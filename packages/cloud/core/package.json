@@ -8,11 +8,18 @@
     "cloud.core": "npm run webiai:dev"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.658.0",
+    "@aws-sdk/lib-dynamodb": "^3.658.0",
     "@pulumi/aws": "^6.0.0",
     "@pulumi/pulumi": "^3.0.0",
     "@webiai/sdk.core": "0.23.11",
     "@webiai/sdk.aws": "0.23.11",
     "@webiai/sdk.ioc": "0.23.11",
-    "@webiai/sdk.infra-provider": "0.23.11"
+    "@webiai/sdk.infra-provider": "0.23.11",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "@types/uuid": "^10.0.0"
   }
 }

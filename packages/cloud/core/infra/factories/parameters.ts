@@ -30,4 +30,14 @@ export namespace Params {
       }),
     });
   };
+
+  export const ApiConfig = (_app: CloudCore, api: sst.aws.ApiGatewayV2) => {
+    return new ssm.Parameter('Param@ApiConfig', {
+      type: 'String',
+      name: $interpolate`/${$app.name}/${$app.stage}/api-config`,
+      value: $jsonStringify({
+        apiUrl: api.url,
+      }),
+    });
+  };
 }
