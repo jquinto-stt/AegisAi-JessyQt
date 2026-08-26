@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { listProducts, createProduct, type Product } from '../api/products';
+import { listProducts, createProduct, USE_MOCK, type Product } from '../api/products';
 
 export default function Products() {
   const { getIdToken } = useAuth();
@@ -69,6 +69,23 @@ export default function Products() {
         <h1>Products — StockFlow</h1>
         <Link to="/">← Dashboard</Link>
       </div>
+
+      {USE_MOCK && (
+        <div
+          style={{
+            background: '#fff8e1',
+            border: '1px solid #ffe082',
+            color: '#795548',
+            padding: '8px 12px',
+            borderRadius: 4,
+            margin: '12px 0',
+            fontSize: 14,
+          }}
+        >
+          <strong>Mock mode</strong> — products are stored locally in your browser
+          (no AWS backend yet). Data persists per user via localStorage.
+        </div>
+      )}
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
