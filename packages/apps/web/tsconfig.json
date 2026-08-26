@@ -1,0 +1,42 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "paths": {
+      "@res": [
+        "./resources/index"
+      ],
+      "@res/*": [
+        "./resources/*"
+      ],
+      "@module:app": [
+        "./modules/app/src/index"
+      ],
+      "@module:app/*": [
+        "./modules/app/src/*"
+      ],
+      "@sst/platform/*": [
+        "./.sst/platform/src/*"
+      ],
+      "@webiai/sdk.infra/*": [
+        "./.sst/webiai/dist/*"
+      ]
+    }
+  },
+  "include": [
+    "infra/**/*",
+    "shared/**/*",
+    "resources/**/*",
+    "sst.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".sst",
+    "modules"
+  ]
+}

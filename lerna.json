@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "packages": [
+    "packages/cloud/core",
+    "packages/cloud/core/modules/*",
+    "packages/apps/web",
+    "packages/apps/web/modules/*"
+  ]
+}

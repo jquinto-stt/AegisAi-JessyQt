@@ -1,0 +1,33 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@res": [
+        "./resources/index"
+      ],
+      "@res/*": [
+        "./resources/*"
+      ],
+      "@sst/platform/*": [
+        "./.sst/platform/src/*"
+      ],
+      "@webiai/sdk.infra/*": [
+        "./.sst/webiai/dist/*"
+      ]
+    }
+  },
+  "include": [
+    "resources/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

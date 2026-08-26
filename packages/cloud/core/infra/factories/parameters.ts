@@ -1,0 +1,33 @@
+/// <reference path="../../.sst/platform/config.d.ts" />
+
+import { ssm } from '@pulumi/aws';
+import type { CloudCore } from '../app.js';
+
+export namespace Params {
+  export const ProjectInfo = (app: CloudCore) => {
+    return new ssm.Parameter('Param@ProjectInfo', {
+      type: 'String',
+      name: $interpolate`/${$app.name}/${$app.stage}/project-info`,
+      value: JSON.stringify({
+        name: 'stockflow',
+        version: '1.0.0',
+      }),
+    });
+  };
+
+  export const AuthConfig = (
+    app: CloudCore,
+    userPool: sst.aws.CognitoUserPool,
+    client: sst.aws.CognitoUserPoolClient,
+  ) => {
+    return new ssm.Parameter('Param@AuthConfig', {
+      type: 'String',
+      name: $interpolate`/${$app.name}/${$app.stage}/auth-config`,
+      value: $jsonStringify({
+        userPoolId: userPool.id,
+        clientId: client.id,
+        region: app.env.schema.aws.region,
+      }),
+    });
+  };
+}

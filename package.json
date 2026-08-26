@@ -1,0 +1,25 @@
+{
+  "name": "@stt/stockflow",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "packages/cloud/core",
+    "packages/apps/web"
+  ],
+  "devDependencies": {
+    "@webiai/devlink": "^2.8.1",
+    "@webiai/sdk.cli": "0.23.11"
+  },
+  "overrides": {
+    "google-protobuf": "3.21.2"
+  },
+  "dependencies": {
+    "@webiai/sdk.core": "0.23.11",
+    "@webiai/sdk.aws": "0.23.11",
+    "@webiai/sdk.infra-provider": "0.23.11"
+  }
+}
