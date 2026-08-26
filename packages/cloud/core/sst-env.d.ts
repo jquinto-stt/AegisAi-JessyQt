@@ -15,6 +15,14 @@ declare module "sst" {
       "id": string
       "type": "sst.aws.CognitoUserPool"
     }
+    "Products@Api": {
+      "type": "sst.aws.ApiGatewayV2"
+      "url": string
+    }
+    "Products@Table": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
   }
 }
 
