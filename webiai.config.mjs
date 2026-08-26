@@ -15,7 +15,7 @@ export default {
   devlink: {
     modes: {
       default: "dev",
-      dev: () => ({ manager: "store" }),
+      dev: () => ({ manager: "npm" }),
     },
   },
 };

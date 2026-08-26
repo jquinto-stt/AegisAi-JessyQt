@@ -5,7 +5,14 @@
   "type": "module",
   "workspaces": [],
   "scripts": {
-    "cloud.core": "npm run webiai:dev",
-    "webiai:dev": "webiai infra dev"
+    "cloud.core": "npm run webiai:dev"
+  },
+  "dependencies": {
+    "@pulumi/aws": "^6.0.0",
+    "@pulumi/pulumi": "^3.0.0",
+    "@webiai/sdk.core": "0.23.11",
+    "@webiai/sdk.aws": "0.23.11",
+    "@webiai/sdk.ioc": "0.23.11",
+    "@webiai/sdk.infra-provider": "0.23.11"
   }
 }

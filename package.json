@@ -18,8 +18,7 @@
     "google-protobuf": "3.21.2"
   },
   "dependencies": {
-    "@webiai/sdk.core": "0.23.11",
-    "@webiai/sdk.aws": "0.23.11",
-    "@webiai/sdk.infra-provider": "0.23.11"
+    "@pulumi/aws": "^6.83.4",
+    "@pulumi/pulumi": "^3.259.0"
   }
 }
