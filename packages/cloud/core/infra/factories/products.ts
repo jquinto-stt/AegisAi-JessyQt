@@ -51,17 +51,17 @@ export namespace Products {
 
     const auth = { auth: { jwt: { authorizer: jwt.id } } };
 
-    api.route(
-      'GET /products',
-      { handler: 'infra/handlers/products.list', link: [table] },
-      auth,
-    );
-
-    api.route(
-      'POST /products',
-      { handler: 'infra/handlers/products.create', link: [table] },
-      auth,
-    );
+    // Routes will be active once IAM permissions are granted by DevOps
+    // api.route(
+    //   'GET /products',
+    //   { handler: 'infra/handlers/products.list', link: [table] },
+    //   auth,
+    // );
+    // api.route(
+    //   'POST /products',
+    //   { handler: 'infra/handlers/products.create', link: [table] },
+    //   auth,
+    // );
 
     return api;
   };
