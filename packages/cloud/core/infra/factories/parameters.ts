@@ -2,9 +2,10 @@
 
 import { ssm } from '@pulumi/aws';
 import type { CloudCore } from '../app.js';
+import type { Auth } from './auth.js';
 
 export namespace Params {
-  export const ProjectInfo = (app: CloudCore) => {
+  export const ProjectInfo = (_app: CloudCore) => {
     return new ssm.Parameter('Param@ProjectInfo', {
       type: 'String',
       name: $interpolate`/${$app.name}/${$app.stage}/project-info`,
@@ -18,7 +19,7 @@ export namespace Params {
   export const AuthConfig = (
     app: CloudCore,
     userPool: sst.aws.CognitoUserPool,
-    client: sst.aws.CognitoUserPoolClient,
+    client: Auth.ClientType,
   ) => {
     return new ssm.Parameter('Param@AuthConfig', {
       type: 'String',

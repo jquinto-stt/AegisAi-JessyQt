@@ -17,7 +17,7 @@ import { Auth, Params, Products } from './factories/index.js';
 export class CloudCore extends Stack<CloudCoreEnv> {
   readonly auth: {
     userPool: sst.aws.CognitoUserPool;
-    client: sst.aws.CognitoUserPoolClient;
+    client: Auth.ClientType;
   } = {} as any;
 
   readonly products: {

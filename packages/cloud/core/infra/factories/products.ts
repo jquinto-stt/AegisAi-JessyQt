@@ -1,6 +1,7 @@
 /// <reference path="../../.sst/platform/config.d.ts" />
 
 import type { CloudCore } from '../app.js';
+import type { Auth } from './auth.js';
 
 /**
  * Products slice — infrastructure factory.
@@ -26,9 +27,9 @@ export namespace Products {
 
   export const Api = (
     app: CloudCore,
-    table: sst.aws.Dynamo,
+    _table: sst.aws.Dynamo,
     userPool: sst.aws.CognitoUserPool,
-    client: sst.aws.CognitoUserPoolClient,
+    client: Auth.ClientType,
   ) => {
     const region = app.env.schema.aws.region;
 
@@ -49,18 +50,18 @@ export namespace Products {
       },
     });
 
-    const auth = { auth: { jwt: { authorizer: jwt.id } } };
+    const _auth = { auth: { jwt: { authorizer: jwt.id } } };
 
     // Routes will be active once IAM permissions are granted by DevOps
     // api.route(
     //   'GET /products',
-    //   { handler: 'infra/handlers/products.list', link: [table] },
-    //   auth,
+    //   { handler: 'infra/handlers/products.list', link: [_table] },
+    //   _auth,
     // );
     // api.route(
     //   'POST /products',
-    //   { handler: 'infra/handlers/products.create', link: [table] },
-    //   auth,
+    //   { handler: 'infra/handlers/products.create', link: [_table] },
+    //   _auth,
     // );
 
     return api;
