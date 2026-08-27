@@ -5,15 +5,21 @@ export default function Home() {
   const { user, signOut } = useAuth();
 
   return (
-    <div style={{ maxWidth: 600, margin: '100px auto', padding: 20 }}>
-      <h1>StockFlow Dashboard</h1>
-      <p>Welcome! You are authenticated as: <strong>{user?.getUsername()}</strong></p>
-      <nav style={{ marginTop: 16 }}>
-        <Link to="/products">Manage Products →</Link>
-      </nav>
-      <button onClick={signOut} style={{ padding: '8px 16px', marginTop: 16 }}>
-        Sign Out
-      </button>
+    <div className="auth-container" style={{ maxWidth: 540 }}>
+      <div className="auth-header">
+        <span className="brand-badge">⚡ StockFlow Cloud</span>
+        <h2>Welcome Back</h2>
+        <p>Authenticated as: <strong style={{ color: '#fff' }}>{user?.getUsername()}</strong></p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Link to="/products" className="btn-primary" style={{ textDecoration: 'none' }}>
+          Open Inventory Dashboard →
+        </Link>
+        <button onClick={signOut} className="btn-secondary">
+          Sign Out
+        </button>
+      </div>
     </div>
   );
 }
