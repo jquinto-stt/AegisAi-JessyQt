@@ -1,0 +1,94 @@
+:root {
+  --necto-brand-navy: #190088;
+  --necto-brand-orange: #FF3F1A;
+  --necto-brand-cyan: #97D6DF;
+  --necto-brand-gray: #ECECEC;
+  --necto-brand-dark: #212121;
+}
+
+.dark {
+  --necto-brand-navy: #190088;
+  --necto-brand-orange: #FF3F1A;
+  --necto-brand-cyan: #97D6DF;
+  --necto-brand-gray: #2C2D31;
+  --necto-brand-dark: #212121;
+}
+
+/* Status Badges - Light & Dark */
+.status-badge-recibido {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+.dark .status-badge-recibido {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+}
+
+.status-badge-confirmado {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.dark .status-badge-confirmado {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.status-badge-en_preparacion {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+.dark .status-badge-en_preparacion {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.status-badge-listo {
+  background-color: rgba(139, 92, 246, 0.12);
+  color: #7c3aed;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+}
+.dark .status-badge-listo {
+  background-color: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+.status-badge-entregado {
+  background-color: rgba(107, 114, 128, 0.12);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.35);
+}
+.dark .status-badge-entregado {
+  background-color: rgba(156, 163, 175, 0.2);
+  color: #d1d5db;
+  border: 1px solid rgba(209, 213, 219, 0.3);
+}
+
+.status-badge-cancelado,
+.status-badge-rechazado {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+.dark .status-badge-cancelado,
+.dark .status-badge-rechazado {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+/* View transitions */
+.animate-view-transition {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

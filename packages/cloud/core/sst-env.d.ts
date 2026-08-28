@@ -6,23 +6,6 @@
 
 declare module "sst" {
   export interface Resource {
-    "Auth@Client": {
-      "id": string
-      "secret": string
-      "type": "sst.aws.CognitoUserPoolClient"
-    }
-    "Auth@UserPool": {
-      "id": string
-      "type": "sst.aws.CognitoUserPool"
-    }
-    "Products@Api": {
-      "type": "sst.aws.ApiGatewayV2"
-      "url": string
-    }
-    "Products@Table": {
-      "name": string
-      "type": "sst.aws.Dynamo"
-    }
   }
 }
 
