@@ -10,7 +10,7 @@ export namespace Params {
       type: 'String',
       name: $interpolate`/${$app.name}/${$app.stage}/project-info`,
       value: JSON.stringify({
-        name: 'stockflow',
+        name: 'necto',
         version: '1.0.0',
       }),
     });

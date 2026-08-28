@@ -9,7 +9,7 @@ import { Auth, Params, Products } from './factories/index.js';
 /**
  * CloudCore — Infrastructure Stack
  *
- * Deploys shared infrastructure resources for StockFlow:
+ * Deploys shared infrastructure resources for Necto:
  * - Cognito User Pool + Client (authentication)
  * - Products: DynamoDB table + HTTP API (Lambda GET/POST)
  * - SSM Parameters (cross-stack exports)
