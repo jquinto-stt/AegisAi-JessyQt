@@ -12,6 +12,7 @@ export namespace Params {
       value: JSON.stringify({
         name: 'necto',
         version: '1.0.0',
+        platform: 'Enterprise Inventory & Orders Management',
       }),
     });
   };
@@ -27,15 +28,25 @@ export namespace Params {
       value: $jsonStringify({
         userPoolId: userPool.id,
         clientId: client.id,
-        region: app.env.schema.aws.region,
+        region: (app.env as any)?.schema?.aws?.region ?? 'us-east-1',
       }),
     });
   };
 
-  export const ApiConfig = (_app: CloudCore, api: sst.aws.ApiGatewayV2) => {
-    return new ssm.Parameter('Param@ApiConfig', {
+  export const InventariosConfig = (_app: CloudCore, api: sst.aws.ApiGatewayV2) => {
+    return new ssm.Parameter('Param@InventariosConfig', {
       type: 'String',
-      name: $interpolate`/${$app.name}/${$app.stage}/api-config`,
+      name: $interpolate`/${$app.name}/${$app.stage}/inventarios-config`,
+      value: $jsonStringify({
+        apiUrl: api.url,
+      }),
+    });
+  };
+
+  export const PedidosConfig = (_app: CloudCore, api: sst.aws.ApiGatewayV2) => {
+    return new ssm.Parameter('Param@PedidosConfig', {
+      type: 'String',
+      name: $interpolate`/${$app.name}/${$app.stage}/pedidos-config`,
       value: $jsonStringify({
         apiUrl: api.url,
       }),

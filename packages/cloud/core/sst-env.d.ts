@@ -6,8 +6,32 @@
 
 declare module "sst" {
   export interface Resource {
+    "Auth@UserPool": {
+      id: string;
+      type: "sst.aws.CognitoUserPool";
+    };
+    "Auth@Client": {
+      id: string;
+      type: "sst.aws.CognitoUserPoolClient";
+    };
+    "Inventarios@Table": {
+      name: string;
+      type: "sst.aws.Dynamo";
+    };
+    "Inventarios@Api": {
+      type: "sst.aws.ApiGatewayV2";
+      url: string;
+    };
+    "Pedidos@Table": {
+      name: string;
+      type: "sst.aws.Dynamo";
+    };
+    "Pedidos@Api": {
+      type: "sst.aws.ApiGatewayV2";
+      url: string;
+    };
   }
 }
 
-import "sst"
-export {}
+import "sst";
+export {};

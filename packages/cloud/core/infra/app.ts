@@ -1,17 +1,16 @@
 /// <reference path="../.sst/platform/config.d.ts" />
 
-import { Env, Config } from '@webiai/sdk.core';
-import { Stack } from '@webiai/sdk.infra/util/stack';
-import { ssm } from '@pulumi/aws';
-import { cloudCoreEnvVisitor, type CloudCoreEnv } from './env.js';
-import { Auth, Params, Products } from './factories/index.js';
+import { Stack } from '@webiai/sdk.infra';
+import type { CloudCoreEnv } from './env.js';
+import { Auth, Inventarios, Pedidos, Params } from './factories/index.js';
 
 /**
- * CloudCore — Infrastructure Stack
+ * CloudCore — Infrastructure Stack for Necto
  *
- * Deploys shared infrastructure resources for Necto:
+ * Deploys infrastructure resources for Necto:
  * - Cognito User Pool + Client (authentication)
- * - Products: DynamoDB table + HTTP API (Lambda GET/POST)
+ * - Inventarios: DynamoDB table + HTTP API
+ * - Pedidos: DynamoDB table + HTTP API
  * - SSM Parameters (cross-stack exports)
  */
 export class CloudCore extends Stack<CloudCoreEnv> {
@@ -20,62 +19,52 @@ export class CloudCore extends Stack<CloudCoreEnv> {
     client: Auth.ClientType;
   } = {} as any;
 
-  readonly products: {
+  readonly inventarios: {
     table: sst.aws.Dynamo;
     api: sst.aws.ApiGatewayV2;
   } = {} as any;
 
-  readonly params: {
-    projectInfo: ssm.Parameter;
-    authConfig: ssm.Parameter;
-    apiConfig: ssm.Parameter;
+  readonly pedidos: {
+    table: sst.aws.Dynamo;
+    api: sst.aws.ApiGatewayV2;
   } = {} as any;
 
-  constructor() {
-    super(() => ({
-      app: Env.var('SST_APP').string()!,
-      stack: Env.var('SST_STACK').optional.string(),
-      retain: Env.var('SST_RETAIN').optional.bool(),
-      home: 'aws',
-    }), cloudCoreEnvVisitor);
+  initAuth(): this {
+    const userPool = Auth.UserPool(this);
+    const client = Auth.Client(this, userPool);
+    Object.assign(this.auth, { userPool, client });
+    return this;
   }
 
-  async run(): Promise<void> {
-    await super.run();
-    await this.initAuth();
-    await this.initProducts();
-    await this.initParameters();
+  initInventarios(): this {
+    const table = Inventarios.Table(this);
+    const api = Inventarios.Api(this, table, this.auth.userPool, this.auth.client);
+    Object.assign(this.inventarios, { table, api });
+    return this;
   }
 
-  private async initAuth(): Promise<void> {
-    this.auth.userPool = Auth.UserPool(this);
-    this.auth.client = Auth.Client(this, this.auth.userPool);
+  initPedidos(): this {
+    const table = Pedidos.Table(this);
+    const api = Pedidos.Api(this, table, this.auth.userPool, this.auth.client);
+    Object.assign(this.pedidos, { table, api });
+    return this;
   }
 
-  private async initProducts(): Promise<void> {
-    this.products.table = Products.Table(this);
-    this.products.api = Products.Api(
-      this,
-      this.products.table,
-      this.auth.userPool,
-      this.auth.client,
-    );
+  initParameters(): this {
+    Params.ProjectInfo(this);
+    Params.AuthConfig(this, this.auth.userPool, this.auth.client);
+    Params.InventariosConfig(this, this.inventarios.api);
+    Params.PedidosConfig(this, this.pedidos.api);
+    return this;
   }
 
-  private async initParameters(): Promise<void> {
-    this.params.projectInfo = Params.ProjectInfo(this);
-    this.params.authConfig = Params.AuthConfig(this, this.auth.userPool, this.auth.client);
-    this.params.apiConfig = Params.ApiConfig(this, this.products.api);
+  async run() {
+    this.initAuth();
+    this.initInventarios();
+    this.initPedidos();
+    this.initParameters();
   }
 }
 
-/**
- * Factory function — entry point for sst.config.ts
- */
-export default () => {
-  Config.set('settings.logger.timestamp', false);
-  Config.set('settings.logger.colorize', true);
-  Config.set('settings.logger.data.style', 'compact');
+export default () => new CloudCore();
 
-  return new CloudCore();
-};

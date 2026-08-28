@@ -1,3 +1,4 @@
-export * from './auth.js';
-export * from './products.js';
-export * from './parameters.js';
+export { Auth } from './auth.js';
+export { Inventarios } from './inventarios.js';
+export { Pedidos } from './pedidos.js';
+export { Params } from './parameters.js';
