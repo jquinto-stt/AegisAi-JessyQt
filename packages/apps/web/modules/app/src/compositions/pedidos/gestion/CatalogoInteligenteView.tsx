@@ -30,6 +30,9 @@ import {
   Package,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button } from "../../../elements/button";
+import { Badge } from "../../../elements/badge";
+import { Card } from "../../../elements/card";
 
 export const CatalogoInteligenteView: React.FC<{
   targetProductId?: string | null;
@@ -216,10 +219,10 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Popularity Badge */}
           {product.popularityRank && product.popularityRank <= 3 && (
-            <span className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md flex items-center gap-1">
+            <Badge className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md border-transparent">
               <Flame className="w-3.5 h-3.5 fill-white" />
               <span>#{product.popularityRank} Más Pedido</span>
-            </span>
+            </Badge>
           )}
 
           {/* Price Tag */}
@@ -227,9 +230,9 @@ export const CatalogoInteligenteView: React.FC<{
             ${product.price.toLocaleString("es-CO")}
           </div>
 
-          <span className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg">
+          <Badge className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg border-transparent">
             {product.category}
-          </span>
+          </Badge>
         </div>
 
         {/* Body */}
@@ -298,13 +301,14 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Footer Controls: Edit Product & Stock Switch */}
           <div className="pt-3 border-t border-gray-100 dark:border-[#374151] flex items-center justify-between gap-2">
-            <button
+            <Button
+              variant="outline"
               onClick={() => setEditingProduct({ ...product })}
-              className="py-2 px-3 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#190088] hover:text-[#190088] dark:hover:text-indigo-300 flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
+              className="h-auto py-2 px-3 rounded-xl text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#190088] hover:text-[#190088] dark:hover:text-indigo-300 shadow-xs"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Editar & Variantes</span>
-            </button>
+            </Button>
 
             {/* Availability Switch */}
             <button
@@ -486,14 +490,14 @@ export const CatalogoInteligenteView: React.FC<{
                 </select>
               </div>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => setIsCreatingProduct(true)}
-                className="py-2.5 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+                className="rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black h-auto py-2.5 px-4 shadow-xs active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nuevo Plato / Producto</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -626,14 +630,14 @@ export const CatalogoInteligenteView: React.FC<{
                       onKeyDown={e => e.key === "Enter" && handleSendReply(rev.id)}
                       className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none"
                     />
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleSendReply(rev.id)}
-                      className="py-2 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center gap-1 cursor-pointer"
+                      className="h-auto py-2 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black"
                     >
                       <Reply className="w-3.5 h-3.5" />
                       <span>Responder</span>
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -892,21 +896,22 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setEditingProduct(null)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer"
+                className="h-auto py-2.5 px-4 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={handleSaveProductEdit}
-                className="py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center gap-2 shadow-xs cursor-pointer"
+                className="h-auto py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black shadow-xs"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Cambios</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1009,20 +1014,21 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setIsCreatingProduct(false)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer"
+                className="h-auto py-2.5 px-4 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="py-2.5 px-5 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black flex items-center gap-2 shadow-xs cursor-pointer"
+                className="h-auto py-2.5 px-5 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>Crear Plato</span>
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -1074,12 +1080,12 @@ export const CatalogoInteligenteView: React.FC<{
             </div>
 
             <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-right">
-              <button
+              <Button
                 onClick={() => setReviewModalProduct(null)}
-                className="py-2 px-4 rounded-xl bg-[#190088] text-white text-xs font-black cursor-pointer"
+                className="h-auto py-2 px-4 rounded-xl bg-[#190088] text-white text-xs font-black"
               >
                 Cerrar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

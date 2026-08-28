@@ -23,6 +23,14 @@ import {
   INITIAL_PROGRAMADOS,
 } from "../mockData";
 import { playNewOrderSound, playSuccessSound, playUrgentAlertSound } from "../utils/soundEffects";
+import { useAuth } from "../../../auth/AuthContext";
+import {
+  listProducts as apiListProducts,
+  createProduct as apiCreateProduct,
+  updateProduct as apiUpdateProduct,
+  USE_MOCK as PRODUCTS_USE_MOCK,
+} from "../../../api/products";
+import { toProductItem, toApiProduct } from "../adapters/productAdapter";
 
 interface PedidosContextType {
   orders: Pedido[];
@@ -79,6 +87,7 @@ interface PedidosContextType {
 const PedidosContext = createContext<PedidosContextType | null>(null);
 
 export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { getIdToken } = useAuth();
   const [orders, setOrders] = useState<Pedido[]>(INITIAL_ORDERS);
   const [programados, setProgramados] = useState<Pedido[]>(INITIAL_PROGRAMADOS);
   const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
@@ -139,6 +148,30 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return next;
     });
   };
+
+  // Load catalog products from the WebiAI Products API (mock fallback).
+  // Necto-only presentation fields are preserved by merging over existing items.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getIdToken().catch(() => "");
+        const apiProducts = await apiListProducts(token);
+        if (cancelled) return;
+        setProducts(prev => {
+          const byId = new Map(prev.map(p => [p.id, p]));
+          return apiProducts.map(ap => toProductItem(ap, byId.get(ap.id)));
+        });
+      } catch (err) {
+        // Non-fatal: keep the seeded INITIAL_PRODUCTS so the UI stays usable.
+        console.error("[PedidosContext] failed to load products", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Recalculate KPIs when orders change
   useEffect(() => {
@@ -319,6 +352,19 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  // Persist a partial product update to the Products API (best-effort).
+  const persistUpdate = async (
+    productId: string,
+    patch: Partial<{ name: string; sku: string; price: number; stock: number }>,
+  ) => {
+    try {
+      const token = await getIdToken().catch(() => "");
+      await apiUpdateProduct(productId, patch, token);
+    } catch (err) {
+      console.error("[PedidosContext] failed to update product", err);
+    }
+  };
+
   // Synergy with Catalog
   const toggleProductAvailability = (productId: string) => {
     setProducts(prev =>
@@ -339,24 +385,55 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateProductPrice = (productId: string, newPrice: number) => {
+    // Optimistic local update, then persist to the API (best-effort).
     setProducts(prev =>
       prev.map(p => (p.id === productId ? { ...p, price: newPrice } : p))
     );
+    void persistUpdate(productId, { price: newPrice });
   };
 
   const updateProduct = (productId: string, updatedFields: Partial<ProductItem>) => {
     setProducts(prev =>
       prev.map(p => (p.id === productId ? { ...p, ...updatedFields } : p))
     );
+    // Persist only the fields the Products API owns (name/sku/price/stock).
+    const apiPatch: Partial<{ name: string; sku: string; price: number; stock: number }> = {};
+    if (updatedFields.name !== undefined) apiPatch.name = updatedFields.name;
+    if (updatedFields.code !== undefined) apiPatch.sku = updatedFields.code;
+    if (updatedFields.price !== undefined) apiPatch.price = updatedFields.price;
+    if (updatedFields.stockEstimated !== undefined) apiPatch.stock = updatedFields.stockEstimated;
+    if (Object.keys(apiPatch).length > 0) void persistUpdate(productId, apiPatch);
   };
 
   const addProduct = (newProduct: Omit<ProductItem, "id">) => {
-    const id = `PROD-${Date.now().toString().slice(-4)}`;
-    const productWithId: ProductItem = {
-      ...newProduct,
-      id,
-    };
-    setProducts(prev => [productWithId, ...prev]);
+    // Optimistic insert with a temporary id, then reconcile with the API id.
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: ProductItem = { ...newProduct, id: tempId };
+    setProducts(prev => [optimistic, ...prev]);
+
+    (async () => {
+      try {
+        const token = await getIdToken().catch(() => "");
+        const created = await apiCreateProduct(
+          toApiProduct({
+            name: newProduct.name,
+            code: newProduct.code,
+            price: newProduct.price,
+            stockEstimated: newProduct.stockEstimated,
+          }),
+          token,
+        );
+        setProducts(prev =>
+          prev.map(p => (p.id === tempId ? toProductItem(created, { ...optimistic, id: created.id }) : p))
+        );
+      } catch (err) {
+        console.error("[PedidosContext] failed to create product", err);
+        if (!PRODUCTS_USE_MOCK) {
+          // Roll back the optimistic insert on a real API failure.
+          setProducts(prev => prev.filter(p => p.id !== tempId));
+        }
+      }
+    })();
   };
 
   // Synergy with Automations
