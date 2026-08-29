@@ -20,21 +20,31 @@
         "./modules/service/src/*"
       ],
       "@sst/platform/*": [
+        "../../cloud/core/.sst/platform/src/*",
         "./.sst/platform/src/*"
       ],
+      "@webiai/sdk.infra": [
+        "../../cloud/core/.sst/webiai/dist/index",
+        "./.sst/webiai/dist/index"
+      ],
       "@webiai/sdk.infra/*": [
+        "../../cloud/core/.sst/webiai/dist/*",
         "./.sst/webiai/dist/*"
       ],
       "@pulumi/pulumi": [
+        "../../cloud/core/.sst/platform/node_modules/@pulumi/pulumi",
         "./.sst/platform/node_modules/@pulumi/pulumi"
       ],
       "@pulumi/pulumi/*": [
+        "../../cloud/core/.sst/platform/node_modules/@pulumi/pulumi/*",
         "./.sst/platform/node_modules/@pulumi/pulumi/*"
       ],
       "@pulumi/aws": [
+        "../../cloud/core/.sst/platform/node_modules/@pulumi/aws",
         "./.sst/platform/node_modules/@pulumi/aws"
       ],
       "@pulumi/aws/*": [
+        "../../cloud/core/.sst/platform/node_modules/@pulumi/aws/*",
         "./.sst/platform/node_modules/@pulumi/aws/*"
       ]
     }
