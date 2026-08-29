@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { CognitoUser, AuthenticationDetails, CognitoUserAttribute } from 'amazon-cognito-identity-js';
-import { userPool } from './cognito';
+import { userPool, isCognitoConfigured } from './cognito';
 
 interface AuthContextType {
   user: CognitoUser | null;
@@ -20,19 +20,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = userPool.getCurrentUser();
-    if (currentUser) {
-      currentUser.getSession((err: Error | null) => {
-        if (!err) setUser(currentUser);
+    try {
+      if (!isCognitoConfigured) {
         setIsLoading(false);
-      });
-    } else {
+        return;
+      }
+      const currentUser = userPool.getCurrentUser();
+      if (currentUser) {
+        currentUser.getSession((err: Error | null) => {
+          if (!err) setUser(currentUser);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    } catch {
       setIsLoading(false);
     }
   }, []);
 
   const signUp = (email: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (!isCognitoConfigured) return resolve();
       const attributes = [
         new CognitoUserAttribute({ Name: 'email', Value: email }),
       ];
@@ -45,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const confirmSignUp = (email: string, code: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (!isCognitoConfigured) return resolve();
       const cognitoUser = new CognitoUser({ Username: email, Pool: userPool });
       cognitoUser.confirmRegistration(code, true, (err) => {
         if (err) return reject(err);
@@ -55,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = (email: string, password: string): Promise<void> => {
     return new Promise((resolve, reject) => {
+      if (!isCognitoConfigured) return resolve();
       const cognitoUser = new CognitoUser({ Username: email, Pool: userPool });
       const authDetails = new AuthenticationDetails({ Username: email, Password: password });
       cognitoUser.authenticateUser(authDetails, {
@@ -72,18 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
-  /**
-   * Resolves the current user's Cognito id token (JWT), refreshing the
-   * session if needed. Used as the Bearer token for authenticated API calls.
-   */
   const getIdToken = (): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const current = user ?? userPool.getCurrentUser();
-      if (!current) return reject(new Error('Not authenticated'));
-      current.getSession((err: Error | null, session: any) => {
-        if (err || !session) return reject(err ?? new Error('No session'));
-        resolve(session.getIdToken().getJwtToken());
-      });
+    return new Promise((resolve) => {
+      try {
+        if (!isCognitoConfigured) return resolve('');
+        const current = user ?? userPool.getCurrentUser();
+        if (!current) return resolve('');
+        current.getSession((err: Error | null, session: any) => {
+          if (err || !session) return resolve('');
+          resolve(session.getIdToken().getJwtToken());
+        });
+      } catch {
+        resolve('');
+      }
     });
   };
 
