@@ -1,9 +1,11 @@
 {
   "version": "0.1.0",
   "packages": [
-    "packages/cloud/core",
-    "packages/cloud/core/modules/*",
+    "packages/services/api",
+    "packages/services/api/modules/*",
     "packages/apps/web",
-    "packages/apps/web/modules/*"
+    "packages/apps/web/modules/*",
+    "packages/cloud/core",
+    "packages/cloud/core/modules/*"
   ]
 }

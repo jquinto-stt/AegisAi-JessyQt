@@ -1,4 +1,2 @@
-export { Auth } from './auth.js';
-export { Inventarios } from './inventarios.js';
-export { Pedidos } from './pedidos.js';
-export { Params } from './parameters.js';
+export { createVpc } from './vpc.js';
+export { createCognito } from './cognito.js';
