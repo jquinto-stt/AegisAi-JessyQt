@@ -22,6 +22,14 @@ export interface BusinessChannelConfig {
 
 export type BusinessIconKey = "utensils" | "flame" | "coffee" | "store" | "chef" | "layers";
 
+export interface BusinessScheduledPause {
+  isPaused: boolean;
+  pauseStartDate?: string;
+  pauseEndDate?: string;
+  reason?: string;
+  autoReplyMessage?: string;
+}
+
 export interface BusinessInstance {
   id: string;
   name: string;
@@ -30,10 +38,14 @@ export interface BusinessInstance {
   iconKey: BusinessIconKey;
   currency: "COP" | "USD" | "MXN" | "ARS";
   city: string;
+  country?: string;
+  contactPhone?: string;
+  contactEmail?: string;
   channels: BusinessChannelConfig;
   kitchenBufferMin: number;
   specialty?: string;
   activeModules: NectoModuleKey[];
+  pauseConfig?: BusinessScheduledPause;
   createdAt: string;
 }
 

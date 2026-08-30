@@ -104,7 +104,12 @@ export default function WorkspacesPage() {
                     <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
                       {biz.name}
                     </h3>
-                    {isActive ? (
+                    {biz.pauseConfig?.isPaused ? (
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        EN PAUSA {biz.pauseConfig.pauseEndDate ? `· REABRE ${new Date(biz.pauseConfig.pauseEndDate).toLocaleDateString()}` : ""}
+                      </span>
+                    ) : isActive ? (
                       <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
                         ACTIVO
                       </span>

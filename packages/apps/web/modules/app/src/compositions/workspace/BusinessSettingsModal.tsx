@@ -68,6 +68,13 @@ export const BusinessSettingsModal: React.FC<{
   ]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Pause & Maintenance States
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseStartDate, setPauseStartDate] = useState("");
+  const [pauseEndDate, setPauseEndDate] = useState("");
+  const [pauseReason, setPauseReason] = useState("Vacaciones Colectivas");
+  const [pauseMessage, setPauseMessage] = useState("");
+
   useEffect(() => {
     if (business) {
       setName(business.name);
@@ -84,6 +91,14 @@ export const BusinessSettingsModal: React.FC<{
       setContactEmail(business.contactEmail || "contacto@negocio.com");
       setKitchenBufferMin(business.kitchenBufferMin || 20);
       setActiveModules(business.activeModules || ["pedidos", "inventarios"]);
+      setIsPaused(business.pauseConfig?.isPaused || false);
+      setPauseStartDate(business.pauseConfig?.pauseStartDate || "");
+      setPauseEndDate(business.pauseConfig?.pauseEndDate || "");
+      setPauseReason(business.pauseConfig?.reason || "Vacaciones Colectivas");
+      setPauseMessage(
+        business.pauseConfig?.autoReplyMessage ||
+          `Hola! ${business.name} se encuentra cerrado temporalmente por vacaciones. Volveremos a recibir pedidos pronto. Gracias por tu comprensión.`
+      );
       setConfirmDelete(false);
     }
   }, [business, isOpen]);
@@ -116,6 +131,13 @@ export const BusinessSettingsModal: React.FC<{
         whatsapp: enableWhatsapp,
         web: enableWeb,
         pos: enablePos,
+      },
+      pauseConfig: {
+        isPaused,
+        pauseStartDate,
+        pauseEndDate,
+        reason: pauseReason,
+        autoReplyMessage: pauseMessage,
       },
     });
 
@@ -537,6 +559,133 @@ export const BusinessSettingsModal: React.FC<{
           {/* TAB 4: ADVANCED & DANGER ZONE */}
           {activeTab === "advanced" && (
             <div className="space-y-6 animate-fade-in">
+              {/* Scheduled Business Pause / Downtime Calendar Section */}
+              <div className="space-y-4 p-5 rounded-3xl bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-2.5 h-2.5 rounded-full ${
+                          isPaused ? "bg-amber-500 animate-pulse" : "bg-emerald-500"
+                        }`}
+                      />
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white">
+                        Estado de Apertura & Pausa Programada
+                      </h4>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 max-w-md leading-relaxed">
+                      Desactiva la recepción de pedidos temporalmente por vacaciones, mantenimiento o feriados con reapertura automática por calendario.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPaused(!isPaused)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                      isPaused
+                        ? "bg-amber-500 text-white shadow-xs"
+                        : "bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300"
+                    }`}
+                  >
+                    <span>{isPaused ? "Pausa Activa" : "Negocio Abierto"}</span>
+                  </button>
+                </div>
+
+                {/* Calendar Schedule Controls (Visible when pause is enabled) */}
+                {isPaused && (
+                  <div className="space-y-4 pt-4 border-t border-zinc-200/70 dark:border-zinc-800 animate-fade-in">
+                    {/* Date Pickers */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                          <span>Inicio de la Pausa (Cierre)</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={pauseStartDate}
+                          onChange={e => setPauseStartDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-950 dark:text-white font-medium focus:outline-none focus:border-[#FF3F1A]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Reapertura Automática</span>
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={pauseEndDate}
+                          onChange={e => setPauseEndDate(e.target.value)}
+                          className="w-full px-3 py-2 text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-950 dark:text-white font-medium focus:outline-none focus:border-[#FF3F1A]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Reasons Chips */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
+                        Motivo del Cierre Temporal
+                      </label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          "Vacaciones Colectivas",
+                          "Inventario & Mantenimiento",
+                          "Feriado / Día No Laborable",
+                          "Remodelación de Local",
+                          "Emergencia Operativa",
+                        ].map(reasonOption => (
+                          <button
+                            key={reasonOption}
+                            type="button"
+                            onClick={() => {
+                              setPauseReason(reasonOption);
+                              setPauseMessage(
+                                `Hola! ${name || "Nuestro negocio"} se encuentra en ${reasonOption.toLowerCase()}. Volveremos a recibir pedidos el día ${
+                                  pauseEndDate ? new Date(pauseEndDate).toLocaleDateString() : "indicado"
+                                }. Gracias por tu comprensión.`
+                              );
+                            }}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer border ${
+                              pauseReason === reasonOption
+                                ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white font-bold"
+                                : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                            }`}
+                          >
+                            {reasonOption}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Auto-Reply Message */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
+                        <span>Mensaje de Respuesta Automática (WhatsApp & Web QR)</span>
+                        <span className="text-[10px] font-mono text-zinc-400">Auto-Reply</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={pauseMessage}
+                        onChange={e => setPauseMessage(e.target.value)}
+                        placeholder="Mensaje que recibirán los clientes si intentan pedir durante la pausa..."
+                        className="w-full p-3 text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-950 dark:text-white font-medium focus:outline-none focus:border-[#FF3F1A] resize-none"
+                      />
+                    </div>
+
+                    {/* Active Warning Banner */}
+                    <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex items-center gap-2.5 text-amber-900 dark:text-amber-200 text-xs">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-none" />
+                      <span>
+                        Durante la pausa, el catálogo web mostrará el aviso de cierre temporal y la fecha de reapertura sin recibir cobros.
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Kitchen Buffer Settings */}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold text-zinc-950 dark:text-white">
                   Tiempos & Rendimiento Operativo
