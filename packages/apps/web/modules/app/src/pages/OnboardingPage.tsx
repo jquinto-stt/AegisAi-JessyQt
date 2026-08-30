@@ -16,88 +16,135 @@ import {
   MessageSquare,
   Smartphone,
   Shield,
-  HelpCircle,
-  Sparkles,
   Building2,
-  Layers,
-  Globe,
   MapPin,
   Mail,
   Phone,
   Briefcase,
-  User,
-  Lock,
   UtensilsCrossed,
   Store,
-  Scissors,
 } from "lucide-react";
+
+/* ── Business Archetypes ─────────────────────────────────────────────── */
+
+const ARCHETYPES: Array<{
+  id: BusinessType;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  defaultModules: NectoModuleKey[];
+  iconKey: BusinessIconKey;
+}> = [
+  {
+    id: "restaurant_virtual",
+    title: "Restaurante & Gastronomía",
+    subtitle:
+      "Comandas en vivo, KDS de cocina, escandallos, delivery WhatsApp y POS mostrador.",
+    icon: UtensilsCrossed,
+    defaultModules: ["pedidos", "inventarios", "reservas"],
+    iconKey: "utensils",
+  },
+  {
+    id: "retail_store",
+    title: "Comercio & Retail",
+    subtitle:
+      "Catálogo de productos, control de stock por SKU, ventas de mostrador y tienda web.",
+    icon: Store,
+    defaultModules: ["pedidos", "inventarios", "referidos"],
+    iconKey: "store",
+  },
+  {
+    id: "services",
+    title: "Servicios & Citas",
+    subtitle:
+      "Agenda de turnos, gestión de especialistas, reservas online y recordatorios automáticos.",
+    icon: Calendar,
+    defaultModules: ["agendamiento", "turnos", "referidos"],
+    iconKey: "coffee",
+  },
+];
+
+const MODULES: Array<{
+  id: NectoModuleKey;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  {
+    id: "pedidos",
+    title: "Pedidos",
+    description:
+      "Control centralizado de órdenes entrantes, estados de entrega y facturación rápida.",
+    icon: ShoppingBag,
+  },
+  {
+    id: "inventarios",
+    title: "Inventarios",
+    description:
+      "Seguimiento en tiempo real de stock, alertas de agotados y reportes de insumos.",
+    icon: Package,
+  },
+  {
+    id: "reservas",
+    title: "Reservas",
+    description:
+      "Sistema para locales físicos que requieren gestión de espacios y mesas.",
+    icon: Bookmark,
+  },
+  {
+    id: "agendamiento",
+    title: "Agendamiento",
+    description:
+      "Organiza citas y servicios con un calendario inteligente integrado con tu equipo.",
+    icon: Calendar,
+  },
+  {
+    id: "turnos",
+    title: "Turnos",
+    description:
+      "Optimiza la jornada laboral de tu personal con cuadrantes y rotaciones automatizadas.",
+    icon: Clock,
+  },
+  {
+    id: "referidos",
+    title: "Referidos",
+    description:
+      "Gestiona programas de lealtad y recomendaciones de clientes para atraer nuevas ventas.",
+    icon: Users,
+  },
+];
+
+const STEPS = [
+  { num: 1, label: "Tu Negocio" },
+  { num: 2, label: "WhatsApp" },
+  { num: 3, label: "Módulos" },
+];
+
+/* ── Component ───────────────────────────────────────────────────────── */
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { businesses, createBusiness } = useBusiness();
-  const [step, setStep] = useState<number>(3); // Set default to Step 3 for business setup
+  const [step, setStep] = useState(1);
 
-  // Paso 1: Cuenta
-  const [ownerName, setOwnerName] = useState("Carlos Bianchi");
-  const [ownerEmail, setOwnerEmail] = useState("carlos@necto.app");
-
-  // Paso 3: Tipo de Negocio & Datos
+  // Step 1: Business Identity
   const [businessModel, setBusinessModel] = useState<BusinessType>("restaurant_virtual");
-  const [companyName, setCompanyName] = useState("Necto Burger & Grill");
-  const [website, setWebsite] = useState("https://nectoburger.com");
+  const [companyName, setCompanyName] = useState("");
   const [country, setCountry] = useState("Colombia");
-  const [city, setCity] = useState("Bogotá");
-  const [corporateEmail, setCorporateEmail] = useState("contacto@nectoburger.com");
-  const [contactPhone, setContactPhone] = useState("+57 300 123 4567");
+  const [city, setCity] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
 
-  // Paso 4: WhatsApp
+  // Step 2: WhatsApp
   const [isMetaConnected, setIsMetaConnected] = useState(false);
 
-  // Paso 5: Módulos
-  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>([
-    "pedidos",
-    "inventarios",
-    "reservas",
-  ]);
+  // Step 3: Modules (pre-loaded from archetype on step 1)
+  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>(
+    ARCHETYPES[0].defaultModules
+  );
 
-  // Business Archetypes Definition
-  const businessArchetypes: Array<{
-    id: BusinessType;
-    title: string;
-    subtitle: string;
-    icon: React.ComponentType<{ className?: string }>;
-    defaultModules: NectoModuleKey[];
-    iconKey: BusinessIconKey;
-  }> = [
-    {
-      id: "restaurant_virtual",
-      title: "Restaurante & Gastronomía",
-      subtitle: "Comandas en vivo, KDS de cocina, escandallos, delivery WhatsApp y POS mostrador.",
-      icon: UtensilsCrossed,
-      defaultModules: ["pedidos", "inventarios", "reservas"],
-      iconKey: "utensils",
-    },
-    {
-      id: "retail_store",
-      title: "Comercio & Retail",
-      subtitle: "Catálogo de productos, control de stock por SKU, ventas de mostrador y tienda web.",
-      icon: Store,
-      defaultModules: ["pedidos", "inventarios", "referidos"],
-      iconKey: "store",
-    },
-    {
-      id: "services",
-      title: "Servicios & Citas",
-      subtitle: "Agenda de turnos, gestión de especialistas, reservas online y recordatorios automáticos.",
-      icon: Calendar,
-      defaultModules: ["agendamiento", "turnos", "referidos"],
-      iconKey: "coffee",
-    },
-  ];
-
-  const handleSelectBusinessModel = (model: (typeof businessArchetypes)[0]) => {
-    setBusinessModel(model.id);
-    setSelectedModules(model.defaultModules);
+  const handleSelectArchetype = (arch: (typeof ARCHETYPES)[0]) => {
+    setBusinessModel(arch.id);
+    setSelectedModules(arch.defaultModules);
   };
 
   const handleToggleModule = (key: NectoModuleKey) => {
@@ -106,7 +153,18 @@ export default function OnboardingPage() {
     );
   };
 
+  const currencyForCountry = (c: string) => {
+    const map: Record<string, "COP" | "USD" | "MXN" | "ARS"> = {
+      Colombia: "COP",
+      México: "MXN",
+      Argentina: "ARS",
+    };
+    return map[c] || "USD";
+  };
+
   const handleFinish = () => {
+    const arch = ARCHETYPES.find(a => a.id === businessModel) || ARCHETYPES[0];
+
     createBusiness({
       name: companyName.trim() || "Mi Negocio",
       slug: (companyName || "mi-negocio")
@@ -115,120 +173,53 @@ export default function OnboardingPage() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, ""),
       businessType: businessModel,
-      iconKey: businessModel === "restaurant_virtual" ? "utensils" : businessModel === "retail_store" ? "store" : "coffee",
-      currency: country === "Colombia" ? "COP" : country === "México" ? "MXN" : "USD",
-      city: `${city}, ${country}`,
-      channels: {
-        whatsapp: true,
-        web: true,
-        pos: true,
-      },
+      iconKey: arch.iconKey,
+      currency: currencyForCountry(country),
+      city: city ? `${city}, ${country}` : country,
+      channels: { whatsapp: true, web: true, pos: true },
       kitchenBufferMin: 20,
-      specialty: businessModel === "restaurant_virtual" ? "Gastronomía & Restaurantes" : businessModel === "retail_store" ? "Comercio & Retail" : "Servicios & Citas",
+      specialty: arch.title,
       activeModules: selectedModules,
     });
 
     navigate("/");
   };
 
-  const modulesList: Array<{
-    id: NectoModuleKey;
-    title: string;
-    description: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    {
-      id: "pedidos",
-      title: "Pedidos",
-      description:
-        "Control centralizado de órdenes entrantes, estados de entrega y facturación rápida.",
-      icon: ShoppingBag,
-    },
-    {
-      id: "inventarios",
-      title: "Inventarios",
-      description:
-        "Seguimiento en tiempo real de stock, alertas de agotados y reportes de insumos.",
-      icon: Package,
-    },
-    {
-      id: "reservas",
-      title: "Reservas",
-      description:
-        "Sistema especializado para locales físicos que requieren gestión de espacios y mesas.",
-      icon: Bookmark,
-    },
-    {
-      id: "agendamiento",
-      title: "Agendamiento",
-      description:
-        "Organiza citas y servicios con un calendario inteligente integrado con tu equipo.",
-      icon: Calendar,
-    },
-    {
-      id: "turnos",
-      title: "Turnos",
-      description:
-        "Optimiza la jornada laboral de tu personal con cuadrantes y rotaciones automatizadas.",
-      icon: Clock,
-    },
-    {
-      id: "referidos",
-      title: "Referidos",
-      description:
-        "Gestiona programas de lealtad y recomendaciones de clientes para atraer nuevas ventas.",
-      icon: Users,
-    },
-  ];
-
-  const steps = [
-    { num: 1, label: "Cuenta" },
-    { num: 2, label: "Verificación" },
-    { num: 3, label: "Negocio" },
-    { num: 4, label: "WhatsApp" },
-    { num: 5, label: "Configuración" },
-  ];
+  const canProceedStep1 = companyName.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
-      {/* Top Header */}
+      {/* Header */}
       <header className="px-6 sm:px-14 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center font-black text-sm select-none tracking-tighter shadow-2xs">
             N
           </div>
-          <span className="font-bold text-xs tracking-tight text-zinc-900 dark:text-zinc-100">
-            Necto
-          </span>
+          <span className="font-bold text-xs tracking-tight">Necto</span>
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
-          {businesses.length > 0 && (
-            <button
-              type="button"
-              onClick={() => navigate("/workspaces")}
-              className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
-            >
-              Cancelar y volver
-            </button>
-          )}
-        </div>
+        {businesses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => navigate("/workspaces")}
+            className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+          >
+            Cancelar
+          </button>
+        )}
       </header>
 
-      {/* Main Container */}
+      {/* Main */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 space-y-8 flex flex-col justify-center">
-        {/* Horizontal Top Stepper */}
-        <div className="w-full max-w-2xl mx-auto flex items-center justify-between relative px-2">
-          {steps.map((s, idx) => {
+        {/* Horizontal Stepper */}
+        <div className="w-full max-w-md mx-auto flex items-center justify-between relative px-2">
+          {STEPS.map((s, idx) => {
             const isPassed = s.num < step;
             const isCurrent = s.num === step;
 
             return (
               <React.Fragment key={s.num}>
-                <div
-                  onClick={() => setStep(s.num)}
-                  className="flex flex-col items-center gap-1.5 z-10 cursor-pointer group"
-                >
+                <div className="flex flex-col items-center gap-1.5 z-10">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-2xs ${
                       isCurrent
@@ -253,7 +244,7 @@ export default function OnboardingPage() {
                   </span>
                 </div>
 
-                {idx < steps.length - 1 && (
+                {idx < STEPS.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 -mt-5 transition-colors ${
                       s.num < step ? "bg-[#FF3F1A]" : "bg-zinc-200 dark:bg-zinc-800"
@@ -265,81 +256,72 @@ export default function OnboardingPage() {
           })}
         </div>
 
-        {/* STEP 3: TIPO DE NEGOCIO & DATOS PRINCIPALES */}
-        {step === 3 && (
+        {/* ─── STEP 1: TU NEGOCIO ──────────────────────────────────────── */}
+        {step === 1 && (
           <div className="space-y-6 animate-fade-in">
-            {/* Header */}
             <div className="text-center space-y-1.5 max-w-lg mx-auto">
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-                Modelo de Negocio & Identidad
+                ¿Qué tipo de negocio operas?
               </h1>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal">
-                Selecciona tu modelo operativo para configurar automáticamente los módulos y herramientas que necesitas.
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                Esto pre-configura automáticamente los módulos y herramientas de tu espacio.
               </p>
             </div>
 
-            {/* Business Model Selector Cards (Clear Archetypes) */}
-            <div className="space-y-2.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
-                1. ¿Qué tipo de negocio operas?
-              </label>
+            {/* Archetype Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ARCHETYPES.map(arch => {
+                const isSelected = businessModel === arch.id;
+                const Icon = arch.icon;
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {businessArchetypes.map(model => {
-                  const isSelected = businessModel === model.id;
-                  const Icon = model.icon;
-
-                  return (
-                    <div
-                      key={model.id}
-                      onClick={() => handleSelectBusinessModel(model)}
-                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                        isSelected
-                          ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 shadow-xs"
-                          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] hover:border-zinc-300 dark:hover:border-zinc-700"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                            isSelected
-                              ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
-                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-                          }`}
-                        >
-                          <Icon className="w-4 h-4 text-[#FF3F1A]" />
-                        </div>
-
-                        <div
-                          className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                            isSelected ? "bg-[#FF3F1A] text-white" : "border border-zinc-300"
-                          }`}
-                        >
-                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                        </div>
+                return (
+                  <div
+                    key={arch.id}
+                    onClick={() => handleSelectArchetype(arch)}
+                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 min-h-[140px] ${
+                      isSelected
+                        ? "border-zinc-950 dark:border-zinc-100 bg-white dark:bg-zinc-900 shadow-sm"
+                        : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] hover:border-zinc-300 dark:hover:border-zinc-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
+                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
                       </div>
 
-                      <div className="space-y-1">
-                        <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
-                          {model.title}
-                        </h4>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                          {model.subtitle}
-                        </p>
+                      <div
+                        className={`w-4.5 h-4.5 rounded-full flex items-center justify-center transition-all ${
+                          isSelected
+                            ? "bg-[#FF3F1A] text-white"
+                            : "border border-zinc-300 dark:border-zinc-700"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                        {arch.title}
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                        {arch.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Centered Form Card for Business Details */}
+            {/* Business Details Card */}
             <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-8 space-y-5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold block">
-                2. Datos de la Empresa
-              </label>
-
-              {/* Row 1: Nombre de la empresa */}
+              {/* Company Name */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Nombre comercial
@@ -352,12 +334,13 @@ export default function OnboardingPage() {
                     placeholder="Ej. Burger House"
                     value={companyName}
                     onChange={e => setCompanyName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
+                    autoFocus
+                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400 transition-colors"
                   />
                 </div>
               </div>
 
-              {/* Row 2: País & Ciudad */}
+              {/* Country & City */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -397,101 +380,52 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Row 3: Correo & Teléfono */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Correo corporativo
-                  </label>
-                  <div className="relative flex items-center">
-                    <Mail className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                    <input
-                      type="email"
-                      placeholder="contacto@empresa.com"
-                      value={corporateEmail}
-                      onChange={e => setCorporateEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Teléfono / WhatsApp
-                  </label>
-                  <div className="relative flex items-center">
-                    <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                    <input
-                      type="text"
-                      placeholder="+57 300 123 4567"
-                      value={contactPhone}
-                      onChange={e => setContactPhone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
+              {/* Phone (optional, feeds into WhatsApp later) */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Teléfono / WhatsApp (opcional)
+                </label>
+                <div className="relative flex items-center">
+                  <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    placeholder="+57 300 123 4567"
+                    value={contactPhone}
+                    onChange={e => setContactPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
+                  />
                 </div>
               </div>
 
-              {/* Action Buttons inside card */}
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+              {/* Actions */}
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end">
                 <button
                   type="button"
+                  disabled={!canProceedStep1}
                   onClick={() => setStep(2)}
-                  className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Volver</span>
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!companyName.trim()}
-                  onClick={() => setStep(4)}
-                  className="py-3 px-8 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
+                  className={`py-3 px-8 rounded-2xl text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98 ${
+                    canProceedStep1
+                      ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
+                      : "bg-zinc-200 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600"
+                  }`}
                 >
                   <span>Continuar</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-
-            {/* Bottom Footer Helper Cards */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-center gap-3 shadow-2xs w-full sm:w-auto">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-                    Perfiles de Empresa
-                  </p>
-                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                    Podrás añadir sucursales adicionales en cualquier momento.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right text-xs text-zinc-400 font-mono">
-                <p>¿Necesitas ayuda con el registro?</p>
-                <button
-                  type="button"
-                  className="text-[#FF3F1A] hover:underline font-bold cursor-pointer"
-                >
-                  Contactar a soporte técnico
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
-        {/* STEP 4: WHATSAPP */}
-        {step === 4 && (
+        {/* ─── STEP 2: WHATSAPP ────────────────────────────────────────── */}
+        {step === 2 && (
           <div className="space-y-6 animate-fade-in">
             <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[460px]">
+              {/* Left Content */}
               <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200/60 dark:border-orange-900/60 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <span>Paso Recomendado</span>
+                    <span>Recomendado</span>
                   </div>
 
                   <div className="space-y-2">
@@ -499,52 +433,45 @@ export default function OnboardingPage() {
                       Conecta tu cuenta de WhatsApp
                     </h1>
                     <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                      Necto utiliza la API oficial de WhatsApp Business a través de Meta para garantizar la máxima fiabilidad, seguridad y cumplimiento en tus operaciones.
+                      API oficial de WhatsApp Business a través de Meta. Máxima fiabilidad, seguridad y cumplimiento.
                     </p>
                   </div>
 
                   <div className="space-y-2.5 pt-2">
-                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-                        <Zap className="w-4 h-4" />
+                    {[
+                      {
+                        icon: Zap,
+                        title: "Activación instantánea",
+                        desc: "Configura tu número y comienza a recibir pedidos en minutos.",
+                      },
+                      {
+                        icon: ShieldCheck,
+                        title: "API oficial Cloud",
+                        desc: "Escalabilidad ilimitada y cumplimiento con políticas de Meta.",
+                      },
+                      {
+                        icon: MessageSquare,
+                        title: "Gestión centralizada",
+                        desc: "Recibe y responde mensajes desde tu tablero de Necto.",
+                      },
+                    ].map(item => (
+                      <div
+                        key={item.title}
+                        className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
+                          <item.icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                            {item.desc}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          Activación instantánea
-                        </p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          Configura tu número y comienza a recibir pedidos en minutos.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          API oficial Cloud
-                        </p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          Escalabilidad ilimitada y cumplimiento total con las políticas de Meta.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-                        <MessageSquare className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                          Gestión centralizada
-                        </p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          Recibe y responde mensajes directamente desde tu tablero de Necto.
-                        </p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
@@ -554,14 +481,14 @@ export default function OnboardingPage() {
                       type="button"
                       onClick={() => {
                         setIsMetaConnected(true);
-                        setTimeout(() => setStep(5), 600);
+                        setTimeout(() => setStep(3), 600);
                       }}
                       className="py-3 px-6 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
                     >
                       {isMetaConnected ? (
                         <>
                           <Check className="w-4 h-4" />
-                          <span>Conectado con Meta</span>
+                          <span>Conectado</span>
                         </>
                       ) : (
                         <span>Conectar con Meta</span>
@@ -570,29 +497,38 @@ export default function OnboardingPage() {
 
                     <button
                       type="button"
-                      onClick={() => setStep(5)}
+                      onClick={() => setStep(3)}
                       className="py-3 px-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
                     >
                       Configurar más tarde
                     </button>
                   </div>
 
-                  <p className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
-                    <Shield className="w-3 h-3 text-zinc-400" />
-                    <span>Tus datos están protegidos por encriptación de extremo a extremo y políticas de Meta.</span>
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Volver</span>
+                    </button>
+
+                    <p className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
+                      <Shield className="w-3 h-3" />
+                      <span>Encriptación de extremo a extremo</span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
+              {/* Right Image */}
               <div className="md:col-span-5 relative overflow-hidden border-t md:border-t-0 md:border-l border-zinc-200/80 dark:border-zinc-800/80">
-                {/* Hero Image */}
                 <img
                   src="/whatsapp-meta-hero.jpg"
                   alt="Necto WhatsApp Business Integration"
                   className="w-full h-full object-cover min-h-[300px]"
                 />
-
-                {/* Bottom overlay text */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
                   <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A]">
                     NECTO X META
@@ -604,6 +540,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            {/* FAQ Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-5 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-start gap-3.5 shadow-2xs">
                 <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center flex-none">
@@ -614,7 +551,7 @@ export default function OnboardingPage() {
                     ¿Qué necesito para empezar?
                   </h4>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Necesitarás un número de teléfono que no esté asociado a una cuenta personal de WhatsApp activa.
+                    Un número de teléfono que no esté asociado a una cuenta personal de WhatsApp.
                   </p>
                 </div>
               </div>
@@ -628,7 +565,7 @@ export default function OnboardingPage() {
                     Seguridad y Cumplimiento
                   </h4>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Necto cumple con GDPR e infraestructuras seguras para manejar las conversaciones de tus clientes.
+                    Necto cumple con GDPR e infraestructuras seguras para las conversaciones de tus clientes.
                   </p>
                 </div>
               </div>
@@ -636,23 +573,22 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* STEP 5: CONFIGURACIÓN / MÓDULOS */}
-        {step === 5 && (
+        {/* ─── STEP 3: MÓDULOS ─────────────────────────────────────────── */}
+        {step === 3 && (
           <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in">
-            <div className="flex items-center justify-between pb-1">
-              <div>
-                <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
-                  Módulos Disponibles
-                </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
-                  {selectedModules.length} de {modulesList.length} seleccionados • Recomendados para {businessArchetypes.find(a => a.id === businessModel)?.title || "tu negocio"}
-                </p>
-              </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
+                Módulos de tu espacio
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-mono">
+                {selectedModules.length} de {MODULES.length} activos — Recomendados para{" "}
+                {ARCHETYPES.find(a => a.id === businessModel)?.title || "tu negocio"}
+              </p>
             </div>
 
-            {/* 6-Module Grid */}
+            {/* Module Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-              {modulesList.map(mod => {
+              {MODULES.map(mod => {
                 const isSelected = selectedModules.includes(mod.id);
                 const Icon = mod.icon;
 
@@ -671,7 +607,7 @@ export default function OnboardingPage() {
                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
                           isSelected
                             ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400"
+                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -701,15 +637,15 @@ export default function OnboardingPage() {
               })}
             </div>
 
-            {/* Bottom Actions */}
+            {/* Actions */}
             <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setStep(4)}
+                onClick={() => setStep(2)}
                 className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Regresar a WhatsApp</span>
+                <span>Volver</span>
               </button>
 
               <button
@@ -717,96 +653,8 @@ export default function OnboardingPage() {
                 onClick={handleFinish}
                 className="py-3 px-8 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
               >
-                <span>Finalizar e Ingresar al Espacio</span>
+                <span>Crear Espacio de Trabajo</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 1: CUENTA */}
-        {step === 1 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in max-w-lg mx-auto w-full">
-            <div className="text-center space-y-1">
-              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-                Crear tu Cuenta
-              </h2>
-              <p className="text-xs text-zinc-400">Datos de acceso del titular</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Nombre Completo
-                </label>
-                <div className="relative flex items-center">
-                  <User className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                  <input
-                    type="text"
-                    value={ownerName}
-                    onChange={e => setOwnerName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Correo Electrónico
-                </label>
-                <div className="relative flex items-center">
-                  <Mail className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                  <input
-                    type="email"
-                    value={ownerEmail}
-                    onChange={e => setUserEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="py-2.5 px-6 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: VERIFICACIÓN */}
-        {step === 2 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in max-w-lg mx-auto w-full">
-            <div className="text-center space-y-1">
-              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
-                Verificación de Seguridad
-              </h2>
-              <p className="text-xs text-zinc-400">Protección de identidad y credenciales</p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-emerald-500 flex-none" />
-              <span>Cuenta verificada correctamente con protocolo de datos seguro.</span>
-            </div>
-
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-between">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="text-xs font-mono text-zinc-400 hover:text-zinc-900"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(3)}
-                className="py-2.5 px-6 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer"
-              >
-                Continuar
               </button>
             </div>
           </div>
