@@ -167,21 +167,6 @@ export const BusinessSwitcher: React.FC = () => {
               );
             })}
           </div>
-
-          {/* Bottom Action: Create Business */}
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/onboarding");
-              }}
-              className="w-full py-2.5 px-3 rounded-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-98"
-            >
-              <Plus className="w-4 h-4 text-[#FF3F1A]" />
-              <span>Crear Nuevo Espacio de Trabajo</span>
-            </button>
-          </div>
         </div>
       )}
     </div>
