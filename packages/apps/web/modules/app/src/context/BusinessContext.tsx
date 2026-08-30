@@ -37,6 +37,7 @@ interface BusinessContextType {
   createBusiness: (data: Omit<BusinessInstance, "id" | "createdAt">) => BusinessInstance;
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
+  deleteBusiness: (id: string) => void;
 }
 
 const DEFAULT_BUSINESS: BusinessInstance = {
@@ -122,6 +123,22 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
+  const deleteBusiness = (id: string) => {
+    setBusinesses(prev => {
+      const filtered = prev.filter(b => b.id !== id);
+      if (filtered.length === 0) {
+        return [DEFAULT_BUSINESS];
+      }
+      return filtered;
+    });
+    if (activeBusinessId === id) {
+      const remaining = businesses.filter(b => b.id !== id);
+      if (remaining.length > 0) {
+        setActiveBusinessId(remaining[0].id);
+      }
+    }
+  };
+
   return (
     <BusinessContext.Provider
       value={{
@@ -133,6 +150,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         createBusiness,
         switchBusiness,
         updateBusiness,
+        deleteBusiness,
       }}
     >
       {children}

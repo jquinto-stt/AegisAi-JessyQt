@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useBusiness } from "../context/BusinessContext";
+import { useBusiness, BusinessInstance } from "../context/BusinessContext";
 import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
+import { BusinessSettingsModal } from "../compositions/workspace/BusinessSettingsModal";
+import { AccountSettingsModal } from "../compositions/workspace/AccountSettingsModal";
 import {
   Store,
   Plus,
@@ -15,6 +17,8 @@ import {
   Building2,
   CheckCircle2,
   Layers,
+  Settings,
+  User,
   ShieldCheck,
 } from "lucide-react";
 
@@ -22,9 +26,18 @@ export default function WorkspacesPage() {
   const navigate = useNavigate();
   const { businesses, activeBusinessId, switchBusiness } = useBusiness();
 
+  // Settings State
+  const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+
   const handleSelectBusiness = (id: string) => {
     switchBusiness(id);
     navigate("/");
+  };
+
+  const handleOpenBusinessSettings = (e: React.MouseEvent, biz: BusinessInstance) => {
+    e.stopPropagation();
+    setSelectedBusinessForSettings(biz);
   };
 
   return (
@@ -40,17 +53,30 @@ export default function WorkspacesPage() {
               Necto Hub
             </span>
             <span className="mx-2 text-zinc-300 dark:text-zinc-700">/</span>
-            <span className="text-xs text-zinc-400 font-medium">Selector de Negocios</span>
+            <span className="text-xs text-zinc-400 font-medium">Gestión de Negocios</span>
           </div>
         </div>
 
-        <button
-          onClick={() => navigate("/onboarding")}
-          className="py-2 px-4 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Crear Negocio</span>
-        </button>
+        <div className="flex items-center gap-2.5">
+          {/* Account / User Settings Button */}
+          <button
+            onClick={() => setIsAccountSettingsOpen(true)}
+            className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800/80 hover:bg-zinc-100 text-zinc-700 dark:text-zinc-300 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Ajustes de cuenta y perfil de usuario"
+          >
+            <User className="w-4 h-4 text-zinc-500" />
+            <span className="hidden sm:inline">Ajustes de Cuenta</span>
+          </button>
+
+          {/* New Business Button */}
+          <button
+            onClick={() => navigate("/onboarding")}
+            className="py-2 px-4 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Crear Negocio</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -64,7 +90,7 @@ export default function WorkspacesPage() {
             Tus Negocios & Sucursales
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xl leading-relaxed">
-            Selecciona un negocio para administrar pedidos, stock y cocina en tiempo real, o crea un nuevo espacio de trabajo.
+            Cada negocio opera de forma totalmente aislada con sus propios canales, comandas, tiempos de cocina y stock.
           </p>
         </div>
 
@@ -85,18 +111,26 @@ export default function WorkspacesPage() {
               >
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
-                      <BusinessIcon iconKey={biz.iconKey} className="w-5 h-5 text-[#FF3F1A]" />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center text-zinc-900 dark:text-zinc-100">
+                        <BusinessIcon iconKey={biz.iconKey} className="w-5 h-5 text-[#FF3F1A]" />
+                      </div>
+                      {isActive && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200/80 dark:border-orange-900/60 flex items-center gap-1 font-mono">
+                          <CheckCircle2 className="w-3 h-3" /> Activo
+                        </span>
+                      )}
                     </div>
-                    {isActive ? (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200/80 dark:border-orange-900/60 flex items-center gap-1 font-mono">
-                        <CheckCircle2 className="w-3 h-3" /> Activo
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 font-mono">
-                        Restaurante
-                      </span>
-                    )}
+
+                    {/* Isolated Business Settings Button */}
+                    <button
+                      type="button"
+                      onClick={e => handleOpenBusinessSettings(e, biz)}
+                      className="p-2 rounded-xl text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                      title={`Ajustes de ${biz.name}`}
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
                   </div>
 
                   <div>
@@ -155,6 +189,18 @@ export default function WorkspacesPage() {
           </div>
         </div>
       </main>
+
+      {/* Modals for Settings */}
+      <BusinessSettingsModal
+        business={selectedBusinessForSettings}
+        isOpen={Boolean(selectedBusinessForSettings)}
+        onClose={() => setSelectedBusinessForSettings(null)}
+      />
+
+      <AccountSettingsModal
+        isOpen={isAccountSettingsOpen}
+        onClose={() => setIsAccountSettingsOpen(false)}
+      />
     </div>
   );
 }
