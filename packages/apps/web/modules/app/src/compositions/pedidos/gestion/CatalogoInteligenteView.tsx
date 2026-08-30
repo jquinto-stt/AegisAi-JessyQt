@@ -496,14 +496,14 @@ export const CatalogoInteligenteView: React.FC<{
                 </select>
               </div>
 
-              <Button
+              <button
                 type="button"
                 onClick={() => setIsCreatingProduct(true)}
-                className="rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black h-auto py-2.5 px-4 shadow-xs active:scale-95"
+                className="rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black h-auto py-2.5 px-4 shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nuevo Plato / Producto</span>
-              </Button>
+              </button>
             </div>
           </div>
 
