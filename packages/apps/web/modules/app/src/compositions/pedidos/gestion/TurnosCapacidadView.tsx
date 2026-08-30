@@ -53,12 +53,6 @@ export const TurnosCapacidadView: React.FC = () => {
         icon={<Users className="w-6 h-6 text-[#FF3F1A]" />}
         title="Turnos y Capacidad Operativa"
         description="Gestión reactiva del personal de cocina, cálculo dinámico de tiempos de horneado y control de estaciones."
-        actionNode={
-          <div className="flex items-center gap-2 text-xs bg-indigo-50 dark:bg-indigo-950/60 text-[#190088] dark:text-indigo-300 font-extrabold px-3.5 py-2 rounded-2xl border border-indigo-200 dark:border-indigo-800 shadow-xs">
-            <Clock className="w-4 h-4 text-[#190088] dark:text-indigo-300" />
-            <span>{shiftInfo.currentShift}</span>
-          </div>
-        }
       />
 
       {/* Selector de Turno Activo */}

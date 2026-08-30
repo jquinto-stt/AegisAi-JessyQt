@@ -50,9 +50,9 @@ export const StorePaceSelector: React.FC = () => {
       badgeText: "Tiempo Estándar",
       desc: "Flujo balanceado de pedidos. Aplica los tiempos base de carta y dotación de cocina.",
       bufferText: "Sin buffer extra",
-      pillClass: "bg-indigo-50 text-[#190088] border-indigo-200 dark:bg-indigo-950/80 dark:text-indigo-300 dark:border-indigo-800",
-      dotClass: "bg-[#190088] dark:bg-indigo-400",
-      borderActive: "border-[#190088] ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/30",
+      pillClass: "bg-slate-100 text-zinc-800 border-slate-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700",
+      dotClass: "bg-zinc-600 dark:bg-zinc-300",
+      borderActive: "border-[#FF3F1A] ring-2 ring-orange-500/20 bg-orange-50/20 dark:bg-orange-950/30",
       icon: Clock,
     },
     demorada: {

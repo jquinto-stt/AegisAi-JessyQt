@@ -107,14 +107,6 @@ export const HistorialView: React.FC = () => {
         icon={<History className="w-6 h-6 text-[#FF3F1A]" />}
         title="Historial y Auditoría de Pedidos"
         description="Registro inmutable de todas las transiciones, comandas y motivos de cancelación."
-        actionNode={
-          <button
-            onClick={() => setShowClosingModal(true)}
-            className="py-2.5 px-4 rounded-2xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
-          >
-            <Receipt className="w-4 h-4" /> Cierre de Turno / Caja
-          </button>
-        }
       />
 
       {/* Filter Bar */}
@@ -168,6 +160,13 @@ export const HistorialView: React.FC = () => {
             <option value="presencial">Mostrador</option>
             <option value="telefono">Teléfono</option>
           </select>
+
+          <button
+            onClick={() => setShowClosingModal(true)}
+            className="py-2 px-3.5 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+          >
+            <Receipt className="w-3.5 h-3.5" /> Cierre de Turno / Caja
+          </button>
         </div>
       </div>
 

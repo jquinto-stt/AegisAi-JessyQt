@@ -8,14 +8,12 @@ import {
   ChefHat, Calendar, Layers, Zap, History, TrendingUp, Menu
 } from "lucide-react";
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
-import {
-  InventariosModule,
-  InventariosRole,
-  OperadorSubView,
-  AnalistaSubView
-} from "@/compositions/inventarios/InventariosModule";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
+
+export type InventariosRole = "operador" | "analista";
+export type OperadorSubView = string;
+export type AnalistaSubView = string;
 
 /* ── Brand Colors ────────────────────────────────────────────────────────── */
 
@@ -254,37 +252,42 @@ function NectoLogo({ size = "md", className = "", style, inline = false }: { siz
 /* ── Unified Sidebar Component ──────────────────────────────────────────── */
 
 function Sidebar({
-  activeModule,
+  activeModule = "pedidos",
   pedidosSection,
   pedidosOpTab,
   pedidosGeTab,
   onNavigatePedidos,
-  inventariosRole,
-  inventariosOpSubView,
-  inventariosAnSubView,
-  onNavigateInventarios,
   isMobileOpen = false,
   onCloseMobile
 }: {
-  activeModule: "pedidos" | "inventarios";
+  activeModule?: "pedidos";
   pedidosSection: PedidosSection;
   pedidosOpTab: OperacionTab;
   pedidosGeTab: GestionTab;
   onNavigatePedidos: (section: PedidosSection, tab: any) => void;
-  inventariosRole: InventariosRole;
-  inventariosOpSubView: OperadorSubView;
-  inventariosAnSubView: AnalistaSubView;
-  onNavigateInventarios: (role: InventariosRole, subView: any) => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      const saved = localStorage.getItem("necto_sidebar_collapsed");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true; // Por defecto colapsada (no desplegada)
+  });
+
+  const handleSetCollapsed = (val: boolean) => {
+    setIsCollapsed(val);
+    try {
+      localStorage.setItem("necto_sidebar_collapsed", JSON.stringify(val));
+    } catch (e) {}
+  };
+
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     subscriptor: false,
     pedidos: true,
     pedOperacion: true,
     pedGestion: true,
-    inventarios: true,
   });
 
   const toggle = (k: string) => setExpanded(p => ({ ...p, [k]: !p[k] }));
@@ -362,7 +365,7 @@ function Sidebar({
           title={label}
           className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-semibold transition-all cursor-pointer ${
             active
-              ? "bg-[#190088] text-white shadow-md"
+              ? "bg-[#FF3F1A] text-white shadow-sm"
               : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800"
           }`}
         >
@@ -376,7 +379,7 @@ function Sidebar({
         onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
           active
-            ? "bg-[#190088] text-white shadow-sm font-bold"
+            ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
             : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
         }`}
       >
@@ -405,7 +408,7 @@ function Sidebar({
         </div>
       )}
 
-      {/* SECTION: Pedidos */}
+      {/* SECTION: Pedidos & Restaurante */}
       <SectionHeader
         icon={<ShoppingBag className="w-4 h-4" />}
         label="Pedidos"
@@ -416,8 +419,9 @@ function Sidebar({
       />
       {(!isCollapsed || isMobile) && expanded.pedidos && (
         <div className="flex flex-col gap-0.5">
-          <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-            <Zap className="w-3 h-3" /> Operación
+          {/* Subcategoría 1: Operación en Vivo */}
+          <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+            <Zap className="w-3 h-3 text-[#FF3F1A]" /> Operación en Vivo
           </div>
           <NavItem
             icon={<ShoppingBag className="w-3.5 h-3.5" />}
@@ -444,86 +448,76 @@ function Sidebar({
             isMobile={isMobile}
           />
 
-          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1">
-            <BarChart2 className="w-3 h-3" /> Gestión
+          {/* Subcategoría 2: Menú & Abastecimiento */}
+          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
+            <Layers className="w-3 h-3 text-[#FF3F1A]" /> Menú & Abastecimiento
+          </div>
+          <NavItem
+            icon={<Layers className="w-3.5 h-3.5" />}
+            label="Catálogo de Platos"
+            active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "catalogo"}
+            onClick={() => onNavigatePedidos("menu", "catalogo")}
+            indent
+            isMobile={isMobile}
+          />
+          <NavItem
+            icon={<Package className="w-3.5 h-3.5" />}
+            label="Insumos & Stock"
+            active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "insumos"}
+            onClick={() => onNavigatePedidos("menu", "insumos")}
+            indent
+            isMobile={isMobile}
+          />
+
+          {/* Subcategoría 3: Analítica & Reportes */}
+          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
+            <BarChart2 className="w-3 h-3 text-[#FF3F1A]" /> Analítica & Reportes
           </div>
           <NavItem
             icon={<BarChart2 className="w-3.5 h-3.5" />}
             label="Dashboard Pedidos"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "resumen"}
-            onClick={() => onNavigatePedidos("gestion", "resumen")}
+            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "resumen"}
+            onClick={() => onNavigatePedidos("analitica", "resumen")}
             indent
             isMobile={isMobile}
           />
           <NavItem
             icon={<History className="w-3.5 h-3.5" />}
-            label="Historial"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "historial"}
-            onClick={() => onNavigatePedidos("gestion", "historial")}
+            label="Historial de Ventas"
+            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "historial"}
+            onClick={() => onNavigatePedidos("analitica", "historial")}
             indent
             isMobile={isMobile}
           />
           <NavItem
-            icon={<Layers className="w-3.5 h-3.5" />}
-            label="Catálogo de Productos"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "catalogo"}
-            onClick={() => onNavigatePedidos("gestion", "catalogo")}
+            icon={<TrendingUp className="w-3.5 h-3.5" />}
+            label="Rendimiento & Canales"
+            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "analitica"}
+            onClick={() => onNavigatePedidos("analitica", "analitica")}
             indent
             isMobile={isMobile}
           />
+
+          {/* Subcategoría 4: Configuración & Equipo */}
+          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
+            <Users className="w-3 h-3 text-[#FF3F1A]" /> Configuración & Equipo
+          </div>
           <NavItem
             icon={<Zap className="w-3.5 h-3.5" />}
-            label="Automatizaciones"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "automatizaciones"}
-            onClick={() => onNavigatePedidos("gestion", "automatizaciones")}
+            label="Automatizaciones & IA"
+            active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
+            onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
             indent
             isMobile={isMobile}
           />
           <NavItem
             icon={<Users className="w-3.5 h-3.5" />}
             label="Turnos y Capacidad"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "turnos"}
-            onClick={() => onNavigatePedidos("gestion", "turnos")}
+            active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "turnos"}
+            onClick={() => onNavigatePedidos("configuracion", "turnos")}
             indent
             isMobile={isMobile}
           />
-          <NavItem
-            icon={<TrendingUp className="w-3.5 h-3.5" />}
-            label="Analítica"
-            active={activeModule === "pedidos" && pedidosSection === "gestion" && pedidosGeTab === "analitica"}
-            onClick={() => onNavigatePedidos("gestion", "analitica")}
-            indent
-            isMobile={isMobile}
-          />
-        </div>
-      )}
-
-      {/* SECTION: Inventarios */}
-      <SectionHeader
-        icon={<Boxes className="w-4 h-4" />}
-        label="Inventarios"
-        section="inventarios"
-        active={activeModule === "inventarios"}
-        onHeaderClick={() => onNavigateInventarios(inventariosRole, inventariosRole === "operador" ? inventariosOpSubView : inventariosAnSubView)}
-        isMobile={isMobile}
-      />
-      {(!isCollapsed || isMobile) && expanded.inventarios && (
-        <div className="flex flex-col gap-0.5">
-          <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-            Operador
-          </div>
-          <NavItem icon={<FolderTree className="w-3.5 h-3.5" />} label="Cliente y Plantilla" active={activeModule === "inventarios" && inventariosRole === "operador" && inventariosOpSubView === "inicio"} onClick={() => onNavigateInventarios("operador", "inicio")} indent isMobile={isMobile} />
-          <NavItem icon={<Camera className="w-3.5 h-3.5" />} label="Captura Multimodal" active={activeModule === "inventarios" && inventariosRole === "operador" && inventariosOpSubView === "captura"} onClick={() => onNavigateInventarios("operador", "captura")} indent isMobile={isMobile} />
-          <NavItem icon={<ShieldCheck className="w-3.5 h-3.5" />} label="Estado y Evidencia" active={activeModule === "inventarios" && inventariosRole === "operador" && inventariosOpSubView === "registro"} onClick={() => onNavigateInventarios("operador", "registro")} indent isMobile={isMobile} />
-          <NavItem icon={<BellRing className="w-3.5 h-3.5" />} label="Resumen y Alertas" active={activeModule === "inventarios" && inventariosRole === "operador" && inventariosOpSubView === "resumen"} onClick={() => onNavigateInventarios("operador", "resumen")} indent isMobile={isMobile} />
-
-          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5">
-            Analista
-          </div>
-          <NavItem icon={<LineChart className="w-3.5 h-3.5" />} label="Dashboard Inventarios" active={activeModule === "inventarios" && inventariosRole === "analista" && inventariosAnSubView === "dashboard"} onClick={() => onNavigateInventarios("analista", "dashboard")} indent isMobile={isMobile} />
-          <NavItem icon={<MapPin className="w-3.5 h-3.5" />} label="Stock & Historial" active={activeModule === "inventarios" && inventariosRole === "analista" && inventariosAnSubView === "historial"} onClick={() => onNavigateInventarios("analista", "historial")} indent isMobile={isMobile} />
-          <NavItem icon={<FileDown className="w-3.5 h-3.5" />} label="Alertas y Exportación" active={activeModule === "inventarios" && inventariosRole === "analista" && inventariosAnSubView === "exportacion"} onClick={() => onNavigateInventarios("analista", "exportacion")} indent isMobile={isMobile} />
-          <NavItem icon={<BookOpen className="w-3.5 h-3.5" />} label="Directorio & Plantillas" active={activeModule === "inventarios" && inventariosRole === "analista" && inventariosAnSubView === "directorio"} onClick={() => onNavigateInventarios("analista", "directorio")} indent isMobile={isMobile} />
         </div>
       )}
     </>
@@ -544,7 +538,7 @@ function Sidebar({
             <>
               <NectoLogo size="xs" inline />
               <button
-                onClick={() => setIsCollapsed(true)}
+                onClick={() => handleSetCollapsed(true)}
                 title="Colapsar barra lateral"
                 className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
               >
@@ -552,16 +546,16 @@ function Sidebar({
               </button>
             </>
           ) : (
-            <div className="flex flex-col items-center gap-2 w-full">
-              <div className="w-9 h-9 rounded-xl border-2 border-[#190088] bg-white flex items-center justify-center shadow-sm select-none">
-                <span className="font-black text-xl text-[#FF3F1A] tracking-tighter">N</span>
-              </div>
+            <div className="flex items-center justify-center w-full">
               <button
-                onClick={() => setIsCollapsed(false)}
+                type="button"
+                onClick={() => handleSetCollapsed(false)}
                 title="Expandir barra lateral"
-                className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] flex items-center justify-center shadow-2xs hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer select-none group"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span className="font-black text-xl text-[#FF3F1A] tracking-tighter group-hover:scale-110 transition-transform">
+                  N
+                </span>
               </button>
             </div>
           )}
@@ -731,11 +725,6 @@ export default function App() {
   const [pedidosOpTab, setPedidosOpTab] = useState<OperacionTab>("en-vivo");
   const [pedidosGeTab, setPedidosGeTab] = useState<GestionTab>("resumen");
 
-  // Inventarios Navigation State
-  const [inventariosRole, setInventariosRole] = useState<InventariosRole>("operador");
-  const [inventariosOpSubView, setInventariosOpSubView] = useState<OperadorSubView>("inicio");
-  const [inventariosAnSubView, setInventariosAnSubView] = useState<AnalistaSubView>("dashboard");
-
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");
@@ -777,35 +766,27 @@ export default function App() {
     },
     {
       id: "3",
-      title: "Alerta de Stock en Catálogo",
-      desc: "Empanada de Humita desactivada por quiebre de stock",
+      title: "Alerta de Stock Crítico",
+      desc: "Humita Cremosa desactivada por quiebre de stock",
       time: "Hace 40 min",
       unread: false,
       type: "stock",
       module: "pedidos",
       pedidosSection: "gestion",
-      pedidosGeTab: "catalogo",
+      pedidosGeTab: "insumos",
       targetProductId: "p3",
       targetModal: "product",
     },
   ]);
 
   const handleNavigateFromNotification = (n: NotificationItem) => {
-    setActiveModule(n.module);
-    if (n.module === "pedidos") {
-      if (n.pedidosSection) setPedidosSection(n.pedidosSection);
-      if (n.pedidosOpTab) setPedidosOpTab(n.pedidosOpTab);
-      if (n.pedidosGeTab) setPedidosGeTab(n.pedidosGeTab);
-      setTargetOrderId(n.targetOrderId || null);
-      setTargetModal(n.targetModal || null);
-      setTargetProductId(n.targetProductId || null);
-    } else {
-      if (n.inventariosRole) setInventariosRole(n.inventariosRole);
-      if (n.inventariosSubView) {
-        if (n.inventariosRole === "operador") setInventariosOpSubView(n.inventariosSubView);
-        else setInventariosAnSubView(n.inventariosSubView);
-      }
-    }
+    setActiveModule("pedidos");
+    if (n.pedidosSection) setPedidosSection(n.pedidosSection);
+    if (n.pedidosOpTab) setPedidosOpTab(n.pedidosOpTab);
+    if (n.pedidosGeTab) setPedidosGeTab(n.pedidosGeTab);
+    setTargetOrderId(n.targetOrderId || null);
+    setTargetModal(n.targetModal || null);
+    setTargetProductId(n.targetProductId || null);
   };
 
   // Breadcrumb Labels Calculation
@@ -819,33 +800,25 @@ export default function App() {
     resumen: "Dashboard Pedidos",
     historial: "Historial de Pedidos",
     catalogo: "Catálogo de Productos",
+    insumos: "Insumos & Stock",
     automatizaciones: "Automatizaciones & Recurrencias",
     turnos: "Turnos y Capacidad",
     analitica: "Analítica de Rendimiento",
   };
 
-  const inventariosPageNames: Record<string, string> = {
-    inicio: "Cliente y Plantilla",
-    captura: "Captura Multimodal",
-    registro: "Estado y Evidencia",
-    resumen: "Resumen y Alertas",
-    dashboard: "Dashboard Inventarios",
-    historial: "Stock & Historial",
-    exportacion: "Alertas y Exportación",
-    directorio: "Directorio & Plantillas",
+  const sectionRoleNames: Record<PedidosSection, string> = {
+    operacion: "Operación en Vivo",
+    menu: "Menú & Abastecimiento",
+    analitica: "Analítica & Reportes",
+    configuracion: "Configuración & Equipo",
+    gestion: "Gestión",
   };
 
-  const currentRoleName = activeModule === "pedidos"
-    ? pedidosSection === "operacion" ? "Operación" : "Gestión"
-    : inventariosRole === "operador" ? "Operador" : "Analista";
-
-  const currentPageName = activeModule === "pedidos"
-    ? pedidosSection === "operacion"
+  const currentRoleName = sectionRoleNames[pedidosSection] || "Gestión";
+  const currentPageName =
+    pedidosSection === "operacion"
       ? pedidosOpPageNames[pedidosOpTab]
-      : pedidosGePageNames[pedidosGeTab]
-    : inventariosRole === "operador"
-      ? inventariosPageNames[inventariosOpSubView]
-      : inventariosPageNames[inventariosAnSubView];
+      : pedidosGePageNames[pedidosGeTab];
 
   return (
     <div
@@ -864,15 +837,6 @@ export default function App() {
             setPedidosSection(section);
             if (section === "operacion") setPedidosOpTab(tab);
             else setPedidosGeTab(tab);
-          }}
-          inventariosRole={inventariosRole}
-          inventariosOpSubView={inventariosOpSubView}
-          inventariosAnSubView={inventariosAnSubView}
-          onNavigateInventarios={(role, subView) => {
-            setActiveModule("inventarios");
-            setInventariosRole(role);
-            if (role === "operador") setInventariosOpSubView(subView);
-            else setInventariosAnSubView(subView);
           }}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -931,30 +895,17 @@ export default function App() {
 
             {/* Active Module Container */}
             <div className="flex-1 overflow-auto">
-              {activeModule === "pedidos" ? (
-                <PedidosModule
-                  sectionProp={pedidosSection}
-                  opTabProp={pedidosOpTab}
-                  geTabProp={pedidosGeTab}
-                  targetOrderId={targetOrderId}
-                  targetModal={targetModal}
-                  targetProductId={targetProductId}
-                  onSectionChange={setPedidosSection}
-                  onOpTabChange={setPedidosOpTab}
-                  onGeTabChange={setPedidosGeTab}
-                />
-              ) : (
-                <InventariosModule
-                  isDarkMode={isDarkMode}
-                  onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                  roleProp={inventariosRole}
-                  opSubViewProp={inventariosOpSubView}
-                  anSubViewProp={inventariosAnSubView}
-                  onRoleChange={setInventariosRole}
-                  onOpSubViewChange={setInventariosOpSubView}
-                  onAnSubViewChange={setInventariosAnSubView}
-                />
-              )}
+              <PedidosModule
+                sectionProp={activeModule === "inventarios" ? "gestion" : pedidosSection}
+                opTabProp={pedidosOpTab}
+                geTabProp={activeModule === "inventarios" ? "insumos" : pedidosGeTab}
+                targetOrderId={targetOrderId}
+                targetModal={targetModal}
+                targetProductId={targetProductId}
+                onSectionChange={setPedidosSection}
+                onOpTabChange={setPedidosOpTab}
+                onGeTabChange={setPedidosGeTab}
+              />
             </div>
           </div>
         </div>

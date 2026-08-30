@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Calendar,
   Layers,
+  Package,
   BarChart2,
   Star,
   Users,
@@ -36,6 +37,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
     kpis,
     incidencias,
     products,
+    ingredients,
     shiftInfo,
     orders,
     automations,
@@ -109,23 +111,17 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
         icon={<TrendingUp className="w-6 h-6 text-[#FF3F1A]" />}
         title="Dashboard de Pedidos & Control Central"
         description="Monitoreo consolidado de métricas clave, platos más vendidos, capacidad de cocina y canales de comanda."
-        actionNode={
-          <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/60 text-[#190088] dark:text-indigo-300 font-extrabold px-3.5 py-2 rounded-2xl border border-indigo-200 dark:border-indigo-800 text-xs shadow-xs">
-            <Clock className="w-4 h-4 text-[#190088] dark:text-indigo-300" />
-            <span>{shiftInfo.currentShift}</span>
-          </div>
-        }
       />
 
       {/* Top Executive KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Pedidos Hoy */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#190088] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Comandas Hoy
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-[#190088] dark:text-indigo-400 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] flex items-center justify-center">
               <ShoppingBag className="w-4.5 h-4.5" />
             </div>
           </div>
@@ -133,8 +129,8 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
             <p className="text-3xl font-black text-gray-900 dark:text-gray-100 font-mono">
               {kpis.pedidosHoy}
             </p>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              <ArrowUpRight className="w-3 h-3" /> +14%
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+              <ArrowUpRight className="w-3 h-3 text-[#FF3F1A]" /> +14%
             </span>
           </div>
           <div className="pt-1 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-medium">
@@ -144,36 +140,36 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
         </div>
 
         {/* KPI 2: Ingresos Totales */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#FF3F1A] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Ventas del Día
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] flex items-center justify-center">
               <DollarSign className="w-4.5 h-4.5" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black text-[#FF3F1A] dark:text-orange-400 font-mono">
+            <p className="text-3xl font-black text-[#FF3F1A] font-mono">
               ${(kpis.ingresosTotales / 1000).toFixed(0)}k
             </p>
-            <span className="text-xs font-extrabold text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
               Ticket: ${(kpis.ticketPromedio / 1000).toFixed(1)}k
             </span>
           </div>
           <div className="pt-1 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-medium">
             <span>Meta diaria: $3.2M</span>
-            <span className="text-emerald-600 font-bold">88% logrado</span>
+            <span className="text-gray-900 dark:text-white font-bold">88% logrado</span>
           </div>
         </div>
 
         {/* KPI 3: Tiempo Promedio Preparación */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-emerald-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Tiempo Promedio Prep.
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center">
               <Clock className="w-4.5 h-4.5" />
             </div>
           </div>
@@ -181,8 +177,8 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
             <p className="text-3xl font-black text-gray-900 dark:text-gray-100 font-mono">
               {kpis.tiempoPromedioPrep} <span className="text-sm font-normal text-gray-400">min</span>
             </p>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full">
-              En meta (&lt;18m)
+            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+              Meta: &lt;18m
             </span>
           </div>
           <div className="pt-1 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-medium">
@@ -192,13 +188,13 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
         </div>
 
         {/* KPI 4: Nivel de Satisfacción */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-amber-400 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs hover:shadow-md transition-shadow space-y-3">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Satisfacción Clientes
             </span>
-            <div className="w-9 h-9 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center">
-              <Star className="w-4.5 h-4.5 fill-amber-400" />
+            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center">
+              <Star className="w-4.5 h-4.5 text-[#FF3F1A]" />
             </div>
           </div>
           <div className="flex items-baseline justify-between">
@@ -206,7 +202,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
               <p className="text-3xl font-black text-gray-900 dark:text-gray-100 font-mono">
                 4.9
               </p>
-              <span className="text-xs font-bold text-amber-500 font-mono">★</span>
+              <span className="text-xs font-bold text-[#FF3F1A] font-mono">★</span>
             </div>
             <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
               589 opiniones
@@ -214,7 +210,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
           </div>
           <div className="pt-1 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-400 font-medium">
             <span>98.2% positivas</span>
-            <span className="text-emerald-600 font-bold">Excelente</span>
+            <span className="text-[#FF3F1A] font-bold">Excelente</span>
           </div>
         </div>
       </div>
@@ -237,23 +233,45 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
           </div>
 
           {/* Botón contextual a Catálogo de Productos */}
-          <button
-            onClick={() => onNavigateGestion("catalogo")}
-            className="p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
-          >
-            <div className="w-7 h-7 rounded-xl bg-orange-50 dark:bg-orange-950/80 flex items-center justify-center">
-              <Layers className="w-4 h-4 text-[#FF3F1A]" />
-            </div>
-            <div>
-              <p className="font-extrabold text-xs text-gray-900 dark:text-gray-100 group-hover:text-[#FF3F1A] transition-colors">
-                Catálogo de Productos
-              </p>
-              <p className="text-[10px] text-gray-400">
-                {products.length} platos · {products.filter(p => !p.isAvailable).length} pausados
-              </p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF3F1A] group-hover:translate-x-0.5 transition-all ml-1" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Botón contextual a Insumos & Stock */}
+            <button
+              onClick={() => onNavigateGestion("insumos")}
+              className="p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+            >
+              <div className="w-7 h-7 rounded-xl bg-orange-50 dark:bg-orange-950/80 flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#FF3F1A]" />
+              </div>
+              <div>
+                <p className="font-extrabold text-xs text-gray-900 dark:text-gray-100 group-hover:text-[#FF3F1A] transition-colors">
+                  Insumos & Stock
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  {ingredients.filter(i => i.status === "CRITICO" || i.status === "AGOTADO").length} en alerta crítica
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF3F1A] group-hover:translate-x-0.5 transition-all ml-1" />
+            </button>
+
+            {/* Botón contextual a Catálogo de Productos */}
+            <button
+              onClick={() => onNavigateGestion("catalogo")}
+              className="p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+            >
+              <div className="w-7 h-7 rounded-xl bg-orange-50 dark:bg-orange-950/80 flex items-center justify-center">
+                <Layers className="w-4 h-4 text-[#FF3F1A]" />
+              </div>
+              <div>
+                <p className="font-extrabold text-xs text-gray-900 dark:text-gray-100 group-hover:text-[#FF3F1A] transition-colors">
+                  Catálogo de Productos
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  {products.length} platos · {products.filter(p => !p.isAvailable).length} pausados
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF3F1A] group-hover:translate-x-0.5 transition-all ml-1" />
+            </button>
+          </div>
         </div>
 
         {/* Top Product Cards Grid */}

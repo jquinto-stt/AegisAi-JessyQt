@@ -48,7 +48,7 @@ export const AIInterpretationModal: React.FC = () => {
                 Revisión de Interpretación IA
               </h3>
               <p className="text-xs text-gray-400">
-                Comanda #{aiModalOrder.id} · Canal: <span className="capitalize">{aiModalOrder.channel}</span>
+                Pedido #{aiModalOrder.id} · Canal: <span className="capitalize">{aiModalOrder.channel}</span>
               </p>
             </div>
           </div>
@@ -71,14 +71,14 @@ export const AIInterpretationModal: React.FC = () => {
         </div>
 
         {/* AI Confidence Notice */}
-        <div className="flex items-center justify-between bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 p-3 rounded-2xl text-xs text-blue-900 dark:text-blue-200">
+        <div className="flex items-center justify-between bg-orange-50/70 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900 p-3 rounded-2xl text-xs text-orange-900 dark:text-orange-200">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-blue-600 flex-none" />
+            <Sparkles className="w-4 h-4 text-[#FF3F1A] flex-none" />
             <span>
               Confianza de interpretación: <strong>{aiModalOrder.aiConfidence}</strong>
             </span>
           </div>
-          <span className="text-[10px] font-bold bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-100 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold bg-orange-200 dark:bg-orange-900 text-orange-900 dark:text-orange-100 px-2 py-0.5 rounded-full">
             Revisión Humana Obligatoria
           </span>
         </div>
@@ -93,7 +93,7 @@ export const AIInterpretationModal: React.FC = () => {
               onClick={() => setIsEditing(!isEditing)}
               className="text-xs font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
             >
-              <Edit2 className="w-3 h-3" /> {isEditing ? "Listo" : "Editar comanda"}
+              <Edit2 className="w-3 h-3" /> {isEditing ? "Listo" : "Editar pedido"}
             </button>
           </div>
 
@@ -160,9 +160,9 @@ export const AIInterpretationModal: React.FC = () => {
           </button>
           <button
             onClick={handleApprove}
-            className="flex-2 py-2.5 px-4 rounded-xl bg-[#190088] hover:bg-[#150070] text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            className="flex-2 py-2.5 px-4 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
           >
-            <Check className="w-4 h-4" /> Aprobar e Ingresar Comanda
+            <Check className="w-4 h-4" /> Aprobar e Ingresar Pedido
           </button>
         </div>
       </div>

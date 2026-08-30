@@ -107,41 +107,41 @@ export const AutomatizacionesView: React.FC = () => {
         icon={<Zap className="w-6 h-6 text-[#FF3F1A]" />}
         title="Automatizaciones & Pedidos Recurrentes"
         description="Reglas de negocio inteligentes en segundo plano, auditoría de ejecuciones y suscripciones corporativas B2B."
-        actionNode={
-          <div className="flex bg-slate-100 dark:bg-gray-800 rounded-2xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
-            <button
-              onClick={() => setActiveSubTab("reglas")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeSubTab === "reglas"
-                  ? "bg-[#190088] text-white shadow-xs"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-              }`}
-            >
-              Reglas ({automations.filter(a => a.isActive).length})
-            </button>
-            <button
-              onClick={() => setActiveSubTab("recurrencias")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeSubTab === "recurrencias"
-                  ? "bg-[#190088] text-white shadow-xs"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-              }`}
-            >
-              Recurrentes B2B ({recurrences.length})
-            </button>
-            <button
-              onClick={() => setActiveSubTab("historial")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeSubTab === "historial"
-                  ? "bg-[#190088] text-white shadow-xs"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-              }`}
-            >
-              Historial de Disparos
-            </button>
-          </div>
-        }
       />
+
+      {/* Subtab Switcher Toolbar */}
+      <div className="flex bg-slate-100 dark:bg-gray-800 rounded-xl p-1 border border-slate-200 dark:border-gray-700 w-fit shadow-xs">
+        <button
+          onClick={() => setActiveSubTab("reglas")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            activeSubTab === "reglas"
+              ? "bg-[#FF3F1A] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+          }`}
+        >
+          Reglas ({automations.filter(a => a.isActive).length})
+        </button>
+        <button
+          onClick={() => setActiveSubTab("recurrencias")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            activeSubTab === "recurrencias"
+              ? "bg-[#FF3F1A] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+          }`}
+        >
+          Recurrentes B2B ({recurrences.length})
+        </button>
+        <button
+          onClick={() => setActiveSubTab("historial")}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+            activeSubTab === "historial"
+              ? "bg-[#FF3F1A] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+          }`}
+        >
+          Historial de Disparos
+        </button>
+      </div>
 
       {/* Top Automation Impact KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

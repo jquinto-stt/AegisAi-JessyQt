@@ -1,27 +1,17 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { OperacionTab, Pedido } from "../types";
+import { ProgrammedOrder, OperacionTab } from "../types";
 import {
   Calendar,
   Clock,
-  Repeat,
-  ArrowRight,
-  Sparkles,
-  CheckCircle,
-  AlertCircle,
-  Building,
-  User,
-  ChefHat,
-  ArrowLeft,
-  Zap,
-  CheckCircle2,
-  X,
-  Play,
-  TrendingUp,
   MapPin,
-  Phone,
-  Layers,
-  ListFilter,
+  CheckCircle2,
+  ChevronRight,
+  Flame,
+  Zap,
+  Repeat,
+  Sparkles,
+  ArrowLeft,
   CalendarDays,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
@@ -48,7 +38,7 @@ export const ProgramadosView: React.FC<{
 
   const handleInjectNow = (orderId: string, customerName: string) => {
     injectScheduledOrderToLive(orderId, true);
-    setSuccessToast(`¡Comanda de ${customerName} inyectada al flujo en vivo de Cocina y Kanban!`);
+    setSuccessToast(`¡Pedido de ${customerName} inyectado a Cocina!`);
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
@@ -59,55 +49,55 @@ export const ProgramadosView: React.FC<{
         icon={<Calendar className="w-6 h-6 text-[#FF3F1A]" />}
         title="Pedidos Programados & Catering Futuro"
         description="Anticipación operativa para pedidos corporativos, eventos y entregas pactadas a una hora específica."
-        actionNode={
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => onNavigateOpTab?.("en-vivo")}
-              className="py-2.5 px-4 rounded-2xl bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-[#190088] text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#190088] dark:text-indigo-400" />
-              <span>Volver al Tablero Kanban</span>
-            </button>
-
-            {/* View Switcher */}
-            <div className="flex bg-slate-100 dark:bg-gray-800 rounded-2xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
-              <button
-                onClick={() => setViewMode("columns")}
-                className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  viewMode === "columns"
-                    ? "bg-[#190088] text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                }`}
-              >
-                Vista Columnas
-              </button>
-              <button
-                onClick={() => setViewMode("timeline")}
-                className={`py-1.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                  viewMode === "timeline"
-                    ? "bg-[#190088] text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-                }`}
-              >
-                Línea de Tiempo
-              </button>
-            </div>
-          </div>
-        }
       />
+
+      {/* Navigation Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#2C2D31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#374151] shadow-xs">
+        <button
+          onClick={() => onNavigateOpTab?.("en-vivo")}
+          className="py-2 px-3.5 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-400 text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#FF3F1A]" />
+          <span>Volver a Pedidos</span>
+        </button>
+
+        {/* View Switcher */}
+        <div className="flex bg-slate-100 dark:bg-gray-800 rounded-xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
+          <button
+            onClick={() => setViewMode("columns")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              viewMode === "columns"
+                ? "bg-[#FF3F1A] text-white shadow-xs"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+            }`}
+          >
+            Vista Columnas
+          </button>
+          <button
+            onClick={() => setViewMode("timeline")}
+            className={`py-1.5 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              viewMode === "timeline"
+                ? "bg-[#FF3F1A] text-white shadow-xs"
+                : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+            }`}
+          >
+            Línea de Tiempo
+          </button>
+        </div>
+      </div>
 
       {/* Planning KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Hoy */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#FF3F1A] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Programados para Hoy
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {hoyList.length}
             </p>
-            <span className="text-xs font-black text-[#FF3F1A] bg-orange-50 dark:bg-orange-950 px-2.5 py-0.5 rounded-full font-mono">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full font-mono">
               ${(totalHoyAmount / 1000).toFixed(0)}k COP
             </span>
           </div>
@@ -115,15 +105,15 @@ export const ProgramadosView: React.FC<{
         </div>
 
         {/* KPI 2: Mañana */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-blue-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Programados para Mañana
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-blue-600 dark:text-blue-400">
+            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {mananaList.length}
             </p>
-            <span className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-950 px-2.5 py-0.5 rounded-full font-mono">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full font-mono">
               ${(totalMananaAmount / 1000).toFixed(0)}k COP
             </span>
           </div>
@@ -131,15 +121,15 @@ export const ProgramadosView: React.FC<{
         </div>
 
         {/* KPI 3: B2B Recurrentes */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-purple-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Suscripciones B2B
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-purple-600 dark:text-purple-400">
+            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {recurrences.length}
             </p>
-            <span className="text-xs font-bold text-purple-600 bg-purple-50 dark:bg-purple-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               Automáticas
             </span>
           </div>
@@ -147,35 +137,35 @@ export const ProgramadosView: React.FC<{
         </div>
 
         {/* KPI 4: Alerta Anticipada */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-emerald-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Alerta Automática
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               30 <span className="text-sm font-normal text-gray-400">min</span>
             </p>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               Activa
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">Despierta comanda antes de la hora de entrega</p>
+          <p className="text-[11px] text-gray-400">Despierta pedido antes de la hora de entrega</p>
         </div>
       </div>
 
       {/* Floating Success Toast */}
       {successToast && (
-        <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-800 rounded-3xl p-4 text-xs text-emerald-800 dark:text-emerald-200 font-bold flex items-center justify-between animate-fade-in shadow-xs">
+        <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-4 text-xs text-zinc-900 dark:text-zinc-100 font-bold flex items-center justify-between animate-fade-in shadow-xs">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-none" />
+            <CheckCircle2 className="w-4 h-4 text-[#FF3F1A] flex-none" />
             <span>{successToast}</span>
           </div>
           <button
             type="button"
             onClick={() => onNavigateOpTab?.("en-vivo")}
-            className="underline font-black text-[#190088] dark:text-indigo-300 cursor-pointer ml-4"
+            className="underline font-black text-[#FF3F1A] cursor-pointer ml-4"
           >
-            Ver en Tablero Kanban →
+            Ver en Pedidos →
           </button>
         </div>
       )}
@@ -185,7 +175,7 @@ export const ProgramadosView: React.FC<{
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Column 1: Hoy */}
           <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-orange-300 dark:border-orange-900">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
                 <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
@@ -206,13 +196,13 @@ export const ProgramadosView: React.FC<{
                 hoyList.map(item => (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-orange-200 dark:border-orange-900/60 p-5 shadow-xs space-y-4 hover:border-[#FF3F1A] transition-all"
+                    className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-gray-700 p-5 shadow-xs space-y-4 hover:border-[#FF3F1A] transition-all"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
                         {item.id}
                       </span>
-                      <span className="font-mono font-black text-xs px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-950 text-[#FF3F1A] flex items-center gap-1.5 border border-orange-300 dark:border-orange-800">
+                      <span className="font-mono font-black text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-gray-800 text-[#FF3F1A] flex items-center gap-1.5 border border-slate-200 dark:border-gray-700">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Pactado: {item.scheduledTime}</span>
                       </span>
@@ -239,8 +229,8 @@ export const ProgramadosView: React.FC<{
                           <span className="font-mono">${(it.unitPrice * it.quantity).toLocaleString("es-CO")}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between font-black text-[#190088] dark:text-indigo-400 pt-2 border-t border-slate-200 dark:border-gray-700">
-                        <span>Total Comanda:</span>
+                      <div className="flex justify-between font-black text-zinc-900 dark:text-zinc-100 pt-2 border-t border-slate-200 dark:border-gray-700">
+                        <span>Total Pedido:</span>
                         <span className="font-mono">${item.total.toLocaleString("es-CO")}</span>
                       </div>
                     </div>
@@ -250,7 +240,7 @@ export const ProgramadosView: React.FC<{
                       <button
                         type="button"
                         onClick={() => setSelectedOrderId(item.id)}
-                        className="py-2.5 px-3 rounded-2xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+                        className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
                       >
                         Ticket
                       </button>
@@ -258,7 +248,7 @@ export const ProgramadosView: React.FC<{
                       <button
                         type="button"
                         onClick={() => handleInjectNow(item.id, item.customerName)}
-                        className="flex-1 py-2.5 px-3 rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
                       >
                         <Zap className="w-4 h-4 text-white" />
                         <span>Despertar e Inyectar a Cocina</span>
@@ -272,64 +262,76 @@ export const ProgramadosView: React.FC<{
 
           {/* Column 2: Mañana */}
           <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-blue-300 dark:border-blue-900">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500" />
+                <span className="w-3 h-3 rounded-full bg-zinc-700" />
                 <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
                   Programados para Mañana ({mananaList.length})
                 </h4>
               </div>
-              <span className="text-xs font-mono font-black text-blue-600">
+              <span className="text-xs font-mono font-bold text-gray-500">
                 ${(totalMananaAmount / 1000).toFixed(0)}k
               </span>
             </div>
 
             <div className="space-y-3.5">
-              {mananaList.map(item => (
-                <div
-                  key={item.id}
-                  className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
-                      {item.id}
-                    </span>
-                    <span className="font-mono font-bold text-xs px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Mañana {item.scheduledTime}</span>
-                    </span>
-                  </div>
-
-                  <div>
-                    <p className="font-black text-sm text-gray-900 dark:text-gray-100 truncate">
-                      {item.customerName}
-                    </p>
-                    <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold flex items-center gap-1 mt-0.5">
-                      <Repeat className="w-3 h-3" />
-                      <span>Origen: {item.recurringFrequency || "Programado"}</span>
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 dark:bg-gray-800/80 rounded-2xl p-3 text-xs space-y-1 border border-slate-100 dark:border-gray-700">
-                    {item.items.map((it, idx) => (
-                      <p key={idx} className="font-semibold text-gray-700 dark:text-gray-300">
-                        <strong>×{it.quantity}</strong> {it.name}
-                      </p>
-                    ))}
-                    <p className="text-right font-mono font-black text-gray-900 dark:text-gray-100 pt-1.5 border-t border-slate-200 dark:border-gray-700">
-                      Total: ${item.total.toLocaleString("es-CO")}
-                    </p>
-                  </div>
+              {mananaList.length === 0 ? (
+                <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-gray-800 rounded-2xl text-gray-400 text-xs font-bold">
+                  No hay pedidos agendados para mañana.
                 </div>
-              ))}
+              ) : (
+                mananaList.map(item => (
+                  <div
+                    key={item.id}
+                    className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-gray-700 p-5 shadow-xs space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
+                        {item.id}
+                      </span>
+                      <span className="font-mono font-black text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center gap-1.5 border border-slate-200 dark:border-gray-700">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>Mañana {item.scheduledTime}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <p className="font-black text-sm text-gray-900 dark:text-gray-100 truncate">
+                        {item.customerName}
+                      </p>
+                      {item.customerAddress && (
+                        <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-gray-400 flex-none" />
+                          <span>{item.customerAddress}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-gray-800/80 rounded-2xl p-3.5 text-xs space-y-1.5 border border-slate-100 dark:border-gray-700">
+                      {item.items.map((it, idx) => (
+                        <div key={idx} className="flex justify-between font-semibold text-gray-700 dark:text-gray-300">
+                          <span>
+                            <strong className="text-[#FF3F1A]">×{it.quantity}</strong> {it.name}
+                          </span>
+                          <span className="font-mono">${(it.unitPrice * it.quantity).toLocaleString("es-CO")}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between font-black text-zinc-900 dark:text-zinc-100 pt-2 border-t border-slate-200 dark:border-gray-700">
+                        <span>Total Pedido:</span>
+                        <span className="font-mono">${item.total.toLocaleString("es-CO")}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
-          {/* Column 3: Corporate Subscriptions B2B */}
+          {/* Column 3: Suscripciones B2B */}
           <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-purple-300 dark:border-purple-900">
+            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500" />
+                <span className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
                 <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
                   Suscripciones B2B ({recurrences.length})
                 </h4>
@@ -341,13 +343,13 @@ export const ProgramadosView: React.FC<{
               {recurrences.map(rec => (
                 <div
                   key={rec.id}
-                  className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5"
+                  className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-xs text-purple-700 dark:text-purple-300">
+                    <span className="font-mono font-black text-xs text-zinc-900 dark:text-zinc-100">
                       {rec.id} · {rec.frequency}
                     </span>
-                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200">
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-200 dark:border-zinc-700">
                       {rec.isActive ? "Activo" : "Pausado"}
                     </span>
                   </div>
@@ -378,7 +380,7 @@ export const ProgramadosView: React.FC<{
         </div>
       ) : (
         /* VIEW 2: TIMELINE VIEW */
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200/90 dark:border-[#374151] p-6 shadow-xs space-y-6">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-6 shadow-xs space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
             <h4 className="font-black text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-[#FF3F1A]" />
@@ -387,7 +389,7 @@ export const ProgramadosView: React.FC<{
             <span className="text-xs font-mono text-gray-400">{hoyList.length} entregas agendadas</span>
           </div>
 
-          <div className="relative border-l-2 border-orange-200 dark:border-orange-900 ml-4 space-y-6 pb-2">
+          <div className="relative border-l-2 border-slate-200 dark:border-gray-800 ml-4 space-y-6 pb-2">
             {hoyList.map(item => (
               <div key={item.id} className="relative pl-6 space-y-2">
                 <div className="absolute -left-2.5 top-1.5 w-5 h-5 rounded-full bg-[#FF3F1A] border-4 border-white dark:border-[#2C2D31]" />
@@ -411,17 +413,17 @@ export const ProgramadosView: React.FC<{
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="font-mono font-black text-sm text-[#190088] dark:text-indigo-400">
+                    <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
                       ${item.total.toLocaleString("es-CO")}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => handleInjectNow(item.id, item.customerName)}
-                      className="py-2 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                      className="py-2 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
                     >
-                      <Zap className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Despertar Comanda</span>
+                      <Zap className="w-3.5 h-3.5 text-white" />
+                      <span>Despertar Pedido</span>
                     </button>
                   </div>
                 </div>

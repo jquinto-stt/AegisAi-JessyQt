@@ -90,9 +90,9 @@ export const IncidenciasDrawer: React.FC = () => {
                           setSelectedOrderId(inc.orderId!);
                           setIsIncidenciasOpen(false);
                         }}
-                        className="text-xs font-bold text-[#190088] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-xs font-bold text-[#FF3F1A] dark:text-orange-400 hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        Ver comanda {inc.orderId} <ArrowRight className="w-3 h-3" />
+                        Ver pedido {inc.orderId} <ArrowRight className="w-3 h-3" />
                       </button>
                     ) : (
                       <div />

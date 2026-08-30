@@ -19,7 +19,7 @@ export const ThermalTicketModal: React.FC = () => {
     const textLines = [
       "================================",
       "       NECTO RESTAURANTE        ",
-      "       COMANDA DE COCINA        ",
+      "        TICKET DE PEDIDO        ",
       "================================",
       `TURNO: #${order.turnNumber || "00"}`,
       `ORDEN: ${order.id}`,
@@ -64,10 +64,10 @@ export const ThermalTicketModal: React.FC = () => {
             </div>
             <div>
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-gray-100">
-                Impresión de Comanda Térmica
+                Impresión de Ticket Térmico
               </h3>
               <p className="text-[11px] text-gray-400">
-                Formateado para comandera POS y cocina
+                Formateado para impresora POS y cocina
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export const ThermalTicketModal: React.FC = () => {
             {/* Restaurant Brand Header */}
             <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-black">
               <h2 className="text-base font-black tracking-wider uppercase">NECTO COCINA</h2>
-              <p className="text-[11px]">SISTEMA CENTRAL DE COMANDAS</p>
+              <p className="text-[11px]">SISTEMA CENTRAL DE PEDIDOS</p>
               <p className="text-[10px] text-gray-600">Canal: {order.channel.toUpperCase()} · {order.createdAt} hs</p>
             </div>
 

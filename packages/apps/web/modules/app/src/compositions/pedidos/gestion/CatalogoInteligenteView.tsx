@@ -30,15 +30,13 @@ import {
   Package,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button } from "../../../elements/button";
-import { Badge } from "../../../elements/badge";
-import { Card } from "../../../elements/card";
 
 export const CatalogoInteligenteView: React.FC<{
   targetProductId?: string | null;
 }> = ({ targetProductId }) => {
   const {
     products,
+    ingredients,
     toggleProductAvailability,
     updateProductPrice,
     updateProduct,
@@ -127,6 +125,11 @@ export const CatalogoInteligenteView: React.FC<{
   // Handle Edit Product Save
   const handleSaveProductEdit = () => {
     if (!editingProduct) return;
+    const computedCost = (editingProduct.recipe || []).reduce((sum, r) => {
+      const ing = ingredients.find(i => i.id === r.ingredientId);
+      return sum + (ing ? ing.costPerUnit * r.quantityRequired : 0);
+    }, 0);
+
     updateProduct(editingProduct.id, {
       name: editingProduct.name,
       code: editingProduct.code,
@@ -136,6 +139,9 @@ export const CatalogoInteligenteView: React.FC<{
       description: editingProduct.description,
       imageUrl: editingProduct.imageUrl,
       modifiers: editingProduct.modifiers || [],
+      recipe: editingProduct.recipe || [],
+      autoPauseOnStockOut: editingProduct.autoPauseOnStockOut,
+      costEstimated: computedCost > 0 ? computedCost : editingProduct.costEstimated,
     });
     setEditingProduct(null);
   };
@@ -198,10 +204,10 @@ export const CatalogoInteligenteView: React.FC<{
     return (
       <div
         key={product.id}
-        className={`bg-white dark:bg-[#2C2D31] rounded-3xl border-2 shadow-xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-lg ${
+        className={`bg-white dark:bg-[#2C2D31] rounded-2xl border shadow-xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-md ${
           product.isAvailable
-            ? "border-slate-200/90 dark:border-[#374151] hover:border-[#190088]"
-            : "border-red-300 dark:border-red-900/60 bg-red-50/10"
+            ? "border-slate-200 dark:border-[#374151] hover:border-[#FF3F1A]"
+            : "border-slate-200 dark:border-gray-700 opacity-75"
         }`}
       >
         {/* Photo Header */}
@@ -242,7 +248,7 @@ export const CatalogoInteligenteView: React.FC<{
               <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-gray-100 line-clamp-1">
                 {product.name}
               </h4>
-              <span className="font-mono font-black text-base text-[#190088] dark:text-indigo-300 flex-none">
+              <span className="font-mono font-black text-base text-zinc-900 dark:text-zinc-100 flex-none">
                 ${product.price.toLocaleString("es-CO")}
               </span>
             </div>
@@ -251,10 +257,10 @@ export const CatalogoInteligenteView: React.FC<{
               {product.description}
             </p>
 
-            {/* Modifiers Pill Chip (Audio Insight: Personalizaciones) */}
+            {/* Modifiers Pill Chip */}
             <div className="pt-1">
               {product.modifiers && product.modifiers.length > 0 ? (
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
                   <Sparkles className="w-3 h-3 text-[#FF3F1A]" />
                   <span>
                     {product.modifiers.length} grupo(s) de personalización ({modifierCount} opciones)
@@ -268,24 +274,24 @@ export const CatalogoInteligenteView: React.FC<{
             </div>
           </div>
 
-          {/* Ratings & Orders - High Visibility Smart Bar */}
+          {/* Ratings & Orders - Clean Bar */}
           <div className="grid grid-cols-2 gap-2 pt-1">
             {/* Rating Chip */}
             <button
               type="button"
               onClick={() => setReviewModalProduct(product)}
-              className="p-2 rounded-2xl bg-amber-500 text-gray-950 hover:bg-amber-400 font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer hover:scale-102 active:scale-98"
+              className="p-2 rounded-xl bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 text-zinc-900 dark:text-zinc-100 border border-slate-200 dark:border-gray-700 font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
               title="Ver reseñas de este plato"
             >
-              <Star className="w-3.5 h-3.5 fill-gray-950 text-gray-950" />
+              <Star className="w-3.5 h-3.5 fill-[#FF3F1A] text-[#FF3F1A]" />
               <span>{product.rating || 4.9}</span>
-              <span className="text-[10px] font-extrabold opacity-85">
+              <span className="text-[10px] font-extrabold opacity-70">
                 ({product.reviewsCount || 0})
               </span>
             </button>
 
             {/* Sales Volume Chip */}
-            <div className="p-2 rounded-2xl bg-orange-50 dark:bg-orange-950/80 border border-orange-200 dark:border-orange-900 text-[#FF3F1A] font-black text-xs flex items-center justify-center gap-1.5">
+            <div className="p-2 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-zinc-900 dark:text-zinc-100 font-black text-xs flex items-center justify-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>{product.salesCount || 120} cmds</span>
             </div>
@@ -293,7 +299,7 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Live Kitchen Notice */}
           {activeOrdersWithProd > 0 && (
-            <div className="bg-orange-50 dark:bg-orange-950/50 border border-orange-200 dark:border-orange-900/60 rounded-xl px-3 py-1.5 text-xs text-[#FF3F1A] font-black flex items-center justify-between">
+            <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 rounded-xl px-3 py-1.5 text-xs text-[#FF3F1A] font-black flex items-center justify-between">
               <span>{activeOrdersWithProd} en preparación en fogón</span>
               <span className="font-mono">{product.prepTimeMinutes}m</span>
             </div>
@@ -304,7 +310,7 @@ export const CatalogoInteligenteView: React.FC<{
             <Button
               variant="outline"
               onClick={() => setEditingProduct({ ...product })}
-              className="h-auto py-2 px-3 rounded-xl text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#190088] hover:text-[#190088] dark:hover:text-indigo-300 shadow-xs"
+              className="h-auto py-2 px-3 rounded-xl text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-xs"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Editar & Variantes</span>
@@ -315,18 +321,18 @@ export const CatalogoInteligenteView: React.FC<{
               onClick={() => toggleProductAvailability(product.id)}
               className={`py-2 px-3 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
                 product.isAvailable
-                  ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100"
-                  : "bg-red-500 text-white hover:bg-red-600"
+                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200"
+                  : "bg-zinc-900 text-white hover:bg-zinc-800"
               }`}
             >
               {product.isAvailable ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
                   <span>Disponible</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <AlertTriangle className="w-3.5 h-3.5 text-orange-400" />
                   <span>Pausado</span>
                 </>
               )}
@@ -342,46 +348,46 @@ export const CatalogoInteligenteView: React.FC<{
       {/* Header Banner */}
       <NectoBanner
         icon={<Layers className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Catálogo de Productos & Opiniones de Clientes"
-        description="Gestión estructurada por categorías, personalizaciones de platos (como en Rappi/Uber), precios y reseñas en vivo."
-        actionNode={
-          <div className="flex bg-slate-100 dark:bg-gray-800 rounded-2xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
-            <button
-              onClick={() => setActiveSubTab("catalogo")}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeSubTab === "catalogo"
-                  ? "bg-[#190088] text-white shadow-xs"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-              }`}
-            >
-              Catálogo de Platos ({products.length})
-            </button>
-            <button
-              onClick={() => setActiveSubTab("resenas")}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                activeSubTab === "resenas"
-                  ? "bg-[#190088] text-white shadow-xs"
-                  : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-              }`}
-            >
-              Centro de Reseñas ({allReviews.length})
-            </button>
-          </div>
-        }
+        title="Catálogo de Productos & Menú Inteligente"
+        description="Gestión estructurada por categorías, personalizaciones de platos (escandallos), precios y reseñas en vivo."
       />
+
+      {/* Subtab Switcher Toolbar */}
+      <div className="flex bg-slate-100 dark:bg-gray-800 rounded-2xl p-1 border border-slate-200 dark:border-gray-700 w-fit shadow-xs">
+        <button
+          onClick={() => setActiveSubTab("catalogo")}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeSubTab === "catalogo"
+              ? "bg-[#FF3F1A] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+          }`}
+        >
+          Catálogo de Platos ({products.length})
+        </button>
+        <button
+          onClick={() => setActiveSubTab("resenas")}
+          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            activeSubTab === "resenas"
+              ? "bg-[#FF3F1A] text-white shadow-xs"
+              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+          }`}
+        >
+          Centro de Reseñas ({allReviews.length})
+        </button>
+      </div>
 
       {/* Top Intelligence Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stat 1: Total Platos */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#190088] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Platos en Carta
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {products.length}
             </p>
-            <span className="text-xs font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               {products.filter(p => p.isAvailable).length} activos
             </span>
           </div>
@@ -391,8 +397,8 @@ export const CatalogoInteligenteView: React.FC<{
         </div>
 
         {/* Stat 2: Calificación Global */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-amber-400 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Satisfacción Global
           </span>
           <div className="flex items-baseline justify-between">
@@ -400,18 +406,18 @@ export const CatalogoInteligenteView: React.FC<{
               <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
                 4.9
               </p>
-              <span className="text-amber-500 font-bold text-sm">★</span>
+              <span className="text-[#FF3F1A] font-bold text-sm">★</span>
             </div>
             <span className="text-xs font-bold text-gray-500">
               {allReviews.length * 15 + 45} opiniones
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">98.2% de calificaciones de 5 estrellas</p>
+          <p className="text-[11px] text-gray-400">98.2% de calificaciones positivas</p>
         </div>
 
         {/* Stat 3: Más Vendido */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#FF3F1A] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Plato Estrella #1
           </span>
           <div className="flex items-baseline justify-between">
@@ -422,23 +428,23 @@ export const CatalogoInteligenteView: React.FC<{
               482 cmds
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">38% del volumen total de ventas</p>
+          <p className="text-[11px] text-gray-400">38% del volumen de ventas</p>
         </div>
 
         {/* Stat 4: Categorías */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-emerald-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Categorías Activas
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {categories.length - 1}
             </p>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               Estructurado
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">Empanadas, Combos, Acompañamientos, Bebidas, Postres</p>
+          <p className="text-[11px] text-gray-400">Empanadas, Combos, Bebidas, Postres</p>
         </div>
       </div>
 
@@ -446,8 +452,8 @@ export const CatalogoInteligenteView: React.FC<{
       {activeSubTab === "catalogo" && (
         <div className="space-y-6">
           {/* Toolbar */}
-          <div className="bg-white dark:bg-[#2C2D31] rounded-3xl p-4 border border-slate-200/90 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-4">
-            {/* Category Filter Pills (Horizontal scroll on mobile, wrap on desktop) */}
+          <div className="bg-white dark:bg-[#2C2D31] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-4">
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full flex-nowrap sm:flex-wrap py-1">
               {categories.map(cat => {
                 const count =
@@ -459,9 +465,9 @@ export const CatalogoInteligenteView: React.FC<{
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
+                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
                       selectedCategory === cat
-                        ? "bg-[#190088] text-white shadow-xs"
+                        ? "bg-[#FF3F1A] text-white shadow-xs"
                         : "bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-slate-300"
                     }`}
                   >
@@ -588,14 +594,14 @@ export const CatalogoInteligenteView: React.FC<{
                       <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
                         {rev.author}
                       </h4>
-                      <p className="text-xs font-bold text-[#190088] dark:text-indigo-300">
+                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                         Plato: {rev.productName}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <div className="flex items-center gap-1 text-amber-500 font-black text-sm justify-end">
+                    <div className="flex items-center gap-1 text-[#FF3F1A] font-black text-sm justify-end">
                       {"★".repeat(rev.rating)}
                       <span className="text-gray-400 font-mono text-xs ml-1">({rev.rating}/5)</span>
                     </div>
@@ -609,8 +615,8 @@ export const CatalogoInteligenteView: React.FC<{
 
                 {/* Submitted Restaurant Response */}
                 {submittedReplies[rev.id] && (
-                  <div className="ml-6 p-3 bg-indigo-50 dark:bg-indigo-950/60 border-l-4 border-[#190088] rounded-xl text-xs space-y-1">
-                    <strong className="text-[#190088] dark:text-indigo-300 font-black">
+                  <div className="ml-6 p-3 bg-zinc-100 dark:bg-zinc-800 border-l-4 border-[#FF3F1A] rounded-xl text-xs space-y-1">
+                    <strong className="text-zinc-900 dark:text-zinc-100 font-black">
                       Respuesta del Restaurante:
                     </strong>
                     <p className="text-gray-700 dark:text-gray-300">{submittedReplies[rev.id]}</p>
@@ -628,14 +634,14 @@ export const CatalogoInteligenteView: React.FC<{
                         setReplyText(prev => ({ ...prev, [rev.id]: e.target.value }))
                       }
                       onKeyDown={e => e.key === "Enter" && handleSendReply(rev.id)}
-                      className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none"
+                      className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
                     />
                     <Button
                       type="button"
                       onClick={() => handleSendReply(rev.id)}
-                      className="h-auto py-2 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black"
+                      className="h-auto py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black"
                     >
-                      <Reply className="w-3.5 h-3.5" />
+                      <Reply className="w-3.5 h-3.5 text-[#FF3F1A]" />
                       <span>Responder</span>
                     </Button>
                   </div>
@@ -892,6 +898,155 @@ export const CatalogoInteligenteView: React.FC<{
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Recipe / Escandallo & Stock Automation Section */}
+            <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                    <span>Receta & Escandallo de Insumos:</span>
+                  </h4>
+                  <p className="text-[11px] text-gray-400">
+                    Define las materias primas consumidas por porción para descontar stock automáticamente.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const firstIng = ingredients[0];
+                    if (!firstIng) return;
+                    const newRecItem = {
+                      ingredientId: firstIng.id,
+                      ingredientName: firstIng.name,
+                      quantityRequired: 0.1,
+                      unit: firstIng.unit,
+                    };
+                    setEditingProduct({
+                      ...editingProduct,
+                      recipe: [...(editingProduct.recipe || []), newRecItem],
+                    });
+                  }}
+                  className="text-[11px] font-black text-[#FF3F1A] flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Añadir Insumo
+                </button>
+              </div>
+
+              {/* Recipe List */}
+              {(editingProduct.recipe || []).length === 0 ? (
+                <div className="p-3.5 rounded-2xl bg-orange-50/30 dark:bg-orange-950/20 border border-dashed border-orange-200 dark:border-orange-900/40 text-center text-xs text-orange-700 dark:text-orange-300">
+                  Sin receta asignada. Haz clic en "Añadir Insumo" para vincular ingredientes y habilitar el descuento de stock.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {editingProduct.recipe?.map((item, rIdx) => {
+                    const currentIng = ingredients.find(i => i.id === item.ingredientId);
+                    return (
+                      <div
+                        key={rIdx}
+                        className="p-3 rounded-xl bg-slate-50 dark:bg-gray-800/80 border border-slate-200 dark:border-gray-700 flex flex-wrap items-center gap-2"
+                      >
+                        <select
+                          value={item.ingredientId}
+                          onChange={e => {
+                            const selectedId = e.target.value;
+                            const found = ingredients.find(i => i.id === selectedId);
+                            const updated = [...(editingProduct.recipe || [])];
+                            updated[rIdx] = {
+                              ...updated[rIdx],
+                              ingredientId: selectedId,
+                              ingredientName: found?.name || "",
+                              unit: found?.unit || "kg",
+                            };
+                            setEditingProduct({ ...editingProduct, recipe: updated });
+                          }}
+                          className="flex-1 min-w-[180px] text-xs font-bold p-1.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
+                        >
+                          {ingredients.map(ing => (
+                            <option key={ing.id} value={ing.id}>
+                              {ing.name} ({ing.currentStock} {ing.unit} disp.)
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="text-gray-400 font-bold text-[10px]">CANT:</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.quantityRequired}
+                            onChange={e => {
+                              const updated = [...(editingProduct.recipe || [])];
+                              updated[rIdx].quantityRequired = parseFloat(e.target.value) || 0;
+                              setEditingProduct({ ...editingProduct, recipe: updated });
+                            }}
+                            className="w-20 text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] rounded-lg px-2 py-1 text-gray-900 dark:text-gray-100"
+                          />
+                          <span className="font-mono text-gray-500 font-bold text-xs">{item.unit}</span>
+                        </div>
+
+                        {currentIng && (
+                          <span className="text-[11px] font-mono text-gray-400">
+                            (Costo: ${(currentIng.costPerUnit * item.quantityRequired).toFixed(0)})
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = editingProduct.recipe?.filter((_, i) => i !== rIdx);
+                            setEditingProduct({ ...editingProduct, recipe: updated });
+                          }}
+                          className="text-gray-400 hover:text-red-500 p-1 cursor-pointer ml-auto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Auto Pause on Stock Out & Cost Margins Preview */}
+              <div className="p-3 bg-slate-100/70 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={editingProduct.autoPauseOnStockOut ?? true}
+                    onChange={e =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        autoPauseOnStockOut: e.target.checked,
+                      })
+                    }
+                    className="w-4 h-4 text-[#FF3F1A] rounded"
+                  />
+                  <span>Pausar plato automáticamente si algún insumo llega a 0</span>
+                </label>
+
+                {/* Cost Estimation */}
+                {(() => {
+                  const estCost = (editingProduct.recipe || []).reduce((sum, r) => {
+                    const ing = ingredients.find(i => i.id === r.ingredientId);
+                    return sum + (ing ? ing.costPerUnit * r.quantityRequired : 0);
+                  }, 0);
+                  const margin = editingProduct.price > 0 ? ((editingProduct.price - estCost) / editingProduct.price) * 100 : 0;
+                  return (
+                    <div className="flex items-center gap-2 text-xs font-mono">
+                      <span className="text-gray-500">Costo Materia Prima:</span>
+                      <strong className="text-gray-900 dark:text-white font-black">${estCost.toFixed(0)}</strong>
+                      <span className={`px-2 py-0.5 rounded-md font-extrabold text-[10px] ${
+                        margin >= 60 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                      }`}>
+                        {margin.toFixed(0)}% Margen
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
 
             {/* Modal Actions */}

@@ -1,11 +1,20 @@
-export type PedidosSection = "operacion" | "gestion";
+export type PedidosSection =
+  | "operacion"
+  | "menu"
+  | "analitica"
+  | "configuracion"
+  | "gestion"; // Retro-compatibilidad
 
 export type OperacionTab = "en-vivo" | "preparacion" | "programados";
+export type MenuTab = "catalogo" | "insumos";
+export type AnaliticaTab = "resumen" | "historial" | "analitica" | "rendimiento";
+export type ConfigTab = "automatizaciones" | "turnos";
 
 export type GestionTab =
   | "resumen"
   | "historial"
   | "catalogo"
+  | "insumos"
   | "automatizaciones"
   | "turnos"
   | "analitica";
@@ -99,6 +108,44 @@ export interface ProductModifierGroup {
   options: ProductModifierOption[];
 }
 
+export interface RecipeIngredient {
+  ingredientId: string;
+  ingredientName: string;
+  quantityRequired: number; // Cantidad consumida por unidad de producto
+  unit: string;
+}
+
+export interface StockIngredientItem {
+  id: string;
+  code: string;
+  name: string;
+  category: "Carnes" | "Harinas y Masas" | "Lácteos" | "Verduras" | "Bebidas" | "Packaging" | "Condimentos" | "General";
+  unit: "kg" | "gr" | "lt" | "ml" | "unid" | "paquete";
+  currentStock: number;
+  minThreshold: number; // Punto de reorden / alerta crítica
+  costPerUnit: number;
+  expiryDate?: string;
+  lotNumber?: string;
+  lastRestockedAt?: string;
+  imageUrl?: string;
+  status: "OPTIMO" | "BAJO" | "CRITICO" | "AGOTADO";
+}
+
+export interface StockMovement {
+  id: string;
+  ingredientId: string;
+  ingredientName: string;
+  type: "INGRESO_PROVEEDOR" | "VENTA_PEDIDO" | "MERMA_COCINA" | "AJUSTE_AUDITORIA";
+  quantity: number; // Positivo para ingreso, negativo para consumo/merma
+  unit: string;
+  orderId?: string;
+  reason?: string;
+  evidenceUrl?: string;
+  evidenceType?: "foto" | "audio" | "texto";
+  registeredBy: string;
+  timestamp: string;
+}
+
 export interface ProductItem {
   id: string;
   code: string;
@@ -119,6 +166,9 @@ export interface ProductItem {
   reviewsCount?: number;
   reviews?: ProductReview[];
   modifiers?: ProductModifierGroup[];
+  recipe?: RecipeIngredient[];
+  autoPauseOnStockOut?: boolean;
+  costEstimated?: number;
 }
 
 export interface AutomationRule {

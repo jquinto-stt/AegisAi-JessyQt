@@ -96,7 +96,7 @@ export const OrderDetailDrawer: React.FC = () => {
             <button
               onClick={() => setPrintTicketOrder(order)}
               className="p-2 rounded-xl bg-white dark:bg-gray-700 hover:bg-orange-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 hover:text-[#FF3F1A] border border-slate-200 dark:border-gray-600 shadow-xs flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
-              title="Imprimir comanda térmica POS"
+              title="Imprimir ticket térmico POS"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">Imprimir</span>
@@ -131,7 +131,7 @@ export const OrderDetailDrawer: React.FC = () => {
                       </span>
                     </div>
                     <h4 className="font-black text-sm text-red-900 dark:text-red-100 mt-0.5">
-                      {activeIncident?.title || `Retraso en Comanda ${order.id}`}
+                      {activeIncident?.title || `Retraso en Pedido ${order.id}`}
                     </h4>
                   </div>
                 </div>
@@ -144,7 +144,7 @@ export const OrderDetailDrawer: React.FC = () => {
                 </p>
                 <p className="text-gray-600 dark:text-gray-300">
                   {activeIncident?.description ||
-                    `La comanda superó el tiempo estimado de preparación pactado (${order.estimatedMinutes} min) debido a sobredemanda de horneado en cocina central.`}
+                    `El pedido superó el tiempo estimado de preparación pactado (${order.estimatedMinutes} min) debido a sobredemanda de horneado en cocina central.`}
                 </p>
               </div>
 
@@ -202,7 +202,7 @@ export const OrderDetailDrawer: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setAiModalOrder(order)}
-                  className="text-xs font-extrabold text-[#190088] dark:text-blue-400 hover:underline cursor-pointer"
+                  className="text-xs font-extrabold text-[#FF3F1A] hover:underline cursor-pointer"
                 >
                   Ver mensaje original →
                 </button>
@@ -230,7 +230,7 @@ export const OrderDetailDrawer: React.FC = () => {
                 <div>
                   <span className="text-gray-400">Teléfono / WhatsApp:</span>
                   <p className="font-mono font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1 text-sm">
-                    <Phone className="w-3.5 h-3.5 text-emerald-500" /> {order.customerPhone}
+                    <Phone className="w-3.5 h-3.5 text-[#FF3F1A]" /> {order.customerPhone}
                   </p>
                 </div>
               )}
@@ -243,7 +243,7 @@ export const OrderDetailDrawer: React.FC = () => {
                 </div>
               )}
               {order.notes && (
-                <div className="sm:col-span-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 p-3 rounded-2xl text-amber-900 dark:text-amber-200">
+                <div className="sm:col-span-2 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 p-3 rounded-2xl text-zinc-900 dark:text-zinc-100">
                   <span className="font-bold text-[11px]">Observación del pedido:</span>
                   <p className="italic text-xs mt-0.5">{order.notes}</p>
                 </div>
@@ -284,7 +284,7 @@ export const OrderDetailDrawer: React.FC = () => {
                       <Minus className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <span className="font-mono font-black text-lg text-[#190088] dark:text-blue-400">
+                  <span className="font-mono font-black text-lg text-zinc-900 dark:text-zinc-100">
                     {order.estimatedMinutes} min
                   </span>
                   {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
@@ -323,7 +323,7 @@ export const OrderDetailDrawer: React.FC = () => {
                       </p>
                     </div>
                     {it.option && (
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-full inline-block mt-1">
+                      <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full inline-block mt-1">
                         {it.option}
                       </span>
                     )}
@@ -345,7 +345,7 @@ export const OrderDetailDrawer: React.FC = () => {
 
               <div className="p-4 bg-slate-50 dark:bg-gray-800/80 flex items-center justify-between">
                 <span className="font-extrabold text-sm text-gray-900 dark:text-gray-100">
-                  Total de la Comanda
+                  Total del Pedido
                 </span>
                 <span className="font-mono font-black text-xl text-[#FF3F1A] dark:text-orange-400">
                   ${order.total.toLocaleString("es-CO")}
@@ -392,9 +392,9 @@ export const OrderDetailDrawer: React.FC = () => {
             <>
               <button
                 onClick={() => confirmOrder(order.id)}
-                className="flex-1 py-3 px-4 rounded-2xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+                className="flex-1 py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
               >
-                <Check className="w-4 h-4" /> Aceptar y Confirmar Comanda
+                <Check className="w-4 h-4 text-[#FF3F1A]" /> Aceptar y Confirmar Pedido
               </button>
               <button
                 onClick={() => setRejectModalOrder(order)}
@@ -408,7 +408,7 @@ export const OrderDetailDrawer: React.FC = () => {
           {order.status === "CONFIRMADO" && (
             <button
               onClick={() => sendToKitchen(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+              className="flex-1 py-3 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
             >
               <ChefHat className="w-4 h-4" /> Pasar a Cocina (KDS)
             </button>
@@ -417,7 +417,7 @@ export const OrderDetailDrawer: React.FC = () => {
           {order.status === "EN_PREPARACION" && (
             <button
               onClick={() => markOrderReady(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+              className="flex-1 py-3 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
             >
               <CheckCircle2 className="w-4 h-4" /> Marcar Listo para Despacho
             </button>
@@ -426,9 +426,9 @@ export const OrderDetailDrawer: React.FC = () => {
           {order.status === "LISTO" && (
             <button
               onClick={() => deliverOrder(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-slate-900 hover:bg-black dark:bg-gray-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+              className="flex-1 py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
             >
-              <Truck className="w-4 h-4 text-emerald-400" /> Marcar Entregado / Despachado
+              <Truck className="w-4 h-4 text-[#FF3F1A]" /> Marcar Entregado / Despachado
             </button>
           )}
 
@@ -436,7 +436,7 @@ export const OrderDetailDrawer: React.FC = () => {
             <button
               onClick={() => setCancelModalOrder(order)}
               className="py-3 px-3 rounded-2xl border border-slate-300 dark:border-gray-600 text-gray-500 hover:text-rose-600 text-xs font-bold transition-colors cursor-pointer"
-              title="Cancelar comanda"
+              title="Cancelar pedido"
             >
               Cancelar
             </button>

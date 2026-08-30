@@ -65,7 +65,7 @@ export const PreparacionTiemposView: React.FC<{
 
   const handleCompleteOrder = (orderId: string, turnNumber?: number) => {
     markOrderReady(orderId);
-    setReadyToast(`¡Comanda ${orderId} (Turno #${turnNumber || "00"}) marcada como LISTA para entrega!`);
+    setReadyToast(`¡Pedido ${orderId} (Turno #${turnNumber || "00"}) marcado como LISTO para entrega!`);
     setTimeout(() => setReadyToast(null), 3500);
   };
 
@@ -86,7 +86,7 @@ export const PreparacionTiemposView: React.FC<{
               {title}
             </h3>
             <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full text-gray-500">
-              {list.length} {list.length === 1 ? "comanda" : "comandas"}
+              {list.length} {list.length === 1 ? "pedido" : "pedidos"}
             </span>
           </div>
           <span className="text-xs text-gray-400 font-semibold">{subdesc}</span>
@@ -94,7 +94,7 @@ export const PreparacionTiemposView: React.FC<{
 
         {list.length === 0 ? (
           <div className="bg-slate-50/60 dark:bg-gray-800/30 rounded-3xl border border-dashed border-slate-200 dark:border-gray-800 p-8 text-center text-xs text-gray-400 font-bold">
-            Sin comandas en esta categoría de tiempo.
+            Sin pedidos en esta categoría de tiempo.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -150,7 +150,7 @@ export const PreparacionTiemposView: React.FC<{
                           type="button"
                           onClick={() => adjustEstimate(order.id, -5)}
                           className="w-7 h-7 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-slate-100 cursor-pointer transition-colors"
-                          title="Restar 5 min a la comanda"
+                          title="Restar 5 min al pedido"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -158,7 +158,7 @@ export const PreparacionTiemposView: React.FC<{
                           type="button"
                           onClick={() => adjustEstimate(order.id, 5)}
                           className="w-7 h-7 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-slate-100 cursor-pointer transition-colors"
-                          title="Sumar 5 min de colchón a la comanda"
+                          title="Sumar 5 min de colchón al pedido"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -199,9 +199,9 @@ export const PreparacionTiemposView: React.FC<{
                             key={idx}
                             type="button"
                             onClick={() => toggleItemCheck(order.id, idx)}
-                            className={`w-full p-3 rounded-2xl border-2 text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
+                            className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
                               checked
-                                ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200"
+                                ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
                                 : "bg-slate-50 dark:bg-gray-800/80 border-slate-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-slate-300"
                             }`}
                           >
@@ -209,7 +209,7 @@ export const PreparacionTiemposView: React.FC<{
                               <span
                                 className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-none transition-all ${
                                   checked
-                                    ? "bg-emerald-600 border-emerald-600 text-white"
+                                    ? "bg-[#FF3F1A] border-[#FF3F1A] text-white"
                                     : "border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700"
                                 }`}
                               >
@@ -226,7 +226,7 @@ export const PreparacionTiemposView: React.FC<{
                             <span
                               className={`text-[10px] font-black px-2 py-0.5 rounded-lg border flex-none ml-2 ${
                                 checked
-                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300"
+                                  ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border-zinc-300 dark:border-zinc-600"
                                   : "bg-slate-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-transparent"
                               }`}
                             >
@@ -240,8 +240,8 @@ export const PreparacionTiemposView: React.FC<{
 
                   {/* Notes / Special Instructions */}
                   {order.notes && (
-                    <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-3 text-xs text-amber-900 dark:text-amber-200 space-y-0.5">
-                      <strong className="font-black text-[11px] uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                    <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-3 text-xs text-zinc-900 dark:text-zinc-100 space-y-0.5">
+                      <strong className="font-black text-[11px] uppercase tracking-wider text-[#FF3F1A] block">
                         Instrucción Especial de Cocina:
                       </strong>
                       <p>{order.notes}</p>
@@ -254,7 +254,7 @@ export const PreparacionTiemposView: React.FC<{
                       type="button"
                       onClick={() => setPrintTicketOrder(order)}
                       className="py-3 px-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-[#FF3F1A] hover:bg-orange-50 dark:hover:bg-gray-800 transition-colors cursor-pointer flex items-center gap-1.5"
-                      title="Imprimir comanda térmica"
+                      title="Imprimir ticket térmico"
                     >
                       <Printer className="w-4 h-4" />
                       <span className="hidden sm:inline">Imprimir</span>
@@ -273,8 +273,8 @@ export const PreparacionTiemposView: React.FC<{
                       onClick={() => handleCompleteOrder(order.id, order.turnNumber)}
                       className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95 ${
                         isAllChecked
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse"
-                          : "bg-[#190088] hover:bg-[#140070] text-white"
+                          ? "bg-[#FF3F1A] hover:bg-[#e03413] text-white"
+                          : "bg-zinc-900 hover:bg-zinc-800 text-white"
                       }`}
                     >
                       <CheckCircle2 className="w-4 h-4" />
@@ -296,37 +296,37 @@ export const PreparacionTiemposView: React.FC<{
       <NectoBanner
         icon={<ChefHat className="w-6 h-6 text-[#FF3F1A]" />}
         title="KDS Cocina y Tiempos de Elaboración"
-        description="Pantalla táctil de producción en cocina: cuenta regresiva de cocción, checklist de horneado y sincronización con el Kanban."
-        actionNode={
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => onNavigateOpTab?.("en-vivo")}
-              className="py-2.5 px-4 rounded-2xl bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-[#190088] text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4 text-[#190088] dark:text-indigo-400" />
-              <span>Volver al Tablero Kanban</span>
-            </button>
-
-            <div className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] font-black px-3.5 py-2 rounded-2xl border border-orange-200 dark:border-orange-800 text-xs">
-              <Flame className="w-4 h-4 text-[#FF3F1A]" />
-              <span>{prepOrders.length} comandas en fogón</span>
-            </div>
-          </div>
-        }
+        description="Pantalla táctil de producción en cocina: cuenta regresiva de cocción, checklist de horneado y sincronización en tiempo real."
       />
+
+      {/* Toolbar / Back navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#2C2D31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#374151] shadow-xs">
+        <button
+          onClick={() => onNavigateOpTab?.("en-vivo")}
+          className="py-2 px-3.5 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-400 text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#FF3F1A]" />
+          <span>Volver a Pedidos</span>
+        </button>
+
+        <div className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] font-black px-3.5 py-1.5 rounded-xl border border-orange-200 dark:border-orange-900/60 text-xs">
+          <Flame className="w-4 h-4 text-[#FF3F1A]" />
+          <span>{prepOrders.length} pedidos en fogón</span>
+        </div>
+      </div>
 
       {/* Real-time Kitchen Operations Metric Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Active cooking orders */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#FF3F1A] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
-            Comandas en Fogón
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+            Pedidos en Fogón
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {prepOrders.length}
             </p>
-            <span className="text-xs font-black text-[#FF3F1A] bg-orange-50 dark:bg-orange-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               En Producción
             </span>
           </div>
@@ -336,15 +336,15 @@ export const PreparacionTiemposView: React.FC<{
         </div>
 
         {/* KPI 2: Retrasados Warning */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-red-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Retrasos Críticos
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-red-600 dark:text-red-400">
               {retrasados.length}
             </p>
-            <span className="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               {retrasados.length > 0 ? "Requiere Atención" : "Todo a tiempo"}
             </span>
           </div>
@@ -352,15 +352,15 @@ export const PreparacionTiemposView: React.FC<{
         </div>
 
         {/* KPI 3: Suggested Prep Buffer */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-[#190088] border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Buffer Sugerido
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               +{shiftInfo.suggestedPrepBufferMinutes} <span className="text-sm font-normal text-gray-400">min</span>
             </p>
-            <span className="text-xs font-bold text-[#190088] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               {shiftInfo.currentShift}
             </span>
           </div>
@@ -368,15 +368,15 @@ export const PreparacionTiemposView: React.FC<{
         </div>
 
         {/* KPI 4: Units in Oven */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-t-4 border-t-emerald-500 border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
             Unidades en Tanda
           </span>
           <div className="flex items-baseline justify-between">
             <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
               {totalUnitsInProduction}
             </p>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
               Capacidad 78%
             </span>
           </div>
@@ -385,7 +385,7 @@ export const PreparacionTiemposView: React.FC<{
       </div>
 
       {/* Production Batch Summary (Tandas Totales en Cocina) */}
-      <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-3.5">
+      <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5">
         <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2.5">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950 text-[#FF3F1A] flex items-center justify-center">
@@ -400,7 +400,7 @@ export const PreparacionTiemposView: React.FC<{
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-black text-[#190088] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950 px-3 py-1 rounded-xl">
+          <span className="text-xs font-mono font-black text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-xl">
             {totalUnitsInProduction} unidades totales
           </span>
         </div>
@@ -429,7 +429,7 @@ export const PreparacionTiemposView: React.FC<{
       {/* KDS Columns by Urgency */}
       <div className="space-y-8">
         {renderSection(
-          "Comandas Retrasadas",
+          "Pedidos Retrasados",
           retrasados,
           "RETRASADO",
           "border-red-400 dark:border-red-900/80 bg-red-50/15",
@@ -438,7 +438,7 @@ export const PreparacionTiemposView: React.FC<{
         )}
 
         {renderSection(
-          "Comandas Próximas al Límite",
+          "Pedidos Próximos al Límite",
           proximos,
           "PROXIMO",
           "border-amber-300 dark:border-amber-800/80 bg-amber-50/15",
@@ -447,7 +447,7 @@ export const PreparacionTiemposView: React.FC<{
         )}
 
         {renderSection(
-          "Comandas a Tiempo",
+          "Pedidos a Tiempo",
           aTiempo,
           "A_TIEMPO",
           "border-slate-200/90 dark:border-[#374151]",

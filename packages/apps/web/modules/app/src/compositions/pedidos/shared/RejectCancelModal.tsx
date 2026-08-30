@@ -32,7 +32,7 @@ export const RejectCancelModal: React.FC = () => {
     : [
         "Solicitud explícita del cliente",
         "Retraso excesivo en cocina",
-        "Error en la comanda",
+        "Error en el pedido",
         "Falta de insumos críticos",
         "Corrección operativa",
         "Otro motivo",
