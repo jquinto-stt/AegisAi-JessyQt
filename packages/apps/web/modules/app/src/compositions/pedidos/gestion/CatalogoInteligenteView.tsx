@@ -225,10 +225,10 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Popularity Badge */}
           {product.popularityRank && product.popularityRank <= 3 && (
-            <Badge className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md border-transparent">
+            <span className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 fill-white" />
               <span>#{product.popularityRank} Más Pedido</span>
-            </Badge>
+            </span>
           )}
 
           {/* Price Tag */}
@@ -236,9 +236,9 @@ export const CatalogoInteligenteView: React.FC<{
             ${product.price.toLocaleString("es-CO")}
           </div>
 
-          <Badge className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg border-transparent">
+          <span className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg">
             {product.category}
-          </Badge>
+          </span>
         </div>
 
         {/* Body */}
