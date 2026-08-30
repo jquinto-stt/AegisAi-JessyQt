@@ -307,14 +307,14 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Footer Controls: Edit Product & Stock Switch */}
           <div className="pt-3 border-t border-gray-100 dark:border-[#374151] flex items-center justify-between gap-2">
-            <Button
-              variant="outline"
+            <button
+              type="button"
               onClick={() => setEditingProduct({ ...product })}
-              className="h-auto py-2 px-3 rounded-xl text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-xs"
+              className="py-2 px-3 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Editar & Variantes</span>
-            </Button>
+            </button>
 
             {/* Availability Switch */}
             <button
@@ -636,14 +636,14 @@ export const CatalogoInteligenteView: React.FC<{
                       onKeyDown={e => e.key === "Enter" && handleSendReply(rev.id)}
                       className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
                     />
-                    <Button
+                    <button
                       type="button"
                       onClick={() => handleSendReply(rev.id)}
-                      className="h-auto py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black"
+                      className="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
                     >
                       <Reply className="w-3.5 h-3.5 text-[#FF3F1A]" />
                       <span>Responder</span>
-                    </Button>
+                    </button>
                   </div>
                 )}
               </div>
@@ -1051,22 +1051,21 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => setEditingProduct(null)}
-                className="h-auto py-2.5 px-4 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300"
+                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
                 onClick={handleSaveProductEdit}
-                className="h-auto py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black shadow-xs"
+                className="py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Cambios</span>
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -1169,21 +1168,20 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => setIsCreatingProduct(false)}
-                className="h-auto py-2.5 px-4 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300"
+                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               >
                 Cancelar
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                className="h-auto py-2.5 px-5 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black shadow-xs"
+                className="py-2.5 px-5 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 <span>Crear Plato</span>
-              </Button>
+              </button>
             </div>
           </form>
         </div>
@@ -1235,12 +1233,13 @@ export const CatalogoInteligenteView: React.FC<{
             </div>
 
             <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-right">
-              <Button
+              <button
+                type="button"
                 onClick={() => setReviewModalProduct(null)}
-                className="h-auto py-2 px-4 rounded-xl bg-[#190088] text-white text-xs font-black"
+                className="py-2 px-4 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black cursor-pointer transition-colors shadow-xs"
               >
                 Cerrar
-              </Button>
+              </button>
             </div>
           </div>
         </div>
