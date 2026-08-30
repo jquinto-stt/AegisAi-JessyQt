@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useBusiness, BusinessInstance, BusinessIconKey } from "../../context/BusinessContext";
-import { BusinessIcon } from "./BusinessIcon";
 import {
   X,
   Check,
   Trash2,
   AlertTriangle,
-  Store,
   MapPin,
   Coins,
   MessageSquare,
   Globe,
   ShoppingBag,
   Clock,
-  ShieldCheck,
   Save,
 } from "lucide-react";
 
@@ -87,26 +84,21 @@ export const BusinessSettingsModal: React.FC<{
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in font-sans">
-      <div className="bg-white dark:bg-[#18181B] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans antialiased">
+      <div className="bg-white dark:bg-[#0E0E10] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between flex-none">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 flex items-center justify-center">
-              <BusinessIcon iconKey={iconKey} className="w-5 h-5 text-[#FF3F1A]" />
-            </div>
-            <div>
-              <h3 className="font-black text-base text-zinc-950 dark:text-zinc-50 tracking-tight">
-                Ajustes de Negocio
-              </h3>
-              <p className="text-xs text-zinc-400 font-medium">
-                Configuración aislada de {business.name}
-              </p>
-            </div>
+        <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between flex-none">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF3F1A]">
+              Parámetros de Sucursal
+            </span>
+            <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
+              Ajustes de {business.name}
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,20 +107,20 @@ export const BusinessSettingsModal: React.FC<{
         {/* Scrollable Form Body */}
         <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
           {/* Identidad */}
-          <div className="space-y-3.5">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
-              Identidad Comercial
-            </h4>
+          <div className="space-y-4">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              01. Identidad & Sede
+            </span>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Nombre del Negocio
+              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                Nombre Comercial
               </label>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2">
                 <select
                   value={iconKey}
                   onChange={e => setIconKey(e.target.value as any)}
-                  className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
+                  className="px-3 py-2.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:outline-none"
                 >
                   {iconOptions.map(opt => (
                     <option key={opt.key} value={opt.key}>
@@ -142,32 +134,32 @@ export const BusinessSettingsModal: React.FC<{
                   required
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="flex-1 px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-950 dark:text-zinc-50 focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
+                  className="flex-1 px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-950 dark:text-zinc-50 focus:outline-none focus:border-zinc-400"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#FF3F1A]" /> Ubicación / Ciudad
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Ubicación / Ciudad
                 </label>
                 <input
                   type="text"
                   value={city}
                   onChange={e => setCity(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
+                  className="w-full px-3.5 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                  <Coins className="w-3.5 h-3.5 text-[#FF3F1A]" /> Moneda Local
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  Moneda Base
                 </label>
                 <select
                   value={currency}
                   onChange={e => setCurrency(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 cursor-pointer"
+                  className="w-full px-3 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400 cursor-pointer"
                 >
                   <option value="COP">COP ($)</option>
                   <option value="USD">USD ($)</option>
@@ -179,68 +171,85 @@ export const BusinessSettingsModal: React.FC<{
           </div>
 
           {/* Canales */}
-          <div className="space-y-3.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
-              Canales de Venta
-            </h4>
+          <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              02. Canales de Entrada
+            </span>
 
             <div className="space-y-2">
+              {/* WhatsApp */}
               <div
                 onClick={() => setEnableWhatsapp(!enableWhatsapp)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enableWhatsapp
-                    ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
-                    : "border-zinc-200 dark:border-zinc-800 opacity-60"
+                    ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
+                    : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-emerald-500" />
-                  <div>
-                    <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50">WhatsApp con Asistente IA</p>
-                    <p className="text-[10px] text-zinc-400">Atiende y monta pedidos automáticamente</p>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                      WhatsApp Business con Agente IA
+                    </span>
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                      24/7
+                    </span>
                   </div>
+                  <p className="text-[11px] text-zinc-400">Atiende y monta comandas automáticamente</p>
                 </div>
-                <div className={`w-4 h-4 rounded flex items-center justify-center text-white ${enableWhatsapp ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
+                    enableWhatsapp ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                  }`}
+                >
                   {enableWhatsapp && <Check className="w-3 h-3" />}
                 </div>
               </div>
 
+              {/* Web */}
               <div
                 onClick={() => setEnableWeb(!enableWeb)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enableWeb
-                    ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
-                    : "border-zinc-200 dark:border-zinc-800 opacity-60"
+                    ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
+                    : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <Globe className="w-4 h-4 text-blue-500" />
-                  <div>
-                    <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50">Menú Web Directo</p>
-                    <p className="text-[10px] text-zinc-400">necto.app/{slug || "tu-negocio"}</p>
-                  </div>
+                <div className="space-y-0.5">
+                  <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                    Menú Web Directo
+                  </span>
+                  <p className="text-[11px] text-zinc-400">necto.app/{slug || "tu-negocio"}</p>
                 </div>
-                <div className={`w-4 h-4 rounded flex items-center justify-center text-white ${enableWeb ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
+                    enableWeb ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                  }`}
+                >
                   {enableWeb && <Check className="w-3 h-3" />}
                 </div>
               </div>
 
+              {/* POS */}
               <div
                 onClick={() => setEnablePos(!enablePos)}
-                className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enablePos
-                    ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
-                    : "border-zinc-200 dark:border-zinc-800 opacity-60"
+                    ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
+                    : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <ShoppingBag className="w-4 h-4 text-zinc-400" />
-                  <div>
-                    <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50">POS Mostrador & Teléfono</p>
-                    <p className="text-[10px] text-zinc-400">Toma de pedidos manual en caja</p>
-                  </div>
+                <div className="space-y-0.5">
+                  <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                    Punto de Venta Mostrador (POS)
+                  </span>
+                  <p className="text-[11px] text-zinc-400">Toma de comandas en caja y salón</p>
                 </div>
-                <div className={`w-4 h-4 rounded flex items-center justify-center text-white ${enablePos ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
+                <div
+                  className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
+                    enablePos ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                  }`}
+                >
                   {enablePos && <Check className="w-3 h-3" />}
                 </div>
               </div>
@@ -248,27 +257,28 @@ export const BusinessSettingsModal: React.FC<{
           </div>
 
           {/* Cocina */}
-          <div className="space-y-3.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
-              Cocina & Despacho
-            </h4>
+          <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              03. Operación de Cocina KDS
+            </span>
+
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-[#FF3F1A]" /> Tiempo Promedio de Elaboración
+              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                Tiempo Base de Preparación
               </label>
-              <div className="flex items-center gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 {[15, 20, 30].map(mins => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => setKitchenBufferMin(mins)}
-                    className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                       kitchenBufferMin === mins
-                        ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 text-[#FF3F1A] font-black"
-                        : "border-zinc-200 dark:border-zinc-800 text-zinc-500"
+                        ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white shadow-2xs"
+                        : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
-                    {mins} min
+                    {mins} minutos
                   </button>
                 ))}
               </div>
@@ -276,36 +286,37 @@ export const BusinessSettingsModal: React.FC<{
           </div>
 
           {/* Zona de Peligro */}
-          <div className="pt-4 border-t border-red-100 dark:border-red-950/40 space-y-3">
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-red-500 font-mono flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Zona de Peligro
-            </h4>
+          <div className="pt-4 border-t border-red-200/80 dark:border-red-950/60 space-y-3">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-red-500 font-bold">
+              04. Zona de Peligro
+            </span>
+
             {!confirmDelete ? (
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
-                className="py-2 px-3 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-4 rounded-xl border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Eliminar este negocio</span>
+                <span>Eliminar sucursal</span>
               </button>
             ) : (
-              <div className="p-3 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-900 space-y-2">
-                <p className="text-xs font-bold text-red-700 dark:text-red-300">
-                  ¿Estás seguro de eliminar "{business.name}"?
+              <div className="p-4 bg-red-50/60 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-900 space-y-3">
+                <p className="text-xs font-semibold text-red-800 dark:text-red-200">
+                  ¿Confirmas eliminar permanentemente "{business.name}"?
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="py-1.5 px-3 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-lg transition-colors cursor-pointer"
+                    className="py-1.5 px-3.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
                   >
-                    Confirmar Eliminación
+                    Eliminar
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="py-1.5 px-3 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold rounded-lg cursor-pointer"
+                    className="py-1.5 px-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-medium rounded-lg cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -316,21 +327,20 @@ export const BusinessSettingsModal: React.FC<{
         </form>
 
         {/* Footer */}
-        <div className="p-4 px-6 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-3 flex-none">
+        <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/80 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-3 flex-none">
           <button
             type="button"
             onClick={onClose}
-            className="py-2 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="py-2 px-4 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="py-2 px-5 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
           >
-            <Save className="w-3.5 h-3.5" />
-            <span>Guardar Ajustes</span>
+            <span>Guardar Parámetros</span>
           </button>
         </div>
       </div>
