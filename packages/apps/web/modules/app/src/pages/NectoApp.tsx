@@ -10,6 +10,7 @@ import {
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
+import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 
 export type InventariosRole = "operador" | "analista";
 export type OperadorSubView = string;
@@ -868,9 +869,17 @@ export default function App() {
                     setPedidosOpTab("en-vivo");
                   }}
                 />
+
+                <div className="hidden sm:block">
+                  <BusinessSwitcher />
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
+                <div className="sm:hidden">
+                  <BusinessSwitcher />
+                </div>
+
                 <NotificationBellDropdown
                   notifications={notifications}
                   setNotifications={setNotifications}
