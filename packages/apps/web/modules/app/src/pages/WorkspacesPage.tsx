@@ -21,6 +21,8 @@ import {
   Sliders,
 } from "lucide-react";
 
+import { NectoLogo } from "../compositions/shared/NectoLogo";
+
 export default function WorkspacesPage() {
   const navigate = useNavigate();
   const { businesses, activeBusinessId, switchBusiness } = useBusiness();
@@ -43,12 +45,7 @@ export default function WorkspacesPage() {
       {/* Top Minimal Header */}
       <header className="px-8 sm:px-16 py-6 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center font-black text-sm select-none tracking-tighter">
-            N
-          </div>
-          <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-            Necto Platform
-          </span>
+          <NectoLogo size="xs" inline />
         </div>
 
         <div className="flex items-center gap-3">

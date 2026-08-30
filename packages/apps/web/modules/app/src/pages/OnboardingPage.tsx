@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, NectoModuleKey, BusinessType, BusinessIconKey } from "../context/BusinessContext";
+import { NectoLogo } from "../compositions/shared/NectoLogo";
 import {
   Users,
   ShoppingBag,
@@ -239,15 +240,7 @@ export default function OnboardingPage() {
       {/* Top Navbar */}
       <header className="h-14 px-6 sm:px-10 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-[#09090B]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-black text-sm select-none shadow-sm">
-            N
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm tracking-tight text-zinc-950 dark:text-white">Necto</span>
-            <span className="text-[10px] font-mono text-zinc-500 uppercase px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900">
-              Workspace Setup
-            </span>
-          </div>
+          <NectoLogo size="xs" inline />
         </div>
 
         <div className="flex items-center gap-4">
