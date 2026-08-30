@@ -869,16 +869,11 @@ export default function App() {
                     setPedidosOpTab("en-vivo");
                   }}
                 />
-
-                <div className="hidden sm:block">
-                  <BusinessSwitcher />
-                </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="sm:hidden">
-                  <BusinessSwitcher />
-                </div>
+              {/* Right Side Header Actions: Business Switcher, Notifications & Theme */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <BusinessSwitcher />
 
                 <NotificationBellDropdown
                   notifications={notifications}
