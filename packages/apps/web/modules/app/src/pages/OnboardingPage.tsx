@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useBusiness, NectoModuleKey } from "../context/BusinessContext";
+import { useBusiness, NectoModuleKey, BusinessType, BusinessIconKey } from "../context/BusinessContext";
 import {
   Users,
   ShoppingBag,
@@ -27,22 +27,23 @@ import {
   Briefcase,
   User,
   Lock,
-  SlidersHorizontal,
+  UtensilsCrossed,
+  Store,
+  Scissors,
 } from "lucide-react";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { businesses, createBusiness } = useBusiness();
-  const [step, setStep] = useState<number>(3); // Set to Step 3 as shown in screenshot, with full navigation across 1-5
+  const [step, setStep] = useState<number>(3); // Set default to Step 3 for business setup
 
   // Paso 1: Cuenta
   const [ownerName, setOwnerName] = useState("Carlos Bianchi");
   const [ownerEmail, setOwnerEmail] = useState("carlos@necto.app");
-  const [ownerPassword, setOwnerPassword] = useState("••••••••••••");
 
-  // Paso 3: Datos del negocio
+  // Paso 3: Tipo de Negocio & Datos
+  const [businessModel, setBusinessModel] = useState<BusinessType>("restaurant_virtual");
   const [companyName, setCompanyName] = useState("Necto Burger & Grill");
-  const [industry, setIndustry] = useState("Gastronomía & Restaurantes");
   const [website, setWebsite] = useState("https://nectoburger.com");
   const [country, setCountry] = useState("Colombia");
   const [city, setCity] = useState("Bogotá");
@@ -54,10 +55,50 @@ export default function OnboardingPage() {
 
   // Paso 5: Módulos
   const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>([
-    "referidos",
     "pedidos",
     "inventarios",
+    "reservas",
   ]);
+
+  // Business Archetypes Definition
+  const businessArchetypes: Array<{
+    id: BusinessType;
+    title: string;
+    subtitle: string;
+    icon: React.ComponentType<{ className?: string }>;
+    defaultModules: NectoModuleKey[];
+    iconKey: BusinessIconKey;
+  }> = [
+    {
+      id: "restaurant_virtual",
+      title: "Restaurante & Gastronomía",
+      subtitle: "Comandas en vivo, KDS de cocina, escandallos, delivery WhatsApp y POS mostrador.",
+      icon: UtensilsCrossed,
+      defaultModules: ["pedidos", "inventarios", "reservas"],
+      iconKey: "utensils",
+    },
+    {
+      id: "retail_store",
+      title: "Comercio & Retail",
+      subtitle: "Catálogo de productos, control de stock por SKU, ventas de mostrador y tienda web.",
+      icon: Store,
+      defaultModules: ["pedidos", "inventarios", "referidos"],
+      iconKey: "store",
+    },
+    {
+      id: "services",
+      title: "Servicios & Citas",
+      subtitle: "Agenda de turnos, gestión de especialistas, reservas online y recordatorios automáticos.",
+      icon: Calendar,
+      defaultModules: ["agendamiento", "turnos", "referidos"],
+      iconKey: "coffee",
+    },
+  ];
+
+  const handleSelectBusinessModel = (model: (typeof businessArchetypes)[0]) => {
+    setBusinessModel(model.id);
+    setSelectedModules(model.defaultModules);
+  };
 
   const handleToggleModule = (key: NectoModuleKey) => {
     setSelectedModules(prev =>
@@ -73,8 +114,8 @@ export default function OnboardingPage() {
         .trim()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, ""),
-      businessType: "restaurant_virtual",
-      iconKey: "utensils",
+      businessType: businessModel,
+      iconKey: businessModel === "restaurant_virtual" ? "utensils" : businessModel === "retail_store" ? "store" : "coffee",
       currency: country === "Colombia" ? "COP" : country === "México" ? "MXN" : "USD",
       city: `${city}, ${country}`,
       channels: {
@@ -83,7 +124,7 @@ export default function OnboardingPage() {
         pos: true,
       },
       kitchenBufferMin: 20,
-      specialty: industry,
+      specialty: businessModel === "restaurant_virtual" ? "Gastronomía & Restaurantes" : businessModel === "retail_store" ? "Comercio & Retail" : "Servicios & Citas",
       activeModules: selectedModules,
     });
 
@@ -97,32 +138,11 @@ export default function OnboardingPage() {
     icon: React.ComponentType<{ className?: string }>;
   }> = [
     {
-      id: "referidos",
-      title: "Referidos",
-      description:
-        "Gestiona programas de lealtad y recomendaciones de clientes para atraer nuevas ventas.",
-      icon: Users,
-    },
-    {
       id: "pedidos",
       title: "Pedidos",
       description:
         "Control centralizado de órdenes entrantes, estados de entrega y facturación rápida.",
       icon: ShoppingBag,
-    },
-    {
-      id: "agendamiento",
-      title: "Agendamiento",
-      description:
-        "Organiza citas y servicios con un calendario inteligente integrado con tu equipo.",
-      icon: Calendar,
-    },
-    {
-      id: "reservas",
-      title: "Reservas",
-      description:
-        "Sistema especializado para locales físicos que requieren gestión de espacios y mesas.",
-      icon: Bookmark,
     },
     {
       id: "inventarios",
@@ -132,11 +152,32 @@ export default function OnboardingPage() {
       icon: Package,
     },
     {
+      id: "reservas",
+      title: "Reservas",
+      description:
+        "Sistema especializado para locales físicos que requieren gestión de espacios y mesas.",
+      icon: Bookmark,
+    },
+    {
+      id: "agendamiento",
+      title: "Agendamiento",
+      description:
+        "Organiza citas y servicios con un calendario inteligente integrado con tu equipo.",
+      icon: Calendar,
+    },
+    {
       id: "turnos",
       title: "Turnos",
       description:
         "Optimiza la jornada laboral de tu personal con cuadrantes y rotaciones automatizadas.",
       icon: Clock,
+    },
+    {
+      id: "referidos",
+      title: "Referidos",
+      description:
+        "Gestiona programas de lealtad y recomendaciones de clientes para atraer nuevas ventas.",
+      icon: Users,
     },
   ];
 
@@ -174,7 +215,7 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main Form Container */}
+      {/* Main Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 space-y-8 flex flex-col justify-center">
         {/* Horizontal Top Stepper */}
         <div className="w-full max-w-2xl mx-auto flex items-center justify-between relative px-2">
@@ -184,7 +225,6 @@ export default function OnboardingPage() {
 
             return (
               <React.Fragment key={s.num}>
-                {/* Step Circle & Label */}
                 <div
                   onClick={() => setStep(s.num)}
                   className="flex flex-col items-center gap-1.5 z-10 cursor-pointer group"
@@ -213,7 +253,6 @@ export default function OnboardingPage() {
                   </span>
                 </div>
 
-                {/* Connecting Line between steps */}
                 {idx < steps.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 -mt-5 transition-colors ${
@@ -226,32 +265,91 @@ export default function OnboardingPage() {
           })}
         </div>
 
-        {/* STEP 3: DATOS DEL NEGOCIO (Exact Match to Figma Screenshot) */}
+        {/* STEP 3: TIPO DE NEGOCIO & DATOS PRINCIPALES */}
         {step === 3 && (
           <div className="space-y-6 animate-fade-in">
             {/* Header */}
             <div className="text-center space-y-1.5 max-w-lg mx-auto">
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-                Datos del negocio
+                Modelo de Negocio & Identidad
               </h1>
               <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal">
-                Cuéntanos un poco más sobre tu empresa para personalizar tu experiencia en Necto.
+                Selecciona tu modelo operativo para configurar automáticamente los módulos y herramientas que necesitas.
               </p>
             </div>
 
-            {/* Centered Form Card */}
-            <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-5">
+            {/* Business Model Selector Cards (Clear Archetypes) */}
+            <div className="space-y-2.5">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
+                1. ¿Qué tipo de negocio operas?
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {businessArchetypes.map(model => {
+                  const isSelected = businessModel === model.id;
+                  const Icon = model.icon;
+
+                  return (
+                    <div
+                      key={model.id}
+                      onClick={() => handleSelectBusinessModel(model)}
+                      className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                        isSelected
+                          ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 shadow-xs"
+                          : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] hover:border-zinc-300 dark:hover:border-zinc-700"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                            isSelected
+                              ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
+                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 text-[#FF3F1A]" />
+                        </div>
+
+                        <div
+                          className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                            isSelected ? "bg-[#FF3F1A] text-white" : "border border-zinc-300"
+                          }`}
+                        >
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                          {model.title}
+                        </h4>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                          {model.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Centered Form Card for Business Details */}
+            <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-8 space-y-5">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 font-bold block">
+                2. Datos de la Empresa
+              </label>
+
               {/* Row 1: Nombre de la empresa */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Nombre de la empresa
+                  Nombre comercial
                 </label>
                 <div className="relative flex items-center">
                   <Building2 className="w-4 h-4 absolute left-3.5 text-zinc-400" />
                   <input
                     type="text"
                     required
-                    placeholder="Ej. Necto Burger & Grill"
+                    placeholder="Ej. Burger House"
                     value={companyName}
                     onChange={e => setCompanyName(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
@@ -259,46 +357,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Row 2: Tipo de Industria & Sitio Web */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Tipo de industria
-                  </label>
-                  <div className="relative flex items-center">
-                    <Layers className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
-                    <select
-                      value={industry}
-                      onChange={e => setIndustry(e.target.value)}
-                      className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
-                    >
-                      <option value="Gastronomía & Restaurantes">Gastronomía & Restaurantes</option>
-                      <option value="Comercio & Retail">Comercio & Retail</option>
-                      <option value="Servicios Profesionales">Servicios Profesionales</option>
-                      <option value="Salud & Bienestar">Salud & Bienestar</option>
-                      <option value="Educación & Cursos">Educación & Cursos</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Sitio web (opcional)
-                  </label>
-                  <div className="relative flex items-center">
-                    <Globe className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                    <input
-                      type="text"
-                      placeholder="https://www.tuempresa.com"
-                      value={website}
-                      onChange={e => setWebsite(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Row 3: País & Ciudad */}
+              {/* Row 2: País & Ciudad */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -311,12 +370,12 @@ export default function OnboardingPage() {
                       onChange={e => setCountry(e.target.value)}
                       className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
                     >
-                      <option value="Colombia">Colombia</option>
-                      <option value="México">México</option>
-                      <option value="Estados Unidos">Estados Unidos</option>
-                      <option value="Argentina">Argentina</option>
-                      <option value="Chile">Chile</option>
-                      <option value="España">España</option>
+                      <option value="Colombia">Colombia (COP $)</option>
+                      <option value="México">México (MXN $)</option>
+                      <option value="Estados Unidos">Estados Unidos (USD $)</option>
+                      <option value="Argentina">Argentina (ARS $)</option>
+                      <option value="Chile">Chile (CLP $)</option>
+                      <option value="España">España (EUR €)</option>
                     </select>
                   </div>
                 </div>
@@ -329,7 +388,7 @@ export default function OnboardingPage() {
                     <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400" />
                     <input
                       type="text"
-                      placeholder="Ej. Bogotá / Ciudad de México"
+                      placeholder="Ej. Bogotá"
                       value={city}
                       onChange={e => setCity(e.target.value)}
                       className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
@@ -338,7 +397,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Row 4: Correo Corporativo & Teléfono */}
+              {/* Row 3: Correo & Teléfono */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -358,7 +417,7 @@ export default function OnboardingPage() {
 
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Teléfono de contacto
+                    Teléfono / WhatsApp
                   </label>
                   <div className="relative flex items-center">
                     <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
@@ -407,7 +466,7 @@ export default function OnboardingPage() {
                     Perfiles de Empresa
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                    Podrás crear múltiples sub-perfiles más adelante.
+                    Podrás añadir sucursales adicionales en cualquier momento.
                   </p>
                 </div>
               </div>
@@ -588,7 +647,7 @@ export default function OnboardingPage() {
                   Módulos Disponibles
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 font-mono">
-                  {selectedModules.length} de {modulesList.length} seleccionados
+                  {selectedModules.length} de {modulesList.length} seleccionados • Recomendados para {businessArchetypes.find(a => a.id === businessModel)?.title || "tu negocio"}
                 </p>
               </div>
             </div>
@@ -702,7 +761,7 @@ export default function OnboardingPage() {
                   <input
                     type="email"
                     value={ownerEmail}
-                    onChange={e => setOwnerEmail(e.target.value)}
+                    onChange={e => setUserEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
                   />
                 </div>
