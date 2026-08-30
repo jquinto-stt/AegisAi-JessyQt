@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useBusiness, BusinessInstance, BusinessIconKey } from "../../context/BusinessContext";
+import { useBusiness, BusinessInstance, BusinessIconKey, NectoModuleKey } from "../../context/BusinessContext";
 import {
   X,
   Check,
@@ -12,6 +12,10 @@ import {
   ShoppingBag,
   Clock,
   Save,
+  Users,
+  Calendar,
+  Bookmark,
+  Package,
 } from "lucide-react";
 
 export const BusinessSettingsModal: React.FC<{
@@ -30,6 +34,10 @@ export const BusinessSettingsModal: React.FC<{
   const [enablePos, setEnablePos] = useState(true);
   const [slug, setSlug] = useState("");
   const [kitchenBufferMin, setKitchenBufferMin] = useState(20);
+  const [activeModules, setActiveModules] = useState<NectoModuleKey[]>([
+    "pedidos",
+    "inventarios",
+  ]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
@@ -43,11 +51,18 @@ export const BusinessSettingsModal: React.FC<{
       setEnablePos(business.channels.pos);
       setSlug(business.slug);
       setKitchenBufferMin(business.kitchenBufferMin);
+      setActiveModules(business.activeModules || ["pedidos", "inventarios"]);
       setConfirmDelete(false);
     }
   }, [business, isOpen]);
 
   if (!isOpen || !business) return null;
+
+  const handleToggleModule = (key: NectoModuleKey) => {
+    setActiveModules(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +75,7 @@ export const BusinessSettingsModal: React.FC<{
       iconKey,
       slug: slug.trim(),
       kitchenBufferMin,
+      activeModules,
       channels: {
         whatsapp: enableWhatsapp,
         web: enableWeb,
@@ -83,13 +99,26 @@ export const BusinessSettingsModal: React.FC<{
     { key: "store", label: "Local / Mostrador" },
   ];
 
+  const modulesList: Array<{
+    id: NectoModuleKey;
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
+    { id: "pedidos", title: "Pedidos", icon: ShoppingBag },
+    { id: "inventarios", title: "Inventarios", icon: Package },
+    { id: "referidos", title: "Referidos", icon: Users },
+    { id: "reservas", title: "Reservas", icon: Bookmark },
+    { id: "agendamiento", title: "Agendamiento", icon: Calendar },
+    { id: "turnos", title: "Turnos", icon: Clock },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans antialiased">
       <div className="bg-white dark:bg-[#0E0E10] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between flex-none">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF3F1A]">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#E53E3E]">
               Parámetros de Sucursal
             </span>
             <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
@@ -170,17 +199,66 @@ export const BusinessSettingsModal: React.FC<{
             </div>
           </div>
 
+          {/* Módulos Activos (Figma Architecture) */}
+          <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                02. Módulos Operativos Habilitados
+              </span>
+              <span className="text-[10px] font-mono text-[#E53E3E]">
+                {activeModules.length} activos
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {modulesList.map(mod => {
+                const isSelected = activeModules.includes(mod.id);
+                const Icon = mod.icon;
+
+                return (
+                  <div
+                    key={mod.id}
+                    onClick={() => handleToggleModule(mod.id)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2 ${
+                      isSelected
+                        ? "border-[#E53E3E] bg-[#FFF5F5] dark:bg-red-950/20 text-zinc-950 dark:text-zinc-50"
+                        : "border-zinc-200 dark:border-zinc-800 opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                          isSelected ? "bg-[#E53E3E] text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-xs font-bold truncate">{mod.title}</span>
+                    </div>
+
+                    <div
+                      className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        isSelected ? "border border-[#E53E3E] text-[#E53E3E]" : "border border-zinc-300"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Canales */}
           <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
             <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-              02. Canales de Entrada
+              03. Canales de Entrada
             </span>
 
             <div className="space-y-2">
-              {/* WhatsApp */}
               <div
                 onClick={() => setEnableWhatsapp(!enableWhatsapp)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enableWhatsapp
                     ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
                     : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
@@ -189,98 +267,60 @@ export const BusinessSettingsModal: React.FC<{
                 <div className="space-y-0.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                      WhatsApp Business con Agente IA
+                      WhatsApp Business IA
                     </span>
                     <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
                       24/7
                     </span>
                   </div>
-                  <p className="text-[11px] text-zinc-400">Atiende y monta comandas automáticamente</p>
                 </div>
                 <div
                   className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
-                    enableWhatsapp ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                    enableWhatsapp ? "bg-[#E53E3E]" : "bg-zinc-300 dark:bg-zinc-700"
                   }`}
                 >
                   {enableWhatsapp && <Check className="w-3 h-3" />}
                 </div>
               </div>
 
-              {/* Web */}
               <div
                 onClick={() => setEnableWeb(!enableWeb)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enableWeb
                     ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
                     : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                 }`}
               >
-                <div className="space-y-0.5">
-                  <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                    Menú Web Directo
-                  </span>
-                  <p className="text-[11px] text-zinc-400">necto.app/{slug || "tu-negocio"}</p>
-                </div>
+                <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                  Menú Web Directo
+                </span>
                 <div
                   className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
-                    enableWeb ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                    enableWeb ? "bg-[#E53E3E]" : "bg-zinc-300 dark:bg-zinc-700"
                   }`}
                 >
                   {enableWeb && <Check className="w-3 h-3" />}
                 </div>
               </div>
 
-              {/* POS */}
               <div
                 onClick={() => setEnablePos(!enablePos)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                   enablePos
                     ? "bg-white dark:bg-zinc-900 border-zinc-900 dark:border-zinc-100"
                     : "bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                 }`}
               >
-                <div className="space-y-0.5">
-                  <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
-                    Punto de Venta Mostrador (POS)
-                  </span>
-                  <p className="text-[11px] text-zinc-400">Toma de comandas en caja y salón</p>
-                </div>
+                <span className="text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                  Punto de Venta Mostrador (POS)
+                </span>
                 <div
                   className={`w-4 h-4 rounded flex items-center justify-center text-white transition-colors ${
-                    enablePos ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                    enablePos ? "bg-[#E53E3E]" : "bg-zinc-300 dark:bg-zinc-700"
                   }`}
                 >
                   {enablePos && <Check className="w-3 h-3" />}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cocina */}
-          <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
-              03. Operación de Cocina KDS
-            </span>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Tiempo Base de Preparación
-              </label>
-              <div className="grid grid-cols-3 gap-2.5">
-                {[15, 20, 30].map(mins => (
-                  <button
-                    key={mins}
-                    type="button"
-                    onClick={() => setKitchenBufferMin(mins)}
-                    className={`py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      kitchenBufferMin === mins
-                        ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white shadow-2xs"
-                        : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
-                    }`}
-                  >
-                    {mins} minutos
-                  </button>
-                ))}
               </div>
             </div>
           </div>
@@ -295,7 +335,7 @@ export const BusinessSettingsModal: React.FC<{
               <button
                 type="button"
                 onClick={() => setConfirmDelete(true)}
-                className="py-2.5 px-4 rounded-xl border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-2 px-3.5 rounded-xl border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Eliminar sucursal</span>
@@ -338,7 +378,7 @@ export const BusinessSettingsModal: React.FC<{
           <button
             type="button"
             onClick={handleSave}
-            className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
+            className="py-2 px-5 rounded-full bg-[#E53E3E] hover:bg-[#D32F2F] text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-98"
           >
             <span>Guardar Parámetros</span>
           </button>

@@ -128,21 +128,27 @@ export default function WorkspacesPage() {
                     <span className="text-zinc-400 dark:text-zinc-500">necto.app/{biz.slug}</span>
                   </div>
 
-                  {/* Active Channels Chips */}
-                  <div className="flex items-center gap-2 pt-1">
+                  {/* Active Modules & Channels Chips */}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    {/* Modules */}
+                    {biz.activeModules && biz.activeModules.map(m => (
+                      <span
+                        key={m}
+                        className="inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                      >
+                        {m}
+                      </span>
+                    ))}
+
+                    {/* Channels */}
                     {biz.channels.whatsapp && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
-                        <MessageSquare className="w-2.5 h-2.5" /> WhatsApp IA
+                        <MessageSquare className="w-2.5 h-2.5" /> WhatsApp
                       </span>
                     )}
                     {biz.channels.web && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
                         <Globe className="w-2.5 h-2.5" /> Web
-                      </span>
-                    )}
-                    {biz.channels.pos && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
-                        <ShoppingBag className="w-2.5 h-2.5" /> POS
                       </span>
                     )}
                   </div>

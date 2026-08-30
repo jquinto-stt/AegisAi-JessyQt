@@ -6,6 +6,14 @@ export type BusinessType =
   | "services"
   | "ecommerce_direct";
 
+export type NectoModuleKey =
+  | "referidos"
+  | "pedidos"
+  | "agendamiento"
+  | "reservas"
+  | "inventarios"
+  | "turnos";
+
 export interface BusinessChannelConfig {
   whatsapp: boolean;
   web: boolean;
@@ -25,6 +33,7 @@ export interface BusinessInstance {
   channels: BusinessChannelConfig;
   kitchenBufferMin: number;
   specialty?: string;
+  activeModules: NectoModuleKey[];
   createdAt: string;
 }
 
@@ -38,6 +47,7 @@ interface BusinessContextType {
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
   deleteBusiness: (id: string) => void;
+  toggleModule: (moduleKey: NectoModuleKey) => void;
 }
 
 const DEFAULT_BUSINESS: BusinessInstance = {
@@ -55,6 +65,7 @@ const DEFAULT_BUSINESS: BusinessInstance = {
   },
   kitchenBufferMin: 20,
   specialty: "Hamburguesas & Comidas Rápidas",
+  activeModules: ["pedidos", "inventarios", "referidos"],
   createdAt: new Date().toISOString(),
 };
 
@@ -66,9 +77,16 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = localStorage.getItem("necto_businesses");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((b: any) => ({
+            ...b,
+            activeModules: b.activeModules || ["pedidos", "inventarios", "referidos"],
+          }));
+        }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn("Error reading businesses from storage", e);
+    }
     return [DEFAULT_BUSINESS];
   });
 
@@ -82,7 +100,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
-  // Sync to localStorage
+  // Save to localStorage
   useEffect(() => {
     try {
       localStorage.setItem("necto_businesses", JSON.stringify(businesses));
@@ -101,18 +119,18 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const newBiz: BusinessInstance = {
       ...data,
-      id: `biz-${Date.now()}`,
+      id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      activeModules: data.activeModules || ["pedidos", "inventarios"],
       createdAt: new Date().toISOString(),
     };
 
-    setBusinesses(prev => [...prev, newBiz]);
+    setBusinesses(prev => [newBiz, ...prev]);
     setActiveBusinessId(newBiz.id);
     return newBiz;
   };
 
   const switchBusiness = (id: string) => {
-    const found = businesses.find(b => b.id === id);
-    if (found) {
+    if (businesses.some(b => b.id === id)) {
       setActiveBusinessId(id);
     }
   };
@@ -129,14 +147,21 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (filtered.length === 0) {
         return [DEFAULT_BUSINESS];
       }
+      if (activeBusinessId === id) {
+        setActiveBusinessId(filtered[0].id);
+      }
       return filtered;
     });
-    if (activeBusinessId === id) {
-      const remaining = businesses.filter(b => b.id !== id);
-      if (remaining.length > 0) {
-        setActiveBusinessId(remaining[0].id);
-      }
-    }
+  };
+
+  const toggleModule = (moduleKey: NectoModuleKey) => {
+    if (!activeBusiness) return;
+    const currentModules = activeBusiness.activeModules || [];
+    const newModules = currentModules.includes(moduleKey)
+      ? currentModules.filter(m => m !== moduleKey)
+      : [...currentModules, moduleKey];
+
+    updateBusiness(activeBusiness.id, { activeModules: newModules });
   };
 
   return (
@@ -151,6 +176,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         switchBusiness,
         updateBusiness,
         deleteBusiness,
+        toggleModule,
       }}
     >
       {children}
@@ -159,9 +185,9 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 };
 
 export const useBusiness = () => {
-  const ctx = useContext(BusinessContext);
-  if (!ctx) {
+  const context = useContext(BusinessContext);
+  if (!context) {
     throw new Error("useBusiness must be used within a BusinessProvider");
   }
-  return ctx;
+  return context;
 };
