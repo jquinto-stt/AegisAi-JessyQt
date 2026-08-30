@@ -12,12 +12,14 @@ export interface BusinessChannelConfig {
   pos: boolean;
 }
 
+export type BusinessIconKey = "utensils" | "flame" | "coffee" | "store" | "chef" | "layers";
+
 export interface BusinessInstance {
   id: string;
   name: string;
   slug: string;
   businessType: BusinessType;
-  logoEmoji: string;
+  iconKey: BusinessIconKey;
   currency: "COP" | "USD" | "MXN" | "ARS";
   city: string;
   channels: BusinessChannelConfig;
@@ -42,7 +44,7 @@ const DEFAULT_BUSINESS: BusinessInstance = {
   name: "Burger House — Sede Principal",
   slug: "burger-house-central",
   businessType: "restaurant_virtual",
-  logoEmoji: "🍔",
+  iconKey: "utensils",
   currency: "COP",
   city: "Bogotá, Colombia",
   channels: {
@@ -51,7 +53,7 @@ const DEFAULT_BUSINESS: BusinessInstance = {
     pos: true,
   },
   kitchenBufferMin: 20,
-  specialty: "Hamburguesas & Combos",
+  specialty: "Hamburguesas & Comidas Rápidas",
   createdAt: new Date().toISOString(),
 };
 

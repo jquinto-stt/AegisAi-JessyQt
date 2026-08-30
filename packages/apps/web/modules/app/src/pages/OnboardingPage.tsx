@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useBusiness, BusinessType } from "../context/BusinessContext";
+import { useBusiness, BusinessType, BusinessIconKey } from "../context/BusinessContext";
+import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import {
   Store,
   Sparkles,
@@ -13,11 +14,14 @@ import {
   Clock,
   MapPin,
   Coins,
-  ShieldCheck,
   ChefHat,
-  Smartphone,
   Flame,
-  CheckCircle2,
+  Coffee,
+  UtensilsCrossed,
+  Layers,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap,
 } from "lucide-react";
 
 export default function OnboardingPage() {
@@ -30,7 +34,7 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("Bogotá, Colombia");
   const [currency, setCurrency] = useState<"COP" | "USD" | "MXN" | "ARS">("COP");
-  const [logoEmoji, setLogoEmoji] = useState("🍔");
+  const [iconKey, setIconKey] = useState<BusinessIconKey>("utensils");
 
   // Step 2: Channels
   const [enableWhatsapp, setEnableWhatsapp] = useState(true);
@@ -39,7 +43,7 @@ export default function OnboardingPage() {
   const [slug, setSlug] = useState("");
 
   // Step 3: Specialty
-  const [specialty, setSpecialty] = useState("Hamburguesas & Comidas Rápidas");
+  const [specialty, setSpecialty] = useState("Hamburguesas, Grill & Fast Food");
 
   // Step 4: Kitchen
   const [kitchenBufferMin, setKitchenBufferMin] = useState(20);
@@ -62,7 +66,7 @@ export default function OnboardingPage() {
       name: name.trim(),
       slug: slug.trim() || `restaurante-${Date.now()}`,
       businessType,
-      logoEmoji,
+      iconKey,
       currency,
       city,
       channels: {
@@ -77,67 +81,91 @@ export default function OnboardingPage() {
     navigate("/");
   };
 
-  const emojiOptions = ["🍔", "🍕", "🍣", "🌮", "☕", "🥩", "🥗", "🍗", "🍦", "🍜"];
+  const iconOptions: Array<{ key: BusinessIconKey; label: string }> = [
+    { key: "utensils", label: "Cocina / Grill" },
+    { key: "flame", label: "Horno / Fuego" },
+    { key: "coffee", label: "Café / Bakery" },
+    { key: "chef", label: "Chef / Autor" },
+    { key: "store", label: "Local / Mostrador" },
+  ];
 
   const specialtyOptions = [
-    { title: "Hamburguesas & Comidas Rápidas", icon: "🍔", desc: "Combos, papas, salsas, bebidas y carnes" },
-    { title: "Pizzería & Empanadas", icon: "🍕", desc: "Masas, quesos, ingredientes y porciones" },
-    { title: "Cafetería & Panadería", icon: "☕", desc: "Pastelería, desayunos, granos y panificados" },
-    { title: "Sushi & Comida Asiática", icon: "🍣", desc: "Rolls, woks, pescados y complementos" },
-    { title: "Gourmet & A la Carta", icon: "🥩", desc: "Cortes de carne, entradas, guarniciones y vinos" },
+    {
+      title: "Hamburguesas, Grill & Fast Food",
+      iconKey: "utensils" as BusinessIconKey,
+      desc: "Combos, salsas, bebidas, carnes y guarniciones rápidas",
+    },
+    {
+      title: "Pizzería, Calzones & Empanadas",
+      iconKey: "flame" as BusinessIconKey,
+      desc: "Masas artesanales, porciones, agregados y bebidas",
+    },
+    {
+      title: "Cafetería, Pastelería & Brunch",
+      iconKey: "coffee" as BusinessIconKey,
+      desc: "Cafés de especialidad, panificados, desayunos y repostería",
+    },
+    {
+      title: "Restaurante A la Carta & Cocina de Autor",
+      iconKey: "chef" as BusinessIconKey,
+      desc: "Entradas, platos principales, maridajes y tiempos de salón",
+    },
   ];
 
   const stepsList = [
-    { num: 1, title: "Tipo & Identidad", subtitle: "Define el nombre y país" },
-    { num: 2, title: "Canales & Agente IA", subtitle: "WhatsApp, Web y POS" },
-    { num: 3, title: "Especialidad & Carta", subtitle: "Plantilla de cocina sugerida" },
-    { num: 4, title: "Operación & Despacho", subtitle: "Tiempos de KDS y preparación" },
+    { num: 1, title: "Identidad & Moneda", subtitle: "Nombre y configuración regional" },
+    { num: 2, title: "Canales de Venta & IA", subtitle: "WhatsApp, Tienda Web y POS" },
+    { num: 3, title: "Especialidad Operativa", subtitle: "Plantilla de carta sugerida" },
+    { num: 4, title: "Cocina & Tiempos KDS", subtitle: "Parámetros de despacho y comandas" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#18181B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white">
-      {/* Top Header */}
-      <header className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#212121] flex items-center justify-between">
+    <div className="min-h-screen bg-[#F4F4F5] dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
+      {/* Top Minimal Header */}
+      <header className="px-6 sm:px-10 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/90 dark:bg-[#18181B]/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white border-2 border-[#190088] dark:border-[#FF3F1A] flex items-center justify-center shadow-xs select-none">
-            <span className="font-black text-xl text-[#FF3F1A] tracking-tighter">N</span>
+          <div className="w-8 h-8 rounded-xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center font-black text-sm select-none tracking-tighter shadow-2xs">
+            N
           </div>
           <div>
-            <span className="font-extrabold text-sm tracking-tight text-zinc-900 dark:text-white">
+            <span className="font-extrabold text-xs tracking-tight text-zinc-900 dark:text-white">
               Necto
             </span>
-            <span className="ml-2 text-xs text-zinc-400 font-mono">Workspace Setup</span>
+            <span className="mx-2 text-zinc-300 dark:text-zinc-700">/</span>
+            <span className="text-xs text-zinc-400 font-medium">Configuración de Negocio</span>
           </div>
         </div>
 
         {businesses.length > 0 && (
           <button
             onClick={() => navigate("/workspaces")}
-            className="text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="text-xs font-bold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
           >
-            ← Volver a Mis Negocios
+            <span>Volver a Mis Negocios</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         )}
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 flex flex-col md:flex-row gap-8 items-start justify-center">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-8 md:p-12 flex flex-col md:flex-row gap-8 items-start justify-center">
         {/* Left Progress Column */}
-        <div className="w-full md:w-72 flex-none space-y-6">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-[#FF3F1A]">
-              Onboarding Guiado
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-100 tracking-tight mt-1">
-              Configura tu Negocio
+        <div className="w-full md:w-80 flex-none space-y-6">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-900/60 text-[#FF3F1A] text-[10px] font-black uppercase tracking-wider font-mono">
+              <Sparkles className="w-3 h-3" />
+              <span>Nuevo Espacio</span>
+            </div>
+            <h1 className="text-2xl font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
+              Crear Negocio
             </h1>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              Personalizaremos el tablero de operaciones y la cocina para tu tipo de negocio.
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Configura el entorno de operaciones y sincroniza cocina, canales y catálogo.
             </p>
           </div>
 
           {/* Stepper Vertical */}
-          <div className="space-y-2 bg-white dark:bg-[#212121] p-4 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xs">
+          <div className="space-y-1.5 bg-white dark:bg-[#18181B] p-3.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
             {stepsList.map(s => {
               const isCurrent = step === s.num;
               const isPast = step > s.num;
@@ -145,128 +173,140 @@ export default function OnboardingPage() {
               return (
                 <div
                   key={s.num}
-                  className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all ${
+                  className={`flex items-center gap-3 p-2.5 rounded-xl transition-all ${
                     isCurrent
-                      ? "bg-orange-50/60 dark:bg-orange-950/30 text-zinc-900 dark:text-zinc-100 font-bold"
-                      : "text-zinc-500 dark:text-zinc-400"
+                      ? "bg-zinc-100 dark:bg-zinc-800/70 text-zinc-950 dark:text-zinc-50 font-bold"
+                      : "text-zinc-400 dark:text-zinc-500"
                   }`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black transition-all ${
+                    className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black transition-all ${
                       isPast
-                        ? "bg-[#FF3F1A] text-white"
+                        ? "bg-[#FF3F1A] text-white shadow-2xs"
                         : isCurrent
-                        ? "bg-orange-100 dark:bg-orange-900 text-[#FF3F1A] border-2 border-[#FF3F1A]"
-                        : "bg-slate-100 dark:bg-zinc-800 text-zinc-400"
+                        ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
                     }`}
                   >
-                    {isPast ? <Check className="w-4 h-4" /> : s.num}
+                    {isPast ? <Check className="w-3.5 h-3.5" /> : s.num}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold truncate leading-tight">{s.title}</p>
-                    <p className="text-[10px] text-zinc-400 truncate">{s.subtitle}</p>
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate mt-0.5">
+                      {s.subtitle}
+                    </p>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div className="p-4 rounded-3xl bg-zinc-900 text-white dark:bg-zinc-800/80 space-y-2">
-            <div className="flex items-center gap-2 text-xs font-black text-[#FF3F1A]">
-              <Sparkles className="w-4 h-4" />
-              <span>Multi-Negocio SaaS</span>
+          {/* Enterprise Badge */}
+          <div className="p-4 rounded-2xl bg-zinc-900 dark:bg-zinc-900 text-zinc-200 border border-zinc-800 space-y-2">
+            <div className="flex items-center gap-2 text-xs font-black text-white">
+              <ShieldCheck className="w-4 h-4 text-[#FF3F1A]" />
+              <span>Multi-Tenant Enterprise</span>
             </div>
-            <p className="text-[11px] text-zinc-300 leading-relaxed">
-              Podrás crear y gestionar múltiples restaurantes o locales desde tu misma cuenta en cualquier momento.
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              Cada negocio cuenta con base de datos de stock, roles de cocina y enlaces de pedidos independientes.
             </p>
           </div>
         </div>
 
         {/* Right Form Card */}
-        <div className="flex-1 w-full bg-white dark:bg-[#212121] rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm p-6 sm:p-8 flex flex-col justify-between min-h-[520px]">
-          {/* STEP 1: TIPO & IDENTIDAD */}
+        <div className="flex-1 w-full bg-white dark:bg-[#18181B] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-8 flex flex-col justify-between min-h-[540px]">
+          {/* STEP 1: IDENTIDAD & MONEDA */}
           {step === 1 && (
             <div className="space-y-6 animate-fade-in">
-              <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  1. Tipo de Negocio & Identidad
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
+                  Paso 1 de 4
+                </span>
+                <h2 className="text-lg font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  Identidad & Configuración Regional
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Selecciona la vertical operativa y los datos principales del establecimiento.
+                  Establece el nombre comercial y los parámetros contables del negocio.
                 </p>
               </div>
 
-              {/* Business Type Cards */}
+              {/* Vertical Selector */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Selecciona la Vertical de Negocio
+                  Vertical Operativa
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     onClick={() => setBusinessType("restaurant_virtual")}
                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-start gap-3.5 ${
                       businessType === "restaurant_virtual"
-                        ? "border-[#FF3F1A] bg-orange-50/40 dark:bg-orange-950/20 shadow-xs"
-                        : "border-slate-200 dark:border-zinc-800 opacity-60"
+                        ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 shadow-2xs"
+                        : "border-zinc-200 dark:border-zinc-800 opacity-60"
                     }`}
                   >
-                    <span className="text-3xl">🍔</span>
+                    <div className="w-9 h-9 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center flex-none">
+                      <UtensilsCrossed className="w-5 h-5" />
+                    </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-black text-zinc-900 dark:text-zinc-100">Restaurante / Dark Kitchen</p>
+                        <p className="text-xs font-black text-zinc-950 dark:text-zinc-50">Restaurante / Dark Kitchen</p>
                         <span className="text-[9px] bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded font-black font-mono">Activo</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
-                        Gestión de comandas, cocina KDS, escandallo de ingredientes y delivery.
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+                        Tablero de pedidos, KDS de cocina, escandallos e impresiones térmicas.
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-zinc-800/60 opacity-40 flex items-start gap-3.5 cursor-not-allowed">
-                    <span className="text-3xl">👗</span>
+                  <div className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 opacity-40 flex items-start gap-3.5 cursor-not-allowed">
+                    <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center flex-none">
+                      <ShoppingBag className="w-5 h-5" />
+                    </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Retail & Tienda</p>
-                        <span className="text-[9px] bg-slate-200 dark:bg-zinc-700 px-1.5 py-0.2 rounded font-mono">Próximamente</span>
+                        <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Retail & Comercio</p>
+                        <span className="text-[9px] bg-zinc-200 dark:bg-zinc-700 px-1.5 py-0.2 rounded font-mono">Próximamente</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
-                        Stock por tallas/colores, códigos de barra y ventas en mostrador.
+                      <p className="text-[11px] text-zinc-400 mt-1 leading-snug">
+                        Inventario por tallas, SKU de códigos de barra y mostrador retail.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Name & Emoji */}
+              {/* Name & Icon Key */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Nombre del Restaurante / Marca *
+                  Nombre Comercial & Distintivo *
                 </label>
-                <div className="flex items-center gap-3">
-                  <select
-                    value={logoEmoji}
-                    onChange={e => setLogoEmoji(e.target.value)}
-                    className="w-14 h-12 text-2xl bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-center cursor-pointer focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
-                  >
-                    {emojiOptions.map(em => (
-                      <option key={em} value={em}>
-                        {em}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex items-center gap-2.5">
+                  <div className="relative flex-none">
+                    <select
+                      value={iconKey}
+                      onChange={e => setIconKey(e.target.value as any)}
+                      className="px-3 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-800 dark:text-zinc-200 cursor-pointer focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
+                    >
+                      {iconOptions.map(opt => (
+                        <option key={opt.key} value={opt.key}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     required
-                    placeholder="Ej: La Birra Burger & Co."
+                    placeholder="Ej: La Birra Burger & Grill"
                     value={name}
                     onChange={e => handleNameChange(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-sm font-semibold text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
+                    className="flex-1 px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-950 dark:text-zinc-50 placeholder-zinc-400 focus:ring-2 focus:ring-[#FF3F1A]/30 focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* City & Currency */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#FF3F1A]" /> Ubicación / Ciudad
@@ -276,18 +316,18 @@ export default function OnboardingPage() {
                     value={city}
                     onChange={e => setCity(e.target.value)}
                     placeholder="Ej: Bogotá, Colombia"
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
+                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                    <Coins className="w-3.5 h-3.5 text-[#FF3F1A]" /> Moneda de Facturación
+                    <Coins className="w-3.5 h-3.5 text-[#FF3F1A]" /> Moneda de Venta
                   </label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-zinc-900 dark:text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 font-bold focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 cursor-pointer"
                   >
                     <option value="COP">Peso Colombiano (COP $)</option>
                     <option value="USD">Dólar Estadounidense (USD $)</option>
@@ -302,12 +342,15 @@ export default function OnboardingPage() {
           {/* STEP 2: CANALES & IA */}
           {step === 2 && (
             <div className="space-y-5 animate-fade-in">
-              <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  2. Canales de Venta & Asistente IA
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
+                  Paso 2 de 4
+                </span>
+                <h2 className="text-lg font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  Canales de Captura & Agente IA
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Activa los canales por donde tus clientes podrán realizar pedidos.
+                  Elige los canales de venta que sincronizarán pedidos con tu cocina.
                 </p>
               </div>
 
@@ -315,25 +358,27 @@ export default function OnboardingPage() {
                 {/* WhatsApp IA */}
                 <div
                   onClick={() => setEnableWhatsapp(!enableWhatsapp)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3.5 ${
                     enableWhatsapp
-                      ? "border-[#FF3F1A] bg-orange-50/30 dark:bg-orange-950/20"
-                      : "border-slate-200 dark:border-zinc-800 opacity-60"
+                      ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
+                      : "border-zinc-200 dark:border-zinc-800 opacity-60"
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-bold">
-                      <MessageSquare className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white flex items-center justify-center font-bold">
+                      <MessageSquare className="w-4 h-4 text-emerald-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">WhatsApp con Asistente IA</p>
-                        <span className="text-[9px] bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded font-black font-mono">Agente 24/7</span>
+                        <p className="text-xs font-black text-zinc-950 dark:text-zinc-50">WhatsApp con Asistente IA</p>
+                        <span className="text-[9px] bg-zinc-900 dark:bg-zinc-700 text-white px-1.5 py-0.2 rounded font-mono">Agente 24/7</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400">Atiende clientes, procesa audio/texto y carga la comanda al tablero.</p>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Interpreta audio/texto de clientes y monta el pedido con confirmación automática.
+                      </p>
                     </div>
                   </div>
-                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enableWhatsapp ? "bg-[#FF3F1A]" : "bg-slate-300 dark:bg-zinc-700"}`}>
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enableWhatsapp ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
                     {enableWhatsapp && <Check className="w-3.5 h-3.5" />}
                   </div>
                 </div>
@@ -341,38 +386,40 @@ export default function OnboardingPage() {
                 {/* Web Direct Store */}
                 <div
                   onClick={() => setEnableWeb(!enableWeb)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3.5 ${
                     enableWeb
-                      ? "border-[#FF3F1A] bg-orange-50/30 dark:bg-orange-950/20"
-                      : "border-slate-200 dark:border-zinc-800 opacity-60"
+                      ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
+                      : "border-zinc-200 dark:border-zinc-800 opacity-60"
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-2xl bg-blue-500 text-white flex items-center justify-center font-bold">
-                      <Globe className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white flex items-center justify-center font-bold">
+                      <Globe className="w-4 h-4 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">Menú Web Directo</p>
-                      <p className="text-[11px] text-zinc-400">Página propia para tus clientes sin comisiones de apps externas.</p>
+                      <p className="text-xs font-black text-zinc-950 dark:text-zinc-50">Menú Web Directo</p>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Tienda web propia con checkout directo sin comisiones externas.
+                      </p>
                     </div>
                   </div>
-                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enableWeb ? "bg-[#FF3F1A]" : "bg-slate-300 dark:bg-zinc-700"}`}>
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enableWeb ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
                     {enableWeb && <Check className="w-3.5 h-3.5" />}
                   </div>
                 </div>
 
                 {/* Subdomain Input */}
                 {enableWeb && (
-                  <div className="p-3.5 bg-slate-50 dark:bg-zinc-800/60 rounded-2xl border border-slate-200 dark:border-zinc-700 space-y-1">
-                    <label className="text-[10px] font-bold text-zinc-400 uppercase">Subdominio de tu Restaurante</label>
+                  <div className="p-3.5 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200/80 dark:border-zinc-700/80 space-y-1">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase font-mono">Enlace Web del Negocio</label>
                     <div className="flex items-center text-xs font-mono text-zinc-500 dark:text-zinc-400">
                       <span>https://necto.app/</span>
                       <input
                         type="text"
                         value={slug}
                         onChange={e => setSlug(e.target.value)}
-                        placeholder="mi-restaurante"
-                        className="flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 font-bold border-b border-zinc-300 dark:border-zinc-600 focus:border-[#FF3F1A] focus:outline-none pl-1"
+                        placeholder="tu-marca"
+                        className="flex-1 bg-transparent text-zinc-950 dark:text-zinc-50 font-bold border-b border-zinc-300 dark:border-zinc-600 focus:border-[#FF3F1A] focus:outline-none pl-1"
                       />
                     </div>
                   </div>
@@ -381,22 +428,24 @@ export default function OnboardingPage() {
                 {/* POS Mostrador */}
                 <div
                   onClick={() => setEnablePos(!enablePos)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3.5 ${
                     enablePos
-                      ? "border-[#FF3F1A] bg-orange-50/30 dark:bg-orange-950/20"
-                      : "border-slate-200 dark:border-zinc-800 opacity-60"
+                      ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20"
+                      : "border-zinc-200 dark:border-zinc-800 opacity-60"
                   }`}
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-9 h-9 rounded-2xl bg-zinc-900 text-white flex items-center justify-center font-bold">
-                      <ShoppingBag className="w-4 h-4" />
+                    <div className="w-9 h-9 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white flex items-center justify-center font-bold">
+                      <ShoppingBag className="w-4 h-4 text-zinc-300" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">POS Mostrador / Teléfono</p>
-                      <p className="text-[11px] text-zinc-400">Toma manual ágil para cajeros y personal de salón.</p>
+                      <p className="text-xs font-black text-zinc-950 dark:text-zinc-50">POS Mostrador & Teléfono</p>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Toma rápida de comandas en salón, caja o pedidos telefónicos.
+                      </p>
                     </div>
                   </div>
-                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enablePos ? "bg-[#FF3F1A]" : "bg-slate-300 dark:bg-zinc-700"}`}>
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-white ${enablePos ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"}`}>
                     {enablePos && <Check className="w-3.5 h-3.5" />}
                   </div>
                 </div>
@@ -404,15 +453,18 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 3: ESPECIALIDAD & CARTA */}
+          {/* STEP 3: ESPECIALIDAD */}
           {step === 3 && (
             <div className="space-y-5 animate-fade-in">
-              <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  3. Especialidad Gastronómica
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
+                  Paso 3 de 4
+                </span>
+                <h2 className="text-lg font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  Especialidad Operativa & Carta Base
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Selecciona tu tipo de carta para pre-cargar categorías e insumos sugeridos.
+                  Selecciona la tipología de cocina para inicializar categorías e insumos sugeridos.
                 </p>
               </div>
 
@@ -421,17 +473,19 @@ export default function OnboardingPage() {
                   <div
                     key={opt.title}
                     onClick={() => setSpecialty(opt.title)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3.5 ${
                       specialty === opt.title
-                        ? "border-[#FF3F1A] bg-orange-50/40 dark:bg-orange-950/30 text-zinc-900 dark:text-zinc-100 shadow-2xs"
-                        : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 text-zinc-600 dark:text-zinc-400"
+                        ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 text-zinc-950 dark:text-zinc-50 shadow-2xs"
+                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     <div className="flex items-center gap-3.5">
-                      <span className="text-2xl">{opt.icon}</span>
+                      <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center flex-none">
+                        <BusinessIcon iconKey={opt.iconKey} className="w-4 h-4 text-[#FF3F1A]" />
+                      </div>
                       <div>
-                        <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">{opt.title}</p>
-                        <p className="text-[10px] text-zinc-400">{opt.desc}</p>
+                        <p className="text-xs font-black text-zinc-950 dark:text-zinc-50">{opt.title}</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">{opt.desc}</p>
                       </div>
                     </div>
                     {specialty === opt.title && (
@@ -448,12 +502,15 @@ export default function OnboardingPage() {
           {/* STEP 4: COCINA & TIEMPOS */}
           {step === 4 && (
             <div className="space-y-6 animate-fade-in">
-              <div>
-                <h2 className="text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight">
-                  4. Operación de Cocina & Tiempos KDS
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
+                  Paso 4 de 4
+                </span>
+                <h2 className="text-lg font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  Tiempos de Cocina & KDS
                 </h2>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Ajusta la velocidad estimada de preparación para tus clientes.
+                  Establece el tiempo estándar de despacho para clientes y repartidores.
                 </p>
               </div>
 
@@ -461,7 +518,7 @@ export default function OnboardingPage() {
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                  <span>Tiempo Base de Preparación</span>
+                  <span>Tiempo Estándar de Preparación</span>
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   {[15, 20, 30].map(mins => (
@@ -471,29 +528,31 @@ export default function OnboardingPage() {
                       onClick={() => setKitchenBufferMin(mins)}
                       className={`p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                         kitchenBufferMin === mins
-                          ? "border-[#FF3F1A] bg-orange-50/40 dark:bg-orange-950/30 text-[#FF3F1A] font-black shadow-2xs"
-                          : "border-slate-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold"
+                          ? "border-[#FF3F1A] bg-orange-50/20 dark:bg-orange-950/20 text-[#FF3F1A] font-black shadow-2xs"
+                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold"
                       }`}
                     >
                       <p className="text-lg font-black">{mins} min</p>
-                      <p className="text-[10px] opacity-70">Despacho estándar</p>
+                      <p className="text-[10px] opacity-70">Despacho base</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Summary Card */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-                  Resumen de Lanzamiento
+              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/80 dark:border-zinc-700/80 space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
+                  Resumen de Despliegue
                 </span>
                 <div className="flex items-center gap-3.5">
-                  <span className="text-3xl">{logoEmoji}</span>
+                  <div className="w-10 h-10 rounded-xl bg-zinc-950 dark:bg-zinc-800 text-white flex items-center justify-center flex-none">
+                    <BusinessIcon iconKey={iconKey} className="w-5 h-5 text-[#FF3F1A]" />
+                  </div>
                   <div>
-                    <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-100">
+                    <h4 className="font-black text-sm text-zinc-950 dark:text-zinc-50">
                       {name || "Nuevo Restaurante"}
                     </h4>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-zinc-400 mt-0.5">
                       {specialty} • {city} • {currency}
                     </p>
                   </div>
@@ -503,12 +562,12 @@ export default function OnboardingPage() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="pt-6 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-3 mt-auto">
+          <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3 mt-auto">
             {step > 1 ? (
               <button
                 type="button"
                 onClick={() => setStep(s => s - 1)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-zinc-700 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Atrás</span>
@@ -522,10 +581,10 @@ export default function OnboardingPage() {
                 type="button"
                 disabled={step === 1 && !name.trim()}
                 onClick={() => setStep(s => s + 1)}
-                className={`py-3 px-6 rounded-2xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                className={`py-3 px-6 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
                   step === 1 && !name.trim()
-                    ? "bg-slate-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
-                    : "bg-[#FF3F1A] hover:bg-[#e03413] text-white shadow-sm active:scale-95"
+                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                    : "bg-[#FF3F1A] hover:bg-[#e03413] text-white shadow-2xs active:scale-95"
                 }`}
               >
                 <span>Continuar</span>
@@ -535,10 +594,10 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleFinish}
-                className="py-3 px-7 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+                className="py-3 px-7 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black shadow-sm transition-all flex items-center gap-2 cursor-pointer active:scale-95"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Lanzar Workspace 🚀</span>
+                <span>Lanzar Workspace</span>
               </button>
             )}
           </div>
