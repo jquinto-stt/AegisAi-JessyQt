@@ -706,7 +706,7 @@ function Footer() {
       <div className="bg-[#FF3F1A] dark:bg-[#212121] relative transition-colors">
         <div className="bg-[#190088] dark:bg-[#FF3F1A] rounded-t-[32px] text-center py-3.5 px-6 transition-colors shadow-inner">
           <p className="text-white text-[13px] font-bold tracking-wide">
-            © 2026 Necto. Plataforma de Operaciones y Gestión para Restaurantes. Todos los derechos reservados.
+            2025@Todos los derechos reservados
           </p>
         </div>
       </div>
