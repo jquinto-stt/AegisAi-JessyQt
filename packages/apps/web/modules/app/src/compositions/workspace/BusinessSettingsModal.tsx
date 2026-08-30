@@ -378,7 +378,7 @@ export const BusinessSettingsModal: React.FC<{
           <button
             type="button"
             onClick={handleSave}
-            className="py-2 px-5 rounded-full bg-[#E53E3E] hover:bg-[#D32F2F] text-white text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-98"
+            className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
           >
             <span>Guardar Parámetros</span>
           </button>
