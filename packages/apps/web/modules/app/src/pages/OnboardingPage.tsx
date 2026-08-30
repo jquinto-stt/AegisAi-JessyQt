@@ -809,199 +809,108 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Column: High-End Enterprise SaaS Dashboard Simulator */}
-        <div className="lg:col-span-5 bg-zinc-100/80 dark:bg-[#0C0C0E] p-6 sm:p-8 flex flex-col justify-between space-y-6 overflow-hidden relative border-t lg:border-t-0">
-          {/* Subtle Ambient Background Light */}
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#FF3F1A]/5 rounded-full blur-3xl pointer-events-none" />
+        {/* Right Column: Aspirational Client-First Visual Showcase */}
+        <div className="lg:col-span-5 relative bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
+          {/* High-Resolution Background Photography */}
+          <img
+            src={
+              step === 2
+                ? "/whatsapp-meta-hero.jpg"
+                : step === 3
+                ? "/onboarding-operations.jpg"
+                : activeArchetype.image
+            }
+            alt={activeArchetype.title}
+            className="absolute inset-0 w-full h-full object-cover opacity-35 dark:opacity-30 transition-all duration-700 scale-105"
+          />
 
-          {/* Header Bar of the Simulator */}
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#FF3F1A]" />
-              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-900 dark:text-zinc-200 font-bold">
-                Necto Operations Console
-              </span>
+          {/* Dark Gradient Overlay for optimal readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-zinc-950/40" />
+
+          {/* Top Brand & Trust Badge */}
+          <div className="relative z-10 flex items-center justify-between">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white text-xs font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span>Plataforma Todo-en-Uno</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-zinc-500 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-2 py-0.5 rounded-md">
-                18ms · Latency
+
+            <span className="text-[11px] font-mono text-zinc-400 uppercase tracking-wider">
+              Necto Business
+            </span>
+          </div>
+
+          {/* Center Value Content */}
+          <div className="relative z-10 space-y-6 my-auto py-8">
+            <div className="space-y-3">
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF3F1A]">
+                {step === 1
+                  ? activeArchetype.title
+                  : step === 2
+                  ? "Canal Oficial WhatsApp & Meta"
+                  : "Operaciones Inteligentes"}
               </span>
-              <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800/80 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Sync
-              </span>
+
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                {step === 1
+                  ? `La forma más simple y potente de gestionar ${companyName.trim() || "tu negocio"}.`
+                  : step === 2
+                  ? "Tus clientes piden por WhatsApp. Tu equipo despacha al instante."
+                  : "Todo tu negocio sincronizado en un solo lugar."}
+              </h2>
+
+              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed max-w-md">
+                {step === 1
+                  ? activeArchetype.tagline
+                  : step === 2
+                  ? "Atención automatizada 24/7, confirmación de pedidos y reservas en tiempo real sin pagar comisiones a terceros."
+                  : "Conecta ventas, control de inventario, cocina y personal para ahorrar tiempo y evitar errores en cada turno."}
+              </p>
+            </div>
+
+            {/* Feature Highlights Grid */}
+            <div className="space-y-2.5 pt-2">
+              {(step === 1
+                ? [
+                    "Diseñado específicamente para tu modelo de negocio",
+                    "Comienza a operar en minutos sin configuraciones difíciles",
+                    "Accesible desde cualquier dispositivo (tablet, celular o PC)",
+                  ]
+                : step === 2
+                ? [
+                    "API oficial sin riesgo de bloqueo de tu número",
+                    "Envío de cartas, menús y confirmaciones automáticas",
+                    "Tus clientes no tienen que descargar ninguna app extra",
+                  ]
+                : [
+                    "Activa o desactiva módulos cuando lo necesites",
+                    "Alertas automáticas de productos e insumos agotados",
+                    "Métricas claras de ventas para tomar mejores decisiones",
+                  ]
+              ).map((benefit, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/5 backdrop-blur-md border border-white/10 text-xs text-zinc-200"
+                >
+                  <div className="w-5 h-5 rounded-full bg-[#FF3F1A]/20 text-[#FF3F1A] flex items-center justify-center flex-none">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                  <span>{benefit}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Main Simulated App Window */}
-          <div className="rounded-2xl border border-zinc-200/90 dark:border-zinc-800 bg-white dark:bg-[#121214] shadow-xl overflow-hidden text-xs relative z-10 flex flex-col">
-            {/* Window Titlebar */}
-            <div className="px-4 py-2.5 bg-zinc-50 dark:bg-zinc-900/90 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
-              </div>
-              <div className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 truncate max-w-[240px] px-3 py-0.5 rounded-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/80">
-                https://app.necto.cloud/w/{companyName ? companyName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-") : "workspace"}
-              </div>
-              <div className="text-[10px] font-mono text-zinc-400 uppercase font-bold">
-                PROD
-              </div>
-            </div>
-
-            {/* Inner Dashboard Layout (Mini Sidebar + Main Dashboard) */}
-            <div className="grid grid-cols-12 min-h-[360px]">
-              {/* Mini Sidebar (3 cols) */}
-              <div className="col-span-4 sm:col-span-3 bg-zinc-50/70 dark:bg-zinc-900/50 border-r border-zinc-200 dark:border-zinc-800/80 p-3 flex flex-col justify-between">
-                <div className="space-y-3">
-                  {/* Brand Header */}
-                  <div className="flex items-center gap-2 pb-2.5 border-b border-zinc-200 dark:border-zinc-800">
-                    <div className="w-7 h-7 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs shadow-2xs flex-none">
-                      {companyName ? companyName.charAt(0).toUpperCase() : "N"}
-                    </div>
-                    <div className="truncate">
-                      <p className="font-bold text-zinc-900 dark:text-white text-[11px] truncate leading-tight">
-                        {companyName.trim() || "Mi Negocio"}
-                      </p>
-                      <p className="text-[9px] font-mono text-zinc-400 truncate">
-                        {country}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Dynamic Module Nav Items */}
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 px-1 font-bold">
-                      Módulos
-                    </p>
-                    {MODULE_DEFINITIONS.filter(m => selectedModules.includes(m.id)).map((m, idx) => (
-                      <div
-                        key={m.id}
-                        className={`px-2 py-1 rounded-md text-[10px] font-medium flex items-center justify-between transition-colors ${
-                          idx === 0
-                            ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold"
-                            : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60"
-                        }`}
-                      >
-                        <span className="truncate">{m.title.split(" ")[0]}</span>
-                        {idx === 0 && <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A]" />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* WhatsApp Status Indicator in Sidebar */}
-                <div className="p-2 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 space-y-1">
-                  <div className="flex items-center justify-between text-[9px] font-mono">
-                    <span className="text-zinc-400 font-bold">WhatsApp API</span>
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isMetaConnected ? "bg-emerald-500 animate-ping" : "bg-amber-400"
-                      }`}
-                    />
-                  </div>
-                  <p className="text-[9px] font-bold text-zinc-700 dark:text-zinc-300 truncate">
-                    {isMetaConnected ? "Meta Cloud Active" : "Standby"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Main Content Area (8/9 cols) */}
-              <div className="col-span-8 sm:col-span-9 p-3.5 sm:p-4 space-y-3.5 bg-white dark:bg-[#121214]">
-                {/* Top Metrics Row */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[9px] font-mono uppercase text-zinc-400 font-bold block">
-                      Operación Hoy
-                    </span>
-                    <p className="text-xs font-bold text-zinc-950 dark:text-white font-mono mt-0.5">
-                      {currencyForCountry(country) === "COP"
-                        ? "$ 1.845.000"
-                        : currencyForCountry(country) === "MXN"
-                        ? "$ 18.450"
-                        : "$ 1,240 USD"}
-                    </p>
-                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-mono">
-                      +14.2% vs ayer
-                    </span>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800/80">
-                    <span className="text-[9px] font-mono uppercase text-zinc-400 font-bold block">
-                      Canal WhatsApp
-                    </span>
-                    <p className="text-xs font-bold text-zinc-950 dark:text-white font-mono mt-0.5">
-                      {isMetaConnected ? "99.4% Delivery" : "0 msgs"}
-                    </p>
-                    <span className="text-[9px] text-zinc-500 font-mono">
-                      {isMetaConnected ? "Cloud API Online" : "Sin vincular"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Live Activity Feed / Transaction Stream */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-mono uppercase text-zinc-400 font-bold tracking-wider">
-                      Flujo Operativo en Tiempo Real
-                    </span>
-                    <span className="text-[9px] font-mono text-[#FF3F1A] font-bold">
-                      {activeArchetype.category}
-                    </span>
-                  </div>
-
-                  {/* Active Event Card */}
-                  <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800/90 space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-mono font-bold text-zinc-950 dark:text-white">
-                        {activeArchetype.mockOrder.id}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
-                        {activeArchetype.mockOrder.badge}
-                      </span>
-                    </div>
-
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-snug">
-                      {activeArchetype.mockOrder.item}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-1 border-t border-zinc-200/60 dark:border-zinc-800/60 text-[10px]">
-                      <span className="text-zinc-500 dark:text-zinc-400 text-[10px]">
-                        {activeArchetype.mockOrder.detail}
-                      </span>
-                      <span className="font-mono font-bold text-zinc-900 dark:text-white">
-                        {activeArchetype.mockOrder.price}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Secondary Historical Event */}
-                  <div className="p-2.5 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/30 border border-zinc-200/50 dark:border-zinc-800/50 flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-none" />
-                      <span className="text-zinc-600 dark:text-zinc-400 truncate">
-                        Sincronización de Stock & Comandas OK
-                      </span>
-                    </div>
-                    <span className="font-mono text-zinc-400 text-[9px] flex-none">
-                      hace 2m
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Security / Architecture Note */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 flex items-center gap-3 relative z-10 shadow-2xs">
-            <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 flex items-center justify-center flex-none">
-              <Shield className="w-4 h-4 text-[#FF3F1A]" />
+          {/* Bottom Social Proof Card */}
+          <div className="relative z-10 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white text-zinc-950 flex items-center justify-center font-bold text-sm flex-none shadow-sm">
+              {companyName ? companyName.charAt(0).toUpperCase() : "N"}
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs font-bold text-zinc-950 dark:text-white">Infraestructura Necto Multi-Tenant</p>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                Espacio aislado con encriptación TLS 1.3 y réplica continua en Cloud.
+              <p className="text-xs font-bold text-white">
+                {companyName.trim() || "Tu nuevo espacio en Necto"}
+              </p>
+              <p className="text-[11px] text-zinc-300">
+                {country} · {selectedModules.length} módulos listos para usar
               </p>
             </div>
           </div>
