@@ -584,23 +584,21 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <div className="md:col-span-5 bg-gradient-to-br from-zinc-50 to-orange-50/30 dark:from-zinc-900 dark:to-orange-950/20 p-8 flex flex-col items-center justify-center text-center border-t md:border-t-0 md:border-l border-zinc-200/80 dark:border-zinc-800/80">
-                <div className="w-44 h-44 rounded-3xl bg-white dark:bg-zinc-800 shadow-xl border border-zinc-200/80 dark:border-zinc-700/80 p-5 flex flex-col items-center justify-center gap-3 group hover:scale-102 transition-transform">
-                  <div className="w-14 h-14 rounded-2xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center shadow-md font-black text-xl">
-                    N
-                  </div>
-                  <div className="flex items-center gap-1 text-xs font-mono font-bold text-zinc-400">
-                    <span>X</span>
-                    <span className="text-blue-500 font-black">Meta</span>
-                  </div>
-                </div>
+              <div className="md:col-span-5 relative overflow-hidden border-t md:border-t-0 md:border-l border-zinc-200/80 dark:border-zinc-800/80">
+                {/* Hero Image */}
+                <img
+                  src="/whatsapp-meta-hero.jpg"
+                  alt="Necto WhatsApp Business Integration"
+                  className="w-full h-full object-cover min-h-[300px]"
+                />
 
-                <div className="mt-6 space-y-1">
-                  <p className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF3F1A]">
+                {/* Bottom overlay text */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A]">
                     NECTO X META
                   </p>
-                  <p className="text-xs text-zinc-400 italic max-w-[220px]">
-                    "La forma más potente de conectar con tus clientes."
+                  <p className="text-xs text-white/80 mt-0.5 max-w-[240px]">
+                    La forma más potente de conectar con tus clientes.
                   </p>
                 </div>
               </div>
