@@ -37,6 +37,7 @@ interface ArchetypeConfig {
   title: string;
   category: string;
   tagline: string;
+  image: string;
   icon: React.ComponentType<{ className?: string }>;
   defaultModules: NectoModuleKey[];
   iconKey: BusinessIconKey;
@@ -56,6 +57,7 @@ const ARCHETYPES: ArchetypeConfig[] = [
     title: "Restaurante & Gastronomía",
     category: "Food & Beverage",
     tagline: "KDS en cocina, comandas en tiempo real, escandallo y delivery WhatsApp.",
+    image: "/onboarding-restaurant.jpg",
     icon: UtensilsCrossed,
     defaultModules: ["pedidos", "inventarios", "reservas"],
     iconKey: "utensils",
@@ -73,6 +75,7 @@ const ARCHETYPES: ArchetypeConfig[] = [
     title: "Comercio & Retail",
     category: "E-Commerce / Store",
     tagline: "Control de stock multialmacén, variantes por SKU y catálogo en línea sincronizado.",
+    image: "/onboarding-retail.jpg",
     icon: Store,
     defaultModules: ["pedidos", "inventarios", "referidos"],
     iconKey: "store",
@@ -90,6 +93,7 @@ const ARCHETYPES: ArchetypeConfig[] = [
     title: "Servicios & Citas",
     category: "Professional Services",
     tagline: "Agenda automatizada por especialista, turnos inteligentes y recordatorios vía WhatsApp.",
+    image: "/onboarding-services.jpg",
     icon: Calendar,
     defaultModules: ["agendamiento", "turnos", "referidos"],
     iconKey: "coffee",
@@ -473,11 +477,7 @@ export default function OnboardingPage() {
                 <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[190px] flex flex-col justify-end p-6">
                   {/* Photo Background */}
                   <img
-                    src={
-                      businessModel === "retail_store"
-                        ? "/onboarding-retail.jpg"
-                        : "/onboarding-restaurant.jpg"
-                    }
+                    src={activeArchetype.image}
                     alt={activeArchetype.title}
                     className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
                   />
