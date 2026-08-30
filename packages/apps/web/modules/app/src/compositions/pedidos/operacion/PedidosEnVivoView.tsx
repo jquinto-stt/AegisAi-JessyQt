@@ -297,31 +297,31 @@ export const PedidosEnVivoView: React.FC<{
 
       {/* Compact Horizontal Toolbar (Toggleable) */}
       {layoutPrefs.showToolbar ? (
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl p-3.5 border border-slate-200 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#121214] rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
           {/* Left: Search & Filter Dropdowns */}
-          <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
             {/* Search with Ctrl+K shortcut */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Buscar pedido, cliente, #turno..."
+                placeholder="Buscar por ID, cliente, producto..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-16 py-2 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
+                className="w-full pl-9 pr-16 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
               />
               <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 {searchQuery ? (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="w-5 h-5 rounded-full bg-slate-200 dark:bg-gray-700 text-gray-500 flex items-center justify-center hover:bg-slate-300 transition-colors"
+                    className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-500 flex items-center justify-center hover:bg-zinc-300 transition-colors"
                     title="Limpiar búsqueda"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-2.5 h-2.5" />
                   </button>
                 ) : (
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono font-bold text-gray-400 bg-slate-100 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded">
+                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded">
                     Ctrl K
                   </kbd>
                 )}
@@ -333,7 +333,7 @@ export const PedidosEnVivoView: React.FC<{
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="appearance-none bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-xs font-bold py-2 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 cursor-pointer shadow-xs"
+                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer"
               >
                 <option value="TODOS">Todos los Estados ({statusCounts.TODOS})</option>
                 <option value="NUEVO">Nuevos ({statusCounts.NUEVO})</option>
@@ -342,7 +342,7 @@ export const PedidosEnVivoView: React.FC<{
                 <option value="LISTO">Listos ({statusCounts.LISTO})</option>
                 <option value="FINALIZADO">Entregados ({statusCounts.FINALIZADO})</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 text-zinc-400 pointer-events-none" />
             </div>
 
             {/* Canal Dropdown */}
@@ -350,31 +350,31 @@ export const PedidosEnVivoView: React.FC<{
               <select
                 value={channelFilter}
                 onChange={e => setChannelFilter(e.target.value as any)}
-                className="appearance-none bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 text-xs font-bold py-2 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 cursor-pointer shadow-xs"
+                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer"
               >
                 <option value="TODOS">Todos los Canales ({channelCounts.TODOS})</option>
-                <option value="whatsapp">WhatsApp IA ({channelCounts.whatsapp})</option>
-                <option value="web">Web Directo ({channelCounts.web})</option>
-                <option value="presencial">Mostrador ({channelCounts.presencial})</option>
+                <option value="whatsapp">WhatsApp ({channelCounts.whatsapp})</option>
+                <option value="web">Web ({channelCounts.web})</option>
+                <option value="presencial">POS ({channelCounts.presencial})</option>
                 <option value="telefono">Teléfono ({channelCounts.telefono})</option>
               </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 absolute right-2 text-zinc-400 pointer-events-none" />
             </div>
 
             {/* Delay Alert Filter Button */}
             <button
               onClick={() => setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO")}
-              className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-xs ${
+              className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
                 urgencyFilter === "RETRASADO"
-                  ? "bg-red-500 text-white border-red-500 ring-2 ring-red-500/20"
-                  : "bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-slate-300"
+                  ? "bg-red-500 text-white border-red-500 shadow-xs"
+                  : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400"
               }`}
             >
               <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-white" : "text-red-500"}`} />
-              <span>Retrasados</span>
+              <span>Retrasos</span>
               {delayedCount > 0 && (
                 <span
-                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md font-black ${
+                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded font-bold ${
                     urgencyFilter === "RETRASADO"
                       ? "bg-white/20 text-white"
                       : "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
@@ -389,26 +389,26 @@ export const PedidosEnVivoView: React.FC<{
           {/* Right: View Mode Toggle, Customize & New Order */}
           <div className="flex items-center gap-2">
             {/* View Switcher */}
-            <div className="flex bg-slate-100 dark:bg-gray-800 p-1 rounded-xl border border-slate-200 dark:border-gray-700">
+            <div className="flex bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-800">
               <button
                 onClick={() => setViewMode("kanban")}
-                className={`py-1.5 px-3 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`py-1 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === "kanban"
-                    ? "bg-[#FF3F1A] text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                 }`}
               >
                 <Kanban className="w-3.5 h-3.5" /> Tablero
               </button>
               <button
                 onClick={() => setViewMode("grid")}
-                className={`py-1.5 px-3 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                className={`py-1 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                   viewMode === "grid"
-                    ? "bg-[#FF3F1A] text-white shadow-xs"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
+                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                 }`}
               >
-                <LayoutGrid className="w-3.5 h-3.5" /> Cuadrícula
+                <LayoutGrid className="w-3.5 h-3.5" /> Lista
               </button>
             </div>
 
@@ -416,37 +416,38 @@ export const PedidosEnVivoView: React.FC<{
             <button
               type="button"
               onClick={() => setShowLayoutModal(true)}
-              className="py-2 px-3 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-[#FF3F1A] text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-              title="Personalizar qué secciones y columnas ver"
+              className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Personalizar columnas y diseño"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span className="hidden md:inline">Personalizar</span>
+              <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="hidden md:inline">Estructura</span>
             </button>
 
             <button
               onClick={() => setShowManualModal(true)}
-              className="py-2 px-3.5 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95 flex-none"
+              className="py-2 px-3.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs flex-none"
             >
-              <Plus className="w-4 h-4" /> Nuevo Pedido
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nuevo Pedido</span>
             </button>
           </div>
         </div>
       ) : (
         /* Floating mini-bar when toolbar is hidden to allow reopening */
-        <div className="flex items-center justify-between bg-white dark:bg-[#2C2D31] p-2.5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xs">
-          <span className="text-xs font-bold text-gray-500 pl-2">Modo Tablero Enfocado</span>
+        <div className="flex items-center justify-between bg-white dark:bg-[#121214] p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+          <span className="text-xs font-mono text-zinc-400 pl-2">MODO TABLERO ENFOCADO</span>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setShowLayoutModal(true)}
-              className="py-1.5 px-3 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold flex items-center gap-1.5 text-gray-700 dark:text-gray-200 hover:border-[#FF3F1A] cursor-pointer"
+              className="py-1.5 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span>Personalizar Vista</span>
+              <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Estructura</span>
             </button>
             <button
               onClick={() => setShowManualModal(true)}
-              className="py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1 shadow-xs cursor-pointer"
+              className="py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] text-xs font-semibold flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> Nuevo Pedido
             </button>
@@ -484,36 +485,36 @@ export const PedidosEnVivoView: React.FC<{
                   setDragOverCol(null);
                   setDraggedOrderId(null);
                 }}
-                className={`w-[86vw] sm:w-80 md:w-88 flex-none snap-center bg-[#F8F9FA]/90 dark:bg-[#1E1E20]/90 rounded-3xl border p-3.5 flex flex-col justify-between shadow-2xs space-y-3 transition-all duration-200 ${
+                className={`w-[86vw] sm:w-80 md:w-88 flex-none snap-center bg-zinc-100/60 dark:bg-[#121214]/60 rounded-2xl border p-3 flex flex-col justify-between shadow-2xs space-y-3 transition-all duration-200 ${
                   dragOverCol === col.id
-                    ? "border-[#FF3F1A] ring-4 ring-orange-500/15 bg-orange-50/40 dark:bg-orange-950/20 scale-[1.01]"
-                    : "border-slate-200/80 dark:border-zinc-800"
+                    ? "border-[#FF3F1A] ring-2 ring-orange-500/20 bg-orange-50/20 dark:bg-orange-950/20"
+                    : "border-zinc-200/80 dark:border-zinc-800/80"
                 }`}
               >
                 {/* Column Header */}
                 <div className="space-y-1.5 flex-none">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-zinc-800/80">
+                  <div className="flex items-center justify-between pb-2 border-b border-zinc-200/60 dark:border-zinc-800/80">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-800 border border-slate-200/60 dark:border-zinc-700/60 text-[#FF3F1A] flex items-center justify-center shadow-2xs">
-                        <Icon className="w-3.5 h-3.5" />
+                      <div className="w-6 h-6 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
+                        <Icon className="w-3 h-3 text-[#FF3F1A]" />
                       </div>
                       <div>
-                        <h4 className="font-black text-xs text-zinc-900 dark:text-zinc-100 tracking-tight">
+                        <h4 className="font-semibold text-xs text-zinc-950 dark:text-zinc-50 tracking-tight">
                           {col.title}
                         </h4>
                       </div>
                     </div>
 
-                    <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-slate-200/80 dark:border-zinc-700/80 shadow-2xs">
+                    <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
                       {colOrders.length}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-zinc-400 px-0.5">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 px-0.5">
                     <span className="truncate max-w-[180px]">{col.description}</span>
-                    <strong className="font-mono font-bold text-zinc-600 dark:text-zinc-400 flex-none">
+                    <span className="font-bold text-zinc-600 dark:text-zinc-400 flex-none">
                       ${(colTotalSum / 1000).toFixed(0)}k
-                    </strong>
+                    </span>
                   </div>
                 </div>
 
@@ -758,31 +759,28 @@ export const PedidosEnVivoView: React.FC<{
 
       {/* Modal: Crear Nuevo Pedido Manual */}
       {showManualModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white dark:bg-[#2C2D31] rounded-3xl shadow-2xl border border-slate-200 dark:border-[#374151] w-full max-w-md p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-[#374151] pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-[#FF3F1A] flex items-center justify-center">
-                  <Plus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-gray-900 dark:text-gray-100">
-                    Nuevo Pedido Manual (POS)
-                  </h3>
-                  <p className="text-xs text-gray-400">Ingreso rápido de pedido en salón o mostrador</p>
-                </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in font-sans antialiased">
+          <div className="bg-white dark:bg-[#0E0E10] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF3F1A]">
+                  Toma Manual
+                </span>
+                <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  Nuevo Pedido
+                </h3>
               </div>
               <button
                 onClick={() => setShowManualModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleCreateManual} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Nombre del Cliente o Mesa *
                 </label>
                 <input
@@ -791,34 +789,34 @@ export const PedidosEnVivoView: React.FC<{
                   placeholder="Ej. Mesa 4 / Carlos Bianchi"
                   value={manualCustomer}
                   onChange={e => setManualCustomer(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  className="w-full px-3.5 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                     Teléfono / WhatsApp
                   </label>
                   <input
                     type="text"
-                    placeholder="+54 11 0000-0000"
+                    placeholder="+57 300 000-0000"
                     value={manualPhone}
                     onChange={e => setManualPhone(e.target.value)}
-                    className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                     Canal de Ingreso
                   </label>
                   <select
                     value={manualChannel}
                     onChange={e => setManualChannel(e.target.value as OrderChannel)}
-                    className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
                   >
-                    <option value="presencial">Mostrador / Salón</option>
+                    <option value="presencial">POS Mostrador</option>
                     <option value="telefono">Teléfono</option>
                     <option value="web">Web Directo</option>
                     <option value="whatsapp">WhatsApp</option>
@@ -826,30 +824,30 @@ export const PedidosEnVivoView: React.FC<{
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Observaciones / Alergias
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Ej. Sin cebolla, entregar empaquetado térmico..."
+                  placeholder="Ej. Sin cebolla, empaque térmico..."
                   value={manualNotes}
                   onChange={e => setManualNotes(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  className="w-full px-3.5 py-2 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#374151]">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  className="py-2 px-4 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-extrabold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+                  className="py-2 px-4 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="py-2 px-4 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95"
+                  className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
                 >
                   Crear Pedido
                 </button>

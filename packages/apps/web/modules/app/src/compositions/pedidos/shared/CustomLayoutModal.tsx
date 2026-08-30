@@ -7,7 +7,6 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  GripVertical,
   Layout,
   Maximize2,
   Sparkles,
@@ -16,7 +15,6 @@ import {
   Package,
   Check as CheckIcon,
   Layers,
-  Search,
   PanelTop,
 } from "lucide-react";
 
@@ -44,16 +42,6 @@ export const DEFAULT_LAYOUT_PREFS: LayoutPreferences = {
     { id: "LISTO", title: "Listos para Entrega", visible: true },
     { id: "FINALIZADO", title: "Entregados Hoy", visible: true },
   ],
-};
-
-const COLUMN_ICONS: Record<OrderStatus, any> = {
-  NUEVO: Sparkles,
-  CONFIRMADO: CheckCircle2,
-  EN_PREPARACION: ChefHat,
-  LISTO: Package,
-  FINALIZADO: CheckIcon,
-  RECHAZADO: X,
-  CANCELADO: X,
 };
 
 export const CustomLayoutModal: React.FC<{
@@ -128,26 +116,21 @@ export const CustomLayoutModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white dark:bg-[#212121] rounded-3xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] transition-all">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans antialiased">
+      <div className="bg-white dark:bg-[#0E0E10] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] transition-all">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 flex-none">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-              <SlidersHorizontal className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 tracking-tight">
-                Personalizar Vista
-              </h3>
-              <p className="text-[11px] text-zinc-400 font-medium">
-                Adapta las secciones y el orden del flujo
-              </p>
-            </div>
+        <div className="px-6 py-5 flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800/80 flex-none">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#FF3F1A]">
+              Personalización
+            </span>
+            <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
+              Estructura del Tablero
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -160,129 +143,60 @@ export const CustomLayoutModal: React.FC<{
             <button
               type="button"
               onClick={applyFocusMode}
-              className="p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 hover:border-[#FF3F1A] bg-slate-50/60 dark:bg-zinc-800/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-900 dark:hover:border-zinc-100 bg-zinc-50/60 dark:bg-zinc-900/60 text-left transition-all cursor-pointer group"
             >
-              <div className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-bold text-xs group-hover:text-[#FF3F1A]">
+              <div className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 font-semibold text-xs">
                 <Maximize2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
                 <span>Modo Enfoque</span>
               </div>
-              <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
-                Sin barras, 100% tablero
+              <p className="text-[10px] text-zinc-400 mt-0.5 font-mono">
+                100% columnas operativas
               </p>
             </button>
 
             <button
               type="button"
               onClick={applyFullMode}
-              className="p-2.5 rounded-2xl border border-slate-200 dark:border-zinc-800 hover:border-[#FF3F1A] bg-slate-50/60 dark:bg-zinc-800/40 text-left transition-all cursor-pointer group"
+              className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-900 dark:hover:border-zinc-100 bg-zinc-50/60 dark:bg-zinc-900/60 text-left transition-all cursor-pointer group"
             >
-              <div className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 font-bold text-xs group-hover:text-[#FF3F1A]">
+              <div className="flex items-center gap-1.5 text-zinc-900 dark:text-zinc-100 font-semibold text-xs">
                 <Layout className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                <span>Modo Completo</span>
+                <span>Modo Estándar</span>
               </div>
-              <p className="text-[10px] text-zinc-400 mt-0.5 font-medium">
+              <p className="text-[10px] text-zinc-400 mt-0.5 font-mono">
                 Todas las barras visibles
               </p>
             </button>
           </div>
 
           {/* Section 1: Visibility of Screen Segments */}
-          <div className="space-y-2.5">
-            <span className="text-[10px] font-black tracking-wider uppercase text-zinc-400">
-              Secciones Principales
+          <div className="space-y-3">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              01. Secciones de Pantalla
             </span>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-900/40 divide-y divide-slate-100 dark:divide-zinc-800/80 overflow-hidden">
-              {/* Top Module Navigation */}
-              <div className="p-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
-                    <PanelTop className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                      Barra de Módulo
-                    </p>
-                    <p className="text-[10px] text-zinc-400 truncate">
-                      Pestañas superiores y utilidades
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraftPrefs(p => ({ ...p, showTopHeader: !p.showTopHeader }))
-                  }
-                  className={`w-10 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 flex-none ${
-                    draftPrefs.showTopHeader ? "bg-[#FF3F1A]" : "bg-slate-200 dark:bg-zinc-700"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                      draftPrefs.showTopHeader ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Banner */}
-              <div className="p-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
-                    <Layers className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                      Banner Informativo
-                    </p>
-                    <p className="text-[10px] text-zinc-400 truncate">
-                      Título y descripción de pantalla
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraftPrefs(p => ({ ...p, showBanner: !p.showBanner }))
-                  }
-                  className={`w-10 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 flex-none ${
-                    draftPrefs.showBanner ? "bg-[#FF3F1A]" : "bg-slate-200 dark:bg-zinc-700"
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                      draftPrefs.showBanner ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/40 dark:bg-zinc-900/40 divide-y divide-zinc-100 dark:divide-zinc-800/80 overflow-hidden">
               {/* Toolbar */}
               <div className="p-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300">
-                    <Search className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                      Barra de Filtros
-                    </p>
-                    <p className="text-[10px] text-zinc-400 truncate">
-                      Buscador, canales y selector
-                    </p>
-                  </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                    Barra de Filtros y Búsqueda
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-mono">
+                    Buscador Ctrl+K, estados y canales
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() =>
                     setDraftPrefs(p => ({ ...p, showToolbar: !p.showToolbar }))
                   }
-                  className={`w-10 h-6 rounded-full transition-colors cursor-pointer relative p-0.5 flex-none ${
-                    draftPrefs.showToolbar ? "bg-[#FF3F1A]" : "bg-slate-200 dark:bg-zinc-700"
+                  className={`w-9 h-5 rounded-full transition-colors cursor-pointer relative p-0.5 flex-none ${
+                    draftPrefs.showToolbar ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
                   }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
                       draftPrefs.showToolbar ? "translate-x-4" : "translate-x-0"
                     }`}
                   />
@@ -291,98 +205,67 @@ export const CustomLayoutModal: React.FC<{
             </div>
           </div>
 
-          {/* Section 2: Columns Reorder & Visibility */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-wider uppercase text-zinc-400">
-                Columnas del Tablero
-              </span>
-              <span className="text-[10px] text-zinc-400 font-medium">
-                Reordena con las flechas
-              </span>
-            </div>
+          {/* Section 2: Columns Reordering & Visibility */}
+          <div className="space-y-3">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+              02. Columnas de Estado
+            </span>
 
-            <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-zinc-900/40 divide-y divide-slate-100 dark:divide-zinc-800/80 overflow-hidden">
-              {draftPrefs.columns.map((col, idx) => {
-                const Icon = COLUMN_ICONS[col.id] || Layers;
-                const isFirst = idx === 0;
-                const isLast = idx === draftPrefs.columns.length - 1;
-
-                return (
-                  <div
-                    key={col.id}
-                    className={`p-2.5 px-3 flex items-center justify-between gap-2 transition-all ${
-                      col.visible ? "bg-white dark:bg-zinc-900/80" : "opacity-40"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <GripVertical className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 flex-none" />
-                      <div className="w-6 h-6 rounded-lg bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] flex items-center justify-center flex-none">
-                        <Icon className="w-3 h-3" />
-                      </div>
-                      <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 truncate">
-                        {col.title}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1 flex-none">
-                      {/* Reorder Buttons */}
-                      <button
-                        type="button"
-                        disabled={isFirst}
-                        onClick={() => handleMoveColumn(idx, "up")}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
-                          isFirst
-                            ? "text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
-                            : "text-zinc-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-                        }`}
-                        title="Mover a la izquierda"
-                      >
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={isLast}
-                        onClick={() => handleMoveColumn(idx, "down")}
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
-                          isLast
-                            ? "text-zinc-300 dark:text-zinc-700 cursor-not-allowed"
-                            : "text-zinc-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
-                        }`}
-                        title="Mover a la derecha"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Visibility Switch */}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleColumn(col.id)}
-                        className={`w-8 h-5 rounded-full transition-colors cursor-pointer relative p-0.5 ml-1 ${
-                          col.visible ? "bg-[#FF3F1A]" : "bg-slate-200 dark:bg-zinc-700"
-                        }`}
-                      >
-                        <div
-                          className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform ${
-                            col.visible ? "translate-x-3" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                    </div>
+            <div className="space-y-1.5">
+              {draftPrefs.columns.map((col, idx) => (
+                <div
+                  key={col.id}
+                  className={`p-3 rounded-xl border flex items-center justify-between gap-2 transition-all ${
+                    col.visible
+                      ? "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
+                      : "bg-zinc-50/40 dark:bg-zinc-950/40 border-zinc-200/50 dark:border-zinc-800/50 opacity-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleColumn(col.id)}
+                      className={`w-4 h-4 rounded flex items-center justify-center text-white cursor-pointer transition-colors ${
+                        col.visible ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
+                      }`}
+                    >
+                      {col.visible && <Check className="w-3 h-3" />}
+                    </button>
+                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                      {col.title}
+                    </span>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-1 flex-none">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => handleMoveColumn(idx, "up")}
+                      className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 cursor-pointer"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === draftPrefs.columns.length - 1}
+                      onClick={() => handleMoveColumn(idx, "down")}
+                      className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 cursor-pointer"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50/60 dark:bg-zinc-900/60 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-3 flex-none">
+        <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/80 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3 flex-none">
           <button
             type="button"
             onClick={handleReset}
-            className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1 cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Restablecer</span>
@@ -392,17 +275,16 @@ export const CustomLayoutModal: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-slate-200/70 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="py-2 px-3 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleSave}
-              className="px-4 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+              className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
             >
-              <Check className="w-3.5 h-3.5" />
-              <span>Aplicar</span>
+              <span>Aplicar Cambios</span>
             </button>
           </div>
         </div>
