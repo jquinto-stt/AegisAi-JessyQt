@@ -18,25 +18,41 @@ import {
   Shield,
   HelpCircle,
   Sparkles,
-  ChevronRight,
+  Building2,
+  Layers,
   Globe,
+  MapPin,
+  Mail,
+  Phone,
+  Briefcase,
+  User,
+  Lock,
+  SlidersHorizontal,
 } from "lucide-react";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { businesses, createBusiness } = useBusiness();
-  const [step, setStep] = useState<number>(4); // Default on Step 4 as shown in screenshot
+  const [step, setStep] = useState<number>(3); // Set to Step 3 as shown in screenshot, with full navigation across 1-5
 
-  // Form State
-  const [name, setName] = useState("Burger House");
-  const [city, setCity] = useState("Bogotá, Colombia");
-  const [currency, setCurrency] = useState<"COP" | "USD" | "MXN" | "ARS">("COP");
-  const [phone, setPhone] = useState("+57 300 123 4567");
-  const [userName, setUserName] = useState("Administrador");
-  const [userEmail, setUserEmail] = useState("admin@necto.app");
+  // Paso 1: Cuenta
+  const [ownerName, setOwnerName] = useState("Carlos Bianchi");
+  const [ownerEmail, setOwnerEmail] = useState("carlos@necto.app");
+  const [ownerPassword, setOwnerPassword] = useState("••••••••••••");
+
+  // Paso 3: Datos del negocio
+  const [companyName, setCompanyName] = useState("Necto Burger & Grill");
+  const [industry, setIndustry] = useState("Gastronomía & Restaurantes");
+  const [website, setWebsite] = useState("https://nectoburger.com");
+  const [country, setCountry] = useState("Colombia");
+  const [city, setCity] = useState("Bogotá");
+  const [corporateEmail, setCorporateEmail] = useState("contacto@nectoburger.com");
+  const [contactPhone, setContactPhone] = useState("+57 300 123 4567");
+
+  // Paso 4: WhatsApp
   const [isMetaConnected, setIsMetaConnected] = useState(false);
 
-  // Modules Selection (Step 5)
+  // Paso 5: Módulos
   const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>([
     "referidos",
     "pedidos",
@@ -51,23 +67,23 @@ export default function OnboardingPage() {
 
   const handleFinish = () => {
     createBusiness({
-      name: name.trim() || "Mi Negocio",
-      slug: (name || "mi-negocio")
+      name: companyName.trim() || "Mi Negocio",
+      slug: (companyName || "mi-negocio")
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, ""),
       businessType: "restaurant_virtual",
       iconKey: "utensils",
-      currency,
-      city,
+      currency: country === "Colombia" ? "COP" : country === "México" ? "MXN" : "USD",
+      city: `${city}, ${country}`,
       channels: {
         whatsapp: true,
         web: true,
         pos: true,
       },
       kitchenBufferMin: 20,
-      specialty: "Gastronomía & Pedidos",
+      specialty: industry,
       activeModules: selectedModules,
     });
 
@@ -158,7 +174,7 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      {/* Main Container with Horizontal Stepper */}
+      {/* Main Form Container */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 space-y-8 flex flex-col justify-center">
         {/* Horizontal Top Stepper */}
         <div className="w-full max-w-2xl mx-auto flex items-center justify-between relative px-2">
@@ -210,12 +226,209 @@ export default function OnboardingPage() {
           })}
         </div>
 
-        {/* STEP 4: WHATSAPP (Exact Match to New Screenshot) */}
+        {/* STEP 3: DATOS DEL NEGOCIO (Exact Match to Figma Screenshot) */}
+        {step === 3 && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Header */}
+            <div className="text-center space-y-1.5 max-w-lg mx-auto">
+              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+                Datos del negocio
+              </h1>
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal">
+                Cuéntanos un poco más sobre tu empresa para personalizar tu experiencia en Necto.
+              </p>
+            </div>
+
+            {/* Centered Form Card */}
+            <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-5">
+              {/* Row 1: Nombre de la empresa */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Nombre de la empresa
+                </label>
+                <div className="relative flex items-center">
+                  <Building2 className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Necto Burger & Grill"
+                    value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Tipo de Industria & Sitio Web */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Tipo de industria
+                  </label>
+                  <div className="relative flex items-center">
+                    <Layers className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
+                    <select
+                      value={industry}
+                      onChange={e => setIndustry(e.target.value)}
+                      className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="Gastronomía & Restaurantes">Gastronomía & Restaurantes</option>
+                      <option value="Comercio & Retail">Comercio & Retail</option>
+                      <option value="Servicios Profesionales">Servicios Profesionales</option>
+                      <option value="Salud & Bienestar">Salud & Bienestar</option>
+                      <option value="Educación & Cursos">Educación & Cursos</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Sitio web (opcional)
+                  </label>
+                  <div className="relative flex items-center">
+                    <Globe className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="https://www.tuempresa.com"
+                      value={website}
+                      onChange={e => setWebsite(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: País & Ciudad */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    País
+                  </label>
+                  <div className="relative flex items-center">
+                    <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
+                    <select
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value="Colombia">Colombia</option>
+                      <option value="México">México</option>
+                      <option value="Estados Unidos">Estados Unidos</option>
+                      <option value="Argentina">Argentina</option>
+                      <option value="Chile">Chile</option>
+                      <option value="España">España</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Ciudad
+                  </label>
+                  <div className="relative flex items-center">
+                    <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="Ej. Bogotá / Ciudad de México"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 4: Correo Corporativo & Teléfono */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Correo corporativo
+                  </label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                    <input
+                      type="email"
+                      placeholder="contacto@empresa.com"
+                      value={corporateEmail}
+                      onChange={e => setCorporateEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Teléfono de contacto
+                  </label>
+                  <div className="relative flex items-center">
+                    <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                    <input
+                      type="text"
+                      placeholder="+57 300 123 4567"
+                      value={contactPhone}
+                      onChange={e => setContactPhone(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons inside card */}
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Volver</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!companyName.trim()}
+                  onClick={() => setStep(4)}
+                  className="py-3 px-8 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
+                >
+                  <span>Continuar</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Footer Helper Cards */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-center gap-3 shadow-2xs w-full sm:w-auto">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                    Perfiles de Empresa
+                  </p>
+                  <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                    Podrás crear múltiples sub-perfiles más adelante.
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-right text-xs text-zinc-400 font-mono">
+                <p>¿Necesitas ayuda con el registro?</p>
+                <button
+                  type="button"
+                  className="text-[#FF3F1A] hover:underline font-bold cursor-pointer"
+                >
+                  Contactar a soporte técnico
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: WHATSAPP */}
         {step === 4 && (
           <div className="space-y-6 animate-fade-in">
-            {/* Split Main Card */}
             <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[460px]">
-              {/* Left Column (Content & Actions) */}
               <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
                 <div className="space-y-4">
                   <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200/60 dark:border-orange-900/60 text-[10px] font-bold uppercase tracking-wider font-mono">
@@ -231,7 +444,6 @@ export default function OnboardingPage() {
                     </p>
                   </div>
 
-                  {/* Value Proposition Rows */}
                   <div className="space-y-2.5 pt-2">
                     <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3">
                       <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
@@ -277,7 +489,6 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Action Buttons & Notice */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center gap-3 flex-wrap">
                     <button
@@ -314,7 +525,6 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Right Column (Visual Meta Showcase) */}
               <div className="md:col-span-5 bg-gradient-to-br from-zinc-50 to-orange-50/30 dark:from-zinc-900 dark:to-orange-950/20 p-8 flex flex-col items-center justify-center text-center border-t md:border-t-0 md:border-l border-zinc-200/80 dark:border-zinc-800/80">
                 <div className="w-44 h-44 rounded-3xl bg-white dark:bg-zinc-800 shadow-xl border border-zinc-200/80 dark:border-zinc-700/80 p-5 flex flex-col items-center justify-center gap-3 group hover:scale-102 transition-transform">
                   <div className="w-14 h-14 rounded-2xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center shadow-md font-black text-xl">
@@ -337,7 +547,6 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Bottom FAQ Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-5 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-start gap-3.5 shadow-2xs">
                 <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center flex-none">
@@ -460,34 +669,46 @@ export default function OnboardingPage() {
 
         {/* STEP 1: CUENTA */}
         {step === 1 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-              Información del Propietario
-            </h2>
+          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in max-w-lg mx-auto w-full">
+            <div className="text-center space-y-1">
+              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                Crear tu Cuenta
+              </h2>
+              <p className="text-xs text-zinc-400">Datos de acceso del titular</p>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Nombre Completo
                 </label>
-                <input
-                  type="text"
-                  value={userName}
-                  onChange={e => setUserName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                />
+                <div className="relative flex items-center">
+                  <User className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={ownerName}
+                    onChange={e => setOwnerName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
               </div>
+
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Correo Electrónico
                 </label>
-                <input
-                  type="email"
-                  value={userEmail}
-                  onChange={e => setUserEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                />
+                <div className="relative flex items-center">
+                  <Mail className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                  <input
+                    type="email"
+                    value={ownerEmail}
+                    onChange={e => setOwnerEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
               </div>
             </div>
+
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
               <button
                 type="button"
@@ -502,14 +723,19 @@ export default function OnboardingPage() {
 
         {/* STEP 2: VERIFICACIÓN */}
         {step === 2 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-              Verificación & Región
-            </h2>
+          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in max-w-lg mx-auto w-full">
+            <div className="text-center space-y-1">
+              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">
+                Verificación de Seguridad
+              </h2>
+              <p className="text-xs text-zinc-400">Protección de identidad y credenciales</p>
+            </div>
+
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-3">
               <ShieldCheck className="w-5 h-5 text-emerald-500 flex-none" />
               <span>Cuenta verificada correctamente con protocolo de datos seguro.</span>
             </div>
+
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-between">
               <button
                 type="button"
@@ -521,73 +747,6 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="py-2.5 px-6 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer"
-              >
-                Continuar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: NEGOCIO */}
-        {step === 3 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in">
-            <h2 className="text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-              Datos del Negocio
-            </h2>
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Nombre del Negocio / Sede
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={e => setName(e.target.value)}
-                  placeholder="Ej. Burger House"
-                  className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Ciudad
-                  </label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={e => setCity(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-medium focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Moneda
-                  </label>
-                  <select
-                    value={currency}
-                    onChange={e => setCurrency(e.target.value as any)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs font-semibold focus:outline-none focus:border-zinc-400 cursor-pointer"
-                  >
-                    <option value="COP">COP ($)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="MXN">MXN ($)</option>
-                    <option value="ARS">ARS ($)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-between">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="text-xs font-mono text-zinc-400 hover:text-zinc-900"
-              >
-                Volver
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(4)}
                 className="py-2.5 px-6 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer"
               >
                 Continuar
