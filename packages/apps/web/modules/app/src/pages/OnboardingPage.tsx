@@ -468,6 +468,41 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Step 1: Representative Archetype Showcase Card */}
+                <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[190px] flex flex-col justify-end p-6">
+                  {/* Photo Background */}
+                  <img
+                    src={
+                      businessModel === "retail_store"
+                        ? "/onboarding-retail.jpg"
+                        : "/onboarding-restaurant.jpg"
+                    }
+                    alt={activeArchetype.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
+                  />
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+
+                  {/* Content */}
+                  <div className="relative z-10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30">
+                        {activeArchetype.category}
+                      </span>
+                      <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
+                        Configuración Optimizada
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-white tracking-tight">
+                      {activeArchetype.title}
+                    </p>
+                    <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
+                      {activeArchetype.tagline}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -686,6 +721,37 @@ export default function OnboardingPage() {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Step 3: Representative Operations Showcase Card */}
+                <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[200px] flex flex-col justify-end p-6">
+                  {/* Photo Background */}
+                  <img
+                    src="/onboarding-operations.jpg"
+                    alt="Necto Operations Hub"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+
+                  {/* Content */}
+                  <div className="relative z-10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30">
+                        OPERACIONES INTEGRADAS
+                      </span>
+                      <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
+                        Cloud Sync
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-white tracking-tight">
+                      Sincronización Total en Mostrador, Cocina y WhatsApp
+                    </p>
+                    <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
+                      Cada módulo se conecta directamente al inventario central y registro contable de tu negocio.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}
