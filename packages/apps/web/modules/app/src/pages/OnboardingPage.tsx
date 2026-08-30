@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, NectoModuleKey, BusinessType, BusinessIconKey } from "../context/BusinessContext";
 import {
@@ -18,131 +18,177 @@ import {
   Shield,
   Building2,
   MapPin,
-  Mail,
   Phone,
-  Briefcase,
   UtensilsCrossed,
   Store,
+  Sparkles,
+  Server,
+  Activity,
+  Layers,
+  CheckCircle2,
+  QrCode,
+  Radio,
+  SlidersHorizontal,
+  ChevronRight,
+  Terminal,
 } from "lucide-react";
 
 /* ── Business Archetypes ─────────────────────────────────────────────── */
 
-const ARCHETYPES: Array<{
+interface ArchetypeConfig {
   id: BusinessType;
   title: string;
-  subtitle: string;
+  category: string;
+  tagline: string;
   icon: React.ComponentType<{ className?: string }>;
   defaultModules: NectoModuleKey[];
   iconKey: BusinessIconKey;
-}> = [
+  features: string[];
+  mockOrder: {
+    id: string;
+    item: string;
+    detail: string;
+    price: string;
+    badge: string;
+  };
+}
+
+const ARCHETYPES: ArchetypeConfig[] = [
   {
     id: "restaurant_virtual",
     title: "Restaurante & Gastronomía",
-    subtitle:
-      "Comandas en vivo, KDS de cocina, escandallos, delivery WhatsApp y POS mostrador.",
+    category: "Food & Beverage",
+    tagline: "KDS en cocina, comandas en tiempo real, escandallo y delivery WhatsApp.",
     icon: UtensilsCrossed,
     defaultModules: ["pedidos", "inventarios", "reservas"],
     iconKey: "utensils",
+    features: ["KDS Cocina", "Escandallo Insumos", "Delivery WhatsApp", "POS Mesas"],
+    mockOrder: {
+      id: "ORD-9402",
+      item: "Smash Burger Doble + Papas Rústicas",
+      detail: "Mesa 4 · Sin cebolla · Té helado",
+      price: "$34.500 COP",
+      badge: "En Preparación",
+    },
   },
   {
     id: "retail_store",
     title: "Comercio & Retail",
-    subtitle:
-      "Catálogo de productos, control de stock por SKU, ventas de mostrador y tienda web.",
+    category: "E-Commerce / Store",
+    tagline: "Control de stock multialmacén, variantes por SKU y catálogo en línea sincronizado.",
     icon: Store,
     defaultModules: ["pedidos", "inventarios", "referidos"],
     iconKey: "store",
+    features: ["Stock por SKU", "Venta de Mostrador", "Catálogo Web", "Fidelización"],
+    mockOrder: {
+      id: "VTA-1108",
+      item: "Hoodie Oversize Heavyweight (Talla L)",
+      detail: "Almacén Central · Envío Express",
+      price: "$149.000 COP",
+      badge: "Despachado",
+    },
   },
   {
     id: "services",
     title: "Servicios & Citas",
-    subtitle:
-      "Agenda de turnos, gestión de especialistas, reservas online y recordatorios automáticos.",
+    category: "Professional Services",
+    tagline: "Agenda automatizada por especialista, turnos inteligentes y recordatorios vía WhatsApp.",
     icon: Calendar,
     defaultModules: ["agendamiento", "turnos", "referidos"],
     iconKey: "coffee",
+    features: ["Agenda de Citas", "Cuadrante de Turnos", "Recordatorio Auto", "Portal Clientes"],
+    mockOrder: {
+      id: "CTA-0391",
+      item: "Mantenimiento & Sesión de Diagnóstico",
+      detail: "Dr. Andrea Morales · 15:30 PM",
+      price: "$120.000 COP",
+      badge: "Confirmado",
+    },
   },
 ];
 
-const MODULES: Array<{
+const MODULE_DEFINITIONS: Array<{
   id: NectoModuleKey;
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
+  tag: string;
 }> = [
   {
     id: "pedidos",
-    title: "Pedidos",
-    description:
-      "Control centralizado de órdenes entrantes, estados de entrega y facturación rápida.",
+    title: "Pedidos & Comandas",
+    description: "Flujo de venta unificado: WhatsApp, mostrador y mesa con actualización en vivo.",
     icon: ShoppingBag,
+    tag: "Core Operativo",
   },
   {
     id: "inventarios",
-    title: "Inventarios",
-    description:
-      "Seguimiento en tiempo real de stock, alertas de agotados y reportes de insumos.",
+    title: "Inventario & Insumos",
+    description: "Descuento automático por receta, control de mermas y alertas de stock crítico.",
     icon: Package,
+    tag: "Control de Costos",
   },
   {
     id: "reservas",
-    title: "Reservas",
-    description:
-      "Sistema para locales físicos que requieren gestión de espacios y mesas.",
+    title: "Reservas de Espacios",
+    description: "Gestión de mesas, salones y asignación inteligente de zonas.",
     icon: Bookmark,
+    tag: "Aforo & Mesas",
   },
   {
     id: "agendamiento",
-    title: "Agendamiento",
-    description:
-      "Organiza citas y servicios con un calendario inteligente integrado con tu equipo.",
+    title: "Agendamiento & Citas",
+    description: "Calendario sincronizado con reservas automáticas desde WhatsApp.",
     icon: Calendar,
+    tag: "Planificación",
   },
   {
     id: "turnos",
-    title: "Turnos",
-    description:
-      "Optimiza la jornada laboral de tu personal con cuadrantes y rotaciones automatizadas.",
+    title: "Turnos de Personal",
+    description: "Cuadrantes de rotación, control de asistencia y asignación por área.",
     icon: Clock,
+    tag: "Equipo",
   },
   {
     id: "referidos",
-    title: "Referidos",
-    description:
-      "Gestiona programas de lealtad y recomendaciones de clientes para atraer nuevas ventas.",
+    title: "Programa de Fidelización",
+    description: "Cupones dinámicos, tracking de referidos y métricas de recompra.",
     icon: Users,
+    tag: "Crecimiento",
   },
 ];
 
 const STEPS = [
-  { num: 1, label: "Tu Negocio" },
-  { num: 2, label: "WhatsApp" },
-  { num: 3, label: "Módulos" },
+  { num: 1, label: "Identidad & Modelo", desc: "Configuración del negocio" },
+  { num: 2, label: "Canal WhatsApp", desc: "Meta Business Cloud API" },
+  { num: 3, label: "Arquitectura Modular", desc: "Módulos operativos" },
 ];
 
-/* ── Component ───────────────────────────────────────────────────────── */
+/* ── Main Component ─────────────────────────────────────────────────── */
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { businesses, createBusiness } = useBusiness();
   const [step, setStep] = useState(1);
 
-  // Step 1: Business Identity
+  // Form State
   const [businessModel, setBusinessModel] = useState<BusinessType>("restaurant_virtual");
   const [companyName, setCompanyName] = useState("");
   const [country, setCountry] = useState("Colombia");
   const [city, setCity] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-
-  // Step 2: WhatsApp
   const [isMetaConnected, setIsMetaConnected] = useState(false);
-
-  // Step 3: Modules (pre-loaded from archetype on step 1)
   const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>(
     ARCHETYPES[0].defaultModules
   );
+  const [isDeploying, setIsDeploying] = useState(false);
 
-  const handleSelectArchetype = (arch: (typeof ARCHETYPES)[0]) => {
+  // Active Archetype Details
+  const activeArchetype = useMemo(() => {
+    return ARCHETYPES.find(a => a.id === businessModel) || ARCHETYPES[0];
+  }, [businessModel]);
+
+  const handleSelectArchetype = (arch: ArchetypeConfig) => {
     setBusinessModel(arch.id);
     setSelectedModules(arch.defaultModules);
   };
@@ -163,503 +209,653 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = () => {
-    const arch = ARCHETYPES.find(a => a.id === businessModel) || ARCHETYPES[0];
-
-    createBusiness({
-      name: companyName.trim() || "Mi Negocio",
-      slug: (companyName || "mi-negocio")
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, ""),
-      businessType: businessModel,
-      iconKey: arch.iconKey,
-      currency: currencyForCountry(country),
-      city: city ? `${city}, ${country}` : country,
-      channels: { whatsapp: true, web: true, pos: true },
-      kitchenBufferMin: 20,
-      specialty: arch.title,
-      activeModules: selectedModules,
-    });
-
-    navigate("/");
+    setIsDeploying(true);
+    setTimeout(() => {
+      createBusiness({
+        name: companyName.trim() || "Mi Negocio",
+        slug: (companyName || "mi-negocio")
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, ""),
+        businessType: businessModel,
+        iconKey: activeArchetype.iconKey,
+        currency: currencyForCountry(country),
+        city: city ? `${city}, ${country}` : country,
+        channels: { whatsapp: isMetaConnected, web: true, pos: true },
+        kitchenBufferMin: 20,
+        specialty: activeArchetype.title,
+        activeModules: selectedModules,
+      });
+      navigate("/");
+    }, 1200);
   };
 
-  const canProceedStep1 = companyName.trim().length > 0;
+  const canProceedStep1 = companyName.trim().length >= 2;
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
-      {/* Header */}
-      <header className="px-6 sm:px-14 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
+    <div className="min-h-screen bg-[#09090B] text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
+      {/* Top Navbar */}
+      <header className="h-14 px-6 sm:px-10 border-b border-zinc-800/80 bg-[#09090B]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center font-black text-sm select-none tracking-tighter shadow-2xs">
+          <div className="w-8 h-8 rounded-xl bg-zinc-100 text-zinc-950 flex items-center justify-center font-black text-sm select-none shadow-sm">
             N
           </div>
-          <span className="font-bold text-xs tracking-tight">Necto</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm tracking-tight text-white">Necto</span>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase px-2 py-0.5 rounded-full border border-zinc-800 bg-zinc-900/60">
+              Workspace Setup
+            </span>
+          </div>
         </div>
 
-        {businesses.length > 0 && (
-          <button
-            type="button"
-            onClick={() => navigate("/workspaces")}
-            className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
-          >
-            Cancelar
-          </button>
-        )}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>SaaS Core v2.4</span>
+          </div>
+
+          {businesses.length > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate("/workspaces")}
+              className="text-xs font-mono text-zinc-400 hover:text-white transition-colors cursor-pointer px-3 py-1 rounded-lg border border-zinc-800 hover:border-zinc-700 bg-zinc-900"
+            >
+              Volver al Hub
+            </button>
+          )}
+        </div>
       </header>
 
-      {/* Main */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-8 space-y-8 flex flex-col justify-center">
-        {/* Horizontal Stepper */}
-        <div className="w-full max-w-md mx-auto flex items-center justify-between relative px-2">
-          {STEPS.map((s, idx) => {
-            const isPassed = s.num < step;
-            const isCurrent = s.num === step;
+      {/* Main Grid Container */}
+      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-3.5rem)]">
+        {/* Left Column: Interactive Wizard Controls (7 Cols) */}
+        <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-zinc-800/80 space-y-8">
+          <div className="space-y-8">
+            {/* Stepper Header */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                {STEPS.map((s, idx) => {
+                  const isPassed = s.num < step;
+                  const isCurrent = s.num === step;
 
-            return (
-              <React.Fragment key={s.num}>
-                <div className="flex flex-col items-center gap-1.5 z-10">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-2xs ${
-                      isCurrent
-                        ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 ring-4 ring-zinc-950/10 dark:ring-white/10"
-                        : isPassed
-                        ? "bg-[#FF3F1A] text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 border border-zinc-200 dark:border-zinc-700"
-                    }`}
-                  >
-                    {isPassed ? <Check className="w-3.5 h-3.5" /> : s.num}
-                  </div>
-                  <span
-                    className={`text-[11px] font-mono transition-colors ${
-                      isCurrent
-                        ? "text-zinc-950 dark:text-zinc-50 font-bold"
-                        : isPassed
-                        ? "text-zinc-700 dark:text-zinc-300"
-                        : "text-zinc-400"
-                    }`}
-                  >
-                    {s.label}
-                  </span>
+                  return (
+                    <React.Fragment key={s.num}>
+                      <button
+                        type="button"
+                        disabled={s.num > step && !canProceedStep1}
+                        onClick={() => {
+                          if (s.num < step || canProceedStep1) setStep(s.num);
+                        }}
+                        className={`flex items-center gap-2 text-xs font-mono transition-all text-left ${
+                          isCurrent
+                            ? "text-white font-bold"
+                            : isPassed
+                            ? "text-zinc-400 hover:text-zinc-200 cursor-pointer"
+                            : "text-zinc-600 cursor-not-allowed"
+                        }`}
+                      >
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
+                            isCurrent
+                              ? "bg-[#FF3F1A] text-white shadow-xs"
+                              : isPassed
+                              ? "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                              : "bg-zinc-900 text-zinc-600 border border-zinc-800"
+                          }`}
+                        >
+                          {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
+                        </div>
+                        <span className="hidden sm:inline">{s.label}</span>
+                      </button>
+
+                      {idx < STEPS.length - 1 && (
+                        <div
+                          className={`h-px w-6 sm:w-10 transition-colors ${
+                            s.num < step ? "bg-[#FF3F1A]" : "bg-zinc-800"
+                          }`}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ─── STEP 1: IDENTIDAD Y MODELO DE NEGOCIO ──────────────────── */}
+            {step === 1 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="space-y-2">
+                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+                    Configura tu espacio de operaciones
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                    Selecciona la arquitectura que mejor describe tu modelo de negocio. Necto pre-configurará los flujos y módulos óptimos.
+                  </p>
                 </div>
 
-                {idx < STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mx-2 -mt-5 transition-colors ${
-                      s.num < step ? "bg-[#FF3F1A]" : "bg-zinc-200 dark:bg-zinc-800"
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
+                {/* Archetype Selector */}
+                <div className="space-y-2.5">
+                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                    <span>Modelo Operativo</span>
+                  </label>
 
-        {/* ─── STEP 1: TU NEGOCIO ──────────────────────────────────────── */}
-        {step === 1 && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="text-center space-y-1.5 max-w-lg mx-auto">
-              <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-                ¿Qué tipo de negocio operas?
-              </h1>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                Esto pre-configura automáticamente los módulos y herramientas de tu espacio.
-              </p>
-            </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {ARCHETYPES.map(arch => {
+                      const isSelected = businessModel === arch.id;
+                      const Icon = arch.icon;
 
-            {/* Archetype Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {ARCHETYPES.map(arch => {
-                const isSelected = businessModel === arch.id;
-                const Icon = arch.icon;
+                      return (
+                        <div
+                          key={arch.id}
+                          onClick={() => handleSelectArchetype(arch)}
+                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
+                            isSelected
+                              ? "bg-zinc-900 border-[#FF3F1A]/80 ring-1 ring-[#FF3F1A]/50 shadow-md"
+                              : "bg-zinc-900/40 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/70"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                                isSelected
+                                  ? "bg-[#FF3F1A] text-white"
+                                  : "bg-zinc-800 text-zinc-400 group-hover:text-zinc-200"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4" />
+                            </div>
 
-                return (
-                  <div
-                    key={arch.id}
-                    onClick={() => handleSelectArchetype(arch)}
-                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between gap-3 min-h-[140px] ${
-                      isSelected
-                        ? "border-zinc-950 dark:border-zinc-100 bg-white dark:bg-zinc-900 shadow-sm"
-                        : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#121214] hover:border-zinc-300 dark:hover:border-zinc-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
+                            <div
+                              className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? "bg-[#FF3F1A] text-white"
+                                  : "border border-zinc-700"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                            </div>
+                          </div>
 
-                      <div
-                        className={`w-4.5 h-4.5 rounded-full flex items-center justify-center transition-all ${
-                          isSelected
-                            ? "bg-[#FF3F1A] text-white"
-                            : "border border-zinc-300 dark:border-zinc-700"
-                        }`}
-                      >
-                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                      </div>
-                    </div>
+                          <div className="space-y-1">
+                            <h3 className="text-xs font-bold text-white tracking-tight">
+                              {arch.title}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400 leading-snug line-clamp-2">
+                              {arch.tagline}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
-                        {arch.title}
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                        {arch.subtitle}
-                      </p>
+                {/* Form Fields */}
+                <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 space-y-4">
+                  {/* Company Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                      <span>Nombre Comercial del Negocio</span>
+                      <span className="text-[10px] text-zinc-500 font-normal">Requerido</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <Building2 className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Trattoria di Roma / Urban Bakery"
+                        value={companyName}
+                        onChange={e => setCompanyName(e.target.value)}
+                        autoFocus
+                        className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium focus:outline-none focus:border-[#FF3F1A] transition-colors"
+                      />
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Business Details Card */}
-            <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-8 space-y-5">
-              {/* Company Name */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Nombre comercial
-                </label>
-                <div className="relative flex items-center">
-                  <Building2 className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ej. Burger House"
-                    value={companyName}
-                    onChange={e => setCompanyName(e.target.value)}
-                    autoFocus
-                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400 transition-colors"
-                  />
+                  {/* Country & City */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                        País & Moneda
+                      </label>
+                      <div className="relative flex items-center">
+                        <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
+                        <select
+                          value={country}
+                          onChange={e => setCountry(e.target.value)}
+                          className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium focus:outline-none focus:border-zinc-700 cursor-pointer"
+                        >
+                          <option value="Colombia">Colombia (COP $)</option>
+                          <option value="México">México (MXN $)</option>
+                          <option value="Estados Unidos">Estados Unidos (USD $)</option>
+                          <option value="Argentina">Argentina (ARS $)</option>
+                          <option value="Chile">Chile (CLP $)</option>
+                          <option value="España">España (EUR €)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                        Ciudad / Región
+                      </label>
+                      <div className="relative flex items-center">
+                        <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                        <input
+                          type="text"
+                          placeholder="Ej. Bogotá, CDMX, Miami"
+                          value={city}
+                          onChange={e => setCity(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium focus:outline-none focus:border-zinc-700"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                      Línea de Atención / WhatsApp
+                    </label>
+                    <div className="relative flex items-center">
+                      <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                      <input
+                        type="tel"
+                        placeholder="+57 300 123 4567"
+                        value={contactPhone}
+                        onChange={e => setContactPhone(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-950 border border-zinc-800 rounded-xl text-white font-medium focus:outline-none focus:border-zinc-700"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Country & City */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    País
-                  </label>
-                  <div className="relative flex items-center">
-                    <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
-                    <select
-                      value={country}
-                      onChange={e => setCountry(e.target.value)}
-                      className="w-full pl-10 pr-8 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
+            {/* ─── STEP 2: WHATSAPP CLOUD API ────────────────────────────── */}
+            {step === 2 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/40 text-emerald-400 border border-emerald-800/60 text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Meta Business Integration</span>
+                  </div>
+
+                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+                    Conecta tu canal oficial de WhatsApp
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                    Necto se integra directamente con la Cloud API de Meta para gestionar pedidos, reservas y notificaciones con máxima tasa de entrega y latencia sub-segundo.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    {
+                      icon: Zap,
+                      title: "Toma de Pedidos Autónoma",
+                      desc: "El bot inteligente atiende clientes, valida stock y genera comandas.",
+                    },
+                    {
+                      icon: ShieldCheck,
+                      title: "Infraestructura Cloud Oficial",
+                      desc: "Sin riesgo de bloqueos por usar soluciones no autorizadas.",
+                    },
+                    {
+                      icon: MessageSquare,
+                      title: "Bandeja Omnicanal Central",
+                      desc: "Tus agentes y administradores responden desde un único panel.",
+                    },
+                    {
+                      icon: QrCode,
+                      title: "Integración QR en Local",
+                      desc: "Permite a los clientes escanear en mesa y abrir el chat directamente.",
+                    },
+                  ].map(item => (
+                    <div
+                      key={item.title}
+                      className="p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 flex items-start gap-3"
                     >
-                      <option value="Colombia">Colombia (COP $)</option>
-                      <option value="México">México (MXN $)</option>
-                      <option value="Estados Unidos">Estados Unidos (USD $)</option>
-                      <option value="Argentina">Argentina (ARS $)</option>
-                      <option value="Chile">Chile (CLP $)</option>
-                      <option value="España">España (EUR €)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                    Ciudad
-                  </label>
-                  <div className="relative flex items-center">
-                    <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                    <input
-                      type="text"
-                      placeholder="Ej. Bogotá"
-                      value={city}
-                      onChange={e => setCity(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Phone (optional, feeds into WhatsApp later) */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Teléfono / WhatsApp (opcional)
-                </label>
-                <div className="relative flex items-center">
-                  <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                  <input
-                    type="text"
-                    placeholder="+57 300 123 4567"
-                    value={contactPhone}
-                    onChange={e => setContactPhone(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end">
-                <button
-                  type="button"
-                  disabled={!canProceedStep1}
-                  onClick={() => setStep(2)}
-                  className={`py-3 px-8 rounded-2xl text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98 ${
-                    canProceedStep1
-                      ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                      : "bg-zinc-200 text-zinc-400 cursor-not-allowed dark:bg-zinc-800 dark:text-zinc-600"
-                  }`}
-                >
-                  <span>Continuar</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─── STEP 2: WHATSAPP ────────────────────────────────────────── */}
-        {step === 2 && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[460px]">
-              {/* Left Content */}
-              <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-6">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200/60 dark:border-orange-900/60 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <span>Recomendado</span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-                      Conecta tu cuenta de WhatsApp
-                    </h1>
-                    <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                      API oficial de WhatsApp Business a través de Meta. Máxima fiabilidad, seguridad y cumplimiento.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2.5 pt-2">
-                    {[
-                      {
-                        icon: Zap,
-                        title: "Activación instantánea",
-                        desc: "Configura tu número y comienza a recibir pedidos en minutos.",
-                      },
-                      {
-                        icon: ShieldCheck,
-                        title: "API oficial Cloud",
-                        desc: "Escalabilidad ilimitada y cumplimiento con políticas de Meta.",
-                      },
-                      {
-                        icon: MessageSquare,
-                        title: "Gestión centralizada",
-                        desc: "Recibe y responde mensajes desde tu tablero de Necto.",
-                      },
-                    ].map(item => (
-                      <div
-                        key={item.title}
-                        className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/60 dark:border-zinc-800/60 flex items-center gap-3"
-                      >
-                        <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center flex-none">
-                          <item.icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                            {item.title}
-                          </p>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                            {item.desc}
-                          </p>
-                        </div>
+                      <div className="w-8 h-8 rounded-xl bg-zinc-800 text-[#FF3F1A] flex items-center justify-center flex-none">
+                        <item.icon className="w-4 h-4" />
                       </div>
-                    ))}
-                  </div>
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-bold text-white">{item.title}</p>
+                        <p className="text-[11px] text-zinc-400 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-3 flex-wrap">
+                {/* Connection Box */}
+                <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#25D366]/10 text-[#25D366] flex items-center justify-center border border-[#25D366]/20 font-bold">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">WhatsApp Business Cloud API</h4>
+                        <p className="text-[11px] text-zinc-400 font-mono">
+                          {isMetaConnected ? "Vinculación Exitosa · Auth Token OK" : "Pendiente de autorización con Meta"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-mono px-2.5 py-1 rounded-full uppercase font-bold ${
+                        isMetaConnected
+                          ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800"
+                          : "bg-amber-950/60 text-amber-400 border border-amber-800"
+                      }`}
+                    >
+                      {isMetaConnected ? "Conectado" : "Desconectado"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsMetaConnected(true);
-                        setTimeout(() => setStep(3), 600);
-                      }}
-                      className="py-3 px-6 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
+                      onClick={() => setIsMetaConnected(!isMetaConnected)}
+                      className={`py-2.5 px-5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-2 cursor-pointer ${
+                        isMetaConnected
+                          ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-zinc-700"
+                          : "bg-[#FF3F1A] hover:bg-[#e03413] text-white shadow-xs"
+                      }`}
                     >
                       {isMetaConnected ? (
                         <>
-                          <Check className="w-4 h-4" />
-                          <span>Conectado</span>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <span>Desconectar Meta API</span>
                         </>
                       ) : (
-                        <span>Conectar con Meta</span>
+                        <>
+                          <Zap className="w-4 h-4" />
+                          <span>Autorizar con Meta</span>
+                        </>
                       )}
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setStep(3)}
-                      className="py-3 px-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+                      className="text-xs text-zinc-400 hover:text-white font-mono px-3 py-2 cursor-pointer transition-colors"
                     >
-                      Configurar más tarde
+                      Vincular más tarde →
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
 
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                      <span>Volver</span>
-                    </button>
-
-                    <p className="text-[10px] text-zinc-400 flex items-center gap-1.5 font-mono">
-                      <Shield className="w-3 h-3" />
-                      <span>Encriptación de extremo a extremo</span>
-                    </p>
+            {/* ─── STEP 3: ARQUITECTURA MODULAR ──────────────────────────── */}
+            {step === 3 && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-950/40 text-[#FF3F1A] border border-orange-800/60 text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <Layers className="w-3 h-3" />
+                    <span>Configuración Modular</span>
                   </div>
-                </div>
-              </div>
 
-              {/* Right Image */}
-              <div className="md:col-span-5 relative overflow-hidden border-t md:border-t-0 md:border-l border-zinc-200/80 dark:border-zinc-800/80">
-                <img
-                  src="/whatsapp-meta-hero.jpg"
-                  alt="Necto WhatsApp Business Integration"
-                  className="w-full h-full object-cover min-h-[300px]"
-                />
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/70 to-transparent">
-                  <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A]">
-                    NECTO X META
-                  </p>
-                  <p className="text-xs text-white/80 mt-0.5 max-w-[240px]">
-                    La forma más potente de conectar con tus clientes.
+                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+                    Personaliza los módulos de tu espacio
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                    Hemos activado los módulos recomendados para <strong className="text-white">{activeArchetype.title}</strong>. Puedes encender o apagar cualquier módulo según tus requerimientos.
                   </p>
                 </div>
-              </div>
-            </div>
 
-            {/* FAQ Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-start gap-3.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-500 flex items-center justify-center flex-none">
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    ¿Qué necesito para empezar?
-                  </h4>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Un número de teléfono que no esté asociado a una cuenta personal de WhatsApp.
-                  </p>
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {MODULE_DEFINITIONS.map(mod => {
+                    const isSelected = selectedModules.includes(mod.id);
+                    const Icon = mod.icon;
 
-              <div className="p-5 rounded-2xl bg-white dark:bg-[#121214] border border-zinc-200/80 dark:border-zinc-800/80 flex items-start gap-3.5 shadow-2xs">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-500 flex items-center justify-center flex-none">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    Seguridad y Cumplimiento
-                  </h4>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                    Necto cumple con GDPR e infraestructuras seguras para las conversaciones de tus clientes.
-                  </p>
+                    return (
+                      <div
+                        key={mod.id}
+                        onClick={() => handleToggleModule(mod.id)}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
+                          isSelected
+                            ? "bg-zinc-900 border-zinc-700 shadow-xs"
+                            : "bg-zinc-950/40 border-zinc-800/60 opacity-60 hover:opacity-100 hover:bg-zinc-900/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? "bg-[#FF3F1A] text-white"
+                                : "bg-zinc-800 text-zinc-500"
+                            }`}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                              {mod.tag}
+                            </span>
+                            <div
+                              className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
+                                isSelected
+                                  ? "bg-[#FF3F1A] text-white"
+                                  : "border border-zinc-700"
+                              }`}
+                            >
+                              {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <h4 className="text-xs font-bold text-white">{mod.title}</h4>
+                          <p className="text-[11px] text-zinc-400 leading-snug">
+                            {mod.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* ─── STEP 3: MÓDULOS ─────────────────────────────────────────── */}
-        {step === 3 && (
-          <div className="bg-white dark:bg-[#121214] rounded-3xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm p-6 sm:p-10 space-y-6 animate-fade-in">
-            <div>
-              <h2 className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
-                Módulos de tu espacio
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 font-mono">
-                {selectedModules.length} de {MODULES.length} activos — Recomendados para{" "}
-                {ARCHETYPES.find(a => a.id === businessModel)?.title || "tu negocio"}
-              </p>
+          {/* Wizard Footer Navigation */}
+          <div className="pt-6 border-t border-zinc-800/80 flex items-center justify-between">
+            {step > 1 ? (
+              <button
+                type="button"
+                onClick={() => setStep(step - 1)}
+                className="py-2.5 px-4 rounded-xl text-xs font-mono text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Paso Anterior</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {step < 3 ? (
+              <button
+                type="button"
+                disabled={step === 1 && !canProceedStep1}
+                onClick={() => setStep(step + 1)}
+                className={`py-3 px-7 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
+                  step === 1 && !canProceedStep1
+                    ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                    : "bg-white text-zinc-950 hover:bg-[#FF3F1A] hover:text-white"
+                }`}
+              >
+                <span>Siguiente Paso</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={isDeploying}
+                onClick={handleFinish}
+                className="py-3 px-8 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+              >
+                {isDeploying ? (
+                  <>
+                    <Activity className="w-4 h-4 animate-spin" />
+                    <span>Desplegando Espacio...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Finalizar & Lanzar Espacio</span>
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: High-Fidelity Workspace Live Simulator (5 Cols) */}
+        <div className="lg:col-span-5 bg-[#09090B] p-6 sm:p-10 flex flex-col justify-between space-y-6 overflow-hidden relative">
+          {/* Subtle Ambient Glow */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF3F1A]/5 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Live Simulator Header */}
+          <div className="space-y-4 relative z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Terminal className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                  Live Workspace Preview
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-2 py-0.5 rounded-full">
+                Interactive State
+              </span>
             </div>
 
-            {/* Module Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-              {MODULES.map(mod => {
-                const isSelected = selectedModules.includes(mod.id);
-                const Icon = mod.icon;
+            {/* Simulated Desktop App Frame */}
+            <div className="rounded-2xl border border-zinc-800 bg-[#121214] shadow-2xl overflow-hidden text-xs">
+              {/* Window Bar */}
+              <div className="px-4 py-2.5 bg-zinc-900/90 border-b border-zinc-800 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+                </div>
+                <div className="text-[10px] font-mono text-zinc-400 truncate max-w-[200px]">
+                  necto.app/{companyName ? companyName.toLowerCase().replace(/\s+/g, "-") : "mi-negocio"}
+                </div>
+                <div className="w-4" />
+              </div>
 
-                return (
-                  <div
-                    key={mod.id}
-                    onClick={() => handleToggleModule(mod.id)}
-                    className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-4 min-h-[170px] relative group ${
-                      isSelected
-                        ? "bg-zinc-50/90 dark:bg-zinc-900 border-zinc-950 dark:border-zinc-100 shadow-xs"
-                        : "bg-white dark:bg-[#121214] border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-                          isSelected
-                            ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </div>
-
-                      <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
-                          isSelected
-                            ? "bg-[#FF3F1A] text-white"
-                            : "border border-zinc-300 dark:border-zinc-700 opacity-0 group-hover:opacity-40"
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
-                      </div>
+              {/* Simulated Inner Workspace Content */}
+              <div className="p-4 space-y-4">
+                {/* Header info */}
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-zinc-800 text-white flex items-center justify-center font-bold text-xs border border-zinc-700">
+                      {companyName ? companyName.charAt(0).toUpperCase() : "N"}
                     </div>
-
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
-                        {mod.title}
-                      </h3>
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                        {mod.description}
+                    <div>
+                      <h4 className="font-bold text-white truncate max-w-[150px]">
+                        {companyName.trim() || "Nombre del Negocio"}
+                      </h4>
+                      <p className="text-[10px] font-mono text-zinc-500">
+                        {city ? `${city} · ` : ""}{country} ({currencyForCountry(country)})
                       </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Actions */}
-            <div className="pt-6 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1.5 cursor-pointer"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Volver</span>
-              </button>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 border border-zinc-700">
+                    {activeArchetype.category}
+                  </span>
+                </div>
 
-              <button
-                type="button"
-                onClick={handleFinish}
-                className="py-3 px-8 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-98"
-              >
-                <span>Crear Espacio de Trabajo</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                {/* Active Modules HUD */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block">
+                    Módulos Conectados ({selectedModules.length}/6)
+                  </span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {MODULE_DEFINITIONS.map(m => {
+                      const isActive = selectedModules.includes(m.id);
+                      return (
+                        <div
+                          key={m.id}
+                          className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-2 transition-all ${
+                            isActive
+                              ? "bg-zinc-800/80 border-zinc-700 text-white"
+                              : "bg-zinc-900/40 border-zinc-800/40 text-zinc-600 line-through"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isActive ? "bg-[#FF3F1A]" : "bg-zinc-700"
+                            }`}
+                          />
+                          <span className="truncate">{m.title.split(" ")[0]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Live Sample Order / Action Preview */}
+                <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-zinc-500">Live Ticket Event</span>
+                    <span className="text-[#FF3F1A] font-bold">{activeArchetype.mockOrder.badge}</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white text-xs">{activeArchetype.mockOrder.item}</span>
+                      <span className="font-mono text-zinc-300 text-xs font-bold">
+                        {activeArchetype.mockOrder.price}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400">{activeArchetype.mockOrder.detail}</p>
+                  </div>
+                </div>
+
+                {/* WhatsApp Status Simulator */}
+                <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        isMetaConnected ? "bg-emerald-400 animate-ping" : "bg-zinc-600"
+                      }`}
+                    />
+                    <span className="text-[11px] font-mono text-zinc-300">
+                      Canal WhatsApp Meta
+                    </span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-mono font-bold ${
+                      isMetaConnected ? "text-emerald-400" : "text-zinc-500"
+                    }`}
+                  >
+                    {isMetaConnected ? "ACTIVO (Webhook OK)" : "STANDBY"}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </main>
+
+          {/* Bottom Security / Architecture Note */}
+          <div className="p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/60 flex items-center gap-3 relative z-10">
+            <div className="w-8 h-8 rounded-xl bg-zinc-800 text-zinc-400 flex items-center justify-center flex-none">
+              <Shield className="w-4 h-4 text-[#FF3F1A]" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-white">Garantía Multi-Tenant Necto</p>
+              <p className="text-[10px] text-zinc-400 leading-snug">
+                Datos aislados por espacio criptográficamente con respaldo continuo en Cloud.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
