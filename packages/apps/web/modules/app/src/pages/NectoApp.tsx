@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Home, Eye, Users, Boxes, Settings, HelpCircle, LogOut,
   ChevronDown, ChevronRight, X, Mail, Megaphone, Package, Gift,
   FileText, BarChart2, UserCircle, Sun, Moon, Bell, BellRing,
   FolderTree, Camera, ShieldCheck, LineChart, BookOpen, MapPin,
   FileDown, Search, ShieldAlert, Sparkles, Check, ShoppingBag,
-  ChefHat, Calendar, Layers, Zap, History, TrendingUp, Menu
+  ChefHat, Calendar, Layers, Zap, History, TrendingUp, Menu,
+  Building2, LayoutGrid
 } from "lucide-react";
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
@@ -269,6 +271,7 @@ function Sidebar({
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }) {
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
       const saved = localStorage.getItem("necto_sidebar_collapsed");
@@ -569,6 +572,11 @@ function Sidebar({
 
         {/* Bottom Action Section */}
         <div className="p-2 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
+          <NavItem
+            icon={<Building2 className="w-4 h-4 text-[#FF3F1A]" />}
+            label="Hub de Negocios"
+            onClick={() => navigate("/workspaces")}
+          />
           <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} />
           <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} />
           <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => {}} />
@@ -604,6 +612,15 @@ function Sidebar({
 
             {/* Drawer Footer */}
             <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1 bg-slate-50/50 dark:bg-gray-800/40">
+              <NavItem
+                icon={<Building2 className="w-4 h-4 text-[#FF3F1A]" />}
+                label="Hub de Negocios"
+                onClick={() => {
+                  onCloseMobile?.();
+                  navigate("/workspaces");
+                }}
+                isMobile={true}
+              />
               <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} isMobile={true} />
               <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} isMobile={true} />
               <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => {}} isMobile={true} />

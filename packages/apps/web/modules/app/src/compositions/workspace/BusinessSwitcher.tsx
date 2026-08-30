@@ -2,7 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
-import { ChevronDown, Plus, Check, LayoutGrid, Building2, Sparkles } from "lucide-react";
+import {
+  ChevronDown,
+  Plus,
+  Check,
+  LayoutGrid,
+  Building2,
+  ArrowRight,
+  Sparkles,
+  Store,
+  MapPin,
+} from "lucide-react";
 
 export const BusinessSwitcher: React.FC = () => {
   const navigate = useNavigate();
@@ -29,19 +39,19 @@ export const BusinessSwitcher: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-zinc-50/80 hover:bg-zinc-100/90 dark:bg-zinc-800/70 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs cursor-pointer group"
+        className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-zinc-50/90 hover:bg-zinc-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs cursor-pointer group"
         title="Cambiar de negocio o administrar sucursales"
       >
-        <div className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center flex-none shadow-2xs group-hover:scale-105 transition-transform">
+        <div className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs group-hover:scale-105 transition-transform">
           <BusinessIcon iconKey={activeBusiness?.iconKey} className="w-3.5 h-3.5 text-[#FF3F1A]" />
         </div>
 
         <div className="text-left min-w-0 max-w-[130px] sm:max-w-[180px]">
-          <p className="text-xs font-black text-zinc-950 dark:text-zinc-50 truncate group-hover:text-[#FF3F1A] transition-colors leading-tight">
-            {activeBusiness?.name || "Mi Restaurante"}
+          <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-[#FF3F1A] transition-colors leading-tight">
+            {activeBusiness?.name || "Mi Negocio"}
           </p>
           <p className="text-[10px] text-zinc-400 font-medium truncate leading-tight mt-0.5">
-            {activeBusiness?.city || "Restaurante"}
+            {activeBusiness?.city || "Sucursal Activa"}
           </p>
         </div>
 
@@ -52,27 +62,52 @@ export const BusinessSwitcher: React.FC = () => {
         />
       </button>
 
-      {/* Dropdown Menu (Right-Aligned) */}
+      {/* Dropdown Menu (High-End Enterprise Workspace Panel) */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2.5 w-80 bg-white/95 dark:bg-[#18181B]/95 backdrop-blur-md rounded-3xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 p-2.5 z-50 animate-fade-in divide-y divide-zinc-100 dark:divide-zinc-800/80">
-          {/* Header */}
-          <div className="p-2 pb-2 flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400 font-mono">
-              Mis Negocios ({businesses.length})
+        <div className="absolute top-full right-0 mt-2.5 w-84 sm:w-96 bg-white dark:bg-[#121214] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-3.5 z-50 animate-fade-in space-y-3">
+          {/* Header with Title & Total Count */}
+          <div className="flex items-center justify-between px-1.5 pt-1">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-[#FF3F1A]" />
+              <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-100">
+                Espacios de Trabajo
+              </h4>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700">
+              {businesses.length} {businesses.length === 1 ? "negocio" : "negocios"}
             </span>
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/workspaces");
-              }}
-              className="text-[10px] font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <LayoutGrid className="w-3 h-3" /> Ver Todos
-            </button>
           </div>
 
-          {/* Business List */}
-          <div className="py-1.5 max-h-60 overflow-y-auto space-y-1 scrollbar-thin">
+          {/* Prominent Hub Bridge Banner */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsOpen(false);
+              navigate("/workspaces");
+            }}
+            className="w-full p-3 rounded-2xl bg-zinc-950 text-white dark:bg-zinc-800/90 dark:hover:bg-zinc-700/90 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] transition-all flex items-center justify-between group cursor-pointer shadow-sm text-left"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center flex-none">
+                <LayoutGrid className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white leading-tight">
+                  Abrir Hub de Negocios
+                </p>
+                <p className="text-[10px] text-zinc-300 dark:text-zinc-400 group-hover:text-white/90 transition-colors">
+                  Ver vista general, métricas y configurar sucursales
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-none" />
+          </button>
+
+          {/* Switcher Business List */}
+          <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-1.5 font-bold">
+              Cambio Rápido
+            </p>
             {businesses.map(biz => {
               const isSelected = biz.id === activeBusiness?.id;
               return (
@@ -82,45 +117,69 @@ export const BusinessSwitcher: React.FC = () => {
                     switchBusiness(biz.id);
                     setIsOpen(false);
                   }}
-                  className={`p-2.5 rounded-2xl flex items-center justify-between gap-3 transition-all cursor-pointer ${
+                  className={`p-3 rounded-2xl flex items-center justify-between gap-3 transition-all cursor-pointer border ${
                     isSelected
-                      ? "bg-orange-50/50 dark:bg-orange-950/30 text-zinc-950 dark:text-zinc-50 font-bold border border-orange-200/60 dark:border-orange-900/60 shadow-2xs"
-                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800/60 text-zinc-600 dark:text-zinc-300 border border-transparent"
+                      ? "bg-orange-50/60 dark:bg-orange-950/30 text-zinc-950 dark:text-zinc-50 border-orange-200 dark:border-orange-900/60 shadow-2xs font-bold"
+                      : "bg-zinc-50/60 dark:bg-zinc-900/40 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 border-zinc-200/70 dark:border-zinc-800/70 text-zinc-700 dark:text-zinc-300"
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center flex-none">
-                      <BusinessIcon iconKey={biz.iconKey} className="w-4 h-4 text-[#FF3F1A]" />
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${
+                        isSelected
+                          ? "bg-[#FF3F1A] text-white shadow-2xs"
+                          : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                      }`}
+                    >
+                      <BusinessIcon
+                        iconKey={biz.iconKey}
+                        className={`w-4 h-4 ${isSelected ? "text-white" : "text-[#FF3F1A]"}`}
+                      />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold truncate leading-tight">{biz.name}</p>
-                      <p className="text-[10px] text-zinc-400 font-medium truncate mt-0.5">
-                        {biz.specialty || biz.city}
+                      <p className="text-xs font-bold truncate leading-tight">
+                        {biz.name}
                       </p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mt-0.5">
+                        <span className="truncate">{biz.city || "Principal"}</span>
+                        <span>·</span>
+                        <span className="font-mono uppercase text-[9px] px-1.5 py-0.2 rounded bg-zinc-200/70 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                          {biz.businessType === "retail_store"
+                            ? "Retail"
+                            : biz.businessType === "services"
+                            ? "Servicios"
+                            : "Restaurante"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  {isSelected && (
+
+                  {isSelected ? (
                     <div className="w-5 h-5 rounded-full bg-[#FF3F1A] text-white flex items-center justify-center flex-none shadow-2xs">
-                      <Check className="w-3 h-3" />
+                      <Check className="w-3 h-3 stroke-[3]" />
                     </div>
+                  ) : (
+                    <span className="text-[10px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Activar
+                    </span>
                   )}
                 </div>
               );
             })}
           </div>
 
-          {/* Create New Business CTA */}
-          <div className="pt-2 p-1">
+          {/* Bottom Action: Create Business */}
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 navigate("/onboarding");
               }}
-              className="w-full py-2.5 px-3 rounded-2xl bg-zinc-900 hover:bg-[#FF3F1A] text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group active:scale-98"
+              className="w-full py-2.5 px-3 rounded-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs active:scale-98"
             >
-              <Plus className="w-4 h-4" />
-              <span>Crear Nuevo Negocio</span>
+              <Plus className="w-4 h-4 text-[#FF3F1A]" />
+              <span>Crear Nuevo Espacio de Trabajo</span>
             </button>
           </div>
         </div>
@@ -128,3 +187,4 @@ export const BusinessSwitcher: React.FC = () => {
     </div>
   );
 };
+
