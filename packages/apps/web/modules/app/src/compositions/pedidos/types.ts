@@ -8,16 +8,18 @@ export type PedidosSection =
 export type OperacionTab = "en-vivo" | "preparacion" | "programados";
 export type MenuTab = "catalogo" | "insumos";
 export type AnaliticaTab = "resumen" | "historial" | "analitica" | "rendimiento";
-export type ConfigTab = "automatizaciones" | "turnos";
+export type ConfigTab = "roles" | "automatizaciones" | "turnos";
 
 export type GestionTab =
   | "resumen"
   | "historial"
   | "catalogo"
   | "insumos"
+  | "roles"
   | "automatizaciones"
   | "turnos"
   | "analitica";
+
 
 export type OrderStatus =
   | "NUEVO"

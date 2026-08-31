@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { useBusiness, BusinessInstance } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
+import { RoleSelectionModal } from "./RoleSelectionModal";
 import {
   Building2,
   TrendingUp,
@@ -24,6 +26,8 @@ import {
 export const GlobalFranchiseOverview: React.FC = () => {
   const navigate = useNavigate();
   const { businesses, switchBusiness, setIsCommandPaletteOpen } = useBusiness();
+  const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
+
 
   const handleNavigateToAnalitica = (
     e: React.MouseEvent,
@@ -178,7 +182,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
             return (
               <div
                 key={biz.id}
-                className="relative p-6 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-5 overflow-hidden group"
+                onClick={() => setRoleSelectBiz(biz)}
+                className="relative p-6 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-5 overflow-hidden group cursor-pointer"
               >
                 {/* Background Banner Watermark if uploaded */}
                 {biz.bannerUrl && (
@@ -198,7 +203,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       )}
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight">
+                      <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors">
                         {biz.name}
                       </h4>
                       <p className="text-xs text-zinc-400 font-medium mt-0.5">
@@ -206,7 +211,6 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       </p>
                     </div>
                   </div>
-
 
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -239,41 +243,41 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     <button
                       type="button"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "resumen")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group"
+                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Dashboard de Pedidos"
                     >
-                      <BarChart2 className="w-3.5 h-3.5 text-[#FF3F1A] group-hover:text-white transition-colors" />
+                      <BarChart2 className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Dashboard</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "historial")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group"
+                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Historial de Ventas"
                     >
-                      <History className="w-3.5 h-3.5 text-[#FF3F1A] group-hover:text-white transition-colors" />
+                      <History className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Historial</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "analitica")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group"
+                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Rendimiento & Canales"
                     >
-                      <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A] group-hover:text-white transition-colors" />
+                      <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Rendimiento</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Footer Action: Enter Workspace */}
+                {/* Footer Action: Enter Workspace via Profile Selector */}
                 <button
                   type="button"
-                  onClick={() => {
-                    switchBusiness(biz.id);
-                    navigate("/");
+                  onClick={e => {
+                    e.stopPropagation();
+                    setRoleSelectBiz(biz);
                   }}
                   className="w-full py-2.5 px-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer shadow-2xs"
                 >
@@ -285,6 +289,14 @@ export const GlobalFranchiseOverview: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal
+        business={roleSelectBiz}
+        isOpen={Boolean(roleSelectBiz)}
+        onClose={() => setRoleSelectBiz(null)}
+      />
     </div>
   );
 };
+

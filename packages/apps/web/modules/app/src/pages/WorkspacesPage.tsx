@@ -4,6 +4,7 @@ import { useBusiness, BusinessInstance } from "../context/BusinessContext";
 import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import { BusinessSettingsModal } from "../compositions/workspace/BusinessSettingsModal";
 import { AccountSettingsModal } from "../compositions/workspace/AccountSettingsModal";
+import { RoleSelectionModal } from "../compositions/workspace/RoleSelectionModal";
 import { CommandPalette } from "../compositions/workspace/CommandPalette";
 import {
   Plus,
@@ -38,7 +39,9 @@ export default function WorkspacesPage() {
 
   const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("franchise_overview");
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
+  const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.documentElement.classList.contains("dark");
@@ -249,14 +252,13 @@ export default function WorkspacesPage() {
 
                   <button
                     type="button"
-                    onClick={() => handleSelectBusiness(biz.id)}
-                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
-                      isActive
-                        ? "bg-[#FF3F1A] text-white hover:bg-[#e03413]"
-                        : "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                    }`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setRoleSelectBiz(biz);
+                    }}
+                    className="py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
                   >
-                    <span>Entrar</span>
+                    <span>Entrar al Tablero</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -294,7 +296,6 @@ export default function WorkspacesPage() {
       {/* Settings Modals */}
       <BusinessSettingsModal
         business={selectedBusinessForSettings}
-
         isOpen={Boolean(selectedBusinessForSettings)}
         onClose={() => setSelectedBusinessForSettings(null)}
       />
@@ -304,8 +305,15 @@ export default function WorkspacesPage() {
         onClose={() => setIsAccountSettingsOpen(false)}
       />
 
+      <RoleSelectionModal
+        business={roleSelectBiz}
+        isOpen={Boolean(roleSelectBiz)}
+        onClose={() => setRoleSelectBiz(null)}
+      />
+
       <CommandPalette />
     </div>
   );
 }
+
 

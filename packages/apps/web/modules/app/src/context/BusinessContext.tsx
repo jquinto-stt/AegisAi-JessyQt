@@ -67,12 +67,160 @@ export interface BusinessInstance {
 
 
 
+export interface RolePermissions {
+  canViewBandeja: boolean;
+  canCreateOrders: boolean;
+  canViewKDS: boolean;
+  canDispatchKDS: boolean;
+  canViewCatalogo: boolean;
+  canEditCatalogo: boolean;
+  canViewInsumos: boolean;
+  canEditInsumos: boolean;
+  canViewAnalitica: boolean;
+  canViewHistorial: boolean;
+  canViewAutomatizaciones: boolean;
+  canViewTurnos: boolean;
+  canManageRoles: boolean;
+}
+
+export interface RolePermission {
+  id: string;
+  name: string;
+  description: string;
+  badgeColor: "rose" | "blue" | "amber" | "emerald" | "purple" | "zinc";
+  isSystem?: boolean;
+  permissions: RolePermissions;
+}
+
+export const INITIAL_ROLES: RolePermission[] = [
+  {
+    id: "role-owner",
+    name: "Dueño / Propietario",
+    description: "Acceso total irrestricto a todas las funciones financieras, operativas, roles y configuración.",
+    badgeColor: "rose",
+    isSystem: true,
+    permissions: {
+      canViewBandeja: true,
+      canCreateOrders: true,
+      canViewKDS: true,
+      canDispatchKDS: true,
+      canViewCatalogo: true,
+      canEditCatalogo: true,
+      canViewInsumos: true,
+      canEditInsumos: true,
+      canViewAnalitica: true,
+      canViewHistorial: true,
+      canViewAutomatizaciones: true,
+      canViewTurnos: true,
+      canManageRoles: true,
+    },
+  },
+  {
+    id: "role-admin",
+    name: "Administrador de Tienda",
+    description: "Gerente contratado para la gestión integral de la tienda: administración de comandas, catálogo, stock, personal, turnos y configuración operativa.",
+    badgeColor: "blue",
+    isSystem: true,
+    permissions: {
+      canViewBandeja: true,
+      canCreateOrders: true,
+      canViewKDS: true,
+      canDispatchKDS: true,
+      canViewCatalogo: true,
+      canEditCatalogo: true,
+      canViewInsumos: true,
+      canEditInsumos: true,
+      canViewAnalitica: true,
+      canViewHistorial: true,
+      canViewAutomatizaciones: true,
+      canViewTurnos: true,
+      canManageRoles: true,
+    },
+  },
+  {
+    id: "role-cook",
+    name: "Cocinero / KDS Chef",
+    description: "Visualización y despacho táctil de tickets en Pantalla KDS Cocina sin acceso a finanzas.",
+    badgeColor: "amber",
+    isSystem: true,
+    permissions: {
+      canViewBandeja: false,
+      canCreateOrders: false,
+      canViewKDS: true,
+      canDispatchKDS: true,
+      canViewCatalogo: false,
+      canEditCatalogo: false,
+      canViewInsumos: false,
+      canEditInsumos: false,
+      canViewAnalitica: false,
+      canViewHistorial: false,
+      canViewAutomatizaciones: false,
+      canViewTurnos: false,
+      canManageRoles: false,
+    },
+  },
+  {
+    id: "role-waiter",
+    name: "Mesero / Cajero POS",
+    description: "Recepción de comandas, cobro en salón y emisión de tickets en Bandeja Unificada.",
+    badgeColor: "emerald",
+    isSystem: true,
+    permissions: {
+      canViewBandeja: true,
+      canCreateOrders: true,
+      canViewKDS: false,
+      canDispatchKDS: false,
+      canViewCatalogo: true,
+      canEditCatalogo: false,
+      canViewInsumos: false,
+      canEditInsumos: false,
+      canViewAnalitica: false,
+      canViewHistorial: true,
+      canViewAutomatizaciones: false,
+      canViewTurnos: false,
+      canManageRoles: false,
+    },
+  },
+  {
+    id: "role-inventory",
+    name: "Encargado de Insumos & Stock",
+    description: "Control de materias primas, escandallos, recetas y registro de inventario.",
+    badgeColor: "purple",
+    isSystem: true,
+    permissions: {
+      canViewBandeja: false,
+      canCreateOrders: false,
+      canViewKDS: false,
+      canDispatchKDS: false,
+      canViewCatalogo: true,
+      canEditCatalogo: true,
+      canViewInsumos: true,
+      canEditInsumos: true,
+      canViewAnalitica: false,
+      canViewHistorial: false,
+      canViewAutomatizaciones: false,
+      canViewTurnos: false,
+      canManageRoles: false,
+    },
+  },
+];
+
+
+
 interface BusinessContextType {
   businesses: BusinessInstance[];
   activeBusiness: BusinessInstance;
   activeBusinessId: string;
   userRole: UserWorkspaceRole;
   setUserRole: (role: UserWorkspaceRole) => void;
+  roles: RolePermission[];
+  activeRoleId: string;
+  activeRole: RolePermission;
+  setActiveRoleId: (roleId: string) => void;
+  createRole: (role: Omit<RolePermission, "id">) => RolePermission;
+  updateRole: (roleId: string, updates: Partial<RolePermission>) => void;
+  deleteRole: (roleId: string) => void;
+  canAccess: (permission: keyof RolePermissions) => boolean;
   isOnboardingOpen: boolean;
   setIsOnboardingOpen: (open: boolean) => void;
   isCommandPaletteOpen: boolean;
@@ -82,9 +230,12 @@ interface BusinessContextType {
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
   deleteBusiness: (id: string) => void;
+  storePace: "rapida" | "habitual" | "demorada";
+  setStorePace: (pace: "rapida" | "habitual" | "demorada") => void;
   toggleModule: (moduleKey: NectoModuleKey) => void;
   updateSetupProgress: (bizId: string, progressUpdates: Partial<BusinessSetupProgress>) => void;
 }
+
 
 
 const DEFAULT_BUSINESS: BusinessInstance = {
@@ -175,8 +326,35 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [userRole, setUserRole] = useState<UserWorkspaceRole>("owner");
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [storePace, setStorePaceState] = useState<"rapida" | "habitual" | "demorada">(() => {
+    try {
+      const saved = localStorage.getItem("necto_store_pace");
+      if (saved === "rapida" || saved === "habitual" || saved === "demorada") return saved;
+    } catch (e) {}
+    return "habitual";
+  });
+
+  const setStorePace = (pace: "rapida" | "habitual" | "demorada") => {
+    setStorePaceState(pace);
+    try {
+      localStorage.setItem("necto_store_pace", pace);
+      window.dispatchEvent(new CustomEvent("necto_store_pace_changed", { detail: pace }));
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const handlePaceChange = (e: Event) => {
+      const customEvent = e as CustomEvent<"rapida" | "habitual" | "demorada">;
+      if (customEvent.detail && (customEvent.detail === "rapida" || customEvent.detail === "habitual" || customEvent.detail === "demorada")) {
+        setStorePaceState(customEvent.detail);
+      }
+    };
+    window.addEventListener("necto_store_pace_changed", handlePaceChange);
+    return () => window.removeEventListener("necto_store_pace_changed", handlePaceChange);
+  }, []);
 
   // Global Keyboard listener for Command Palette (Ctrl+K or Cmd+K)
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -281,8 +459,74 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const newModules = currentModules.includes(moduleKey)
       ? currentModules.filter(m => m !== moduleKey)
       : [...currentModules, moduleKey];
-
     updateBusiness(activeBusiness.id, { activeModules: newModules });
+  };
+
+  // Roles & Permissions state
+
+  const [roles, setRoles] = useState<RolePermission[]>(() => {
+    try {
+      const saved = localStorage.getItem("necto_custom_roles");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_ROLES;
+  });
+
+  const [activeRoleId, setActiveRoleIdState] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem("necto_active_role_id");
+      if (saved) return saved;
+    } catch (e) {}
+    return "role-owner";
+  });
+
+  const setActiveRoleId = (roleId: string) => {
+    setActiveRoleIdState(roleId);
+    try {
+      localStorage.setItem("necto_active_role_id", roleId);
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("necto_custom_roles", JSON.stringify(roles));
+    } catch (e) {}
+  }, [roles]);
+
+  const activeRole: RolePermission =
+    roles.find(r => r.id === activeRoleId) || roles[0] || INITIAL_ROLES[0];
+
+  const createRole = (newRoleData: Omit<RolePermission, "id">): RolePermission => {
+    const newRole: RolePermission = {
+      ...newRoleData,
+      id: `role-custom-${Date.now()}`,
+    };
+    setRoles(prev => [...prev, newRole]);
+    return newRole;
+  };
+
+  const updateRole = (roleId: string, updates: Partial<RolePermission>) => {
+    setRoles(prev =>
+      prev.map(r => (r.id === roleId ? { ...r, ...updates, permissions: { ...r.permissions, ...(updates.permissions || {}) } } : r))
+    );
+  };
+
+  const deleteRole = (roleId: string) => {
+    setRoles(prev => {
+      const filtered = prev.filter(r => r.id !== roleId || r.isSystem);
+      return filtered;
+    });
+    if (activeRoleId === roleId) {
+      setActiveRoleId("role-owner");
+    }
+  };
+
+  const canAccess = (permission: keyof RolePermissions): boolean => {
+    if (!activeRole || !activeRole.permissions) return true;
+    return !!activeRole.permissions[permission];
   };
 
   return (
@@ -293,6 +537,14 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeBusinessId,
         userRole,
         setUserRole,
+        roles,
+        activeRoleId,
+        activeRole,
+        setActiveRoleId,
+        createRole,
+        updateRole,
+        deleteRole,
+        canAccess,
         isOnboardingOpen,
         setIsOnboardingOpen,
         isCommandPaletteOpen,
@@ -302,6 +554,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         switchBusiness,
         updateBusiness,
         deleteBusiness,
+        storePace,
+        setStorePace,
         toggleModule,
         updateSetupProgress,
       }}
@@ -309,6 +563,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </BusinessContext.Provider>
   );
+
 
 };
 

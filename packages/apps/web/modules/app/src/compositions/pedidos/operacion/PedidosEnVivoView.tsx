@@ -30,7 +30,9 @@ import {
   GripVertical,
   ChevronDown,
   Minimize2,
+  Calendar,
 } from "lucide-react";
+
 
 import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
@@ -103,6 +105,7 @@ export const PedidosEnVivoView: React.FC<{
   const [urgencyFilter, setUrgencyFilter] = useState<UrgencyLevel | "TODOS">("TODOS");
   const [searchQuery, setSearchQuery] = useState("");
   const [showManualModal, setShowManualModal] = useState(false);
+
   const [manualCustomer, setManualCustomer] = useState("");
   const [manualPhone, setManualPhone] = useState("");
   const [manualChannel, setManualChannel] = useState<OrderChannel>("presencial");
@@ -231,17 +234,6 @@ export const PedidosEnVivoView: React.FC<{
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut listener (Ctrl+K / Cmd+K to focus search)
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   // Filtering
   const filterOrdersList = (list: Pedido[]) => {
@@ -329,11 +321,8 @@ export const PedidosEnVivoView: React.FC<{
                   >
                     <X className="w-2.5 h-2.5" />
                   </button>
-                ) : (
-                  <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded">
-                    Ctrl K
-                  </kbd>
-                )}
+                ) : null}
+
               </div>
             </div>
 
@@ -372,21 +361,24 @@ export const PedidosEnVivoView: React.FC<{
 
             {/* Delay Alert Filter Button */}
             <button
-              onClick={() => setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO")}
+              onClick={() => {
+                setShowProgramadosOnly(false);
+                setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO");
+              }}
               className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
                 urgencyFilter === "RETRASADO"
-                  ? "bg-red-500 text-white border-red-500 shadow-xs"
+                  ? "bg-rose-500 text-white border-rose-500 shadow-2xs"
                   : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400"
               }`}
             >
-              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-white" : "text-red-500"}`} />
+              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-white" : "text-rose-500"}`} />
               <span>Retrasos</span>
               {delayedCount > 0 && (
                 <span
                   className={`font-mono text-[10px] px-1.5 py-0.2 rounded font-bold ${
                     urgencyFilter === "RETRASADO"
                       ? "bg-white/20 text-white"
-                      : "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+                      : "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300"
                   }`}
                 >
                   {delayedCount}
@@ -394,6 +386,8 @@ export const PedidosEnVivoView: React.FC<{
               )}
             </button>
           </div>
+
+
 
           {/* Right: View Mode Toggle, Customize & New Order */}
           <div className="flex items-center gap-2">
@@ -547,43 +541,59 @@ export const PedidosEnVivoView: React.FC<{
 
                 {/* Tickets Container */}
                 <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[calc(100vh-340px)]">
-                  {col.id === "NUEVO" && todayScheduled.length > 0 && (
-                    <div className="p-3.5 rounded-2xl bg-zinc-100/90 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 space-y-2 text-xs shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 text-[11px]">
-                          <Clock className="w-3.5 h-3.5 text-[#FF3F1A]" /> Programado para Hoy:
-                        </span>
-                        <span className="font-mono font-black text-[10px] bg-white dark:bg-gray-800 px-2 py-0.5 rounded-md text-zinc-900 dark:text-zinc-100">
-                          {todayScheduled[0].scheduledTime}
+                  {col.id === "NUEVO" && programados.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#FF3F1A]" /> Programados ({programados.length})
                         </span>
                       </div>
-                      <div>
-                        <p className="font-extrabold text-gray-900 dark:text-gray-100 truncate">
-                          {todayScheduled[0].customerName}
-                        </p>
-                        <p className="text-[11px] text-gray-500">
-                          {todayScheduled[0].items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          injectScheduledOrderToLive(todayScheduled[0].id, true);
-                        }}
-                        className="w-full py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-black flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        <span>Despertar e Inyectar a Cocina</span>
-                      </button>
+
+                      {programados.map(prog => (
+                        <div
+                          key={prog.id}
+                          className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200/80 dark:border-zinc-800 space-y-2 text-xs shadow-2xs transition-all hover:border-zinc-300"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-1.5 text-[11px] truncate max-w-[140px]">
+                              {prog.customerName}
+                            </span>
+                            <span className="font-mono font-bold text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700">
+                              {prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] text-zinc-500 line-clamp-2">
+                            {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                          </p>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/80 text-[11px]">
+                            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                              ${prog.total.toLocaleString("es-AR")}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation();
+                                injectScheduledOrderToLive(prog.id, true);
+                              }}
+                              className="py-1.5 px-2.5 rounded-xl bg-zinc-950 hover:bg-[#FF3F1A] text-white text-[10px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+                            >
+                              <Zap className="w-3 h-3 text-[#FF3F1A]" />
+                              <span>Inyectar a Cocina</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  {colOrders.length === 0 && (col.id !== "NUEVO" || todayScheduled.length === 0) ? (
-                    <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-gray-800 rounded-2xl text-gray-400 text-xs">
-                      <p className="font-bold">Sin pedidos en esta etapa</p>
+                  {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
+                    <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl text-zinc-400 text-xs font-medium">
+                      <p>Sin pedidos en esta etapa</p>
                     </div>
                   ) : (
+
                     colOrders.map(order => {
                       const channelBadge = getChannelBadge(order.channel);
                       const isDelayed = order.urgency === "RETRASADO";
@@ -607,30 +617,33 @@ export const PedidosEnVivoView: React.FC<{
                             setDragOverCol(null);
                           }}
                           onClick={() => setSelectedOrderId(order.id)}
-                          className={`bg-white dark:bg-[#2C2D31] rounded-2xl border-2 p-4 shadow-xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing space-y-3 ${
+                          className={`bg-white dark:bg-[#18181B] rounded-3xl border p-4 shadow-2xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing space-y-3 ${
                             isDragging
-                              ? "opacity-35 scale-95 border-dashed border-[#FF3F1A] ring-2 ring-orange-500/30"
+                              ? "opacity-40 scale-95 border-dashed border-[#FF3F1A] ring-2 ring-orange-500/20"
                               : isDelayed
-                              ? "border-red-400 dark:border-red-800 bg-red-50/10"
-                              : "border-slate-200/90 dark:border-gray-700 hover:border-[#FF3F1A]"
+                              ? "border-rose-500/40 bg-rose-500/[0.02] dark:bg-rose-500/[0.04]"
+                              : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700"
                           }`}
                         >
                           {/* Ticket Top Meta */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5">
-                              <GripVertical className="w-3.5 h-3.5 text-gray-400 opacity-60 hover:opacity-100 flex-none" />
-                              <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <GripVertical className="w-3.5 h-3.5 text-zinc-400 opacity-60 hover:opacity-100 flex-none" />
+                              <span className="font-mono font-bold text-xs text-zinc-950 dark:text-zinc-50 tracking-tight">
                                 {order.id}
                               </span>
-                              {isDelayed && (
-                                <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-md animate-pulse">
-                                  RETRASO
+                              {order.turnNumber && (
+                                <span className="font-mono text-[10px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded-md">
+                                  #{order.turnNumber}
                                 </span>
+                              )}
+                              {isDelayed && (
+                                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-none" title="Retraso operativo" />
                               )}
                             </div>
 
                             <span
-                              className={`text-[10px] font-black px-2 py-0.5 rounded-lg border ${channelBadge.bg}`}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${channelBadge.bg}`}
                             >
                               {channelBadge.label}
                             </span>
@@ -638,30 +651,30 @@ export const PedidosEnVivoView: React.FC<{
 
                           {/* Customer & Time */}
                           <div>
-                            <h5 className="font-extrabold text-xs text-gray-900 dark:text-gray-100 truncate">
+                            <h5 className="font-bold text-xs text-zinc-950 dark:text-zinc-50 truncate">
                               {order.customerName}
                             </h5>
-                            <p className="text-[10px] text-gray-400 font-mono">
-                              Creado: {order.createdAt}
+                            <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                              {order.createdAt} · {order.items.reduce((s, i) => s + i.quantity, 0)} items
                             </p>
                           </div>
 
                           {/* Items Preview */}
-                          <div className="bg-slate-50 dark:bg-gray-800/80 rounded-xl p-2.5 text-xs space-y-1 border border-slate-100 dark:border-gray-700">
+                          <div className="bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl p-2.5 text-xs space-y-1 border border-zinc-200/60 dark:border-zinc-800/60">
                             {order.items.slice(0, 2).map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-gray-700 dark:text-gray-300 font-medium">
-                                <span className="truncate pr-1">
-                                  <strong className="text-[#FF3F1A]">×{item.quantity}</strong> {item.name}
+                              <div key={idx} className="flex justify-between text-zinc-700 dark:text-zinc-300 font-medium">
+                                <span className="truncate pr-1 text-[11px]">
+                                  <strong className="text-[#FF3F1A] font-bold">×{item.quantity}</strong> {item.name}
                                 </span>
                               </div>
                             ))}
                             {order.items.length > 2 && (
-                              <p className="text-[10px] text-gray-400 italic">
+                              <p className="text-[10px] text-zinc-400 italic">
                                 +{order.items.length - 2} productos más...
                               </p>
                             )}
 
-                            <div className="pt-1.5 border-t border-slate-200 dark:border-gray-700 flex justify-between font-black text-xs text-zinc-900 dark:text-zinc-100">
+                            <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-800/60 flex justify-between font-bold text-xs text-zinc-950 dark:text-zinc-50">
                               <span>Total:</span>
                               <span className="font-mono">${order.total.toLocaleString("es-CO")}</span>
                             </div>
@@ -669,19 +682,19 @@ export const PedidosEnVivoView: React.FC<{
 
                           {/* Elapsed Time Progress Bar */}
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] font-extrabold text-gray-500">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400">
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3 text-[#FF3F1A]" />
                                 <span>{order.elapsedMinutes}m de {order.estimatedMinutes}m</span>
                               </span>
-                              <span className={isDelayed ? "text-red-500 font-black" : "text-gray-400"}>
+                              <span className={isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}>
                                 {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${progressPercent}%`}
                               </span>
                             </div>
-                            <div className="w-full bg-slate-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                            <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${
-                                  isDelayed ? "bg-red-500" : progressPercent > 80 ? "bg-amber-500" : "bg-[#FF3F1A]"
+                                className={`h-full rounded-full transition-all ${
+                                  isDelayed ? "bg-rose-500" : progressPercent > 80 ? "bg-amber-500" : "bg-[#FF3F1A]"
                                 }`}
                                 style={{ width: `${progressPercent}%` }}
                               />
@@ -690,20 +703,20 @@ export const PedidosEnVivoView: React.FC<{
 
                           {/* Quick Advancement Action Buttons */}
                           <div
-                            className="pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-1.5"
+                            className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-1.5"
                             onClick={e => e.stopPropagation()}
                           >
                             {order.status === "NUEVO" && (
                               <>
                                 <button
                                   onClick={() => setRejectModalOrder(order)}
-                                  className="py-1.5 px-2.5 rounded-xl border border-slate-200 dark:border-gray-700 text-[10px] font-bold text-gray-500 hover:bg-slate-100 cursor-pointer"
+                                  className="py-1.5 px-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
                                 >
                                   Descartar
                                 </button>
                                 <button
                                   onClick={() => confirmOrder(order.id)}
-                                  className="flex-1 py-1.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-black flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                                  className="flex-1 py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs cursor-pointer active:scale-98"
                                 >
                                   <span>Confirmar</span>
                                   <ArrowRight className="w-3 h-3 text-[#FF3F1A]" />
@@ -714,35 +727,35 @@ export const PedidosEnVivoView: React.FC<{
                             {order.status === "CONFIRMADO" && (
                               <button
                                 onClick={() => sendToKitchen(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-black flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
                               >
-                                <ChefHat className="w-3 h-3" />
-                                <span>Pasar al Fogón / Horno</span>
+                                <ChefHat className="w-3.5 h-3.5" />
+                                <span>Pasar a Cocina</span>
                               </button>
                             )}
 
                             {order.status === "EN_PREPARACION" && (
                               <button
                                 onClick={() => markOrderReady(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-black flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
                               >
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>Marcar Listo para Retiro</span>
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Marcar Listo</span>
                               </button>
                             )}
 
                             {order.status === "LISTO" && (
                               <button
                                 onClick={() => deliverOrder(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-[11px] font-black flex items-center justify-center gap-1 shadow-xs cursor-pointer active:scale-95"
+                                className="w-full py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
                               >
-                                <Package className="w-3 h-3 text-[#FF3F1A]" />
+                                <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
                                 <span>Entregar Pedido</span>
                               </button>
                             )}
 
                             {order.status === "FINALIZADO" && (
-                              <div className="w-full text-center py-1 text-[10px] font-extrabold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                              <div className="w-full text-center py-1 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl">
                                 Pedido Finalizado
                               </div>
                             )}
@@ -763,26 +776,27 @@ export const PedidosEnVivoView: React.FC<{
             <div
               key={order.id}
               onClick={() => setSelectedOrderId(order.id)}
-              className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-gray-700 p-5 shadow-xs hover:border-[#FF3F1A] transition-all cursor-pointer space-y-3"
+              className="bg-white dark:bg-[#18181B] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs hover:border-[#FF3F1A] transition-all cursor-pointer space-y-3"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">{order.id}</span>
-                <span className="text-xs font-black text-zinc-900 dark:text-zinc-100 font-mono">
+                <span className="font-mono font-bold text-xs text-zinc-950 dark:text-zinc-50">{order.id}</span>
+                <span className="text-xs font-bold text-zinc-950 dark:text-zinc-50 font-mono">
                   ${order.total.toLocaleString("es-CO")}
                 </span>
               </div>
-              <h5 className="font-extrabold text-sm text-gray-900 dark:text-gray-100">{order.customerName}</h5>
-              <p className="text-xs text-gray-500">
+              <h5 className="font-bold text-sm text-zinc-950 dark:text-zinc-50">{order.customerName}</h5>
+              <p className="text-xs text-zinc-500">
                 {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
               </p>
-              <div className="text-[11px] font-bold text-gray-400 flex justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
-                <span className="text-zinc-900 dark:text-zinc-100 font-extrabold">{order.status}</span>
+              <div className="text-[11px] font-bold text-zinc-400 flex justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                <span className="text-zinc-950 dark:text-zinc-50 font-bold">{order.status}</span>
                 <span>{order.createdAt}</span>
               </div>
             </div>
           ))}
         </div>
       )}
+
 
       {/* Modal: Crear Nuevo Pedido Manual */}
       {showManualModal && (

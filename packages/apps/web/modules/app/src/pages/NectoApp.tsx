@@ -6,11 +6,12 @@ import {
   Home, Eye, Users, Boxes, Settings, HelpCircle, LogOut,
   ChevronDown, ChevronRight, X, Mail, Megaphone, Package, Gift,
   FileText, BarChart2, UserCircle, Sun, Moon, Bell, BellRing,
-  FolderTree, Camera, ShieldCheck, LineChart, BookOpen, MapPin,
+  FolderTree, Camera, Shield, ShieldCheck, LineChart, BookOpen, MapPin,
   FileDown, Search, ShieldAlert, Sparkles, Check, ShoppingBag,
   ChefHat, Calendar, Layers, Zap, History, TrendingUp, Menu,
   Building2, LayoutGrid
 } from "lucide-react";
+
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
@@ -310,7 +311,9 @@ function Sidebar({
   onCloseMobile?: () => void;
 }) {
   const navigate = useNavigate();
+  const { canAccess, activeRole } = useBusiness();
   const [isCollapsed, setIsCollapsed] = useState(() => {
+
     try {
       const saved = localStorage.getItem("necto_sidebar_collapsed");
       if (saved !== null) return JSON.parse(saved);
@@ -463,78 +466,106 @@ function Sidebar({
       />
       {(!isCollapsed || isMobile) && expanded.pedidos && (
         <div className="flex flex-col gap-0.5">
-          {/* Subcategoría 1: Operación en Vivo */}
-          <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
-            <Zap className="w-3 h-3 text-[#FF3F1A]" /> Operación en Vivo
-          </div>
-          <NavItem
-            icon={<ShoppingBag className="w-3.5 h-3.5" />}
-            label="Pedidos Activos"
-            active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
-            onClick={() => onNavigatePedidos("operacion", "en-vivo")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<ChefHat className="w-3.5 h-3.5" />}
-            label="KDS Cocina"
-            active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
-            onClick={() => onNavigatePedidos("operacion", "preparacion")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<Calendar className="w-3.5 h-3.5" />}
-            label="Programados"
-            active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "programados"}
-            onClick={() => onNavigatePedidos("operacion", "programados")}
-            indent
-            isMobile={isMobile}
-          />
+          {/* Subcategoría 1: Operación */}
+          {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
+            <>
+              <div className="px-3 pt-2.5 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                <Zap className="w-3 h-3 text-[#FF3F1A]" /> Operación
+              </div>
+
+              {canAccess("canViewBandeja") && (
+                <NavItem
+                  icon={<ShoppingBag className="w-3.5 h-3.5" />}
+                  label="Bandeja Unificada"
+                  active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
+                  onClick={() => onNavigatePedidos("operacion", "en-vivo")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+              {canAccess("canViewKDS") && (
+                <NavItem
+                  icon={<ChefHat className="w-3.5 h-3.5" />}
+                  label="KDS Cocina"
+                  active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
+                  onClick={() => onNavigatePedidos("operacion", "preparacion")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+            </>
+          )}
 
           {/* Subcategoría 2: Menú & Abastecimiento */}
-          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
-            <Layers className="w-3 h-3 text-[#FF3F1A]" /> Menú & Abastecimiento
-          </div>
-          <NavItem
-            icon={<Layers className="w-3.5 h-3.5" />}
-            label="Catálogo de Platos"
-            active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "catalogo"}
-            onClick={() => onNavigatePedidos("menu", "catalogo")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<Package className="w-3.5 h-3.5" />}
-            label="Insumos & Stock"
-            active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "insumos"}
-            onClick={() => onNavigatePedidos("menu", "insumos")}
-            indent
-            isMobile={isMobile}
-          />
+          {(canAccess("canViewCatalogo") || canAccess("canViewInsumos")) && (
+            <>
+              <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
+                <Layers className="w-3 h-3 text-[#FF3F1A]" /> Menú & Abastecimiento
+              </div>
+              {canAccess("canViewCatalogo") && (
+                <NavItem
+                  icon={<Layers className="w-3.5 h-3.5" />}
+                  label="Catálogo de Platos"
+                  active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "catalogo"}
+                  onClick={() => onNavigatePedidos("menu", "catalogo")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+              {canAccess("canViewInsumos") && (
+                <NavItem
+                  icon={<Package className="w-3.5 h-3.5" />}
+                  label="Insumos & Stock"
+                  active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "insumos"}
+                  onClick={() => onNavigatePedidos("menu", "insumos")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+            </>
+          )}
 
           {/* Subcategoría 3: Configuración & Equipo */}
-          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
-            <Users className="w-3 h-3 text-[#FF3F1A]" /> Configuración & Equipo
-          </div>
+          {(canAccess("canViewAutomatizaciones") || canAccess("canViewTurnos") || canAccess("canManageRoles")) && (
+            <>
+              <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
+                <Users className="w-3 h-3 text-[#FF3F1A]" /> Configuración & Equipo
+              </div>
 
-          <NavItem
-            icon={<Zap className="w-3.5 h-3.5" />}
-            label="Automatizaciones & IA"
-            active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
-            onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<Users className="w-3.5 h-3.5" />}
-            label="Turnos y Capacidad"
-            active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "turnos"}
-            onClick={() => onNavigatePedidos("configuracion", "turnos")}
-            indent
-            isMobile={isMobile}
-          />
+              {canAccess("canManageRoles") && (
+                <NavItem
+                  icon={<Shield className="w-3.5 h-3.5" />}
+                  label="Roles & Permisos"
+                  active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "roles"}
+                  onClick={() => onNavigatePedidos("configuracion", "roles")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+              {canAccess("canViewAutomatizaciones") && (
+                <NavItem
+                  icon={<Zap className="w-3.5 h-3.5" />}
+                  label="Automatizaciones & IA"
+                  active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
+                  onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+              {canAccess("canViewTurnos") && (
+                <NavItem
+                  icon={<Users className="w-3.5 h-3.5" />}
+                  label="Turnos y Capacidad"
+                  active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "turnos"}
+                  onClick={() => onNavigatePedidos("configuracion", "turnos")}
+                  indent
+                  isMobile={isMobile}
+                />
+              )}
+            </>
+          )}
         </div>
+
       )}
     </>
   );
@@ -749,7 +780,8 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios">("pedidos");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { activeBusiness, setIsCommandPaletteOpen } = useBusiness();
+  const { activeBusiness, setIsCommandPaletteOpen, canAccess, activeRole, roles, setActiveRoleId } = useBusiness();
+
 
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -779,7 +811,24 @@ export default function App() {
     setSearchParams({ section, tab }, { replace: true });
   };
 
-
+  // Synchronize when URL parameters change (e.g. from CommandPalette, direct links, or Hub)
+  useEffect(() => {
+    const s = searchParams.get("section") as PedidosSection | null;
+    const t = searchParams.get("tab") as string | null;
+    if (s) {
+      setActiveModule("pedidos");
+      setPedidosSection(s);
+      if (s === "operacion") {
+        if (t === "en-vivo" || t === "preparacion") {
+          setPedidosOpTab(t);
+        }
+      } else {
+        if (t) {
+          setPedidosGeTab(t as GestionTab);
+        }
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -788,6 +837,7 @@ export default function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
 
 
   const [targetOrderId, setTargetOrderId] = useState<string | null>(null);
@@ -858,14 +908,16 @@ export default function App() {
     historial: "Historial de Pedidos",
     catalogo: "Catálogo de Productos",
     insumos: "Insumos & Stock",
+    roles: "Roles & Permisos del Equipo",
     automatizaciones: "Automatizaciones & Recurrencias",
     turnos: "Turnos y Capacidad",
     analitica: "Analítica de Rendimiento",
   };
 
   const sectionRoleNames: Record<PedidosSection, string> = {
-    operacion: "Operación en Vivo",
+    operacion: "Operación",
     menu: "Menú & Abastecimiento",
+
     analitica: "Analítica & Reportes",
     configuracion: "Configuración & Equipo",
     gestion: "Gestión",
@@ -922,16 +974,35 @@ export default function App() {
                         ? "en-vivo"
                         : pedidosSection === "menu"
                         ? "catalogo"
-                        : "automatizaciones"
+                        : "roles"
                     )
                   }
                 />
               </div>
 
-              {/* Right Side Header Actions: Search, Business Switcher, Notifications & Theme */}
+              {/* Right Side Header Actions: Search, Active Role, Business Switcher, Notifications & Theme */}
               <div className="flex items-center gap-2 sm:gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => handleNavigatePedidos("configuracion", "roles")}
+                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-102 ${
+                    activeRole.badgeColor === "rose"
+                      ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                      : activeRole.badgeColor === "amber"
+                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                      : activeRole.badgeColor === "emerald"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                      : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+                  }`}
+                  title={`Rol activo: ${activeRole.name}. Clic para gestionar o simular otros roles.`}
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span className="truncate max-w-[130px]">{activeRole.name}</span>
+                </button>
+
                 <GlobalSearchButton />
                 <BusinessSwitcher />
+
 
                 <NotificationBellDropdown
                   notifications={notifications}

@@ -154,6 +154,26 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [printTicketOrder, setPrintTicketOrder] = useState<Pedido | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
+  // Sync with global store pace changes from BusinessSwitcher
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("necto_store_pace");
+      if (saved === "rapida" || saved === "habitual" || saved === "demorada") {
+        setStorePace(saved as StorePaceMode);
+      }
+    } catch (e) {}
+
+    const handlePaceChange = (e: Event) => {
+      const customEvent = e as CustomEvent<StorePaceMode>;
+      if (customEvent.detail && ["rapida", "habitual", "demorada"].includes(customEvent.detail)) {
+        setStorePace(customEvent.detail);
+      }
+    };
+    window.addEventListener("necto_store_pace_changed", handlePaceChange);
+    return () => window.removeEventListener("necto_store_pace_changed", handlePaceChange);
+  }, []);
+
+
   const toggleSound = () => {
     setIsSoundEnabled(prev => {
       const next = !prev;

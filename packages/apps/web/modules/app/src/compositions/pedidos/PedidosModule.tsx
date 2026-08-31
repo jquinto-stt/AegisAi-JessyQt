@@ -10,13 +10,14 @@ import { CatalogoInteligenteView } from "./gestion/CatalogoInteligenteView";
 import { InsumosStockView } from "./gestion/InsumosStockView";
 import { AutomatizacionesView } from "./gestion/AutomatizacionesView";
 import { TurnosCapacidadView } from "./gestion/TurnosCapacidadView";
+import { RolesPermisosView } from "./gestion/RolesPermisosView";
 import { AnaliticaView } from "./gestion/AnaliticaView";
+import { useBusiness } from "../../context/BusinessContext";
 import { OrderDetailDrawer } from "./shared/OrderDetailDrawer";
 import { AIInterpretationModal } from "./shared/AIInterpretationModal";
 import { RejectCancelModal } from "./shared/RejectCancelModal";
 import { IncidenciasDrawer } from "./shared/IncidenciasDrawer";
 import { ThermalTicketModal } from "./shared/ThermalTicketModal";
-import { StorePaceSelector } from "./shared/StorePaceSelector";
 import {
   DEFAULT_LAYOUT_PREFS,
   LayoutPreferences,
@@ -33,6 +34,7 @@ import {
   Users,
   BarChart2,
   Bell,
+  Shield,
   ShieldAlert,
   History,
   Store,
@@ -40,6 +42,7 @@ import {
   VolumeX,
   Camera,
 } from "lucide-react";
+
 
 const PedidosContent: React.FC<{
   sectionProp?: PedidosSection;
@@ -62,13 +65,13 @@ const PedidosContent: React.FC<{
   onOpTabChange,
   onGeTabChange,
 }) => {
-  const { orders, isSoundEnabled, toggleSound, incidencias } = usePedidos();
+  const { orders, isSoundEnabled, toggleSound, incidencias, setIsIncidenciasOpen } = usePedidos();
   const [section, setSection] = useState<PedidosSection>(sectionProp);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp);
 
-  const [isIncidenciasOpen, setIsIncidenciasOpen] = useState(false);
   const [isQuickStockOpen, setIsQuickStockOpen] = useState(false);
+
 
   // Layout Preferences for top header visibility
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {
@@ -213,10 +216,9 @@ const PedidosContent: React.FC<{
               {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
-            <StorePaceSelector />
-
             <button
               onClick={() => setIsIncidenciasOpen(true)}
+
               className={`py-2 px-3.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-xs flex-none ${
                 activeIncCount > 0
                   ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
@@ -239,25 +241,53 @@ const PedidosContent: React.FC<{
           {section === "operacion" && (
             <>
               {[
-                { id: "en-vivo" as OperacionTab, label: "Tablero de Pedidos", icon: <ShoppingBag className="w-3.5 h-3.5 flex-none" /> },
-                { id: "preparacion" as OperacionTab, label: "KDS Cocina & Tiempos", icon: <ChefHat className="w-3.5 h-3.5 flex-none" /> },
-                { id: "programados" as OperacionTab, label: "Programados & Futuros", icon: <Calendar className="w-3.5 h-3.5 flex-none" /> },
+                {
+                  id: "en-vivo" as OperacionTab,
+                  label: "Bandeja Unificada (Todos los Canales)",
+                  icon: <ShoppingBag className="w-3.5 h-3.5 flex-none" />,
+                  count: orders.length,
+                  highlightBadge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
+                },
+                {
+                  id: "preparacion" as OperacionTab,
+                  label: "Pantalla KDS Cocina",
+                  icon: <ChefHat className="w-3.5 h-3.5 flex-none" />,
+                  count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
+                },
               ].map(tab => (
+
                 <button
                   key={tab.id}
                   onClick={() => handleOpTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     opTab === tab.id
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-800"
+                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-2xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
+                  {tab.count !== undefined && (
+                    <span
+                      className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
+                        opTab === tab.id
+                          ? "bg-white/20 text-white dark:bg-zinc-900 dark:text-white"
+                          : "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                  {tab.highlightBadge && (
+                    <span className="text-[10px] bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full font-bold animate-pulse">
+                      {tab.highlightBadge}
+                    </span>
+                  )}
                 </button>
               ))}
             </>
           )}
+
 
           {(section === "menu" || (section === "gestion" && (geTab === "catalogo" || geTab === "insumos"))) && (
             <>
@@ -304,9 +334,10 @@ const PedidosContent: React.FC<{
             </>
           )}
 
-          {(section === "configuracion" || (section === "gestion" && (geTab === "automatizaciones" || geTab === "turnos"))) && (
+          {(section === "configuracion" || (section === "gestion" && (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
             <>
               {[
+                { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="w-3.5 h-3.5 flex-none" /> },
                 { id: "automatizaciones" as GestionTab, label: "Automatizaciones & WhatsApp IA", icon: <Zap className="w-3.5 h-3.5 flex-none" /> },
                 { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="w-3.5 h-3.5 flex-none" /> },
               ].map(tab => (
@@ -343,6 +374,7 @@ const PedidosContent: React.FC<{
 
         {(section === "menu" || section === "analitica" || section === "configuracion" || section === "gestion") && (
           <>
+            {geTab === "roles" && <RolesPermisosView />}
             {geTab === "resumen" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}
             {geTab === "historial" && <HistorialView />}
             {geTab === "catalogo" && <CatalogoInteligenteView targetProductId={targetProductId} />}
@@ -353,6 +385,7 @@ const PedidosContent: React.FC<{
           </>
         )}
       </div>
+
 
       {/* Modals & Drawers */}
       <OrderDetailDrawer />

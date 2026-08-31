@@ -9,26 +9,17 @@ import {
   Flame,
   Minus,
   Plus,
-  Users,
-  ChevronRight,
-  ShieldCheck,
   Check,
-  ArrowLeft,
-  Kanban,
-  Package,
-  Layers,
-  Sparkles,
-  SlidersHorizontal,
-  Timer,
-  Utensils,
   Maximize2,
   Printer,
+  Sparkles,
+  Layers,
+  UtensilsCrossed,
 } from "lucide-react";
-import { NectoBanner } from "../shared/NectoBanner";
 
 export const PreparacionTiemposView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
-}> = ({ onNavigateOpTab }) => {
+}> = () => {
   const { orders, markOrderReady, adjustEstimate, shiftInfo, setSelectedOrderId, setPrintTicketOrder } = usePedidos();
 
   const [stationFilter, setStationFilter] = useState<"TODAS" | "Horno" | "Armado" | "Empaque">("TODAS");
@@ -79,25 +70,26 @@ export const PreparacionTiemposView: React.FC<{
   ) => {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-gray-800">
+        {/* Section Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
-            <span className={`w-3.5 h-3.5 rounded-full ${accentBadge}`} />
-            <h3 className="font-black text-base text-gray-900 dark:text-gray-100">
+            <span className={`w-2.5 h-2.5 rounded-full ${accentBadge}`} />
+            <h3 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 tracking-tight">
               {title}
             </h3>
-            <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full text-gray-500">
-              {list.length} {list.length === 1 ? "pedido" : "pedidos"}
+            <span className="font-mono font-bold text-xs bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+              {list.length} {list.length === 1 ? "comanda" : "comandas"}
             </span>
           </div>
-          <span className="text-xs text-gray-400 font-semibold">{subdesc}</span>
+          <span className="text-xs text-zinc-400 font-medium">{subdesc}</span>
         </div>
 
         {list.length === 0 ? (
-          <div className="bg-slate-50/60 dark:bg-gray-800/30 rounded-3xl border border-dashed border-slate-200 dark:border-gray-800 p-8 text-center text-xs text-gray-400 font-bold">
-            Sin pedidos en esta categoría de tiempo.
+          <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center text-xs text-zinc-400 font-medium">
+            Sin comandas en esta categoría de tiempo.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {list.map(order => {
               const currentChecks = checkedItems[order.id] || new Set();
               const isAllChecked = currentChecks.size === order.items.length;
@@ -110,57 +102,68 @@ export const PreparacionTiemposView: React.FC<{
               return (
                 <div
                   key={order.id}
-                  className={`bg-white dark:bg-[#2C2D31] rounded-3xl border-2 shadow-xs p-5 flex flex-col justify-between gap-4 transition-all duration-300 hover:shadow-lg ${accentBorder}`}
+                  onClick={() => setSelectedOrderId(order.id)}
+                  className={`bg-white dark:bg-[#18181B] rounded-3xl border shadow-2xs p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 ${
+                    isDelayed
+                      ? "border-rose-500/40 bg-rose-500/[0.02] dark:bg-rose-500/[0.04]"
+                      : "border-zinc-200/80 dark:border-zinc-800"
+                  }`}
                 >
-                  {/* Card Header: Turno Gigante & Timer */}
-                  <div className="flex items-start justify-between border-b border-gray-100 dark:border-[#374151] pb-3.5">
+                  {/* Card Header: Turno & Timer */}
+                  <div className="flex items-start justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3.5">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black px-3 py-1 rounded-xl bg-orange-100 dark:bg-orange-950 text-[#FF3F1A] border border-orange-300 dark:border-orange-800">
+                        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-white border border-zinc-200 dark:border-zinc-700">
                           Turno #{order.turnNumber || "00"}
                         </span>
-                        <span className="font-mono font-black text-xs text-gray-400">
+                        <span className="font-mono font-bold text-xs text-zinc-400">
                           {order.id}
                         </span>
                       </div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-gray-100 truncate">
+                      <h4 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 truncate">
                         {order.customerName}
                       </h4>
                     </div>
 
-                    {/* Big Countdown Timer */}
+                    {/* Countdown Timer */}
                     <div className="text-right">
                       <div
-                        className={`flex items-center justify-end gap-1.5 font-mono font-black text-2xl ${
+                        className={`flex items-center justify-end gap-1.5 font-mono font-black text-xl ${
                           isDelayed
-                            ? "text-red-600 dark:text-red-400"
+                            ? "text-rose-600 dark:text-rose-400"
                             : urgency === "PROXIMO"
                             ? "text-amber-500"
-                            : "text-[#190088] dark:text-indigo-300"
+                            : "text-zinc-950 dark:text-zinc-50"
                         }`}
                       >
-                        {isDelayed && <Flame className="w-5 h-5 text-red-500 animate-bounce flex-none" />}
+                        {isDelayed && <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-none" />}
                         <span>{order.elapsedMinutes}m</span>
-                        <span className="text-xs font-normal text-gray-400">/{order.estimatedMinutes}m</span>
+                        <span className="text-xs font-normal text-zinc-400">/{order.estimatedMinutes}m</span>
                       </div>
 
                       {/* Micro Time Adjusters */}
                       <div className="flex items-center gap-1.5 mt-1.5 justify-end">
                         <button
                           type="button"
-                          onClick={() => adjustEstimate(order.id, -5)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-slate-100 cursor-pointer transition-colors"
+                          onClick={e => {
+                            e.stopPropagation();
+                            adjustEstimate(order.id, -5);
+                          }}
+                          className="w-6 h-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 cursor-pointer transition-colors text-xs"
                           title="Restar 5 min al pedido"
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          <Minus className="w-3 h-3" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => adjustEstimate(order.id, 5)}
-                          className="w-7 h-7 rounded-lg border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-slate-100 cursor-pointer transition-colors"
-                          title="Sumar 5 min de colchón al pedido"
+                          onClick={e => {
+                            e.stopPropagation();
+                            adjustEstimate(order.id, 5);
+                          }}
+                          className="w-6 h-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 cursor-pointer transition-colors text-xs"
+                          title="Sumar 5 min al pedido"
                         >
-                          <Plus className="w-3.5 h-3.5" />
+                          <Plus className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
@@ -168,69 +171,72 @@ export const PreparacionTiemposView: React.FC<{
 
                   {/* Progress Bar */}
                   <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] font-mono text-gray-400">
-                      <span>Progreso de cocción:</span>
+                    <div className="flex justify-between text-[10px] font-bold text-zinc-400">
+                      <span>Progreso de preparación</span>
                       <span>{progressPercent}%</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          isDelayed ? "bg-red-500" : urgency === "PROXIMO" ? "bg-amber-500" : "bg-emerald-500"
+                          isDelayed ? "bg-rose-500" : urgency === "PROXIMO" ? "bg-amber-500" : "bg-[#FF3F1A]"
                         }`}
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
                   </div>
 
-                  {/* Cooking Checklist with Touch Buttons */}
+                  {/* Cooking Checklist */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-gray-400">
-                      <span>Checklist de Bandejas / Platos:</span>
-                      <span className="text-gray-500 font-mono font-bold">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      <span>Checklist de Preparación</span>
+                      <span className="font-mono text-zinc-500">
                         {currentChecks.size}/{order.items.length} listos
                       </span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {order.items.map((it, idx) => {
                         const checked = currentChecks.has(idx);
                         return (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => toggleItemCheck(order.id, idx)}
-                            className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleItemCheck(order.id, idx);
+                            }}
+                            className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
                               checked
-                                ? "bg-zinc-100 dark:bg-zinc-800 border-zinc-400 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
-                                : "bg-slate-50 dark:bg-gray-800/80 border-slate-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-slate-300"
+                                ? "bg-zinc-100/70 dark:bg-zinc-800/80 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
+                                : "bg-zinc-50/80 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800/80 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300"
                             }`}
                           >
-                            <div className="flex items-center gap-3 truncate">
+                            <div className="flex items-center gap-2.5 truncate">
                               <span
-                                className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-none transition-all ${
+                                className={`w-4 h-4 rounded-md border flex items-center justify-center flex-none transition-all ${
                                   checked
                                     ? "bg-[#FF3F1A] border-[#FF3F1A] text-white"
-                                    : "border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                                    : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                                 }`}
                               >
-                                {checked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                {checked && <Check className="w-3 h-3 stroke-[3]" />}
                               </span>
-                              <span className="font-mono font-black text-sm text-[#FF3F1A]">
+                              <span className="font-mono font-bold text-xs text-[#FF3F1A]">
                                 ×{it.quantity}
                               </span>
-                              <span className={`font-bold truncate ${checked ? "line-through opacity-70" : ""}`}>
+                              <span className={`font-semibold truncate text-xs ${checked ? "line-through opacity-60" : ""}`}>
                                 {it.name}
                               </span>
                             </div>
 
                             <span
-                              className={`text-[10px] font-black px-2 py-0.5 rounded-lg border flex-none ml-2 ${
+                              className={`text-[9px] font-bold px-2 py-0.5 rounded-md border flex-none ml-2 ${
                                 checked
                                   ? "bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 border-zinc-300 dark:border-zinc-600"
-                                  : "bg-slate-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-transparent"
+                                  : "bg-zinc-200/60 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-transparent"
                               }`}
                             >
-                              {checked ? "Horneado" : "Pendiente"}
+                              {checked ? "Listo" : "Pendiente"}
                             </span>
                           </button>
                         );
@@ -240,48 +246,46 @@ export const PreparacionTiemposView: React.FC<{
 
                   {/* Notes / Special Instructions */}
                   {order.notes && (
-                    <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-3 text-xs text-zinc-900 dark:text-zinc-100 space-y-0.5">
-                      <strong className="font-black text-[11px] uppercase tracking-wider text-[#FF3F1A] block">
-                        Instrucción Especial de Cocina:
+                    <div className="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-2.5 text-xs text-zinc-900 dark:text-zinc-100 space-y-0.5">
+                      <strong className="font-bold text-[10px] uppercase tracking-wider text-zinc-500 block">
+                        Instrucción Especial:
                       </strong>
-                      <p>{order.notes}</p>
+                      <p className="italic text-[11px] text-zinc-600 dark:text-zinc-300">{order.notes}</p>
                     </div>
                   )}
 
-                  {/* Footer Complete Button & Print */}
-                  <div className="pt-2 border-t border-gray-100 dark:border-[#374151] flex items-center gap-2">
+                  {/* Card Bottom: Print Ticket & Ready Button */}
+                  <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setPrintTicketOrder(order)}
-                      className="py-3 px-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-[#FF3F1A] hover:bg-orange-50 dark:hover:bg-gray-800 transition-colors cursor-pointer flex items-center gap-1.5"
-                      title="Imprimir ticket térmico"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setPrintTicketOrder(order);
+                      }}
+                      className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 text-xs font-bold cursor-pointer transition-colors"
+                      title="Imprimir comanda KDS"
                     >
-                      <Printer className="w-4 h-4" />
-                      <span className="hidden sm:inline">Imprimir</span>
+                      <Printer className="w-3.5 h-3.5" />
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setSelectedOrderId(order.id)}
-                      className="py-3 px-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
-                    >
-                      Detalle
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleCompleteOrder(order.id, order.turnNumber)}
-                      className={`flex-1 py-3 px-4 rounded-2xl text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95 ${
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleCompleteOrder(order.id, order.turnNumber);
+                      }}
+                      className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 ${
                         isAllChecked
-                          ? "bg-[#FF3F1A] hover:bg-[#e03413] text-white"
+                          ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
                           : "bg-zinc-900 hover:bg-zinc-800 text-white"
                       }`}
                     >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{isAllChecked ? "¡Todo Horneado! Marcar Listo" : "Marcar Listo"}</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                      <span>{isAllChecked ? "¡Todo Listo! Despachar" : "Marcar Preparado"}</span>
                     </button>
                   </div>
                 </div>
+
               );
             })}
           </div>
@@ -291,178 +295,131 @@ export const PreparacionTiemposView: React.FC<{
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header Banner */}
-      <NectoBanner
-        icon={<ChefHat className="w-6 h-6 text-[#FF3F1A]" />}
-        title="KDS Cocina y Tiempos de Elaboración"
-        description="Pantalla táctil de producción en cocina: cuenta regresiva de cocción, checklist de horneado y sincronización en tiempo real."
-      />
-
-      {/* Toolbar / Back navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#2C2D31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#374151] shadow-xs">
-        <button
-          onClick={() => onNavigateOpTab?.("en-vivo")}
-          className="py-2 px-3.5 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-400 text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#FF3F1A]" />
-          <span>Volver a Pedidos</span>
-        </button>
-
-        <div className="flex items-center gap-1.5 bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] font-black px-3.5 py-1.5 rounded-xl border border-orange-200 dark:border-orange-900/60 text-xs">
-          <Flame className="w-4 h-4 text-[#FF3F1A]" />
-          <span>{prepOrders.length} pedidos en fogón</span>
-        </div>
-      </div>
-
-      {/* Real-time Kitchen Operations Metric Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Active cooking orders */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Pedidos en Fogón
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {prepOrders.length}
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              En Producción
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">
-            {totalUnitsInProduction} unidades totales a elaborar
-          </p>
-        </div>
-
-        {/* KPI 2: Retrasados Warning */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Retrasos Críticos
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-red-600 dark:text-red-400">
-              {retrasados.length}
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              {retrasados.length > 0 ? "Requiere Atención" : "Todo a tiempo"}
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Superan el tiempo prometido en carta</p>
-        </div>
-
-        {/* KPI 3: Suggested Prep Buffer */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Buffer Sugerido
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              +{shiftInfo.suggestedPrepBufferMinutes} <span className="text-sm font-normal text-gray-400">min</span>
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              {shiftInfo.currentShift}
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Calculado según la dotación activa de cocineros</p>
-        </div>
-
-        {/* KPI 4: Units in Oven */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Unidades en Tanda
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {totalUnitsInProduction}
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              Capacidad 78%
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Agrupadas por receta y cocción</p>
-        </div>
-      </div>
-
-      {/* Production Batch Summary (Tandas Totales en Cocina) */}
-      <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5">
-        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-2.5">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950 text-[#FF3F1A] flex items-center justify-center">
-              <Layers className="w-4 h-4" />
+    <div className="space-y-5 animate-fade-in">
+      {/* KDS Industrial Command Header */}
+      <div className="bg-white dark:bg-[#121214] rounded-3xl p-4 sm:p-5 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Left: Station Identity & Filters */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[#FF3F1A]">
+              <ChefHat className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                Resumen de Tandas Totales a Hornear en este Momento
-              </h4>
-              <p className="text-[11px] text-gray-400">
-                Acumulado de unidades por receta para optimizar el espacio de las bandejas del horno.
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">
+                  KDS Cocina & Estaciones
+                </h2>
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Sincronizado
+                </span>
+              </div>
+              <p className="text-xs text-zinc-400 font-medium">
+                Comandas en preparación activa sincronizadas con la Bandeja Unificada
               </p>
             </div>
           </div>
-          <span className="text-xs font-mono font-black text-zinc-900 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-3 py-1 rounded-xl">
-            {totalUnitsInProduction} unidades totales
-          </span>
-        </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {Object.keys(batchTotals).length === 0 ? (
-            <p className="text-xs text-gray-400 font-semibold py-2">
-              No hay productos en preparación actualmente.
-            </p>
-          ) : (
-            Object.entries(batchTotals).map(([name, qty]) => (
-              <div
-                key={name}
-                className="py-2 px-3.5 rounded-2xl bg-slate-50 dark:bg-gray-850 border border-slate-200 dark:border-gray-700 text-xs font-black flex items-center gap-2.5 shadow-xs"
+          {/* Station Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {(["TODAS", "Horno", "Armado", "Empaque"] as const).map(st => (
+              <button
+                key={st}
+                onClick={() => setStationFilter(st)}
+                className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  stationFilter === st
+                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
+                    : "bg-zinc-100/70 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/80 dark:hover:bg-zinc-800"
+                }`}
               >
-                <span className="w-6 h-6 rounded-xl bg-[#FF3F1A] text-white flex items-center justify-center font-mono font-black text-xs">
-                  {qty}
-                </span>
-                <span className="text-gray-800 dark:text-gray-200">{name}</span>
-              </div>
-            ))
-          )}
+                {st === "TODAS" ? "Todas las Estaciones" : st}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Real-time Kitchen Operations Metrics */}
+        <div className="flex items-center gap-2.5 flex-wrap md:flex-nowrap justify-start md:justify-end">
+          {/* KPI: En Fogón */}
+          <div className="px-4 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-left min-w-[110px]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+              En Fogón
+            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono font-bold text-lg text-zinc-950 dark:text-zinc-50">
+                {prepOrders.length}
+              </span>
+              <span className="text-[10px] text-zinc-400 font-medium">
+                ({totalUnitsInProduction} un.)
+              </span>
+            </div>
+          </div>
+
+          {/* KPI: Retrasos */}
+          <div className={`px-4 py-2.5 rounded-2xl border text-left min-w-[110px] ${
+            retrasados.length > 0
+              ? "bg-rose-500/[0.04] border-rose-500/30 text-rose-600 dark:text-rose-400"
+              : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-400"
+          }`}>
+            <span className="text-[10px] font-bold uppercase tracking-wider block">
+              Retrasos
+            </span>
+            <span className="font-mono font-bold text-lg">
+              {retrasados.length}
+            </span>
+          </div>
+
+          {/* KPI: Buffer */}
+          <div className="px-4 py-2.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-left min-w-[110px]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">
+              Buffer Estimado
+            </span>
+            <span className="font-mono font-bold text-lg text-zinc-950 dark:text-zinc-50">
+              +{shiftInfo.suggestedPrepBufferMinutes}m
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* KDS Columns by Urgency */}
-      <div className="space-y-8">
-        {renderSection(
-          "Pedidos Retrasados",
-          retrasados,
-          "RETRASADO",
-          "border-red-400 dark:border-red-900/80 bg-red-50/15",
-          "bg-red-500 animate-ping",
-          "Prioridad crítica de entrega"
-        )}
-
-        {renderSection(
-          "Pedidos Próximos al Límite",
-          proximos,
-          "PROXIMO",
-          "border-amber-300 dark:border-amber-800/80 bg-amber-50/15",
-          "bg-amber-500",
-          "Preparación en curso a terminar en <5 min"
-        )}
-
-        {renderSection(
-          "Pedidos a Tiempo",
-          aTiempo,
-          "A_TIEMPO",
-          "border-slate-200/90 dark:border-[#374151]",
-          "bg-emerald-500",
-          "Flujo regular de horneado"
-        )}
-      </div>
-
-      {/* Floating Ready Toast */}
+      {/* Ready Toast */}
       {readyToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 py-3 rounded-2xl shadow-2xl text-xs font-black flex items-center gap-2.5 border border-gray-700 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-none" />
-          <span>{readyToast}</span>
+        <div className="p-3.5 rounded-2xl bg-emerald-500 text-white text-xs font-bold flex items-center justify-between shadow-md animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{readyToast}</span>
+          </div>
         </div>
       )}
+
+      {/* KDS Sections by Urgency */}
+      <div className="space-y-6">
+        {renderSection(
+          "Comandas Retrasadas",
+          retrasados,
+          "RETRASADO",
+          "border-rose-500/50",
+          "bg-rose-500 animate-pulse",
+          "Superan el tiempo prometido"
+        )}
+
+        {renderSection(
+          "Comandas Próximas al Límite",
+          proximos,
+          "PROXIMO",
+          "border-amber-500/50",
+          "bg-amber-500",
+          "Terminar en <5 minutos"
+        )}
+
+        {renderSection(
+          "Comandas a Tiempo",
+          aTiempo,
+          "A_TIEMPO",
+          "border-zinc-200/80",
+          "bg-emerald-500",
+          "Dentro de la ventana estándar"
+        )}
+      </div>
     </div>
   );
 };

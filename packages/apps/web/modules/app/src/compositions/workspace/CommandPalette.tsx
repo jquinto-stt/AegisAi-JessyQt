@@ -64,12 +64,11 @@ export const CommandPalette: React.FC = () => {
       id: "global-overview",
       category: "Vistas Especiales",
       title: "Vista Franquicia / Resumen Global",
-      subtitle: "Dashboard consolidado en el Hub con ventas y comandas de todas las marcas",
+      subtitle: "Dashboard consolidado con ventas y métricas de todas las marcas",
       icon: <LayoutGrid className="w-4 h-4 text-[#FF3F1A]" />,
-
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/workspaces");
+        navigate("/workspaces?tab=franchise_overview");
       },
       badge: "MULTI-LOCAL",
     },
@@ -84,11 +83,12 @@ export const CommandPalette: React.FC = () => {
       action: () => {
         switchBusiness(b.id);
         setIsCommandPaletteOpen(false);
-        navigate("/");
+        navigate("/?section=operacion&tab=en-vivo");
       },
       active: b.id === activeBusinessId,
-      badge: b.businessType === "restaurant_virtual" ? "Gastro" : "Retail",
+      badge: b.businessType === "retail_store" ? "Retail" : "Gastro",
     })),
+
     // Actions
     {
       id: "create-business",
@@ -104,7 +104,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: "hub-workspaces",
       category: "Acciones",
-      title: "Abrir Hub de Gestión de Espacios",
+      title: "Abrir Hub de Gestión de Negocios",
       subtitle: "Ver todas las sedes, estados de suscripción y parámetros",
       icon: <Building2 className="w-4 h-4 text-blue-500" />,
       action: () => {
@@ -112,41 +112,98 @@ export const CommandPalette: React.FC = () => {
         navigate("/workspaces");
       },
     },
-    // Modules Navigation
+
+    // Modules Navigation (Exact direct routing)
     {
       id: "mod-pedidos",
       category: "Acceso Rápido a Módulos",
-      title: "Tablero de Pedidos en Vivo",
-      subtitle: "Monitor de comandas entrantes por WhatsApp y Web",
+      title: "Bandeja Unificada de Pedidos",
+      subtitle: "Monitor omnicanal de comandas (WhatsApp, Web y POS)",
       icon: <ShoppingBag className="w-4 h-4 text-orange-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/");
+        navigate("/?section=operacion&tab=en-vivo");
       },
     },
     {
       id: "mod-kds",
       category: "Acceso Rápido a Módulos",
       title: "Pantalla KDS Cocina & Tiempos",
-      subtitle: "Visualización táctil de preparación para cocineros",
+      subtitle: "Estación táctil de preparación para cocineros y horneros",
       icon: <Flame className="w-4 h-4 text-rose-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/");
+        navigate("/?section=operacion&tab=preparacion");
+      },
+    },
+    {
+      id: "mod-catalogo",
+      category: "Acceso Rápido a Módulos",
+      title: "Catálogo de Platos & Modificadores",
+      subtitle: "Gestión de cartas, fotos, secciones y opciones extras",
+      icon: <Layers className="w-4 h-4 text-amber-500" />,
+      action: () => {
+        setIsCommandPaletteOpen(false);
+        navigate("/?section=menu&tab=catalogo");
+      },
+    },
+    {
+      id: "mod-insumos",
+      category: "Acceso Rápido a Módulos",
+      title: "Insumos & Stock (Escandallos)",
+      subtitle: "Control de materias primas y coste unitario por receta",
+      icon: <Building2 className="w-4 h-4 text-emerald-500" />,
+      action: () => {
+        setIsCommandPaletteOpen(false);
+        navigate("/?section=menu&tab=insumos");
       },
     },
     {
       id: "mod-analitica",
       category: "Acceso Rápido a Módulos",
-      title: "Analítica de Ventas y Rendimiento",
-      subtitle: "Métricas de facturación, ticket promedio y horas pico",
+      title: "Dashboard Analítico & Rendimiento",
+      subtitle: "Métricas de facturación, ticket promedio y canales",
       icon: <BarChart3 className="w-4 h-4 text-violet-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/");
+        navigate("/?section=analitica&tab=resumen");
+      },
+    },
+    {
+      id: "mod-historial",
+      category: "Acceso Rápido a Módulos",
+      title: "Historial Completo de Ventas",
+      subtitle: "Auditoría de tickets finalizados y trazabilidad",
+      icon: <ShoppingBag className="w-4 h-4 text-indigo-500" />,
+      action: () => {
+        setIsCommandPaletteOpen(false);
+        navigate("/?section=analitica&tab=historial");
+      },
+    },
+    {
+      id: "mod-automatizaciones",
+      category: "Acceso Rápido a Módulos",
+      title: "Automatizaciones & WhatsApp IA",
+      subtitle: "Reglas automáticas de despacho y respuestas con IA",
+      icon: <Zap className="w-4 h-4 text-yellow-500" />,
+      action: () => {
+        setIsCommandPaletteOpen(false);
+        navigate("/?section=configuracion&tab=automatizaciones");
+      },
+    },
+    {
+      id: "mod-turnos",
+      category: "Acceso Rápido a Módulos",
+      title: "Turnos y Capacidad de Cocina",
+      subtitle: "Dotación de personal y buffer de tiempos de entrega",
+      icon: <Users className="w-4 h-4 text-sky-500" />,
+      action: () => {
+        setIsCommandPaletteOpen(false);
+        navigate("/?section=configuracion&tab=turnos");
       },
     },
   ];
+
 
   // Filter items
   const filteredItems = items.filter(item => {
