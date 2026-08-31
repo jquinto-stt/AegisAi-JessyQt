@@ -90,11 +90,12 @@ export const RejectCancelModal: React.FC = () => {
         {/* Reason selector */}
         <div className="flex flex-col gap-2">
           {reasons.map(r => (
-            <button
+            <Button
               key={r}
-              type="button"
+              variant="ghost"
+              intent="reject-cancel.reason.select"
               onClick={() => setSelectedReason(r)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-xs text-left font-semibold transition-all cursor-pointer ${
+              className={`p-0 justify-start flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-xs text-left font-semibold transition-all cursor-pointer ${
                 selectedReason === r
                   ? "border-red-400 bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-300"
                   : "border-slate-200 dark:border-[#374151] text-gray-700 dark:text-gray-300 hover:border-slate-300"
@@ -108,7 +109,7 @@ export const RejectCancelModal: React.FC = () => {
                 {selectedReason === r && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
               </span>
               <span>{r}</span>
-            </button>
+            </Button>
           ))}
         </div>
 

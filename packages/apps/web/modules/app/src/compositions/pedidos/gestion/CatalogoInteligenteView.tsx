@@ -1034,18 +1034,14 @@ export const CatalogoInteligenteView: React.FC<{
               )}
 
               {/* Special Instructions Textarea */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Instrucciones especiales para Cocina
-                </label>
-                <textarea
-                  rows={2}
-                  value={previewCustomerNotes}
-                  onChange={e => setPreviewCustomerNotes(e.target.value)}
-                  placeholder="Ej. Sin cebolla, salsa aparte, servilletas extra..."
-                  className="w-full p-3 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Textarea
+                label="Instrucciones especiales para Cocina"
+                intent="preview.customer.notes"
+                rows={2}
+                value={previewCustomerNotes}
+                onChange={e => setPreviewCustomerNotes(e.target.value)}
+                placeholder="Ej. Sin cebolla, salsa aparte, servilletas extra..."
+              />
             </div>
 
             {/* Bottom Floating Bar with Quantity & Total */}
