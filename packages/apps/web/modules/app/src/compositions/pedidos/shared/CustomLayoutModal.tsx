@@ -145,8 +145,9 @@ export const CustomLayoutModal: React.FC<{
         <div className="p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
           {/* Quick Presets */}
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="layout.preset.focus"
               onClick={applyFocusMode}
               className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-900 dark:hover:border-zinc-100 bg-zinc-50/60 dark:bg-zinc-900/60 text-left transition-all cursor-pointer group"
             >
@@ -157,10 +158,11 @@ export const CustomLayoutModal: React.FC<{
               <p className="text-[10px] text-zinc-400 mt-0.5 font-mono">
                 100% columnas operativas
               </p>
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="layout.preset.full"
               onClick={applyFullMode}
               className="p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-900 dark:hover:border-zinc-100 bg-zinc-50/60 dark:bg-zinc-900/60 text-left transition-all cursor-pointer group"
             >
@@ -171,7 +173,7 @@ export const CustomLayoutModal: React.FC<{
               <p className="text-[10px] text-zinc-400 mt-0.5 font-mono">
                 Todas las barras visibles
               </p>
-            </button>
+            </Button>
           </div>
 
           {/* Section 1: Visibility of Screen Segments */}
@@ -219,37 +221,40 @@ export const CustomLayoutModal: React.FC<{
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="layout.column.toggle"
                       onClick={() => handleToggleColumn(col.id)}
-                      className={`w-4 h-4 rounded flex items-center justify-center text-white cursor-pointer transition-colors ${
+                      className={`p-0 w-4 h-4 rounded flex items-center justify-center text-white cursor-pointer transition-colors ${
                         col.visible ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
                       }`}
                     >
                       {col.visible && <Check className="w-3 h-3" />}
-                    </button>
+                    </Button>
                     <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                       {col.title}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-1 flex-none">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="layout.column.move-up"
                       disabled={idx === 0}
                       onClick={() => handleMoveColumn(idx, "up")}
                       className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 cursor-pointer"
                     >
                       <ChevronUp className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      intent="layout.column.move-down"
                       disabled={idx === draftPrefs.columns.length - 1}
                       onClick={() => handleMoveColumn(idx, "down")}
                       className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 disabled:opacity-20 cursor-pointer"
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}

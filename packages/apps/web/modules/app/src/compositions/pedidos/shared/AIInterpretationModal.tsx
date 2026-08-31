@@ -92,12 +92,14 @@ export const AIInterpretationModal: React.FC = () => {
             <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
               Estructuración Propuesta:
             </span>
-            <button
+            <Button
+              variant="ghost"
+              intent="ai-modal.edit-toggle"
               onClick={() => setIsEditing(!isEditing)}
               className="text-xs font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Edit2 className="w-3 h-3" /> {isEditing ? "Listo" : "Editar pedido"}
-            </button>
+            </Button>
           </div>
 
           <div className="border border-slate-200 dark:border-[#374151] rounded-2xl divide-y divide-gray-100 dark:divide-[#374151] overflow-hidden">
@@ -118,19 +120,23 @@ export const AIInterpretationModal: React.FC = () => {
                 <div className="flex items-center gap-2">
                   {isEditing ? (
                     <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-gray-800 rounded-lg p-1">
-                      <button
+                      <Button
+                        variant="ghost"
+                        intent="ai-modal.qty.decrement"
                         onClick={() => updateQty(idx, -1)}
-                        className="w-5 h-5 flex items-center justify-center font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-200 rounded"
+                        className="p-0 w-5 h-5 flex items-center justify-center font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-200 rounded"
                       >
                         -
-                      </button>
+                      </Button>
                       <span className="font-mono font-extrabold px-1">{it.quantity}</span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        intent="ai-modal.qty.increment"
                         onClick={() => updateQty(idx, 1)}
-                        className="w-5 h-5 flex items-center justify-center font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-200 rounded"
+                        className="p-0 w-5 h-5 flex items-center justify-center font-bold text-gray-700 dark:text-gray-200 hover:bg-slate-200 rounded"
                       >
                         +
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <span className="font-mono font-extrabold text-sm text-[#FF3F1A]">

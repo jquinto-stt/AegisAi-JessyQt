@@ -351,9 +351,10 @@ export const BusinessSettingsModal: React.FC<{
                 const isActive = activeTab === tab.id;
 
                 return (
-                  <button
+                  <Button
                     key={tab.id}
-                    type="button"
+                    variant="ghost"
+                    intent="business.settings.tab"
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`w-full p-3 rounded-2xl text-left transition-all cursor-pointer flex items-start gap-3 group ${
                       isActive
@@ -376,7 +377,7 @@ export const BusinessSettingsModal: React.FC<{
                         {tab.desc}
                       </p>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -433,9 +434,10 @@ export const BusinessSettingsModal: React.FC<{
                         const isSelected = businessType === archetype.id;
                         const Icon = archetype.icon;
                         return (
-                          <button
+                          <Button
                             key={archetype.id}
-                            type="button"
+                            variant="ghost"
+                            intent="business.archetype.select"
                             onClick={() => setBusinessType(archetype.id as BusinessType)}
                             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                               isSelected
@@ -448,7 +450,7 @@ export const BusinessSettingsModal: React.FC<{
                             <span className={`text-[10px] ${isSelected ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>
                               {archetype.desc}
                             </span>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -699,11 +701,12 @@ export const BusinessSettingsModal: React.FC<{
                         { color: "#0D9488", name: "Teal" },
                         { color: "#18181B", name: "Titanio" },
                       ].map(preset => (
-                        <button
+                        <Button
                           key={preset.color}
-                          type="button"
+                          variant="ghost"
+                          intent="business.brandcolor.select"
                           onClick={() => setBrandColor(preset.color)}
-                          className={`w-9 h-9 rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-2xs relative ${
+                          className={`p-0 w-9 h-9 rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-2xs relative ${
                             brandColor.toLowerCase() === preset.color.toLowerCase()
                               ? "ring-2 ring-offset-2 ring-[#FF3F1A] dark:ring-offset-zinc-900 scale-110"
                               : "hover:scale-105 opacity-85 hover:opacity-100"
@@ -714,7 +717,7 @@ export const BusinessSettingsModal: React.FC<{
                           {brandColor.toLowerCase() === preset.color.toLowerCase() && (
                             <Check className="w-4 h-4 text-white drop-shadow stroke-[3]" />
                           )}
-                        </button>
+                        </Button>
                       ))}
 
                       {/* Custom Native Color Picker */}
@@ -819,8 +822,9 @@ export const BusinessSettingsModal: React.FC<{
 
                           <div className="flex items-center gap-2 flex-none">
                             {opt.id !== "mute" && (
-                              <button
-                                type="button"
+                              <Button
+                                variant="ghost"
+                                intent="business.sound.test"
                                 onClick={e => {
                                   e.stopPropagation();
                                   playOrderAlert(opt.id as SoundAlertKey);
@@ -830,7 +834,7 @@ export const BusinessSettingsModal: React.FC<{
                               >
                                 <Play className="w-3 h-3 fill-current" />
                                 <span className="hidden sm:inline">Probar</span>
-                              </button>
+                              </Button>
                             )}
                             <div
                               className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
@@ -1044,8 +1048,9 @@ export const BusinessSettingsModal: React.FC<{
                       </p>
                     </div>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="business.pause.toggle"
                       onClick={() => setIsPaused(!isPaused)}
                       className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         isPaused
@@ -1054,7 +1059,7 @@ export const BusinessSettingsModal: React.FC<{
                       }`}
                     >
                       {isPaused ? "Pausa Activa" : "Pausar Local"}
-                    </button>
+                    </Button>
                   </div>
 
                   {isPaused && (
@@ -1099,9 +1104,10 @@ export const BusinessSettingsModal: React.FC<{
                             "Feriado / Día Festivo",
                             "Remodelación de Local",
                           ].map(opt => (
-                            <button
+                            <Button
                               key={opt}
-                              type="button"
+                              variant="ghost"
+                              intent="business.pause.reason"
                               onClick={() => {
                                 setPauseReason(opt);
                                 setPauseMessage(
@@ -1115,7 +1121,7 @@ export const BusinessSettingsModal: React.FC<{
                               }`}
                             >
                               {opt}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>

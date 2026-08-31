@@ -100,18 +100,19 @@ export const OrderCard: React.FC<{
       <div className="space-y-1 py-1 border-t border-zinc-100 dark:border-zinc-800/80">
         <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400">
           <span>{totalItemCount} ÍTEMS</span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="order-card.print"
             onClick={e => {
               e.stopPropagation();
               setPrintTicketOrder(order);
             }}
-            className="hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 cursor-pointer transition-colors"
+            className="p-0 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center gap-1 cursor-pointer transition-colors"
             title="Imprimir comanda térmica"
           >
             <Printer className="w-3 h-3" />
             <span>Ticket</span>
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-0.5 max-h-20 overflow-hidden">

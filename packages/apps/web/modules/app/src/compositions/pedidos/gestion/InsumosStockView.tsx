@@ -361,17 +361,19 @@ export const InsumosStockView: React.FC = () => {
             {/* Category Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {categories.map(cat => (
-                <button
+                <Button
                   key={cat}
+                  variant="ghost"
+                  intent="insumos.category.select"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`p-0 px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === cat
                       ? "bg-[#FF3F1A] text-white shadow-xs"
                       : "bg-slate-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-slate-200"
                   }`}
                 >
                   {cat}
-                </button>
+                </Button>
               ))}
             </div>
 

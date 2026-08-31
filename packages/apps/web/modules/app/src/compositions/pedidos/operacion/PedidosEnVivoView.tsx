@@ -8,7 +8,6 @@ import {
   Sparkles,
   ChefHat,
   CheckCircle2,
-  Clock,
   LayoutGrid,
   Kanban,
   ListFilter,
@@ -27,7 +26,6 @@ import {
   Send,
   Package,
   Zap,
-  GripVertical,
   ChevronDown,
   Minimize2,
   Calendar,
@@ -137,9 +135,43 @@ export const PedidosEnVivoView: React.FC<{
   const [dragOverCol, setDragOverCol] = useState<OrderStatus | null>(null);
   const [dragToast, setDragToast] = useState<string | null>(null);
 
+  // Flujo operativo lineal del pedido: no se pueden saltar ni retroceder etapas.
+  // Cada estado sólo puede avanzar exactamente al siguiente mediante arrastre.
+  const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
+    NUEVO: "CONFIRMADO",
+    CONFIRMADO: "EN_PREPARACION",
+    EN_PREPARACION: "LISTO",
+    LISTO: "FINALIZADO",
+  };
+
+  const colNames: Record<OrderStatus, string> = {
+    NUEVO: "Nuevos & Por Confirmar",
+    CONFIRMADO: "Confirmados (En Cola)",
+    EN_PREPARACION: "En Cocina / Horno",
+    LISTO: "Listos para Entrega",
+    FINALIZADO: "Entregados / Finalizados",
+    RECHAZADO: "Rechazados",
+    CANCELADO: "Cancelados",
+  };
+
+  const showToast = (msg: string) => {
+    setDragToast(msg);
+    setTimeout(() => setDragToast(null), 3000);
+  };
+
   const handleDropOrder = (orderId: string, targetCol: OrderStatus) => {
     const order = orders.find(o => o.id === orderId);
     if (!order || order.status === targetCol) return;
+
+    // Sólo se admite avanzar UNA etapa: bloquea saltos (p.ej. NUEVO→LISTO)
+    // y retrocesos (p.ej. LISTO→NUEVO).
+    const allowedNext = NEXT_STATUS[order.status];
+    if (targetCol !== allowedNext) {
+      showToast(
+        `No se puede mover a "${colNames[targetCol]}": el pedido debe avanzar por orden desde "${colNames[order.status]}".`
+      );
+      return;
+    }
 
     transitionOrder(
       orderId,
@@ -148,18 +180,7 @@ export const PedidosEnVivoView: React.FC<{
       `Pedido movido al estado ${targetCol} mediante arrastre en el tablero.`
     );
 
-    const colNames: Record<OrderStatus, string> = {
-      NUEVO: "Nuevos & Por Confirmar",
-      CONFIRMADO: "Confirmados (En Cola)",
-      EN_PREPARACION: "En Cocina / Horno",
-      LISTO: "Listos para Entrega",
-      FINALIZADO: "Entregados / Finalizados",
-      RECHAZADO: "Rechazados",
-      CANCELADO: "Cancelados",
-    };
-
-    setDragToast(`Pedido ${orderId} trasladado a "${colNames[targetCol]}"`);
-    setTimeout(() => setDragToast(null), 3000);
+    showToast(`Pedido ${orderId} trasladado a "${colNames[targetCol]}"`);
   };
 
   // Kanban Column Definitions dictionary
@@ -273,19 +294,6 @@ export const PedidosEnVivoView: React.FC<{
   };
 
 
-  const getChannelBadge = (channel: OrderChannel) => {
-    switch (channel) {
-      case "whatsapp":
-        return { label: "WhatsApp IA", bg: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700" };
-      case "web":
-        return { label: "Web Directo", bg: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700" };
-      case "presencial":
-        return { label: "Mostrador", bg: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700" };
-      case "telefono":
-        return { label: "Teléfono", bg: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border-zinc-200 dark:border-zinc-700" };
-    }
-  };
-
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header Banner (Toggleable) */}
@@ -347,11 +355,13 @@ export const PedidosEnVivoView: React.FC<{
             </div>
 
             {/* Delay Alert Filter Button */}
-            <button
+            <Button
+              variant="ghost"
+              intent="pedidos.filter.delayed"
               onClick={() => {
                 setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO");
               }}
-              className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+              className={`p-0 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
                 urgencyFilter === "RETRASADO"
                   ? "bg-rose-500 text-white border-rose-500 shadow-2xs"
                   : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400"
@@ -370,7 +380,7 @@ export const PedidosEnVivoView: React.FC<{
                   {delayedCount}
                 </span>
               )}
-            </button>
+            </Button>
           </div>
 
 
@@ -577,7 +587,6 @@ export const PedidosEnVivoView: React.FC<{
                   ) : (
 
                     colOrders.map(order => {
-                      const channelBadge = getChannelBadge(order.channel);
                       const isDelayed = order.urgency === "RETRASADO";
                       const isDragging = draggedOrderId === order.id;
                       const progressPercent = Math.min(
@@ -607,81 +616,39 @@ export const PedidosEnVivoView: React.FC<{
                               : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700"
                           }`}
                         >
-                          {/* Ticket Top Meta */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <GripVertical className="w-3.5 h-3.5 text-zinc-400 opacity-60 hover:opacity-100 flex-none" />
-                              <span className="font-mono font-bold text-xs text-zinc-950 dark:text-zinc-50 tracking-tight">
-                                {order.id}
-                              </span>
-                              {order.turnNumber && (
-                                <span className="font-mono text-[10px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded-md">
-                                  #{order.turnNumber}
-                                </span>
-                              )}
-                              {isDelayed && (
-                                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-none" title="Retraso operativo" />
-                              )}
+                          {/* Cliente + total (jerarquía primaria) */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <h5 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 truncate flex items-center gap-1.5">
+                                {isDelayed && (
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-none" title="Retraso operativo" />
+                                )}
+                                {order.customerName}
+                              </h5>
+                              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                                {order.id} · {order.items.reduce((s, i) => s + i.quantity, 0)} ítems
+                              </p>
                             </div>
-
-                            <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${channelBadge.bg}`}
-                            >
-                              {channelBadge.label}
+                            <span className="font-mono font-bold text-sm text-zinc-950 dark:text-zinc-50 flex-none">
+                              ${order.total.toLocaleString("es-CO")}
                             </span>
                           </div>
 
-                          {/* Customer & Time */}
-                          <div>
-                            <h5 className="font-bold text-xs text-zinc-950 dark:text-zinc-50 truncate">
-                              {order.customerName}
-                            </h5>
-                            <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                              {order.createdAt} · {order.items.reduce((s, i) => s + i.quantity, 0)} items
-                            </p>
-                          </div>
-
-                          {/* Items Preview */}
-                          <div className="bg-zinc-50 dark:bg-zinc-900/60 rounded-2xl p-2.5 text-xs space-y-1 border border-zinc-200/60 dark:border-zinc-800/60">
-                            {order.items.slice(0, 2).map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-zinc-700 dark:text-zinc-300 font-medium">
-                                <span className="truncate pr-1 text-[11px]">
-                                  <strong className="text-[#FF3F1A] font-bold">×{item.quantity}</strong> {item.name}
-                                </span>
+                          {/* Tiempo: una sola señal (barra sólo en preparación) */}
+                          {order.status === "EN_PREPARACION" ? (
+                            <div className="space-y-1">
+                              <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
+                                  style={{ width: `${progressPercent}%` }}
+                                />
                               </div>
-                            ))}
-                            {order.items.length > 2 && (
-                              <p className="text-[10px] text-zinc-400 italic">
-                                +{order.items.length - 2} productos más...
-                              </p>
-                            )}
-
-                            <div className="pt-1.5 border-t border-zinc-200/60 dark:border-zinc-800/60 flex justify-between font-bold text-xs text-zinc-950 dark:text-zinc-50">
-                              <span>Total:</span>
-                              <span className="font-mono">${order.total.toLocaleString("es-CO")}</span>
                             </div>
-                          </div>
-
-                          {/* Elapsed Time Progress Bar */}
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-[#FF3F1A]" />
-                                <span>{order.elapsedMinutes}m de {order.estimatedMinutes}m</span>
-                              </span>
-                              <span className={isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}>
-                                {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${progressPercent}%`}
-                              </span>
-                            </div>
-                            <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  isDelayed ? "bg-rose-500" : progressPercent > 80 ? "bg-amber-500" : "bg-[#FF3F1A]"
-                                }`}
-                                style={{ width: `${progressPercent}%` }}
-                              />
-                            </div>
-                          </div>
+                          ) : (
+                            <p className={`text-[10px] font-mono ${isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}`}>
+                              {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m de demora` : `${order.elapsedMinutes}m / ${order.estimatedMinutes}m`}
+                            </p>
+                          )}
 
                           {/* Quick Advancement Action Buttons */}
                           <div

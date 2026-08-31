@@ -13,6 +13,9 @@ import {
   UrgencyLevel,
   StockIngredientItem,
   StockMovement,
+  Conversation,
+  ConversationStatus,
+  HandoffReason,
 } from "../types";
 import {
   INITIAL_ORDERS,
@@ -25,6 +28,7 @@ import {
   INITIAL_PROGRAMADOS,
   INITIAL_INGREDIENTS,
   INITIAL_MOVEMENTS,
+  INITIAL_CONVERSATIONS,
 } from "../mockData";
 import { playNewOrderSound, playSuccessSound, playUrgentAlertSound } from "../utils/soundEffects";
 import { useAuth } from "../../../auth/AuthContext";
@@ -93,12 +97,37 @@ interface PedidosContextType {
   addIncidencia: (inc: Omit<Incidencia, "id" | "timestamp" | "isResolved">) => void;
   createManualOrder: (newOrder: Partial<Pedido>) => void;
   injectScheduledOrderToLive: (orderId: string, directToKitchen?: boolean) => void;
+
+  // Human-in-the-Loop — Conversaciones WhatsApp / IA
+  conversations: Conversation[];
+  selectedConversationId: string | null;
+  setSelectedConversationId: (id: string | null) => void;
+  /** Nombre legible del operador actual (para controlledBy / autoría de mensajes). */
+  currentOperatorName: string;
+  /** Transición genérica de estado del hilo (registra evento de auditoría). */
+  transitionConversation: (conversationId: string, toStatus: ConversationStatus, note?: string) => void;
+  /** El operador toma el control: IA pasa a pausa (HUMANO_ATENDIENDO). */
+  takeControl: (conversationId: string) => void;
+  /** Devuelve el control a la IA (IA_ATENDIENDO). */
+  releaseToAI: (conversationId: string) => void;
+  /** Marca el caso como resuelto (RESUELTO). */
+  resolveConversation: (conversationId: string) => void;
+  /** El operador (dueño del control) envía un mensaje al cliente. */
+  sendOperatorMessage: (conversationId: string, text: string) => void;
+  /** Marca una conversación como que requiere intervención humana. */
+  flagForHandoff: (conversationId: string, reason: HandoffReason) => void;
+  /** Marca la conversación como leída (limpia el badge de no-leído). */
+  markConversationRead: (conversationId: string) => void;
+  /** DEMO: simula un mensaje entrante del cliente. */
+  simulateCustomerMessage: (conversationId: string, text: string) => void;
+  /** DEMO: simula una respuesta de la IA (solo si está en IA_ATENDIENDO). */
+  simulateAIReply: (conversationId: string, text: string) => void;
 }
 
 const PedidosContext = createContext<PedidosContextType | null>(null);
 
 export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { getIdToken } = useAuth();
+  const { getIdToken, user } = useAuth();
   const [orders, setOrders] = useState<Pedido[]>(INITIAL_ORDERS);
   const [programados, setProgramados] = useState<Pedido[]>(INITIAL_PROGRAMADOS);
   const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
@@ -110,6 +139,19 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [storePace, setStorePaceState] = useState<StorePaceMode>("habitual");
   const [incidencias, setIncidencias] = useState<Incidencia[]>(INITIAL_INCIDENCIAS);
   const [kpis, setKpis] = useState<ResumenKPIs>(INITIAL_KPIS);
+  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
+  // Nombre legible del operador actual. En el mockup, si no hay sesión Cognito
+  // con nombre usable, se cae a un rol genérico consistente con las acciones de pedido.
+  const currentOperatorName = (() => {
+    try {
+      const uname = user?.getUsername?.();
+      if (uname && !uname.includes("@")) return uname;
+      if (uname) return uname.split("@")[0];
+    } catch (e) {}
+    return "Operador de Caja";
+  })();
 
   const setStorePace = (mode: StorePaceMode) => {
     setStorePaceState(mode);
@@ -713,6 +755,180 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (isSoundEnabled) playNewOrderSound();
   };
 
+  // ==========================================================================
+  // Human-in-the-Loop — Conversaciones WhatsApp / IA
+  // ==========================================================================
+  const nowTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  };
+
+  const transitionConversation = (
+    conversationId: string,
+    toStatus: ConversationStatus,
+    note?: string,
+  ) => {
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        // controlledBy sólo tiene valor mientras un humano atiende.
+        const controlledBy =
+          toStatus === "HUMANO_ATENDIENDO" ? currentOperatorName : null;
+        // El motivo de handoff se limpia al salir de la cola/atención.
+        const requiresHandoffReason =
+          toStatus === "IA_ATENDIENDO" || toStatus === "RESUELTO"
+            ? undefined
+            : conv.requiresHandoffReason;
+        return {
+          ...conv,
+          status: toStatus,
+          controlledBy,
+          requiresHandoffReason,
+          handoffHistory: [
+            ...conv.handoffHistory,
+            {
+              timestamp: timeStr,
+              fromStatus: conv.status,
+              toStatus,
+              user: currentOperatorName,
+              note,
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const takeControl = (conversationId: string) => {
+    transitionConversation(
+      conversationId,
+      "HUMANO_ATENDIENDO",
+      "Operador tomó el control de la conversación.",
+    );
+  };
+
+  const releaseToAI = (conversationId: string) => {
+    transitionConversation(
+      conversationId,
+      "IA_ATENDIENDO",
+      "Control devuelto al asistente IA.",
+    );
+  };
+
+  const resolveConversation = (conversationId: string) => {
+    transitionConversation(
+      conversationId,
+      "RESUELTO",
+      "Conversación marcada como resuelta.",
+    );
+    if (isSoundEnabled) playSuccessSound();
+  };
+
+  const sendOperatorMessage = (conversationId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        // Exclusión mutua: sólo el operador con el control puede escribir.
+        if (conv.status !== "HUMANO_ATENDIENDO") return conv;
+        return {
+          ...conv,
+          lastMessageAt: timeStr,
+          messages: [
+            ...conv.messages,
+            {
+              id: `m-${Date.now()}`,
+              sender: "humano",
+              authorName: currentOperatorName,
+              text: trimmed,
+              timestamp: timeStr,
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const flagForHandoff = (conversationId: string, reason: HandoffReason) => {
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        return {
+          ...conv,
+          status: "REQUIERE_INTERVENCION",
+          requiresHandoffReason: reason,
+          unreadForOperator: true,
+          handoffHistory: [
+            ...conv.handoffHistory,
+            {
+              timestamp: timeStr,
+              fromStatus: conv.status,
+              toStatus: "REQUIERE_INTERVENCION",
+              user: "Asistente IA",
+              note: "La IA solicitó intervención humana.",
+            },
+          ],
+        };
+      })
+    );
+    if (isSoundEnabled) playUrgentAlertSound();
+  };
+
+  const markConversationRead = (conversationId: string) => {
+    setConversations(prev =>
+      prev.map(conv =>
+        conv.id === conversationId ? { ...conv, unreadForOperator: false } : conv
+      )
+    );
+  };
+
+  // --- Simuladores de demo (sólo mockup, no hay WhatsApp/IA reales) ---
+  const simulateCustomerMessage = (conversationId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        return {
+          ...conv,
+          lastMessageAt: timeStr,
+          // Si un humano no está atendiendo, marcar como no leído para el operador.
+          unreadForOperator: conv.status !== "HUMANO_ATENDIENDO" ? true : conv.unreadForOperator,
+          messages: [
+            ...conv.messages,
+            { id: `m-${Date.now()}`, sender: "cliente", text: trimmed, timestamp: timeStr },
+          ],
+        };
+      })
+    );
+  };
+
+  const simulateAIReply = (conversationId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        // La IA sólo responde si tiene el control (exclusión mutua con el humano).
+        if (conv.status !== "IA_ATENDIENDO") return conv;
+        return {
+          ...conv,
+          lastMessageAt: timeStr,
+          messages: [
+            ...conv.messages,
+            { id: `m-${Date.now()}`, sender: "ia", text: trimmed, timestamp: timeStr },
+          ],
+        };
+      })
+    );
+  };
+
   return (
     <PedidosContext.Provider
       value={{
@@ -770,6 +986,19 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addIncidencia,
         createManualOrder,
         injectScheduledOrderToLive,
+        conversations,
+        selectedConversationId,
+        setSelectedConversationId,
+        currentOperatorName,
+        transitionConversation,
+        takeControl,
+        releaseToAI,
+        resolveConversation,
+        sendOperatorMessage,
+        flagForHandoff,
+        markConversationRead,
+        simulateCustomerMessage,
+        simulateAIReply,
       }}
     >
       {children}

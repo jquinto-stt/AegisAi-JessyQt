@@ -21,6 +21,7 @@ import {
   Layers,
   X,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
@@ -258,12 +259,14 @@ export const CommandPalette: React.FC = () => {
             className="w-full bg-transparent text-sm sm:text-base font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden"
           />
           {search ? (
-            <button
+            <Button
+              variant="ghost"
+              intent="command.search.clear"
               onClick={() => setSearch("")}
-              className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              className="!p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-transparent"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           ) : (
             <div className="flex items-center gap-1">
               <kbd className="px-2 py-0.5 text-[10px] font-mono font-bold bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-300/80 dark:border-zinc-700">

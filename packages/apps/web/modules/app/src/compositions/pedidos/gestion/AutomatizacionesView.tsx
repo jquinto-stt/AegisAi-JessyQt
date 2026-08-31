@@ -274,9 +274,11 @@ export const AutomatizacionesView: React.FC = () => {
                       </span>
                     </div>
 
-                    <button
+                    <Button
+                      variant="ghost"
+                      intent="automatizaciones.rule.toggle"
                       onClick={() => toggleAutomationRule(rule.id)}
-                      className={`flex items-center gap-1.5 font-black text-xs px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                      className={`p-0 flex items-center gap-1.5 font-black text-xs px-3 py-1 rounded-full border transition-all cursor-pointer ${
                         rule.isActive
                           ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
                           : "bg-slate-100 dark:bg-gray-800 text-gray-500 border-slate-300 dark:border-gray-700"
@@ -284,7 +286,7 @@ export const AutomatizacionesView: React.FC = () => {
                     >
                       {rule.isActive ? <ToggleRight className="w-4 h-4 text-emerald-600" /> : <ToggleLeft className="w-4 h-4" />}
                       <span>{rule.isActive ? "Regla Activa" : "Pausada"}</span>
-                    </button>
+                    </Button>
                   </div>
 
                   <div>
@@ -360,12 +362,14 @@ export const AutomatizacionesView: React.FC = () => {
               </div>
             </div>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="automatizaciones.recurrence.emit.test"
               onClick={() => handleEmitRecurrenceNow(recurrences[0])}
-              className="py-2.5 px-4 rounded-2xl bg-[#190088] hover:bg-[#140070] text-white font-black text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+              className="p-0 py-2.5 px-4 rounded-2xl bg-[#190088] hover:bg-[#140070] text-white font-black text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
             >
               <Play className="w-4 h-4" /> Emitir Prueba Inmediata
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -391,16 +395,18 @@ export const AutomatizacionesView: React.FC = () => {
                       </div>
                     </div>
 
-                    <button
+                    <Button
+                      variant="ghost"
+                      intent="automatizaciones.recurrence.toggle"
                       onClick={() => toggleRecurrence(rec.id)}
-                      className={`font-black text-xs px-3 py-1 rounded-full border cursor-pointer transition-all ${
+                      className={`p-0 font-black text-xs px-3 py-1 rounded-full border cursor-pointer transition-all ${
                         rec.isActive
                           ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                           : "bg-gray-100 text-gray-500 border-gray-200"
                       }`}
                     >
                       {rec.isActive ? "Activa" : "Pausada"}
-                    </button>
+                    </Button>
                   </div>
 
                   {/* Customer Info */}

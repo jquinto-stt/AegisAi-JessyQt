@@ -163,7 +163,9 @@ export const OrderDetailDrawer: React.FC = () => {
                   <span>Sumar +10m a Cocina</span>
                 </Button>
 
-                <button
+                <Button
+                  variant="ghost"
+                  intent="order-detail.notify-whatsapp"
                   onClick={handleSendWhatsAppNotification}
                   disabled={whatsappSent}
                   className="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-75"
@@ -179,7 +181,7 @@ export const OrderDetailDrawer: React.FC = () => {
                       <span>Avisar Demora por WhatsApp</span>
                     </>
                   )}
-                </button>
+                </Button>
 
                 {activeIncident && (
                   <Button
@@ -206,13 +208,15 @@ export const OrderDetailDrawer: React.FC = () => {
                     Interpretación Necto IA · Confianza {order.aiConfidence}
                   </span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  intent="order-detail.ai.view-original"
                   onClick={() => setAiModalOrder(order)}
                   className="text-xs font-bold text-[#FF3F1A] hover:underline cursor-pointer flex items-center gap-1"
                 >
                   <span>Mensaje original</span>
                   <ArrowRight className="w-3 h-3" />
-                </button>
+                </Button>
               </div>
               {order.aiRawMessage && (
                 <p className="text-xs text-zinc-600 dark:text-zinc-300 italic bg-white dark:bg-zinc-950 p-3 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
@@ -301,25 +305,29 @@ export const OrderDetailDrawer: React.FC = () => {
                 <span className="text-xs text-zinc-400 font-medium">Tiempo Estimado</span>
                 <div className="flex items-center gap-2">
                   {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      intent="order-detail.estimate.decrement"
                       onClick={() => adjustEstimate(order.id, -5)}
-                      className="w-7 h-7 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer shadow-2xs active:scale-95"
+                      className="p-0 w-7 h-7 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer shadow-2xs active:scale-95"
                       title="Restar 5 min"
                     >
                       <Minus className="w-3 h-3" />
-                    </button>
+                    </Button>
                   )}
                   <span className="font-mono font-bold text-base text-zinc-950 dark:text-zinc-50">
                     {order.estimatedMinutes} min
                   </span>
                   {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      intent="order-detail.estimate.increment"
                       onClick={() => adjustEstimate(order.id, 5)}
-                      className="w-7 h-7 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer shadow-2xs active:scale-95"
+                      className="p-0 w-7 h-7 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 cursor-pointer shadow-2xs active:scale-95"
                       title="Sumar 5 min"
                     >
                       <Plus className="w-3 h-3" />
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

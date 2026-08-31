@@ -236,9 +236,11 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
           {/* Botón contextual a Catálogo de Productos */}
           <div className="flex items-center gap-2">
             {/* Botón contextual a Insumos & Stock */}
-            <button
+            <Button
+              variant="ghost"
+              intent="resumen.nav.insumos"
               onClick={() => onNavigateGestion("insumos")}
-              className="p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+              className="p-0 p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center justify-start gap-3 transition-all cursor-pointer group shadow-xs"
             >
               <div className="w-7 h-7 rounded-xl bg-orange-50 dark:bg-orange-950/80 flex items-center justify-center">
                 <Package className="w-4 h-4 text-[#FF3F1A]" />
@@ -252,12 +254,14 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF3F1A] group-hover:translate-x-0.5 transition-all ml-1" />
-            </button>
+            </Button>
 
             {/* Botón contextual a Catálogo de Productos */}
-            <button
+            <Button
+              variant="ghost"
+              intent="resumen.nav.catalogo"
               onClick={() => onNavigateGestion("catalogo")}
-              className="p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center gap-3 transition-all cursor-pointer group shadow-xs"
+              className="p-0 p-2.5 px-4 rounded-2xl bg-slate-50 hover:bg-slate-100 dark:bg-gray-800 dark:hover:bg-gray-700 border border-slate-200 dark:border-gray-700 text-left flex items-center justify-start gap-3 transition-all cursor-pointer group shadow-xs"
             >
               <div className="w-7 h-7 rounded-xl bg-orange-50 dark:bg-orange-950/80 flex items-center justify-center">
                 <Layers className="w-4 h-4 text-[#FF3F1A]" />
@@ -271,7 +275,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-[#FF3F1A] group-hover:translate-x-0.5 transition-all ml-1" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -351,16 +355,18 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
               </div>
 
               {/* Botón contextual a Analítica */}
-              <button
+              <Button
+                variant="ghost"
+                intent="resumen.nav.analitica"
                 onClick={() => onNavigateGestion("analitica")}
-                className="p-2 px-3.5 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/80 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-left flex items-center gap-2.5 transition-all cursor-pointer group shadow-xs"
+                className="p-0 p-2 px-3.5 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/80 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-left flex items-center justify-start gap-2.5 transition-all cursor-pointer group shadow-xs"
               >
                 <BarChart2 className="w-4 h-4 text-[#190088] dark:text-indigo-300" />
                 <span className="font-extrabold text-xs text-[#190088] dark:text-indigo-300">
                   Analítica de Rendimiento
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 text-[#190088] dark:text-indigo-300 group-hover:translate-x-0.5 transition-transform" />
-              </button>
+              </Button>
             </div>
 
             {/* Channel Cards Grid */}
@@ -475,9 +481,11 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
           </div>
 
           {/* Botón contextual a Turnos y Capacidad */}
-          <button
+          <Button
+            variant="ghost"
+            intent="resumen.nav.turnos"
             onClick={() => onNavigateGestion("turnos")}
-            className="w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/80 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-left flex items-center justify-between transition-all cursor-pointer group shadow-xs"
+            className="p-0 w-full p-3 rounded-2xl bg-indigo-50/70 hover:bg-indigo-100/80 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-left flex items-center justify-between transition-all cursor-pointer group shadow-xs"
           >
             <div className="flex items-center gap-2.5">
               <Users className="w-4 h-4 text-[#190088] dark:text-indigo-300" />
@@ -486,7 +494,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
               </span>
             </div>
             <ArrowRight className="w-4 h-4 text-[#190088] dark:text-indigo-300 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -571,15 +579,17 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
                         Ver Comanda <ArrowRight className="w-3 h-3" />
                       </Button>
                     ) : (
-                      <button
+                      <Button
+                        variant="ghost"
+                        intent="resumen.incidencia.manage"
                         onClick={e => {
                           e.stopPropagation();
                           setIsIncidenciasOpen(true);
                         }}
-                        className="py-1.5 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white font-black text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="p-0 py-1.5 px-3 rounded-xl bg-[#190088] hover:bg-[#140070] text-white font-black text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95"
                       >
                         Gestionar <ArrowRight className="w-3 h-3" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -630,9 +640,11 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
           </div>
 
           {/* Botón contextual a Automatizaciones */}
-          <button
+          <Button
+            variant="ghost"
+            intent="resumen.nav.automatizaciones"
             onClick={() => onNavigateGestion("automatizaciones")}
-            className="w-full p-3 rounded-2xl bg-purple-50/70 hover:bg-purple-100/80 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-left flex items-center justify-between transition-all cursor-pointer group shadow-xs"
+            className="p-0 w-full p-3 rounded-2xl bg-purple-50/70 hover:bg-purple-100/80 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 text-left flex items-center justify-between transition-all cursor-pointer group shadow-xs"
           >
             <div className="flex items-center gap-2.5">
               <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-300" />
@@ -641,7 +653,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
               </span>
             </div>
             <ArrowRight className="w-4 h-4 text-purple-600 dark:text-purple-300 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

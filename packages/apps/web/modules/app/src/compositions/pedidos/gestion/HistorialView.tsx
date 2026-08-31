@@ -272,24 +272,26 @@ export const HistorialView: React.FC = () => {
                 <span>Fecha del Cierre:</span>
               </span>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="historial.closing.date.today"
                   onClick={() => setClosingDate(new Date().toISOString().split("T")[0])}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 cursor-pointer"
+                  className="p-0 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   Hoy
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  intent="historial.closing.date.yesterday"
                   onClick={() => {
                     const d = new Date();
                     d.setDate(d.getDate() - 1);
                     setClosingDate(d.toISOString().split("T")[0]);
                   }}
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 cursor-pointer"
+                  className="p-0 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   Ayer
-                </button>
+                </Button>
                 <input
                   type="date"
                   value={closingDate}
@@ -376,13 +378,14 @@ export const HistorialView: React.FC = () => {
               >
                 Cerrar
               </Button>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="historial.closing.export.csv"
                 onClick={handleExportCSV}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
+                className="p-0 flex-1 py-2.5 px-4 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95"
               >
                 <Download className="w-4 h-4" /> Descargar CSV
-              </button>
+              </Button>
             </div>
           </div>
         </div>

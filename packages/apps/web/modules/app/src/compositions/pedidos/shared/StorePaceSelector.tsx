@@ -88,10 +88,11 @@ export const StorePaceSelector: React.FC = () => {
   return (
     <div className="relative">
       {/* Top Trigger Pill Button */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="store-pace.trigger"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex-none flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-black transition-all cursor-pointer shadow-xs hover:scale-102 active:scale-98 ${currentConfig.pillClass}`}
+        className={`p-0 flex-none flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-black transition-all cursor-pointer shadow-xs hover:scale-102 active:scale-98 ${currentConfig.pillClass}`}
         title="Cambiar ritmo de demanda de la tienda"
       >
         <span className={`w-2.5 h-2.5 rounded-full flex-none ${currentConfig.dotClass}`} />
@@ -99,7 +100,7 @@ export const StorePaceSelector: React.FC = () => {
           {currentConfig.label}
         </span>
         <ChevronDown className="w-3.5 h-3.5 opacity-70 flex-none ml-0.5" />
-      </button>
+      </Button>
 
       {/* Popover / Modal Selector */}
       {isOpen && (

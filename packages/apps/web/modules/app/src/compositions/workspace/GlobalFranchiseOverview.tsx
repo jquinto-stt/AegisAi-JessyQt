@@ -73,13 +73,15 @@ export const GlobalFranchiseOverview: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="ghost"
+              intent="franchise.command.open"
               onClick={() => setIsCommandPaletteOpen(true)}
               className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer border border-white/10"
             >
               <Zap className="w-3.5 h-3.5 text-amber-400" />
               <span>Comando Rápido (Ctrl+K)</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -241,35 +243,38 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     Analítica & Reportes de esta Franquicia
                   </span>
                   <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="franchise.analitica.resumen"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "resumen")}
                       className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Dashboard de Pedidos"
                     >
                       <BarChart2 className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Dashboard</span>
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="franchise.analitica.historial"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "historial")}
                       className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Historial de Ventas"
                     >
                       <History className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Historial</span>
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="franchise.analitica.rendimiento"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "analitica")}
                       className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
                       title="Ver Rendimiento & Canales"
                     >
                       <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
                       <span className="text-[10px] font-medium leading-tight">Rendimiento</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
 

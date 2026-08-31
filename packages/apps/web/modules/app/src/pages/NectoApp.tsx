@@ -77,10 +77,11 @@ function NotificationBellDropdown({
 
   return (
     <div className="relative">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="shell.notifications.toggle"
         onClick={() => setOpen(!open)}
-        className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-500 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-500 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
         title="Notificaciones de Necto IA"
       >
         <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
@@ -90,7 +91,7 @@ function NotificationBellDropdown({
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF3F1A]"></span>
           </span>
         )}
-      </button>
+      </Button>
 
       {open && (
         <>
@@ -107,9 +108,9 @@ function NotificationBellDropdown({
               </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="text-[11px] font-bold text-orange-600 hover:underline cursor-pointer">
+                  <Button variant="ghost" intent="shell.notifications.markAllRead" onClick={markAllRead} className="p-0 text-[11px] font-bold text-orange-600 hover:underline cursor-pointer">
                     Marcar leídas
-                  </button>
+                  </Button>
                 )}
                 <Button
                   variant="ghost"
@@ -145,9 +146,9 @@ function NotificationBellDropdown({
             </div>
 
             <div className="p-3 border-t border-gray-100 dark:border-[#374151] text-center bg-slate-50/50 dark:bg-gray-800/30">
-              <button onClick={() => setOpen(false)} className="text-xs font-extrabold text-[#190088] dark:text-blue-400 hover:underline cursor-pointer">
+              <Button variant="ghost" intent="shell.notifications.viewAll" onClick={() => setOpen(false)} className="p-0 text-xs font-extrabold text-[#190088] dark:text-blue-400 hover:underline cursor-pointer">
                 Ver todas las notificaciones
-              </button>
+              </Button>
             </div>
           </div>
         </>
@@ -175,37 +176,40 @@ export function TailAdminBreadcrumb({
 
   return (
     <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="shell.breadcrumb.home"
         onClick={() => navigate("/workspaces")}
-        className="hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] transition-colors items-center gap-1.5 cursor-pointer hidden sm:flex font-mono"
+        className="p-0 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] transition-colors items-center gap-1.5 cursor-pointer hidden sm:flex font-mono"
         title="Ir al Hub de Negocios y Franquicia"
       >
         <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
         <span>Hub</span>
-      </button>
+      </Button>
 
 
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="shell.breadcrumb.module"
         onClick={() => navigate("/workspaces")}
-        className="text-gray-700 dark:text-gray-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] font-bold hidden md:inline truncate max-w-[150px] transition-colors cursor-pointer"
+        className="p-0 text-gray-700 dark:text-gray-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] font-bold hidden md:inline truncate max-w-[150px] transition-colors cursor-pointer"
         title="Cambiar de sucursal en el Hub"
       >
         {moduleName}
-      </button>
+      </Button>
 
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden md:inline" />
 
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="shell.breadcrumb.section"
         onClick={onNavigateSection || onNavigateHome}
-        className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium hidden sm:inline transition-colors cursor-pointer"
+        className="p-0 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium hidden sm:inline transition-colors cursor-pointer"
       >
         {roleName}
-      </button>
+      </Button>
 
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
 
@@ -365,24 +369,28 @@ function Sidebar({
 
     if (isCollapsed && !isMobile) {
       return (
-        <button
+        <Button
+          variant="ghost"
+          intent="shell.nav.item"
           onClick={handleItemClick}
           title={label}
-          className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-medium transition-all cursor-pointer ${
+          className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-medium transition-all cursor-pointer ${
             active
               ? "bg-[#FF3F1A] text-white shadow-md"
               : "text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
           }`}
         >
           {icon}
-        </button>
+        </Button>
       );
     }
 
     return (
-      <button
+      <Button
+        variant="ghost"
+        intent="shell.nav.item"
         onClick={handleItemClick}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer ${
+        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer ${
           active
             ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
             : "text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
@@ -390,7 +398,7 @@ function Sidebar({
       >
         <span className={`flex-none ${active ? "text-white" : "text-gray-400 dark:text-gray-400"}`}>{icon}</span>
         <span className="flex-1 truncate">{label}</span>
-      </button>
+      </Button>
     );
   }
 
@@ -411,24 +419,28 @@ function Sidebar({
   }) {
     if (isCollapsed && !isMobile) {
       return (
-        <button
+        <Button
+          variant="ghost"
+          intent="shell.nav.section"
           onClick={() => { if (onHeaderClick) onHeaderClick(); else toggle(section); }}
           title={label}
-          className={`w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-semibold transition-all cursor-pointer ${
+          className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-semibold transition-all cursor-pointer ${
             active
               ? "bg-[#FF3F1A] text-white shadow-sm"
               : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800"
           }`}
         >
           {icon}
-        </button>
+        </Button>
       );
     }
 
     return (
-      <button
+      <Button
+        variant="ghost"
+        intent="shell.nav.section"
         onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
+        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
           active
             ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
             : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
@@ -437,7 +449,7 @@ function Sidebar({
         <span className={`flex-none ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>{icon}</span>
         <span className="flex-1 text-left truncate">{label}</span>
         {expanded[section] ? <ChevronDown className="w-3.5 h-3.5 flex-none" /> : <ChevronRight className="w-3.5 h-3.5 flex-none" />}
-      </button>
+      </Button>
     );
   }
 
@@ -590,26 +602,29 @@ function Sidebar({
           {!isCollapsed ? (
             <>
               <NectoLogo size="xs" inline />
-              <button
+              <Button
+                variant="ghost"
+                intent="shell.sidebar.collapse"
                 onClick={() => handleSetCollapsed(true)}
                 title="Colapsar barra lateral"
-                className="w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="p-0 w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4 rotate-180" />
-              </button>
+              </Button>
             </>
           ) : (
             <div className="flex items-center justify-center w-full">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="shell.sidebar.expand"
                 onClick={() => handleSetCollapsed(false)}
                 title="Expandir barra lateral"
-                className="w-10 h-10 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] flex items-center justify-center shadow-2xs hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer select-none group"
+                className="p-0 w-10 h-10 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] flex items-center justify-center shadow-2xs hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer select-none group"
               >
                 <span className="font-black text-xl text-[#FF3F1A] tracking-tighter group-hover:scale-110 transition-transform">
                   N
                 </span>
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -646,12 +661,14 @@ function Sidebar({
             {/* Drawer Header */}
             <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
               <NectoLogo size="xs" inline />
-              <button
+              <Button
+                variant="ghost"
+                intent="shell.sidebar.closeMobile"
                 onClick={onCloseMobile}
-                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                className="p-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Mobile Nav Links */}
@@ -907,6 +924,7 @@ export default function App() {
     "en-vivo": "Pedidos Activos",
     "preparacion": "KDS Cocina y Tiempos",
     "programados": "Pedidos Programados",
+    "conversaciones": "Conversaciones WhatsApp",
   };
 
   const pedidosGePageNames: Record<GestionTab, string> = {
@@ -959,14 +977,15 @@ export default function App() {
             <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex-none">
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Mobile Menu Toggle Button */}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="shell.sidebar.openMobile"
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 shadow-sm hover:scale-105 active:scale-95 cursor-pointer flex-none"
+                  className="p-0 lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 shadow-sm hover:scale-105 active:scale-95 cursor-pointer flex-none"
                   title="Abrir menú de navegación"
                 >
                   <Menu className="w-5 h-5" />
-                </button>
+                </Button>
 
                 <TailAdminBreadcrumb
                   moduleName={activeModule === "pedidos" ? (activeBusiness?.name || "Módulo Pedidos") : "Inventarios SST"}
@@ -988,10 +1007,11 @@ export default function App() {
 
               {/* Right Side Header Actions: Search, Active Role, Business Switcher, Notifications & Theme */}
               <div className="flex items-center gap-2 sm:gap-2.5">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="shell.role.select"
                   onClick={() => handleNavigatePedidos("configuracion", "roles")}
-                  className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-102 ${
+                  className={`p-0 hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-102 ${
                     activeRole.badgeColor === "rose"
                       ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
                       : activeRole.badgeColor === "amber"
@@ -1004,7 +1024,7 @@ export default function App() {
                 >
                   <Shield className="w-3.5 h-3.5" />
                   <span className="truncate max-w-[130px]">{activeRole.name}</span>
-                </button>
+                </Button>
 
                 <GlobalSearchButton />
                 <BusinessSwitcher />

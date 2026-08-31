@@ -89,15 +89,17 @@ export const IncidenciasDrawer: React.FC = () => {
 
                   <div className="pt-2 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">
                     {inc.orderId ? (
-                      <button
+                      <Button
+                        variant="ghost"
+                        intent="incidencias.order.view"
                         onClick={() => {
                           setSelectedOrderId(inc.orderId!);
                           setIsIncidenciasOpen(false);
                         }}
-                        className="text-xs font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
+                        className="p-0 text-xs font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         Ver pedido {inc.orderId} <ArrowRight className="w-3 h-3" />
-                      </button>
+                      </Button>
                     ) : (
                       <div />
                     )}

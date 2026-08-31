@@ -79,9 +79,11 @@ export default function WorkspacesPage() {
 
           {/* Hub Navigation Tabs - Visible on all devices */}
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
-            <button
+            <Button
+              variant="ghost"
+              intent="workspaces.hub.tab"
               onClick={() => setHubTab("workspaces_list")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 hubTab === "workspaces_list"
                   ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
                   : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -89,10 +91,12 @@ export default function WorkspacesPage() {
             >
               <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>Mis Locales ({businesses.length})</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              intent="workspaces.hub.tab"
               onClick={() => setHubTab("franchise_overview")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                 hubTab === "franchise_overview"
                   ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
                   : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
@@ -100,7 +104,7 @@ export default function WorkspacesPage() {
             >
               <Layers className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>Visión Franquicia</span>
-            </button>
+            </Button>
           </div>
         </div>
 

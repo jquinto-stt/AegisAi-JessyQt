@@ -132,10 +132,26 @@ El módulo de **Operación** también está migrado, en sus dos vistas:
 | --- | --- | --- | --- |
 | **Bandeja Unificada** | `operacion/PedidosEnVivoView.tsx` | `Button`, `Card`, `Field`, `Select`, `Textarea` | `pedidos.order.*`, `pedidos.manual.*`, `pedidos.toolbar.*` |
 | **KDS Cocina** | `operacion/PreparacionTiemposView.tsx` | `Button`, `Card`, `Badge` | `kds.order.*`, `kds.section.*`, `kds.header` |
+| **Conversaciones WhatsApp** | `operacion/ConversacionesView.tsx` | `Button`, `SearchInput`, `SegmentedControl` | `conversaciones.*`, `conversation.*` |
 
 Se preservó intacta la lógica delicada: transiciones de estado de pedidos (`confirmOrder`, `sendToKitchen`, `markOrderReady`, `deliverOrder`), sonido (`playOrderAlert`/`playSuccessSound`), filtrado (`filterOrdersList`), drag & drop del tablero Kanban, y cálculos de urgencia/progreso.
 
 El conmutador de vista (Tablero/Lista) se migró a `SegmentedControl` (`pedidos.view`) y el buscador a `SearchInput` (`pedidos.search`, conserva el `ref` para el atajo Ctrl+K). Quedan como primitivas propias las pills de filtro con estado activo (Retrasos, estaciones KDS, checklist de cocina) — son arrays dinámicos — y los `<select>` de filtro de la toolbar (llevan chevron propio).
+
+**Validación de flujo del Kanban:** el drag & drop del tablero sólo permite avanzar el pedido **una etapa** en el orden `NUEVO → CONFIRMADO → EN_PREPARACION → LISTO → FINALIZADO`. Soltar una tarjeta en una columna que salte o retroceda estados se bloquea con un aviso, evitando transiciones inválidas.
+
+#### Human-in-the-Loop (HITL): intervención humana en conversaciones WhatsApp
+
+El sub-tab **Conversaciones** implementa un flujo de intervención humana sobre las conversaciones de WhatsApp/IA (mockup en memoria, sin backend). Cada conversación tiene una máquina de estados de control independiente del estado del pedido:
+
+`IA_ATENDIENDO → REQUIERE_INTERVENCION → HUMANO_ATENDIENDO → RESUELTO → (vuelve a) IA_ATENDIENDO`
+
+- **Detección:** badge naranja pulsante + borde de acento + sonido cuando una conversación requiere intervención (IA ambigua, cliente pide humano, modificación especial, confirmar dato, baja confianza).
+- **Toma de control:** el operador pulsa *Tomar control* → pasa a `HUMANO_ATENDIENDO` y se registra `controlledBy`. La exclusión mutua (IA vs humano) está garantizada en el contexto: `sendOperatorMessage` sólo agrega si el humano tiene el control, y la IA sólo responde en `IA_ATENDIENDO`.
+- **Gestión del pedido:** desde la conversación se puede confirmar / modificar / rechazar el pedido asociado reutilizando las acciones y modales existentes (`confirmOrder`, `AIInterpretationModal`, `RejectCancelModal`).
+- **Auditoría:** cada transición queda registrada en `handoffHistory` (quién y cuándo), análogo al `history` del pedido.
+
+Componentes: `operacion/ConversacionesView.tsx` (inbox de dos paneles), `shared/ConversationThread.tsx` (hilo + input contextual) y `shared/ConversationControlBar.tsx` (control + acciones de pedido). Estado y acciones en `context/PedidosContext.tsx` (`takeControl`, `releaseToAI`, `resolveConversation`, `sendOperatorMessage`, `flagForHandoff`). Datos sembrados en `mockData.ts` (`INITIAL_CONVERSATIONS`).
 
 ### Uso real: módulo Pedidos → Gestión
 
@@ -193,7 +209,7 @@ Las pantallas grandes fuera de Pedidos también están migradas (enfoque pragmá
 
 ### Cobertura y decisiones de alcance
 
-La adopción de Elements alcanza **~55%** del front (203 de 366 controles UI usan la capa). Se añadieron tres Elements nuevos para cubrir patrones que antes quedaban como primitivas inline:
+La adopción de Elements alcanza **~86%** del front (327 de 381 controles UI usan la capa). Se añadieron Elements nuevos para cubrir patrones que antes quedaban como primitivas inline, y se migraron masivamente los `<button>`, `<input>`, `<select>` y `<textarea>` nativos que mapean limpio a la capa (`Button`, `Field`, `Select`, `Textarea`). Los ~54 controles nativos restantes son intencionales: las primitivas internas de `src/elements/` (implementación de los propios Elements), las pantallas de autenticación (CSS propio), y casos especiales donde el nativo es la opción correcta (inputs con icono absoluto, `type="date/file/color/datetime-local"`, checkboxes/radios, controles inline sin label, y triggers circulares propios). Los tres Elements iniciales para cubrir patrones que antes quedaban inline:
 
 - **`Toggle`** (`necto.el.toggle`): switch ON/OFF accesible (`role="switch"`). Aplicado en los canales de venta de `BusinessSettingsModal` (WhatsApp/Web/POS → `business.channel.*`) y en `showToolbar` de `CustomLayoutModal` (`layout.toolbar.*`).
 - **`SegmentedControl`** (`necto.el.segmented`): grupo de opciones con estado activo (tabs, pills de filtro, conmutadores de vista), con tonos `contrast | accent | panel`. Aplicado en el time-range y metric-tabs de `AnaliticaView`, subtabs de `AutomatizacionesView`/`InsumosStockView`/`CatalogoInteligenteView`, y view switchers de `ProgramadosView`/`PedidosEnVivoView`.

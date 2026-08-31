@@ -223,12 +223,14 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
         {/* Footer */}
         <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-between text-xs text-zinc-400">
           <span>Podrás cambiar de rol o simular otra vista en cualquier momento desde la barra superior.</span>
-          <button
+          <Button
+            variant="ghost"
+            intent="role-select.cancel"
             onClick={onClose}
-            className="font-bold text-zinc-600 dark:text-zinc-300 hover:underline cursor-pointer"
+            className="p-0 font-bold text-zinc-600 dark:text-zinc-300 hover:underline hover:bg-transparent cursor-pointer"
           >
             Cancelar
-          </button>
+          </Button>
         </div>
       </div>
     </div>

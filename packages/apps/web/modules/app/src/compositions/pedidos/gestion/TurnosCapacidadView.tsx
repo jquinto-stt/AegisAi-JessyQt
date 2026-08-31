@@ -20,7 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Badge } from "@/elements";
+import { Badge, Button } from "@/elements";
 
 export const TurnosCapacidadView: React.FC = () => {
   const { shiftInfo, updateStaffStatus, assignStaffStation, switchShift, orders } = usePedidos();
@@ -76,10 +76,12 @@ export const TurnosCapacidadView: React.FC = () => {
           {shiftOptions.map(opt => {
             const isSelected = shiftInfo.currentShift.includes(opt.label);
             return (
-              <button
+              <Button
                 key={opt.id}
+                variant="ghost"
+                intent="turnos.shift.switch"
                 onClick={() => switchShift(opt.id)}
-                className={`py-2 px-4 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border shadow-xs flex-none ${
+                className={`p-0 py-2 px-4 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 border shadow-xs flex-none ${
                   isSelected
                     ? "bg-[#190088] text-white border-[#190088] ring-2 ring-indigo-500/20"
                     : "bg-slate-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-700 hover:border-indigo-300"
@@ -95,7 +97,7 @@ export const TurnosCapacidadView: React.FC = () => {
                 >
                   {opt.hours}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -315,17 +317,19 @@ export const TurnosCapacidadView: React.FC = () => {
                   {(["Horno", "Armado", "Empaque", "Caja"] as const).map(st => {
                     const isCurrentStation = (member.station || "Horno") === st;
                     return (
-                      <button
+                      <Button
                         key={st}
+                        variant="ghost"
+                        intent="turnos.staff.station.assign"
                         onClick={() => assignStaffStation(member.id, st)}
-                        className={`py-1.5 px-1 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
+                        className={`p-0 py-1.5 px-1 rounded-xl text-[10px] font-black transition-all cursor-pointer ${
                           isCurrentStation
                             ? "bg-[#190088] text-white shadow-xs"
                             : "bg-slate-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-slate-200"
                         }`}
                       >
                         {st}
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -336,10 +340,12 @@ export const TurnosCapacidadView: React.FC = () => {
                 {(["Activo", "Descanso", "Inactivo"] as const).map(st => {
                   const isCurrent = member.status === st;
                   return (
-                    <button
+                    <Button
                       key={st}
+                      variant="ghost"
+                      intent="turnos.staff.status.update"
                       onClick={() => updateStaffStatus(member.id, st)}
-                      className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all cursor-pointer active:scale-95 ${
+                      className={`p-0 flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all cursor-pointer active:scale-95 ${
                         isCurrent
                           ? st === "Activo"
                             ? "bg-emerald-600 text-white shadow-xs"
@@ -350,7 +356,7 @@ export const TurnosCapacidadView: React.FC = () => {
                       }`}
                     >
                       {st}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

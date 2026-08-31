@@ -8,6 +8,7 @@ import {
   ResumenKPIs,
   StockIngredientItem,
   StockMovement,
+  Conversation,
 } from "./types";
 
 export const INITIAL_PRODUCTS: ProductItem[] = [
@@ -867,5 +868,147 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
     evidenceType: "foto",
     registeredBy: "Camila Rossi",
     timestamp: "Ayer 19:30",
+  },
+];
+
+
+// ============================================================================
+// Conversaciones WhatsApp / IA — datos sembrados para el flujo Human-in-the-Loop
+// Cada caso cubre un estado / motivo distinto para que el demo muestre el ciclo
+// completo: IA atendiendo → requiere intervención → humano → resuelto → IA.
+// ============================================================================
+export const INITIAL_CONVERSATIONS: Conversation[] = [
+  // 1) REQUIERE_INTERVENCION — cliente pide explícitamente un humano
+  {
+    id: "CONV-01",
+    customerName: "Camila Benítez",
+    customerPhone: "+54 11 6789-1234",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "CLIENTE_PIDE_HUMANO",
+    aiConfidence: "Media",
+    orderId: "PED-1021",
+    lastMessageAt: "20:14",
+    unreadForOperator: true,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola, hice un pedido hace un rato pero necesito cambiar la dirección de entrega.", timestamp: "20:10" },
+      { id: "m2", sender: "ia", text: "¡Hola Camila! Con gusto. ¿A qué dirección querés que enviemos tu pedido?", timestamp: "20:11" },
+      { id: "m3", sender: "cliente", text: "Es complicado, prefiero hablar con una persona por favor.", timestamp: "20:14" },
+    ],
+    handoffHistory: [
+      { timestamp: "20:14", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "El cliente solicitó hablar con una persona." },
+    ],
+  },
+
+  // 2) REQUIERE_INTERVENCION — baja confianza / pedido ambiguo
+  {
+    id: "CONV-02",
+    customerName: "Tech Solutions S.A.",
+    customerPhone: "+54 11 4455-6677",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "AMBIGUO",
+    aiConfidence: "Baja",
+    orderId: "PED-1020",
+    lastMessageAt: "18:22",
+    unreadForOperator: true,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Buenas, para la reunión de mañana queremos las de siempre pero un poco más que la vez pasada.", timestamp: "18:20" },
+      { id: "m2", sender: "ia", text: "¡Hola! Para asegurarme, ¿podrías confirmarme cantidades y variedades exactas?", timestamp: "18:21" },
+      { id: "m3", sender: "cliente", text: "Ustedes ya saben lo que pedimos siempre, mandenlo igual.", timestamp: "18:22" },
+    ],
+    handoffHistory: [
+      { timestamp: "18:22", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Pedido ambiguo: el cliente no confirma cantidades (confianza Baja)." },
+    ],
+  },
+
+  // 3) REQUIERE_INTERVENCION — modificación especial fuera del catálogo
+  {
+    id: "CONV-03",
+    customerName: "Lucía Paredes",
+    customerPhone: "+54 11 8899-0011",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "MODIFICACION_ESPECIAL",
+    aiConfidence: "Media",
+    lastMessageAt: "19:05",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola! ¿Pueden hacer las empanadas sin sal? Es por tema de salud.", timestamp: "19:03" },
+      { id: "m2", sender: "ia", text: "Voy a consultar con la cocina si es posible esa preparación especial.", timestamp: "19:05" },
+    ],
+    handoffHistory: [
+      { timestamp: "19:05", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Modificación especial no contemplada en el catálogo." },
+    ],
+  },
+
+  // 4) HUMANO_ATENDIENDO — un operador ya tomó el control
+  {
+    id: "CONV-04",
+    customerName: "Gonzalo Herrera",
+    customerPhone: "+54 11 2233-4455",
+    channel: "whatsapp",
+    status: "HUMANO_ATENDIENDO",
+    controlledBy: "Operador de Caja",
+    requiresHandoffReason: "CONFIRMAR_DATO",
+    aiConfidence: "Media",
+    lastMessageAt: "20:02",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "¿El local sigue abierto? Quiero pasar a retirar.", timestamp: "19:58" },
+      { id: "m2", sender: "ia", text: "Déjame confirmar el horario con el equipo.", timestamp: "19:59" },
+      { id: "m3", sender: "humano", authorName: "Operador de Caja", text: "¡Hola Gonzalo! Sí, estamos abiertos hasta las 23:30. Te esperamos.", timestamp: "20:02" },
+    ],
+    handoffHistory: [
+      { timestamp: "19:59", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Requiere confirmar un dato operativo." },
+      { timestamp: "20:00", fromStatus: "REQUIERE_INTERVENCION", toStatus: "HUMANO_ATENDIENDO", user: "Operador de Caja", note: "Operador tomó el control de la conversación." },
+    ],
+  },
+
+  // 5) IA_ATENDIENDO — conversación sana, sin necesidad de intervención
+  {
+    id: "CONV-05",
+    customerName: "Mariana Silva",
+    customerPhone: "+54 11 9482-1102",
+    channel: "whatsapp",
+    status: "IA_ATENDIENDO",
+    controlledBy: null,
+    aiConfidence: "Alta",
+    orderId: "PED-1024",
+    lastMessageAt: "20:08",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola! Queremos media docena de carne a cuchillo y media de pollo al verdeo, y dos cocas frías porfa.", timestamp: "20:06" },
+      { id: "m2", sender: "ia", text: "¡Perfecto Mariana! Tomé tu pedido: 6 carne a cuchillo, 6 pollo al verdeo y 2 Coca-Cola. Total $X. ¿Confirmás?", timestamp: "20:07" },
+      { id: "m3", sender: "cliente", text: "Sí, confirmo! Gracias.", timestamp: "20:08" },
+    ],
+    handoffHistory: [],
+  },
+
+  // 6) RESUELTO — caso cerrado por el humano
+  {
+    id: "CONV-06",
+    customerName: "Ignacio Ferreyra",
+    customerPhone: "+54 11 3341-9988",
+    channel: "whatsapp",
+    status: "RESUELTO",
+    controlledBy: null,
+    aiConfidence: "Alta",
+    orderId: "PED-1022",
+    lastMessageAt: "17:40",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Quería saber si llegó bien mi transferencia.", timestamp: "17:30" },
+      { id: "m2", sender: "humano", authorName: "Supervisor de Turno", text: "¡Hola Ignacio! Sí, confirmamos el pago. Tu pedido ya está en preparación.", timestamp: "17:35" },
+      { id: "m3", sender: "cliente", text: "Genial, muchas gracias!", timestamp: "17:40" },
+    ],
+    handoffHistory: [
+      { timestamp: "17:32", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Consulta de pago fuera del alcance del asistente." },
+      { timestamp: "17:33", fromStatus: "REQUIERE_INTERVENCION", toStatus: "HUMANO_ATENDIENDO", user: "Supervisor de Turno" },
+      { timestamp: "17:40", fromStatus: "HUMANO_ATENDIENDO", toStatus: "RESUELTO", user: "Supervisor de Turno", note: "Pago confirmado. Caso resuelto." },
+    ],
   },
 ];

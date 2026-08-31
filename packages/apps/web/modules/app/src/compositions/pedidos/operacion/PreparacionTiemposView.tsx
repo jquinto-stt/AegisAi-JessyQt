@@ -202,14 +202,15 @@ export const PreparacionTiemposView: React.FC<{
                       {order.items.map((it, idx) => {
                         const checked = currentChecks.has(idx);
                         return (
-                          <button
+                          <Button
                             key={idx}
-                            type="button"
+                            variant="ghost"
+                            intent="kds.order.item.toggle"
                             onClick={e => {
                               e.stopPropagation();
                               toggleItemCheck(order.id, idx);
                             }}
-                            className={`w-full p-2.5 rounded-2xl border text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
+                            className={`p-0 w-full p-2.5 rounded-2xl border text-left flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
                               checked
                                 ? "bg-zinc-100/70 dark:bg-zinc-800/80 border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
                                 : "bg-zinc-50/80 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800/80 text-zinc-800 dark:text-zinc-200 hover:border-zinc-300"
@@ -242,7 +243,7 @@ export const PreparacionTiemposView: React.FC<{
                             >
                               {checked ? "Listo" : "Pendiente"}
                             </span>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -329,17 +330,19 @@ export const PreparacionTiemposView: React.FC<{
           {/* Station Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {(["TODAS", "Horno", "Armado", "Empaque"] as const).map(st => (
-              <button
+              <Button
                 key={st}
+                variant="ghost"
+                intent="kds.station.filter"
                 onClick={() => setStationFilter(st)}
-                className={`px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                className={`p-0 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                   stationFilter === st
                     ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
                     : "bg-zinc-100/70 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/80 dark:hover:bg-zinc-800"
                 }`}
               >
                 {st === "TODAS" ? "Todas las Estaciones" : st}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

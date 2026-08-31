@@ -481,19 +481,21 @@ export const CatalogoInteligenteView: React.FC<{
           </div>
 
           {/* Customer Customizer Preview Button (Audio / Visual Interaction) */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="catalog.product.preview.open"
             onClick={() => handleOpenCustomerPreview(product)}
             className="w-full py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-950/70 border border-orange-200/80 dark:border-orange-900/60 text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
           >
             <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
             <span>Personalizar (Vista Cliente)</span>
-          </button>
+          </Button>
 
           {/* Ratings & Orders */}
           <div className="grid grid-cols-2 gap-2 pt-1">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="catalog.product.reviews.open"
               onClick={() => setReviewModalProduct(product)}
               className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 text-zinc-800 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-700 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               title="Ver opiniones"
@@ -503,7 +505,7 @@ export const CatalogoInteligenteView: React.FC<{
               <span className="text-[10px] font-normal opacity-70">
                 ({product.reviewsCount || 0})
               </span>
-            </button>
+            </Button>
 
             <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center justify-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A]" />
@@ -532,9 +534,11 @@ export const CatalogoInteligenteView: React.FC<{
             </Button>
 
             {/* Availability Switch */}
-            <button
+            <Button
+              variant="ghost"
+              intent="catalog.product.availability.toggle"
               onClick={() => toggleProductAvailability(product.id)}
-              className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+              className={`p-0 py-2 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                 product.isAvailable
                   ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200"
                   : "bg-zinc-900 text-white hover:bg-zinc-800"
@@ -551,7 +555,7 @@ export const CatalogoInteligenteView: React.FC<{
                   <span>Pausado</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -664,10 +668,12 @@ export const CatalogoInteligenteView: React.FC<{
                     : products.filter(p => p.category === cat).length;
 
                 return (
-                  <button
+                  <Button
                     key={cat}
+                    variant="ghost"
+                    intent="catalog.category.select"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
+                    className={`p-0 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
                       selectedCategory === cat
                         ? "bg-[#FF3F1A] text-white shadow-xs"
                         : "bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
@@ -675,7 +681,7 @@ export const CatalogoInteligenteView: React.FC<{
                   >
                     <span>{cat}</span>
                     <span className="text-[10px] opacity-80 font-mono">({count})</span>
-                  </button>
+                  </Button>
                 );
               })}
 
@@ -695,10 +701,11 @@ export const CatalogoInteligenteView: React.FC<{
             <div className="flex items-center gap-3 flex-wrap">
               {/* Grouped View vs Grid Switch */}
               <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="catalog.view.layout.grouped"
                   onClick={() => setViewLayout("grouped")}
-                  className={`p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`p-0 p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                     viewLayout === "grouped"
                       ? "bg-white dark:bg-zinc-750 text-[#FF3F1A] shadow-2xs"
                       : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -707,11 +714,12 @@ export const CatalogoInteligenteView: React.FC<{
                 >
                   <Layers className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Por Secciones</span>
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  intent="catalog.view.layout.grid"
                   onClick={() => setViewLayout("grid")}
-                  className={`p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`p-0 p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
                     viewLayout === "grid"
                       ? "bg-white dark:bg-zinc-750 text-[#FF3F1A] shadow-2xs"
                       : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
@@ -720,7 +728,7 @@ export const CatalogoInteligenteView: React.FC<{
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Cuadrícula</span>
-                </button>
+                </Button>
               </div>
 
               {/* Sort selector */}
@@ -840,17 +848,19 @@ export const CatalogoInteligenteView: React.FC<{
           {/* Rating Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto">
             {["TODOS", 5, 4, 3, 2, 1].map(r => (
-              <button
+              <Button
                 key={r}
+                variant="ghost"
+                intent="review.star.filter"
                 onClick={() => setStarFilter(r as any)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`p-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   starFilter === r
                     ? "bg-[#FF3F1A] text-white shadow-xs"
                     : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300"
                 }`}
               >
                 {r === "TODOS" ? "Todas las opiniones" : `${r} Estrellas ★`}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -943,13 +953,14 @@ export const CatalogoInteligenteView: React.FC<{
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.preview.close"
                 onClick={() => setCustomerPreviewProduct(null)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-2xl bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-colors cursor-pointer"
+                className="p-0 absolute top-4 right-4 w-9 h-9 rounded-2xl bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
 
               <div className="absolute bottom-4 left-5 right-5 text-white">
                 <div className="flex items-center justify-between">
@@ -1058,28 +1069,31 @@ export const CatalogoInteligenteView: React.FC<{
             <div className="p-5 sm:p-6 bg-zinc-50/80 dark:bg-zinc-900/90 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-4 flex-none">
               {/* Quantity Controls */}
               <div className="flex items-center gap-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-1 shadow-2xs">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="preview.qty.decrease"
                   onClick={() => setPreviewQuantity(Math.max(1, previewQuantity - 1))}
-                  className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
+                  className="p-0 w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
                 >
                   -
-                </button>
+                </Button>
                 <span className="font-mono text-sm font-bold w-6 text-center text-zinc-950 dark:text-white">
                   {previewQuantity}
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="preview.qty.increase"
                   onClick={() => setPreviewQuantity(previewQuantity + 1)}
-                  className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
+                  className="p-0 w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
                 >
                   +
-                </button>
+                </Button>
               </div>
 
               {/* Add to order button */}
-              <button
-                type="button"
+              <Button
+                variant="accent"
+                intent="preview.order.submit"
                 onClick={handleTestOrderSubmit}
                 className="flex-1 py-3 px-5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold transition-all flex items-center justify-between shadow-sm cursor-pointer active:scale-98"
               >
@@ -1087,7 +1101,7 @@ export const CatalogoInteligenteView: React.FC<{
                 <span className="font-mono font-black text-sm">
                   ${computedPreviewTotal.toLocaleString("es-CO")}
                 </span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1114,12 +1128,14 @@ export const CatalogoInteligenteView: React.FC<{
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="catalog.product.edit.close"
                 onClick={() => setEditingProduct(null)}
-                className="w-9 h-9 rounded-2xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-9 h-9 p-0 rounded-2xl text-zinc-400"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             {/* General Info Fields */}
@@ -1207,27 +1223,30 @@ export const CatalogoInteligenteView: React.FC<{
 
                 {/* Fast Template Inserters */}
                 <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    intent="catalog.modifier.preset.extras"
                     onClick={() => handleAddModifierTemplate("extras")}
-                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/50 text-[#FF3F1A] border border-orange-200 dark:border-orange-900/60 cursor-pointer"
+                    className="p-0 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/50 text-[#FF3F1A] border border-orange-200 dark:border-orange-900/60 cursor-pointer"
                   >
                     + Preset Extras
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    intent="catalog.modifier.preset.cooking"
                     onClick={() => handleAddModifierTemplate("cooking")}
-                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                    className="p-0 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
                   >
                     + Preset Cocción
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    intent="catalog.modifier.preset.sauces"
                     onClick={() => handleAddModifierTemplate("sauces")}
-                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                    className="p-0 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
                   >
                     + Preset Salsas
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1236,13 +1255,14 @@ export const CatalogoInteligenteView: React.FC<{
                   <p className="text-xs text-zinc-400">
                     Sin grupos de personalización para este plato.
                   </p>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    intent="catalog.modifier.group.add.first"
                     onClick={() => handleAddModifierTemplate("extras")}
-                    className="py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold cursor-pointer"
+                    className="p-0 py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold cursor-pointer"
                   >
                     Añadir Primer Grupo de Extras
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -1280,17 +1300,18 @@ export const CatalogoInteligenteView: React.FC<{
                             <option value="multi">Múltiples Extras</option>
                           </select>
 
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            intent="catalog.modifier.group.remove"
                             onClick={() => {
                               const updated = editingProduct.modifiers?.filter((_, i) => i !== gIdx);
                               setEditingProduct({ ...editingProduct, modifiers: updated });
                             }}
-                            className="w-8 h-8 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center cursor-pointer transition-colors"
+                            className="p-0 w-8 h-8 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center cursor-pointer transition-colors"
                             title="Eliminar grupo"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -1325,22 +1346,24 @@ export const CatalogoInteligenteView: React.FC<{
                               />
                             </div>
 
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              intent="catalog.modifier.option.remove"
                               onClick={() => {
                                 const updated = [...(editingProduct.modifiers || [])];
                                 updated[gIdx].options = updated[gIdx].options.filter((_, i) => i !== oIdx);
                                 setEditingProduct({ ...editingProduct, modifiers: updated });
                               }}
-                              className="w-7 h-7 rounded-lg text-zinc-400 hover:text-red-500 flex items-center justify-center cursor-pointer"
+                              className="p-0 w-7 h-7 rounded-lg text-zinc-400 hover:text-red-500 flex items-center justify-center cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         ))}
 
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          intent="catalog.modifier.option.add"
                           onClick={() => {
                             const updated = [...(editingProduct.modifiers || [])];
                             updated[gIdx].options.push({
@@ -1350,10 +1373,10 @@ export const CatalogoInteligenteView: React.FC<{
                             });
                             setEditingProduct({ ...editingProduct, modifiers: updated });
                           }}
-                          className="text-[11px] font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1 pt-1 cursor-pointer"
+                          className="p-0 text-[11px] font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1 pt-1 cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" /> Añadir Opción a este grupo
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -1397,13 +1420,14 @@ export const CatalogoInteligenteView: React.FC<{
               <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
                 Nueva Categoría de Menú
               </h3>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.category.create.close"
                 onClick={() => setIsAddingCategory(false)}
-                className="text-zinc-400 hover:text-zinc-600"
+                className="w-7 h-7 p-0 text-zinc-400"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             <Field
@@ -1456,13 +1480,14 @@ export const CatalogoInteligenteView: React.FC<{
                   Crear Nuevo Plato
                 </h3>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.product.create.close"
                 onClick={() => setIsCreatingProduct(false)}
-                className="text-zinc-400 hover:text-zinc-600"
+                className="w-8 h-8 p-0 text-zinc-400"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-3">

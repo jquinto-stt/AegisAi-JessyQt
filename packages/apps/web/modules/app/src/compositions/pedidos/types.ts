@@ -5,7 +5,7 @@ export type PedidosSection =
   | "configuracion"
   | "gestion"; // Retro-compatibilidad
 
-export type OperacionTab = "en-vivo" | "preparacion" | "programados";
+export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversaciones";
 export type MenuTab = "catalogo" | "insumos";
 export type AnaliticaTab = "resumen" | "historial" | "analitica" | "rendimiento";
 export type ConfigTab = "roles" | "automatizaciones" | "turnos";
@@ -251,4 +251,71 @@ export interface ResumenKPIs {
 }
 
 export type StorePaceMode = "rapida" | "habitual" | "demorada";
+
+
+// ============================================================================
+// Human-in-the-Loop (HITL) — Conversaciones de WhatsApp / IA
+// ----------------------------------------------------------------------------
+// Modela el hilo de chat entre el cliente y el negocio. El ciclo de vida de la
+// CONVERSACIÓN es distinto al del PEDIDO (OrderStatus): la conversación es el
+// canal; el pedido es el resultado. Cuando se genera un pedido, la conversación
+// lo referencia por `orderId` y reutiliza las acciones existentes del contexto.
+// ============================================================================
+
+/** Estados del control de una conversación (máquina de estados HITL). */
+export type ConversationStatus =
+  | "IA_ATENDIENDO"          // La IA lleva la conversación
+  | "REQUIERE_INTERVENCION"  // La IA pidió ayuda; nadie la tomó aún (en cola)
+  | "HUMANO_ATENDIENDO"      // Un operador tomó el control (IA en pausa)
+  | "RESUELTO";              // El humano cerró el caso
+
+/** Motivo por el que la IA (o el cliente) solicita intervención humana. */
+export type HandoffReason =
+  | "AMBIGUO"                // El pedido/mensaje es ambiguo
+  | "FUERA_DE_ALCANCE"       // La IA no puede resolver la solicitud
+  | "MODIFICACION_ESPECIAL"  // El cliente pide una modificación especial
+  | "CONFIRMAR_DATO"         // Hay que confirmar un dato antes de procesar
+  | "CLIENTE_PIDE_HUMANO"    // El cliente pidió explícitamente hablar con alguien
+  | "BAJA_CONFIANZA";        // La interpretación de la IA tiene confianza baja
+
+/** Quién emitió un mensaje del hilo. */
+export type MessageSender = "cliente" | "ia" | "humano";
+
+export interface ChatMessage {
+  id: string;
+  sender: MessageSender;
+  /** Nombre del operador cuando sender = "humano". */
+  authorName?: string;
+  text: string;
+  timestamp: string;
+}
+
+/** Evento de auditoría de una transición de control (análogo a OrderEvent). */
+export interface ConversationEvent {
+  timestamp: string;
+  fromStatus?: ConversationStatus;
+  toStatus: ConversationStatus;
+  user: string;
+  note?: string;
+}
+
+export interface Conversation {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  channel: OrderChannel;
+  status: ConversationStatus;
+  /** Operador que tiene el control ahora (fuente de verdad de exclusión mutua). */
+  controlledBy: string | null;
+  /** Motivo del handoff cuando el estado es REQUIERE_INTERVENCION. */
+  requiresHandoffReason?: HandoffReason;
+  aiConfidence?: AIConfidence;
+  /** Pedido asociado (si ya se generó); enlaza con Pedido.id. */
+  orderId?: string;
+  messages: ChatMessage[];
+  handoffHistory: ConversationEvent[];
+  lastMessageAt: string;
+  /** Marca visual de "no leído" para el operador (badge en la lista). */
+  unreadForOperator: boolean;
+}
 

@@ -76,8 +76,9 @@ export const ThermalTicketModal: React.FC = () => {
           <div className="flex items-center gap-2">
             {/* Paper Size Switcher */}
             <div className="flex bg-slate-200/80 dark:bg-gray-700 p-0.5 rounded-xl text-[11px] font-bold">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="ticket.paper.80mm"
                 onClick={() => setPaperWidth("80mm")}
                 className={`px-2 py-1 rounded-lg transition-all ${
                   paperWidth === "80mm"
@@ -86,9 +87,10 @@ export const ThermalTicketModal: React.FC = () => {
                 }`}
               >
                 80mm
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
+                intent="ticket.paper.58mm"
                 onClick={() => setPaperWidth("58mm")}
                 className={`px-2 py-1 rounded-lg transition-all ${
                   paperWidth === "58mm"
@@ -97,7 +99,7 @@ export const ThermalTicketModal: React.FC = () => {
                 }`}
               >
                 58mm
-              </button>
+              </Button>
             </div>
 
             <Button
@@ -240,14 +242,15 @@ export const ThermalTicketModal: React.FC = () => {
             >
               Cerrar
             </Button>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="ticket.print"
               onClick={handlePrint}
               className="py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir en Ticketera</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

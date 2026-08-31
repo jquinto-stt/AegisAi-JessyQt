@@ -18,6 +18,7 @@ import {
   Zap,
   Flame,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export const BusinessSwitcher: React.FC = () => {
   const navigate = useNavigate();
@@ -49,8 +50,9 @@ export const BusinessSwitcher: React.FC = () => {
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Switcher Trigger Button */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        intent="business.switcher.trigger"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-zinc-50/90 hover:bg-zinc-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs cursor-pointer group"
         title="Cambiar de negocio, ritmo de tienda o ver resumen global"
@@ -87,7 +89,7 @@ export const BusinessSwitcher: React.FC = () => {
             isOpen ? "rotate-180 text-[#FF3F1A]" : ""
           }`}
         />
-      </button>
+      </Button>
 
       {/* Dropdown Menu (High-End Enterprise Workspace Panel) */}
       {isOpen && (
@@ -109,8 +111,9 @@ export const BusinessSwitcher: React.FC = () => {
           </div>
 
           {/* Prominent Hub Access Banner */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="business.hub.open"
             onClick={() => {
               setIsOpen(false);
               navigate("/workspaces");
@@ -132,7 +135,7 @@ export const BusinessSwitcher: React.FC = () => {
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-none" />
-          </button>
+          </Button>
 
           {/* Ritmo Operativo de Tienda (Store Pace) */}
           <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
@@ -146,8 +149,9 @@ export const BusinessSwitcher: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="business.pace.rapida"
                 onClick={() => setStorePace("rapida")}
                 className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
                   storePace === "rapida"
@@ -160,10 +164,11 @@ export const BusinessSwitcher: React.FC = () => {
                   <span className="text-xs font-bold">Rápida</span>
                 </div>
                 <p className="text-[9px] text-zinc-400 mt-0.5">-5 min prom.</p>
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="business.pace.habitual"
                 onClick={() => setStorePace("habitual")}
                 className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
                   storePace === "habitual"
@@ -176,10 +181,11 @@ export const BusinessSwitcher: React.FC = () => {
                   <span className="text-xs font-bold">Habitual</span>
                 </div>
                 <p className={`text-[9px] mt-0.5 ${storePace === "habitual" ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>Estándar</p>
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="business.pace.demorada"
                 onClick={() => setStorePace("demorada")}
                 className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
                   storePace === "demorada"
@@ -192,7 +198,7 @@ export const BusinessSwitcher: React.FC = () => {
                   <span className="text-xs font-bold">Demorada</span>
                 </div>
                 <p className="text-[9px] text-zinc-400 mt-0.5">+10 min prot.</p>
-              </button>
+              </Button>
             </div>
           </div>
 

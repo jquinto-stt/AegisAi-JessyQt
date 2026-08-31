@@ -4,6 +4,7 @@ import { PedidosSection, OperacionTab, GestionTab } from "./types";
 import { PedidosEnVivoView } from "./operacion/PedidosEnVivoView";
 import { PreparacionTiemposView } from "./operacion/PreparacionTiemposView";
 import { ProgramadosView } from "./operacion/ProgramadosView";
+import { ConversacionesView } from "./operacion/ConversacionesView";
 import { ResumenDashboardView } from "./gestion/ResumenDashboardView";
 import { HistorialView } from "./gestion/HistorialView";
 import { CatalogoInteligenteView } from "./gestion/CatalogoInteligenteView";
@@ -41,6 +42,7 @@ import {
   Volume2,
   VolumeX,
   Camera,
+  MessagesSquare,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -66,7 +68,7 @@ const PedidosContent: React.FC<{
   onOpTabChange,
   onGeTabChange,
 }) => {
-  const { orders, isSoundEnabled, toggleSound, incidencias, setIsIncidenciasOpen } = usePedidos();
+  const { orders, isSoundEnabled, toggleSound, incidencias, setIsIncidenciasOpen, conversations } = usePedidos();
   const [section, setSection] = useState<PedidosSection>(sectionProp);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp);
@@ -132,6 +134,7 @@ const PedidosContent: React.FC<{
 
   const activeIncCount = incidencias.filter(i => !i.isResolved).length;
   const newOrdersCount = orders.filter(o => o.status === "NUEVO").length;
+  const pendingConversationsCount = conversations.filter(c => c.status === "REQUIERE_INTERVENCION").length;
   const isKanbanActive = section === "operacion" && opTab === "en-vivo";
   const shouldShowTopHeader = isKanbanActive ? layoutPrefs.showTopHeader : true;
 
@@ -147,7 +150,9 @@ const PedidosContent: React.FC<{
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800/80 pb-3">
           {/* Section Pill Switcher (4 Pilares) */}
           <div className="flex bg-slate-100 dark:bg-gray-800 p-1 rounded-2xl border border-slate-200 dark:border-gray-700 w-full sm:w-auto overflow-x-auto no-scrollbar">
-            <button
+            <Button
+              variant="ghost"
+              intent="pedidos.section.switch"
               onClick={() => handleSectionSwitch("operacion")}
               className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "operacion"
@@ -157,14 +162,16 @@ const PedidosContent: React.FC<{
             >
               <Zap className="w-4 h-4" />
               <span>Operación</span>
-              {newOrdersCount > 0 && (
+              {newOrdersCount + pendingConversationsCount > 0 && (
                 <span className="text-[10px] bg-white text-[#FF3F1A] px-1.5 py-0.2 rounded-full font-black">
-                  {newOrdersCount}
+                  {newOrdersCount + pendingConversationsCount}
                 </span>
               )}
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="pedidos.section.switch"
               onClick={() => handleSectionSwitch("menu")}
               className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "menu"
@@ -174,9 +181,11 @@ const PedidosContent: React.FC<{
             >
               <Layers className="w-4 h-4" />
               <span>Menú & Stock</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="pedidos.section.switch"
               onClick={() => handleSectionSwitch("analitica")}
               className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "analitica"
@@ -186,9 +195,11 @@ const PedidosContent: React.FC<{
             >
               <BarChart2 className="w-4 h-4" />
               <span>Analítica</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="pedidos.section.switch"
               onClick={() => handleSectionSwitch("configuracion")}
               className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "configuracion"
@@ -198,16 +209,17 @@ const PedidosContent: React.FC<{
             >
               <Users className="w-4 h-4" />
               <span>Configuración</span>
-            </button>
+            </Button>
           </div>
 
           {/* Right Actions: Sound, Store Pace Kitchen Throttle & Incidencias */}
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
             {/* Audio Alerts Toggle */}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="pedidos.sound.toggle"
               onClick={toggleSound}
-              className={`p-2 rounded-2xl border transition-all cursor-pointer shadow-xs flex items-center justify-center flex-none ${
+              className={`p-0 p-2 rounded-2xl border transition-all cursor-pointer shadow-xs flex items-center justify-center flex-none ${
                 isSoundEnabled
                   ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white"
                   : "bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
@@ -215,7 +227,7 @@ const PedidosContent: React.FC<{
               title={isSoundEnabled ? "Alertas sonoras de cocina activadas" : "Alertas sonoras silenciadas"}
             >
               {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
+            </Button>
 
             <Button
               variant="outline"
@@ -256,10 +268,19 @@ const PedidosContent: React.FC<{
                   icon: <ChefHat className="w-3.5 h-3.5 flex-none" />,
                   count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
                 },
+                {
+                  id: "conversaciones" as OperacionTab,
+                  label: "Conversaciones WhatsApp",
+                  icon: <MessagesSquare className="w-3.5 h-3.5 flex-none" />,
+                  count: conversations.length,
+                  highlightBadge: pendingConversationsCount > 0 ? `${pendingConversationsCount} atención` : undefined,
+                },
               ].map(tab => (
 
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
+                  intent="pedidos.subtab.switch"
                   onClick={() => handleOpTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     opTab === tab.id
@@ -285,7 +306,7 @@ const PedidosContent: React.FC<{
                       {tab.highlightBadge}
                     </span>
                   )}
-                </button>
+                </Button>
               ))}
             </>
           )}
@@ -297,8 +318,10 @@ const PedidosContent: React.FC<{
                 { id: "catalogo" as GestionTab, label: "Catálogo de Platos", icon: <Layers className="w-3.5 h-3.5 flex-none" /> },
                 { id: "insumos" as GestionTab, label: "Insumos & Stock (Escandallos)", icon: <Package className="w-3.5 h-3.5 flex-none" /> },
               ].map(tab => (
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
+                  intent="pedidos.subtab.switch"
                   onClick={() => handleGeTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
@@ -308,7 +331,7 @@ const PedidosContent: React.FC<{
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
-                </button>
+                </Button>
               ))}
             </>
           )}
@@ -320,8 +343,10 @@ const PedidosContent: React.FC<{
                 { id: "historial" as GestionTab, label: "Historial de Ventas", icon: <History className="w-3.5 h-3.5 flex-none" /> },
                 { id: "analitica" as GestionTab, label: "Rendimiento & Canales", icon: <BarChart2 className="w-3.5 h-3.5 flex-none" /> },
               ].map(tab => (
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
+                  intent="pedidos.subtab.switch"
                   onClick={() => handleGeTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
@@ -331,7 +356,7 @@ const PedidosContent: React.FC<{
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
-                </button>
+                </Button>
               ))}
             </>
           )}
@@ -343,8 +368,10 @@ const PedidosContent: React.FC<{
                 { id: "automatizaciones" as GestionTab, label: "Automatizaciones & WhatsApp IA", icon: <Zap className="w-3.5 h-3.5 flex-none" /> },
                 { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="w-3.5 h-3.5 flex-none" /> },
               ].map(tab => (
-                <button
+                <Button
                   key={tab.id}
+                  variant="ghost"
+                  intent="pedidos.subtab.switch"
                   onClick={() => handleGeTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
@@ -354,7 +381,7 @@ const PedidosContent: React.FC<{
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
-                </button>
+                </Button>
               ))}
             </>
           )}
@@ -371,6 +398,7 @@ const PedidosContent: React.FC<{
             {opTab === "en-vivo" && <PedidosEnVivoView onNavigateOpTab={handleOpTabSwitch} />}
             {opTab === "preparacion" && <PreparacionTiemposView onNavigateOpTab={handleOpTabSwitch} />}
             {opTab === "programados" && <ProgramadosView onNavigateOpTab={handleOpTabSwitch} />}
+            {opTab === "conversaciones" && <ConversacionesView />}
           </>
         )}
 

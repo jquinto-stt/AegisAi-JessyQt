@@ -151,13 +151,14 @@ export const ProgramadosView: React.FC<{
             <CheckCircle2 className="w-4 h-4 text-[#FF3F1A] flex-none" />
             <span>{successToast}</span>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="programados.toast.goto"
             onClick={() => onNavigateOpTab?.("en-vivo")}
-            className="underline font-black text-[#FF3F1A] cursor-pointer ml-4"
+            className="p-0 underline font-black text-[#FF3F1A] cursor-pointer ml-4"
           >
             Ver en Pedidos →
-          </button>
+          </Button>
         </div>
       )}
 

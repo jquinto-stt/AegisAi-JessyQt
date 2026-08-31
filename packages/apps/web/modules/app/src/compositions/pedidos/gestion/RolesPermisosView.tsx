@@ -347,10 +347,12 @@ export const RolesPermisosView: React.FC = () => {
 
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               {roles.map(role => (
-                <button
+                <Button
                   key={role.id}
+                  variant="ghost"
+                  intent="roles.sim.select"
                   onClick={() => setActiveRoleId(role.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none border ${
+                  className={`p-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none border ${
                     activeRoleId === role.id
                       ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-2xs scale-102"
                       : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"
@@ -358,7 +360,7 @@ export const RolesPermisosView: React.FC = () => {
                 >
                   <span className={`w-2 h-2 rounded-full ${role.badgeColor === "rose" ? "bg-rose-500" : role.badgeColor === "amber" ? "bg-amber-500" : role.badgeColor === "emerald" ? "bg-emerald-500" : "bg-sky-500"}`} />
                   <span>{role.name}</span>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -429,32 +431,34 @@ export const RolesPermisosView: React.FC = () => {
                         </Badge>
                       )}
 
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        intent="roles.card.edit"
                         onClick={e => {
                           e.stopPropagation();
                           handleOpenEdit(role);
                         }}
-                        className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                        className="p-0 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
                         title="Editar permisos"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
 
                       {!role.isSystem && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          intent="roles.card.delete"
                           onClick={e => {
                             e.stopPropagation();
                             if (confirm(`¿Eliminar el rol "${role.name}"?`)) {
                               deleteRole(role.id);
                             }
                           }}
-                          className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-rose-500 transition-colors"
+                          className="p-0 p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/50 text-rose-500 transition-colors"
                           title="Eliminar rol"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -585,34 +589,38 @@ export const RolesPermisosView: React.FC = () => {
                   Plantillas Rápidas (Cargar permisos predeterminados):
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    intent="roles.preset.admin"
                     onClick={() => applyPreset("admin")}
-                    className="py-1 px-2.5 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 text-xs font-bold hover:bg-sky-500/20 cursor-pointer"
+                    className="p-0 py-1 px-2.5 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 text-xs font-bold hover:bg-sky-500/20 cursor-pointer"
                   >
                     Plantilla Administrador
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    intent="roles.preset.cook"
                     onClick={() => applyPreset("cook")}
-                    className="py-1 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold hover:bg-amber-500/20 cursor-pointer"
+                    className="p-0 py-1 px-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold hover:bg-amber-500/20 cursor-pointer"
                   >
                     Plantilla Cocinero KDS
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    intent="roles.preset.waiter"
                     onClick={() => applyPreset("waiter")}
-                    className="py-1 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
+                    className="p-0 py-1 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
                   >
                     Plantilla Mesero / Cajero
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    intent="roles.preset.inventory"
                     onClick={() => applyPreset("inventory")}
-                    className="py-1 px-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold hover:bg-purple-500/20 cursor-pointer"
+                    className="p-0 py-1 px-2.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold hover:bg-purple-500/20 cursor-pointer"
                   >
                     Plantilla Insumos & Stock
-                  </button>
+                  </Button>
                 </div>
               </div>
 

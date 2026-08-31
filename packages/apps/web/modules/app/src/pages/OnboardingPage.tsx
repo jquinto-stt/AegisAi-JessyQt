@@ -277,8 +277,9 @@ export default function OnboardingPage() {
 
                   return (
                     <React.Fragment key={s.num}>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        intent="onboarding.stepper.jump"
                         disabled={s.num > step && !canProceedStep1}
                         onClick={() => {
                           if (s.num < step || canProceedStep1) setStep(s.num);
@@ -303,7 +304,7 @@ export default function OnboardingPage() {
                           {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
                         </div>
                         <span className="hidden sm:inline">{s.label}</span>
-                      </button>
+                      </Button>
 
                       {idx < STEPS.length - 1 && (
                         <div
@@ -599,13 +600,14 @@ export default function OnboardingPage() {
                       )}
                     </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      intent="onboarding.meta.skip"
                       onClick={() => setStep(3)}
                       className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-mono px-3 py-2 cursor-pointer transition-colors"
                     >
                       Vincular más tarde →
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
