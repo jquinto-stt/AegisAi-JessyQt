@@ -36,7 +36,7 @@ export default function WorkspacesPage() {
   const navigate = useNavigate();
   const { businesses, activeBusiness, activeBusinessId, switchBusiness, setIsCommandPaletteOpen } = useBusiness();
 
-  const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("workspaces_list");
+  const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("franchise_overview");
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
@@ -112,17 +112,10 @@ export default function WorkspacesPage() {
             <User className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Cuenta</span>
           </button>
-
-          <button
-            onClick={() => navigate("/onboarding")}
-            className="py-2 px-3 sm:px-4 rounded-2xl bg-[#FF3F1A] text-white text-xs font-semibold hover:bg-[#e03413] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 h-10 sm:h-11"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Crear Negocio</span>
-          </button>
         </div>
 
       </header>
+
 
 
 
