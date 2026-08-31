@@ -1,0 +1,18 @@
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/delegation.md:49:El binario local, al ser invocado con esta variable, ejecuta el comando directamente sin intentar delegar nuevamente.
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/cli/bundle/create.md:772:> Estas dependencias son las que los archivos generados importan (`@webiai/sdk.http` en `bootstrap.ts`, `application.ts`, `endpoints.ts`, `Health.ts`; `@webiai/sdk.ioc` en `bootstrap.ts`, `application.ts`). Sin ellas, `wfai install` fallaría al intentar compilar el microservicio.
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/cli/project/align.md:54:El comando intenta extraer `scope` y `name` del campo `name` del `package.json`:
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/cli/sst/state/remove.md:12:  2. Si el nombre lógico es inequívoco (un solo recurso lo lleva), intenta el `sst state remove` nativo.
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/cli/sst/state/remove.md:48:   - Si es un URN → flujo híbrido verificado (export → confirmar existencia → intento nativo si el nombre es inequívoco → verificar → fallback a `sst state edit` → verificar).
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/archetypes/bundle.md:918:Una aplicación frontend React es un `module` ejecutable que implementa una SPA (Single Page Application) usando React, Vite como bundler y servidor de desarrollo, y TypeScript.
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/reference/sst-provider.md:79:5. Si no encuentra → intenta auto-download desde `get.pulumi.com` → 403
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/semver/README.md:207:indicated the intent to use *that specific* set of
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@babel/parser/CHANGELOG.md:656:Fix: Check for duplicate named exports in exported rest elements/properties ([#164](https://github.com/babel/babylon/pull/164)) (Kai Cataldo)
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@babel/parser/CHANGELOG.md:721:**SyntaxError**: Cannot have multiple rest elements when destructuring (1:13)
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@babel/parser/CHANGELOG.md:989:- Fix parse error with yielding jsx elements in generators `function* it() { yield <a></a>; }` ([#31](https://github.com/babel/babylon/pull/31)) @eldereal
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@webiai/devlink/docs/AGENTS.md:52:# Full pipeline via shell composition
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@webiai/devlink/docs/AGENTS.md:120:### Pipeline Composition (External Tools)
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/@webiai/devlink/docs/installation/install.md:540:### Pipeline Decomposition
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/es5-ext/README.md:238:Returns the array of elements that are present in context list but not present in other list.
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/es5-ext/README.md:255:Returns the array of elements that are found only in one of the lists (either context list or list provided in arguments).
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/node_modules/es5-ext/README.md:294:Group list elements by value returned by _cb_ function
+/workspaces/.npm-global/lib/node_modules/@webiai/sdk.cli/docs/cli/kiro/login.md:37:2. Navigate to the Kiro authentication page
