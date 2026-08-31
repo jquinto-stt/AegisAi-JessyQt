@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   MessageSquare,
   Smartphone,
-  Shield,
   Building2,
   MapPin,
   Phone,
@@ -29,7 +28,6 @@ import {
   CheckCircle2,
   QrCode,
   SlidersHorizontal,
-  Terminal,
 } from "lucide-react";
 
 /* ── Business Archetypes ─────────────────────────────────────────────── */

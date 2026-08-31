@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { OrderStatus } from "../types";
 import {
-  SlidersHorizontal,
   RotateCcw,
   Check,
   X,
@@ -9,13 +8,6 @@ import {
   ChevronDown,
   Layout,
   Maximize2,
-  Sparkles,
-  CheckCircle2,
-  ChefHat,
-  Package,
-  Check as CheckIcon,
-  Layers,
-  PanelTop,
 } from "lucide-react";
 import { Button, Toggle } from "@/elements";
 

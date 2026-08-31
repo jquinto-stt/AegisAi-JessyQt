@@ -2,42 +2,26 @@ import React, { useState, useMemo } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
-import { ProductItem, ProductReview, ProductModifierGroup, ProductModifierOption } from "../types";
+import { ProductItem, ProductModifierGroup } from "../types";
 import { Button, Card, Field, Select, Textarea, Badge, SegmentedControl } from "@/elements";
 import {
   Layers,
   Sparkles,
   Plus,
-  DollarSign,
   AlertTriangle,
   Star,
-  MessageSquare,
   TrendingUp,
   X,
   CheckCircle2,
   SlidersHorizontal,
   Flame,
-  Award,
-  ThumbsUp,
   ShieldCheck,
-  Clock,
-  MessageCircle,
-  Reply,
   Check,
   Edit3,
   Trash2,
-  Settings,
-  ChevronRight,
-  HelpCircle,
-  Tag,
-  Package,
   Eye,
-  ShoppingBag,
   UtensilsCrossed,
   LayoutGrid,
-  Filter,
-  Volume2,
-  Info,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 
@@ -48,7 +32,6 @@ export const CatalogoInteligenteView: React.FC<{
     products,
     ingredients,
     toggleProductAvailability,
-    updateProductPrice,
     updateProduct,
     addProduct,
     orders,
@@ -66,7 +49,7 @@ export const CatalogoInteligenteView: React.FC<{
   // Modals
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
-  const [reviewModalProduct, setReviewModalProduct] = useState<ProductItem | null>(null);
+  const [, setReviewModalProduct] = useState<ProductItem | null>(null);
   const [customerPreviewProduct, setCustomerPreviewProduct] = useState<ProductItem | null>(null);
 
   // Category creation modal
@@ -106,7 +89,7 @@ export const CatalogoInteligenteView: React.FC<{
   const [newProdCode, setNewProdCode] = useState("");
   const [newProdCategory, setNewProdCategory] = useState("Empanadas");
   const [newProdPrice, setNewProdPrice] = useState<number>(5500);
-  const [newProdPrepTime, setNewProdPrepTime] = useState<number>(12);
+  const [newProdPrepTime] = useState<number>(12);
   const [newProdDesc, setNewProdDesc] = useState("");
   const [newProdImage, setNewProdImage] = useState("");
   const [newProdModifiers, setNewProdModifiers] = useState<ProductModifierGroup[]>([]);

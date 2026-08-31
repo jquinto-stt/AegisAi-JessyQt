@@ -12,8 +12,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  RadialBarChart,
-  RadialBar,
 } from "recharts";
 import {
   BarChart2,
@@ -22,26 +20,21 @@ import {
   Sparkles,
   ShoppingBag,
   Award,
-  Calendar,
   Layers,
   ArrowUpRight,
   ArrowDownRight,
   DollarSign,
-  Zap,
   ChefHat,
   ShieldAlert,
   Users,
   Bot,
-  AlertTriangle,
-  CheckCircle2,
   Flame,
-  Package,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 import { Badge, SegmentedControl } from "@/elements";
 
 export const AnaliticaView: React.FC = () => {
-  const { kpis, products, orders } = usePedidos();
+  const { kpis, products } = usePedidos();
 
   const [activeMetricTab, setActiveMetricTab] = useState<"overview" | "sales" | "revenue">("overview");
   const [timeRange, setTimeRange] = useState("Esta Semana");
@@ -68,15 +61,6 @@ export const AnaliticaView: React.FC = () => {
     { hour: "20:00", comandas: 38, promedio: 28 },
     { hour: "21:00", comandas: 29, promedio: 22 },
     { hour: "22:00", comandas: 14, promedio: 10 },
-  ];
-
-  // Radial Progress: On-time Delivery
-  const radialData = [
-    {
-      name: "Cumplimiento",
-      value: 86.4,
-      fill: "#190088",
-    },
   ];
 
   // Channels Breakdown Dataset

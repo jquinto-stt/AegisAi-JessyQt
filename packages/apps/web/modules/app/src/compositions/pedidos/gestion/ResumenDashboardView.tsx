@@ -4,13 +4,10 @@ import {
   TrendingUp,
   ShoppingBag,
   Clock,
-  AlertTriangle,
-  CheckCircle,
   DollarSign,
   Sparkles,
   ArrowRight,
   ShieldAlert,
-  Calendar,
   Layers,
   Package,
   BarChart2,
@@ -22,10 +19,7 @@ import {
   Store,
   Phone,
   ArrowUpRight,
-  ShieldCheck,
   Zap,
-  ChevronRight,
-  Activity,
 } from "lucide-react";
 import { GestionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";

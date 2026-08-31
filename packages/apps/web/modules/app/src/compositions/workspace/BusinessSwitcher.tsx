@@ -4,15 +4,10 @@ import { useBusiness } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
 import {
   ChevronDown,
-  Plus,
   Check,
   LayoutGrid,
   Building2,
   ArrowRight,
-  Sparkles,
-  Command,
-  Store,
-  MapPin,
   ShieldCheck,
   Clock,
   Zap,

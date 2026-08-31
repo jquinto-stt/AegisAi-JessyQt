@@ -1,23 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useBusiness, BusinessInstance } from "../../context/BusinessContext";
+import { useBusiness } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
 import {
   Search,
   Building2,
   Plus,
-  Settings,
   LayoutGrid,
-  Check,
   Zap,
   ShoppingBag,
   Flame,
-  ChefHat,
   BarChart3,
   Users,
-  Command,
-  ArrowRight,
-  Sparkles,
   Layers,
   X,
 } from "lucide-react";
@@ -27,7 +21,6 @@ export const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
   const {
     businesses,
-    activeBusiness,
     activeBusinessId,
     switchBusiness,
     isCommandPaletteOpen,

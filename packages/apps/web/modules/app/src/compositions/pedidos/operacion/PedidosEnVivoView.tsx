@@ -2,28 +2,17 @@ import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { OrderStatus, OrderChannel, UrgencyLevel, Pedido } from "../types";
 import {
-  Search,
-  Filter,
   Plus,
   Sparkles,
   ChefHat,
   CheckCircle2,
   LayoutGrid,
   Kanban,
-  ListFilter,
   AlertTriangle,
-  RotateCcw,
-  Store,
   X,
-  ShoppingBag,
   SlidersHorizontal,
   ArrowRight,
-  User,
-  Phone,
-  MessageSquare,
-  Flame,
   Check,
-  Send,
   Package,
   Zap,
   ChevronDown,
@@ -46,7 +35,7 @@ import {
 
 export const PedidosEnVivoView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
-}> = ({ onNavigateOpTab }) => {
+}> = () => {
   const {
     orders,
     programados,
@@ -61,9 +50,6 @@ export const PedidosEnVivoView: React.FC<{
     transitionOrder,
   } = usePedidos();
   const { activeBusiness } = useBusiness();
-
-
-  const todayScheduled = programados.filter(p => p.scheduledDate === "Hoy");
 
   // Layout Preferences with localStorage persistence
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {

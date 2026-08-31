@@ -9,20 +9,12 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  Lock,
   Flame,
-  ShoppingBag,
   Layers,
-  Package,
   BarChart3,
-  History,
-  Zap,
-  Users,
   Settings,
   X,
-  Sparkles,
   ChevronRight,
-  Info,
 } from "lucide-react";
 import { Button, Field, Select, Badge } from "@/elements";
 

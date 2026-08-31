@@ -7,14 +7,10 @@ import {
   ShieldCheck,
   Flame,
   ShoppingBag,
-  Layers,
   Package,
-  BarChart3,
   Users,
-  CheckCircle2,
   ArrowRight,
   X,
-  Lock,
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/elements";

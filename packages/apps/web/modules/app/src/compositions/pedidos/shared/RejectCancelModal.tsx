@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { X, AlertTriangle, XCircle, Check } from "lucide-react";
+import { X, AlertTriangle, XCircle } from "lucide-react";
 import { Button, Field } from "@/elements";
 
 export const RejectCancelModal: React.FC = () => {
@@ -14,7 +14,6 @@ export const RejectCancelModal: React.FC = () => {
   } = usePedidos();
 
   const isReject = Boolean(rejectModalOrder);
-  const isCancel = Boolean(cancelModalOrder);
   const targetOrder = rejectModalOrder || cancelModalOrder;
 
   const [selectedReason, setSelectedReason] = useState("");

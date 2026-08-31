@@ -1,6 +1,6 @@
 import React from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { X, AlertTriangle, CheckCircle2, ShieldAlert, ArrowRight, Clock } from "lucide-react";
+import { X, CheckCircle2, ShieldAlert, ArrowRight } from "lucide-react";
 import { Button, Badge } from "@/elements";
 
 export const IncidenciasDrawer: React.FC = () => {

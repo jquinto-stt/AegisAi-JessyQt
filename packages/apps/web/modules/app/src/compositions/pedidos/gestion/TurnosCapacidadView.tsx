@@ -1,22 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { usePedidos } from "../context/PedidosContext";
 import {
   Users,
-  Clock,
-  ShieldCheck,
-  AlertTriangle,
   CheckCircle2,
   ChefHat,
-  ArrowRight,
-  TrendingUp,
   UserCheck,
   Flame,
   Package,
   Store,
-  Layers,
-  Sparkles,
   Zap,
-  Info,
   Calendar,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";

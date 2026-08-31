@@ -13,7 +13,6 @@ import { AutomatizacionesView } from "./gestion/AutomatizacionesView";
 import { TurnosCapacidadView } from "./gestion/TurnosCapacidadView";
 import { RolesPermisosView } from "./gestion/RolesPermisosView";
 import { AnaliticaView } from "./gestion/AnaliticaView";
-import { useBusiness } from "../../context/BusinessContext";
 import { OrderDetailDrawer } from "./shared/OrderDetailDrawer";
 import { AIInterpretationModal } from "./shared/AIInterpretationModal";
 import { RejectCancelModal } from "./shared/RejectCancelModal";
@@ -24,24 +23,18 @@ import {
   LayoutPreferences,
 } from "./shared/CustomLayoutModal";
 import {
-  Sparkles,
   Zap,
   ShoppingBag,
   ChefHat,
-  Calendar,
   Layers,
   Package,
-  Repeat,
   Users,
   BarChart2,
-  Bell,
   Shield,
   ShieldAlert,
   History,
-  Store,
   Volume2,
   VolumeX,
-  Camera,
   MessagesSquare,
 } from "lucide-react";
 import { Button } from "@/elements";
@@ -61,8 +54,6 @@ const PedidosContent: React.FC<{
   sectionProp = "operacion",
   opTabProp = "en-vivo",
   geTabProp = "resumen",
-  targetOrderId,
-  targetModal,
   targetProductId,
   onSectionChange,
   onOpTabChange,
@@ -72,9 +63,6 @@ const PedidosContent: React.FC<{
   const [section, setSection] = useState<PedidosSection>(sectionProp);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp);
-
-  const [isQuickStockOpen, setIsQuickStockOpen] = useState(false);
-
 
   // Layout Preferences for top header visibility
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {

@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { ui_dsl, type ElementBaseProps } from './dsl';
 
 export interface ToggleProps extends ElementBaseProps {

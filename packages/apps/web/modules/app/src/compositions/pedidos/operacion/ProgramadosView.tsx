@@ -6,11 +6,7 @@ import {
   Clock,
   MapPin,
   CheckCircle2,
-  ChevronRight,
-  Flame,
   Zap,
-  Repeat,
-  Sparkles,
   ArrowLeft,
   CalendarDays,
 } from "lucide-react";
@@ -25,7 +21,6 @@ export const ProgramadosView: React.FC<{
     recurrences,
     injectScheduledOrderToLive,
     setSelectedOrderId,
-    transitionOrder,
   } = usePedidos();
 
   const [viewMode, setViewMode] = useState<"columns" | "timeline">("columns");

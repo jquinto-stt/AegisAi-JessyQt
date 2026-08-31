@@ -4,18 +4,11 @@ import { Pedido, UrgencyLevel, OperacionTab } from "../types";
 import { Button, Card, Badge } from "@/elements";
 import {
   ChefHat,
-  Clock,
   CheckCircle2,
-  AlertTriangle,
-  Flame,
   Minus,
   Plus,
   Check,
-  Maximize2,
   Printer,
-  Sparkles,
-  Layers,
-  UtensilsCrossed,
 } from "lucide-react";
 
 export const PreparacionTiemposView: React.FC<{
@@ -65,7 +58,7 @@ export const PreparacionTiemposView: React.FC<{
     title: string,
     list: Pedido[],
     urgency: UrgencyLevel,
-    accentBorder: string,
+    _accentBorder: string,
     accentBadge: string,
     subdesc: string
   ) => {

@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { Sparkles, X, Check, Edit2, AlertTriangle, Plus, Trash2, ArrowRight } from "lucide-react";
+import { Sparkles, X, Check, Edit2 } from "lucide-react";
 import { OrderItem } from "../types";
 import { Button } from "@/elements";
 
 export const AIInterpretationModal: React.FC = () => {
-  const { aiModalOrder, setAiModalOrder, approveAIOrder, products } = usePedidos();
+  const { aiModalOrder, setAiModalOrder, approveAIOrder } = usePedidos();
 
   if (!aiModalOrder) return null;
 

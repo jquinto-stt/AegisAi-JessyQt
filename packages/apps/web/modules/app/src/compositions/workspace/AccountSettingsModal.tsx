@@ -2,13 +2,9 @@ import React, { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import {
   X,
-  User,
-  CreditCard,
   Check,
-  Shield,
-  Save,
 } from "lucide-react";
-import { Button, Field, Badge } from "@/elements";
+import { Button, Field } from "@/elements";
 
 export const AccountSettingsModal: React.FC<{
   isOpen: boolean;

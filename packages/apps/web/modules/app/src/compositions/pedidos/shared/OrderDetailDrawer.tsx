@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { OrderStatusBadge, UrgencyBadge, ChannelBadge, AIBadge } from "./Badges";
+import { OrderStatusBadge, UrgencyBadge, ChannelBadge } from "./Badges";
 import {
   X,
   Clock,
@@ -10,15 +10,12 @@ import {
   ChefHat,
   CheckCircle2,
   Check,
-  AlertTriangle,
   Sparkles,
   History,
   Minus,
   Plus,
   ArrowRight,
   Receipt,
-  FileText,
-  ShieldAlert,
   MessageCircle,
   CheckCircle,
   Truck,

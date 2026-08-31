@@ -2,18 +2,10 @@ import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { StockIngredientItem } from "../types";
 import {
-  Layers,
-  Search,
   Plus,
-  Filter,
   Download,
-  AlertTriangle,
   CheckCircle2,
   Package,
-  Clock,
-  ArrowDownCircle,
-  ArrowUpCircle,
-  TrendingDown,
   FileSpreadsheet,
   Edit3,
   Trash2,
@@ -21,9 +13,6 @@ import {
   DollarSign,
   History,
   ShieldAlert,
-  Sparkles,
-  Camera,
-  ChevronRight,
   X,
 } from "lucide-react";
 import { SafeImage } from "../shared/SafeImage";
@@ -162,12 +151,6 @@ export const InsumosStockView: React.FC = () => {
       });
     }
     setIsModalOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("¿Estás seguro de eliminar este insumo del inventario?")) {
-      deleteIngredient(id);
-    }
   };
 
   const handleExport = (format: string) => {

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, BusinessInstance } from "../context/BusinessContext";
-import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import { BusinessSettingsModal } from "../compositions/workspace/BusinessSettingsModal";
 import { AccountSettingsModal } from "../compositions/workspace/AccountSettingsModal";
 import { RoleSelectionModal } from "../compositions/workspace/RoleSelectionModal";
@@ -9,22 +8,13 @@ import { CommandPalette } from "../compositions/workspace/CommandPalette";
 import {
   Plus,
   ArrowRight,
-  ArrowLeft,
-  MapPin,
-  Coins,
   MessageSquare,
   Globe,
-  ShoppingBag,
   Settings,
   User,
-  Check,
   Building2,
   Layers,
   ChevronRight,
-  Sliders,
-  Search,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 import { NectoLogo } from "../compositions/shared/NectoLogo";
@@ -36,28 +26,12 @@ import { Button } from "@/elements";
 
 export default function WorkspacesPage() {
   const navigate = useNavigate();
-  const { businesses, activeBusiness, activeBusinessId, switchBusiness, setIsCommandPaletteOpen } = useBusiness();
+  const { businesses, activeBusinessId, switchBusiness } = useBusiness();
 
   const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("franchise_overview");
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
   const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
-
-
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return document.documentElement.classList.contains("dark");
-  });
-
-  const toggleDarkMode = () => {
-    const next = !isDarkMode;
-    setIsDarkMode(next);
-    if (next) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
 
   const handleSelectBusiness = (id: string) => {
     switchBusiness(id);

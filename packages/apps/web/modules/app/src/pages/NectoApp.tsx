@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
 
-  Home, Eye, Users, Boxes, Settings, HelpCircle, LogOut,
+  Home, Eye, Users, Settings, HelpCircle, LogOut,
   ChevronDown, ChevronRight, X, Mail, Megaphone, Package, Gift,
-  FileText, BarChart2, UserCircle, Sun, Moon, Bell, BellRing,
-  FolderTree, Camera, Shield, ShieldCheck, LineChart, BookOpen, MapPin,
-  FileDown, Search, ShieldAlert, Sparkles, Check, ShoppingBag,
-  ChefHat, Calendar, Layers, Zap, History, TrendingUp, Menu,
-  Building2, LayoutGrid
+  FileText, BarChart2, UserCircle, Bell,
+  Shield,
+  ShieldAlert, ShoppingBag,
+  ChefHat, Layers, Zap, Menu,
+  Building2
 } from "lucide-react";
 
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
@@ -17,7 +17,6 @@ import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
-import { GlobalFranchiseOverview } from "@/compositions/workspace/GlobalFranchiseOverview";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
 import { NectoLogo } from "@/compositions/shared/NectoLogo";
@@ -31,9 +30,6 @@ export type OperadorSubView = string;
 export type AnalistaSubView = string;
 
 /* ── Brand Colors ────────────────────────────────────────────────────────── */
-
-const NAVY = "#190088";
-const ORANGE = "#FF3F1A";
 
 /* ── Notifications ───────────────────────────────────────────────────────── */
 
@@ -245,7 +241,7 @@ function Sidebar({
   onCloseMobile?: () => void;
 }) {
   const navigate = useNavigate();
-  const { canAccess, activeRole } = useBusiness();
+  const { canAccess } = useBusiness();
   const { signOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
 
@@ -725,10 +721,10 @@ function Footer() {
 /* ── Main Root Component ─────────────────────────────────────────────────── */
 
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode] = useState(false);
   const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios">("pedidos");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { activeBusiness, setIsCommandPaletteOpen, canAccess, activeRole, roles, setActiveRoleId } = useBusiness();
+  const { activeBusiness, activeRole } = useBusiness();
 
 
 

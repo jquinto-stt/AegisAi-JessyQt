@@ -3,18 +3,12 @@ import { usePedidos } from "../context/PedidosContext";
 import { OrderStatus, OrderChannel } from "../types";
 import { OrderStatusBadge, ChannelBadge } from "../shared/Badges";
 import {
-  Search,
-  Filter,
   Calendar,
   Download,
   Eye,
   History,
-  ArrowUpDown,
-  FileSpreadsheet,
   Receipt,
-  Printer,
   X,
-  DollarSign,
   CheckCircle2,
   AlertTriangle,
   Clock,
