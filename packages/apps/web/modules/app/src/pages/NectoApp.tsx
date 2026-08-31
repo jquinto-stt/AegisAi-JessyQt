@@ -21,6 +21,7 @@ import { GlobalFranchiseOverview } from "@/compositions/workspace/GlobalFranchis
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
 import { useBusiness } from "@/context/BusinessContext";
+import { useAuth } from "@/auth/AuthContext";
 import { Button, Badge } from "@/elements";
 
 
@@ -322,6 +323,7 @@ function Sidebar({
 }) {
   const navigate = useNavigate();
   const { canAccess, activeRole } = useBusiness();
+  const { signOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
 
     try {
@@ -643,7 +645,7 @@ function Sidebar({
           />
           <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} />
           <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} />
-          <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => {}} />
+          <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { signOut(); navigate("/login"); }} />
         </div>
       </div>
 
@@ -689,7 +691,7 @@ function Sidebar({
               />
               <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} isMobile={true} />
               <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} isMobile={true} />
-              <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => {}} isMobile={true} />
+              <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { onCloseMobile?.(); signOut(); navigate("/login"); }} isMobile={true} />
             </div>
           </div>
         </div>
