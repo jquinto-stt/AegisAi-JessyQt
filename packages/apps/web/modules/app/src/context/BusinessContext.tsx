@@ -212,7 +212,6 @@ interface BusinessContextType {
   activeBusiness: BusinessInstance;
   activeBusinessId: string;
   userRole: UserWorkspaceRole;
-  setUserRole: (role: UserWorkspaceRole) => void;
   roles: RolePermission[];
   activeRoleId: string;
   activeRole: RolePermission;
@@ -221,19 +220,14 @@ interface BusinessContextType {
   updateRole: (roleId: string, updates: Partial<RolePermission>) => void;
   deleteRole: (roleId: string) => void;
   canAccess: (permission: keyof RolePermissions) => boolean;
-  isOnboardingOpen: boolean;
-  setIsOnboardingOpen: (open: boolean) => void;
   isCommandPaletteOpen: boolean;
   setIsCommandPaletteOpen: (open: boolean) => void;
-  toggleCommandPalette: () => void;
   createBusiness: (data: Omit<BusinessInstance, "id" | "createdAt">) => BusinessInstance;
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
   deleteBusiness: (id: string) => void;
   storePace: "rapida" | "habitual" | "demorada";
   setStorePace: (pace: "rapida" | "habitual" | "demorada") => void;
-  toggleModule: (moduleKey: NectoModuleKey) => void;
-  updateSetupProgress: (bizId: string, progressUpdates: Partial<BusinessSetupProgress>) => void;
 }
 
 
@@ -323,8 +317,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return DEFAULT_BUSINESS.id;
   });
 
-  const [userRole, setUserRole] = useState<UserWorkspaceRole>("owner");
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [userRole] = useState<UserWorkspaceRole>("owner");
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [storePace, setStorePaceState] = useState<"rapida" | "habitual" | "demorada">(() => {
     try {
@@ -384,9 +377,6 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const activeBusiness =
     businesses.find(b => b.id === activeBusinessId) || businesses[0] || DEFAULT_BUSINESS;
 
-  const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
-
-
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const newBiz: BusinessInstance = {
       ...data,
@@ -418,28 +408,6 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   };
 
-  const updateSetupProgress = (bizId: string, progressUpdates: Partial<BusinessSetupProgress>) => {
-    setBusinesses(prev =>
-      prev.map(b => {
-        if (b.id === bizId) {
-          return {
-            ...b,
-            setupProgress: {
-              ...(b.setupProgress || {
-                whatsappConnected: false,
-                menuConfigured: false,
-                kitchenConfigured: false,
-                teamInvited: false,
-              }),
-              ...progressUpdates,
-            },
-          };
-        }
-        return b;
-      })
-    );
-  };
-
   const deleteBusiness = (id: string) => {
     setBusinesses(prev => {
       const filtered = prev.filter(b => b.id !== id);
@@ -451,15 +419,6 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       return filtered;
     });
-  };
-
-  const toggleModule = (moduleKey: NectoModuleKey) => {
-    if (!activeBusiness) return;
-    const currentModules = activeBusiness.activeModules || [];
-    const newModules = currentModules.includes(moduleKey)
-      ? currentModules.filter(m => m !== moduleKey)
-      : [...currentModules, moduleKey];
-    updateBusiness(activeBusiness.id, { activeModules: newModules });
   };
 
   // Roles & Permissions state
@@ -536,7 +495,6 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         activeBusiness,
         activeBusinessId,
         userRole,
-        setUserRole,
         roles,
         activeRoleId,
         activeRole,
@@ -545,19 +503,14 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateRole,
         deleteRole,
         canAccess,
-        isOnboardingOpen,
-        setIsOnboardingOpen,
         isCommandPaletteOpen,
         setIsCommandPaletteOpen,
-        toggleCommandPalette,
         createBusiness,
         switchBusiness,
         updateBusiness,
         deleteBusiness,
         storePace,
         setStorePace,
-        toggleModule,
-        updateSetupProgress,
       }}
     >
       {children}

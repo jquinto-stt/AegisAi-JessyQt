@@ -4,13 +4,6 @@
  * Elements = componentes UI atómicos y reutilizables, cada uno declarado con
  * ui_dsl() y emitiendo data-node-id + data-intent para trazabilidad.
  */
-export { ui_dsl, cx } from './dsl';
-export type {
-  ElementBaseProps,
-  RenderContext,
-  UiDslConfig,
-} from './dsl';
-
 export { Button } from './Button';
 export type { ButtonProps } from './Button';
 export { Card } from './Card';
