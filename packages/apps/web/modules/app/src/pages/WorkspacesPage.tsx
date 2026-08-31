@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, BusinessInstance } from "../context/BusinessContext";
 import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import { BusinessSettingsModal } from "../compositions/workspace/BusinessSettingsModal";
 import { AccountSettingsModal } from "../compositions/workspace/AccountSettingsModal";
+import { CommandPalette } from "../compositions/workspace/CommandPalette";
 import {
   Plus,
   ArrowRight,
+  ArrowLeft,
   MapPin,
   Coins,
   MessageSquare,
@@ -19,19 +21,39 @@ import {
   Layers,
   ChevronRight,
   Sliders,
+  Search,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import { NectoLogo } from "../compositions/shared/NectoLogo";
-
+import { ThemeToggle } from "../compositions/shared/ThemeToggle";
+import { GlobalSearchButton } from "../compositions/shared/GlobalSearchButton";
 import { GlobalFranchiseOverview } from "../compositions/workspace/GlobalFranchiseOverview";
+
 
 export default function WorkspacesPage() {
   const navigate = useNavigate();
-  const { businesses, activeBusinessId, switchBusiness } = useBusiness();
+  const { businesses, activeBusiness, activeBusinessId, switchBusiness, setIsCommandPaletteOpen } = useBusiness();
 
   const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("workspaces_list");
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.documentElement.classList.contains("dark");
+  });
+
+  const toggleDarkMode = () => {
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
 
   const handleSelectBusiness = (id: string) => {
     switchBusiness(id);
@@ -47,8 +69,9 @@ export default function WorkspacesPage() {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
       {/* Top Minimal Header */}
       <header className="px-4 sm:px-12 py-4 sm:py-5 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <NectoLogo size="xs" inline />
+
 
           {/* Hub Navigation Tabs - Visible on all devices */}
           <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -77,10 +100,14 @@ export default function WorkspacesPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <GlobalSearchButton />
+          <ThemeToggle />
+
           <button
             onClick={() => setIsAccountSettingsOpen(true)}
-            className="text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            className="text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5 cursor-pointer py-2 px-3 rounded-2xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-white dark:hover:bg-zinc-900"
           >
             <User className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Cuenta</span>
@@ -88,13 +115,15 @@ export default function WorkspacesPage() {
 
           <button
             onClick={() => navigate("/onboarding")}
-            className="py-2 px-3 sm:px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-semibold hover:bg-[#e03413] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+            className="py-2 px-3 sm:px-4 rounded-2xl bg-[#FF3F1A] text-white text-xs font-semibold hover:bg-[#e03413] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98 h-10 sm:h-11"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Crear Negocio</span>
           </button>
         </div>
+
       </header>
+
 
 
       {/* Main Hub Content Area */}
@@ -261,6 +290,9 @@ export default function WorkspacesPage() {
         isOpen={isAccountSettingsOpen}
         onClose={() => setIsAccountSettingsOpen(false)}
       />
+
+      <CommandPalette />
     </div>
   );
 }
+

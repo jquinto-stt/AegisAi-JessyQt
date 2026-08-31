@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+
 import {
 
   Home, Eye, Users, Boxes, Settings, HelpCircle, LogOut,
@@ -16,7 +17,10 @@ import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
 import { GlobalFranchiseOverview } from "@/compositions/workspace/GlobalFranchiseOverview";
+import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
+import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
 import { useBusiness } from "@/context/BusinessContext";
+
 
 export type InventariosRole = "operador" | "analista";
 export type OperadorSubView = string;
@@ -151,30 +155,60 @@ export function TailAdminBreadcrumb({
   moduleName = "Pedidos",
   roleName = "Operación",
   pageName = "Pedidos Activos",
-  onNavigateHome
+  onNavigateHome,
+  onNavigateSection,
 }: {
   moduleName?: string;
   roleName?: string;
   pageName?: string;
   onNavigateHome?: () => void;
+  onNavigateSection?: () => void;
 }) {
+  const navigate = useNavigate();
+
   return (
     <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
       <button
-        onClick={onNavigateHome}
-        className="hover:text-gray-900 dark:hover:text-white transition-colors items-center gap-1 cursor-pointer hidden sm:flex"
+        type="button"
+        onClick={() => navigate("/workspaces")}
+        className="hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] transition-colors items-center gap-1.5 cursor-pointer hidden sm:flex font-mono"
+        title="Ir al Hub de Negocios y Franquicia"
       >
-        <span>Home</span>
+        <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+        <span>Hub</span>
       </button>
+
+
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
-      <span className="text-gray-600 dark:text-gray-300 font-bold hidden md:inline">{moduleName}</span>
+
+      <button
+        type="button"
+        onClick={() => navigate("/workspaces")}
+        className="text-gray-700 dark:text-gray-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] font-bold hidden md:inline truncate max-w-[150px] transition-colors cursor-pointer"
+        title="Cambiar de sucursal en el Hub"
+      >
+        {moduleName}
+      </button>
+
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden md:inline" />
-      <span className="text-gray-500 dark:text-gray-400 font-medium hidden sm:inline">{roleName}</span>
+
+      <button
+        type="button"
+        onClick={onNavigateSection || onNavigateHome}
+        className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium hidden sm:inline transition-colors cursor-pointer"
+      >
+        {roleName}
+      </button>
+
       <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
-      <span className="text-[#FF3F1A] dark:text-orange-400 font-extrabold truncate max-w-[130px] sm:max-w-none">{pageName}</span>
+
+      <span className="text-[#FF3F1A] dark:text-orange-400 font-black truncate max-w-[130px] sm:max-w-none">
+        {pageName}
+      </span>
     </nav>
   );
 }
+
 
 /* ── Logo ───────────────────────────────────────────────────────────────── */
 
@@ -402,6 +436,8 @@ function Sidebar({
     <>
       <NavItem icon={<Home className="w-4 h-4" />} label="Inicio" onClick={() => onNavigatePedidos("operacion", "en-vivo")} isMobile={isMobile} />
       <NavItem icon={<Eye className="w-4 h-4" />} label="Visitante" onClick={() => {}} isMobile={isMobile} />
+
+
 
       <SectionHeader icon={<Users className="w-4 h-4" />} label="Subscriptor" section="subscriptor" isMobile={isMobile} />
       {(!isCollapsed || isMobile) && expanded.subscriptor && (
@@ -713,27 +749,37 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios">("pedidos");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { activeBusiness } = useBusiness();
+  const { activeBusiness, setIsCommandPaletteOpen } = useBusiness();
 
-  // Pedidos Navigation State
-  const [pedidosSection, setPedidosSection] = useState<PedidosSection>("operacion");
-  const [pedidosOpTab, setPedidosOpTab] = useState<OperacionTab>("en-vivo");
-  const [pedidosGeTab, setPedidosGeTab] = useState<GestionTab>("resumen");
 
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  useEffect(() => {
-    if (location.state) {
-      const { section, geTab, opTab } = location.state as {
-        section?: PedidosSection;
-        geTab?: GestionTab;
-        opTab?: OperacionTab;
-      };
-      if (section) setPedidosSection(section);
-      if (geTab) setPedidosGeTab(geTab);
-      if (opTab) setPedidosOpTab(opTab);
+  // Pedidos Navigation State initialized from URL search params
+  const [pedidosSection, setPedidosSection] = useState<PedidosSection>(() => {
+    const s = searchParams.get("section") as PedidosSection | null;
+    return s || "operacion";
+  });
+  const [pedidosOpTab, setPedidosOpTab] = useState<OperacionTab>(() => {
+    const t = searchParams.get("tab") as OperacionTab | null;
+    return t || "en-vivo";
+  });
+  const [pedidosGeTab, setPedidosGeTab] = useState<GestionTab>(() => {
+    const t = searchParams.get("tab") as GestionTab | null;
+    return t || "resumen";
+  });
+
+  const handleNavigatePedidos = (section: PedidosSection, tab: any) => {
+    setActiveModule("pedidos");
+    setPedidosSection(section);
+    if (section === "operacion") {
+      setPedidosOpTab(tab);
+    } else {
+      setPedidosGeTab(tab);
     }
-  }, [location.state]);
+    setSearchParams({ section, tab }, { replace: true });
+  };
+
+
 
   useEffect(() => {
     if (isDarkMode) {
@@ -843,12 +889,7 @@ export default function App() {
           pedidosSection={pedidosSection}
           pedidosOpTab={pedidosOpTab}
           pedidosGeTab={pedidosGeTab}
-          onNavigatePedidos={(section, tab) => {
-            setActiveModule("pedidos");
-            setPedidosSection(section);
-            if (section === "operacion") setPedidosOpTab(tab);
-            else setPedidosGeTab(tab);
-          }}
+          onNavigatePedidos={handleNavigatePedidos}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
@@ -873,17 +914,23 @@ export default function App() {
                   moduleName={activeModule === "pedidos" ? (activeBusiness?.name || "Módulo Pedidos") : "Inventarios SST"}
                   roleName={currentRoleName}
                   pageName={currentPageName}
-
-                  onNavigateHome={() => {
-                    setActiveModule("pedidos");
-                    setPedidosSection("operacion");
-                    setPedidosOpTab("en-vivo");
-                  }}
+                  onNavigateHome={() => handleNavigatePedidos("operacion", "en-vivo")}
+                  onNavigateSection={() =>
+                    handleNavigatePedidos(
+                      pedidosSection,
+                      pedidosSection === "operacion"
+                        ? "en-vivo"
+                        : pedidosSection === "menu"
+                        ? "catalogo"
+                        : "automatizaciones"
+                    )
+                  }
                 />
               </div>
 
-              {/* Right Side Header Actions: Business Switcher, Notifications & Theme */}
-              <div className="flex items-center gap-2.5 sm:gap-3">
+              {/* Right Side Header Actions: Search, Business Switcher, Notifications & Theme */}
+              <div className="flex items-center gap-2 sm:gap-2.5">
+                <GlobalSearchButton />
                 <BusinessSwitcher />
 
                 <NotificationBellDropdown
@@ -892,20 +939,9 @@ export default function App() {
                   onNavigate={handleNavigateFromNotification}
                 />
 
-                {/* Dark Mode Circular Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-500 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
-                  title={isDarkMode ? "Cambiar a Modo Claro" : "Cambiar a Modo Oscuro"}
-                >
-                  {isDarkMode ? (
-                    <Sun className="w-5 h-5 text-amber-400 fill-amber-400/20 transition-transform duration-300 transform rotate-0 hover:rotate-45" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-slate-600 dark:text-slate-300 transition-transform duration-300 transform rotate-0 hover:-rotate-12" />
-                  )}
-                </button>
+                <ThemeToggle />
               </div>
+
             </div>
 
             {/* Active Local Operational Container */}
@@ -917,11 +953,12 @@ export default function App() {
                 targetOrderId={targetOrderId}
                 targetModal={targetModal}
                 targetProductId={targetProductId}
-                onSectionChange={setPedidosSection}
-                onOpTabChange={setPedidosOpTab}
-                onGeTabChange={setPedidosGeTab}
+                onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
+                onOpTabChange={t => handleNavigatePedidos("operacion", t)}
+                onGeTabChange={t => handleNavigatePedidos(pedidosSection === "operacion" ? "menu" : pedidosSection, t)}
               />
             </div>
+
           </div>
         </div>
       </div>

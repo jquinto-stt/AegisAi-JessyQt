@@ -185,39 +185,11 @@ export const BusinessSwitcher: React.FC = () => {
               );
             })}
           </div>
-
-          {/* Quick Actions: Command Palette Trigger & New Business */}
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                setIsCommandPaletteOpen(true);
-              }}
-              className="px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <span>Buscar</span>
-              <kbd className="px-1.5 py-0.2 rounded bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 font-mono text-[9px]">
-                Ctrl + K
-              </kbd>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setIsOpen(false);
-                navigate("/onboarding");
-              }}
-              className="px-3 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Crear Negocio</span>
-            </button>
-          </div>
         </div>
       )}
     </div>
   );
 };
+
 
 

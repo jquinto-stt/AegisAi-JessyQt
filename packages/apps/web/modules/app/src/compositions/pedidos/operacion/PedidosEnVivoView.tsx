@@ -29,7 +29,9 @@ import {
   Zap,
   GripVertical,
   ChevronDown,
+  Minimize2,
 } from "lucide-react";
+
 import { OperacionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
 import {
@@ -423,6 +425,23 @@ export const PedidosEnVivoView: React.FC<{
               <span className="hidden md:inline">Estructura</span>
             </button>
 
+            {!layoutPrefs.showTopHeader && (
+              <button
+                type="button"
+                onClick={() => {
+                  const newPrefs = { ...layoutPrefs, showTopHeader: true, showBanner: true };
+                  setLayoutPrefs(newPrefs);
+                  localStorage.setItem("necto_pedidos_layout_prefs", JSON.stringify(newPrefs));
+                  window.dispatchEvent(new Event("necto_layout_changed"));
+                }}
+                className="py-2 px-3 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-orange-50/90 dark:bg-orange-950/40 text-[#FF3F1A] hover:bg-[#FF3F1A] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                title="Restaurar barra de navegación de módulos"
+              >
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Salir Enfoque</span>
+              </button>
+            )}
+
             <button
               onClick={() => setShowManualModal(true)}
               className="py-2 px-3.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs flex-none"
@@ -430,6 +449,7 @@ export const PedidosEnVivoView: React.FC<{
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Pedido</span>
             </button>
+
           </div>
         </div>
       ) : (

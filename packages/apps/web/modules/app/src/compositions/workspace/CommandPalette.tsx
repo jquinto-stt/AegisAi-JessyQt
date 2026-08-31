@@ -63,9 +63,10 @@ export const CommandPalette: React.FC = () => {
     {
       id: "global-overview",
       category: "Vistas Especiales",
-      title: "🏢 Vista Franquicia / Resumen Global",
+      title: "Vista Franquicia / Resumen Global",
       subtitle: "Dashboard consolidado en el Hub con ventas y comandas de todas las marcas",
       icon: <LayoutGrid className="w-4 h-4 text-[#FF3F1A]" />,
+
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/workspaces");

@@ -86,15 +86,16 @@ export const CustomLayoutModal: React.FC<{
 
   const applyFocusMode = () => {
     setDraftPrefs({
-      showTopHeader: true,
+      showTopHeader: false,
       showBanner: false,
-      showToolbar: false,
+      showToolbar: true,
       columns: draftPrefs.columns.map(c => ({
         ...c,
         visible: c.id !== "FINALIZADO",
       })),
     });
   };
+
 
 
   const applyFullMode = () => {
