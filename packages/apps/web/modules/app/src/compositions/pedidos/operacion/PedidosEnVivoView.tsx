@@ -38,7 +38,7 @@ import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
 import { OperacionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button, Card, Field, Select, Textarea } from "@/elements";
+import { Button, Card, Field, Select, Textarea, SegmentedControl, SearchInput } from "@/elements";
 
 import {
   CustomLayoutModal,
@@ -303,29 +303,15 @@ export const PedidosEnVivoView: React.FC<{
           {/* Left: Search & Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
             {/* Search with Ctrl+K shortcut */}
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Buscar por ID, cliente, producto..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-16 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-              />
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="w-4 h-4 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-500 flex items-center justify-center hover:bg-zinc-300 transition-colors"
-                    title="Limpiar búsqueda"
-                  >
-                    <X className="w-2.5 h-2.5" />
-                  </button>
-                ) : null}
-
-              </div>
-            </div>
+            <SearchInput
+              ref={searchInputRef}
+              intent="pedidos.search"
+              className="flex-1 min-w-[200px] max-w-sm"
+              placeholder="Buscar por ID, cliente, producto..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery("")}
+            />
 
             {/* Estado Dropdown */}
             <div className="relative flex items-center">
@@ -392,28 +378,16 @@ export const PedidosEnVivoView: React.FC<{
           {/* Right: View Mode Toggle, Customize & New Order */}
           <div className="flex items-center gap-2">
             {/* View Switcher */}
-            <div className="flex bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <button
-                onClick={() => setViewMode("kanban")}
-                className={`py-1 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  viewMode === "kanban"
-                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
-              >
-                <Kanban className="w-3.5 h-3.5" /> Tablero
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`py-1 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" /> Lista
-              </button>
-            </div>
+            <SegmentedControl
+              intent="pedidos.view"
+              tone="contrast"
+              value={viewMode}
+              onValueChange={setViewMode}
+              options={[
+                { value: "kanban", label: "Tablero", icon: <Kanban className="w-3.5 h-3.5" /> },
+                { value: "grid", label: "Lista", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+              ]}
+            />
 
             {/* Personalizar Vista Button */}
             <Button

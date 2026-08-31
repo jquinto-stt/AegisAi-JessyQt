@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { SafeImage } from "../shared/SafeImage";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button, Field, Select, Badge } from "@/elements";
+import { Button, Field, Select, Badge, SegmentedControl, SearchInput } from "@/elements";
 
 export const InsumosStockView: React.FC = () => {
   const {
@@ -274,28 +274,17 @@ export const InsumosStockView: React.FC = () => {
       {/* Sub-Tabs: Listado vs Movimientos */}
       <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-4 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800 pb-3">
-          <div className="flex bg-slate-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
-            <button
-              onClick={() => setActiveTab("listado")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                activeTab === "listado"
-                  ? "bg-white dark:bg-[#2C2D31] text-[#FF3F1A] shadow-xs"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              Listado de Insumos ({filteredIngredients.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("movimientos")}
-              className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                activeTab === "movimientos"
-                  ? "bg-white dark:bg-[#2C2D31] text-[#FF3F1A] shadow-xs"
-                  : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              Trazabilidad & Movimientos ({stockMovements.length})
-            </button>
-          </div>
+          <SegmentedControl
+            intent="insumos.subtab"
+            tone="panel"
+            className="w-fit"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            options={[
+              { value: "listado", label: `Listado de Insumos (${filteredIngredients.length})` },
+              { value: "movimientos", label: `Trazabilidad & Movimientos (${stockMovements.length})` },
+            ]}
+          />
 
           {/* Actions: Create & Export */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -345,16 +334,14 @@ export const InsumosStockView: React.FC = () => {
           <div className="space-y-4">
             {/* Filters Bar */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar insumo por nombre, código o lote..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full text-xs font-medium pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100 focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <SearchInput
+                intent="insumos.search"
+                className="flex-1"
+                placeholder="Buscar insumo por nombre, código o lote..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery("")}
+              />
 
               {/* Status Filter */}
               <Select

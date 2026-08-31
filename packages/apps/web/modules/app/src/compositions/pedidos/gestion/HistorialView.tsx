@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button, Select } from "@/elements";
+import { Button, Select, SearchInput } from "@/elements";
 
 export const HistorialView: React.FC = () => {
   const { orders, setSelectedOrderId, shiftInfo } = usePedidos();
@@ -112,16 +112,14 @@ export const HistorialView: React.FC = () => {
 
       {/* Filter Bar */}
       <div className="bg-white dark:bg-[#2C2D31] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="relative flex-1 min-w-[240px] max-w-sm">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar por ID o cliente..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9.5 pr-4 py-2 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none"
-          />
-        </div>
+        <SearchInput
+          intent="historial.search"
+          className="flex-1 min-w-[240px] max-w-sm"
+          placeholder="Buscar por ID o cliente..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onClear={() => setSearch("")}
+        />
 
         <div className="flex items-center gap-2 flex-wrap text-xs">
           {/* Date Picker Filter */}

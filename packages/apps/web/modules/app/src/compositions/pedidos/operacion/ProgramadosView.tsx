@@ -15,7 +15,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button } from "@/elements";
+import { Button, SegmentedControl } from "@/elements";
 
 export const ProgramadosView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
@@ -65,28 +65,16 @@ export const ProgramadosView: React.FC<{
         </Button>
 
         {/* View Switcher */}
-        <div className="flex bg-slate-100 dark:bg-gray-800 rounded-xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
-          <button
-            onClick={() => setViewMode("columns")}
-            className={`py-1.5 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
-              viewMode === "columns"
-                ? "bg-[#FF3F1A] text-white shadow-xs"
-                : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-            }`}
-          >
-            Vista Columnas
-          </button>
-          <button
-            onClick={() => setViewMode("timeline")}
-            className={`py-1.5 px-3 rounded-lg text-xs font-black transition-all cursor-pointer ${
-              viewMode === "timeline"
-                ? "bg-[#FF3F1A] text-white shadow-xs"
-                : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-            }`}
-          >
-            Línea de Tiempo
-          </button>
-        </div>
+        <SegmentedControl
+          intent="programados.view"
+          tone="accent"
+          value={viewMode}
+          onValueChange={setViewMode}
+          options={[
+            { value: "columns", label: "Vista Columnas" },
+            { value: "timeline", label: "Línea de Tiempo" },
+          ]}
+        />
       </div>
 
       {/* Planning KPIs Grid */}

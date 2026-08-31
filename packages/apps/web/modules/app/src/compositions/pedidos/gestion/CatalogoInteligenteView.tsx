@@ -3,7 +3,7 @@ import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
 import { ProductItem, ProductReview, ProductModifierGroup, ProductModifierOption } from "../types";
-import { Button, Card, Field, Select, Textarea, Badge } from "@/elements";
+import { Button, Card, Field, Select, Textarea, Badge, SegmentedControl } from "@/elements";
 import {
   Layers,
   Sparkles,
@@ -568,28 +568,17 @@ export const CatalogoInteligenteView: React.FC<{
       />
 
       {/* Subtab Switcher Toolbar */}
-      <div className="flex bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl p-1 border border-zinc-200 dark:border-zinc-700 w-fit shadow-2xs">
-        <button
-          onClick={() => setActiveSubTab("catalogo")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === "catalogo"
-              ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
-          }`}
-        >
-          Catálogo & Platos ({products.length})
-        </button>
-        <button
-          onClick={() => setActiveSubTab("resenas")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubTab === "resenas"
-              ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
-          }`}
-        >
-          Opiniones de Clientes ({allReviews.length})
-        </button>
-      </div>
+      <SegmentedControl
+        intent="catalog.subtab"
+        tone="accent"
+        className="w-fit rounded-2xl"
+        value={activeSubTab}
+        onValueChange={setActiveSubTab}
+        options={[
+          { value: "catalogo", label: `Catálogo & Platos (${products.length})` },
+          { value: "resenas", label: `Opiniones de Clientes (${allReviews.length})` },
+        ]}
+      />
 
       {/* Top Intelligence Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

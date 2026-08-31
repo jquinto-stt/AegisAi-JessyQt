@@ -75,6 +75,9 @@ src/elements/
 ├── Field.tsx     # <input> etiquetado (labelStyle mono|bold, mono, error, hint)
 ├── Select.tsx    # <select> etiquetado (options | children)
 ├── Textarea.tsx  # <textarea> etiquetada
+├── Toggle.tsx    # switch ON/OFF accesible (role=switch)
+├── SegmentedControl.tsx  # grupo de opciones con estado activo (tabs/pills/views)
+├── SearchInput.tsx       # input de búsqueda (icono + clear opcional, forwardRef)
 └── index.ts      # barrel
 ```
 
@@ -82,7 +85,7 @@ src/elements/
 
 | Concepto | Implementación concreta | Evidencia (Node ID / Intent) |
 | --- | --- | --- |
-| **Element** | Componente UI atómico declarado con `ui_dsl()` | `necto.el.button`, `necto.el.field`, `necto.el.select`, `necto.el.textarea`, `necto.el.card`, `necto.el.badge` |
+| **Element** | Componente UI atómico declarado con `ui_dsl()` (o función genérica cuando requiere tipos literales / ref) | `necto.el.button`, `necto.el.field`, `necto.el.select`, `necto.el.textarea`, `necto.el.card`, `necto.el.badge`, `necto.el.toggle`, `necto.el.segmented`, `necto.el.search` |
 | **Design DSL / `ui_dsl()`** | Helper tipado que declara `nodeId` + `intent` + `variants` y devuelve un componente que emite los metadatos | `src/elements/dsl.ts` |
 | **Node IDs** | Identificador estable por nodo, para trazabilidad/telemetría/testing | atributo `data-node-id` |
 | **Intent Tags** | Metadato de intención por nodo/acción | atributo `data-intent` (p.ej. `catalog.product.create.submit`) |
@@ -132,7 +135,7 @@ El módulo de **Operación** también está migrado, en sus dos vistas:
 
 Se preservó intacta la lógica delicada: transiciones de estado de pedidos (`confirmOrder`, `sendToKitchen`, `markOrderReady`, `deliverOrder`), sonido (`playOrderAlert`/`playSuccessSound`), filtrado (`filterOrdersList`), drag & drop del tablero Kanban, y cálculos de urgencia/progreso.
 
-Se dejaron **intencionalmente** sin migrar los controles que no son botones atómicos: los toggles de vista (Tablero/Lista), las pills de filtro con estado activo (Retrasos, estaciones KDS, checklist de cocina), el input de búsqueda (usa `ref` + icono + botón de limpiar) y los `<select>` de filtro de la toolbar (llevan chevron propio). Migrarlos a Elements requeriría un Element `SegmentedControl`/`SearchInput` dedicado.
+El conmutador de vista (Tablero/Lista) se migró a `SegmentedControl` (`pedidos.view`) y el buscador a `SearchInput` (`pedidos.search`, conserva el `ref` para el atajo Ctrl+K). Quedan como primitivas propias las pills de filtro con estado activo (Retrasos, estaciones KDS, checklist de cocina) — son arrays dinámicos — y los `<select>` de filtro de la toolbar (llevan chevron propio).
 
 ### Uso real: módulo Pedidos → Gestión
 
@@ -150,7 +153,7 @@ Las 7 vistas de **Gestión** están migradas (enfoque pragmático: acciones ató
 
 Toda la lógica de negocio quedó intacta: CRUD de insumos (`addIngredient`/`updateIngredient`/`deleteIngredient` con cálculo de estado de stock), roles y permisos (`createRole`/`updateRole`/`deleteRole`), toggles de reglas/recurrencias, exportación CSV del cierre de caja, y los cálculos de KPIs.
 
-En estas vistas se dejaron sin migrar (documentado): los controles **segmentados** (sub-tabs, pills de filtro por categoría/estado/turno, toggles ON/OFF de reglas), las **tarjetas-dashboard** con estilo visual propio (`#2C2D31`/`#374151`) y los elementos con acento **índigo `#190088`** (no hay variante para ese color). Estos requerirían Elements `SegmentedControl`, `Toggle` y una variante `indigo` para migrarse de forma coherente.
+Los sub-tabs de `AutomatizacionesView` e `InsumosStockView` se migraron a `SegmentedControl` (`automatizaciones.subtab`, `insumos.subtab`) y el buscador de insumos a `SearchInput` (`insumos.search`). Quedan sin migrar (documentado): las pills de filtro por categoría/estado/turno (arrays dinámicos), las **tarjetas-dashboard** con estilo visual propio (`#2C2D31`/`#374151`) y los elementos con acento **índigo `#190088`** (no hay variante para ese color).
 
 ### Uso real: módulo Pedidos → componentes compartidos y Programados
 
@@ -190,11 +193,17 @@ Las pantallas grandes fuera de Pedidos también están migradas (enfoque pragmá
 
 ### Cobertura y decisiones de alcance
 
-La adopción de Elements alcanza **~52%** del front (27 de 39 archivos de UI usan la capa). El resto se dejó **intencionalmente** sin migrar, por razones documentadas:
+La adopción de Elements alcanza **~55%** del front (203 de 366 controles UI usan la capa). Se añadieron tres Elements nuevos para cubrir patrones que antes quedaban como primitivas inline:
+
+- **`Toggle`** (`necto.el.toggle`): switch ON/OFF accesible (`role="switch"`). Aplicado en los canales de venta de `BusinessSettingsModal` (WhatsApp/Web/POS → `business.channel.*`) y en `showToolbar` de `CustomLayoutModal` (`layout.toolbar.*`).
+- **`SegmentedControl`** (`necto.el.segmented`): grupo de opciones con estado activo (tabs, pills de filtro, conmutadores de vista), con tonos `contrast | accent | panel`. Aplicado en el time-range y metric-tabs de `AnaliticaView`, subtabs de `AutomatizacionesView`/`InsumosStockView`/`CatalogoInteligenteView`, y view switchers de `ProgramadosView`/`PedidosEnVivoView`.
+- **`SearchInput`** (`necto.el.search`): input de búsqueda con icono + clear opcional (usa `forwardRef` para soportar focus por atajo). Aplicado en `PedidosEnVivoView` (con `ref` para Ctrl+K), `InsumosStockView` e `HistorialView`.
+
+El resto se dejó **intencionalmente** sin migrar, por razones documentadas:
 
 - **Pantallas de autenticación** (`Login`, `Register`): usan un sistema de CSS propio (`auth-container`, `form-input`, `btn-primary`), ajeno a Tailwind. Migrarlas rompería su diseño.
 - **Componentes trigger propios** (`ThemeToggle`, `GlobalSearchButton`): ya son primitivas UI reutilizables con forma circular y animaciones específicas, análogas a un Element.
-- **Controles segmentados / dropdowns** (`BusinessSwitcher`, `CommandPalette`, tabs, switches, pills de filtro): requerirían Elements dedicados (`SegmentedControl`, `Toggle`, `SearchInput`) para migrarse de forma coherente.
+- **Controles segmentados con lógica/estilo especial** (`BusinessSwitcher`, `CommandPalette`, section switcher y sub-tabs de `PedidosModule`, arquetipos/tabs verticales de `BusinessSettingsModal`, grupos índigo de `TurnosCapacidadView`, `StorePaceSelector`, category pills dinámicas): se dejaron por layout vertical, arrays dinámicos, color de acento propio o handlers acoplados que no mapean limpio a los Elements horizontales.
 - **`Badges`** (`AIBadge`): componente de badge con API propia (clicable, abre modal IA).
 
 ### Trazabilidad
@@ -203,8 +212,9 @@ Cada nodo relevante emite `data-node-id` y `data-intent`, localizables en el DOM
 
 ```text
 necto.el.button · necto.el.field · necto.el.select · necto.el.textarea
-necto.el.card · necto.el.badge
+necto.el.card · necto.el.badge · necto.el.toggle · necto.el.segmented · necto.el.search
 
 catalog.product.create.submit · catalog.product.edit.save
 catalog.sort · catalog.review.verified
+business.channel.whatsapp · analitica.time-range · pedidos.search
 ```

@@ -24,7 +24,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button, Field, Textarea, Badge } from "@/elements";
+import { Button, Field, Textarea, Badge, SegmentedControl } from "@/elements";
 
 export const AutomatizacionesView: React.FC = () => {
   const { automations, toggleAutomationRule, recurrences, toggleRecurrence, createManualOrder } =
@@ -111,38 +111,18 @@ export const AutomatizacionesView: React.FC = () => {
       />
 
       {/* Subtab Switcher Toolbar */}
-      <div className="flex bg-slate-100 dark:bg-gray-800 rounded-xl p-1 border border-slate-200 dark:border-gray-700 w-fit shadow-xs">
-        <button
-          onClick={() => setActiveSubTab("reglas")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-            activeSubTab === "reglas"
-              ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-          }`}
-        >
-          Reglas ({automations.filter(a => a.isActive).length})
-        </button>
-        <button
-          onClick={() => setActiveSubTab("recurrencias")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-            activeSubTab === "recurrencias"
-              ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-          }`}
-        >
-          Recurrentes B2B ({recurrences.length})
-        </button>
-        <button
-          onClick={() => setActiveSubTab("historial")}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-            activeSubTab === "historial"
-              ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
-          }`}
-        >
-          Historial de Disparos
-        </button>
-      </div>
+      <SegmentedControl
+        intent="automatizaciones.subtab"
+        tone="accent"
+        className="w-fit"
+        value={activeSubTab}
+        onValueChange={setActiveSubTab}
+        options={[
+          { value: "reglas", label: `Reglas (${automations.filter(a => a.isActive).length})` },
+          { value: "recurrencias", label: `Recurrentes B2B (${recurrences.length})` },
+          { value: "historial", label: "Historial de Disparos" },
+        ]}
+      />
 
       {/* Top Automation Impact KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

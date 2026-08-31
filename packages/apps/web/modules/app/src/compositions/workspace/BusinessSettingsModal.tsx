@@ -44,7 +44,7 @@ import {
   Play,
   VolumeX,
 } from "lucide-react";
-import { Button, Field, Select, Textarea, Badge } from "@/elements";
+import { Button, Field, Select, Textarea, Badge, Toggle } from "@/elements";
 
 
 
@@ -959,19 +959,12 @@ export const BusinessSettingsModal: React.FC<{
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setEnableWhatsapp(!enableWhatsapp)}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer flex-none ${
-                        enableWhatsapp ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
-                      }`}
-                    >
-                      <span
-                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
-                          enableWhatsapp ? "translate-x-7" : "translate-x-1"
-                        }`}
-                      />
-                    </button>
+                    <Toggle
+                      checked={enableWhatsapp}
+                      onCheckedChange={setEnableWhatsapp}
+                      intent="business.channel.whatsapp"
+                      ariaLabel="Activar canal WhatsApp"
+                    />
                   </div>
 
                   {/* Web QR */}
@@ -990,19 +983,12 @@ export const BusinessSettingsModal: React.FC<{
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setEnableWeb(!enableWeb)}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer flex-none ${
-                        enableWeb ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
-                      }`}
-                    >
-                      <span
-                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
-                          enableWeb ? "translate-x-7" : "translate-x-1"
-                        }`}
-                      />
-                    </button>
+                    <Toggle
+                      checked={enableWeb}
+                      onCheckedChange={setEnableWeb}
+                      intent="business.channel.web"
+                      ariaLabel="Activar canal Web"
+                    />
                   </div>
 
                   {/* POS Mostrador */}
@@ -1021,19 +1007,12 @@ export const BusinessSettingsModal: React.FC<{
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setEnablePos(!enablePos)}
-                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer flex-none ${
-                        enablePos ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
-                      }`}
-                    >
-                      <span
-                        className={`block w-4 h-4 rounded-full bg-white transition-transform ${
-                          enablePos ? "translate-x-7" : "translate-x-1"
-                        }`}
-                      />
-                    </button>
+                    <Toggle
+                      checked={enablePos}
+                      onCheckedChange={setEnablePos}
+                      intent="business.channel.pos"
+                      ariaLabel="Activar canal POS"
+                    />
                   </div>
                 </div>
               </div>

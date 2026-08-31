@@ -17,7 +17,7 @@ import {
   Layers,
   PanelTop,
 } from "lucide-react";
-import { Button } from "@/elements";
+import { Button, Toggle } from "@/elements";
 
 export interface ColumnConfig {
   id: OrderStatus;
@@ -191,21 +191,13 @@ export const CustomLayoutModal: React.FC<{
                     Buscador Ctrl+K, estados y canales
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraftPrefs(p => ({ ...p, showToolbar: !p.showToolbar }))
-                  }
-                  className={`w-9 h-5 rounded-full transition-colors cursor-pointer relative p-0.5 flex-none ${
-                    draftPrefs.showToolbar ? "bg-[#FF3F1A]" : "bg-zinc-300 dark:bg-zinc-700"
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                      draftPrefs.showToolbar ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
+                <Toggle
+                  checked={draftPrefs.showToolbar}
+                  onCheckedChange={next => setDraftPrefs(p => ({ ...p, showToolbar: next }))}
+                  size="sm"
+                  intent="layout.toolbar.visibility"
+                  ariaLabel="Mostrar barra de filtros"
+                />
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ import {
   Package,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Badge } from "@/elements";
+import { Badge, SegmentedControl } from "@/elements";
 
 export const AnaliticaView: React.FC = () => {
   const { kpis, products, orders } = usePedidos();
@@ -140,21 +140,18 @@ export const AnaliticaView: React.FC = () => {
       />
 
       {/* Time Range Filter Toolbar */}
-      <div className="flex bg-slate-100 dark:bg-gray-800 p-1 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold w-fit shadow-xs">
-        {["Hoy", "Esta Semana", "Este Mes"].map(r => (
-          <button
-            key={r}
-            onClick={() => setTimeRange(r)}
-            className={`px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
-              timeRange === r
-                ? "bg-[#FF3F1A] text-white shadow-xs font-extrabold"
-                : "text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
-            }`}
-          >
-            {r}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        intent="analitica.time-range"
+        tone="accent"
+        className="w-fit"
+        value={timeRange}
+        onValueChange={setTimeRange}
+        options={[
+          { value: "Hoy", label: "Hoy" },
+          { value: "Esta Semana", label: "Esta Semana" },
+          { value: "Este Mes", label: "Este Mes" },
+        ]}
+      />
 
       {/* Top Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -246,38 +243,17 @@ export const AnaliticaView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex bg-slate-100 dark:bg-gray-800 p-1 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold">
-              <button
-                onClick={() => setActiveMetricTab("overview")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeMetricTab === "overview"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-black"
-                    : "text-gray-500"
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveMetricTab("sales")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeMetricTab === "sales"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-black"
-                    : "text-gray-500"
-                }`}
-              >
-                Comandas
-              </button>
-              <button
-                onClick={() => setActiveMetricTab("revenue")}
-                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                  activeMetricTab === "revenue"
-                    ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-xs font-black"
-                    : "text-gray-500"
-                }`}
-              >
-                Ingresos
-              </button>
-            </div>
+            <SegmentedControl
+              intent="analitica.metric-tab"
+              tone="panel"
+              value={activeMetricTab}
+              onValueChange={setActiveMetricTab}
+              options={[
+                { value: "overview", label: "Overview" },
+                { value: "sales", label: "Comandas" },
+                { value: "revenue", label: "Ingresos" },
+              ]}
+            />
           </div>
         </div>
 
