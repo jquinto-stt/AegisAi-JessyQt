@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
+
   Home, Eye, Users, Boxes, Settings, HelpCircle, LogOut,
   ChevronDown, ChevronRight, X, Mail, Megaphone, Package, Gift,
   FileText, BarChart2, UserCircle, Sun, Moon, Bell, BellRing,
@@ -13,6 +14,9 @@ import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
+import { CommandPalette } from "@/compositions/workspace/CommandPalette";
+import { GlobalFranchiseOverview } from "@/compositions/workspace/GlobalFranchiseOverview";
+import { useBusiness } from "@/context/BusinessContext";
 
 export type InventariosRole = "operador" | "analista";
 export type OperadorSubView = string;
@@ -263,7 +267,7 @@ function Sidebar({
   isMobileOpen = false,
   onCloseMobile
 }: {
-  activeModule?: "pedidos";
+  activeModule?: "pedidos" | "inventarios";
   pedidosSection: PedidosSection;
   pedidosOpTab: OperacionTab;
   pedidosGeTab: GestionTab;
@@ -473,39 +477,11 @@ function Sidebar({
             isMobile={isMobile}
           />
 
-          {/* Subcategoría 3: Analítica & Reportes */}
-          <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
-            <BarChart2 className="w-3 h-3 text-[#FF3F1A]" /> Analítica & Reportes
-          </div>
-          <NavItem
-            icon={<BarChart2 className="w-3.5 h-3.5" />}
-            label="Dashboard Pedidos"
-            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "resumen"}
-            onClick={() => onNavigatePedidos("analitica", "resumen")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<History className="w-3.5 h-3.5" />}
-            label="Historial de Ventas"
-            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "historial"}
-            onClick={() => onNavigatePedidos("analitica", "historial")}
-            indent
-            isMobile={isMobile}
-          />
-          <NavItem
-            icon={<TrendingUp className="w-3.5 h-3.5" />}
-            label="Rendimiento & Canales"
-            active={activeModule === "pedidos" && (pedidosSection === "analitica" || pedidosSection === "gestion") && pedidosGeTab === "analitica"}
-            onClick={() => onNavigatePedidos("analitica", "analitica")}
-            indent
-            isMobile={isMobile}
-          />
-
-          {/* Subcategoría 4: Configuración & Equipo */}
+          {/* Subcategoría 3: Configuración & Equipo */}
           <div className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-t border-slate-100 dark:border-gray-800/80 mt-1.5 flex items-center gap-1.5">
             <Users className="w-3 h-3 text-[#FF3F1A]" /> Configuración & Equipo
           </div>
+
           <NavItem
             icon={<Zap className="w-3.5 h-3.5" />}
             label="Automatizaciones & IA"
@@ -737,11 +713,27 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios">("pedidos");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { activeBusiness } = useBusiness();
 
   // Pedidos Navigation State
   const [pedidosSection, setPedidosSection] = useState<PedidosSection>("operacion");
   const [pedidosOpTab, setPedidosOpTab] = useState<OperacionTab>("en-vivo");
   const [pedidosGeTab, setPedidosGeTab] = useState<GestionTab>("resumen");
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state) {
+      const { section, geTab, opTab } = location.state as {
+        section?: PedidosSection;
+        geTab?: GestionTab;
+        opTab?: OperacionTab;
+      };
+      if (section) setPedidosSection(section);
+      if (geTab) setPedidosGeTab(geTab);
+      if (opTab) setPedidosOpTab(opTab);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -750,6 +742,7 @@ export default function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
 
   const [targetOrderId, setTargetOrderId] = useState<string | null>(null);
   const [targetModal, setTargetModal] = useState<"ticket" | "ai" | "incidencias" | "product" | null>(null);
@@ -877,9 +870,10 @@ export default function App() {
                 </button>
 
                 <TailAdminBreadcrumb
-                  moduleName={activeModule === "pedidos" ? "Módulo Pedidos" : "Inventarios SST"}
+                  moduleName={activeModule === "pedidos" ? (activeBusiness?.name || "Módulo Pedidos") : "Inventarios SST"}
                   roleName={currentRoleName}
                   pageName={currentPageName}
+
                   onNavigateHome={() => {
                     setActiveModule("pedidos");
                     setPedidosSection("operacion");
@@ -914,7 +908,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Active Module Container */}
+            {/* Active Local Operational Container */}
             <div className="flex-1 overflow-auto">
               <PedidosModule
                 sectionProp={activeModule === "inventarios" ? "gestion" : pedidosSection}
@@ -933,6 +927,9 @@ export default function App() {
       </div>
 
       <Footer />
+      <CommandPalette />
     </div>
   );
 }
+
+

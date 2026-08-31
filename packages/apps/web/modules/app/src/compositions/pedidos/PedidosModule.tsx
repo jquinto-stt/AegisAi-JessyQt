@@ -131,9 +131,9 @@ const PedidosContent: React.FC<{
 
   return (
     <div className="flex flex-col h-full space-y-5 p-4 sm:p-6 max-w-[1600px] mx-auto w-full">
-      {/* Top Module Sub-header: Operación ↔ Gestión Pill Switcher & Sub-tabs (Toggleable via Personalizar Vista) */}
-      {layoutPrefs.showTopHeader && (
+      {/* Top Module Sub-header: Operación ↔ Gestión Pill Switcher & Sub-tabs */}
       <div className="bg-white dark:bg-[#2C2D31] rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-[#374151] shadow-xs flex flex-col gap-3 flex-none">
+
         {/* Row 1: Section Switcher (Left) + Actions (Right) */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800/80 pb-3">
           {/* Section Pill Switcher (4 Pilares) */}
@@ -322,9 +322,9 @@ const PedidosContent: React.FC<{
           )}
         </div>
       </div>
-      )}
 
       {/* Main Tab Render Container */}
+
       <div className="flex-1 min-h-0">
         {section === "operacion" && (
           <>

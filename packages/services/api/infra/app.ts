@@ -1,8 +1,9 @@
-/// <reference path="../../cloud/core/.sst/platform/config.d.ts" />
+/// <reference path="../.sst/platform/config.d.ts" />
 
+import { Env } from '@webiai/sdk.core';
 import { Stack } from '@webiai/sdk.infra';
 import { ssm } from '@pulumi/aws';
-import type { SrvApiEnv } from './env.js';
+import { srvApiEnvVisitor, type SrvApiEnv } from './env.js';
 
 /**
  * SrvApi — Backend & Compute Stack for Necto
@@ -26,6 +27,15 @@ export class SrvApi extends Stack<SrvApiEnv> {
   readonly api: {
     gateway: sst.aws.ApiGatewayV2;
   } = {} as any;
+
+  constructor() {
+    super(() => ({
+      app: Env.var('SST_APP').string()!,
+      stack: Env.var('SST_STACK').optional.string(),
+      retain: Env.var('SST_RETAIN').optional.bool(),
+      home: 'aws',
+    }), srvApiEnvVisitor);
+  }
 
   initDatabase(): this {
     const table = new sst.aws.Dynamo('NectoTable', {
@@ -69,7 +79,8 @@ export class SrvApi extends Stack<SrvApiEnv> {
     return this;
   }
 
-  async run() {
+  async run(): Promise<void> {
+    await super.run();
     this.initDatabase();
     this.initCompute();
     this.initApi();

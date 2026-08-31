@@ -23,10 +23,13 @@ import {
 
 import { NectoLogo } from "../compositions/shared/NectoLogo";
 
+import { GlobalFranchiseOverview } from "../compositions/workspace/GlobalFranchiseOverview";
+
 export default function WorkspacesPage() {
   const navigate = useNavigate();
   const { businesses, activeBusinessId, switchBusiness } = useBusiness();
 
+  const [hubTab, setHubTab] = useState<"workspaces_list" | "franchise_overview">("workspaces_list");
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
@@ -43,23 +46,49 @@ export default function WorkspacesPage() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
       {/* Top Minimal Header */}
-      <header className="px-8 sm:px-16 py-6 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="px-4 sm:px-12 py-4 sm:py-5 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-4 sm:gap-6">
           <NectoLogo size="xs" inline />
+
+          {/* Hub Navigation Tabs - Visible on all devices */}
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <button
+              onClick={() => setHubTab("workspaces_list")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                hubTab === "workspaces_list"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span>Mis Locales ({businesses.length})</span>
+            </button>
+            <button
+              onClick={() => setHubTab("franchise_overview")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                hubTab === "franchise_overview"
+                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span>Visión Franquicia</span>
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setIsAccountSettingsOpen(true)}
             className="text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900"
           >
             <User className="w-3.5 h-3.5" />
-            <span>Cuenta</span>
+            <span className="hidden sm:inline">Cuenta</span>
           </button>
 
           <button
             onClick={() => navigate("/onboarding")}
-            className="py-2 px-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+            className="py-2 px-3 sm:px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-semibold hover:bg-[#e03413] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Crear Negocio</span>
@@ -67,24 +96,32 @@ export default function WorkspacesPage() {
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-6 sm:p-12 space-y-8">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
-              Gestión Multi-Tenant
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
-            Espacios de Trabajo
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xl font-normal">
-            Selecciona un negocio para entrar al panel de operaciones o administra los parámetros de cada sucursal.
-          </p>
-        </div>
 
-        {/* Business List (Structured Architectural Rows / Cards) */}
-        <div className="space-y-3">
+      {/* Main Hub Content Area */}
+      {hubTab === "franchise_overview" ? (
+        <div className="flex-1 max-w-6xl w-full mx-auto">
+          <GlobalFranchiseOverview />
+        </div>
+      ) : (
+        <main className="flex-1 max-w-4xl w-full mx-auto p-6 sm:p-12 space-y-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-zinc-400">
+                Gestión Multi-Tenant
+              </span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+              Espacios de Trabajo
+            </h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xl font-normal">
+              Selecciona un local para ingresar a su panel de comandas o gestiona la configuración de cada sucursal.
+            </p>
+          </div>
+
+          {/* Business List (Structured Architectural Rows / Cards) */}
+          <div className="space-y-3">
+
+
           {businesses.map(biz => {
             const isActive = biz.id === activeBusinessId;
 
@@ -161,25 +198,27 @@ export default function WorkspacesPage() {
                   <button
                     type="button"
                     onClick={e => handleOpenSettings(e, biz)}
-                    className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                    title={`Ajustes de ${biz.name}`}
+                    className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    title={`Configuración y eliminación de ${biz.name}`}
                   >
-                    <Settings className="w-4 h-4" />
+                    <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:rotate-45 transition-transform" />
+                    <span>Ajustes</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleSelectBusiness(biz.id)}
-                    className={`py-2 px-4 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
                       isActive
-                        ? "bg-[#FF3F1A] text-white hover:bg-[#e03413] shadow-xs"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                        ? "bg-[#FF3F1A] text-white hover:bg-[#e03413]"
+                        : "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
                     }`}
                   >
                     <span>Entrar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
+
               </div>
             );
           })}
@@ -207,10 +246,13 @@ export default function WorkspacesPage() {
           </div>
         </div>
       </main>
+    )}
+
 
       {/* Settings Modals */}
       <BusinessSettingsModal
         business={selectedBusinessForSettings}
+
         isOpen={Boolean(selectedBusinessForSettings)}
         onClose={() => setSelectedBusinessForSettings(null)}
       />

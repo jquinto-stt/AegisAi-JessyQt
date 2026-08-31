@@ -30,6 +30,15 @@ export interface BusinessScheduledPause {
   autoReplyMessage?: string;
 }
 
+export interface BusinessSetupProgress {
+  whatsappConnected: boolean;
+  menuConfigured: boolean;
+  kitchenConfigured: boolean;
+  teamInvited: boolean;
+}
+
+export type UserWorkspaceRole = "owner" | "manager" | "staff";
+
 export interface BusinessInstance {
   id: string;
   name: string;
@@ -46,6 +55,7 @@ export interface BusinessInstance {
   specialty?: string;
   activeModules: NectoModuleKey[];
   pauseConfig?: BusinessScheduledPause;
+  setupProgress?: BusinessSetupProgress;
   createdAt: string;
 }
 
@@ -53,14 +63,21 @@ interface BusinessContextType {
   businesses: BusinessInstance[];
   activeBusiness: BusinessInstance;
   activeBusinessId: string;
+  userRole: UserWorkspaceRole;
+  setUserRole: (role: UserWorkspaceRole) => void;
   isOnboardingOpen: boolean;
   setIsOnboardingOpen: (open: boolean) => void;
+  isCommandPaletteOpen: boolean;
+  setIsCommandPaletteOpen: (open: boolean) => void;
+  toggleCommandPalette: () => void;
   createBusiness: (data: Omit<BusinessInstance, "id" | "createdAt">) => BusinessInstance;
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
   deleteBusiness: (id: string) => void;
   toggleModule: (moduleKey: NectoModuleKey) => void;
+  updateSetupProgress: (bizId: string, progressUpdates: Partial<BusinessSetupProgress>) => void;
 }
+
 
 const DEFAULT_BUSINESS: BusinessInstance = {
   id: "biz-necto-central",
@@ -78,7 +95,38 @@ const DEFAULT_BUSINESS: BusinessInstance = {
   kitchenBufferMin: 20,
   specialty: "Hamburguesas & Comidas Rápidas",
   activeModules: ["pedidos", "inventarios", "referidos"],
+  setupProgress: {
+    whatsappConnected: true,
+    menuConfigured: true,
+    kitchenConfigured: true,
+    teamInvited: false,
+  },
   createdAt: new Date().toISOString(),
+};
+
+const SECONDARY_BUSINESS: BusinessInstance = {
+  id: "biz-necto-pizza",
+  name: "Pizza Necto — Delivery Express",
+  slug: "pizza-necto-express",
+  businessType: "restaurant_virtual",
+  iconKey: "flame",
+  currency: "COP",
+  city: "Medellín, Colombia",
+  channels: {
+    whatsapp: true,
+    web: true,
+    pos: false,
+  },
+  kitchenBufferMin: 15,
+  specialty: "Pizzas Artesanales & Calzones",
+  activeModules: ["pedidos", "inventarios"],
+  setupProgress: {
+    whatsappConnected: true,
+    menuConfigured: true,
+    kitchenConfigured: false,
+    teamInvited: false,
+  },
+  createdAt: new Date(Date.now() - 86400000).toISOString(),
 };
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -93,24 +141,44 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return parsed.map((b: any) => ({
             ...b,
             activeModules: b.activeModules || ["pedidos", "inventarios", "referidos"],
+            setupProgress: b.setupProgress || {
+              whatsappConnected: true,
+              menuConfigured: true,
+              kitchenConfigured: false,
+              teamInvited: false,
+            },
           }));
         }
       }
     } catch (e) {
       console.warn("Error reading businesses from storage", e);
     }
-    return [DEFAULT_BUSINESS];
+    return [DEFAULT_BUSINESS, SECONDARY_BUSINESS];
   });
 
   const [activeBusinessId, setActiveBusinessId] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("necto_active_business_id");
-      if (saved) return saved;
+      if (saved && saved !== "GLOBAL_OVERVIEW") return saved;
     } catch (e) {}
     return DEFAULT_BUSINESS.id;
   });
 
+  const [userRole, setUserRole] = useState<UserWorkspaceRole>("owner");
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Global Keyboard listener for Command Palette (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Save to localStorage
   useEffect(() => {
@@ -121,18 +189,29 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     try {
-      localStorage.setItem("necto_active_business_id", activeBusinessId);
+      if (activeBusinessId && activeBusinessId !== "GLOBAL_OVERVIEW") {
+        localStorage.setItem("necto_active_business_id", activeBusinessId);
+      }
     } catch (e) {}
   }, [activeBusinessId]);
 
   const activeBusiness =
     businesses.find(b => b.id === activeBusinessId) || businesses[0] || DEFAULT_BUSINESS;
 
+  const toggleCommandPalette = () => setIsCommandPaletteOpen(prev => !prev);
+
+
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const newBiz: BusinessInstance = {
       ...data,
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
       activeModules: data.activeModules || ["pedidos", "inventarios"],
+      setupProgress: {
+        whatsappConnected: data.channels?.whatsapp || false,
+        menuConfigured: false,
+        kitchenConfigured: false,
+        teamInvited: false,
+      },
       createdAt: new Date().toISOString(),
     };
 
@@ -150,6 +229,28 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const updateBusiness = (id: string, updates: Partial<BusinessInstance>) => {
     setBusinesses(prev =>
       prev.map(b => (b.id === id ? { ...b, ...updates } : b))
+    );
+  };
+
+  const updateSetupProgress = (bizId: string, progressUpdates: Partial<BusinessSetupProgress>) => {
+    setBusinesses(prev =>
+      prev.map(b => {
+        if (b.id === bizId) {
+          return {
+            ...b,
+            setupProgress: {
+              ...(b.setupProgress || {
+                whatsappConnected: false,
+                menuConfigured: false,
+                kitchenConfigured: false,
+                teamInvited: false,
+              }),
+              ...progressUpdates,
+            },
+          };
+        }
+        return b;
+      })
     );
   };
 
@@ -182,18 +283,25 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         businesses,
         activeBusiness,
         activeBusinessId,
+        userRole,
+        setUserRole,
         isOnboardingOpen,
         setIsOnboardingOpen,
+        isCommandPaletteOpen,
+        setIsCommandPaletteOpen,
+        toggleCommandPalette,
         createBusiness,
         switchBusiness,
         updateBusiness,
         deleteBusiness,
         toggleModule,
+        updateSetupProgress,
       }}
     >
       {children}
     </BusinessContext.Provider>
   );
+
 };
 
 export const useBusiness = () => {
@@ -203,3 +311,4 @@ export const useBusiness = () => {
   }
   return context;
 };
+

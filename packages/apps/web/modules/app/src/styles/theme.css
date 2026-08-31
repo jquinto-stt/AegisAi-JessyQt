@@ -1,18 +1,54 @@
 :root {
+  /* Exact Color Palette */
+  --color-principal: #FF3F1A;
+  --color-terciario: #190088;
+  --color-secundario: #97D6DF;
+  --color-secundario-fondos: #ECECEC;
+  --color-fuente: #212121;
+  --color-detalles: #EFE6D3;
+
   --necto-brand-navy: #190088;
   --necto-brand-orange: #FF3F1A;
   --necto-brand-cyan: #97D6DF;
   --necto-brand-gray: #ECECEC;
   --necto-brand-dark: #212121;
+  --necto-brand-cream: #EFE6D3;
+
+  /* Typography Tokens (Figma: DM Sans) */
+  --font-family-primary: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-display: 36px;
+  --font-size-h1: 24px;
+  --font-size-body-lg: 16px;
+  --font-size-body: 14px;
+  --font-size-caption: 12px;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
 }
 
 .dark {
+  --color-principal: #FF3F1A;
+  --color-terciario: #190088;
+  --color-secundario: #97D6DF;
+  --color-secundario-fondos: #1E1E22;
+  --color-fuente: #ECECEC;
+  --color-detalles: #37332A;
+
   --necto-brand-navy: #190088;
   --necto-brand-orange: #FF3F1A;
   --necto-brand-cyan: #97D6DF;
   --necto-brand-gray: #2C2D31;
   --necto-brand-dark: #212121;
+  --necto-brand-cream: #37332A;
 }
+
+
+html, body, input, button, select, textarea {
+  font-family: var(--font-family-primary);
+  font-feature-settings: "opsz" 14;
+}
+
 
 /* Status Badges - Light & Dark */
 .status-badge-recibido {

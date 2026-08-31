@@ -86,7 +86,7 @@ export const CustomLayoutModal: React.FC<{
 
   const applyFocusMode = () => {
     setDraftPrefs({
-      showTopHeader: false,
+      showTopHeader: true,
       showBanner: false,
       showToolbar: false,
       columns: draftPrefs.columns.map(c => ({
@@ -95,6 +95,7 @@ export const CustomLayoutModal: React.FC<{
       })),
     });
   };
+
 
   const applyFullMode = () => {
     setDraftPrefs({
