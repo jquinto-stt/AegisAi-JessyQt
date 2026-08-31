@@ -17,6 +17,7 @@ import {
   Lock,
   Sparkles,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 interface RoleSelectionModalProps {
   business: BusinessInstance | null;
@@ -102,12 +103,14 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
             </div>
           </div>
 
-          <button
+          <Button
+            variant="ghost"
+            intent="role-select.close"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center justify-center cursor-pointer transition-colors"
+            className="w-8 h-8 p-0 rounded-xl text-zinc-400"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Modal Body: Instructions & Role Options */}
@@ -199,21 +202,18 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant={isOwner ? "primary" : "outline"}
+                    intent="role-select.enter"
                     onClick={e => {
                       e.stopPropagation();
                       handleSelectRole(role);
                     }}
-                    className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 flex-none shadow-2xs self-end sm:self-center ${
-                      isOwner
-                        ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 hover:bg-[#FF3F1A] hover:text-white dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                    }`}
+                    className="py-2 px-3.5 text-xs flex-none self-end sm:self-center"
                   >
                     <span>Entrar como {role.name.split("/")[0].trim()}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               );
             })}

@@ -38,6 +38,7 @@ import {
   Package,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Badge } from "@/elements";
 
 export const AnaliticaView: React.FC = () => {
   const { kpis, products, orders } = usePedidos();
@@ -349,10 +350,10 @@ export const AnaliticaView: React.FC = () => {
               </h4>
               <p className="text-xs text-gray-400">Diagnóstico en tiempo real para balanceo de brigada</p>
             </div>
-            <span className="text-xs font-bold text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/60 px-2.5 py-1 rounded-full border border-red-200 dark:border-red-800 flex items-center gap-1">
+            <Badge variant="danger" intent="analitica.station.alert" className="normal-case">
               <Flame className="w-3.5 h-3.5 text-red-500" />
               Horno saturado
-            </span>
+            </Badge>
           </div>
 
           <div className="space-y-3 pt-2">
@@ -411,9 +412,9 @@ export const AnaliticaView: React.FC = () => {
               </h4>
               <p className="text-xs text-gray-400">Picos clave a las 13:00 (Almuerzo) y 20:00 (Cena)</p>
             </div>
-            <span className="text-xs font-bold text-orange-600 bg-orange-50 dark:bg-orange-950 px-2.5 py-1 rounded-full border border-orange-200 dark:border-orange-800">
+            <Badge variant="accent" intent="analitica.peak" className="normal-case">
               Pico 38 comandas
-            </span>
+            </Badge>
           </div>
 
           <div className="h-64 w-full pt-2">
@@ -457,9 +458,9 @@ export const AnaliticaView: React.FC = () => {
               </h4>
               <p className="text-xs text-gray-400">Tasa de efectividad de comanda: 94.2%</p>
             </div>
-            <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+            <Badge variant="success" intent="analitica.friction" className="normal-case">
               5.8% Fricción
-            </span>
+            </Badge>
           </div>
 
           <div className="space-y-3 pt-2">

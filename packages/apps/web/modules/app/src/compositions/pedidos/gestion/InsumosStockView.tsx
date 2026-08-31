@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { SafeImage } from "../shared/SafeImage";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button, Field, Select, Badge } from "@/elements";
 
 export const InsumosStockView: React.FC = () => {
   const {
@@ -298,31 +299,37 @@ export const InsumosStockView: React.FC = () => {
 
           {/* Actions: Create & Export */}
           <div className="flex items-center gap-2 flex-wrap">
-            <button
+            <Button
+              variant="accent"
+              intent="insumos.create.open"
               onClick={handleOpenCreateModal}
-              className="px-3.5 py-1.5 bg-[#FF3F1A] hover:bg-[#e03413] text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 text-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Insumo</span>
-            </button>
+            </Button>
 
             <div className="w-[1px] h-6 bg-slate-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
-            <button
+            <Button
+              variant="outline"
+              intent="insumos.export.excel"
               onClick={() => handleExport("Excel")}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3 py-1.5 bg-white dark:bg-gray-800 text-xs"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Excel</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="outline"
+              intent="insumos.export.pdf"
               onClick={() => handleExport("PDF")}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3 py-1.5 bg-white dark:bg-gray-800 text-xs"
             >
               <Download className="w-3.5 h-3.5 text-red-600" />
               <span>PDF</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -350,17 +357,18 @@ export const InsumosStockView: React.FC = () => {
               </div>
 
               {/* Status Filter */}
-              <select
+              <Select
+                intent="insumos.filter.status"
                 value={selectedStatus}
                 onChange={e => setSelectedStatus(e.target.value)}
-                className="text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-700 dark:text-gray-300 focus:outline-none"
-              >
-                <option value="Todos">Todos los Estados</option>
-                <option value="OPTIMO">Óptimo</option>
-                <option value="BAJO">Bajo (Reorden)</option>
-                <option value="CRITICO">Crítico</option>
-                <option value="AGOTADO">Agotado (0)</option>
-              </select>
+                options={[
+                  { value: "Todos", label: "Todos los Estados" },
+                  { value: "OPTIMO", label: "Óptimo" },
+                  { value: "BAJO", label: "Bajo (Reorden)" },
+                  { value: "CRITICO", label: "Crítico" },
+                  { value: "AGOTADO", label: "Agotado (0)" },
+                ]}
+              />
             </div>
 
             {/* Category Pills */}
@@ -467,40 +475,44 @@ export const InsumosStockView: React.FC = () => {
 
                         <td className="p-3.5 text-center">
                           {isDepleted ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
+                            <Badge variant="danger" intent="insumos.status.depleted">
                               AGOTADO (0)
-                            </span>
+                            </Badge>
                           ) : isCritical ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
+                            <Badge variant="danger" intent="insumos.status.critical">
                               CRÍTICO
-                            </span>
+                            </Badge>
                           ) : isLow ? (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                            <Badge variant="warning" intent="insumos.status.low">
                               REORDEN
-                            </span>
+                            </Badge>
                           ) : (
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                            <Badge variant="success" intent="insumos.status.ok">
                               ÓPTIMO
-                            </span>
+                            </Badge>
                           )}
                         </td>
 
                         <td className="p-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
+                            <Button
+                              variant="ghost"
+                              intent="insumos.edit.open"
                               onClick={() => handleOpenEditModal(ing)}
-                              className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-800 cursor-pointer"
+                              className="p-1.5 rounded-lg text-gray-500"
                               title="Editar Insumo"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              intent="insumos.delete"
                               onClick={() => deleteIngredient(ing.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950 text-red-500 hover:text-red-700 cursor-pointer"
+                              className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
                               title="Eliminar Insumo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -594,177 +606,151 @@ export const InsumosStockView: React.FC = () => {
                   {editingIngredient ? "Editar Insumo" : "Nuevo Insumo / Materia Prima"}
                 </h3>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="insumos.modal.close"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-xl hover:bg-slate-200 dark:hover:bg-gray-700 text-gray-400 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 p-0 rounded-xl text-gray-400"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleSaveIngredient} className="p-5 space-y-4 overflow-y-auto flex-1">
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Código SKU
-                  </label>
-                  <input
-                    type="text"
-                    value={formCode}
-                    onChange={e => setFormCode(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] font-mono text-gray-900 dark:text-gray-100"
-                    required
-                  />
-                </div>
+                <Field
+                  label="Código SKU"
+                  labelStyle="bold"
+                  mono
+                  intent="insumos.form.code"
+                  type="text"
+                  value={formCode}
+                  onChange={e => setFormCode(e.target.value)}
+                  required
+                />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Categoría
-                  </label>
-                  <select
-                    value={formCategory}
-                    onChange={e => setFormCategory(e.target.value as any)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
-                  >
-                    {categories.filter(c => c !== "Todos").map(c => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  label="Categoría"
+                  intent="insumos.form.category"
+                  value={formCategory}
+                  onChange={e => setFormCategory(e.target.value as any)}
+                  options={categories.filter(c => c !== "Todos").map(c => ({ value: c, label: c }))}
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre del Insumo / Materia Prima
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Carne Vacuna Especial (Nalga/Bola de Lomo)"
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
+              <Field
+                label="Nombre del Insumo / Materia Prima"
+                labelStyle="bold"
+                intent="insumos.form.name"
+                type="text"
+                placeholder="Ej: Carne Vacuna Especial (Nalga/Bola de Lomo)"
+                value={formName}
+                onChange={e => setFormName(e.target.value)}
+                required
+              />
+
+              <div className="grid grid-cols-3 gap-3">
+                <Select
+                  label="Unidad"
+                  intent="insumos.form.unit"
+                  value={formUnit}
+                  onChange={e => setFormUnit(e.target.value as any)}
+                  options={[
+                    { value: "kg", label: "kg (Kilogramos)" },
+                    { value: "gr", label: "gr (Gramos)" },
+                    { value: "lt", label: "lt (Litros)" },
+                    { value: "ml", label: "ml (Mililitros)" },
+                    { value: "unid", label: "unid (Unidades)" },
+                    { value: "paquete", label: "paquete" },
+                  ]}
+                />
+
+                <Field
+                  label="Stock Actual"
+                  labelStyle="bold"
+                  mono
+                  intent="insumos.form.stock"
+                  type="number"
+                  step="0.01"
+                  value={formStock}
+                  onChange={e => setFormStock(parseFloat(e.target.value) || 0)}
+                  required
+                />
+
+                <Field
+                  label="Punto Reorden"
+                  labelStyle="bold"
+                  mono
+                  intent="insumos.form.threshold"
+                  type="number"
+                  step="0.01"
+                  value={formMinThreshold}
+                  onChange={e => setFormMinThreshold(parseFloat(e.target.value) || 0)}
                   required
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Unidad
-                  </label>
-                  <select
-                    value={formUnit}
-                    onChange={e => setFormUnit(e.target.value as any)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="kg">kg (Kilogramos)</option>
-                    <option value="gr">gr (Gramos)</option>
-                    <option value="lt">lt (Litros)</option>
-                    <option value="ml">ml (Mililitros)</option>
-                    <option value="unid">unid (Unidades)</option>
-                    <option value="paquete">paquete</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="Costo Unitario ($)"
+                  labelStyle="bold"
+                  mono
+                  intent="insumos.form.cost"
+                  type="number"
+                  value={formCost}
+                  onChange={e => setFormCost(parseFloat(e.target.value) || 0)}
+                />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Stock Actual
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formStock}
-                    onChange={e => setFormStock(parseFloat(e.target.value) || 0)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100 font-mono"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Punto Reorden
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formMinThreshold}
-                    onChange={e => setFormMinThreshold(parseFloat(e.target.value) || 0)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100 font-mono"
-                    required
-                  />
-                </div>
+                <Field
+                  label="Lote Proveedor"
+                  labelStyle="bold"
+                  mono
+                  intent="insumos.form.lot"
+                  type="text"
+                  placeholder="LOT-2026-X"
+                  value={formLot}
+                  onChange={e => setFormLot(e.target.value)}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Costo Unitario ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={formCost}
-                    onChange={e => setFormCost(parseFloat(e.target.value) || 0)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100 font-mono"
-                  />
-                </div>
+                <Field
+                  label="Fecha Vencimiento (FIFO)"
+                  labelStyle="bold"
+                  intent="insumos.form.expiry"
+                  type="date"
+                  value={formExpiry}
+                  onChange={e => setFormExpiry(e.target.value)}
+                />
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Lote Proveedor
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="LOT-2026-X"
-                    value={formLot}
-                    onChange={e => setFormLot(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha Vencimiento (FIFO)
-                  </label>
-                  <input
-                    type="date"
-                    value={formExpiry}
-                    onChange={e => setFormExpiry(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    URL Imagen (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://images.unsplash..."
-                    value={formImageUrl}
-                    onChange={e => setFormImageUrl(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
-                  />
-                </div>
+                <Field
+                  label="URL Imagen (Opcional)"
+                  labelStyle="bold"
+                  intent="insumos.form.image"
+                  type="text"
+                  placeholder="https://images.unsplash..."
+                  value={formImageUrl}
+                  onChange={e => setFormImageUrl(e.target.value)}
+                />
               </div>
 
               <div className="pt-3 border-t border-slate-100 dark:border-[#374151] flex items-center justify-end gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="insumos.modal.cancel"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2 text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#FF3F1A] hover:bg-[#e03413] shadow-sm cursor-pointer"
+                  variant="accent"
+                  intent="insumos.modal.submit"
+                  className="px-5 py-2 text-xs"
                 >
                   {editingIngredient ? "Guardar Cambios" : "Crear Insumo"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

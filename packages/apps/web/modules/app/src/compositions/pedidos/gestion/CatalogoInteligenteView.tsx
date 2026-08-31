@@ -3,6 +3,7 @@ import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
 import { ProductItem, ProductReview, ProductModifierGroup, ProductModifierOption } from "../types";
+import { Button, Card, Field, Select, Textarea, Badge } from "@/elements";
 import {
   Layers,
   Sparkles,
@@ -520,14 +521,15 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Footer Controls: Edit Product & Stock Switch */}
           <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              intent="catalog.product.edit.open"
               onClick={() => setEditingProduct({ ...product })}
-              className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="py-2 px-3 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Editar Extras</span>
-            </button>
+            </Button>
 
             {/* Availability Switch */}
             <button
@@ -592,7 +594,7 @@ export const CatalogoInteligenteView: React.FC<{
       {/* Top Intelligence Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stat 1: Total Platos */}
-        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+        <Card intent="catalog.stat.total" className="dark:bg-[#1E1F23] p-5 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Platos en Carta
           </span>
@@ -600,17 +602,17 @@ export const CatalogoInteligenteView: React.FC<{
             <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
               {products.length}
             </p>
-            <span className="text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full">
+            <Badge variant="neutral">
               {products.filter(p => p.isAvailable).length} activos
-            </span>
+            </Badge>
           </div>
           <p className="text-[11px] text-zinc-400">
             {products.filter(p => !p.isAvailable).length} pausados por falta de insumos
           </p>
-        </div>
+        </Card>
 
         {/* Stat 2: Calificación Global */}
-        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+        <Card intent="catalog.stat.rating" className="dark:bg-[#1E1F23] p-5 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Satisfacción de Clientes
           </span>
@@ -626,10 +628,10 @@ export const CatalogoInteligenteView: React.FC<{
             </span>
           </div>
           <p className="text-[11px] text-zinc-400">98.2% de calificaciones positivas</p>
-        </div>
+        </Card>
 
         {/* Stat 3: Más Vendido */}
-        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+        <Card intent="catalog.stat.top" className="dark:bg-[#1E1F23] p-5 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Plato Estrella #1
           </span>
@@ -642,10 +644,10 @@ export const CatalogoInteligenteView: React.FC<{
             </span>
           </div>
           <p className="text-[11px] text-zinc-400">38% del volumen de ventas</p>
-        </div>
+        </Card>
 
         {/* Stat 4: Categorías */}
-        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+        <Card intent="catalog.stat.categories" className="dark:bg-[#1E1F23] p-5 space-y-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Categorías Activas
           </span>
@@ -653,12 +655,10 @@ export const CatalogoInteligenteView: React.FC<{
             <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
               {allAvailableCategories.length - 1}
             </p>
-            <span className="text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full">
-              Estructurado
-            </span>
+            <Badge variant="neutral">Estructurado</Badge>
           </div>
           <p className="text-[11px] text-zinc-400">Agrupado por secciones de menú</p>
-        </div>
+        </Card>
       </div>
 
       {/* SUBTAB 1: Catálogo de Platos */}
@@ -690,15 +690,16 @@ export const CatalogoInteligenteView: React.FC<{
                 );
               })}
 
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                intent="catalog.category.new"
                 onClick={() => setIsAddingCategory(true)}
-                className="px-3 py-2 rounded-2xl text-xs font-bold border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-400 transition-colors flex items-center gap-1 flex-none cursor-pointer"
+                className="flex-none border-dashed rounded-2xl"
                 title="Añadir nueva categoría"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nueva Categoría</span>
-              </button>
+              </Button>
             </div>
 
             {/* Right Controls: View Layout, Sort & New Product Button */}
@@ -738,26 +739,27 @@ export const CatalogoInteligenteView: React.FC<{
                 <span className="text-zinc-400 hidden sm:flex items-center gap-1">
                   <SlidersHorizontal className="w-3.5 h-3.5" /> Ordenar:
                 </span>
-                <select
+                <Select
+                  intent="catalog.sort"
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value as any)}
-                  className="border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-2 text-xs font-bold cursor-pointer focus:outline-none"
-                >
-                  <option value="populares">Más Pedidos (#1)</option>
-                  <option value="rating">Mejor Calificados</option>
-                  <option value="precio_desc">Mayor Precio</option>
-                  <option value="precio_asc">Menor Precio</option>
-                </select>
+                  options={[
+                    { value: "populares", label: "Más Pedidos (#1)" },
+                    { value: "rating", label: "Mejor Calificados" },
+                    { value: "precio_desc", label: "Mayor Precio" },
+                    { value: "precio_asc", label: "Menor Precio" },
+                  ]}
+                />
               </div>
 
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                intent="catalog.product.new"
                 onClick={() => setIsCreatingProduct(true)}
-                className="py-2 px-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nuevo Plato</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -817,16 +819,17 @@ export const CatalogoInteligenteView: React.FC<{
                       <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
                         No hay platos en la categoría "{selectedCategory}"
                       </h4>
-                      <button
-                        type="button"
+                      <Button
+                        variant="accent"
+                        intent="catalog.product.new.empty"
                         onClick={() => {
                           setNewProdCategory(selectedCategory === "Todos" ? "Empanadas" : selectedCategory);
                           setIsCreatingProduct(true);
                         }}
-                        className="py-2 px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
+                        className="mx-auto"
                       >
                         Crear primer plato en {selectedCategory}
-                      </button>
+                      </Button>
                     </div>
                   );
                 }
@@ -864,9 +867,10 @@ export const CatalogoInteligenteView: React.FC<{
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredReviews.map(rev => (
-              <div
+              <Card
                 key={rev.id}
-                className="p-5 rounded-3xl bg-white dark:bg-[#1E1F23] border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-3"
+                intent="catalog.review.card"
+                className="p-5 dark:bg-[#1E1F23] space-y-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -889,9 +893,9 @@ export const CatalogoInteligenteView: React.FC<{
                   </div>
 
                   {rev.verifiedOrder && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                    <Badge variant="success" intent="catalog.review.verified">
                       <ShieldCheck className="w-3 h-3" /> Verificado
-                    </span>
+                    </Badge>
                   )}
                 </div>
 
@@ -914,21 +918,22 @@ export const CatalogoInteligenteView: React.FC<{
                       onChange={e => setReplyText({ ...replyText, [rev.id]: e.target.value })}
                       className="flex-1 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs"
                     />
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      intent="catalog.review.reply.send"
                       onClick={() => {
                         if (replyText[rev.id]?.trim()) {
                           setSubmittedReplies({ ...submittedReplies, [rev.id]: replyText[rev.id] });
                           setReplyText({ ...replyText, [rev.id]: "" });
                         }
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold"
+                      className="px-3 py-1.5"
                     >
                       Enviar
-                    </button>
+                    </Button>
                   </div>
                 )}
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -1130,91 +1135,72 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* General Info Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Nombre del Plato:
-                </label>
-                <input
-                  type="text"
-                  value={editingProduct.name}
-                  onChange={e =>
-                    setEditingProduct({ ...editingProduct, name: e.target.value })
-                  }
-                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Field
+                label="Nombre del Plato:"
+                labelStyle="bold"
+                intent="catalog.product.edit.name"
+                type="text"
+                value={editingProduct.name}
+                onChange={e =>
+                  setEditingProduct({ ...editingProduct, name: e.target.value })
+                }
+              />
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Categoría del Menú:
-                </label>
-                <select
-                  value={editingProduct.category}
-                  onChange={e =>
-                    setEditingProduct({ ...editingProduct, category: e.target.value })
-                  }
-                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none cursor-pointer"
-                >
-                  {allAvailableCategories
-                    .filter(c => c !== "Todos")
-                    .map(c => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <Select
+                label="Categoría del Menú:"
+                intent="catalog.product.edit.category"
+                value={editingProduct.category}
+                onChange={e =>
+                  setEditingProduct({ ...editingProduct, category: e.target.value })
+                }
+                options={allAvailableCategories
+                  .filter(c => c !== "Todos")
+                  .map(c => ({ value: c, label: c }))}
+              />
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Precio Base ($ COP):
-                </label>
-                <input
-                  type="number"
-                  value={editingProduct.price}
-                  onChange={e =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      price: Number(e.target.value),
-                    })
-                  }
-                  className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Field
+                label="Precio Base ($ COP):"
+                labelStyle="bold"
+                mono
+                intent="catalog.product.edit.price"
+                type="number"
+                value={editingProduct.price}
+                onChange={e =>
+                  setEditingProduct({
+                    ...editingProduct,
+                    price: Number(e.target.value),
+                  })
+                }
+              />
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Tiempo de Cocina / KDS (min):
-                </label>
-                <input
-                  type="number"
-                  value={editingProduct.prepTimeMinutes}
-                  onChange={e =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      prepTimeMinutes: Number(e.target.value),
-                    })
-                  }
-                  className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Field
+                label="Tiempo de Cocina / KDS (min):"
+                labelStyle="bold"
+                mono
+                intent="catalog.product.edit.prepTime"
+                type="number"
+                value={editingProduct.prepTimeMinutes}
+                onChange={e =>
+                  setEditingProduct({
+                    ...editingProduct,
+                    prepTimeMinutes: Number(e.target.value),
+                  })
+                }
+              />
 
-              <div className="sm:col-span-2 space-y-1.5">
-                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                  Descripción del Plato:
-                </label>
-                <textarea
-                  rows={2}
-                  value={editingProduct.description}
-                  onChange={e =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Textarea
+                label="Descripción del Plato:"
+                intent="catalog.product.edit.description"
+                className="sm:col-span-2"
+                rows={2}
+                value={editingProduct.description}
+                onChange={e =>
+                  setEditingProduct({
+                    ...editingProduct,
+                    description: e.target.value,
+                  })
+                }
+              />
             </div>
 
             {/* Modifiers & Extras Studio Section */}
@@ -1388,21 +1374,22 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-200/80 dark:border-zinc-800">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.product.edit.cancel"
                 onClick={() => setEditingProduct(null)}
-                className="py-2.5 px-4 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
               >
                 Cancelar
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="accent"
+                intent="catalog.product.edit.save"
                 onClick={handleSaveProductEdit}
-                className="py-2.5 px-6 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition-all active:scale-98"
+                className="px-6"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Cambios</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1430,35 +1417,33 @@ export const CatalogoInteligenteView: React.FC<{
               </button>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                Nombre de la Categoría:
-              </label>
-              <input
-                type="text"
-                required
-                autoFocus
-                placeholder="Ej. Pizzas Artesanales, Postres..."
-                value={newCategoryName}
-                onChange={e => setNewCategoryName(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-              />
-            </div>
+            <Field
+              label="Nombre de la Categoría:"
+              labelStyle="bold"
+              intent="catalog.category.create.name"
+              type="text"
+              required
+              autoFocus
+              placeholder="Ej. Pizzas Artesanales, Postres..."
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+            />
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.category.create.cancel"
                 onClick={() => setIsAddingCategory(false)}
-                className="py-2 px-3 text-xs font-bold text-zinc-500"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="py-2 px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
+                variant="accent"
+                intent="catalog.category.create.submit"
               >
                 Crear Categoría
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -1492,82 +1477,66 @@ export const CatalogoInteligenteView: React.FC<{
             </div>
 
             <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  Nombre del Plato:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Hamburguesa Doble Cheddar con Bacon"
-                  value={newProdName}
-                  onChange={e => setNewProdName(e.target.value)}
-                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                />
-              </div>
+              <Field
+                label="Nombre del Plato:"
+                labelStyle="bold"
+                intent="catalog.product.create.name"
+                type="text"
+                required
+                placeholder="Ej. Hamburguesa Doble Cheddar con Bacon"
+                value={newProdName}
+                onChange={e => setNewProdName(e.target.value)}
+              />
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    Categoría:
-                  </label>
-                  <select
-                    value={newProdCategory}
-                    onChange={e => setNewProdCategory(e.target.value)}
-                    className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white"
-                  >
-                    {allAvailableCategories
-                      .filter(c => c !== "Todos")
-                      .map(c => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                  </select>
-                </div>
+                <Select
+                  label="Categoría:"
+                  intent="catalog.product.create.category"
+                  value={newProdCategory}
+                  onChange={e => setNewProdCategory(e.target.value)}
+                  options={allAvailableCategories
+                    .filter(c => c !== "Todos")
+                    .map(c => ({ value: c, label: c }))}
+                />
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                    Precio ($ COP):
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={newProdPrice}
-                    onChange={e => setNewProdPrice(Number(e.target.value))}
-                    className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                  Descripción:
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Describe los ingredientes principales para el menú digital..."
-                  value={newProdDesc}
-                  onChange={e => setNewProdDesc(e.target.value)}
-                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
+                <Field
+                  label="Precio ($ COP):"
+                  labelStyle="bold"
+                  mono
+                  intent="catalog.product.create.price"
+                  type="number"
+                  required
+                  value={newProdPrice}
+                  onChange={e => setNewProdPrice(Number(e.target.value))}
                 />
               </div>
+
+              <Textarea
+                label="Descripción:"
+                intent="catalog.product.create.description"
+                rows={2}
+                placeholder="Describe los ingredientes principales para el menú digital..."
+                value={newProdDesc}
+                onChange={e => setNewProdDesc(e.target.value)}
+              />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="catalog.product.create.cancel"
                 onClick={() => setIsCreatingProduct(false)}
-                className="py-2.5 px-4 text-xs font-bold text-zinc-500"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="py-2.5 px-6 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
+                variant="accent"
+                intent="catalog.product.create.submit"
+                className="px-6"
               >
                 Crear Plato
-              </button>
+              </Button>
             </div>
           </form>
         </div>

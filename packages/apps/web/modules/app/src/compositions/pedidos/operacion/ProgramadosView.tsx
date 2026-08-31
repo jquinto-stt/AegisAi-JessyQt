@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { ProgrammedOrder, OperacionTab } from "../types";
+import { OperacionTab } from "../types";
 import {
   Calendar,
   Clock,
@@ -15,6 +15,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button } from "@/elements";
 
 export const ProgramadosView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
@@ -53,13 +54,15 @@ export const ProgramadosView: React.FC<{
 
       {/* Navigation Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#2C2D31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#374151] shadow-xs">
-        <button
+        <Button
+          variant="outline"
+          intent="programados.back"
           onClick={() => onNavigateOpTab?.("en-vivo")}
-          className="py-2 px-3.5 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-gray-400 text-xs font-black flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+          className="py-2 px-3.5 bg-slate-50 dark:bg-gray-800 text-xs"
         >
           <ArrowLeft className="w-4 h-4 text-[#FF3F1A]" />
           <span>Volver a Pedidos</span>
-        </button>
+        </Button>
 
         {/* View Switcher */}
         <div className="flex bg-slate-100 dark:bg-gray-800 rounded-xl p-1 border border-slate-200 dark:border-gray-700 shadow-xs">
@@ -237,22 +240,24 @@ export const ProgramadosView: React.FC<{
 
                     {/* Wake up action button */}
                     <div className="flex items-center gap-2 pt-1">
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
+                        intent="programados.order.ticket"
                         onClick={() => setSelectedOrderId(item.id)}
-                        className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+                        className="py-2.5 px-3 text-xs"
                       >
                         Ticket
-                      </button>
+                      </Button>
 
-                      <button
-                        type="button"
+                      <Button
+                        variant="accent"
+                        intent="programados.order.inject"
                         onClick={() => handleInjectNow(item.id, item.customerName)}
-                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="flex-1 py-2.5 px-3 text-xs"
                       >
                         <Zap className="w-4 h-4 text-white" />
                         <span>Despertar e Inyectar a Cocina</span>
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))
@@ -417,14 +422,15 @@ export const ProgramadosView: React.FC<{
                       ${item.total.toLocaleString("es-CO")}
                     </span>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="accent"
+                      intent="programados.timeline.inject"
                       onClick={() => handleInjectNow(item.id, item.customerName)}
-                      className="py-2 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+                      className="py-2 px-3 text-xs"
                     >
                       <Zap className="w-3.5 h-3.5 text-white" />
                       <span>Despertar Pedido</span>
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>

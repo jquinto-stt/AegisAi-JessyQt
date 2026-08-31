@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { GestionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button, Badge } from "@/elements";
 
 export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTab) => void }> = ({
   onNavigateGestion,
@@ -508,13 +509,15 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
               </div>
             </div>
 
-            <button
+            <Button
+              variant="outline"
+              intent="resumen.incidencias.open"
               onClick={() => setIsIncidenciasOpen(true)}
-              className="py-2 px-3.5 rounded-2xl bg-red-50 hover:bg-red-100/90 dark:bg-red-950/60 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 font-extrabold text-xs flex items-center gap-2 transition-colors cursor-pointer border border-red-200 dark:border-red-800 shadow-xs"
+              className="py-2 px-3.5 rounded-2xl bg-red-50 hover:bg-red-100/90 dark:bg-red-950/60 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 text-xs"
             >
               <span>Abrir Panel de Incidencias</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-3">
@@ -537,15 +540,13 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                          inc.severity === "Alta"
-                            ? "bg-red-600 text-white"
-                            : "bg-amber-500 text-white"
-                        }`}
+                      <Badge
+                        variant={inc.severity === "Alta" ? "danger" : "warning"}
+                        intent="resumen.incidencia.severity"
+                        className="normal-case"
                       >
                         {inc.severity}
-                      </span>
+                      </Badge>
                       <h4 className="font-extrabold text-xs text-gray-900 dark:text-gray-100 group-hover:text-[#FF3F1A] transition-colors">
                         {inc.title}
                       </h4>
@@ -558,15 +559,17 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion: (tab: GestionTa
                       {inc.timestamp}
                     </span>
                     {inc.orderId ? (
-                      <button
+                      <Button
+                        variant="accent"
+                        intent="resumen.incidencia.view-order"
                         onClick={e => {
                           e.stopPropagation();
                           setSelectedOrderId(inc.orderId!);
                         }}
-                        className="py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white font-black text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="py-1.5 px-3 rounded-xl text-[11px]"
                       >
                         Ver Comanda <ArrowRight className="w-3 h-3" />
-                      </button>
+                      </Button>
                     ) : (
                       <button
                         onClick={e => {

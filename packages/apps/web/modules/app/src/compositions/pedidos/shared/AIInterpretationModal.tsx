@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { Sparkles, X, Check, Edit2, AlertTriangle, Plus, Trash2, ArrowRight } from "lucide-react";
 import { OrderItem } from "../types";
+import { Button } from "@/elements";
 
 export const AIInterpretationModal: React.FC = () => {
   const { aiModalOrder, setAiModalOrder, approveAIOrder, products } = usePedidos();
@@ -52,12 +53,14 @@ export const AIInterpretationModal: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            intent="ai-modal.close"
             onClick={() => setAiModalOrder(null)}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            className="w-8 h-8 p-0 text-gray-400"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Original Message Quote */}
@@ -152,18 +155,22 @@ export const AIInterpretationModal: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-2">
-          <button
+          <Button
+            variant="outline"
+            intent="ai-modal.cancel"
             onClick={() => setAiModalOrder(null)}
-            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+            className="flex-1 py-2.5 px-4 text-xs"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="accent"
+            intent="ai-modal.approve"
             onClick={handleApprove}
-            className="flex-2 py-2.5 px-4 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+            className="flex-2 py-2.5 px-4 text-xs"
           >
             <Check className="w-4 h-4" /> Aprobar e Ingresar Pedido
-          </button>
+          </Button>
         </div>
       </div>
     </div>

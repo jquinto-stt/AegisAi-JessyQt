@@ -24,6 +24,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button, Field, Textarea, Badge } from "@/elements";
 
 export const AutomatizacionesView: React.FC = () => {
   const { automations, toggleAutomationRule, recurrences, toggleRecurrence, createManualOrder } =
@@ -237,9 +238,9 @@ export const AutomatizacionesView: React.FC = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{emitSuccessMsg}</span>
           </div>
-          <button onClick={() => setEmitSuccessMsg(null)} className="cursor-pointer">
+          <Button variant="ghost" intent="automatizaciones.notify.close" onClick={() => setEmitSuccessMsg(null)} className="w-6 h-6 p-0">
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -261,12 +262,14 @@ export const AutomatizacionesView: React.FC = () => {
               </div>
             </div>
 
-            <button
+            <Button
+              variant="accent"
+              intent="automatizaciones.rule.new"
               onClick={() => setShowNewRuleModal(true)}
-              className="py-2.5 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white font-black text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+              className="py-2.5 px-4 rounded-2xl text-xs"
             >
               <Plus className="w-4 h-4" /> Nueva Regla
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -457,12 +460,14 @@ export const AutomatizacionesView: React.FC = () => {
                     <strong className="text-gray-900 dark:text-gray-100 font-mono">{rec.nextExecution}</strong>
                   </div>
 
-                  <button
+                  <Button
+                    variant="primary"
+                    intent="automatizaciones.recurrence.emit"
                     onClick={() => handleEmitRecurrenceNow(rec)}
-                    className="py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-black dark:bg-gray-700 text-white font-black text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+                    className="py-2 px-3.5 text-xs"
                   >
                     <Play className="w-3.5 h-3.5 text-emerald-400" /> Emitir Ahora
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
@@ -500,17 +505,19 @@ export const AutomatizacionesView: React.FC = () => {
                     <span className="font-extrabold text-gray-900 dark:text-gray-100">
                       {log.ruleName}
                     </span>
-                    <span
-                      className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    <Badge
+                      variant={
                         log.status === "Ejecutado"
-                          ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
+                          ? "success"
                           : log.status === "Alerta Emitida"
-                          ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
-                          : "bg-gray-100 dark:bg-gray-800 text-gray-600"
-                      }`}
+                          ? "danger"
+                          : "neutral"
+                      }
+                      intent="automatizaciones.log.status"
+                      className="normal-case"
                     >
                       {log.status}
-                    </span>
+                    </Badge>
                   </div>
                   <p className="text-gray-500 dark:text-gray-400">{log.detail}</p>
                 </div>
@@ -540,41 +547,36 @@ export const AutomatizacionesView: React.FC = () => {
                   <p className="text-xs text-gray-400">Define disparadores y condiciones de seguridad</p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="automatizaciones.rule.close"
                 onClick={() => setShowNewRuleModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="w-8 h-8 p-0 text-gray-400"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleCreateRule} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                  Nombre de la Regla *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Auto-despacho para clientes VIP"
-                  value={newRuleName}
-                  onChange={e => setNewRuleName(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                />
-              </div>
+              <Field
+                label="Nombre de la Regla *"
+                labelStyle="bold"
+                intent="automatizaciones.rule.name"
+                type="text"
+                required
+                placeholder="Ej. Auto-despacho para clientes VIP"
+                value={newRuleName}
+                onChange={e => setNewRuleName(e.target.value)}
+              />
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                  Descripción Operativa
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Explica qué acción se ejecuta cuando se cumplan las condiciones..."
-                  value={newRuleDesc}
-                  onChange={e => setNewRuleDesc(e.target.value)}
-                  className="w-full p-2.5 text-xs bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-[#374151] rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
-                />
-              </div>
+              <Textarea
+                label="Descripción Operativa"
+                intent="automatizaciones.rule.description"
+                rows={2}
+                placeholder="Explica qué acción se ejecuta cuando se cumplan las condiciones..."
+                value={newRuleDesc}
+                onChange={e => setNewRuleDesc(e.target.value)}
+              />
 
               <div className="space-y-2 pt-1">
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
@@ -597,19 +599,22 @@ export const AutomatizacionesView: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-[#374151]">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  intent="automatizaciones.rule.cancel"
                   onClick={() => setShowNewRuleModal(false)}
-                  className="py-2 px-4 rounded-xl border border-slate-200 dark:border-gray-700 text-xs font-extrabold text-gray-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800 cursor-pointer"
+                  className="py-2 px-4 text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="py-2 px-4 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer"
+                  variant="accent"
+                  intent="automatizaciones.rule.submit"
+                  className="py-2 px-4 text-xs"
                 >
                   Guardar y Activar Regla
-                </button>
+                </Button>
               </div>
             </form>
           </div>

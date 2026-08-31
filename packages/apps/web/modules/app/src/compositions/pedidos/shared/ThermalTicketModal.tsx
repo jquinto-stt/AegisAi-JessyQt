@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { Printer, X, Check, Copy, Sliders, QrCode } from "lucide-react";
+import { Button } from "@/elements";
 
 export const ThermalTicketModal: React.FC = () => {
   const { printTicketOrder, setPrintTicketOrder } = usePedidos();
@@ -99,12 +100,14 @@ export const ThermalTicketModal: React.FC = () => {
               </button>
             </div>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="ticket.close"
               onClick={() => setPrintTicketOrder(null)}
-              className="w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 text-gray-400 flex items-center justify-center"
+              className="w-7 h-7 p-0 rounded-lg text-gray-400"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -218,23 +221,25 @@ export const ThermalTicketModal: React.FC = () => {
 
         {/* Footer Actions Bar (hidden in print) */}
         <div className="p-4 border-t border-gray-100 dark:border-[#374151] bg-slate-50 dark:bg-gray-800/80 flex items-center justify-between gap-3 flex-none print:hidden">
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            intent="ticket.copy"
             onClick={handleCopyText}
-            className="py-2.5 px-3.5 rounded-xl border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-gray-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="py-2.5 px-3.5 text-xs"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             <span>{copied ? "Copiado al portapapeles" : "Copiar Texto"}</span>
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="ticket.cancel"
               onClick={() => setPrintTicketOrder(null)}
-              className="py-2.5 px-4 rounded-xl text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 text-xs font-bold cursor-pointer"
+              className="py-2.5 px-4 text-xs"
             >
               Cerrar
-            </button>
+            </Button>
             <button
               type="button"
               onClick={handlePrint}

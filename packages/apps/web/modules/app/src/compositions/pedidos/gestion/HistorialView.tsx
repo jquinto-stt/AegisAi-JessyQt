@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button, Select } from "@/elements";
 
 export const HistorialView: React.FC = () => {
   const { orders, setSelectedOrderId, shiftInfo } = usePedidos();
@@ -134,39 +135,43 @@ export const HistorialView: React.FC = () => {
             />
           </div>
 
-          <select
+          <Select
+            intent="historial.filter.status"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value as any)}
-            className="border border-slate-200 dark:border-[#374151] bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer"
-          >
-            <option value="TODOS">Todos los Estados</option>
-            <option value="NUEVO">Nuevos</option>
-            <option value="CONFIRMADO">Confirmados</option>
-            <option value="EN_PREPARACION">En Preparación</option>
-            <option value="LISTO">Listos</option>
-            <option value="FINALIZADO">Finalizados</option>
-            <option value="CANCELADO">Cancelados</option>
-            <option value="RECHAZADO">Rechazados</option>
-          </select>
+            options={[
+              { value: "TODOS", label: "Todos los Estados" },
+              { value: "NUEVO", label: "Nuevos" },
+              { value: "CONFIRMADO", label: "Confirmados" },
+              { value: "EN_PREPARACION", label: "En Preparación" },
+              { value: "LISTO", label: "Listos" },
+              { value: "FINALIZADO", label: "Finalizados" },
+              { value: "CANCELADO", label: "Cancelados" },
+              { value: "RECHAZADO", label: "Rechazados" },
+            ]}
+          />
 
-          <select
+          <Select
+            intent="historial.filter.channel"
             value={channelFilter}
             onChange={e => setChannelFilter(e.target.value as any)}
-            className="border border-slate-200 dark:border-[#374151] bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer"
-          >
-            <option value="TODOS">Todos los Canales</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="web">Web Necto</option>
-            <option value="presencial">Mostrador</option>
-            <option value="telefono">Teléfono</option>
-          </select>
+            options={[
+              { value: "TODOS", label: "Todos los Canales" },
+              { value: "whatsapp", label: "WhatsApp" },
+              { value: "web", label: "Web Necto" },
+              { value: "presencial", label: "Mostrador" },
+              { value: "telefono", label: "Teléfono" },
+            ]}
+          />
 
-          <button
+          <Button
+            variant="accent"
+            intent="historial.closing.open"
             onClick={() => setShowClosingModal(true)}
-            className="py-2 px-3.5 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer active:scale-95"
+            className="py-2 px-3.5 text-xs"
           >
             <Receipt className="w-3.5 h-3.5" /> Cierre de Turno / Caja
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -213,12 +218,14 @@ export const HistorialView: React.FC = () => {
                     <OrderStatusBadge status={order.status} size="sm" />
                   </td>
                   <td className="p-4 text-right">
-                    <button
+                    <Button
+                      variant="outline"
+                      intent="historial.order.detail"
                       onClick={() => setSelectedOrderId(order.id)}
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg text-xs"
                     >
                       <Eye className="w-3.5 h-3.5 text-gray-400" /> Detalle
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -250,12 +257,14 @@ export const HistorialView: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="historial.closing.close"
                 onClick={() => setShowClosingModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                className="w-8 h-8 p-0 text-gray-400"
               >
                 <X className="w-5 h-5" />
-              </button>
+              </Button>
             </div>
 
             {/* Date Selection for Closure */}
@@ -361,13 +370,14 @@ export const HistorialView: React.FC = () => {
 
             {/* Modal Actions */}
             <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                intent="historial.closing.cancel"
                 onClick={() => setShowClosingModal(false)}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+                className="flex-1 py-2.5 px-4 text-xs"
               >
                 Cerrar
-              </button>
+              </Button>
               <button
                 type="button"
                 onClick={handleExportCSV}

@@ -102,7 +102,7 @@ export const UrgencyBadge: React.FC<{ urgency: UrgencyLevel; elapsedMin?: number
     );
   }
 
-  if (urgency === "URGENTE") {
+  if (urgency === "PROXIMO") {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/60">
         <Clock className="w-3 h-3 text-amber-500" />
@@ -148,7 +148,7 @@ export const ChannelBadge: React.FC<{ channel: OrderChannel }> = ({ channel }) =
   );
 };
 
-export const AIBadge: React.FC<{ confidence: AIConfidence; onClick?: (e: any) => void }> = ({
+export const AIBadge: React.FC<{ confidence?: AIConfidence; onClick?: (e: any) => void }> = ({
   confidence,
   onClick,
 }) => {
@@ -160,7 +160,7 @@ export const AIBadge: React.FC<{ confidence: AIConfidence; onClick?: (e: any) =>
       title="Procesado por Asistente IA"
     >
       <Bot className="w-3 h-3 text-[#FF3F1A]" />
-      <span>IA {confidence}%</span>
+      <span>IA {confidence ? `· ${confidence}` : ""}</span>
     </button>
   );
 };

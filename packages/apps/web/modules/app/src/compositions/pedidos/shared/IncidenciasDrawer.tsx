@@ -1,6 +1,7 @@
 import React from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { X, AlertTriangle, CheckCircle2, ShieldAlert, ArrowRight, Clock } from "lucide-react";
+import { Button, Badge } from "@/elements";
 
 export const IncidenciasDrawer: React.FC = () => {
   const { incidencias, isIncidenciasOpen, setIsIncidenciasOpen, resolveIncidencia, setSelectedOrderId } =
@@ -36,12 +37,14 @@ export const IncidenciasDrawer: React.FC = () => {
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            intent="incidencias.close"
             onClick={() => setIsIncidenciasOpen(false)}
-            className="w-8 h-8 rounded-xl hover:bg-zinc-200/70 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center justify-center cursor-pointer transition-colors"
+            className="w-8 h-8 p-0 rounded-xl text-zinc-400"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -67,15 +70,13 @@ export const IncidenciasDrawer: React.FC = () => {
                   className="bg-white dark:bg-[#18181B] border border-rose-500/30 bg-rose-500/[0.02] dark:bg-rose-500/[0.04] rounded-3xl p-4 shadow-2xs space-y-2.5 transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
-                        inc.severity === "Alta"
-                          ? "bg-rose-100/70 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900"
-                          : "bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900"
-                      }`}
+                    <Badge
+                      variant={inc.severity === "Alta" ? "danger" : "warning"}
+                      intent="incidencias.severity"
+                      className="normal-case"
                     >
                       Severidad {inc.severity}
-                    </span>
+                    </Badge>
                     <span className="font-mono text-[10px] text-zinc-400">{inc.timestamp}</span>
                   </div>
 
@@ -101,12 +102,14 @@ export const IncidenciasDrawer: React.FC = () => {
                       <div />
                     )}
 
-                    <button
+                    <Button
+                      variant="primary"
+                      intent="incidencias.resolve"
                       onClick={() => resolveIncidencia(inc.id)}
-                      className="px-3 py-1.5 rounded-xl bg-zinc-950 hover:bg-[#FF3F1A] text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                      className="px-3 py-1.5 text-xs"
                     >
                       Marcar Resuelta
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))

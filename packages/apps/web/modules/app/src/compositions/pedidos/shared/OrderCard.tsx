@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { usePedidos } from "../context/PedidosContext";
+import { Button } from "@/elements";
 
 export const OrderCard: React.FC<{
   order: Pedido;
@@ -151,70 +152,75 @@ export const OrderCard: React.FC<{
       <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
         {order.status === "NUEVO" && (
           <div className="flex items-center gap-1.5 w-full">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              intent="order-card.reject"
               onClick={e => {
                 e.stopPropagation();
                 setRejectModalOrder(order);
               }}
-              className="py-1.5 px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-red-300 dark:hover:border-red-900 text-zinc-400 hover:text-red-600 transition-colors text-xs font-mono cursor-pointer"
+              className="py-1.5 px-2.5 rounded-lg hover:border-red-300 dark:hover:border-red-900 text-zinc-400 hover:text-red-600 text-xs font-mono"
             >
               Rechazar
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              intent="order-card.confirm"
               onClick={e => {
                 e.stopPropagation();
                 confirmOrder(order.id);
               }}
-              className="flex-1 py-1.5 px-3 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer active:scale-98 shadow-2xs"
+              className="flex-1 py-1.5 px-3 rounded-lg text-xs"
             >
               <span>Confirmar</span>
               <ArrowRight className="w-3 h-3" />
-            </button>
+            </Button>
           </div>
         )}
 
         {order.status === "CONFIRMADO" && (
-          <button
-            type="button"
+          <Button
+            variant="accent"
+            intent="order-card.send-kitchen"
             onClick={e => {
               e.stopPropagation();
               sendToKitchen(order.id);
             }}
-            className="w-full py-1.5 px-3 rounded-lg bg-[#FF3F1A] hover:bg-[#e03413] text-white transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+            className="w-full py-1.5 px-3 rounded-lg text-xs"
           >
             <ChefHat className="w-3.5 h-3.5" />
             <span>Mandar a Cocina</span>
-          </button>
+          </Button>
         )}
 
         {order.status === "EN_PREPARACION" && (
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            intent="order-card.mark-ready"
             onClick={e => {
               e.stopPropagation();
               markOrderReady(order.id);
             }}
-            className="w-full py-1.5 px-3 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+            className="w-full py-1.5 px-3 rounded-lg text-xs"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Marcar Listo</span>
-          </button>
+          </Button>
         )}
 
         {order.status === "LISTO" && (
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            intent="order-card.deliver"
             onClick={e => {
               e.stopPropagation();
               deliverOrder(order.id);
             }}
-            className="w-full py-1.5 px-3 rounded-lg bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-emerald-600 dark:hover:bg-emerald-600 dark:hover:text-white transition-all text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 shadow-2xs"
+            className="w-full py-1.5 px-3 rounded-lg text-xs hover:bg-emerald-600 dark:hover:bg-emerald-600 dark:hover:text-white"
           >
             <Truck className="w-3.5 h-3.5" />
             <span>Entregar Pedido</span>
-          </button>
+          </Button>
         )}
 
         {order.status === "FINALIZADO" && (

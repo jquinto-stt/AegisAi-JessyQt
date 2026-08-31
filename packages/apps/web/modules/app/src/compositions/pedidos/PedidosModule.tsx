@@ -42,6 +42,7 @@ import {
   VolumeX,
   Camera,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 
 const PedidosContent: React.FC<{
@@ -216,13 +217,14 @@ const PedidosContent: React.FC<{
               {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
 
-            <button
+            <Button
+              variant="outline"
+              intent="pedidos.incidencias.open"
               onClick={() => setIsIncidenciasOpen(true)}
-
-              className={`py-2 px-3.5 rounded-xl border text-xs font-extrabold flex items-center gap-2 transition-all cursor-pointer shadow-xs flex-none ${
+              className={`py-2 px-3.5 text-xs flex-none ${
                 activeIncCount > 0
                   ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
-                  : "border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-slate-100"
+                  : "bg-white dark:bg-gray-800"
               }`}
             >
               <ShieldAlert className={`w-4 h-4 ${activeIncCount > 0 ? "text-[#FF3F1A]" : "text-gray-400"}`} />
@@ -232,7 +234,7 @@ const PedidosContent: React.FC<{
                   {activeIncCount}
                 </span>
               )}
-            </button>
+            </Button>
           </div>
         </div>
 

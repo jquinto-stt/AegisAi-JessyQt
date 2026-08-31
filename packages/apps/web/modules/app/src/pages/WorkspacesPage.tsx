@@ -31,6 +31,7 @@ import { NectoLogo } from "../compositions/shared/NectoLogo";
 import { ThemeToggle } from "../compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "../compositions/shared/GlobalSearchButton";
 import { GlobalFranchiseOverview } from "../compositions/workspace/GlobalFranchiseOverview";
+import { Button } from "@/elements";
 
 
 export default function WorkspacesPage() {
@@ -108,13 +109,15 @@ export default function WorkspacesPage() {
           <GlobalSearchButton />
           <ThemeToggle />
 
-          <button
+          <Button
+            variant="ghost"
+            intent="workspaces.account.open"
             onClick={() => setIsAccountSettingsOpen(true)}
-            className="text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1.5 cursor-pointer py-2 px-3 rounded-2xl border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800 hover:bg-white dark:hover:bg-zinc-900"
+            className="text-xs font-mono py-2 px-3 rounded-2xl"
           >
             <User className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Cuenta</span>
-          </button>
+          </Button>
         </div>
 
       </header>
@@ -240,27 +243,29 @@ export default function WorkspacesPage() {
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-2 sm:self-center flex-none pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800">
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    intent="workspaces.business.settings"
                     onClick={e => handleOpenSettings(e, biz)}
-                    className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                    className="py-2 px-3 text-xs"
                     title={`Configuración y eliminación de ${biz.name}`}
                   >
                     <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:rotate-45 transition-transform" />
                     <span>Ajustes</span>
-                  </button>
+                  </Button>
 
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    intent="workspaces.business.enter"
                     onClick={e => {
                       e.stopPropagation();
                       setRoleSelectBiz(biz);
                     }}
-                    className="py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
+                    className="py-2 px-4 text-xs"
                   >
                     <span>Entrar al Tablero</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
 
               </div>

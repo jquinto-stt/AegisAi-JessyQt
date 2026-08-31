@@ -18,6 +18,7 @@ import {
   Command,
   ArrowRight,
   Sparkles,
+  Layers,
   X,
 } from "lucide-react";
 

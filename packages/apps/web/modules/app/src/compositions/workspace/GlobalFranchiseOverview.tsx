@@ -22,6 +22,7 @@ import {
   BarChart2,
   History,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export const GlobalFranchiseOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -273,17 +274,18 @@ export const GlobalFranchiseOverview: React.FC = () => {
                 </div>
 
                 {/* Footer Action: Enter Workspace via Profile Selector */}
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  intent="franchise.business.enter"
                   onClick={e => {
                     e.stopPropagation();
                     setRoleSelectBiz(biz);
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-bold transition-all flex items-center justify-between cursor-pointer shadow-2xs"
+                  className="w-full py-2.5 px-4 text-xs justify-between"
                 >
                   <span>Entrar al Tablero de Comandas</span>
                   <ArrowRight className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             );
           })}

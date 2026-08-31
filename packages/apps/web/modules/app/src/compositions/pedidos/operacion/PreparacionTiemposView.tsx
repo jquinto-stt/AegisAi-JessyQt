@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { Pedido, UrgencyLevel, OperacionTab } from "../types";
+import { Button, Card, Badge } from "@/elements";
 import {
   ChefHat,
   Clock,
@@ -77,17 +78,17 @@ export const PreparacionTiemposView: React.FC<{
             <h3 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 tracking-tight">
               {title}
             </h3>
-            <span className="font-mono font-bold text-xs bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700">
+            <Badge variant="neutral" intent="kds.section.count" className="text-xs normal-case">
               {list.length} {list.length === 1 ? "comanda" : "comandas"}
-            </span>
+            </Badge>
           </div>
           <span className="text-xs text-zinc-400 font-medium">{subdesc}</span>
         </div>
 
         {list.length === 0 ? (
-          <div className="bg-zinc-50/50 dark:bg-zinc-900/30 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 p-8 text-center text-xs text-zinc-400 font-medium">
+          <Card variant="dashed" intent="kds.section.empty" className="p-8 text-center text-xs text-zinc-400 font-medium">
             Sin comandas en esta categoría de tiempo.
-          </div>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {list.map(order => {
@@ -100,13 +101,14 @@ export const PreparacionTiemposView: React.FC<{
               );
 
               return (
-                <div
+                <Card
                   key={order.id}
+                  intent="kds.order.card"
                   onClick={() => setSelectedOrderId(order.id)}
-                  className={`bg-white dark:bg-[#18181B] rounded-3xl border shadow-2xs p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 ${
+                  className={`dark:bg-[#18181B] p-5 flex flex-col justify-between gap-4 transition-all duration-200 hover:shadow-md cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-700 ${
                     isDelayed
                       ? "border-rose-500/40 bg-rose-500/[0.02] dark:bg-rose-500/[0.04]"
-                      : "border-zinc-200/80 dark:border-zinc-800"
+                      : ""
                   }`}
                 >
                   {/* Card Header: Turno & Timer */}
@@ -143,28 +145,30 @@ export const PreparacionTiemposView: React.FC<{
 
                       {/* Micro Time Adjusters */}
                       <div className="flex items-center gap-1.5 mt-1.5 justify-end">
-                        <button
-                          type="button"
+                        <Button
+                          variant="outline"
+                          intent="kds.order.estimate.decrease"
                           onClick={e => {
                             e.stopPropagation();
                             adjustEstimate(order.id, -5);
                           }}
-                          className="w-6 h-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 cursor-pointer transition-colors text-xs"
+                          className="w-6 h-6 p-0 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-xs"
                           title="Restar 5 min al pedido"
                         >
                           <Minus className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="outline"
+                          intent="kds.order.estimate.increase"
                           onClick={e => {
                             e.stopPropagation();
                             adjustEstimate(order.id, 5);
                           }}
-                          className="w-6 h-6 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 cursor-pointer transition-colors text-xs"
+                          className="w-6 h-6 p-0 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-xs"
                           title="Sumar 5 min al pedido"
                         >
                           <Plus className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -256,35 +260,37 @@ export const PreparacionTiemposView: React.FC<{
 
                   {/* Card Bottom: Print Ticket & Ready Button */}
                   <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
+                      intent="kds.order.print"
                       onClick={e => {
                         e.stopPropagation();
                         setPrintTicketOrder(order);
                       }}
-                      className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 text-xs font-bold cursor-pointer transition-colors"
+                      className="p-2.5 bg-white dark:bg-zinc-800 text-xs"
                       title="Imprimir comanda KDS"
                     >
                       <Printer className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      intent="kds.order.complete"
                       onClick={e => {
                         e.stopPropagation();
                         handleCompleteOrder(order.id, order.turnNumber);
                       }}
-                      className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-98 ${
+                      className={`flex-1 py-2.5 px-3 rounded-2xl text-xs ${
                         isAllChecked
-                          ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                          : "bg-zinc-900 hover:bg-zinc-800 text-white"
+                          ? ""
+                          : "bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-900 dark:text-white"
                       }`}
                     >
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
                       <span>{isAllChecked ? "¡Todo Listo! Despachar" : "Marcar Preparado"}</span>
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </Card>
 
               );
             })}
@@ -297,7 +303,7 @@ export const PreparacionTiemposView: React.FC<{
   return (
     <div className="space-y-5 animate-fade-in">
       {/* KDS Industrial Command Header */}
-      <div className="bg-white dark:bg-[#121214] rounded-3xl p-4 sm:p-5 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <Card intent="kds.header" className="dark:bg-[#121214] p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left: Station Identity & Filters */}
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
@@ -309,10 +315,10 @@ export const PreparacionTiemposView: React.FC<{
                 <h2 className="text-sm font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">
                   KDS Cocina & Estaciones
                 </h2>
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                <Badge variant="success" intent="kds.sync.status" className="rounded-md normal-case">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Sincronizado
-                </span>
+                </Badge>
               </div>
               <p className="text-xs text-zinc-400 font-medium">
                 Comandas en preparación activa sincronizadas con la Bandeja Unificada
@@ -379,7 +385,7 @@ export const PreparacionTiemposView: React.FC<{
             </span>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Ready Toast */}
       {readyToast && (

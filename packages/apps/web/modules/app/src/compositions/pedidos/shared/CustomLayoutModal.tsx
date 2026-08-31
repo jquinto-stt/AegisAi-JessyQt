@@ -17,6 +17,7 @@ import {
   Layers,
   PanelTop,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export interface ColumnConfig {
   id: OrderStatus;
@@ -130,12 +131,14 @@ export const CustomLayoutModal: React.FC<{
               Estructura del Tablero
             </h3>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            intent="layout.close"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 p-0 rounded-lg text-zinc-400"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Scrollable Body */}
@@ -264,30 +267,33 @@ export const CustomLayoutModal: React.FC<{
 
         {/* Footer */}
         <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/80 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-3 flex-none">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="layout.reset"
             onClick={handleReset}
-            className="text-xs font-mono text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors flex items-center gap-1 cursor-pointer"
+            className="text-xs font-mono text-zinc-400"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Restablecer</span>
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              intent="layout.cancel"
               onClick={onClose}
-              className="py-2 px-3 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              className="py-2 px-3 text-xs"
             >
               Cancelar
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="primary"
+              intent="layout.save"
               onClick={handleSave}
-              className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
+              className="py-2 px-5 text-xs"
             >
               <span>Aplicar Cambios</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>

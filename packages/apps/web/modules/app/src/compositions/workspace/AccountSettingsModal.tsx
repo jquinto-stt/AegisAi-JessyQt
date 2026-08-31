@@ -8,14 +8,18 @@ import {
   Shield,
   Save,
 } from "lucide-react";
+import { Button, Field, Badge } from "@/elements";
 
 export const AccountSettingsModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  const [name, setName] = useState(user?.name || "Administrador Master");
-  const [email, setEmail] = useState(user?.email || "admin@necto.app");
+  // CognitoUser no expone name/email directamente; el username del pool es el
+  // email. Usamos getUsername() con fallback a los valores por defecto.
+  const username = user?.getUsername?.();
+  const [name, setName] = useState("Administrador Master");
+  const [email, setEmail] = useState(username || "admin@necto.app");
   const [savedToast, setSavedToast] = useState(false);
 
   if (!isOpen) return null;
@@ -42,12 +46,14 @@ export const AccountSettingsModal: React.FC<{
               Ajustes de Perfil & Organización
             </h3>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            intent="account.close"
             onClick={onClose}
-            className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-7 h-7 p-0 rounded-lg text-zinc-400"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -57,31 +63,25 @@ export const AccountSettingsModal: React.FC<{
               01. Usuario Master
             </span>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Nombre Completo
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-950 dark:text-zinc-50 focus:outline-none focus:border-zinc-400"
-              />
-            </div>
+            <Field
+              label="Nombre Completo"
+              labelStyle="bold"
+              intent="account.name"
+              type="text"
+              required
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Correo Electrónico
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-semibold text-zinc-950 dark:text-zinc-50 focus:outline-none focus:border-zinc-400"
-              />
-            </div>
+            <Field
+              label="Correo Electrónico"
+              labelStyle="bold"
+              intent="account.email"
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
           </div>
 
           <div className="space-y-4 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
@@ -114,20 +114,22 @@ export const AccountSettingsModal: React.FC<{
 
         {/* Footer */}
         <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/80 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-3 flex-none">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="account.cancel"
             onClick={onClose}
-            className="py-2 px-4 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+            className="py-2 px-4 text-xs"
           >
             Cerrar
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            intent="account.save"
             onClick={handleSave}
-            className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
+            className="py-2 px-5 text-xs"
           >
             <span>Guardar Perfil</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -25,6 +25,7 @@ import {
   Printer,
   ExternalLink,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export const OrderDetailDrawer: React.FC = () => {
   const {
@@ -99,21 +100,25 @@ export const OrderDetailDrawer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-none">
-            <button
+            <Button
+              variant="outline"
+              intent="order-detail.print"
               onClick={() => setPrintTicketOrder(order)}
-              className="py-2 px-3 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 shadow-2xs flex items-center gap-1.5 text-xs font-bold transition-all cursor-pointer"
+              className="py-2 px-3 bg-white dark:bg-zinc-800 text-xs"
               title="Imprimir ticket de comanda"
             >
               <Printer className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Imprimir</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="ghost"
+              intent="order-detail.close"
               onClick={() => setSelectedOrderId(null)}
-              className="w-8 h-8 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 p-0 rounded-xl text-zinc-400"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -148,13 +153,15 @@ export const OrderDetailDrawer: React.FC = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-2 pt-1">
-                <button
+                <Button
+                  variant="outline"
+                  intent="order-detail.add-time"
                   onClick={() => adjustEstimate(order.id, 10)}
-                  className="py-2 px-3 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 text-zinc-800 dark:text-zinc-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  className="py-2 px-3 bg-white dark:bg-zinc-800 text-xs"
                 >
                   <Plus className="w-3.5 h-3.5 text-[#FF3F1A]" />
                   <span>Sumar +10m a Cocina</span>
-                </button>
+                </Button>
 
                 <button
                   onClick={handleSendWhatsAppNotification}
@@ -175,13 +182,15 @@ export const OrderDetailDrawer: React.FC = () => {
                 </button>
 
                 {activeIncident && (
-                  <button
+                  <Button
+                    variant="primary"
+                    intent="order-detail.resolve"
                     onClick={() => resolveIncidencia(activeIncident.id)}
-                    className="py-2 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ml-auto"
+                    className="py-2 px-3 text-xs ml-auto"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Resolver</span>
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -423,60 +432,72 @@ export const OrderDetailDrawer: React.FC = () => {
         <div className="p-5 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex items-center gap-3 flex-none">
           {order.status === "NUEVO" && (
             <>
-              <button
+              <Button
+                variant="primary"
+                intent="order-detail.confirm"
                 onClick={() => confirmOrder(order.id)}
-                className="flex-1 py-3 px-4 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-98"
+                className="flex-1 py-3 px-4 rounded-2xl text-xs"
               >
                 <Check className="w-4 h-4 text-[#FF3F1A]" />
                 <span>Aceptar y Confirmar Pedido</span>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                intent="order-detail.reject"
                 onClick={() => setRejectModalOrder(order)}
-                className="py-3 px-4 rounded-2xl border border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 hover:bg-rose-50 text-xs font-bold transition-all cursor-pointer active:scale-98"
+                className="py-3 px-4 rounded-2xl border-rose-200 dark:border-rose-800/80 text-rose-600 dark:text-rose-400 hover:bg-rose-50 text-xs"
               >
                 Rechazar
-              </button>
+              </Button>
             </>
           )}
 
           {order.status === "CONFIRMADO" && (
-            <button
+            <Button
+              variant="accent"
+              intent="order-detail.send-kitchen"
               onClick={() => sendToKitchen(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-98"
+              className="flex-1 py-3 px-4 rounded-2xl text-xs"
             >
               <ChefHat className="w-4 h-4" />
               <span>Pasar a Cocina (KDS)</span>
-            </button>
+            </Button>
           )}
 
           {order.status === "EN_PREPARACION" && (
-            <button
+            <Button
+              variant="accent"
+              intent="order-detail.mark-ready"
               onClick={() => markOrderReady(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-98"
+              className="flex-1 py-3 px-4 rounded-2xl text-xs"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Marcar Listo para Despacho</span>
-            </button>
+            </Button>
           )}
 
           {order.status === "LISTO" && (
-            <button
+            <Button
+              variant="primary"
+              intent="order-detail.deliver"
               onClick={() => deliverOrder(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer active:scale-98"
+              className="flex-1 py-3 px-4 rounded-2xl text-xs"
             >
               <Truck className="w-4 h-4 text-[#FF3F1A]" />
               <span>Marcar Entregado / Despachado</span>
-            </button>
+            </Button>
           )}
 
           {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
-            <button
+            <Button
+              variant="outline"
+              intent="order-detail.cancel"
               onClick={() => setCancelModalOrder(order)}
-              className="py-3 px-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-rose-600 text-xs font-bold transition-colors cursor-pointer"
+              className="py-3 px-3.5 rounded-2xl text-zinc-400 hover:text-rose-600 text-xs"
               title="Cancelar pedido"
             >
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
       </div>

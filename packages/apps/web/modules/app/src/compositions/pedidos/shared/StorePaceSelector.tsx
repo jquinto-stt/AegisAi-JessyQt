@@ -13,6 +13,7 @@ import {
   Sparkles,
   ShieldAlert,
 } from "lucide-react";
+import { Button } from "@/elements";
 
 export const StorePaceSelector: React.FC = () => {
   const { storePace, setStorePace, shiftInfo } = usePedidos();
@@ -120,12 +121,14 @@ export const StorePaceSelector: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="store-pace.close"
                 onClick={() => setIsOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="w-8 h-8 p-0 text-gray-400"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Options */}

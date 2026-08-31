@@ -20,6 +20,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Badge } from "@/elements";
 
 export const TurnosCapacidadView: React.FC = () => {
   const { shiftInfo, updateStaffStatus, assignStaffStation, switchShift, orders } = usePedidos();
@@ -108,17 +109,19 @@ export const TurnosCapacidadView: React.FC = () => {
             <span className="text-xs font-extrabold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Nivel de Capacidad Operativa
             </span>
-            <span
-              className={`text-xs font-black px-2.5 py-0.5 rounded-full border ${
+            <Badge
+              variant={
                 shiftInfo.capacityStatus === "Optima"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300"
+                  ? "success"
                   : shiftInfo.capacityStatus === "Moderada"
-                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300"
-                  : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300"
-              }`}
+                  ? "warning"
+                  : "danger"
+              }
+              intent="turnos.capacity.level"
+              className="normal-case"
             >
               Nivel {shiftInfo.capacityStatus}
-            </span>
+            </Badge>
           </div>
 
           <div className="space-y-2">
@@ -259,15 +262,15 @@ export const TurnosCapacidadView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 text-xs font-bold">
-            <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-3 py-1 rounded-xl">
+            <Badge variant="success" intent="turnos.staff.active" className="rounded-xl normal-case">
               {activeStaffMembers.length} Activos
-            </span>
-            <span className="bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-3 py-1 rounded-xl">
+            </Badge>
+            <Badge variant="warning" intent="turnos.staff.break" className="rounded-xl normal-case">
               {onBreakStaffMembers.length} En Descanso
-            </span>
-            <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-xl">
+            </Badge>
+            <Badge variant="neutral" intent="turnos.staff.inactive" className="rounded-xl normal-case">
               {inactiveStaffMembers.length} Inactivos
-            </span>
+            </Badge>
           </div>
         </div>
 

@@ -44,6 +44,7 @@ import {
   Play,
   VolumeX,
 } from "lucide-react";
+import { Button, Field, Select, Textarea, Badge } from "@/elements";
 
 
 
@@ -263,18 +264,18 @@ export const BusinessSettingsModal: React.FC<{
                 <h2 className="text-base sm:text-lg font-extrabold text-zinc-950 dark:text-white tracking-tight">
                   {name || "Configuración del Negocio"}
                 </h2>
-                <span className="text-[11px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                <Badge variant="neutral" intent="business.type">
                   {businessType === "retail_store"
                     ? "Retail"
                     : businessType === "services"
                     ? "Servicios"
                     : "Restaurante"}
-                </span>
+                </Badge>
                 {isPaused && (
-                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1">
+                  <Badge variant="warning" intent="business.paused" className="normal-case">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                     Pausa Activa
-                  </span>
+                  </Badge>
                 )}
               </div>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5 flex items-center gap-2">
@@ -287,14 +288,15 @@ export const BusinessSettingsModal: React.FC<{
             </div>
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="business.close"
             onClick={onClose}
-            className="w-10 h-10 rounded-2xl text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/80 flex items-center justify-center transition-all cursor-pointer"
+            className="w-10 h-10 p-0 rounded-2xl text-zinc-400"
             title="Cerrar ventana"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* 2-Column Suite Layout */}
@@ -406,19 +408,16 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      Nombre de la Sede o Restaurante
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      placeholder="Ej: Burger House — Sede Principal"
-                      className="w-full px-4 py-3 bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-semibold text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A] focus:ring-2 focus:ring-[#FF3F1A]/10 transition-all"
-                    />
-                  </div>
+                  <Field
+                    label="Nombre de la Sede o Restaurante"
+                    labelStyle="bold"
+                    intent="business.name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Ej: Burger House — Sede Principal"
+                  />
 
                   {/* Arquetipo */}
                   <div className="space-y-1.5">
@@ -457,52 +456,43 @@ export const BusinessSettingsModal: React.FC<{
 
                   {/* País, Ciudad y Moneda */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        País
-                      </label>
-                      <select
-                        value={country}
-                        onChange={e => setCountry(e.target.value)}
-                        className="w-full px-3.5 py-3 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A] cursor-pointer"
-                      >
-                        <option value="Colombia">Colombia</option>
-                        <option value="México">México</option>
-                        <option value="Estados Unidos">Estados Unidos</option>
-                        <option value="España">España</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Chile">Chile</option>
-                      </select>
-                    </div>
+                    <Select
+                      label="País"
+                      intent="business.country"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      options={[
+                        { value: "Colombia", label: "Colombia" },
+                        { value: "México", label: "México" },
+                        { value: "Estados Unidos", label: "Estados Unidos" },
+                        { value: "España", label: "España" },
+                        { value: "Argentina", label: "Argentina" },
+                        { value: "Chile", label: "Chile" },
+                      ]}
+                    />
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        Ciudad / Zona
-                      </label>
-                      <input
-                        type="text"
-                        value={city}
-                        onChange={e => setCity(e.target.value)}
-                        placeholder="Ej: Bogotá, Chapinero"
-                        className="w-full px-3.5 py-3 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A]"
-                      />
-                    </div>
+                    <Field
+                      label="Ciudad / Zona"
+                      labelStyle="bold"
+                      intent="business.city"
+                      type="text"
+                      value={city}
+                      onChange={e => setCity(e.target.value)}
+                      placeholder="Ej: Bogotá, Chapinero"
+                    />
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        Moneda Base
-                      </label>
-                      <select
-                        value={currency}
-                        onChange={e => setCurrency(e.target.value as any)}
-                        className="w-full px-3.5 py-3 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A] cursor-pointer"
-                      >
-                        <option value="COP">COP ($ Pesos)</option>
-                        <option value="USD">USD ($ Dólares)</option>
-                        <option value="MXN">MXN ($ Pesos MX)</option>
-                        <option value="ARS">ARS ($ Pesos AR)</option>
-                      </select>
-                    </div>
+                    <Select
+                      label="Moneda Base"
+                      intent="business.currency"
+                      value={currency}
+                      onChange={e => setCurrency(e.target.value as any)}
+                      options={[
+                        { value: "COP", label: "COP ($ Pesos)" },
+                        { value: "USD", label: "USD ($ Dólares)" },
+                        { value: "MXN", label: "MXN ($ Pesos MX)" },
+                        { value: "ARS", label: "ARS ($ Pesos AR)" },
+                      ]}
+                    />
                   </div>
 
                   {/* Subdominio y Contacto */}
@@ -568,14 +558,15 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {logoUrl && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        intent="business.logo.remove"
                         onClick={() => setLogoUrl("")}
-                        className="text-xs text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        className="p-0 text-xs text-red-500 hover:text-red-700 hover:bg-transparent"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Quitar Logo</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
 
@@ -623,14 +614,15 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {bannerUrl && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        intent="business.banner.remove"
                         onClick={() => setBannerUrl("")}
-                        className="text-xs text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer flex items-center gap-1"
+                        className="p-0 text-xs text-red-500 hover:text-red-700 hover:bg-transparent"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Quitar Portada</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
 
@@ -1155,12 +1147,12 @@ export const BusinessSettingsModal: React.FC<{
                           <span>Mensaje de Respuesta Automática</span>
                           <span className="text-[10px] font-mono text-zinc-400">WhatsApp & Web</span>
                         </label>
-                        <textarea
+                        <Textarea
+                          intent="business.pause.message"
                           rows={3}
                           value={pauseMessage}
                           onChange={e => setPauseMessage(e.target.value)}
                           placeholder="Mensaje que recibirán los clientes si intentan pedir durante la pausa..."
-                          className="w-full p-3.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-2xl text-zinc-950 dark:text-white font-medium focus:outline-none focus:border-[#FF3F1A] resize-none"
                         />
                       </div>
                     </div>
@@ -1223,14 +1215,15 @@ export const BusinessSettingsModal: React.FC<{
                           Se borrarán de forma irreversible los catálogos, pedidos y configuraciones asociadas.
                         </p>
                       </div>
-                      <button
-                        type="button"
+                      <Button
+                        variant="accent"
+                        intent="business.delete.request"
                         onClick={() => setConfirmDelete(true)}
-                        className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs flex-none"
+                        className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-xs flex-none"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Eliminar Negocio</span>
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <div className="p-5 bg-red-100/70 dark:bg-red-950/60 rounded-2xl border border-red-300 dark:border-red-800 space-y-3">
@@ -1238,20 +1231,22 @@ export const BusinessSettingsModal: React.FC<{
                         ¿Confirmas eliminar definitivamente "{business.name}"? Esta acción no se puede deshacer.
                       </p>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
+                        <Button
+                          variant="accent"
+                          intent="business.delete.confirm"
                           onClick={handleDelete}
-                          className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                          className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-xs"
                         >
                           Sí, eliminar negocio
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="outline"
+                          intent="business.delete.cancel"
                           onClick={() => setConfirmDelete(false)}
-                          className="py-2.5 px-4 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold rounded-xl border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                          className="py-2.5 px-4 bg-white dark:bg-zinc-800 text-xs"
                         >
                           Cancelar
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -1263,21 +1258,23 @@ export const BusinessSettingsModal: React.FC<{
 
         {/* Modal Bottom Actions */}
         <div className="px-6 sm:px-8 py-4 bg-zinc-50/80 dark:bg-zinc-900/90 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between flex-none">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="business.discard"
             onClick={onClose}
-            className="py-2.5 px-5 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
+            className="py-2.5 px-5 text-xs"
           >
             Descartar
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="accent"
+            intent="business.save"
             onClick={handleSave}
-            className="py-2.5 px-6 rounded-2xl bg-[#FF3F1A] text-white text-xs font-bold hover:bg-[#e03413] transition-all cursor-pointer shadow-sm flex items-center gap-2 active:scale-98"
+            className="py-2.5 px-6 rounded-2xl text-xs"
           >
             <Check className="w-4 h-4 stroke-[3]" />
             <span>Guardar Configuración</span>
-          </button>
+          </Button>
         </div>
       </div>
     </div>

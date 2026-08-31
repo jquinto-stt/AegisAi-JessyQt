@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, NectoModuleKey, BusinessType, BusinessIconKey } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
+import { Button, Badge } from "@/elements";
 import {
   Users,
   ShoppingBag,
@@ -250,13 +251,14 @@ export default function OnboardingPage() {
           </div>
 
           {businesses.length > 0 && (
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              intent="onboarding.back-to-hub"
               onClick={() => navigate("/workspaces")}
-              className="text-xs font-mono text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900 shadow-2xs"
+              className="text-xs font-mono px-3 py-1.5 bg-white dark:bg-zinc-900"
             >
               Volver al Hub
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -569,26 +571,20 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-mono px-2.5 py-1 rounded-full uppercase font-bold ${
-                        isMetaConnected
-                          ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800"
-                          : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800"
-                      }`}
+                    <Badge
+                      variant={isMetaConnected ? "success" : "warning"}
+                      intent="onboarding.meta.status"
                     >
                       {isMetaConnected ? "Conectado" : "Desconectado"}
-                    </span>
+                    </Badge>
                   </div>
 
                   <div className="flex items-center gap-3 pt-2">
-                    <button
-                      type="button"
+                    <Button
+                      variant={isMetaConnected ? "outline" : "accent"}
+                      intent="onboarding.meta.toggle"
                       onClick={() => setIsMetaConnected(!isMetaConnected)}
-                      className={`py-2.5 px-5 rounded-xl text-xs font-bold tracking-wide transition-all flex items-center gap-2 cursor-pointer ${
-                        isMetaConnected
-                          ? "bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 border border-zinc-200 dark:border-zinc-700 shadow-2xs"
-                          : "bg-[#FF3F1A] hover:bg-[#e03413] text-white shadow-xs"
-                      }`}
+                      className="py-2.5 px-5 text-xs"
                     >
                       {isMetaConnected ? (
                         <>
@@ -601,7 +597,7 @@ export default function OnboardingPage() {
                           <span>Autorizar con Meta</span>
                         </>
                       )}
-                    </button>
+                    </Button>
 
                     <button
                       type="button"
@@ -753,38 +749,37 @@ export default function OnboardingPage() {
           {/* Wizard Footer Navigation */}
           <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
             {step > 1 ? (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                intent="onboarding.step.prev"
                 onClick={() => setStep(step - 1)}
-                className="py-2.5 px-4 rounded-xl text-xs font-mono text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="py-2.5 px-4 text-xs font-mono"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Paso Anterior</span>
-              </button>
+              </Button>
             ) : (
               <div />
             )}
 
             {step < 3 ? (
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                intent="onboarding.step.next"
                 disabled={step === 1 && !canProceedStep1}
                 onClick={() => setStep(step + 1)}
-                className={`py-3 px-7 rounded-xl text-xs font-semibold tracking-wide transition-all shadow-xs flex items-center gap-2 cursor-pointer ${
-                  step === 1 && !canProceedStep1
-                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 cursor-not-allowed"
-                    : "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white"
-                }`}
+                className="py-3 px-7 text-xs"
               >
                 <span>Siguiente Paso</span>
                 <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="accent"
+                intent="onboarding.finish"
                 disabled={isDeploying}
                 onClick={handleFinish}
-                className="py-3 px-8 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold tracking-wide transition-all shadow-md flex items-center gap-2 cursor-pointer active:scale-98"
+                className="py-3 px-8 text-xs"
               >
                 {isDeploying ? (
                   <>
@@ -797,7 +792,7 @@ export default function OnboardingPage() {
                     <Sparkles className="w-3.5 h-3.5" />
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </div>
         </div>

@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Info,
 } from "lucide-react";
+import { Button, Field, Select, Badge } from "@/elements";
 
 export const RolesPermisosView: React.FC = () => {
   const {
@@ -320,13 +321,15 @@ export const RolesPermisosView: React.FC = () => {
             </p>
           </div>
 
-          <button
+          <Button
+            variant="primary"
+            intent="roles.create.open"
             onClick={handleOpenCreate}
-            className="py-2.5 px-4 rounded-2xl bg-zinc-950 hover:bg-[#FF3F1A] text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-bold transition-all shadow-2xs flex items-center gap-2 cursor-pointer flex-none self-start sm:self-auto"
+            className="py-2.5 px-4 rounded-2xl text-xs flex-none self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
             <span>Crear Nuevo Rol</span>
-          </button>
+          </Button>
         </div>
 
         {/* Role Simulator Bar */}
@@ -421,9 +424,9 @@ export const RolesPermisosView: React.FC = () => {
 
                     <div className="flex items-center gap-1.5">
                       {isActiveSim && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <Badge variant="success" intent="roles.active-sim" className="rounded-md normal-case">
                           Activo en Pantalla
-                        </span>
+                        </Badge>
                       )}
 
                       <button
@@ -484,13 +487,15 @@ export const RolesPermisosView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 flex-none">
-                <button
+                <Button
+                  variant="outline"
+                  intent="roles.edit.open"
                   onClick={() => handleOpenEdit(selectedRole)}
-                  className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="py-2 px-3 bg-zinc-50 dark:bg-zinc-800 text-xs"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
                   <span>Modificar Permisos</span>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -562,12 +567,14 @@ export const RolesPermisosView: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="roles.form.close"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 p-0 rounded-xl text-zinc-400"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Modal Form */}
@@ -613,52 +620,44 @@ export const RolesPermisosView: React.FC = () => {
 
               {/* Name & Color */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    Nombre del Rol
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formName}
-                    onChange={e => setFormName(e.target.value)}
-                    placeholder="Ej. Repartidor / Delivery, Auditor, Jefe de Barra"
-                    className="w-full px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
+                <Field
+                  label="Nombre del Rol"
+                  labelStyle="bold"
+                  intent="roles.form.name"
+                  className="sm:col-span-2"
+                  type="text"
+                  required
+                  value={formName}
+                  onChange={e => setFormName(e.target.value)}
+                  placeholder="Ej. Repartidor / Delivery, Auditor, Jefe de Barra"
+                />
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                    Color de Distintivo
-                  </label>
-                  <select
-                    value={formColor}
-                    onChange={e => setFormColor(e.target.value as any)}
-                    className="w-full px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
-                  >
-                    <option value="rose">Rosa / Flame</option>
-                    <option value="blue">Azul / Sky</option>
-                    <option value="amber">Ámbar / Cocina</option>
-                    <option value="emerald">Esmeralda / Caja</option>
-                    <option value="purple">Púrpura / Stock</option>
-                    <option value="zinc">Gris / Estándar</option>
-                  </select>
-                </div>
+                <Select
+                  label="Color de Distintivo"
+                  intent="roles.form.color"
+                  value={formColor}
+                  onChange={e => setFormColor(e.target.value as any)}
+                  options={[
+                    { value: "rose", label: "Rosa / Flame" },
+                    { value: "blue", label: "Azul / Sky" },
+                    { value: "amber", label: "Ámbar / Cocina" },
+                    { value: "emerald", label: "Esmeralda / Caja" },
+                    { value: "purple", label: "Púrpura / Stock" },
+                    { value: "zinc", label: "Gris / Estándar" },
+                  ]}
+                />
               </div>
 
               {/* Description */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                  Descripción del Puesto
-                </label>
-                <input
-                  type="text"
-                  value={formDesc}
-                  onChange={e => setFormDesc(e.target.value)}
-                  placeholder="Ej. Personal encargado del empaque y despacho de pedidos rápidos"
-                  className="w-full px-3.5 py-2 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-                />
-              </div>
+              <Field
+                label="Descripción del Puesto"
+                labelStyle="bold"
+                intent="roles.form.description"
+                type="text"
+                value={formDesc}
+                onChange={e => setFormDesc(e.target.value)}
+                placeholder="Ej. Personal encargado del empaque y despacho de pedidos rápidos"
+              />
 
               {/* Granular Permission Toggles */}
               <div className="space-y-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
@@ -714,19 +713,22 @@ export const RolesPermisosView: React.FC = () => {
 
               {/* Modal Actions */}
               <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  intent="roles.form.cancel"
                   onClick={() => setIsModalOpen(false)}
-                  className="py-2.5 px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="py-2.5 px-4 text-xs"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="py-2.5 px-5 rounded-xl bg-zinc-950 hover:bg-[#FF3F1A] text-white dark:bg-white dark:text-zinc-950 dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                  variant="primary"
+                  intent="roles.form.submit"
+                  className="py-2.5 px-5 text-xs"
                 >
                   {editingRole ? "Guardar Cambios" : "Crear Rol"}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

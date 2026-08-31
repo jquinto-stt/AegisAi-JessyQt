@@ -21,6 +21,7 @@ import { GlobalFranchiseOverview } from "@/compositions/workspace/GlobalFranchis
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
 import { useBusiness } from "@/context/BusinessContext";
+import { Button, Badge } from "@/elements";
 
 
 export type InventariosRole = "operador" | "analista";
@@ -99,9 +100,9 @@ function NotificationBellDropdown({
               <div className="flex items-center gap-2">
                 <h4 className="font-extrabold text-sm text-gray-900 dark:text-gray-100">Notificaciones</h4>
                 {unreadCount > 0 && (
-                  <span className="text-[10px] bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-extrabold px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
+                  <Badge variant="accent" intent="shell.notifications.unread" className="normal-case">
                     {unreadCount} nuevas
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -110,9 +111,14 @@ function NotificationBellDropdown({
                     Marcar leídas
                   </button>
                 )}
-                <button onClick={() => setOpen(false)} className="w-7 h-7 rounded-lg hover:bg-slate-200 dark:hover:bg-gray-700 text-gray-400 flex items-center justify-center cursor-pointer">
+                <Button
+                  variant="ghost"
+                  intent="shell.notifications.close"
+                  onClick={() => setOpen(false)}
+                  className="w-7 h-7 p-0 rounded-lg text-gray-400"
+                >
                   <X className="w-4 h-4" />
-                </button>
+                </Button>
               </div>
             </div>
 

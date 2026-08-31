@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { X, AlertTriangle, XCircle, Check } from "lucide-react";
+import { Button, Field } from "@/elements";
 
 export const RejectCancelModal: React.FC = () => {
   const {
@@ -78,9 +79,9 @@ export const RejectCancelModal: React.FC = () => {
               {isReject ? "Rechazar Pedido" : "Cancelar Pedido"} #{targetOrder.id}
             </h3>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+          <Button variant="ghost" intent="reject-cancel.close" onClick={handleClose} className="w-8 h-8 p-0 text-gray-400">
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -113,33 +114,34 @@ export const RejectCancelModal: React.FC = () => {
         </div>
 
         {selectedReason === "Otro motivo" && (
-          <input
+          <Field
+            label=""
+            intent="reject-cancel.custom-reason"
             type="text"
             placeholder="Escriba el motivo detallado..."
             value={customReason}
             onChange={e => setCustomReason(e.target.value)}
-            className="w-full border border-slate-200 dark:border-[#374151] rounded-xl px-3.5 py-2 text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:border-red-400"
           />
         )}
 
         <div className="flex gap-2 pt-2">
-          <button
+          <Button
+            variant="outline"
+            intent="reject-cancel.back"
             onClick={handleClose}
-            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-bold hover:bg-slate-100 cursor-pointer"
+            className="flex-1 py-2.5 px-4 text-xs"
           >
             Volver
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="accent"
+            intent="reject-cancel.confirm"
             disabled={!isFormValid}
             onClick={handleSubmit}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-white text-xs font-extrabold shadow-sm transition-all cursor-pointer ${
-              isFormValid
-                ? "bg-red-600 hover:bg-red-700 active:scale-95"
-                : "bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-60"
-            }`}
+            className="flex-1 py-2.5 px-4 text-xs bg-red-600 hover:bg-red-700"
           >
             Confirmar {isReject ? "Rechazo" : "Cancelación"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

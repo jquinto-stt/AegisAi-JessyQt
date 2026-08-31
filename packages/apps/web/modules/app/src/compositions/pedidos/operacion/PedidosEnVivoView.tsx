@@ -38,6 +38,7 @@ import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
 import { OperacionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
+import { Button, Card, Field, Select, Textarea } from "@/elements";
 
 import {
   CustomLayoutModal,
@@ -362,7 +363,6 @@ export const PedidosEnVivoView: React.FC<{
             {/* Delay Alert Filter Button */}
             <button
               onClick={() => {
-                setShowProgramadosOnly(false);
                 setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO");
               }}
               className={`py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
@@ -416,40 +416,44 @@ export const PedidosEnVivoView: React.FC<{
             </div>
 
             {/* Personalizar Vista Button */}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              intent="pedidos.toolbar.customize"
               onClick={() => setShowLayoutModal(true)}
-              className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="py-2 px-3 bg-zinc-50 dark:bg-zinc-900 text-xs"
               title="Personalizar columnas y diseño"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
               <span className="hidden md:inline">Estructura</span>
-            </button>
+            </Button>
 
             {!layoutPrefs.showTopHeader && (
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                intent="pedidos.toolbar.exit-focus"
                 onClick={() => {
                   const newPrefs = { ...layoutPrefs, showTopHeader: true, showBanner: true };
                   setLayoutPrefs(newPrefs);
                   localStorage.setItem("necto_pedidos_layout_prefs", JSON.stringify(newPrefs));
                   window.dispatchEvent(new Event("necto_layout_changed"));
                 }}
-                className="py-2 px-3 rounded-xl border border-orange-200 dark:border-orange-900/60 bg-orange-50/90 dark:bg-orange-950/40 text-[#FF3F1A] hover:bg-[#FF3F1A] hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                className="py-2 px-3 border-orange-200 dark:border-orange-900/60 bg-orange-50/90 dark:bg-orange-950/40 text-[#FF3F1A] hover:bg-[#FF3F1A] hover:text-white text-xs"
                 title="Restaurar barra de navegación de módulos"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Salir Enfoque</span>
-              </button>
+              </Button>
             )}
 
-            <button
+            <Button
+              variant="primary"
+              intent="pedidos.toolbar.new-order"
               onClick={() => setShowManualModal(true)}
-              className="py-2 px-3.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs flex-none"
+              className="py-2 px-3.5 text-xs flex-none"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Pedido</span>
-            </button>
+            </Button>
 
           </div>
         </div>
@@ -458,20 +462,23 @@ export const PedidosEnVivoView: React.FC<{
         <div className="flex items-center justify-between bg-white dark:bg-[#121214] p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
           <span className="text-xs font-mono text-zinc-400 pl-2">MODO TABLERO ENFOCADO</span>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              intent="pedidos.minibar.customize"
               onClick={() => setShowLayoutModal(true)}
-              className="py-1.5 px-3 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
+              className="py-1.5 px-3 text-xs"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
               <span>Estructura</span>
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              intent="pedidos.minibar.new-order"
               onClick={() => setShowManualModal(true)}
-              className="py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] text-xs font-semibold flex items-center gap-1 cursor-pointer"
+              className="py-1.5 px-3 text-xs"
             >
               <Plus className="w-3.5 h-3.5" /> Nuevo Pedido
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -571,17 +578,18 @@ export const PedidosEnVivoView: React.FC<{
                             <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
                               ${prog.total.toLocaleString("es-AR")}
                             </span>
-                            <button
-                              type="button"
+                            <Button
+                              variant="primary"
+                              intent="pedidos.scheduled.inject"
                               onClick={e => {
                                 e.stopPropagation();
                                 injectScheduledOrderToLive(prog.id, true);
                               }}
-                              className="py-1.5 px-2.5 rounded-xl bg-zinc-950 hover:bg-[#FF3F1A] text-white text-[10px] font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+                              className="py-1.5 px-2.5 text-[10px]"
                             >
                               <Zap className="w-3 h-3 text-[#FF3F1A]" />
                               <span>Inyectar a Cocina</span>
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       ))}
@@ -589,9 +597,9 @@ export const PedidosEnVivoView: React.FC<{
                   )}
 
                   {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
-                    <div className="p-8 text-center border border-dashed border-zinc-200 dark:border-zinc-800 rounded-3xl text-zinc-400 text-xs font-medium">
+                    <Card variant="dashed" intent="pedidos.column.empty" className="p-8 text-center text-zinc-400 text-xs font-medium">
                       <p>Sin pedidos en esta etapa</p>
-                    </div>
+                    </Card>
                   ) : (
 
                     colOrders.map(order => {
@@ -708,50 +716,60 @@ export const PedidosEnVivoView: React.FC<{
                           >
                             {order.status === "NUEVO" && (
                               <>
-                                <button
+                                <Button
+                                  variant="outline"
+                                  intent="pedidos.order.discard"
                                   onClick={() => setRejectModalOrder(order)}
-                                  className="py-1.5 px-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[10px] font-bold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                                  className="py-1.5 px-2.5 text-[10px]"
                                 >
                                   Descartar
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  intent="pedidos.order.confirm"
                                   onClick={() => confirmOrder(order.id)}
-                                  className="flex-1 py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[11px] font-bold flex items-center justify-center gap-1 shadow-2xs cursor-pointer active:scale-98"
+                                  className="flex-1 py-1.5 px-3 text-[11px]"
                                 >
                                   <span>Confirmar</span>
                                   <ArrowRight className="w-3 h-3 text-[#FF3F1A]" />
-                                </button>
+                                </Button>
                               </>
                             )}
 
                             {order.status === "CONFIRMADO" && (
-                              <button
+                              <Button
+                                variant="accent"
+                                intent="pedidos.order.send-kitchen"
                                 onClick={() => sendToKitchen(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+                                className="w-full py-1.5 px-3 text-[11px]"
                               >
                                 <ChefHat className="w-3.5 h-3.5" />
                                 <span>Pasar a Cocina</span>
-                              </button>
+                              </Button>
                             )}
 
                             {order.status === "EN_PREPARACION" && (
-                              <button
+                              <Button
+                                variant="accent"
+                                intent="pedidos.order.mark-ready"
                                 onClick={() => markOrderReady(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+                                className="w-full py-1.5 px-3 text-[11px]"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 <span>Marcar Listo</span>
-                              </button>
+                              </Button>
                             )}
 
                             {order.status === "LISTO" && (
-                              <button
+                              <Button
+                                variant="primary"
+                                intent="pedidos.order.deliver"
                                 onClick={() => deliverOrder(order.id)}
-                                className="w-full py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+                                className="w-full py-1.5 px-3 text-[11px]"
                               >
                                 <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
                                 <span>Entregar Pedido</span>
-                              </button>
+                              </Button>
                             )}
 
                             {order.status === "FINALIZADO" && (
@@ -773,10 +791,11 @@ export const PedidosEnVivoView: React.FC<{
         /* GRID VIEW (Compact cards fallback) */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filterOrdersList(orders).map(order => (
-            <div
+            <Card
               key={order.id}
+              intent="pedidos.grid.card"
               onClick={() => setSelectedOrderId(order.id)}
-              className="bg-white dark:bg-[#18181B] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs hover:border-[#FF3F1A] transition-all cursor-pointer space-y-3"
+              className="dark:bg-[#18181B] p-5 hover:border-[#FF3F1A] transition-all cursor-pointer space-y-3"
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono font-bold text-xs text-zinc-950 dark:text-zinc-50">{order.id}</span>
@@ -792,7 +811,7 @@ export const PedidosEnVivoView: React.FC<{
                 <span className="text-zinc-950 dark:text-zinc-50 font-bold">{order.status}</span>
                 <span>{order.createdAt}</span>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -811,87 +830,78 @@ export const PedidosEnVivoView: React.FC<{
                   Nuevo Pedido
                 </h3>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                intent="pedidos.manual.close"
                 onClick={() => setShowManualModal(false)}
-                className="w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 p-0 rounded-lg text-zinc-400"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             <form onSubmit={handleCreateManual} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Nombre del Cliente o Mesa *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Mesa 4 / Carlos Bianchi"
-                  value={manualCustomer}
-                  onChange={e => setManualCustomer(e.target.value)}
-                  className="w-full px-3.5 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-zinc-400"
-                />
-              </div>
+              <Field
+                label="Nombre del Cliente o Mesa *"
+                labelStyle="bold"
+                intent="pedidos.manual.customer"
+                type="text"
+                required
+                placeholder="Ej. Mesa 4 / Carlos Bianchi"
+                value={manualCustomer}
+                onChange={e => setManualCustomer(e.target.value)}
+              />
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Teléfono / WhatsApp
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="+57 300 000-0000"
-                    value={manualPhone}
-                    onChange={e => setManualPhone(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
+                <Field
+                  label="Teléfono / WhatsApp"
+                  labelStyle="bold"
+                  intent="pedidos.manual.phone"
+                  type="text"
+                  placeholder="+57 300 000-0000"
+                  value={manualPhone}
+                  onChange={e => setManualPhone(e.target.value)}
+                />
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    Canal de Ingreso
-                  </label>
-                  <select
-                    value={manualChannel}
-                    onChange={e => setManualChannel(e.target.value as OrderChannel)}
-                    className="w-full px-3 py-2.5 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none cursor-pointer"
-                  >
-                    <option value="presencial">POS Mostrador</option>
-                    <option value="telefono">Teléfono</option>
-                    <option value="web">Web Directo</option>
-                    <option value="whatsapp">WhatsApp</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                  Observaciones / Alergias
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Ej. Sin cebolla, empaque térmico..."
-                  value={manualNotes}
-                  onChange={e => setManualNotes(e.target.value)}
-                  className="w-full px-3.5 py-2 text-xs bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-zinc-400"
+                <Select
+                  label="Canal de Ingreso"
+                  intent="pedidos.manual.channel"
+                  value={manualChannel}
+                  onChange={e => setManualChannel(e.target.value as OrderChannel)}
+                  options={[
+                    { value: "presencial", label: "POS Mostrador" },
+                    { value: "telefono", label: "Teléfono" },
+                    { value: "web", label: "Web Directo" },
+                    { value: "whatsapp", label: "WhatsApp" },
+                  ]}
                 />
               </div>
 
+              <Textarea
+                label="Observaciones / Alergias"
+                intent="pedidos.manual.notes"
+                rows={2}
+                placeholder="Ej. Sin cebolla, empaque térmico..."
+                value={manualNotes}
+                onChange={e => setManualNotes(e.target.value)}
+              />
+
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  intent="pedidos.manual.cancel"
                   onClick={() => setShowManualModal(false)}
-                  className="py-2 px-4 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="py-2 px-5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-semibold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs active:scale-98"
+                  variant="primary"
+                  intent="pedidos.manual.submit"
+                  className="px-5"
                 >
                   Crear Pedido
-                </button>
+                </Button>
               </div>
             </form>
           </div>
