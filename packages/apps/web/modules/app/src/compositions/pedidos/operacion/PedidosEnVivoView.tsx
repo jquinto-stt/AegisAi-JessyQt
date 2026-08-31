@@ -32,8 +32,11 @@ import {
   Minimize2,
 } from "lucide-react";
 
+import { useBusiness } from "@/context/BusinessContext";
+import { playOrderAlert } from "@/utils/audioAlerts";
 import { OperacionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
+
 import {
   CustomLayoutModal,
   DEFAULT_LAYOUT_PREFS,
@@ -56,6 +59,8 @@ export const PedidosEnVivoView: React.FC<{
     injectScheduledOrderToLive,
     transitionOrder,
   } = usePedidos();
+  const { activeBusiness } = useBusiness();
+
 
   const todayScheduled = programados.filter(p => p.scheduledDate === "Hoy");
 
@@ -267,11 +272,13 @@ export const PedidosEnVivoView: React.FC<{
       channel: manualChannel,
       notes: manualNotes.trim() || undefined,
     });
+    playOrderAlert(activeBusiness?.soundAlert || "bell");
     setManualCustomer("");
     setManualPhone("");
     setManualNotes("");
     setShowManualModal(false);
   };
+
 
   const getChannelBadge = (channel: OrderChannel) => {
     switch (channel) {

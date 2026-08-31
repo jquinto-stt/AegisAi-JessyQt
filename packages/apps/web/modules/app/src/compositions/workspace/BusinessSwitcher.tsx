@@ -53,9 +53,14 @@ export const BusinessSwitcher: React.FC = () => {
         className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-zinc-50/90 hover:bg-zinc-100 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs cursor-pointer group"
         title="Cambiar de negocio, ver resumen global o atajo Ctrl+K"
       >
-        <div className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs group-hover:scale-105 transition-transform">
-          <BusinessIcon iconKey={activeBusiness?.iconKey} className="w-3.5 h-3.5 text-[#FF3F1A]" />
+        <div className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs group-hover:scale-105 transition-transform overflow-hidden">
+          {activeBusiness?.logoUrl ? (
+            <img src={activeBusiness.logoUrl} alt={activeBusiness.name} className="w-full h-full object-cover" />
+          ) : (
+            <BusinessIcon iconKey={activeBusiness?.iconKey} className="w-3.5 h-3.5 text-[#FF3F1A]" />
+          )}
         </div>
+
 
         <div className="text-left min-w-0 max-w-[130px] sm:max-w-[180px]">
           <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-[#FF3F1A] transition-colors leading-tight">
@@ -143,17 +148,22 @@ export const BusinessSwitcher: React.FC = () => {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none overflow-hidden ${
                         isSelected
                           ? "bg-[#FF3F1A] text-white shadow-2xs"
                           : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
                       }`}
                     >
-                      <BusinessIcon
-                        iconKey={biz.iconKey}
-                        className={`w-4 h-4 ${isSelected ? "text-white" : "text-[#FF3F1A]"}`}
-                      />
+                      {biz.logoUrl ? (
+                        <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <BusinessIcon
+                          iconKey={biz.iconKey}
+                          className={`w-4 h-4 ${isSelected ? "text-white" : "text-[#FF3F1A]"}`}
+                        />
+                      )}
                     </div>
+
                     <div className="min-w-0">
                       <p className="text-xs font-bold truncate leading-tight">
                         {biz.name}

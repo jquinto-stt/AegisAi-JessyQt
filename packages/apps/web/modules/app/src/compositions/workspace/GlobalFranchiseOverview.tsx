@@ -178,13 +178,24 @@ export const GlobalFranchiseOverview: React.FC = () => {
             return (
               <div
                 key={biz.id}
-                className="p-6 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-5"
+                className="relative p-6 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-5 overflow-hidden group"
               >
+                {/* Background Banner Watermark if uploaded */}
+                {biz.bannerUrl && (
+                  <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.10] pointer-events-none overflow-hidden">
+                    <img src={biz.bannerUrl} alt="" className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500" />
+                  </div>
+                )}
+
                 {/* Branch Header */}
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-4 z-10">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs">
-                      <BusinessIcon iconKey={biz.iconKey} className="w-6 h-6 text-[#FF3F1A]" />
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs overflow-hidden">
+                      {biz.logoUrl ? (
+                        <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <BusinessIcon iconKey={biz.iconKey} className="w-6 h-6 text-[#FF3F1A]" />
+                      )}
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight">
@@ -195,6 +206,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       </p>
                     </div>
                   </div>
+
 
                   <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

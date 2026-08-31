@@ -38,6 +38,8 @@ export interface BusinessSetupProgress {
 }
 
 export type UserWorkspaceRole = "owner" | "manager" | "staff";
+export type SoundAlertKey = "bell" | "chime" | "kitchen_ding" | "pos_beep" | "mute";
+
 
 export interface BusinessInstance {
   id: string;
@@ -45,6 +47,10 @@ export interface BusinessInstance {
   slug: string;
   businessType: BusinessType;
   iconKey: BusinessIconKey;
+  logoUrl?: string;
+  bannerUrl?: string;
+  brandColor?: string;
+  soundAlert?: SoundAlertKey;
   currency: "COP" | "USD" | "MXN" | "ARS";
   city: string;
   country?: string;
@@ -58,6 +64,8 @@ export interface BusinessInstance {
   setupProgress?: BusinessSetupProgress;
   createdAt: string;
 }
+
+
 
 interface BusinessContextType {
   businesses: BusinessInstance[];

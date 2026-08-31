@@ -158,69 +158,89 @@ export default function WorkspacesPage() {
               <div
                 key={biz.id}
                 onClick={() => handleSelectBusiness(biz.id)}
-                className={`p-5 sm:p-6 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group ${
+                className={`relative p-5 sm:p-6 rounded-3xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group overflow-hidden ${
                   isActive
-                    ? "bg-white dark:bg-zinc-900 border-zinc-950 dark:border-zinc-100 shadow-xs"
-                    : "bg-white/60 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600"
+                    ? "bg-white dark:bg-zinc-900 border-zinc-950 dark:border-zinc-100 shadow-sm"
+                    : "bg-white/70 dark:bg-zinc-900/50 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 shadow-2xs"
                 }`}
               >
-                {/* Left Info */}
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h3 className="text-base font-semibold text-zinc-950 dark:text-zinc-50 tracking-tight">
-                      {biz.name}
-                    </h3>
-                    {biz.pauseConfig?.isPaused ? (
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                        EN PAUSA {biz.pauseConfig.pauseEndDate ? `· REABRE ${new Date(biz.pauseConfig.pauseEndDate).toLocaleDateString()}` : ""}
-                      </span>
-                    ) : isActive ? (
-                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                        ACTIVO
-                      </span>
+                {/* Background Banner Watermark if uploaded */}
+                {biz.bannerUrl && (
+                  <div className="absolute inset-0 opacity-[0.07] dark:opacity-[0.12] pointer-events-none overflow-hidden">
+                    <img src={biz.bannerUrl} alt="" className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500" />
+                  </div>
+                )}
+
+                {/* Left Info with Brand Avatar & Meta */}
+                <div className="flex items-start sm:items-center gap-4 min-w-0 z-10 flex-1">
+                  <div className="w-13 h-13 rounded-2xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs overflow-hidden">
+                    {biz.logoUrl ? (
+                      <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                        SUCURSAL
+                      <span className="font-black text-base text-[#FF3F1A]">
+                        {biz.name.charAt(0).toUpperCase()}
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 font-mono flex-wrap">
-                    <span>{biz.specialty || "Gastronomía"}</span>
-                    <span>•</span>
-                    <span>{biz.city}</span>
-                    <span>•</span>
-                    <span>{biz.currency}</span>
-                    <span>•</span>
-                    <span className="text-zinc-400 dark:text-zinc-500">necto.app/{biz.slug}</span>
-                  </div>
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <h3 className="text-base font-bold text-zinc-950 dark:text-zinc-50 tracking-tight">
+                        {biz.name}
+                      </h3>
+                      {biz.pauseConfig?.isPaused ? (
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/80 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                          EN PAUSA {biz.pauseConfig.pauseEndDate ? `· REABRE ${new Date(biz.pauseConfig.pauseEndDate).toLocaleDateString()}` : ""}
+                        </span>
+                      ) : isActive ? (
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
+                          ACTIVO
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                          SUCURSAL
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Active Modules & Channels Chips */}
-                  <div className="flex items-center gap-2 pt-1 flex-wrap">
-                    {/* Modules */}
-                    {biz.activeModules && biz.activeModules.map(m => (
-                      <span
-                        key={m}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
-                      >
-                        {m}
-                      </span>
-                    ))}
+                    <div className="flex items-center gap-3 text-xs text-zinc-500 dark:text-zinc-400 font-mono flex-wrap">
+                      <span>{biz.specialty || "Gastronomía"}</span>
+                      <span>•</span>
+                      <span>{biz.city}</span>
+                      <span>•</span>
+                      <span>{biz.currency}</span>
+                      <span>•</span>
+                      <span className="text-zinc-400 dark:text-zinc-500">necto.app/{biz.slug}</span>
+                    </div>
 
-                    {/* Channels */}
-                    {biz.channels.whatsapp && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
-                        <MessageSquare className="w-2.5 h-2.5" /> WhatsApp
-                      </span>
-                    )}
-                    {biz.channels.web && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                        <Globe className="w-2.5 h-2.5" /> Web
-                      </span>
-                    )}
+                    {/* Active Modules & Channels Chips */}
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
+                      {/* Modules */}
+                      {biz.activeModules && biz.activeModules.map(m => (
+                        <span
+                          key={m}
+                          className="inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                        >
+                          {m}
+                        </span>
+                      ))}
+
+                      {/* Channels */}
+                      {biz.channels.whatsapp && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
+                          <MessageSquare className="w-2.5 h-2.5" /> WhatsApp
+                        </span>
+                      )}
+                      {biz.channels.web && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                          <Globe className="w-2.5 h-2.5" /> Web
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-2 sm:self-center flex-none pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800">

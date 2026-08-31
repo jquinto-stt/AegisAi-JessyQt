@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { usePedidos } from "../context/PedidosContext";
+import { useBusiness } from "@/context/BusinessContext";
+import { playOrderAlert } from "@/utils/audioAlerts";
 import { ProductItem, ProductReview, ProductModifierGroup, ProductModifierOption } from "../types";
 import {
   Layers,
@@ -28,6 +30,13 @@ import {
   HelpCircle,
   Tag,
   Package,
+  Eye,
+  ShoppingBag,
+  UtensilsCrossed,
+  LayoutGrid,
+  Filter,
+  Volume2,
+  Info,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 
@@ -42,17 +51,40 @@ export const CatalogoInteligenteView: React.FC<{
     updateProduct,
     addProduct,
     orders,
+    createManualOrder,
   } = usePedidos();
 
+  const { activeBusiness } = useBusiness();
+
   const [activeSubTab, setActiveSubTab] = useState<"catalogo" | "resenas">("catalogo");
+  const [viewLayout, setViewLayout] = useState<"grouped" | "grid">("grouped");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [starFilter, setStarFilter] = useState<number | "TODOS">("TODOS");
   const [sortBy, setSortBy] = useState<"populares" | "rating" | "precio_asc" | "precio_desc">("populares");
 
-  // Edit / Create Modals
+  // Modals
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [reviewModalProduct, setReviewModalProduct] = useState<ProductItem | null>(null);
+  const [customerPreviewProduct, setCustomerPreviewProduct] = useState<ProductItem | null>(null);
+
+  // Category creation modal
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [customCategoriesList, setCustomCategoriesList] = useState<string[]>([
+    "Empanadas",
+    "Hamburguesas & Combos",
+    "Pizzas",
+    "Acompañamientos",
+    "Bebidas",
+    "Postres",
+  ]);
+
+  // Customer Customization State (Interactive simulation)
+  const [previewSelectedOptions, setPreviewSelectedOptions] = useState<{ [groupId: string]: string[] }>({});
+  const [previewQuantity, setPreviewQuantity] = useState(1);
+  const [previewCustomerNotes, setPreviewCustomerNotes] = useState("");
+  const [orderAddedToast, setOrderAddedToast] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (targetProductId) {
@@ -61,12 +93,19 @@ export const CatalogoInteligenteView: React.FC<{
     }
   }, [targetProductId, products]);
 
+  // Extract all categories dynamically from products + custom list
+  const allAvailableCategories = useMemo(() => {
+    const fromProducts = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+    const combined = Array.from(new Set(["Todos", ...customCategoriesList, ...fromProducts]));
+    return combined;
+  }, [products, customCategoriesList]);
+
   // New Product Form State
   const [newProdName, setNewProdName] = useState("");
   const [newProdCode, setNewProdCode] = useState("");
   const [newProdCategory, setNewProdCategory] = useState("Empanadas");
-  const [newProdPrice, setNewProdPrice] = useState<number>(5000);
-  const [newProdPrepTime, setNewProdPrepTime] = useState<number>(10);
+  const [newProdPrice, setNewProdPrice] = useState<number>(5500);
+  const [newProdPrepTime, setNewProdPrepTime] = useState<number>(12);
   const [newProdDesc, setNewProdDesc] = useState("");
   const [newProdImage, setNewProdImage] = useState("");
   const [newProdModifiers, setNewProdModifiers] = useState<ProductModifierGroup[]>([]);
@@ -75,52 +114,204 @@ export const CatalogoInteligenteView: React.FC<{
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
   const [submittedReplies, setSubmittedReplies] = useState<{ [key: string]: string }>({});
 
-  const categories = [
-    "Todos",
-    "Empanadas",
-    "Combos",
-    "Acompañamientos",
-    "Bebidas",
-    "Postres",
-  ];
-
   // Aggregate all reviews across all products
-  const allReviews = products.flatMap(p =>
-    (p.reviews || []).map(r => ({
-      ...r,
-      productName: p.name,
-      productImage: p.imageUrl,
-      productId: p.id,
-    }))
-  );
+  const allReviews = useMemo(() => {
+    return products.flatMap(p =>
+      (p.reviews || []).map(r => ({
+        ...r,
+        productName: p.name,
+        productImage: p.imageUrl,
+        productId: p.id,
+      }))
+    );
+  }, [products]);
 
   const filteredReviews = allReviews.filter(r => {
     if (starFilter !== "TODOS" && r.rating !== starFilter) return false;
     return true;
   });
 
-  // Filter & Sort Products
-  let displayProducts = [...products];
+  // Open Customer Customization Preview
+  const handleOpenCustomerPreview = (product: ProductItem) => {
+    setCustomerPreviewProduct(product);
+    setPreviewQuantity(1);
+    setPreviewCustomerNotes("");
 
-  if (selectedCategory !== "Todos") {
-    displayProducts = displayProducts.filter(p => p.category === selectedCategory);
-  }
+    // Initialize defaults for modifiers
+    const initialSelections: { [groupId: string]: string[] } = {};
+    (product.modifiers || []).forEach(group => {
+      if (group.minSelect > 0 && group.options.length > 0) {
+        const defaultOpt = group.options.find(o => o.isDefault) || group.options[0];
+        initialSelections[group.id] = [defaultOpt.id];
+      } else {
+        initialSelections[group.id] = [];
+      }
+    });
+    setPreviewSelectedOptions(initialSelections);
+  };
 
-  if (sortBy === "populares") {
-    displayProducts.sort((a, b) => (a.popularityRank || 99) - (b.popularityRank || 99));
-  } else if (sortBy === "rating") {
-    displayProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  } else if (sortBy === "precio_asc") {
-    displayProducts.sort((a, b) => a.price - b.price);
-  } else if (sortBy === "precio_desc") {
-    displayProducts.sort((a, b) => b.price - a.price);
-  }
+  // Toggle modifier option in preview
+  const handleTogglePreviewOption = (group: ProductModifierGroup, optionId: string) => {
+    const current = previewSelectedOptions[group.id] || [];
 
-  // Group products by category when in "Todos" mode
-  const categorizedSections: Record<string, ProductItem[]> = {};
-  categories.filter(c => c !== "Todos").forEach(cat => {
-    categorizedSections[cat] = products.filter(p => p.category === cat);
-  });
+    if (group.maxSelect === 1) {
+      // Single selection (Radio behavior)
+      setPreviewSelectedOptions(prev => ({
+        ...prev,
+        [group.id]: [optionId],
+      }));
+    } else {
+      // Multiple selection (Checkbox behavior)
+      if (current.includes(optionId)) {
+        setPreviewSelectedOptions(prev => ({
+          ...prev,
+          [group.id]: current.filter(id => id !== optionId),
+        }));
+      } else {
+        if (current.length < group.maxSelect) {
+          setPreviewSelectedOptions(prev => ({
+            ...prev,
+            [group.id]: [...current, optionId],
+          }));
+        }
+      }
+    }
+  };
+
+  // Calculate live preview total
+  const computedPreviewTotal = useMemo(() => {
+    if (!customerPreviewProduct) return 0;
+    let totalPerUnit = customerPreviewProduct.price;
+
+    (customerPreviewProduct.modifiers || []).forEach(group => {
+      const selectedIds = previewSelectedOptions[group.id] || [];
+      selectedIds.forEach(optId => {
+        const opt = group.options.find(o => o.id === optId);
+        if (opt) totalPerUnit += opt.priceDelta;
+      });
+    });
+
+    return totalPerUnit * previewQuantity;
+  }, [customerPreviewProduct, previewSelectedOptions, previewQuantity]);
+
+  // Submit test order from customer preview
+  const handleTestOrderSubmit = () => {
+    if (!customerPreviewProduct) return;
+
+    // Collect modifier descriptions
+    const chosenModifierDescriptions: string[] = [];
+    (customerPreviewProduct.modifiers || []).forEach(group => {
+      const selectedIds = previewSelectedOptions[group.id] || [];
+      selectedIds.forEach(optId => {
+        const opt = group.options.find(o => o.id === optId);
+        if (opt) {
+          chosenModifierDescriptions.push(
+            `${opt.name}${opt.priceDelta > 0 ? ` (+$${opt.priceDelta.toLocaleString("es-CO")})` : ""}`
+          );
+        }
+      });
+    });
+
+    const fullNotes = [
+      chosenModifierDescriptions.length > 0 ? `Extras: ${chosenModifierDescriptions.join(", ")}` : "",
+      previewCustomerNotes.trim() ? `Nota cliente: ${previewCustomerNotes.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    createManualOrder({
+      customerName: "Cliente Web QR (Mesa 3)",
+      customerPhone: "+57 310 998 8776",
+      channel: "web",
+      notes: fullNotes,
+      items: [
+        {
+          productId: customerPreviewProduct.id,
+          name: customerPreviewProduct.name,
+          quantity: previewQuantity,
+          unitPrice: customerPreviewProduct.price,
+          notes: fullNotes,
+          category: customerPreviewProduct.category,
+        },
+      ],
+      total: computedPreviewTotal,
+    });
+
+    playOrderAlert(activeBusiness?.soundAlert || "bell");
+
+    setOrderAddedToast(`Comanda de "${customerPreviewProduct.name}" inyectada en vivo.`);
+    setTimeout(() => setOrderAddedToast(null), 3500);
+    setCustomerPreviewProduct(null);
+  };
+
+  // Modifier Group Quick Templates
+  const handleAddModifierTemplate = (
+    templateType: "extras" | "cooking" | "sauces" | "drink"
+  ) => {
+    if (!editingProduct) return;
+
+    let newGroup: ProductModifierGroup;
+
+    switch (templateType) {
+      case "extras":
+        newGroup = {
+          id: `mod-extras-${Date.now()}`,
+          title: "Adicionales & Extras Especiales",
+          minSelect: 0,
+          maxSelect: 4,
+          options: [
+            { id: `opt-ex-1-${Date.now()}`, name: "Doble Queso Mozzarella", priceDelta: 3000 },
+            { id: `opt-ex-2-${Date.now()}`, name: "Tocineta Crujiente Ahumada", priceDelta: 4000 },
+            { id: `opt-ex-3-${Date.now()}`, name: "Huevo Frito a la Plancha", priceDelta: 2000 },
+            { id: `opt-ex-4-${Date.now()}`, name: "Porción de Papas Rústicas", priceDelta: 5500 },
+          ],
+        };
+        break;
+      case "cooking":
+        newGroup = {
+          id: `mod-cook-${Date.now()}`,
+          title: "Tipo de Cocción / Término",
+          minSelect: 1,
+          maxSelect: 1,
+          options: [
+            { id: `opt-ck-1-${Date.now()}`, name: "Al Horno de Piedra (Recomendado)", priceDelta: 0, isDefault: true },
+            { id: `opt-ck-2-${Date.now()}`, name: "Frita Crocante", priceDelta: 500 },
+          ],
+        };
+        break;
+      case "sauces":
+        newGroup = {
+          id: `mod-sauces-${Date.now()}`,
+          title: "Salsas & Dips de la Casa",
+          minSelect: 0,
+          maxSelect: 2,
+          options: [
+            { id: `opt-sc-1-${Date.now()}`, name: "Salsa Tártara Artesanal 50ml", priceDelta: 1500 },
+            { id: `opt-sc-2-${Date.now()}`, name: "Chimichurri Casero 50ml", priceDelta: 1500 },
+            { id: `opt-sc-3-${Date.now()}`, name: "Salsa Criolla con Ají", priceDelta: 1500 },
+          ],
+        };
+        break;
+      case "drink":
+        newGroup = {
+          id: `mod-drink-${Date.now()}`,
+          title: "Bebida de Acompañamiento",
+          minSelect: 0,
+          maxSelect: 1,
+          options: [
+            { id: `opt-dr-1-${Date.now()}`, name: "Gaseosa Personal 400ml", priceDelta: 4500 },
+            { id: `opt-dr-2-${Date.now()}`, name: "Jugo Natural en Agua 16oz", priceDelta: 6000 },
+            { id: `opt-dr-3-${Date.now()}`, name: "Cerveza Artesanal 330ml", priceDelta: 8500 },
+          ],
+        };
+        break;
+    }
+
+    setEditingProduct({
+      ...editingProduct,
+      modifiers: [...(editingProduct.modifiers || []), newGroup],
+    });
+  };
 
   // Handle Edit Product Save
   const handleSaveProductEdit = () => {
@@ -156,7 +347,7 @@ export const CatalogoInteligenteView: React.FC<{
       code: newProdCode || `PRD-${Math.floor(Math.random() * 900 + 100)}`,
       category: newProdCategory,
       price: Number(newProdPrice),
-      prepTimeMinutes: Number(newProdPrepTime) || 10,
+      prepTimeMinutes: Number(newProdPrepTime) || 12,
       description: newProdDesc || "Plato artesanal preparado con ingredientes frescos.",
       imageUrl:
         newProdImage ||
@@ -174,18 +365,35 @@ export const CatalogoInteligenteView: React.FC<{
     // Reset Form
     setNewProdName("");
     setNewProdCode("");
-    setNewProdPrice(5000);
+    setNewProdPrice(5500);
     setNewProdDesc("");
     setNewProdImage("");
     setNewProdModifiers([]);
     setIsCreatingProduct(false);
   };
 
-  const handleSendReply = (reviewId: string) => {
-    if (replyText[reviewId]?.trim()) {
-      setSubmittedReplies(prev => ({ ...prev, [reviewId]: replyText[reviewId] }));
-      setReplyText(prev => ({ ...prev, [reviewId]: "" }));
+  // Add new category
+  const handleAddNewCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim()) return;
+    const cat = newCategoryName.trim();
+    if (!customCategoriesList.includes(cat)) {
+      setCustomCategoriesList(prev => [...prev, cat]);
+      setSelectedCategory(cat);
     }
+    setNewCategoryName("");
+    setIsAddingCategory(false);
+  };
+
+  // Sort and filter helper
+  const sortProducts = (list: ProductItem[]) => {
+    return [...list].sort((a, b) => {
+      if (sortBy === "populares") return (a.popularityRank || 99) - (b.popularityRank || 99);
+      if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+      if (sortBy === "precio_asc") return a.price - b.price;
+      if (sortBy === "precio_desc") return b.price - a.price;
+      return 0;
+    });
   };
 
   // Render a Single Product Card
@@ -204,14 +412,14 @@ export const CatalogoInteligenteView: React.FC<{
     return (
       <div
         key={product.id}
-        className={`bg-white dark:bg-[#2C2D31] rounded-2xl border shadow-xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-md ${
+        className={`bg-white dark:bg-[#1E1F23] rounded-3xl border shadow-xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-md ${
           product.isAvailable
-            ? "border-slate-200 dark:border-[#374151] hover:border-[#FF3F1A]"
-            : "border-slate-200 dark:border-gray-700 opacity-75"
+            ? "border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A]"
+            : "border-zinc-200 dark:border-zinc-800 opacity-75"
         }`}
       >
         {/* Photo Header */}
-        <div className="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-gray-800">
+        <div className="relative h-48 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
           <img
             src={
               product.imageUrl ||
@@ -225,14 +433,14 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Popularity Badge */}
           {product.popularityRank && product.popularityRank <= 3 && (
-            <span className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md flex items-center gap-1">
+            <span className="absolute top-3 left-3 bg-[#FF3F1A] text-white text-[10px] font-bold font-mono px-2.5 py-1 rounded-xl shadow-md flex items-center gap-1">
               <Flame className="w-3.5 h-3.5 fill-white" />
               <span>#{product.popularityRank} Más Pedido</span>
             </span>
           )}
 
           {/* Price Tag */}
-          <div className="absolute bottom-3 right-3 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md text-gray-900 dark:text-white px-3 py-1 rounded-xl text-xs font-mono font-black shadow-xs">
+          <div className="absolute bottom-3 right-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md text-zinc-950 dark:text-white px-3 py-1 rounded-xl text-xs font-mono font-bold shadow-xs">
             ${product.price.toLocaleString("es-CO")}
           </div>
 
@@ -241,57 +449,62 @@ export const CatalogoInteligenteView: React.FC<{
           </span>
         </div>
 
-        {/* Body */}
+        {/* Card Body */}
         <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-black text-sm sm:text-base text-gray-900 dark:text-gray-100 line-clamp-1">
+              <h4 className="font-bold text-sm sm:text-base text-zinc-950 dark:text-zinc-50 line-clamp-1">
                 {product.name}
               </h4>
-              <span className="font-mono font-black text-base text-zinc-900 dark:text-zinc-100 flex-none">
-                ${product.price.toLocaleString("es-CO")}
-              </span>
             </div>
 
-            <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2">
               {product.description}
             </p>
 
-            {/* Modifiers Pill Chip */}
+            {/* Modifiers & Extras Chip */}
             <div className="pt-1">
               {product.modifiers && product.modifiers.length > 0 ? (
-                <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700">
                   <Sparkles className="w-3 h-3 text-[#FF3F1A]" />
                   <span>
-                    {product.modifiers.length} grupo(s) de personalización ({modifierCount} opciones)
+                    {product.modifiers.length} grupo(s) · {modifierCount} extras/opciones
                   </span>
                 </div>
               ) : (
-                <div className="text-[11px] text-gray-400 font-semibold flex items-center gap-1">
-                  <span>Sin personalizaciones adicionales</span>
+                <div className="text-[11px] text-zinc-400 font-medium flex items-center gap-1">
+                  <span>Sin adicionales configurados</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Ratings & Orders - Clean Bar */}
+          {/* Customer Customizer Preview Button (Audio / Visual Interaction) */}
+          <button
+            type="button"
+            onClick={() => handleOpenCustomerPreview(product)}
+            className="w-full py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-950/70 border border-orange-200/80 dark:border-orange-900/60 text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+          >
+            <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            <span>Personalizar (Vista Cliente)</span>
+          </button>
+
+          {/* Ratings & Orders */}
           <div className="grid grid-cols-2 gap-2 pt-1">
-            {/* Rating Chip */}
             <button
               type="button"
               onClick={() => setReviewModalProduct(product)}
-              className="p-2 rounded-xl bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 text-zinc-900 dark:text-zinc-100 border border-slate-200 dark:border-gray-700 font-black text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
-              title="Ver reseñas de este plato"
+              className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 text-zinc-800 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-700 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              title="Ver opiniones"
             >
               <Star className="w-3.5 h-3.5 fill-[#FF3F1A] text-[#FF3F1A]" />
               <span>{product.rating || 4.9}</span>
-              <span className="text-[10px] font-extrabold opacity-70">
+              <span className="text-[10px] font-normal opacity-70">
                 ({product.reviewsCount || 0})
               </span>
             </button>
 
-            {/* Sales Volume Chip */}
-            <div className="p-2 rounded-xl bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-zinc-900 dark:text-zinc-100 font-black text-xs flex items-center justify-center gap-1.5">
+            <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center justify-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>{product.salesCount || 120} cmds</span>
             </div>
@@ -299,27 +512,27 @@ export const CatalogoInteligenteView: React.FC<{
 
           {/* Live Kitchen Notice */}
           {activeOrdersWithProd > 0 && (
-            <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 rounded-xl px-3 py-1.5 text-xs text-[#FF3F1A] font-black flex items-center justify-between">
-              <span>{activeOrdersWithProd} en preparación en fogón</span>
+            <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 rounded-xl px-3 py-1.5 text-xs text-[#FF3F1A] font-bold flex items-center justify-between">
+              <span>{activeOrdersWithProd} en cocina ahora</span>
               <span className="font-mono">{product.prepTimeMinutes}m</span>
             </div>
           )}
 
           {/* Footer Controls: Edit Product & Stock Switch */}
-          <div className="pt-3 border-t border-gray-100 dark:border-[#374151] flex items-center justify-between gap-2">
+          <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => setEditingProduct({ ...product })}
-              className="py-2 px-3 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-black text-gray-700 dark:text-gray-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="py-2 px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:border-[#FF3F1A] hover:text-[#FF3F1A] shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Editar & Variantes</span>
+              <span>Editar Extras</span>
             </button>
 
             {/* Availability Switch */}
             <button
               onClick={() => toggleProductAvailability(product.id)}
-              className={`py-2 px-3 rounded-xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+              className={`py-2 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                 product.isAvailable
                   ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200"
                   : "bg-zinc-900 text-white hover:bg-zinc-800"
@@ -344,118 +557,118 @@ export const CatalogoInteligenteView: React.FC<{
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-sans">
       {/* Header Banner */}
       <NectoBanner
         icon={<Layers className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Catálogo de Productos & Menú Inteligente"
-        description="Gestión estructurada por categorías, personalizaciones de platos (escandallos), precios y reseñas en vivo."
+        title="Catálogo & Menú por Categorías"
+        description="Organización agrupada por categorías, personalizaciones de platos de cara al cliente (extras, salsas y términos) y recetas de stock."
       />
 
       {/* Subtab Switcher Toolbar */}
-      <div className="flex bg-slate-100 dark:bg-gray-800 rounded-2xl p-1 border border-slate-200 dark:border-gray-700 w-fit shadow-xs">
+      <div className="flex bg-zinc-100 dark:bg-zinc-800/80 rounded-2xl p-1 border border-zinc-200 dark:border-zinc-700 w-fit shadow-2xs">
         <button
           onClick={() => setActiveSubTab("catalogo")}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeSubTab === "catalogo"
               ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+              : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
           }`}
         >
-          Catálogo de Platos ({products.length})
+          Catálogo & Platos ({products.length})
         </button>
         <button
           onClick={() => setActiveSubTab("resenas")}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeSubTab === "resenas"
               ? "bg-[#FF3F1A] text-white shadow-xs"
-              : "text-gray-600 dark:text-gray-300 hover:text-gray-900"
+              : "text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
           }`}
         >
-          Centro de Reseñas ({allReviews.length})
+          Opiniones de Clientes ({allReviews.length})
         </button>
       </div>
 
       {/* Top Intelligence Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stat 1: Total Platos */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Platos en Carta
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
+            <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
               {products.length}
             </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full">
               {products.filter(p => p.isAvailable).length} activos
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-zinc-400">
             {products.filter(p => !p.isAvailable).length} pausados por falta de insumos
           </p>
         </div>
 
         {/* Stat 2: Calificación Global */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Satisfacción Global
+        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+            Satisfacción de Clientes
           </span>
           <div className="flex items-baseline justify-between">
             <div className="flex items-center gap-1">
-              <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
+              <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
                 4.9
               </p>
               <span className="text-[#FF3F1A] font-bold text-sm">★</span>
             </div>
-            <span className="text-xs font-bold text-gray-500">
-              {allReviews.length * 15 + 45} opiniones
+            <span className="text-xs font-bold text-zinc-500">
+              {allReviews.length * 15 + 45} reseñas
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">98.2% de calificaciones positivas</p>
+          <p className="text-[11px] text-zinc-400">98.2% de calificaciones positivas</p>
         </div>
 
         {/* Stat 3: Más Vendido */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Plato Estrella #1
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-base font-black text-gray-900 dark:text-gray-100 truncate">
+            <p className="text-sm font-bold text-zinc-950 dark:text-zinc-50 truncate max-w-[140px]">
               Carne a Cuchillo
             </p>
-            <span className="text-xs font-black text-[#FF3F1A] font-mono">
+            <span className="text-xs font-bold text-[#FF3F1A] font-mono">
               482 cmds
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">38% del volumen de ventas</p>
+          <p className="text-[11px] text-zinc-400">38% del volumen de ventas</p>
         </div>
 
         {/* Stat 4: Categorías */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+        <div className="bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-2xs space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
             Categorías Activas
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {categories.length - 1}
+            <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+              {allAvailableCategories.length - 1}
             </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 rounded-full">
               Estructurado
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">Empanadas, Combos, Bebidas, Postres</p>
+          <p className="text-[11px] text-zinc-400">Agrupado por secciones de menú</p>
         </div>
       </div>
 
       {/* SUBTAB 1: Catálogo de Platos */}
       {activeSubTab === "catalogo" && (
         <div className="space-y-6">
-          {/* Toolbar */}
-          <div className="bg-white dark:bg-[#2C2D31] rounded-2xl p-4 border border-slate-200 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-4">
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full flex-nowrap sm:flex-wrap py-1">
-              {categories.map(cat => {
+          {/* Category Bar & Controls */}
+          <div className="bg-white dark:bg-[#1E1F23] rounded-3xl p-4 sm:p-5 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+            {/* Category Filter Pills + New Category Button */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full flex-nowrap py-1">
+              {allAvailableCategories.map(cat => {
                 const count =
                   cat === "Todos"
                     ? products.length
@@ -465,32 +678,73 @@ export const CatalogoInteligenteView: React.FC<{
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
+                    className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
                       selectedCategory === cat
                         ? "bg-[#FF3F1A] text-white shadow-xs"
-                        : "bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-slate-300"
+                        : "bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
                     }`}
                   >
                     <span>{cat}</span>
-                    <span className="text-[10px] opacity-75 font-mono">({count})</span>
+                    <span className="text-[10px] opacity-80 font-mono">({count})</span>
                   </button>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => setIsAddingCategory(true)}
+                className="px-3 py-2 rounded-2xl text-xs font-bold border border-dashed border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-400 transition-colors flex items-center gap-1 flex-none cursor-pointer"
+                title="Añadir nueva categoría"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva Categoría</span>
+              </button>
             </div>
 
-            {/* Right Controls: Sort & New Product Button */}
+            {/* Right Controls: View Layout, Sort & New Product Button */}
             <div className="flex items-center gap-3 flex-wrap">
+              {/* Grouped View vs Grid Switch */}
+              <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <button
+                  type="button"
+                  onClick={() => setViewLayout("grouped")}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                    viewLayout === "grouped"
+                      ? "bg-white dark:bg-zinc-750 text-[#FF3F1A] shadow-2xs"
+                      : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  }`}
+                  title="Vista Agrupada por Secciones"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Por Secciones</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewLayout("grid")}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 ${
+                    viewLayout === "grid"
+                      ? "bg-white dark:bg-zinc-750 text-[#FF3F1A] shadow-2xs"
+                      : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+                  }`}
+                  title="Vista de Cuadrícula Plana"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Cuadrícula</span>
+                </button>
+              </div>
+
+              {/* Sort selector */}
               <div className="flex items-center gap-2 text-xs font-bold">
-                <span className="text-gray-400 flex items-center gap-1">
-                  <SlidersHorizontal className="w-3.5 h-3.5" /> Ordenar por:
+                <span className="text-zinc-400 hidden sm:flex items-center gap-1">
+                  <SlidersHorizontal className="w-3.5 h-3.5" /> Ordenar:
                 </span>
                 <select
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value as any)}
-                  className="border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl px-3.5 py-2 text-xs font-black cursor-pointer focus:outline-none"
+                  className="border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl px-3 py-2 text-xs font-bold cursor-pointer focus:outline-none"
                 >
-                  <option value="populares">Más Pedidos (Ranking #1)</option>
-                  <option value="rating">Mejor Calificados (Reseñas)</option>
+                  <option value="populares">Más Pedidos (#1)</option>
+                  <option value="rating">Mejor Calificados</option>
                   <option value="precio_desc">Mayor Precio</option>
                   <option value="precio_asc">Menor Precio</option>
                 </select>
@@ -499,49 +753,90 @@ export const CatalogoInteligenteView: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsCreatingProduct(true)}
-                className="rounded-2xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black h-auto py-2.5 px-4 shadow-xs active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                className="py-2 px-4 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
               >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Plato / Producto</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo Plato</span>
               </button>
             </div>
           </div>
 
-          {/* Categorized Product Sections or Single Filtered View */}
-          {selectedCategory === "Todos" ? (
+          {/* MAIN PRODUCT LISTING: Grouped Sections or Flat Grid */}
+          {viewLayout === "grouped" && selectedCategory === "Todos" ? (
+            /* GROUPED BY CATEGORY SECTIONS */
             <div className="space-y-8">
-              {categories
-                .filter(c => c !== "Todos")
+              {allAvailableCategories
+                .filter(cat => cat !== "Todos")
                 .map(cat => {
-                  const catItems = categorizedSections[cat] || [];
-                  if (catItems.length === 0) return null;
+                  const catProducts = sortProducts(products.filter(p => p.category === cat));
+                  if (catProducts.length === 0) return null;
 
                   return (
                     <div key={cat} className="space-y-4">
-                      {/* Category Header Banner */}
-                      <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
+                      {/* Category Section Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
                         <div className="flex items-center gap-2.5">
-                          <span className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
-                          <h3 className="font-black text-lg text-gray-900 dark:text-gray-100">
-                            {cat}
-                          </h3>
-                          <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full text-gray-500">
-                            {catItems.length} {catItems.length === 1 ? "plato" : "platos"}
-                          </span>
+                          <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[#FF3F1A] font-bold">
+                            <UtensilsCrossed className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-bold text-zinc-950 dark:text-white tracking-tight">
+                              {cat}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400">
+                              {catProducts.length} producto(s) disponibles en esta sección
+                            </p>
+                          </div>
                         </div>
+
+                        <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl">
+                          {catProducts.length} Platos
+                        </span>
                       </div>
 
-                      {/* Product Grid for this Category */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
-                        {catItems.map(p => renderProductCard(p))}
+                      {/* Category Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {catProducts.map(renderProductCard)}
                       </div>
                     </div>
                   );
                 })}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
-              {displayProducts.map(p => renderProductCard(p))}
+            /* FLAT FILTERED GRID */
+            <div>
+              {(() => {
+                const filtered = sortProducts(
+                  products.filter(p => selectedCategory === "Todos" || p.category === selectedCategory)
+                );
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="p-12 text-center bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                      <UtensilsCrossed className="w-8 h-8 text-zinc-300 mx-auto" />
+                      <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                        No hay platos en la categoría "{selectedCategory}"
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewProdCategory(selectedCategory === "Todos" ? "Empanadas" : selectedCategory);
+                          setIsCreatingProduct(true);
+                        }}
+                        className="py-2 px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
+                      >
+                        Crear primer plato en {selectedCategory}
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map(renderProductCard)}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -549,100 +844,87 @@ export const CatalogoInteligenteView: React.FC<{
 
       {/* SUBTAB 2: Centro de Reseñas */}
       {activeSubTab === "resenas" && (
-        <div className="space-y-5">
-          {/* Reviews Filter Toolbar */}
-          <div className="bg-white dark:bg-[#2C2D31] rounded-3xl p-4 border border-slate-200/90 dark:border-[#374151] shadow-xs flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full flex-nowrap sm:flex-wrap py-1">
-              <span className="text-xs font-bold text-gray-500 mr-1 flex-none">Filtrar por estrellas:</span>
-              {(["TODOS", 5, 4, 3, 2, 1] as const).map(stars => (
-                <button
-                  key={String(stars)}
-                  onClick={() => setStarFilter(stars)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 flex-none ${
-                    starFilter === stars
-                      ? "bg-amber-500 text-gray-950 shadow-xs"
-                      : "bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-slate-300"
-                  }`}
-                >
-                  <span>{stars === "TODOS" ? "Todas" : `${stars} ★`}</span>
-                </button>
-              ))}
-            </div>
-
-            <span className="text-xs font-mono font-bold text-gray-400">
-              {filteredReviews.length} reseñas encontradas
-            </span>
+        <div className="space-y-6">
+          {/* Rating Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {["TODOS", 5, 4, 3, 2, 1].map(r => (
+              <button
+                key={r}
+                onClick={() => setStarFilter(r as any)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  starFilter === r
+                    ? "bg-[#FF3F1A] text-white shadow-xs"
+                    : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300"
+                }`}
+              >
+                {r === "TODOS" ? "Todas las opiniones" : `${r} Estrellas ★`}
+              </button>
+            ))}
           </div>
 
-          {/* Reviews List */}
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredReviews.map(rev => (
               <div
                 key={rev.id}
-                className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200/90 dark:border-[#374151] p-5 shadow-xs space-y-3"
+                className="p-5 rounded-3xl bg-white dark:bg-[#1E1F23] border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-3"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    {rev.productImage && (
-                      <img
-                        src={rev.productImage}
-                        alt={rev.productName}
-                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-gray-700 flex-none"
-                      />
-                    )}
+                    <img
+                      src={rev.productImage}
+                      alt={rev.productName}
+                      className="w-11 h-11 rounded-xl object-cover border border-zinc-200 dark:border-zinc-700"
+                    />
                     <div>
-                      <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                        {rev.author}
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
+                        {rev.productName}
                       </h4>
-                      <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        Plato: {rev.productName}
-                      </p>
+                      <div className="flex items-center gap-1 text-[#FF3F1A] text-xs font-bold">
+                        {"★".repeat(rev.rating)}
+                        <span className="text-zinc-400 text-[10px] ml-1 font-normal">
+                          por {rev.author} · {rev.date}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 text-[#FF3F1A] font-black text-sm justify-end">
-                      {"★".repeat(rev.rating)}
-                      <span className="text-gray-400 font-mono text-xs ml-1">({rev.rating}/5)</span>
-                    </div>
-                    <span className="text-[11px] text-gray-400">{rev.date}</span>
-                  </div>
+                  {rev.verifiedOrder && (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> Verificado
+                    </span>
+                  )}
                 </div>
 
-                <p className="text-xs text-gray-700 dark:text-gray-300 bg-slate-50 dark:bg-gray-800/80 p-3.5 rounded-2xl border border-slate-100 dark:border-gray-700 leading-relaxed">
+                <p className="text-xs text-zinc-600 dark:text-zinc-300 italic leading-relaxed">
                   "{rev.comment}"
                 </p>
 
-                {/* Submitted Restaurant Response */}
-                {submittedReplies[rev.id] && (
-                  <div className="ml-6 p-3 bg-zinc-100 dark:bg-zinc-800 border-l-4 border-[#FF3F1A] rounded-xl text-xs space-y-1">
-                    <strong className="text-zinc-900 dark:text-zinc-100 font-black">
-                      Respuesta del Restaurante:
-                    </strong>
-                    <p className="text-gray-700 dark:text-gray-300">{submittedReplies[rev.id]}</p>
+                {/* Reply section */}
+                {submittedReplies[rev.id] ? (
+                  <div className="p-3 rounded-xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/40 text-xs text-zinc-800 dark:text-zinc-200">
+                    <span className="font-bold text-[#FF3F1A] text-[11px] block">Respuesta del Local:</span>
+                    <p className="mt-0.5">{submittedReplies[rev.id]}</p>
                   </div>
-                )}
-
-                {/* Response Input */}
-                {!submittedReplies[rev.id] && (
-                  <div className="flex items-center gap-2 pt-1">
+                ) : (
+                  <div className="flex items-center gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                     <input
                       type="text"
-                      placeholder="Responder al cliente en WhatsApp / Web..."
+                      placeholder="Responder al cliente como local..."
                       value={replyText[rev.id] || ""}
-                      onChange={e =>
-                        setReplyText(prev => ({ ...prev, [rev.id]: e.target.value }))
-                      }
-                      onKeyDown={e => e.key === "Enter" && handleSendReply(rev.id)}
-                      className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 rounded-xl px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
+                      onChange={e => setReplyText({ ...replyText, [rev.id]: e.target.value })}
+                      className="flex-1 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs"
                     />
                     <button
                       type="button"
-                      onClick={() => handleSendReply(rev.id)}
-                      className="py-2 px-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-black flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+                      onClick={() => {
+                        if (replyText[rev.id]?.trim()) {
+                          setSubmittedReplies({ ...submittedReplies, [rev.id]: replyText[rev.id] });
+                          setReplyText({ ...replyText, [rev.id]: "" });
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold"
                     >
-                      <Reply className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                      <span>Responder</span>
+                      Enviar
                     </button>
                   </div>
                 )}
@@ -652,28 +934,195 @@ export const CatalogoInteligenteView: React.FC<{
         </div>
       )}
 
-      {/* MODAL 1: EDIT PRODUCT & MODIFIERS (Audio Insight: Editor de Personalizaciones) */}
+      {/* ========================================================================= */}
+      {/* MODAL 1: CUSTOMER CUSTOMIZATION & LIVE PREVIEW (Vista de cara al cliente) */}
+      {/* ========================================================================= */}
+      {customerPreviewProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-[#121215] rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl max-w-xl w-full flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Header with Photo & Close */}
+            <div className="relative h-44 sm:h-52 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-none">
+              <img
+                src={customerPreviewProduct.imageUrl}
+                alt={customerPreviewProduct.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+              <button
+                type="button"
+                onClick={() => setCustomerPreviewProduct(null)}
+                className="absolute top-4 right-4 w-9 h-9 rounded-2xl bg-black/50 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="absolute bottom-4 left-5 right-5 text-white">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg sm:text-xl font-black leading-tight">
+                    {customerPreviewProduct.name}
+                  </h3>
+                  <span className="font-mono text-base font-black px-3 py-1 rounded-xl bg-[#FF3F1A] text-white">
+                    ${customerPreviewProduct.price.toLocaleString("es-CO")}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-200 mt-1 line-clamp-2">
+                  {customerPreviewProduct.description}
+                </p>
+              </div>
+            </div>
+
+            {/* Customization Options Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+              {(customerPreviewProduct.modifiers || []).length === 0 ? (
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-500">
+                  Este plato se sirve en su receta estándar sin modificadores adicionales.
+                </div>
+              ) : (
+                customerPreviewProduct.modifiers?.map(group => {
+                  const isSingleSelect = group.maxSelect === 1;
+                  const selectedInGroup = previewSelectedOptions[group.id] || [];
+
+                  return (
+                    <div
+                      key={group.id}
+                      className="p-4 sm:p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-zinc-950 dark:text-white">
+                            {group.title}
+                          </h4>
+                          <p className="text-[11px] text-zinc-400">
+                            {isSingleSelect
+                              ? "Selecciona 1 opción obligatoria"
+                              : `Selecciona hasta ${group.maxSelect} adicionales`}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                          {group.minSelect > 0 ? "Obligatorio" : "Opcional"}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.options.map(opt => {
+                          const isSelected = selectedInGroup.includes(opt.id);
+
+                          return (
+                            <div
+                              key={opt.id}
+                              onClick={() => handleTogglePreviewOption(group, opt.id)}
+                              className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isSelected
+                                  ? "bg-white dark:bg-zinc-800/90 border-zinc-950 dark:border-zinc-100 shadow-xs font-bold"
+                                  : "bg-white/60 dark:bg-zinc-900/40 border-zinc-200/80 dark:border-zinc-800/80 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div
+                                  className={`w-5 h-5 rounded-${isSingleSelect ? "full" : "lg"} flex items-center justify-center flex-none transition-colors ${
+                                    isSelected
+                                      ? "bg-[#FF3F1A] text-white"
+                                      : "border border-zinc-300 dark:border-zinc-700"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                                </div>
+                                <span className="text-xs font-semibold truncate">{opt.name}</span>
+                              </div>
+
+                              <span className="text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 flex-none">
+                                {opt.priceDelta > 0
+                                  ? `+$${opt.priceDelta.toLocaleString("es-CO")}`
+                                  : "Sin costo"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* Special Instructions Textarea */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Instrucciones especiales para Cocina
+                </label>
+                <textarea
+                  rows={2}
+                  value={previewCustomerNotes}
+                  onChange={e => setPreviewCustomerNotes(e.target.value)}
+                  placeholder="Ej. Sin cebolla, salsa aparte, servilletas extra..."
+                  className="w-full p-3 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:outline-none focus:border-[#FF3F1A]"
+                />
+              </div>
+            </div>
+
+            {/* Bottom Floating Bar with Quantity & Total */}
+            <div className="p-5 sm:p-6 bg-zinc-50/80 dark:bg-zinc-900/90 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-4 flex-none">
+              {/* Quantity Controls */}
+              <div className="flex items-center gap-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-1 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setPreviewQuantity(Math.max(1, previewQuantity - 1))}
+                  className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  -
+                </button>
+                <span className="font-mono text-sm font-bold w-6 text-center text-zinc-950 dark:text-white">
+                  {previewQuantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewQuantity(previewQuantity + 1)}
+                  className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 text-zinc-800 dark:text-zinc-200 font-bold flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Add to order button */}
+              <button
+                type="button"
+                onClick={handleTestOrderSubmit}
+                className="flex-1 py-3 px-5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold transition-all flex items-center justify-between shadow-sm cursor-pointer active:scale-98"
+              >
+                <span>Probar Comanda en Vivo</span>
+                <span className="font-mono font-black text-sm">
+                  ${computedPreviewTotal.toLocaleString("es-CO")}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: EDIT PRODUCT & MODIFIERS STUDIO                                 */}
+      {/* ========================================================================= */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-slate-200 dark:border-[#374151] shadow-2xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-[#121215] rounded-3xl border border-zinc-200/90 dark:border-zinc-800 shadow-2xl max-w-3xl w-full p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950 text-[#FF3F1A] flex items-center justify-center">
-                  <Edit3 className="w-4 h-4" />
+            <div className="flex items-center justify-between border-b border-zinc-200/80 dark:border-zinc-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] flex items-center justify-center font-bold">
+                  <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-base text-gray-900 dark:text-gray-100">
+                  <h3 className="text-base font-extrabold text-zinc-950 dark:text-white">
                     Editar Plato & Personalizaciones
                   </h3>
-                  <p className="text-xs text-gray-400">
-                    Configura nombres, precios base y grupos de adicionales/tamaño (como en Rappi / Uber).
+                  <p className="text-xs text-zinc-400">
+                    Configura precios, recetas y opciones de adicionales de cara al cliente.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="w-9 h-9 rounded-2xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -681,8 +1130,8 @@ export const CatalogoInteligenteView: React.FC<{
 
             {/* General Info Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                   Nombre del Plato:
                 </label>
                 <input
@@ -691,22 +1140,22 @@ export const CatalogoInteligenteView: React.FC<{
                   onChange={e =>
                     setEditingProduct({ ...editingProduct, name: e.target.value })
                   }
-                  className="w-full text-xs font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
-                  Categoría:
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Categoría del Menú:
                 </label>
                 <select
                   value={editingProduct.category}
                   onChange={e =>
                     setEditingProduct({ ...editingProduct, category: e.target.value })
                   }
-                  className="w-full text-xs font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none cursor-pointer"
                 >
-                  {categories
+                  {allAvailableCategories
                     .filter(c => c !== "Todos")
                     .map(c => (
                       <option key={c} value={c}>
@@ -716,8 +1165,8 @@ export const CatalogoInteligenteView: React.FC<{
                 </select>
               </div>
 
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                   Precio Base ($ COP):
                 </label>
                 <input
@@ -729,13 +1178,13 @@ export const CatalogoInteligenteView: React.FC<{
                       price: Number(e.target.value),
                     })
                   }
-                  className="w-full text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
-                  Tiempo de Cocina (min):
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Tiempo de Cocina / KDS (min):
                 </label>
                 <input
                   type="number"
@@ -746,13 +1195,13 @@ export const CatalogoInteligenteView: React.FC<{
                       prepTimeMinutes: Number(e.target.value),
                     })
                   }
-                  className="w-full text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
-                  Descripción Clara para Clientes & IA:
+              <div className="sm:col-span-2 space-y-1.5">
+                <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                  Descripción del Plato:
                 </label>
                 <textarea
                   rows={2}
@@ -763,54 +1212,71 @@ export const CatalogoInteligenteView: React.FC<{
                       description: e.target.value,
                     })
                   }
-                  className="w-full text-xs border border-slate-200 dark:border-gray-700 rounded-xl p-2.5 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 leading-relaxed"
+                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
             </div>
 
-            {/* Modifiers & Customizations Builder (Audio Insight) */}
-            <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <div className="flex items-center justify-between">
-                <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                  <span>Personalizaciones y Modificadores:</span>
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newGroup: ProductModifierGroup = {
-                      id: `mod-${Date.now()}`,
-                      title: "Elige tu Tamaño / Adicional",
-                      minSelect: 0,
-                      maxSelect: 1,
-                      options: [
-                        { id: `opt-${Date.now()}-1`, name: "Porción Regular", priceDelta: 0, isDefault: true },
-                        { id: `opt-${Date.now()}-2`, name: "Porción Grande", priceDelta: 2000 },
-                      ],
-                    };
-                    setEditingProduct({
-                      ...editingProduct,
-                      modifiers: [...(editingProduct.modifiers || []), newGroup],
-                    });
-                  }}
-                  className="text-[11px] font-black text-[#190088] dark:text-indigo-400 flex items-center gap-1 hover:underline cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Añadir Grupo de Personalización
-                </button>
+            {/* Modifiers & Extras Studio Section */}
+            <div className="space-y-4 pt-4 border-t border-zinc-200/80 dark:border-zinc-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                    <span>Personalizaciones, Extras & Modificadores</span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400">
+                    Opciones que el cliente podrá elegir y pagar adicionalmente.
+                  </p>
+                </div>
+
+                {/* Fast Template Inserters */}
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleAddModifierTemplate("extras")}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/50 text-[#FF3F1A] border border-orange-200 dark:border-orange-900/60 cursor-pointer"
+                  >
+                    + Preset Extras
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddModifierTemplate("cooking")}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                  >
+                    + Preset Cocción
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddModifierTemplate("sauces")}
+                    className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 cursor-pointer"
+                  >
+                    + Preset Salsas
+                  </button>
+                </div>
               </div>
 
               {(editingProduct.modifiers || []).length === 0 ? (
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-gray-850 border border-dashed border-slate-200 dark:border-gray-700 text-center text-xs text-gray-400">
-                  Sin opciones de personalización configuradas aún.
+                <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-dashed border-zinc-300 dark:border-zinc-700 text-center space-y-2">
+                  <p className="text-xs text-zinc-400">
+                    Sin grupos de personalización para este plato.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleAddModifierTemplate("extras")}
+                    className="py-1.5 px-3 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold cursor-pointer"
+                  >
+                    Añadir Primer Grupo de Extras
+                  </button>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {editingProduct.modifiers?.map((group, gIdx) => (
                     <div
                       key={group.id}
-                      className="p-4 rounded-2xl bg-slate-50 dark:bg-gray-850 border border-slate-200 dark:border-gray-700 space-y-3"
+                      className="p-4 sm:p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-3"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-3">
                         <input
                           type="text"
                           value={group.title}
@@ -819,20 +1285,38 @@ export const CatalogoInteligenteView: React.FC<{
                             updated[gIdx].title = e.target.value;
                             setEditingProduct({ ...editingProduct, modifiers: updated });
                           }}
-                          className="font-black text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 px-2 py-1 rounded-lg border border-slate-200 dark:border-gray-700 w-2/3"
-                          placeholder="Nombre del grupo (ej. Elige tu tamaño)"
+                          className="font-bold text-xs text-zinc-950 dark:text-white bg-white dark:bg-zinc-950 px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 flex-1"
+                          placeholder="Nombre del grupo (ej. Elige tus Extras)"
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = editingProduct.modifiers?.filter((_, i) => i !== gIdx);
-                            setEditingProduct({ ...editingProduct, modifiers: updated });
-                          }}
-                          className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
-                          title="Eliminar grupo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={group.maxSelect === 1 ? "single" : "multi"}
+                            onChange={e => {
+                              const isSingle = e.target.value === "single";
+                              const updated = [...(editingProduct.modifiers || [])];
+                              updated[gIdx].minSelect = isSingle ? 1 : 0;
+                              updated[gIdx].maxSelect = isSingle ? 1 : 4;
+                              setEditingProduct({ ...editingProduct, modifiers: updated });
+                            }}
+                            className="text-xs font-bold border border-zinc-200 dark:border-zinc-700 rounded-xl px-2.5 py-1 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200"
+                          >
+                            <option value="single">Selección Única (1)</option>
+                            <option value="multi">Múltiples Extras</option>
+                          </select>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = editingProduct.modifiers?.filter((_, i) => i !== gIdx);
+                              setEditingProduct({ ...editingProduct, modifiers: updated });
+                            }}
+                            className="w-8 h-8 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950 flex items-center justify-center cursor-pointer transition-colors"
+                            title="Eliminar grupo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {/* Options in this Group */}
@@ -847,11 +1331,12 @@ export const CatalogoInteligenteView: React.FC<{
                                 updated[gIdx].options[oIdx].name = e.target.value;
                                 setEditingProduct({ ...editingProduct, modifiers: updated });
                               }}
-                              className="flex-1 text-xs border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-2 py-1 text-gray-800 dark:text-gray-200"
-                              placeholder="Nombre de la opción (ej. Porción Grande)"
+                              className="flex-1 text-xs border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 rounded-xl px-3 py-1.5 text-zinc-800 dark:text-zinc-200"
+                              placeholder="Nombre de la opción (ej. Queso Extra)"
                             />
+
                             <div className="flex items-center gap-1 text-xs">
-                              <span className="text-gray-400 font-mono">+</span>
+                              <span className="text-zinc-400 font-mono">+$</span>
                               <input
                                 type="number"
                                 value={opt.priceDelta}
@@ -860,10 +1345,11 @@ export const CatalogoInteligenteView: React.FC<{
                                   updated[gIdx].options[oIdx].priceDelta = Number(e.target.value);
                                   setEditingProduct({ ...editingProduct, modifiers: updated });
                                 }}
-                                className="w-20 text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg px-2 py-1 text-gray-800 dark:text-gray-200"
-                                placeholder="Precio extra"
+                                className="w-24 text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 rounded-xl px-2.5 py-1.5 text-zinc-800 dark:text-zinc-200"
+                                placeholder="Precio"
                               />
                             </div>
+
                             <button
                               type="button"
                               onClick={() => {
@@ -871,7 +1357,7 @@ export const CatalogoInteligenteView: React.FC<{
                                 updated[gIdx].options = updated[gIdx].options.filter((_, i) => i !== oIdx);
                                 setEditingProduct({ ...editingProduct, modifiers: updated });
                               }}
-                              className="text-gray-400 hover:text-red-500 cursor-pointer"
+                              className="w-7 h-7 rounded-lg text-zinc-400 hover:text-red-500 flex items-center justify-center cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -889,9 +1375,9 @@ export const CatalogoInteligenteView: React.FC<{
                             });
                             setEditingProduct({ ...editingProduct, modifiers: updated });
                           }}
-                          className="text-[11px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex items-center gap-1 pt-1 cursor-pointer"
+                          className="text-[11px] font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1 pt-1 cursor-pointer"
                         >
-                          <Plus className="w-3 h-3" /> Añadir Opción a este grupo
+                          <Plus className="w-3.5 h-3.5" /> Añadir Opción a este grupo
                         </button>
                       </div>
                     </div>
@@ -900,168 +1386,19 @@ export const CatalogoInteligenteView: React.FC<{
               )}
             </div>
 
-            {/* Recipe / Escandallo & Stock Automation Section */}
-            <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                    <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                    <span>Receta & Escandallo de Insumos:</span>
-                  </h4>
-                  <p className="text-[11px] text-gray-400">
-                    Define las materias primas consumidas por porción para descontar stock automáticamente.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const firstIng = ingredients[0];
-                    if (!firstIng) return;
-                    const newRecItem = {
-                      ingredientId: firstIng.id,
-                      ingredientName: firstIng.name,
-                      quantityRequired: 0.1,
-                      unit: firstIng.unit,
-                    };
-                    setEditingProduct({
-                      ...editingProduct,
-                      recipe: [...(editingProduct.recipe || []), newRecItem],
-                    });
-                  }}
-                  className="text-[11px] font-black text-[#FF3F1A] flex items-center gap-1 hover:underline cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Añadir Insumo
-                </button>
-              </div>
-
-              {/* Recipe List */}
-              {(editingProduct.recipe || []).length === 0 ? (
-                <div className="p-3.5 rounded-2xl bg-orange-50/30 dark:bg-orange-950/20 border border-dashed border-orange-200 dark:border-orange-900/40 text-center text-xs text-orange-700 dark:text-orange-300">
-                  Sin receta asignada. Haz clic en "Añadir Insumo" para vincular ingredientes y habilitar el descuento de stock.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {editingProduct.recipe?.map((item, rIdx) => {
-                    const currentIng = ingredients.find(i => i.id === item.ingredientId);
-                    return (
-                      <div
-                        key={rIdx}
-                        className="p-3 rounded-xl bg-slate-50 dark:bg-gray-800/80 border border-slate-200 dark:border-gray-700 flex flex-wrap items-center gap-2"
-                      >
-                        <select
-                          value={item.ingredientId}
-                          onChange={e => {
-                            const selectedId = e.target.value;
-                            const found = ingredients.find(i => i.id === selectedId);
-                            const updated = [...(editingProduct.recipe || [])];
-                            updated[rIdx] = {
-                              ...updated[rIdx],
-                              ingredientId: selectedId,
-                              ingredientName: found?.name || "",
-                              unit: found?.unit || "kg",
-                            };
-                            setEditingProduct({ ...editingProduct, recipe: updated });
-                          }}
-                          className="flex-1 min-w-[180px] text-xs font-bold p-1.5 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] text-gray-900 dark:text-gray-100"
-                        >
-                          {ingredients.map(ing => (
-                            <option key={ing.id} value={ing.id}>
-                              {ing.name} ({ing.currentStock} {ing.unit} disp.)
-                            </option>
-                          ))}
-                        </select>
-
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="text-gray-400 font-bold text-[10px]">CANT:</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.quantityRequired}
-                            onChange={e => {
-                              const updated = [...(editingProduct.recipe || [])];
-                              updated[rIdx].quantityRequired = parseFloat(e.target.value) || 0;
-                              setEditingProduct({ ...editingProduct, recipe: updated });
-                            }}
-                            className="w-20 text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 bg-white dark:bg-[#1E1F23] rounded-lg px-2 py-1 text-gray-900 dark:text-gray-100"
-                          />
-                          <span className="font-mono text-gray-500 font-bold text-xs">{item.unit}</span>
-                        </div>
-
-                        {currentIng && (
-                          <span className="text-[11px] font-mono text-gray-400">
-                            (Costo: ${(currentIng.costPerUnit * item.quantityRequired).toFixed(0)})
-                          </span>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = editingProduct.recipe?.filter((_, i) => i !== rIdx);
-                            setEditingProduct({ ...editingProduct, recipe: updated });
-                          }}
-                          className="text-gray-400 hover:text-red-500 p-1 cursor-pointer ml-auto"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Auto Pause on Stock Out & Cost Margins Preview */}
-              <div className="p-3 bg-slate-100/70 dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={editingProduct.autoPauseOnStockOut ?? true}
-                    onChange={e =>
-                      setEditingProduct({
-                        ...editingProduct,
-                        autoPauseOnStockOut: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 text-[#FF3F1A] rounded"
-                  />
-                  <span>Pausar plato automáticamente si algún insumo llega a 0</span>
-                </label>
-
-                {/* Cost Estimation */}
-                {(() => {
-                  const estCost = (editingProduct.recipe || []).reduce((sum, r) => {
-                    const ing = ingredients.find(i => i.id === r.ingredientId);
-                    return sum + (ing ? ing.costPerUnit * r.quantityRequired : 0);
-                  }, 0);
-                  const margin = editingProduct.price > 0 ? ((editingProduct.price - estCost) / editingProduct.price) * 100 : 0;
-                  return (
-                    <div className="flex items-center gap-2 text-xs font-mono">
-                      <span className="text-gray-500">Costo Materia Prima:</span>
-                      <strong className="text-gray-900 dark:text-white font-black">${estCost.toFixed(0)}</strong>
-                      <span className={`px-2 py-0.5 rounded-md font-extrabold text-[10px] ${
-                        margin >= 60 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                      }`}>
-                        {margin.toFixed(0)}% Margen
-                      </span>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-
             {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-zinc-200/80 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setEditingProduct(null)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="py-2.5 px-4 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={handleSaveProductEdit}
-                className="py-2.5 px-5 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="py-2.5 px-6 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03413] text-white text-xs font-bold shadow-sm flex items-center gap-2 cursor-pointer transition-all active:scale-98"
               >
                 <Check className="w-4 h-4" />
                 <span>Guardar Cambios</span>
@@ -1071,64 +1408,115 @@ export const CatalogoInteligenteView: React.FC<{
         </div>
       )}
 
-      {/* MODAL 2: CREATE NEW PRODUCT (Crear Plato) */}
+      {/* ========================================================================= */}
+      {/* MODAL 3: CREATE NEW CATEGORY                                             */}
+      {/* ========================================================================= */}
+      {isAddingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <form
+            onSubmit={handleAddNewCategory}
+            className="bg-white dark:bg-[#121215] rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-sm w-full p-6 space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <h3 className="text-sm font-bold text-zinc-950 dark:text-white">
+                Nueva Categoría de Menú
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddingCategory(false)}
+                className="text-zinc-400 hover:text-zinc-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                Nombre de la Categoría:
+              </label>
+              <input
+                type="text"
+                required
+                autoFocus
+                placeholder="Ej. Pizzas Artesanales, Postres..."
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddingCategory(false)}
+                className="py-2 px-3 text-xs font-bold text-zinc-500"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="py-2 px-4 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
+              >
+                Crear Categoría
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 4: CREATE NEW PRODUCT                                              */}
+      {/* ========================================================================= */}
       {isCreatingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-md animate-fade-in">
           <form
             onSubmit={handleCreateProductSubmit}
-            className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-slate-200 dark:border-[#374151] shadow-2xl max-w-xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-[#121215] rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-2xl max-w-xl w-full p-6 sm:p-8 space-y-5 max-h-[90vh] overflow-y-auto"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+            <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950 text-[#FF3F1A] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] flex items-center justify-center font-bold">
                   <Plus className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="font-black text-base text-gray-900 dark:text-gray-100">
-                    Crear Nuevo Plato / Producto
-                  </h3>
-                  <p className="text-xs text-gray-400">
-                    Añade un plato a la carta física, WhatsApp IA y menú web.
-                  </p>
-                </div>
+                <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  Crear Nuevo Plato
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCreatingProduct(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                className="text-zinc-400 hover:text-zinc-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Form Fields */}
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                   Nombre del Plato:
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej. Empanada Fugazzeta con Mozzarella"
+                  placeholder="Ej. Hamburguesa Doble Cheddar con Bacon"
                   value={newProdName}
                   onChange={e => setNewProdName(e.target.value)}
-                  className="w-full text-xs font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                     Categoría:
                   </label>
                   <select
                     value={newProdCategory}
                     onChange={e => setNewProdCategory(e.target.value)}
-                    className="w-full text-xs font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="w-full text-xs font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white"
                   >
-                    {categories
+                    {allAvailableCategories
                       .filter(c => c !== "Todos")
                       .map(c => (
                         <option key={c} value={c}>
@@ -1138,8 +1526,8 @@ export const CatalogoInteligenteView: React.FC<{
                   </select>
                 </div>
 
-                <div>
-                  <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                     Precio ($ COP):
                   </label>
                   <input
@@ -1147,101 +1535,49 @@ export const CatalogoInteligenteView: React.FC<{
                     required
                     value={newProdPrice}
                     onChange={e => setNewProdPrice(Number(e.target.value))}
-                    className="w-full text-xs font-mono font-bold border border-slate-200 dark:border-gray-700 rounded-xl px-3 py-2 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="w-full text-xs font-mono font-bold border border-zinc-200 dark:border-zinc-800 rounded-xl px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300 block mb-1">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
                   Descripción:
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Describe los ingredientes principales para el menú..."
+                  placeholder="Describe los ingredientes principales para el menú digital..."
                   value={newProdDesc}
                   onChange={e => setNewProdDesc(e.target.value)}
-                  className="w-full text-xs border border-slate-200 dark:border-gray-700 rounded-xl p-2.5 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full text-xs border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
                 />
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={() => setIsCreatingProduct(false)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="py-2.5 px-4 text-xs font-bold text-zinc-500"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="py-2.5 px-5 rounded-xl bg-[#FF3F1A] hover:bg-orange-600 text-white text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="py-2.5 px-6 rounded-xl bg-[#FF3F1A] text-white text-xs font-bold cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>Crear Plato</span>
+                Crear Plato
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* MODAL 3: VIEW PRODUCT REVIEWS */}
-      {reviewModalProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border-2 border-slate-200 dark:border-[#374151] shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <div>
-                <h3 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                  Reseñas: {reviewModalProduct.name}
-                </h3>
-                <div className="flex items-center gap-1 text-amber-500 font-bold text-xs mt-0.5">
-                  {"★".repeat(Math.round(reviewModalProduct.rating || 5))}
-                  <span className="text-gray-400 font-mono ml-1">
-                    ({reviewModalProduct.rating} / 5) · {reviewModalProduct.reviewsCount || 0} opiniones
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={() => setReviewModalProduct(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {(reviewModalProduct.reviews || []).length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-6">
-                  Sin reseñas individuales detalladas aún para este plato.
-                </p>
-              ) : (
-                reviewModalProduct.reviews?.map(rev => (
-                  <div
-                    key={rev.id}
-                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-gray-800/80 border border-slate-200 dark:border-gray-700 text-xs space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <strong className="text-gray-900 dark:text-gray-100">{rev.author}</strong>
-                      <span className="text-[10px] text-gray-400">{rev.date}</span>
-                    </div>
-                    <p className="text-gray-600 dark:text-gray-300 italic">"{rev.comment}"</p>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-right">
-              <button
-                type="button"
-                onClick={() => setReviewModalProduct(null)}
-                className="py-2 px-4 rounded-xl bg-[#190088] hover:bg-[#140070] text-white text-xs font-black cursor-pointer transition-colors shadow-xs"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
+      {/* Floating Order Injected Toast */}
+      {orderAddedToast && (
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-zinc-950 text-white border border-zinc-800 shadow-2xl flex items-center gap-3 animate-fade-in">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          <span className="text-xs font-bold">{orderAddedToast}</span>
         </div>
       )}
     </div>
