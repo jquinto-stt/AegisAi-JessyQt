@@ -1,157 +1,110 @@
-# MANUAL — IMPLEMENTACIÓN DE ELEMENTS
-### Kiro + WebiAI
+# MANUAL DE INSTALACIÓN — WebiAI + Elements (Kiro)
 
-> **Aviso de seguridad (leer primero).**
-> Este manual **nunca** debe contener tokens de npm (`_authToken`), contraseñas ni credenciales.
-> Si en algún log, captura o chat viste un token privado de npm, considéralo comprometido:
-> **revócalo/rótalo** en el registry correspondiente. En todos los ejemplos, los tokens
-> aparecen como `<REDACTED>` a propósito.
+Guía **paso a paso ejecutable**. Cada paso tiene: **comando exacto** → **qué debe
+devolver** → **si falla, qué hacer exactamente**. Sigue los pasos **en orden**; no
+avances a un paso si el anterior no dio el resultado esperado.
 
----
-
-## Índice
-
-1. [Objetivo](#1-objetivo)
-2. [Requisitos previos](#2-requisitos-previos)
-3. [Preparación de Kiro](#3-preparación-de-kiro)
-4. [Inicio de sesión / autenticación](#4-inicio-de-sesión--autenticación)
-5. [Configuración del registry WebiAI](#5-configuración-del-registry-webiai)
-6. [Verificación del acceso al registry](#6-verificación-del-acceso-al-registry)
-7. [Instalación de WebiAI CLI](#7-instalación-de-webiai-cli)
-8. [Instalación de Elements](#8-instalación-de-elements)
-9. [Configuración del proyecto frontend](#9-configuración-del-proyecto-frontend)
-10. [Estructura recomendada](#10-estructura-recomendada)
-11. [Implementación de Elements](#11-implementación-de-elements)
-12. [Integración con la SPA](#12-integración-con-la-spa)
-13. [Flujo de trabajo con Kiro](#13-flujo-de-trabajo-con-kiro)
-14. [Problemas encontrados](#14-problemas-encontrados)
-15. [Soluciones](#15-soluciones)
-16. [Errores comunes](#16-errores-comunes)
-17. [Puntos críticos a tener en cuenta](#17-puntos-críticos-a-tener-en-cuenta)
-18. [Checklist de instalación](#18-checklist-de-instalación)
-19. [Checklist de implementación](#19-checklist-de-implementación)
-20. [Troubleshooting](#20-troubleshooting)
+> **Seguridad:** nunca escribas ni compartas el `_authToken` real. En este manual los
+> tokens aparecen como `<REDACTED>` / `<TU_TOKEN>`. Si viste un token en un log o chat,
+> **revócalo/rótalo**.
 
 ---
 
-## 1. Objetivo
-
-Dejar documentado, de principio a fin, cómo llevar un entorno **Kiro** desde cero
-hasta tener disponible el tooling de **WebiAI** y la capa **Elements** del proyecto,
-de forma **reutilizable** por cualquier desarrollador del equipo.
-
-El manual sigue un principio no negociable:
-
-> **No basta con "ejecute estos comandos".**
-> Cada comando indica **qué debe devolver** y **cómo verificar** que salió bien
-> antes de pasar al siguiente paso.
-
-### Aclaración importante sobre el problema real
-
-El problema que motivó este manual **no fue que Elements no existiera**. El paquete
-`@webiai/sdk.cli` sí estaba publicado y accesible. El problema fue que estábamos
-intentando **verificar/instalar desde un entorno Kiro que todavía no tenía resuelta
-la autenticación al registry privado de WebiAI**.
+## Orden de instalación (visión rápida)
 
 ```text
-Windows
-   │
-   ├── npm autenticado
-   ├── registry WebiAI accesible
-   └── npm view @webiai/sdk.cli ✓
-
-Kiro
-   │
-   ├── registry configurado ✓
-   ├── autenticación inicialmente ausente ✗
-   ├── npm whoami → ENEEDAUTH
-   │
-   └── iniciar sesión / autenticar Kiro
-             ↓
-        registry accesible ✓
-             ↓
-        instalar WebiAI ✓
-             ↓
-        instalar Elements ✓
+1. Node / npm            (base del sistema)
+2. Registry @webiai      (a dónde busca npm los paquetes @webiai/*)
+3. Autenticación         (login contra el registry privado)
+4. Verificar acceso      (npm view: el paquete es visible)
+5. WebiAI CLI            (npm install -g @webiai/sdk.cli)
+6. Dependencias proyecto (npm install: @webiai/devlink + públicas)
+7. Elements              (capa del repo en src/elements/, no es un paquete)
+8. Arrancar y verificar  (tsc + build + dev)
 ```
 
-**Que funcione en Windows NO significa que funcione en Kiro/Linux.** Son entornos
-distintos, con `.npmrc` y credenciales distintas.
+> **IMPORTANTE:** primero se instala **WebiAI** (el CLI/tooling desde el registry
+> privado). **Elements NO es un paquete npm**: es la capa de UI que vive en el repo
+> (`src/elements/`). Se "instala" clonando el repo y corriendo `npm install`. El paso 7
+> lo explica.
 
 ---
 
-## 2. Requisitos previos
+## PASO 1 — Node y npm
 
-| Requisito | Verificación | Valor esperado (referencia de este proyecto) |
-|---|---|---|
-| Node.js ≥ 22 | `node --version` | `v22.x` (aquí `v22.23.2`) |
-| npm ≥ 10 | `npm --version` | `10.x` (aquí `10.9.8`) |
-| Acceso al registry privado WebiAI | ver secciones 5–6 | `https://npm.pkg.webiai.io/` |
-| Credenciales/token del registry privado | provistas por el equipo | (nunca en el manual) |
-
-**Cómo verificar:**
+**Comando:**
 
 ```bash
-node --version   # debe imprimir v22.x o superior
-npm --version    # debe imprimir 10.x o superior
+node --version
+npm --version
 ```
 
-Si `node` o `npm` no responden, detente y resuelve la instalación de Node antes de continuar.
-
----
-
-## 3. Preparación de Kiro
-
-En el entorno Kiro (contenedor Linux) la configuración de npm suele vivir en un
-`.npmrc` a nivel de workspace, no en tu `$HOME` de Windows.
-
-**Cómo verificar de qué `.npmrc` está leyendo npm:**
-
-```bash
-npm config list
-```
-
-Debe mostrar, entre otras cosas, la ruta del/los `.npmrc` en uso y las claves
-configuradas. Presta atención a:
-
-- `prefix` (dónde se instalan los paquetes globales).
-- `@webiai:registry`.
-- `registry`.
-
-En este proyecto el `.npmrc` del workspace contiene (tokens redactados):
-
-```ini
-prefix=/workspaces/.npm-global
-strict-ssl=true
-//npm.pkg.github.com/:_authToken=<REDACTED>
-//npm.pkg.webiai.io/:_authToken=<REDACTED>
-@webiai:registry=https://npm.pkg.webiai.io
-```
-
-> **Nota del entorno Coder/Kiro:** el token de GitHub Packages suele inyectarse vía
-> `GITHUB_TOKEN`. El token del registry WebiAI lo provee el equipo. **Nunca** lo
-> escribas a mano en un manual ni lo subas a git.
-
-**Cómo verificar dónde instala npm los binarios globales:**
-
-```bash
-npm root -g
-```
-
-Valor esperado en Kiro:
+**Debe devolver:**
 
 ```text
-/workspaces/.npm-global/lib/node_modules
+v22.x   (o superior)   ← ejemplo real: v22.23.2
+10.x    (o superior)   ← ejemplo real: 10.9.8
 ```
 
-Esto es clave para diagnosticar el error `webiai: command not found` (paquete
-instalado pero binario fuera del `PATH`).
+**Si falla:**
+
+- `command not found: node` → instala Node 22+ (nvm, o el instalador del sistema) y
+  reabre la terminal. Repite el comando.
+- Versión menor a 22 → actualiza Node. WebiAI requiere Node ≥ 22.
 
 ---
 
-## 4. Inicio de sesión / autenticación
+## PASO 2 — Configurar el registry `@webiai`
 
-Este es **el paso donde falla la mayoría** y el corazón del problema documentado.
+Solo el scope `@webiai` va al registry privado. **El registry general NO se toca.**
+
+**Comandos:**
+
+```bash
+npm config set @webiai:registry https://npm.pkg.webiai.io/
+npm config set registry https://registry.npmjs.org/
+```
+
+**Verifica que quedó bien:**
+
+```bash
+npm config get @webiai:registry
+```
+
+Debe devolver **exactamente**:
+
+```text
+https://npm.pkg.webiai.io/
+```
+
+```bash
+npm config get registry
+```
+
+Debe devolver **exactamente**:
+
+```text
+https://registry.npmjs.org/
+```
+
+**Si falla / da otro valor:**
+
+- Devuelve `undefined` en `@webiai:registry` → el `set` no se aplicó; repítelo.
+- El `registry` general apunta a `npm.pkg.webiai.io` → **está mal**. Corrígelo:
+  ```bash
+  npm config set registry https://registry.npmjs.org/
+  ```
+  (Si dejas todo npm apuntando al privado, luego fallará descargar `commander`, `react`,
+  etc. con `404` — ver PASO 5.)
+- Escribiste `@webiai:registry=https://...` directo en la terminal y salió
+  `bash: ... No such file or directory` → **eso es sintaxis de `.npmrc`, no un comando.**
+  Usa siempre `npm config set @webiai:registry https://npm.pkg.webiai.io/`.
+
+---
+
+## PASO 3 — Autenticación contra el registry privado
+
+**Configurar el registry NO es estar autenticado.** Este es el paso donde más se falla.
 
 **Comando de verificación:**
 
@@ -159,157 +112,98 @@ Este es **el paso donde falla la mayoría** y el corazón del problema documenta
 npm whoami --registry=https://npm.pkg.webiai.io/
 ```
 
-**Interpretación del resultado:**
+**Debe devolver:** tu nombre de usuario del registry.
 
-| Resultado | Significado | Acción |
-|---|---|---|
-| Imprime tu usuario | Autenticación correcta | Continúa a la sección 5/6 |
-| `npm error code ENEEDAUTH` | Kiro **no** está autenticado en el registry privado | **Detente y resuelve** antes de seguir |
-
-Ejemplo real del fallo en Kiro:
+**Si devuelve esto → NO estás autenticado, detente y arréglalo:**
 
 ```text
 npm error code ENEEDAUTH
 npm error need auth This command requires you to be logged in.
-npm error need auth You need to authorize this machine using `npm adduser`
 ```
 
-**Cómo resolver la autenticación (según cómo distribuya credenciales tu equipo):**
+**Cómo arreglarlo (elige UNA opción):**
 
-- **Opción A — token en `.npmrc` (recomendada en Kiro/CI):** añade la línea del
-  token del registry privado al `.npmrc` del workspace:
-
+- **Opción A — token en `.npmrc` (recomendada en Kiro/CI).** Añade estas líneas al
+  `.npmrc` del workspace (`/workspaces/.npmrc` en este entorno):
   ```ini
   //npm.pkg.webiai.io/:_authToken=<TU_TOKEN>
   @webiai:registry=https://npm.pkg.webiai.io/
   ```
-
-  > No pongas el token en el repo. En Kiro/Coder suele venir de una variable de
-  > entorno o de SSM; en CI, de un secret.
+  El `<TU_TOKEN>` lo provee el equipo (o una variable de entorno / SSM). **No lo
+  escribas en el repo.**
 
 - **Opción B — login interactivo:**
-
   ```bash
   npm login --registry=https://npm.pkg.webiai.io/
   ```
 
-**Verifica de nuevo antes de continuar:**
+**Vuelve a verificar (obligatorio antes de seguir):**
 
 ```bash
 npm whoami --registry=https://npm.pkg.webiai.io/
 ```
 
-Solo cuando este comando devuelve tu usuario debes pasar al resto del proceso.
+Solo continúa cuando devuelva tu usuario.
+
+> **Nota Windows vs Kiro:** que `npm whoami` funcione en tu Windows NO significa que
+> funcione en Kiro (contenedor Linux). Son entornos con `.npmrc` y credenciales
+> distintos. **Verifica dentro de Kiro.**
 
 ---
 
-## 5. Configuración del registry WebiAI
+## PASO 4 — Verificar que el paquete WebiAI es accesible (sin instalar)
 
-La regla de oro:
-
-```text
-@webiai  →  https://npm.pkg.webiai.io/   (registry privado, SOLO el scope)
-todo lo demás  →  https://registry.npmjs.org/  (registry público)
-```
-
-**Comandos:**
-
-```bash
-# Registry privado SOLO para el scope @webiai
-npm config set @webiai:registry https://npm.pkg.webiai.io/
-
-# Registry público para todo lo demás (react, vite, commander, etc.)
-npm config set registry https://registry.npmjs.org/
-```
-
-> El segundo comando es defensivo: garantiza que el registry general **no** quedó
-> apuntando por error al privado.
-
----
-
-## 6. Verificación del acceso al registry
-
-Nunca asumas que "está configurado" solo porque no dio error. **Verifica cada valor.**
-
-**Paso 1 — registry del scope:**
-
-```bash
-npm config get @webiai:registry
-```
-
-Debe devolver exactamente:
-
-```text
-https://npm.pkg.webiai.io/
-```
-
-**Paso 2 — registry general:**
-
-```bash
-npm config get registry
-```
-
-Debe devolver exactamente:
-
-```text
-https://registry.npmjs.org/
-```
-
-**Paso 3 — autenticación (repetir el de la sección 4):**
-
-```bash
-npm whoami --registry=https://npm.pkg.webiai.io/
-```
-
-- Devuelve tu usuario → **continúa**.
-- Devuelve `ENEEDAUTH` → **detente** y vuelve a la sección 4.
-
-**Paso 4 — el paquete es visible SIN instalarlo:**
+**Comando:**
 
 ```bash
 npm view @webiai/sdk.cli
 ```
 
-Debe mostrar metadata del paquete (nombre, versión, dependencias). Ejemplo:
+**Debe devolver:** metadata del paquete (nombre, versión, dependencias). Referencia:
 
 ```text
-@webiai/sdk.cli@0.23.11
+@webiai/sdk.cli@0.23.11 ...
 ```
 
-Si aquí ves un error de auth o un `E500 / bug in the auth plugin system`, el
-problema sigue siendo de **autenticación/acceso**, no del paquete.
+**Si falla:**
 
-**Comprobación fina de versión y binario (opcional, muy útil):**
+- `E500 ... bug in the auth plugin system` → sigues **sin autenticar**. Vuelve al PASO 3.
+- `404 Not Found ... is not in this registry` → el scope `@webiai` se está resolviendo
+  contra npmjs. Vuelve al PASO 2 y confirma `npm config get @webiai:registry`.
+
+**Comprobación opcional del binario:**
 
 ```bash
 npm view @webiai/sdk.cli@0.23.11 bin
 ```
 
-Resultado esperado:
+Debe devolver:
 
 ```text
 { webiai: 'dist/cli.js' }
 ```
 
-Esto confirma que el paquete expone un binario llamado `webiai`.
+(Confirma que el paquete instala un comando llamado `webiai`.)
 
 ---
 
-## 7. Instalación de WebiAI CLI
+## PASO 5 — Instalar el WebiAI CLI (global)
 
-Con registry correcto **y** autenticación verificada:
+Solo con el PASO 3 (auth) y el PASO 4 (acceso) en verde.
+
+**Comando:**
 
 ```bash
 npm install -g @webiai/sdk.cli@0.23.11
 ```
 
-Resultado esperado (aproximado):
+**Debe devolver algo como:**
 
 ```text
 added 26 packages
 ```
 
-**Verifica que el CLI quedó operativo:**
+**Verifica que quedó operativo:**
 
 ```bash
 webiai --version
@@ -325,385 +219,49 @@ Debe devolver:
 webiai --help
 ```
 
-Debe listar los comandos disponibles, entre ellos:
+Debe listar comandos: `infra docs init install run hooks build tests clean scan project lib bundle dev kiro`.
 
-```text
-infra  docs  init  install  run  hooks  build  tests
-clean  scan  project  lib  bundle  dev  kiro
-```
+**Si falla:**
 
-Si `webiai --version` funciona, el CLI está instalado, en el `PATH` y ejecutable.
-
-> Si aparece `webiai: command not found`, revisa `npm root -g` (sección 3) y
-> asegúrate de que `<prefix>/bin` esté en tu `PATH`.
+- `404 Not Found - GET https://npm.pkg.webiai.io/commander` (u otra dep pública) →
+  **apuntaste TODO npm al privado.** `commander` es público. Arréglalo:
+  ```bash
+  npm config set registry https://registry.npmjs.org/
+  ```
+  y reinstala.
+- `404 ... @webiai/sdk.cli is not in this registry` → el scope no apunta al privado
+  (PASO 2) o no estás autenticado (PASO 3).
+- `webiai: command not found` (pero el install dijo "added ...") → el binario global no
+  está en el `PATH`. Diagnostica:
+  ```bash
+  npm root -g
+  ```
+  En Kiro debe devolver `/workspaces/.npm-global/lib/node_modules`. Asegúrate de que la
+  carpeta `bin` correspondiente (`/workspaces/.npm-global/bin`) esté en tu `PATH`.
 
 ---
 
-## 8. Instalación de Elements
+## PASO 6 — Instalar las dependencias del proyecto
 
-**Punto clave conceptual:** en este proyecto, **"Elements" es una capa
-arquitectónica propia** (componentes React declarados con `ui_dsl()` en
-`src/elements/`, ver secciones 10–11), **no un paquete npm independiente** de WebiAI.
-Lo que se instala vía registry privado es el **tooling WebiAI** (`@webiai/sdk.cli`,
-`@webiai/devlink`), que es lo que habilita construir/servir el bundle y trabajar con Kiro.
+Clona el repo (si aún no lo tienes) y entra a la raíz del monorepo.
 
-Por eso el manual distingue dos cosas que suelen confundirse:
-
-| Concepto | Qué es | Cómo se "instala" |
-|---|---|---|
-| **Tooling WebiAI** | CLI y devlink del SDK | `npm install` desde el **registry privado** |
-| **Elements** | Capa UI del proyecto (`src/elements/`) | Ya vive en el repo; no se instala por npm |
-
-**Cómo quedó la dependencia del tooling** (en el `package.json` raíz del monorepo):
-
-```jsonc
-{
-  "devDependencies": {
-    "@webiai/devlink": "^2.8.1",
-    "@webiai/sdk.cli": "0.23.11"
-  }
-}
-```
-
-**Comando de instalación de las dependencias del proyecto** (resuelve `@webiai/*`
-desde el privado y el resto desde npmjs, gracias a la config de las secciones 5–6):
+**Comando (en la raíz del repo):**
 
 ```bash
 npm install
 ```
 
-**Cómo verificar que las dependencias `@webiai/*` se instalaron desde el registro correcto:**
+Esto resuelve `@webiai/*` desde el privado y el resto (react, vite, etc.) desde npmjs,
+gracias a la config del PASO 2.
+
+**Verifica que las dependencias WebiAI se instalaron:**
 
 ```bash
 npm ls @webiai/sdk.cli @webiai/devlink
 ```
 
-Debe listar las versiones sin errores de `UNMET DEPENDENCY` ni `404`.
-
-> Si necesitas el CLI de forma global (para `webiai ...` en cualquier carpeta), usa
-> además la instalación global de la sección 7. Para el proyecto en sí, basta con el
-> `npm install` de las devDependencies.
-
----
-
-## 9. Configuración del proyecto frontend
-
-La SPA vive en `packages/apps/web/modules/app` (React + Vite + TypeScript + Tailwind v4).
-
-**Verifica que el proyecto compila y arranca:**
-
-```bash
-# desde packages/apps/web/modules/app
-npm run build      # debe terminar con "✓ built"
-npm run dev        # levanta Vite (por defecto puerto 5173)
-```
-
-Config relevante ya presente en el repo:
-
-- **Alias `@` → `./src`** en `vite.config.ts` y `paths` en `tsconfig.app.json`.
-  Verifícalo:
-
-  ```bash
-  npm run build   # si el alias @ estuviera roto, fallaría la resolución de imports
-  ```
-
-- **Tailwind v4 vía plugin** (`@tailwindcss/vite`), sin `tailwind.config.js`.
-
----
-
-## 10. Estructura recomendada
-
-La capa Elements se ubica en `src/elements/` y sigue esta estructura:
-
-```text
-src/elements/
-├── dsl.ts        # ui_dsl(): declara nodeId + intent + variants → componente tipado
-├── Button.tsx    # variants: primary | accent | outline | ghost
-├── Card.tsx
-├── Badge.tsx
-├── Field.tsx     # <input> etiquetado
-├── Select.tsx    # <select> etiquetado
-├── Textarea.tsx  # <textarea> etiquetada
-├── Toggle.tsx    # switch ON/OFF accesible
-├── SegmentedControl.tsx  # grupo de opciones con estado activo
-├── SearchInput.tsx       # input de búsqueda con forwardRef
-└── index.ts      # barrel (solo exporta los Elements)
-```
-
-Convenciones:
-
-- Cada Element se declara con `ui_dsl()` y **emite `data-node-id` + `data-intent`**
-  para trazabilidad/telemetría/testing.
-- Los que necesitan tipos genéricos literales o `ref` (SegmentedControl, SearchInput)
-  se implementan como función genérica / `forwardRef` en vez de `ui_dsl`, pero mantienen
-  la convención de `data-node-id`/`data-intent`.
-
----
-
-## 11. Implementación de Elements
-
-Un Element se declara así (patrón real de `Button.tsx`):
-
-```tsx
-import { ui_dsl, type ElementBaseProps } from './dsl';
-
-export interface ButtonProps extends ElementBaseProps,
-  Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'> {
-  variant?: 'primary' | 'accent' | 'outline' | 'ghost';
-}
-
-export const Button = ui_dsl<ButtonProps>({
-  nodeId: 'necto.el.button',
-  intent: ['action.generic'],
-  base: 'inline-flex items-center justify-center gap-1.5 rounded-xl ...',
-  variants: {
-    primary: 'bg-zinc-950 text-white ...',
-    accent:  'bg-[#FF3F1A] text-white ...',
-    outline: 'border border-zinc-200 ...',
-    ghost:   'text-zinc-500 hover:bg-zinc-100 ...',
-  },
-  render: ({ nodeId, intent, className, props, children }) => (
-    <button data-node-id={nodeId} data-intent={intent} className={className} {...props}>
-      {children}
-    </button>
-  ),
-});
-```
-
-**Cómo verificar que un Element quedó bien:** al renderizarlo en el DOM debe
-aparecer con sus atributos de trazabilidad. En build:
-
-```bash
-npm run build
-grep -o "necto\.el\.button" dist/assets/index-*.js   # debe encontrarlo
-```
-
----
-
-## 12. Integración con la SPA
-
-Los Elements se consumen desde el barrel:
-
-```tsx
-import { Button, Field, Select, Textarea, Badge, Card } from "@/elements";
-```
-
-Regla práctica de adopción (aprendida en este proyecto):
-
-- **Usa Elements** para acciones (`Button`), formularios estándar (`Field`/`Select`/`Textarea`),
-  estados (`Badge`), contenedores (`Card`), toggles, segmentos y búsquedas.
-- **Deja HTML nativo** donde el Element rompería el diseño: inputs con icono absoluto,
-  `type="date|file|color|datetime-local"`, checkboxes/radios, `<select>` con chevron
-  propio, controles inline sin label, y las **primitivas internas** de `src/elements/`.
-
-**Cómo verificar el nivel de adopción** (Elements vs nativos):
-
-```bash
-EL=$(grep -rho -E "<(Button|Card|Badge|Field|Select|Textarea|Toggle|SegmentedControl|SearchInput)\b" src --include="*.tsx" | wc -l)
-NAT=$(grep -rho -E "<(button|input|select|textarea)\b" src --include="*.tsx" | wc -l)
-awk "BEGIN{printf \"Adopción: %.1f%%\n\", ($EL/($EL+$NAT))*100}"
-```
-
----
-
-## 13. Flujo de trabajo con Kiro
-
-1. **Autenticar** el entorno Kiro contra el registry privado (secciones 4–6).
-2. `npm install` para resolver `@webiai/*` (privado) + resto (público).
-3. Desarrollar en `src/` usando la capa Elements.
-4. Verificar SIEMPRE tras cada grupo de cambios:
-   ```bash
-   npx tsc -p tsconfig.app.json --noEmit    # tipos: EXIT 0
-   npm run build                            # bundle: ✓ built
-   ```
-5. Levantar `npm run dev` y comprobar HTTP 200 en las rutas principales.
-
-> **Regla de verificación de Kiro:** el editor no siempre detecta errores de tipos
-> genéricos; `tsc` sí. Verifica con `tsc`, no solo con los diagnostics del editor.
-
----
-
-## 14. Problemas encontrados
-
-| # | Síntoma | Entorno |
-|---|---|---|
-| P1 | `npm whoami` → `ENEEDAUTH` | Kiro |
-| P2 | `npm view @webiai/sdk.cli` → `E500 / bug in the auth plugin system` | Kiro |
-| P3 | `npm install -g @webiai/sdk.cli` → `404 Not Found ... is not in this registry` | Kiro |
-| P4 | `404 Not Found - GET https://npm.pkg.webiai.io/commander` | Kiro |
-| P5 | `@webiai:registry=https://...` → `bash: No such file or directory` | Kiro |
-| P6 | Funcionaba en Windows pero no en Kiro | ambos |
-
----
-
-## 15. Soluciones
-
-- **P1 (ENEEDAUTH):** autenticar Kiro contra el privado (token en `.npmrc` del
-  workspace o `npm login --registry=...`). Reverificar con `npm whoami --registry=...`.
-- **P2 (E500 auth plugin):** era consecuencia de la falta de auth (P1). Al resolver
-  la autenticación, `npm view` empezó a devolver la metadata correctamente.
-- **P3 (404 en npmjs):** el scope `@webiai` estaba resolviéndose contra
-  `registry.npmjs.org`. Solución: `npm config set @webiai:registry https://npm.pkg.webiai.io/`.
-- **P4 (404 de `commander` en el privado):** se había apuntado **todo** npm al
-  privado. `commander` es público. Solución: mantener `registry` general en npmjs y
-  **solo** el scope `@webiai` en el privado.
-- **P5 (línea de `.npmrc` en Bash):** `@webiai:registry=...` es sintaxis de archivo
-  `.npmrc`, no un comando. Usar `npm config set @webiai:registry https://npm.pkg.webiai.io/`.
-- **P6 (Windows sí / Kiro no):** son entornos distintos. Repetir la verificación de
-  auth y registry **dentro de Kiro**.
-
----
-
-## 16. Errores comunes
-
-**❌ NO hacer esto:**
-
-- ❌ Ejecutar `@webiai:registry=https://npm.pkg.webiai.io/` directamente en Bash.
-  → Es una línea de `.npmrc`, no un comando. Usa `npm config set ...`.
-- ❌ Apuntar **todo** npm al registry privado:
-  ```bash
-  npm config set registry https://npm.pkg.webiai.io/   # ❌ rompe react/commander/etc.
-  ```
-- ❌ Asumir que porque `npm config get @webiai:registry` devuelve la URL, **ya estás
-  autenticado**. Configurar ≠ autenticar. Verifica siempre `npm whoami --registry=...`.
-- ❌ Instalar paquetes `@webiai/*` desde `registry.npmjs.org` (darán 404).
-- ❌ Confundir el entorno **Windows** con el entorno **Linux/contenedor de Kiro**.
-- ❌ Pegar o commitear el `_authToken`.
-
-**✅ SÍ hacer:**
-
-- ✅ Mantener `registry.npmjs.org` como registry general y WebiAI **solo** para el
-  scope `@webiai`.
-- ✅ Verificar siempre `npm whoami --registry=https://npm.pkg.webiai.io/`.
-- ✅ Usar `npm view` para comprobar acceso **antes** de instalar.
-
----
-
-## 17. Puntos críticos a tener en cuenta
-
-1. **Configurar el registry NO es autenticarse.** Son dos cosas separadas.
-2. **El scope aísla el registry privado.** `@webiai` → privado; todo lo demás → público.
-3. **Windows ≠ Kiro.** Verifica dentro del entorno donde vas a instalar.
-4. **`prefix`/`npm root -g`** importa para que `webiai` esté en el `PATH`.
-5. **La instalación no fue "mágica".** Lo que la desbloqueó fue **resolver el acceso
-   autenticado de Kiro al registry privado**, no un comando especial de Elements.
-6. **Tokens fuera del repo y de los manuales**, siempre.
-
----
-
-## 18. Checklist de instalación
-
-```text
-[ ] node --version                → v22.x o superior
-[ ] npm --version                 → 10.x o superior
-[ ] npm config get @webiai:registry → https://npm.pkg.webiai.io/
-[ ] npm config get registry       → https://registry.npmjs.org/
-[ ] npm whoami --registry=https://npm.pkg.webiai.io/ → tu usuario (NO ENEEDAUTH)
-[ ] npm view @webiai/sdk.cli      → muestra metadata/versión
-[ ] npm install -g @webiai/sdk.cli@0.23.11 (si necesitas el CLI global)
-[ ] webiai --version              → 0.23.11
-[ ] webiai --help                 → lista de comandos
-[ ] npm root -g                   → <prefix>/lib/node_modules (binario en PATH)
-```
-
----
-
-## 19. Checklist de implementación
-
-```text
-[ ] npm install (en la raíz del monorepo)  → sin 404 ni UNMET
-[ ] npm ls @webiai/sdk.cli @webiai/devlink → versiones correctas
-[ ] Alias @ → ./src funcionando           → npm run build sin errores de import
-[ ] Elements importados desde "@/elements"
-[ ] npx tsc -p tsconfig.app.json --noEmit  → EXIT 0
-[ ] npm run build                          → ✓ built
-[ ] npm run dev + HTTP 200 en /, /workspaces, /onboarding
-[ ] data-node-id/data-intent presentes en el bundle (grep necto.el.*)
-```
-
----
-
-## 20. Troubleshooting
-
-### Los 3 comandos de diagnóstico (ejecutar en este orden)
-
-Si un desarrollador reporta que "no puede instalar/ver WebiAI o Elements", pídele
-estos tres primero. Aíslan el problema en **registry → autenticación → acceso al paquete**:
-
-```bash
-# 1) ¿El scope apunta al registry privado?
-npm config get @webiai:registry        # esperado: https://npm.pkg.webiai.io/
-
-# 2) ¿Está autenticado ese registry?
-npm whoami --registry=https://npm.pkg.webiai.io/   # esperado: tu usuario (no ENEEDAUTH)
-
-# 3) ¿El paquete es accesible sin instalar?
-npm view @webiai/sdk.cli               # esperado: metadata + versión
-```
-
-### Tabla rápida
-
-| Error | Causa probable | Solución |
-|---|---|---|
-| `ENEEDAUTH` en `npm whoami` | Kiro no autenticado en el privado | Sección 4 (token en `.npmrc` o `npm login --registry=...`) |
-| `E500 / bug in the auth plugin system` en `npm view` | Falta de auth | Resolver auth (P1) y reintentar |
-| `404 ... is not in this registry` para `@webiai/*` | Scope resolviéndose en npmjs | `npm config set @webiai:registry https://npm.pkg.webiai.io/` |
-| `404 - GET https://npm.pkg.webiai.io/commander` | Todo npm apuntando al privado | `npm config set registry https://registry.npmjs.org/` |
-| `bash: @webiai:registry=...: No such file or directory` | Sintaxis de `.npmrc` en Bash | Usar `npm config set ...` |
-| `webiai: command not found` | Binario global fuera del PATH | Revisar `npm root -g` y `<prefix>/bin` en PATH |
-| Funciona en Windows, no en Kiro | Entornos distintos | Reverificar auth/registry dentro de Kiro |
-
-### Flujo conceptual completo
-
-```text
-                 KIRO
-                  │
-                  ▼
-        ¿npm está configurado?   (npm config get @webiai:registry / registry)
-                  │
-                  ▼
-       @webiai → registry privado
-                  │
-                  ▼
-       ¿Está autenticado?        (npm whoami --registry=...)
-          │             │
-         NO            SÍ
-          │             │
-     solucionar         ▼
-     sesión       npm view @webiai/...   (acceso sin instalar)
-                        │
-                        ▼
-                 npm install
-                        │
-                        ▼
-                WebiAI CLI (webiai --version)
-                        │
-                        ▼
-                   Elements (src/elements/)
-                        │
-                        ▼
-                 SPA / Frontend
-```
-
-### Comando exacto que desbloqueó la instalación
-
-No fue "una instalación mágica de Elements". La secuencia que finalmente funcionó fue:
-
-```bash
-# 1) aislar el scope al registry privado (NO tocar el registry general)
-npm config set @webiai:registry https://npm.pkg.webiai.io/
-npm config set registry https://registry.npmjs.org/
-
-# 2) resolver la autenticación de Kiro (token en .npmrc del workspace o login)
-npm whoami --registry=https://npm.pkg.webiai.io/     # confirmar usuario (no ENEEDAUTH)
-
-# 3) recién entonces, instalar
-npm install -g @webiai/sdk.cli@0.23.11               # CLI global
-# y/o, en el proyecto:
-npm install                                          # resuelve @webiai/* + deps públicas
-```
-
-Y la dependencia quedó registrada en el `package.json` raíz del monorepo:
+Debe listar las versiones **sin** `UNMET DEPENDENCY` ni `404`. Referencia del proyecto
+(en `package.json` raíz):
 
 ```jsonc
 {
@@ -714,9 +272,171 @@ Y la dependencia quedó registrada en el `package.json` raíz del monorepo:
 }
 ```
 
+**Si falla:**
+
+- `404` en un `@webiai/*` → PASO 2 / PASO 3 (registry o auth).
+- `404` en un paquete público (react, vite, commander...) → el registry general quedó
+  mal; `npm config set registry https://registry.npmjs.org/` y repite `npm install`.
+- Errores raros de caché tras cambiar de registry:
+  ```bash
+  npm cache verify
+  rm -rf node_modules package-lock.json   # último recurso
+  npm install
+  ```
+
 ---
 
-_Última verificación de los valores de este manual contra el entorno real del proyecto:_
-`node v22.23.2`, `npm 10.9.8`, `@webiai:registry = https://npm.pkg.webiai.io/`,
-`registry = https://registry.npmjs.org/`, `webiai --version = 0.23.11`,
+## PASO 7 — "Instalar" Elements (la capa del repo)
+
+**Elements NO es un paquete npm.** Es la capa de UI del proyecto, ya incluida en el
+repositorio. "Instalarla" = tenerla en el repo tras `npm install`. No hay `npm install
+@webiai/elements` ni nada parecido.
+
+**Verifica que la capa existe:**
+
+```bash
+ls packages/apps/web/modules/app/src/elements/
+```
+
+Debe listar (referencia):
+
+```text
+dsl.ts  Button.tsx  Card.tsx  Badge.tsx  Field.tsx  Select.tsx
+Textarea.tsx  Toggle.tsx  SegmentedControl.tsx  SearchInput.tsx  index.ts
+```
+
+**Verifica que se pueden importar** (se consumen desde el barrel `@/elements`):
+
+```bash
+grep -r "from \"@/elements\"" packages/apps/web/modules/app/src | head
+```
+
+Debe mostrar imports como `import { Button, Field } from "@/elements";`.
+
+> Distinción clave:
+> - **WebiAI (paso 5–6)** = tooling/CLI que se instala del **registry privado**.
+> - **Elements (paso 7)** = capa de UI que **ya vive en el repo**; no se instala por npm.
+
+---
+
+## PASO 8 — Arrancar y verificar
+
+Entra a la app: `packages/apps/web/modules/app`.
+
+**Type-check:**
+
+```bash
+npx tsc -p tsconfig.app.json --noEmit
+```
+
+Debe terminar con **EXIT 0** (sin imprimir errores).
+
+**Build de producción:**
+
+```bash
+npm run build
+```
+
+Debe terminar con:
+
+```text
+✓ built in N.NNs
+```
+
+**Servidor de desarrollo:**
+
+```bash
+npm run dev
+```
+
+Debe levantar Vite e imprimir la URL local (por defecto `http://localhost:5173/`).
+Verifica en el navegador o con:
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5173/
+```
+
+Debe devolver `200`.
+
+**Si falla:**
+
+- `tsc` con errores → corrige los tipos antes de continuar (no confíes solo en el editor;
+  `tsc` detecta cosas que el editor no).
+- El build falla por un import `@/...` → el alias `@ → ./src` no se resolvió; revisa que
+  `vite.config.ts` y `tsconfig.app.json` no se hayan modificado.
+- `EADDRINUSE` en `npm run dev` → el puerto está ocupado; usa otro:
+  ```bash
+  npm run dev -- --port 5174
+  ```
+
+---
+
+## Los 3 comandos de diagnóstico (memorízalos)
+
+Si algo falla en los pasos 4–6, ejecuta estos tres **en este orden**. Aíslan el
+problema en **registry → autenticación → acceso**:
+
+```bash
+npm config get @webiai:registry                      # 1) ¿scope al privado?  → https://npm.pkg.webiai.io/
+npm whoami --registry=https://npm.pkg.webiai.io/     # 2) ¿autenticado?       → tu usuario (no ENEEDAUTH)
+npm view @webiai/sdk.cli                             # 3) ¿accesible?         → metadata/versión
+```
+
+---
+
+## Tabla de errores → solución exacta
+
+| Error exacto | Paso | Qué hacer exactamente |
+|---|---|---|
+| `command not found: node` | 1 | Instalar Node ≥ 22 y reabrir terminal |
+| `npm config get @webiai:registry` → `undefined` | 2 | `npm config set @webiai:registry https://npm.pkg.webiai.io/` |
+| `bash: @webiai:registry=...: No such file or directory` | 2 | Es sintaxis de `.npmrc`; usar `npm config set @webiai:registry https://npm.pkg.webiai.io/` |
+| `npm error code ENEEDAUTH` | 3 | Añadir `//npm.pkg.webiai.io/:_authToken=<TU_TOKEN>` al `.npmrc` **o** `npm login --registry=https://npm.pkg.webiai.io/` |
+| `E500 ... bug in the auth plugin system` | 4 | Es falta de auth: volver al PASO 3 y reverificar `npm whoami` |
+| `404 ... @webiai/sdk.cli is not in this registry` | 4/5 | El scope apunta a npmjs: `npm config set @webiai:registry https://npm.pkg.webiai.io/` |
+| `404 - GET https://npm.pkg.webiai.io/commander` | 5 | Todo npm al privado: `npm config set registry https://registry.npmjs.org/` y reinstalar |
+| `webiai: command not found` (tras instalar OK) | 5 | `npm root -g`; añadir `<prefix>/bin` al `PATH` |
+| `npm ls` → `UNMET DEPENDENCY` | 6 | `rm -rf node_modules package-lock.json && npm install` |
+| Funciona en Windows, falla en Kiro | 3 | Repetir PASO 3 (auth) **dentro de Kiro** |
+
+---
+
+## Reglas de oro (no hacer esto)
+
+- ❌ **No** apuntes todo npm al privado (`npm config set registry https://npm.pkg.webiai.io/`).
+  Solo el scope `@webiai`.
+- ❌ **No** asumas que configurar el registry = estar autenticado. Verifica `npm whoami --registry=...`.
+- ❌ **No** ejecutes `@webiai:registry=...` en Bash. Es sintaxis de `.npmrc`; usa `npm config set ...`.
+- ❌ **No** instales `@webiai/*` desde `registry.npmjs.org` (da 404).
+- ❌ **No** busques Elements como paquete npm: vive en el repo (`src/elements/`).
+- ❌ **No** compartas ni commitees el `_authToken`.
+- ✅ **Sí** mantén npmjs como registry general y WebiAI solo para `@webiai`.
+
+---
+
+## Checklist de instalación (marca en orden)
+
+```text
+[ ] node --version                                   → v22.x+
+[ ] npm --version                                    → 10.x+
+[ ] npm config get @webiai:registry                  → https://npm.pkg.webiai.io/
+[ ] npm config get registry                          → https://registry.npmjs.org/
+[ ] npm whoami --registry=https://npm.pkg.webiai.io/ → tu usuario (NO ENEEDAUTH)
+[ ] npm view @webiai/sdk.cli                          → metadata/versión
+[ ] npm install -g @webiai/sdk.cli@0.23.11            → added N packages
+[ ] webiai --version                                 → 0.23.11
+[ ] webiai --help                                    → lista de comandos
+[ ] npm install (raíz del repo)                      → sin 404 / UNMET
+[ ] npm ls @webiai/sdk.cli @webiai/devlink           → versiones OK
+[ ] ls src/elements/                                 → Button.tsx, dsl.ts, index.ts, ...
+[ ] npx tsc -p tsconfig.app.json --noEmit            → EXIT 0
+[ ] npm run build                                    → ✓ built
+[ ] npm run dev + curl / → 200
+```
+
+---
+
+_Valores de referencia verificados en este entorno:_
+`node v22.23.2` · `npm 10.9.8` · `webiai 0.23.11` ·
+`@webiai:registry = https://npm.pkg.webiai.io/` · `registry = https://registry.npmjs.org/` ·
 `npm root -g = /workspaces/.npm-global/lib/node_modules`.
