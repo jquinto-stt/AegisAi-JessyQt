@@ -517,55 +517,21 @@ export default function OnboardingPage() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    {
-                      icon: Zap,
-                      title: "Toma de Pedidos Autónoma",
-                      desc: "El bot inteligente atiende clientes, valida stock y genera comandas.",
-                    },
-                    {
-                      icon: ShieldCheck,
-                      title: "Infraestructura Cloud Oficial",
-                      desc: "Sin riesgo de bloqueos por usar soluciones no autorizadas.",
-                    },
-                    {
-                      icon: MessageSquare,
-                      title: "Bandeja Omnicanal Central",
-                      desc: "Tus agentes y administradores responden desde un único panel.",
-                    },
-                    {
-                      icon: QrCode,
-                      title: "Integración QR en Local",
-                      desc: "Permite a los clientes escanear en mesa y abrir el chat directamente.",
-                    },
-                  ].map(item => (
-                    <div
-                      key={item.title}
-                      className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 flex items-start gap-3 shadow-2xs"
-                    >
-                      <div className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-800 text-[#FF3F1A] border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none">
-                        <item.icon className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-zinc-950 dark:text-white">{item.title}</p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">{item.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Connection Box */}
-                <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-[#25D366]/10 text-emerald-600 dark:text-[#25D366] flex items-center justify-center border border-emerald-200 dark:border-[#25D366]/20 font-bold">
-                        <Smartphone className="w-5 h-5" />
+                {/* Main Hero Connection Box */}
+                <div className="p-6 sm:p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-6 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#25D366]/15 text-[#008069] dark:text-[#25D366] flex items-center justify-center border border-[#25D366]/30 font-bold flex-none shadow-2xs">
+                        <Smartphone className="w-7 h-7" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-zinc-950 dark:text-white">WhatsApp Business & Web</h4>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
-                          {isMetaConnected ? "Vinculación Exitosa · WhatsApp Web & Cloud API Activos" : "Conecta tu dispositivo vía WhatsApp Web o Meta Cloud API"}
+                        <h3 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white">
+                          WhatsApp Business Web & Bot IA
+                        </h3>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
+                          {isMetaConnected
+                            ? "✓ Dispositivo vinculado con éxito. Canal activo para comandas."
+                            : "Vincula tu cuenta para recibir comandas automáticas y atender clientes en tiempo real."}
                         </p>
                       </div>
                     </div>
@@ -573,24 +539,25 @@ export default function OnboardingPage() {
                     <Badge
                       variant={isMetaConnected ? "success" : "warning"}
                       intent="onboarding.meta.status"
+                      className="self-start sm:self-center"
                     >
-                      {isMetaConnected ? "Conectado" : "Desconectado"}
+                      {isMetaConnected ? "Conectado" : "Pendiente de Conexión"}
                     </Badge>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-zinc-200/80 dark:border-zinc-800">
                     <Button
-                      variant={isMetaConnected ? "outline" : "accent"}
+                      variant="primary"
                       intent="onboarding.meta.toggle"
                       onClick={() => {
                         window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
                         setIsMetaConnected(true);
                       }}
-                      className="py-2.5 px-5 text-xs flex items-center gap-2 cursor-pointer shadow-md"
+                      className="py-3.5 px-6 rounded-2xl text-sm font-bold bg-[#008069] hover:bg-[#006e5a] text-white flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
                     >
                       {isMetaConnected ? (
                         <>
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          <CheckCircle2 className="w-4 h-4 text-white" />
                           <span>Reabrir WhatsApp Web</span>
                         </>
                       ) : (
@@ -605,9 +572,9 @@ export default function OnboardingPage() {
                       variant="ghost"
                       intent="onboarding.meta.skip"
                       onClick={() => setStep(3)}
-                      className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-mono px-3 py-2 cursor-pointer transition-colors"
+                      className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-mono px-4 py-3 cursor-pointer transition-colors text-center"
                     >
-                      Continuar al siguiente paso →
+                      Vincular más tarde →
                     </Button>
                   </div>
                 </div>
