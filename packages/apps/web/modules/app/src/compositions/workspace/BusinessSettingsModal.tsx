@@ -1246,8 +1246,25 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
                   </div>
 
+                  {/* Slug / Identificador de Tienda */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      Identificador URL de la Sede (Slug)
+                    </label>
+                    <div className="flex items-center px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus-within:border-[#190088] transition-colors">
+                      <span className="text-zinc-400 select-none font-mono text-[11px]">necto.app/</span>
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+                        placeholder="mi-restaurante"
+                        className="flex-1 bg-transparent font-mono font-bold text-zinc-950 dark:text-white focus:outline-none ml-1 lowercase"
+                      />
+                    </div>
+                  </div>
+
                   {/* Contacto */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                         Correo de Contacto
@@ -1255,9 +1272,9 @@ export const BusinessSettingsModal: React.FC<{
                       <input
                         type="email"
                         value={contactEmail}
-                        onChange={e => setContactEmail(e.target.value)}
+                        onChange={e => setContactEmail(e.target.value.toLowerCase().trim())}
                         placeholder="contacto@restaurante.com"
-                        className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A]"
+                        className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#190088] lowercase"
                       />
                     </div>
 
@@ -1270,9 +1287,9 @@ export const BusinessSettingsModal: React.FC<{
                         <input
                           type="text"
                           value={contactPhone}
-                          onChange={e => setContactPhone(e.target.value)}
+                          onChange={e => setContactPhone(e.target.value.replace(/[^0-9+\s()-]/g, ""))}
                           placeholder="+57 300 123 4567"
-                          className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A]"
+                          className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#190088]"
                         />
                       </div>
                     </div>
@@ -1863,7 +1880,7 @@ export const BusinessSettingsModal: React.FC<{
                           intent="bot.nequi"
                           type="text"
                           value={nequiNumber}
-                          onChange={e => setNequiNumber(e.target.value)}
+                          onChange={e => setNequiNumber(e.target.value.replace(/[^0-9\s]/g, ""))}
                           placeholder="310 987 6543"
                         />
                         <Field
@@ -1872,7 +1889,7 @@ export const BusinessSettingsModal: React.FC<{
                           intent="bot.daviplata"
                           type="text"
                           value={daviplataNumber}
-                          onChange={e => setDaviplataNumber(e.target.value)}
+                          onChange={e => setDaviplataNumber(e.target.value.replace(/[^0-9\s]/g, ""))}
                           placeholder="310 987 6543"
                         />
                       </div>
@@ -1885,7 +1902,7 @@ export const BusinessSettingsModal: React.FC<{
                             intent="bot.bancolombia"
                             type="text"
                             value={bancolombiaAccount}
-                            onChange={e => setBancolombiaAccount(e.target.value)}
+                            onChange={e => setBancolombiaAccount(e.target.value.replace(/[^0-9-\s]/g, ""))}
                             placeholder="104-892134-55"
                           />
                         </div>
@@ -1907,7 +1924,7 @@ export const BusinessSettingsModal: React.FC<{
                             intent="bot.nit"
                             type="text"
                             value={accountNit}
-                            onChange={e => setAccountNit(e.target.value)}
+                            onChange={e => setAccountNit(e.target.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""))}
                             placeholder="901.458.789-1"
                           />
                         </div>
