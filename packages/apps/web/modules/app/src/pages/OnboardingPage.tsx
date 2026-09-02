@@ -302,7 +302,7 @@ export default function OnboardingPage() {
                         <div
                           className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
                             isCurrent
-                              ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-xs ring-2 ring-zinc-950/10 dark:ring-white/10"
+                              ? "bg-[#190088] text-white shadow-xs ring-2 ring-[#190088]/20"
                               : isPassed
                               ? "bg-[#FF3F1A] text-white"
                               : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400 dark:text-zinc-600 border border-zinc-200 dark:border-zinc-800"
@@ -330,7 +330,7 @@ export default function OnboardingPage() {
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
-                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
                     Configura tu espacio de operaciones
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -356,7 +356,7 @@ export default function OnboardingPage() {
                           onClick={() => handleSelectArchetype(arch)}
                           className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
                             isSelected
-                              ? "bg-zinc-50 dark:bg-zinc-900 border-zinc-950 dark:border-[#FF3F1A]/80 ring-1 ring-zinc-950 dark:ring-[#FF3F1A]/50 shadow-sm"
+                              ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
                               : "bg-white dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/70"
                           }`}
                         >
@@ -364,8 +364,8 @@ export default function OnboardingPage() {
                             <div
                               className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                                 isSelected
-                                  ? "bg-zinc-950 text-white dark:bg-[#FF3F1A]"
-                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-950 dark:group-hover:text-zinc-200"
+                                  ? "bg-[#190088] text-white"
+                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 group-hover:text-[#190088] dark:group-hover:text-white"
                               }`}
                             >
                               <Icon className="w-4 h-4" />
@@ -413,7 +413,7 @@ export default function OnboardingPage() {
                         value={companyName}
                         onChange={e => setCompanyName(e.target.value)}
                         autoFocus
-                        className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-[#FF3F1A] transition-colors shadow-2xs"
+                        className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-[#190088] transition-colors shadow-2xs"
                       />
                     </div>
                   </div>
@@ -518,7 +518,7 @@ export default function OnboardingPage() {
                     <span>Meta Business Integration</span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
                     Conecta tu canal oficial de WhatsApp
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
@@ -583,7 +583,7 @@ export default function OnboardingPage() {
                       variant="ghost"
                       intent="onboarding.meta.skip"
                       onClick={() => setStep(3)}
-                      className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-mono px-4 py-3 cursor-pointer transition-colors text-center"
+                      className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-white font-mono px-4 py-3 cursor-pointer transition-colors text-center"
                     >
                       Vincular más tarde →
                     </Button>
@@ -627,16 +627,16 @@ export default function OnboardingPage() {
             {step === 3 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] border border-orange-200 dark:border-orange-800/60 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <Layers className="w-3 h-3" />
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-blue-200 border border-[#190088]/20 text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <Layers className="w-3 h-3 text-[#190088] dark:text-blue-300" />
                     <span>Configuración Modular</span>
                   </div>
 
-                  <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">
+                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
                     Personaliza los módulos de tu espacio
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Hemos activado los módulos recomendados para <strong className="text-zinc-950 dark:text-white">{activeArchetype.title}</strong>. Puedes encender o apagar cualquier módulo según tus requerimientos.
+                    Hemos activado los módulos recomendados para <strong className="text-[#190088] dark:text-[#EFE6D3]">{activeArchetype.title}</strong>. Puedes encender o apagar cualquier módulo según tus requerimientos.
                   </p>
                 </div>
 
@@ -651,7 +651,7 @@ export default function OnboardingPage() {
                         onClick={() => handleToggleModule(mod.id)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
                           isSelected
-                            ? "bg-white dark:bg-zinc-900 border-zinc-950 dark:border-zinc-700 shadow-xs"
+                            ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
                             : "bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800/60 opacity-60 hover:opacity-100 hover:bg-white dark:hover:bg-zinc-900/40"
                         }`}
                       >
@@ -659,7 +659,7 @@ export default function OnboardingPage() {
                           <div
                             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                               isSelected
-                                ? "bg-zinc-950 text-white dark:bg-[#FF3F1A]"
+                                ? "bg-[#190088] text-white"
                                 : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500"
                             }`}
                           >
@@ -757,7 +757,7 @@ export default function OnboardingPage() {
                 intent="onboarding.step.next"
                 disabled={step === 1 && !canProceedStep1}
                 onClick={() => setStep(step + 1)}
-                className="py-3 px-7 text-xs"
+                className="py-3 px-7 text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white shadow-md cursor-pointer"
               >
                 <span>Siguiente Paso</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -768,7 +768,7 @@ export default function OnboardingPage() {
                 intent="onboarding.finish"
                 disabled={isDeploying}
                 onClick={handleFinish}
-                className="py-3 px-8 text-xs"
+                className="py-3 px-8 text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white shadow-md cursor-pointer"
               >
                 {isDeploying ? (
                   <>
@@ -786,9 +786,9 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Column: Aspirational Client-First Visual Showcase with Necto Brand Identity */}
-        <div className="lg:col-span-5 relative bg-gradient-to-br from-[#190088] via-[#FF3F1A]/90 to-[#FF3F1A] text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
-          {/* High-Resolution Background Photography with Brand Blend */}
+        {/* Right Column: Pure Radiant Necto Orange Visual Showcase */}
+        <div className="lg:col-span-5 relative bg-[#FF3F1A] text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
+          {/* High-Resolution Background Photography with Orange Blend */}
           <img
             src={
               step === 1
@@ -798,22 +798,21 @@ export default function OnboardingPage() {
                 : "/onboarding-restaurant.jpg"
             }
             alt={activeArchetype.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-45 mix-blend-overlay transition-all duration-700 scale-100"
+            className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity scale-100 transition-all duration-700"
           />
 
-          {/* Warm Necto Orange & Deep Blue Atmospheric Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#190088]/95 via-[#190088]/40 to-[#FF3F1A]/30" />
-          <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-[#FF3F1A]/40 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-[#190088]/60 blur-3xl pointer-events-none" />
+          {/* Pure Radiant Necto Orange Atmosphere */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#D62F0E] via-[#FF3F1A]/85 to-[#FF5E3E]/70" />
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
 
           {/* Top Brand & Trust Badge */}
           <div className="relative z-10 flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-[#EFE6D3]" />
               <span>Plataforma Todo-en-Uno</span>
             </div>
 
-            <span className="text-[11px] font-mono text-[#EFE6D3] uppercase tracking-wider px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 font-bold">
+            <span className="text-[11px] font-mono text-[#EFE6D3] uppercase tracking-wider px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 font-bold">
               Necto Core
             </span>
           </div>
@@ -821,7 +820,7 @@ export default function OnboardingPage() {
           {/* Center Value Content */}
           <div className="relative z-10 space-y-6 my-auto py-8">
             <div className="space-y-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#EFE6D3] px-3 py-1 rounded-lg bg-white/15 backdrop-blur-md border border-white/25 inline-block shadow-sm">
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#EFE6D3] px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md border border-white/30 inline-block shadow-sm">
                 {step === 1
                   ? activeArchetype.title
                   : step === 2
@@ -837,7 +836,7 @@ export default function OnboardingPage() {
                   : "Todo tu negocio sincronizado en un solo lugar."}
               </h2>
 
-              <p className="text-xs sm:text-sm text-white/90 leading-relaxed max-w-md drop-shadow-sm font-medium">
+              <p className="text-xs sm:text-sm text-white/95 leading-relaxed max-w-md drop-shadow-sm font-medium">
                 {step === 1
                   ? activeArchetype.tagline
                   : step === 2
@@ -868,10 +867,10 @@ export default function OnboardingPage() {
               ).map((benefit, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-xs text-white shadow-md transition-all hover:bg-white/20"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-xs text-white shadow-md transition-all hover:bg-white/25"
                 >
-                  <div className="w-5 h-5 rounded-full bg-white text-[#190088] flex items-center justify-center flex-none font-bold shadow-xs">
-                    <Check className="w-3.5 h-3.5 stroke-[3] text-[#190088]" />
+                  <div className="w-5 h-5 rounded-full bg-white text-[#FF3F1A] flex items-center justify-center flex-none font-bold shadow-xs">
+                    <Check className="w-3.5 h-3.5 stroke-[3] text-[#FF3F1A]" />
                   </div>
                   <span className="font-semibold text-white leading-tight">{benefit}</span>
                 </div>
@@ -881,7 +880,7 @@ export default function OnboardingPage() {
 
           {/* Bottom Social Proof Card */}
           <div className="relative z-10 p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center gap-3.5 shadow-xl">
-            <div className="w-10 h-10 rounded-xl bg-white text-[#190088] flex items-center justify-center font-black text-sm flex-none shadow-md">
+            <div className="w-10 h-10 rounded-xl bg-white text-[#FF3F1A] flex items-center justify-center font-black text-sm flex-none shadow-md">
               {companyName ? companyName.charAt(0).toUpperCase() : "N"}
             </div>
             <div className="space-y-0.5">
