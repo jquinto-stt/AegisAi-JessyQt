@@ -15,7 +15,15 @@ import { NectoBanner } from "../shared/NectoBanner";
 import { Badge, Button } from "@/elements";
 
 export const TurnosCapacidadView: React.FC = () => {
-  const { shiftInfo, updateStaffStatus, assignStaffStation, switchShift, orders } = usePedidos();
+  const {
+    shiftInfo,
+    updateStaffStatus,
+    assignStaffStation,
+    switchShift,
+    orders,
+    storePace,
+    setStorePace,
+  } = usePedidos();
 
   const activeStaffMembers = shiftInfo.activeStaff.filter(s => s.status === "Activo");
   const onBreakStaffMembers = shiftInfo.activeStaff.filter(s => s.status === "Descanso");
@@ -44,21 +52,109 @@ export const TurnosCapacidadView: React.FC = () => {
       {/* Header Banner */}
       <NectoBanner
         icon={<Users className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Turnos y Capacidad Operativa"
-        description="Gestión reactiva del personal de cocina, cálculo dinámico de tiempos de horneado y control de estaciones."
+        title="Turnos y Capacidad Operativa de Cocina"
+        description="Gestión del personal de cocina, modulación del ritmo operativo de despacho y control de estaciones."
       />
 
+      {/* Ritmo Operativo de Cocina (Modulador de Tiempos & Sobrecarga) */}
+      <div className="bg-white dark:bg-[#121316] rounded-3xl border border-zinc-200/90 dark:border-zinc-800/90 p-5 sm:p-6 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] flex items-center justify-center shadow-2xs">
+              <Flame className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-sm text-zinc-950 dark:text-white">
+                Ritmo Operativo & Modulador de Cocina
+              </h4>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Ajusta el colchón de tiempo que el bot de WhatsApp y la tienda web prometen al cliente según la carga real:
+              </p>
+            </div>
+          </div>
+
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 self-start sm:self-auto border border-zinc-200/80 dark:border-zinc-700">
+            Estado: <span className="text-[#FF3F1A] uppercase">{storePace === "rapida" ? "Rápido (-5m)" : storePace === "demorada" ? "Demorado (+10m)" : "Habitual (Estándar)"}</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <button
+            onClick={() => setStorePace("rapida")}
+            className={`p-4 rounded-2xl text-left border transition-all cursor-pointer ${
+              storePace === "rapida"
+                ? "bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-400 dark:border-emerald-700 shadow-xs"
+                : "bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                <Zap className="w-4 h-4" /> Rápida / Fluida
+              </span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300">
+                -5 min
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">
+              Para cocina con baja demanda. Reduce el tiempo estimado de entrega al cliente.
+            </p>
+          </button>
+
+          <button
+            onClick={() => setStorePace("habitual")}
+            className={`p-4 rounded-2xl text-left border transition-all cursor-pointer ${
+              storePace === "habitual"
+                ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 border-zinc-900 dark:border-white shadow-xs"
+                : "bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-bold flex items-center gap-1.5 ${storePace === "habitual" ? "text-white dark:text-zinc-900" : "text-zinc-900 dark:text-white"}`}>
+                <CheckCircle2 className="w-4 h-4 text-[#FF3F1A]" /> Habitual (Estándar)
+              </span>
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${storePace === "habitual" ? "bg-white/20 text-white dark:bg-black/10 dark:text-zinc-900" : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600"}`}>
+                Normal
+              </span>
+            </div>
+            <p className={`text-[11px] mt-2 ${storePace === "habitual" ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-500 dark:text-zinc-400"}`}>
+              Ritmo de operación estándar según las recetas y mise en place configurado.
+            </p>
+          </button>
+
+          <button
+            onClick={() => setStorePace("demorada")}
+            className={`p-4 rounded-2xl text-left border transition-all cursor-pointer ${
+              storePace === "demorada"
+                ? "bg-rose-50/80 dark:bg-rose-950/30 border-rose-400 dark:border-rose-700 shadow-xs"
+                : "bg-zinc-50 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                <Flame className="w-4 h-4" /> Demorada / Pico
+              </span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300">
+                +10 min
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">
+              Protección ante alta congestión o pedidos acumulados. Agrega colchón automático.
+            </p>
+          </button>
+        </div>
+      </div>
+
       {/* Selector de Turno Activo */}
-      <div className="bg-white dark:bg-[#2C2D31] rounded-3xl border border-slate-200/90 dark:border-[#374151] p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#121316] rounded-3xl border border-zinc-200/90 dark:border-zinc-800/90 p-5 shadow-2xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-2xl bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] flex items-center justify-center">
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
+            <h4 className="font-black text-sm text-zinc-900 dark:text-zinc-100">
               Programación de Turno en Curso
             </h4>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Selecciona el horario del servicio para recalcular la dotación y capacidad base:
             </p>
           </div>

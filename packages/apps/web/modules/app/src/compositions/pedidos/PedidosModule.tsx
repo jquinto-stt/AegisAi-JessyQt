@@ -195,42 +195,44 @@ const PedidosContent: React.FC<{
             </Button>
           </div>
 
-          {/* Right Actions: Sound, Store Pace Kitchen Throttle & Incidencias */}
-          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
-            {/* Audio Alerts Toggle */}
-            <Button
-              variant="ghost"
-              intent="pedidos.sound.toggle"
-              onClick={toggleSound}
-              className={`p-2 rounded-xl border transition-all cursor-pointer shadow-xs flex items-center justify-center flex-none ${
-                isSoundEnabled
-                  ? "bg-[#FF3F1A] text-white border-[#FF3F1A]"
-                  : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600"
-              }`}
-              title={isSoundEnabled ? "Alertas sonoras activadas" : "Alertas sonoras silenciadas"}
-            >
-              {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </Button>
+          {/* Right Actions: Sound & Incidencias (Only visible in Operación) */}
+          {section === "operacion" && (
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end animate-fade-in">
+              {/* Audio Alerts Toggle */}
+              <Button
+                variant="ghost"
+                intent="pedidos.sound.toggle"
+                onClick={toggleSound}
+                className={`p-2 rounded-xl border transition-all cursor-pointer shadow-xs flex items-center justify-center flex-none ${
+                  isSoundEnabled
+                    ? "bg-[#FF3F1A] text-white border-[#FF3F1A]"
+                    : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600"
+                }`}
+                title={isSoundEnabled ? "Alertas sonoras activadas" : "Alertas sonoras silenciadas"}
+              >
+                {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </Button>
 
-            <Button
-              variant="outline"
-              intent="pedidos.incidencias.open"
-              onClick={() => setIsIncidenciasOpen(true)}
-              className={`py-2 px-3.5 text-xs flex-none ${
-                activeIncCount > 0
-                  ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
-                  : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-zinc-100"
-              }`}
-            >
-              <ShieldAlert className={`w-4 h-4 ${activeIncCount > 0 ? "text-[#FF3F1A]" : "text-zinc-400"}`} />
-              <span>Incidencias</span>
-              {activeIncCount > 0 && (
-                <span className="bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full text-[10px] font-bold">
-                  {activeIncCount}
-                </span>
-              )}
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                intent="pedidos.incidencias.open"
+                onClick={() => setIsIncidenciasOpen(true)}
+                className={`py-2 px-3.5 text-xs flex-none ${
+                  activeIncCount > 0
+                    ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
+                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-zinc-100"
+                }`}
+              >
+                <ShieldAlert className={`w-4 h-4 ${activeIncCount > 0 ? "text-[#FF3F1A]" : "text-zinc-400"}`} />
+                <span>Incidencias</span>
+                {activeIncCount > 0 && (
+                  <span className="bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full text-[10px] font-bold">
+                    {activeIncCount}
+                  </span>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Row 2: Sub-tabs Navigation */}
@@ -388,8 +390,8 @@ const PedidosContent: React.FC<{
       <AIInterpretationModal />
       <RejectCancelModal />
       <IncidenciasDrawer />
-      {/* Floating WhatsApp Widget (Available on Kanban, KDS, Programados, etc.) */}
-      {!(section === "operacion" && opTab === "conversaciones") && (
+      {/* Floating WhatsApp Widget (Exclusively on Live Kanban / Bandeja) */}
+      {section === "operacion" && opTab === "en-vivo" && (
         <WhatsAppFloatingWidget
           onNavigateToFullView={() => handleOpTabSwitch("conversaciones")}
         />

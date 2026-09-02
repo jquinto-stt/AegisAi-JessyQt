@@ -64,19 +64,9 @@ export const BusinessSwitcher: React.FC = () => {
           <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-[#FF3F1A] transition-colors leading-tight">
             {activeBusiness?.name || "Mi Negocio"}
           </p>
-          <div className="flex items-center gap-1 text-[10px] text-zinc-400 font-medium truncate leading-tight mt-0.5">
-            <span className="truncate">{activeBusiness?.city || "Sucursal Activa"}</span>
-            <span>·</span>
-            <span className={`font-mono font-bold text-[9px] ${
-              storePace === "demorada"
-                ? "text-rose-500 font-bold"
-                : storePace === "rapida"
-                ? "text-emerald-500 font-bold"
-                : "text-zinc-500"
-            }`}>
-              {storePace === "demorada" ? "Demorada" : storePace === "rapida" ? "Rápida" : "Habitual"}
-            </span>
-          </div>
+          <p className="text-[10px] text-zinc-400 font-medium truncate leading-tight mt-0.5">
+            {activeBusiness?.city || "Sucursal Activa"}
+          </p>
         </div>
 
         <ChevronDown
@@ -86,42 +76,26 @@ export const BusinessSwitcher: React.FC = () => {
         />
       </Button>
 
-      {/* Dropdown Menu (High-End Enterprise Workspace Panel) */}
+      {/* Dropdown Menu (Clean Workspace Selector) */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2.5 w-84 sm:w-96 bg-white dark:bg-[#121214] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 p-3.5 z-50 animate-fade-in space-y-3.5">
-          {/* Header with Title & Role Badge */}
-          <div className="flex items-center justify-between px-1.5 pt-1">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#FF3F1A]" />
-              <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-100">
-                Espacios de Trabajo
-              </h4>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-900 flex items-center gap-1">
-                <ShieldCheck className="w-2.5 h-2.5" />
-                {userRole === "owner" ? "Dueño / Admin" : userRole === "manager" ? "Gerente" : "Staff"}
-              </span>
-            </div>
-          </div>
-
-          {/* Prominent Hub Access Banner */}
+        <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 shadow-2xl p-3 z-50 animate-fade-in space-y-2.5">
+          {/* Header Action: Ir a Visión Franquicia / Hub */}
           <Button
             variant="ghost"
-            intent="business.hub.open"
+            intent="business.hub.navigate"
             onClick={() => {
-              setIsOpen(false);
               navigate("/workspaces");
+              setIsOpen(false);
             }}
-            className="w-full p-3 rounded-2xl bg-[#190088] text-white hover:bg-[#FF3F1A] transition-all flex items-center justify-between group cursor-pointer shadow-sm text-left"
+            className="w-full p-3 rounded-2xl bg-gradient-to-r from-[#190088] to-[#14006e] text-white flex items-center justify-between group shadow-sm hover:opacity-95 transition-all cursor-pointer border border-[#190088]"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center flex-none">
-                <LayoutGrid className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center flex-none">
+                <Layers className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-white leading-tight flex items-center gap-1.5">
-                  Abrir Hub de Negocios
+              <div className="text-left">
+                <p className="text-xs font-bold leading-tight flex items-center gap-1.5">
+                  <span>Hub de Franquicias</span>
                   <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.2 rounded font-normal">Visión Global</span>
                 </p>
                 <p className="text-[10px] text-zinc-300 dark:text-zinc-400 group-hover:text-white/90 transition-colors">
@@ -131,71 +105,6 @@ export const BusinessSwitcher: React.FC = () => {
             </div>
             <ArrowRight className="w-4 h-4 text-white/70 group-hover:text-white group-hover:translate-x-0.5 transition-all flex-none" />
           </Button>
-
-          {/* Ritmo Operativo de Tienda (Store Pace) */}
-          <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-            <div className="flex items-center justify-between px-1.5">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold flex items-center gap-1.5">
-                <Clock className="w-3 h-3 text-[#FF3F1A]" /> Ritmo Operativo de Tienda
-              </span>
-              <span className="text-[10px] font-mono text-zinc-400">
-                {storePace === "rapida" ? "-5m colchón" : storePace === "demorada" ? "+10m colchón" : "Estándar"}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              <Button
-                variant="ghost"
-                intent="business.pace.rapida"
-                onClick={() => setStorePace("rapida")}
-                className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
-                  storePace === "rapida"
-                    ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 shadow-2xs font-bold"
-                    : "bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Zap className="w-3 h-3 text-emerald-500" />
-                  <span className="text-xs font-bold">Rápida</span>
-                </div>
-                <p className="text-[9px] text-zinc-400 mt-0.5">-5 min prom.</p>
-              </Button>
-
-              <Button
-                variant="ghost"
-                intent="business.pace.habitual"
-                onClick={() => setStorePace("habitual")}
-                className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
-                  storePace === "habitual"
-                    ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white shadow-2xs font-bold"
-                    : "bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-[#FF3F1A]" />
-                  <span className="text-xs font-bold">Habitual</span>
-                </div>
-                <p className={`text-[9px] mt-0.5 ${storePace === "habitual" ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>Estándar</p>
-              </Button>
-
-              <Button
-                variant="ghost"
-                intent="business.pace.demorada"
-                onClick={() => setStorePace("demorada")}
-                className={`p-2.5 rounded-2xl text-left border transition-all cursor-pointer ${
-                  storePace === "demorada"
-                    ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 shadow-2xs font-bold"
-                    : "bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
-                }`}
-              >
-                <div className="flex items-center gap-1">
-                  <Flame className="w-3 h-3 text-rose-500" />
-                  <span className="text-xs font-bold">Demorada</span>
-                </div>
-                <p className="text-[9px] text-zinc-400 mt-0.5">+10 min prot.</p>
-              </Button>
-            </div>
-          </div>
 
           {/* Switcher Business List */}
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1.5 max-h-48 overflow-y-auto pr-1">

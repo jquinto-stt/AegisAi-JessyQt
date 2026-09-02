@@ -53,108 +53,106 @@ export const GlobalFranchiseOverview: React.FC = () => {
       <div className="bg-gradient-to-r from-[#190088] via-[#14006e] to-[#190088] text-white p-6 sm:p-8 rounded-3xl border border-[#190088]/80 shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-[#FF3F1A]/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FF3F1A]/20 text-[#FF3F1A] border border-[#FF3F1A]/30">
-                <Sparkles className="w-3 h-3" /> Resumen Multi-Local en Tiempo Real
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-              Visión Franquicia & Grupo
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 max-w-xl">
-              Consolidación financiera y operativa de todas tus sucursales activas en una sola pantalla.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              intent="franchise.command.open"
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-colors flex items-center gap-2 cursor-pointer border border-white/10"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Comando Rápido (Ctrl+K)</span>
-            </Button>
-          </div>
+        <div className="relative z-10 space-y-1.5 max-w-2xl">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Visión Franquicia & Grupo
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-300">
+            Consolidación financiera y operativa de todas tus sucursales activas en una sola pantalla.
+          </p>
         </div>
       </div>
 
-      {/* Aggregate KPI Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Aggregate KPI Metrics Grid (TailAdmin Inspired Architecture) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Metric 1: Total Revenue */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200 dark:border-zinc-700/80 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400">
-              Ventas Totales Hoy
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+        <div className="rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 p-5 md:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shadow-2xs">
+            <DollarSign className="w-5 h-5" />
+          </div>
+
+          <div className="mt-5 flex items-end justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
+                Ventas Totales Hoy
+              </span>
+              <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+                {totalRevenue}
+              </h4>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-2xl font-black text-zinc-950 dark:text-zinc-50">{totalRevenue}</h3>
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-3.5 h-3.5" /> +18.4%
+
+            <span className="flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 py-0.5 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
+              <TrendingUp className="w-3.5 h-3.5" />
+              18.4%
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400">Agregado entre {businesses.length} locales</p>
         </div>
 
         {/* Metric 2: Orders Count */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200 dark:border-zinc-700/80 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400">
-              Pedidos Despachados
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <ShoppingBag className="w-4 h-4" />
+        <div className="rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 p-5 md:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shadow-2xs">
+            <ShoppingBag className="w-5 h-5" />
+          </div>
+
+          <div className="mt-5 flex items-end justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
+                Pedidos Despachados
+              </span>
+              <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+                {totalOrdersToday}
+              </h4>
             </div>
+
+            <span className="flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/50 py-0.5 px-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50">
+              {businesses.length} locales
+            </span>
           </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-2xl font-black text-zinc-950 dark:text-zinc-50">{totalOrdersToday}</h3>
-            <span className="text-xs font-bold text-zinc-500">Tickets hoy</span>
-          </div>
-          <p className="text-[11px] text-zinc-400">Promedio de {Math.round(totalOrdersToday / (businesses.length || 1))} pedidos/local</p>
         </div>
 
         {/* Metric 3: Active Kitchen Orders */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200 dark:border-zinc-700/80 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400">
-              En Cocina Ahora (KDS)
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] flex items-center justify-center">
-              <Flame className="w-4 h-4" />
+        <div className="rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 p-5 md:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A] shadow-2xs">
+            <Flame className="w-5 h-5" />
+          </div>
+
+          <div className="mt-5 flex items-end justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
+                En Cocina (KDS)
+              </span>
+              <h4 className="mt-1 text-2xl sm:text-3xl font-black text-[#FF3F1A] tracking-tight">
+                {activeOrdersInKitchen}
+              </h4>
             </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-2xl font-black text-[#FF3F1A]">{activeOrdersInKitchen}</h3>
-            <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> En tiempo
+
+            <span className="flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 py-0.5 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              En tiempo
             </span>
           </div>
-          <p className="text-[11px] text-zinc-400">Comandas en marcha en simultáneo</p>
         </div>
 
         {/* Metric 4: Avg Ticket */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200 dark:border-zinc-700/80 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-400">
-              Ticket Promedio
-            </span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+        <div className="rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 p-5 md:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 shadow-2xs">
+            <Zap className="w-5 h-5" />
+          </div>
 
-              <Zap className="w-4 h-4" />
+          <div className="mt-5 flex items-end justify-between">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
+                Ticket Promedio
+              </span>
+              <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+                {avgTicket}
+              </h4>
             </div>
+
+            <span className="text-xs font-mono font-bold text-zinc-400">
+              COP
+            </span>
           </div>
-          <div className="flex items-baseline justify-between">
-            <h3 className="text-2xl font-black text-zinc-950 dark:text-zinc-50">{avgTicket}</h3>
-            <span className="text-xs font-bold text-zinc-400">COP</span>
-          </div>
-          <p className="text-[11px] text-zinc-400">Ratio de consumo consolidado</p>
         </div>
       </div>
 
@@ -181,7 +179,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
             return (
               <div
                 key={biz.id}
-                onClick={() => setRoleSelectBiz(biz)}
+                onClick={() => {
+                  switchBusiness(biz.id);
+                  navigate("/");
+                }}
                 className="relative rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden group cursor-pointer"
               >
                 {/* Top Banner Cover Photo - 100% Nítido y Vívido */}
@@ -235,9 +236,15 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       )}
                     </div>
                     <div className="min-w-0 pb-1 flex-1">
-                      <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors truncate">
-                        {biz.name}
-                      </h4>
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors truncate">
+                          {biz.name}
+                        </h4>
+                        <span className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 group-hover:text-[#FF3F1A] flex items-center gap-1 transition-colors flex-none">
+                          <span className="hidden sm:inline">Ingresar</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                      </div>
                       <p className="text-xs text-zinc-400 font-medium mt-0.5">
                         {biz.city} · <span className="text-zinc-500 font-mono">{biz.currency}</span>
                       </p>
@@ -289,20 +296,6 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-
-                {/* Footer Action: Enter Workspace via Profile Selector */}
-                <Button
-                  variant="primary"
-                  intent="franchise.business.enter"
-                  onClick={e => {
-                    e.stopPropagation();
-                    setRoleSelectBiz(biz);
-                  }}
-                  className="w-full py-2.5 px-4 text-xs justify-between"
-                >
-                  <span>Entrar al Tablero de Comandas</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
                 </div>
               </div>
             );

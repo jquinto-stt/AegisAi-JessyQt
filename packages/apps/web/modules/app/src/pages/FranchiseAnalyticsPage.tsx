@@ -160,9 +160,6 @@ const FranchiseAnalyticsContent: React.FC = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export const FranchiseAnalyticsPage: React.FC = () => {
   return (

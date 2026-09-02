@@ -380,35 +380,15 @@ function Sidebar({
 
   const renderNavLinks = (isMobile = false) => (
     <>
-      <NavItem icon={<Home className="w-4 h-4" />} label="Inicio" onClick={() => onNavigatePedidos("operacion", "en-vivo")} isMobile={isMobile} />
-      <NavItem icon={<Eye className="w-4 h-4" />} label="Visitante" onClick={() => {}} isMobile={isMobile} />
-
-
-
-      <SectionHeader icon={<Users className="w-4 h-4" />} label="Subscriptor" section="subscriptor" isMobile={isMobile} />
-      {(!isCollapsed || isMobile) && expanded.subscriptor && (
-        <div className="flex flex-col gap-0.5">
-          <NavItem icon={<Mail className="w-3.5 h-3.5" />} label="Invitaciones" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<Megaphone className="w-3.5 h-3.5" />} label="Campañas" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<Package className="w-3.5 h-3.5" />} label="Productos" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<Gift className="w-3.5 h-3.5" />} label="Recompensas" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<FileText className="w-3.5 h-3.5" />} label="Formularios" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<BarChart2 className="w-3.5 h-3.5" />} label="Métricas" onClick={() => {}} indent isMobile={isMobile} />
-          <NavItem icon={<UserCircle className="w-3.5 h-3.5" />} label="Administradores" onClick={() => {}} indent isMobile={isMobile} />
-        </div>
-      )}
-
-      {/* SECTION: Pedidos & Restaurante */}
-      <SectionHeader
-        icon={<ShoppingBag className="w-4 h-4" />}
-        label="Pedidos"
-        section="pedidos"
-        active={activeModule === "pedidos"}
-        onHeaderClick={() => onNavigatePedidos(pedidosSection, pedidosSection === "operacion" ? pedidosOpTab : pedidosGeTab)}
+      <NavItem
+        icon={<Home className="w-4 h-4" />}
+        label="Inicio Operativo"
+        active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
+        onClick={() => onNavigatePedidos("operacion", "en-vivo")}
         isMobile={isMobile}
       />
-      {(!isCollapsed || isMobile) && expanded.pedidos && (
-        <div className="flex flex-col gap-0.5">
+
+      <div className="flex flex-col gap-0.5 mt-2">
           {/* Subcategoría 1: Operación */}
           {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
             <>
@@ -508,8 +488,6 @@ function Sidebar({
             </>
           )}
         </div>
-
-      )}
     </>
   );
 
@@ -932,27 +910,8 @@ export default function App() {
                 />
               </div>
 
-              {/* Right Side Header Actions: Search, Active Role, Business Switcher, Notifications & Theme */}
+              {/* Right Side Header Actions: Search, Business Switcher, Notifications & Theme */}
               <div className="flex items-center gap-2 sm:gap-2.5">
-                <Button
-                  variant="ghost"
-                  intent="shell.role.select"
-                  onClick={() => handleNavigatePedidos("configuracion", "roles")}
-                  className={`p-0 hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs hover:scale-102 ${
-                    activeRole.badgeColor === "rose"
-                      ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
-                      : activeRole.badgeColor === "amber"
-                      ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                      : activeRole.badgeColor === "emerald"
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                      : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
-                  }`}
-                  title={`Rol activo: ${activeRole.name}. Clic para gestionar o simular otros roles.`}
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span className="truncate max-w-[130px]">{activeRole.name}</span>
-                </Button>
-
                 <GlobalSearchButton />
                 <BusinessSwitcher />
 
