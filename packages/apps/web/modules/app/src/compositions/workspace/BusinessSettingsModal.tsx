@@ -376,27 +376,17 @@ const InteractiveImageViewport: React.FC<{
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setFitMode(fitMode === "cover" ? "contain" : "cover")}
-              className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span>{fitMode === "cover" ? "Ajustar al Marco" : "Llenar Marco"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onUpdate({ rotate, scale, posX: 0, posY: 0 })}
+              onClick={() => onUpdate({ rotate, scale: 1, posX: 0, posY: 0 })}
               className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
             >
               <Move className="w-3.5 h-3.5 text-[#190088] dark:text-blue-400" />
-              <span>Centrar</span>
+              <span>Centrar Imagen</span>
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => {
-              setFitMode("cover");
               onUpdate({ rotate: 0, scale: 1, posX: 0, posY: 0 });
             }}
             className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
@@ -1118,26 +1108,6 @@ export const BusinessSettingsModal: React.FC<{
                           className="hidden"
                         />
                       </label>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLogoUrl(USER_AVATAR_URL);
-                          setLogoRotate(0);
-                          setLogoScale(1);
-                          setLogoPosX(0);
-                          setLogoPosY(0);
-                        }}
-                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-[#190088]/30 dark:border-zinc-700 text-xs font-bold text-[#190088] dark:text-[#EFE6D3] hover:bg-[#190088]/5 transition-all cursor-pointer shadow-2xs"
-                        title="Usar la foto de perfil del usuario como logotipo"
-                      >
-                        <img
-                          src={USER_AVATAR_URL}
-                          alt="Foto de Perfil"
-                          className="w-5 h-5 rounded-full object-cover border border-[#190088]/40"
-                        />
-                        <span>Usar mi foto de perfil</span>
-                      </button>
                     </div>
 
                     {logoUrl ? (
