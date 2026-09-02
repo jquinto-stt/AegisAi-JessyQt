@@ -530,29 +530,27 @@ function Sidebar({
           {!isCollapsed ? (
             <>
               <NectoLogo size="xs" inline />
-              <Button
-                variant="ghost"
-                intent="shell.sidebar.collapse"
+              <button
+                type="button"
                 onClick={() => handleSetCollapsed(true)}
                 title="Colapsar barra lateral"
-                className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center transition-all cursor-pointer shadow-2xs group flex-none"
               >
-                <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 hover:text-[#FF3F1A]" />
-              </Button>
+                <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A] transition-colors" />
+              </button>
             </>
           ) : (
             <div className="flex items-center justify-center w-full">
-              <Button
-                variant="ghost"
-                intent="shell.sidebar.expand"
+              <button
+                type="button"
                 onClick={() => handleSetCollapsed(false)}
                 title="Expandir barra lateral"
-                className="p-0 w-10 h-10 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] flex items-center justify-center shadow-2xs hover:shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer select-none group"
+                className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] flex items-center justify-center shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group flex-none"
               >
                 <span className="font-black text-xl text-[#FF3F1A] tracking-tighter group-hover:scale-110 transition-transform">
                   N
                 </span>
-              </Button>
+              </button>
             </div>
           )}
         </div>
