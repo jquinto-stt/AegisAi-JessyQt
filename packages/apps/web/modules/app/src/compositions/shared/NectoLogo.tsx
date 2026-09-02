@@ -249,23 +249,20 @@ export function NectoSidebarLogo({
 }: NectoSidebarLogoProps) {
   return (
     <div
-      className={`flex items-center justify-between w-full select-none transition-all duration-150 ${className}`}
+      className={`flex items-center justify-between w-full select-none ${className}`}
     >
       <button
         type="button"
         onClick={isCollapsed ? onToggle : undefined}
         title={isCollapsed ? "Expandir barra lateral" : "Necto"}
-        className={`flex items-center gap-1.5 focus:outline-none transition-all text-left group ${
+        className={`flex items-center gap-0 focus:outline-none text-left group ${
           isCollapsed ? "cursor-pointer mx-auto" : "cursor-default"
         }`}
       >
-        {/* Anchor: The 'N' Isotype (Always visible, lead glyph) */}
+        {/* Anchor N Isotype */}
         <div
-          className={`w-8 h-8 flex items-center justify-center flex-none transition-all duration-150 ${
-            isCollapsed
-              ? "p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-2xs group-hover:border-[#FF3F1A] dark:group-hover:border-[#FF3F1A] group-hover:scale-105 active:scale-95"
-              : ""
-          }`}
+          className="w-8 h-8 flex items-center justify-center flex-none"
+          style={{ transition: "transform 120ms ease-out" }}
         >
           <svg
             className="block w-full h-full"
@@ -273,34 +270,33 @@ export function NectoSidebarLogo({
             viewBox="0 0 50 50.3601"
             preserveAspectRatio="xMidYMid meet"
           >
-            <g id="NectoIsotypeAnchor">
+            <g>
               <path d={svgPaths.p31604a80} fill="#FF3F1A" />
-              <path
-                d={svgPaths.p1b22ab80}
-                className="fill-[#190088]"
-                fill="#190088"
-              />
+              <path d={svgPaths.p1b22ab80} fill="#190088" />
             </g>
           </svg>
         </div>
 
-        {/* The Emerging Letters: E, C, T, O sliding out from the N on expansion */}
+        {/* ECTO letters + sub-brand — GPU-only: transform + opacity */}
         <div
-          className={`overflow-hidden flex items-center transition-all duration-200 ease-out ${
-            isCollapsed
-              ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
-              : "max-w-[190px] opacity-100 translate-x-0"
-          }`}
+          className="flex items-center will-change-transform"
+          style={{
+            transition: "transform 150ms ease-out, opacity 100ms ease-out",
+            transform: isCollapsed ? "scaleX(0) translateX(-8px)" : "scaleX(1) translateX(0)",
+            opacity: isCollapsed ? 0 : 1,
+            transformOrigin: "left center",
+            width: isCollapsed ? 0 : "auto",
+            pointerEvents: isCollapsed ? "none" : "auto",
+          }}
         >
-          {/* Letters E - C - T - O */}
-          <div className="relative w-[84px] h-6 flex-none transition-transform duration-200">
+          <div className="relative w-[84px] h-6 flex-none ml-1.5">
             <svg
               className="block w-full h-full"
               fill="none"
               viewBox="50 0 185 50.3601"
               preserveAspectRatio="xMidYMid meet"
             >
-              <g id="LettersECTO">
+              <g>
                 <path d={svgPaths.p1aedf600} fill="#FF3F1A" />
                 <path d={svgPaths.p204e9500} fill="#FF3F1A" />
                 <path d={svgPaths.p14a87f30} fill="#FF3F1A" />
@@ -308,16 +304,14 @@ export function NectoSidebarLogo({
               </g>
             </svg>
           </div>
-
-          {/* Secondary Wordmark Tag */}
-          <div className="relative w-11 h-4 ml-1.5 flex-none transition-all duration-200 delay-[50ms]">
+          <div className="relative w-11 h-4 ml-1.5 flex-none">
             <svg
               className="block w-full h-full"
               fill="none"
               viewBox="0 0 105.906 39.3108"
               preserveAspectRatio="xMidYMid meet"
             >
-              <g id="SubBrandTag">
+              <g>
                 <path d={svgPaths.p3c6b27c0} className="fill-[#190088] dark:fill-white" />
                 <path d={svgPaths.p14f5d000} className="fill-[#190088] dark:fill-white" />
                 <path d={svgPaths.p19d15a00} className="fill-[#190088] dark:fill-white" />
@@ -336,17 +330,19 @@ export function NectoSidebarLogo({
         </div>
       </button>
 
-      {/* Collapse Trigger Button (Visible only when sidebar is expanded) */}
+      {/* Collapse button */}
       {!isCollapsed && (
         <button
           type="button"
           onClick={onToggle}
           title="Colapsar barra lateral"
-          className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center transition-all cursor-pointer shadow-2xs group flex-none animate-fade-in"
+          className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center cursor-pointer shadow-2xs group flex-none"
+          style={{ transition: "background 120ms, color 120ms" }}
         >
-          <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A] transition-colors" />
+          <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A]" style={{ transition: "color 120ms" }} />
         </button>
       )}
     </div>
   );
 }
+
