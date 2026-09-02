@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../../auth/AuthContext";
+import { useBusiness } from "../../context/BusinessContext";
 import {
   X,
   Check,
+  Camera,
+  Upload,
 } from "lucide-react";
 import { Button, Field } from "@/elements";
 
@@ -11,17 +14,33 @@ export const AccountSettingsModal: React.FC<{
   onClose: () => void;
 }> = ({ isOpen, onClose }) => {
   const { user } = useAuth();
-  // CognitoUser no expone name/email directamente; el username del pool es el
-  // email. Usamos getUsername() con fallback a los valores por defecto.
+  const { userAvatarUrl, setUserAvatarUrl } = useBusiness();
   const username = user?.getUsername?.();
   const [name, setName] = useState("Administrador Master");
   const [email, setEmail] = useState(username || "admin@necto.app");
+  const [avatarPreview, setAvatarPreview] = useState(userAvatarUrl);
   const [savedToast, setSavedToast] = useState(false);
 
   if (!isOpen) return null;
 
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarPreview(reader.result);
+        setUserAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (avatarPreview) {
+      setUserAvatarUrl(avatarPreview);
+    }
     setSavedToast(true);
     setTimeout(() => {
       setSavedToast(false);
@@ -58,6 +77,32 @@ export const AccountSettingsModal: React.FC<{
             <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
               01. Usuario Master
             </span>
+
+            {/* Profile Avatar Upload */}
+            <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white dark:border-zinc-700 shadow-md flex-none bg-zinc-200 dark:bg-zinc-800">
+                <img
+                  src={avatarPreview}
+                  alt="Avatar de Usuario"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 block">
+                  Foto de Perfil
+                </span>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#190088] hover:bg-[#14006e] text-white text-xs font-bold transition-colors cursor-pointer shadow-2xs">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Cambiar Foto</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
 
             <Field
               label="Nombre Completo"

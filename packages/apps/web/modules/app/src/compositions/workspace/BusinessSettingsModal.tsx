@@ -137,7 +137,6 @@ const InteractiveImageViewport: React.FC<{
 }> = ({ imageUrl, rotate, scale, posX, posY, onUpdate, aspectRatio = "square", label = "Imagen" }) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [fitMode, setFitMode] = useState<"contain" | "cover">("cover");
   const [previewShape, setPreviewShape] = useState<"circle" | "square">(aspectRatio === "square" ? "circle" : "square");
 
   const dragStartRef = React.useRef<{
@@ -152,8 +151,8 @@ const InteractiveImageViewport: React.FC<{
     startY: 0,
     initialPosX: 0,
     initialPosY: 0,
-    containerWidth: 300,
-    containerHeight: 300,
+    containerWidth: 320,
+    containerHeight: 320,
   });
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -166,8 +165,8 @@ const InteractiveImageViewport: React.FC<{
       startY: e.clientY,
       initialPosX: posX,
       initialPosY: posY,
-      containerWidth: rect.width || 300,
-      containerHeight: rect.height || 300,
+      containerWidth: rect.width || 320,
+      containerHeight: rect.height || 320,
     };
     setIsDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -209,66 +208,71 @@ const InteractiveImageViewport: React.FC<{
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
     const delta = -e.deltaY * 0.0015;
-    const newScale = Math.max(0.5, Math.min(3.5, Number((scale + delta).toFixed(2))));
+    const newScale = Math.max(0.4, Math.min(3.5, Number((scale + delta).toFixed(2))));
     onUpdate({ rotate, scale: newScale, posX, posY });
   };
 
   return (
     <div className="space-y-4 select-none w-full">
-      {/* Studio Canvas Area */}
-      <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-zinc-900 to-black border border-zinc-800 shadow-2xl overflow-hidden flex flex-col items-center">
-        {/* Subtle radial glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(25,0,136,0.22)_0%,transparent_75%)] pointer-events-none" />
+      {/* Studio Canvas Area with Full Image Visibility & Aperture Mask */}
+      <div
+        ref={containerRef}
+        onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        className="relative w-full h-72 sm:h-84 rounded-3xl bg-[#090A0E] border border-zinc-800 shadow-2xl overflow-hidden flex items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none"
+      >
+        {/* Ambient Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-        {/* Viewport Frame with Mask */}
-        <div
-          ref={containerRef}
-          onWheel={handleWheel}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          className={`relative overflow-hidden cursor-grab active:cursor-grabbing touch-none transition-all duration-300 shadow-2xl ring-1 ring-white/10 ${
-            aspectRatio === "square"
-              ? previewShape === "circle"
-                ? "w-52 h-52 sm:w-60 sm:h-60 rounded-full ring-4 ring-[#190088]/60 shadow-[0_0_40px_rgba(25,0,136,0.3)]"
-                : "w-52 h-52 sm:w-60 sm:h-60 rounded-3xl"
-              : "w-full h-44 sm:h-56 rounded-3xl ring-1 ring-white/15"
-          }`}
-        >
-          {/* Image */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src={imageUrl}
-              alt={label}
-              style={{
-                transform: `rotate(${rotate}deg) scale(${scale}) translate(${posX}%, ${posY}%)`,
-                transition: isDragging ? "none" : "transform 0.08s ease-out",
-              }}
-              className={`pointer-events-none ${
-                fitMode === "contain" ? "max-w-full max-h-full object-contain" : "w-full h-full object-cover"
-              }`}
-              draggable={false}
-            />
-          </div>
+        {/* The Transformed Full Image (never cut off blindly) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+          <img
+            src={imageUrl}
+            alt={label}
+            style={{
+              transform: `rotate(${rotate}deg) scale(${scale}) translate(${posX}%, ${posY}%)`,
+              transition: isDragging ? "none" : "transform 0.08s ease-out",
+            }}
+            className="pointer-events-none max-w-full max-h-full object-contain"
+            draggable={false}
+          />
+        </div>
 
-          {/* Center alignment crosshair guide */}
-          <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center">
-            <div className="w-full h-[1px] bg-white/40 absolute" />
-            <div className="h-full w-[1px] bg-white/40 absolute" />
+        {/* Center Viewfinder Aperture with Darkened Backdrop Shadow */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div
+            className={`pointer-events-none transition-all duration-300 shadow-[0_0_0_9999px_rgba(0,0,0,0.58)] ring-2 ring-white/70 ${
+              aspectRatio === "square"
+                ? previewShape === "circle"
+                  ? "w-48 h-48 sm:w-56 sm:h-56 rounded-full ring-4 ring-[#190088] shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
+                  : "w-48 h-48 sm:w-56 sm:h-56 rounded-2xl"
+                : "w-[90%] sm:w-[85%] h-36 sm:h-44 rounded-2xl ring-2 ring-[#FF3F1A]/80"
+            }`}
+          >
+            {/* Crosshair guidelines */}
+            <div className="absolute inset-0 opacity-20 flex items-center justify-center pointer-events-none">
+              <div className="w-full h-[1px] bg-white absolute" />
+              <div className="h-full w-[1px] bg-white absolute" />
+            </div>
           </div>
         </div>
 
-        {/* Canvas floating pills & shape toggles */}
-        <div className="mt-4 flex items-center justify-between w-full max-w-sm px-2 text-xs z-10">
-          <span className="font-mono text-[10px] text-zinc-400 bg-white/10 border border-white/10 px-2.5 py-1 rounded-full backdrop-blur-md">
-            Zoom {Math.round(scale * 100)}% · {rotate}°
+        {/* Top Badges */}
+        <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none z-10">
+          <span className="font-mono text-[10px] text-white bg-slate-900/80 border border-white/10 px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm">
+            Zoom {Math.round(scale * 100)}% · Giro {rotate}°
           </span>
 
           {aspectRatio === "square" && (
-            <div className="flex items-center gap-1 bg-white/10 border border-white/10 p-0.5 rounded-full backdrop-blur-md">
+            <div className="flex items-center gap-1 bg-slate-900/80 border border-white/10 p-0.5 rounded-full backdrop-blur-md pointer-events-auto">
               <button
                 type="button"
-                onClick={() => setPreviewShape("circle")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewShape("circle");
+                }}
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                   previewShape === "circle" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
                 }`}
@@ -277,7 +281,10 @@ const InteractiveImageViewport: React.FC<{
               </button>
               <button
                 type="button"
-                onClick={() => setPreviewShape("square")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPreviewShape("square");
+                }}
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
                   previewShape === "square" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
                 }`}
@@ -286,6 +293,13 @@ const InteractiveImageViewport: React.FC<{
               </button>
             </div>
           )}
+        </div>
+
+        {/* Bottom Drag Helper */}
+        <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none z-10">
+          <span className="px-2.5 py-0.5 rounded-lg bg-slate-900/70 backdrop-blur-md text-slate-300 font-mono text-[9px]">
+            {isDragging ? "Ajustando encuadre..." : "Arrastra libremente para centrar dentro del marco"}
+          </span>
         </div>
       </div>
 
@@ -402,7 +416,7 @@ export const BusinessSettingsModal: React.FC<{
   onClose: () => void;
   isCreateMode?: boolean;
 }> = ({ business, isOpen, onClose, isCreateMode = false }) => {
-  const { updateBusiness, deleteBusiness, createBusiness } = useBusiness();
+  const { updateBusiness, deleteBusiness, createBusiness, setUserAvatarUrl } = useBusiness();
 
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState<
@@ -602,7 +616,9 @@ export const BusinessSettingsModal: React.FC<{
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setLogoUrl(reader.result as string);
+        const result = reader.result as string;
+        setLogoUrl(result);
+        setUserAvatarUrl(result);
         setLogoRotate(0);
         setLogoScale(1);
         setLogoPosX(0);
@@ -636,6 +652,10 @@ export const BusinessSettingsModal: React.FC<{
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+
+    if (logoUrl) {
+      setUserAvatarUrl(logoUrl);
+    }
 
     const payload = {
       name: name.trim(),

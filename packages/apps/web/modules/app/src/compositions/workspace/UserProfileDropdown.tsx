@@ -26,6 +26,7 @@ export const UserProfileDropdown: React.FC = () => {
     businesses,
     activeBusiness,
     switchBusiness,
+    userAvatarUrl,
   } = useBusiness();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -35,8 +36,6 @@ export const UserProfileDropdown: React.FC = () => {
 
   const username = user?.getUsername?.() || "admin@necto.app";
   const displayName = "Administrador Master";
-
-  const userAvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
 
   // Close when clicking outside
   useEffect(() => {

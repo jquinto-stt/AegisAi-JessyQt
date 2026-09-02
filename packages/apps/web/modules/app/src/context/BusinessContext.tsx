@@ -254,6 +254,8 @@ interface BusinessContextType {
   deleteBusiness: (id: string) => void;
   storePace: "rapida" | "habitual" | "demorada";
   setStorePace: (pace: "rapida" | "habitual" | "demorada") => void;
+  userAvatarUrl: string;
+  setUserAvatarUrl: (url: string) => void;
 }
 
 
@@ -515,6 +517,21 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return !!activeRole.permissions[permission];
   };
 
+  const [userAvatarUrl, setUserAvatarUrlState] = useState<string>(() => {
+    try {
+      return localStorage.getItem("necto_user_avatar") || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+    } catch (e) {
+      return "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+    }
+  });
+
+  const setUserAvatarUrl = (url: string) => {
+    setUserAvatarUrlState(url);
+    try {
+      localStorage.setItem("necto_user_avatar", url);
+    } catch (e) {}
+  };
+
   return (
     <BusinessContext.Provider
       value={{
@@ -538,6 +555,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         deleteBusiness,
         storePace,
         setStorePace,
+        userAvatarUrl,
+        setUserAvatarUrl,
       }}
     >
       {children}
