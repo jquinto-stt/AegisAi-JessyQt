@@ -98,14 +98,17 @@ export const UserProfileDropdown: React.FC = () => {
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                   {username}
                 </p>
+                {!isOnHub && (
                 <p className="text-[10px] font-mono text-[#FF3F1A] font-bold mt-0.5 truncate flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A] inline-block" />
                   <span>{activeBusiness?.name || "Sucursal Activa"}</span>
                 </p>
+                )}
               </div>
             </div>
 
-            {/* Option: Sucursales Activas Card Trigger */}
+            {/* Option: Sucursales Activas Card Trigger — only in Store view */}
+            {!isOnHub && (
             <div className="space-y-2">
               <button
                 type="button"
@@ -205,6 +208,7 @@ export const UserProfileDropdown: React.FC = () => {
                 </div>
               )}
             </div>
+            )}
 
             {/* Menu Links */}
             <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 space-y-1">
