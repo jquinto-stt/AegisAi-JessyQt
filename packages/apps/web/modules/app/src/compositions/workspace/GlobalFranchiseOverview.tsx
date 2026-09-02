@@ -80,95 +80,89 @@ export const GlobalFranchiseOverview: React.FC = () => {
         </div>
       </div>
 
-      {/* Aggregate KPI Metrics Grid (Harmonious Executive Design) */}
+      {/* Aggregate KPI Metrics Grid (1:1 Figma Design System) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Metric 1: Total Revenue */}
-        <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 shadow-2xs">
-              <DollarSign className="w-6 h-6" />
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 py-1 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-              <TrendingUp className="w-3.5 h-3.5" />
-              +18.4% vs ayer
-            </span>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
+        {/* Metric 1: Conversiones Totales / Ventas Totales */}
+        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Ventas Totales Hoy
             </span>
-            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+            <div className="w-7 h-7 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-500 dark:text-red-400 flex items-center justify-center flex-none">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
               {totalRevenue}
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Consolidado en vivo de sucursales</p>
+            <span className="text-xs font-bold text-emerald-500">
+              ↑12%
+            </span>
           </div>
         </div>
 
-        {/* Metric 2: Orders Count */}
-        <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shadow-2xs">
-              <ShoppingBag className="w-6 h-6" />
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 py-1 px-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
-              {businesses.length} sucursales
-            </span>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
+        {/* Metric 2: Tasa de Conversión / Pedidos Despachados */}
+        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Pedidos Despachados
             </span>
-            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+            <div className="w-7 h-7 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-none font-bold text-xs font-mono">
+              %
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
               {totalOrdersToday}
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Comandas procesadas hoy</p>
+            <span className="text-xs font-bold text-emerald-500">
+              ↑0.5%
+            </span>
           </div>
         </div>
 
-        {/* Metric 3: Active Kitchen Orders */}
-        <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] shadow-2xs">
-              <Flame className="w-6 h-6" />
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 py-1 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              En tiempo
-            </span>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
-              En Cocina (KDS)
-            </span>
-            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-[#FF3F1A] tracking-tight">
-              {activeOrdersInKitchen}
-            </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Tiempo prom. preparación: 18m</p>
-          </div>
-        </div>
-
-        {/* Metric 4: Avg Ticket */}
-        <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 shadow-2xs">
-              <Zap className="w-6 h-6" />
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/60 py-1 px-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 font-mono">
-              COP
-            </span>
-          </div>
-
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
+        {/* Metric 3: ROI / Ticket Promedio */}
+        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Ticket Promedio
             </span>
-            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+            <div className="w-7 h-7 rounded-xl bg-[#EFE6D3] dark:bg-[#37332A] text-amber-800 dark:text-[#EFE6D3] flex items-center justify-center flex-none font-bold text-xs font-mono">
+              $
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
               {avgTicket}
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Gasto medio por comanda</p>
+            <span className="text-xs font-bold text-emerald-500">
+              ↑18%
+            </span>
+          </div>
+        </div>
+
+        {/* Metric 4: Tasa de Crecimiento */}
+        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
+              Tasa de Crecimiento
+            </span>
+            <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-none font-bold text-xs">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
+          </div>
+
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
+              +15%
+            </h4>
+            <span className="text-xs font-bold text-emerald-500">
+              ↑2%
+            </span>
           </div>
         </div>
       </div>
