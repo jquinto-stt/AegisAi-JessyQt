@@ -123,6 +123,8 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
   ],
 };
 
+const USER_AVATAR_URL = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+
 const InteractiveImageViewport: React.FC<{
   imageUrl: string;
   rotate: number;
@@ -136,6 +138,7 @@ const InteractiveImageViewport: React.FC<{
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [fitMode, setFitMode] = useState<"contain" | "cover">("cover");
+  const [previewShape, setPreviewShape] = useState<"circle" | "square">(aspectRatio === "square" ? "circle" : "square");
 
   const dragStartRef = React.useRef<{
     startX: number;
@@ -176,11 +179,9 @@ const InteractiveImageViewport: React.FC<{
     const rawDeltaX = e.clientX - dragStartRef.current.startX;
     const rawDeltaY = e.clientY - dragStartRef.current.startY;
 
-    // Convert pixel delta to percentage of container
     const percentX = (rawDeltaX / dragStartRef.current.containerWidth) * 100;
     const percentY = (rawDeltaY / dragStartRef.current.containerHeight) * 100;
 
-    // Rotate delta to match image local coordinate space so drag always follows mouse movement
     const rad = (-rotate * Math.PI) / 180;
     const cos = Math.cos(rad);
     const sin = Math.sin(rad);
@@ -213,82 +214,94 @@ const InteractiveImageViewport: React.FC<{
   };
 
   return (
-    <div className="space-y-4 select-none w-full font-sans">
-      {/* Interactive Canvas Viewport */}
-      <div
-        ref={containerRef}
-        onWheel={handleWheel}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        className={`relative overflow-hidden rounded-3xl bg-slate-950 dark:bg-[#090A0E] border-2 border-slate-700/60 shadow-xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
-          aspectRatio === "square"
-            ? "w-full sm:w-[320px] h-[280px] sm:h-[320px] mx-auto"
-            : "w-full h-56 sm:h-72 md:h-80"
-        }`}
-      >
-        {/* Ambient Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+    <div className="space-y-4 select-none w-full">
+      {/* Studio Canvas Area */}
+      <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-zinc-900 to-black border border-zinc-800 shadow-2xl overflow-hidden flex flex-col items-center">
+        {/* Subtle radial glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(25,0,136,0.22)_0%,transparent_75%)] pointer-events-none" />
 
-        {/* The Transformed Image */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-3">
-          <img
-            src={imageUrl}
-            alt={label}
-            style={{
-              transform: `rotate(${rotate}deg) scale(${scale}) translate(${posX}%, ${posY}%)`,
-              transition: isDragging ? "none" : "transform 0.08s ease-out",
-            }}
-            className={`pointer-events-none transition-all ${
-              fitMode === "contain"
-                ? "max-w-full max-h-full object-contain"
-                : "w-full h-full object-cover"
-            }`}
-            draggable={false}
-          />
+        {/* Viewport Frame with Mask */}
+        <div
+          ref={containerRef}
+          onWheel={handleWheel}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          className={`relative overflow-hidden cursor-grab active:cursor-grabbing touch-none transition-all duration-300 shadow-2xl ring-1 ring-white/10 ${
+            aspectRatio === "square"
+              ? previewShape === "circle"
+                ? "w-52 h-52 sm:w-60 sm:h-60 rounded-full ring-4 ring-[#190088]/60 shadow-[0_0_40px_rgba(25,0,136,0.3)]"
+                : "w-52 h-52 sm:w-60 sm:h-60 rounded-3xl"
+              : "w-full h-44 sm:h-56 rounded-3xl ring-1 ring-white/15"
+          }`}
+        >
+          {/* Image */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img
+              src={imageUrl}
+              alt={label}
+              style={{
+                transform: `rotate(${rotate}deg) scale(${scale}) translate(${posX}%, ${posY}%)`,
+                transition: isDragging ? "none" : "transform 0.08s ease-out",
+              }}
+              className={`pointer-events-none ${
+                fitMode === "contain" ? "max-w-full max-h-full object-contain" : "w-full h-full object-cover"
+              }`}
+              draggable={false}
+            />
+          </div>
+
+          {/* Center alignment crosshair guide */}
+          <div className="absolute inset-0 pointer-events-none opacity-20 flex items-center justify-center">
+            <div className="w-full h-[1px] bg-white/40 absolute" />
+            <div className="h-full w-[1px] bg-white/40 absolute" />
+          </div>
         </div>
 
-        {/* Crop Frame Overlay Guides */}
-        <div className="absolute inset-3 pointer-events-none rounded-2xl border border-white/20">
-          <div className="absolute -top-1 -left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#FF3F1A]" />
-          <div className="absolute -top-1 -right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#FF3F1A]" />
-          <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#FF3F1A]" />
-          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#FF3F1A]" />
-        </div>
-
-        {/* Floating Readout Badges */}
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 pointer-events-none z-10">
-          <span className="px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-white font-mono text-[10px] font-bold shadow-md">
-            Zoom: {Math.round(scale * 100)}% · Giro: {rotate}°
+        {/* Canvas floating pills & shape toggles */}
+        <div className="mt-4 flex items-center justify-between w-full max-w-sm px-2 text-xs z-10">
+          <span className="font-mono text-[10px] text-zinc-400 bg-white/10 border border-white/10 px-2.5 py-1 rounded-full backdrop-blur-md">
+            Zoom {Math.round(scale * 100)}% · {rotate}°
           </span>
-        </div>
 
-        {/* Drag Hint at bottom */}
-        <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none z-10">
-          <span className="px-2.5 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md text-slate-300 font-mono text-[9px] shadow-sm">
-            {isDragging ? "Moviendo..." : "Arrastra la imagen para encuadrar"}
-          </span>
+          {aspectRatio === "square" && (
+            <div className="flex items-center gap-1 bg-white/10 border border-white/10 p-0.5 rounded-full backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setPreviewShape("circle")}
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                  previewShape === "circle" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Círculo
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewShape("square")}
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                  previewShape === "square" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                Cuadrado
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Direct Controls & Precision Sliders */}
-      <div className="p-4 rounded-2xl bg-[#F7F4EC] dark:bg-[#15161A] border border-[#190088]/15 dark:border-zinc-800 space-y-3.5 shadow-xs">
-        {/* Zoom Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              <ZoomIn className="w-3.5 h-3.5 text-[#190088] dark:text-blue-400" />
-              <span>Tamaño / Zoom</span>
-            </span>
-            <span className="font-mono font-bold text-xs text-[#190088] dark:text-blue-400">
-              {Math.round(scale * 100)}%
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+      {/* Luxury Minimalist Controls Deck */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-zinc-50 dark:bg-[#121316] border border-zinc-200/80 dark:border-zinc-800 space-y-4 shadow-sm">
+        {/* Zoom row */}
+        <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
+          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+            <ZoomIn className="w-4 h-4 text-[#190088] dark:text-blue-400" />
+            <span>Escala</span>
+          </span>
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => onUpdate({ rotate, scale: Math.max(0.5, Number((scale - 0.1).toFixed(2))), posX, posY })}
-              className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+              className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
             >
               -
             </button>
@@ -299,35 +312,29 @@ const InteractiveImageViewport: React.FC<{
               step={0.05}
               value={scale}
               onChange={e => onUpdate({ rotate, scale: parseFloat(e.target.value), posX, posY })}
-              className="flex-1 h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#190088]"
+              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#190088]"
             />
             <button
               type="button"
               onClick={() => onUpdate({ rotate, scale: Math.min(3.0, Number((scale + 0.1).toFixed(2))), posX, posY })}
-              className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+              className="w-7 h-7 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
             >
               +
             </button>
           </div>
         </div>
 
-        {/* Rotation Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              <RotateCw className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span>Ángulo de Rotación</span>
-            </span>
-            <span className="font-mono font-bold text-xs text-[#FF3F1A]">
-              {rotate}°
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
+        {/* Rotate row */}
+        <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
+          <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+            <RotateCw className="w-4 h-4 text-[#FF3F1A]" />
+            <span>Rotación</span>
+          </span>
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => onUpdate({ rotate: (rotate - 90) % 360, scale, posX, posY })}
-              className="px-2 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs flex-none"
-              title="Girar 90° antihorario"
+              className="px-2 h-7 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
             >
               -90°
             </button>
@@ -338,36 +345,36 @@ const InteractiveImageViewport: React.FC<{
               step={1}
               value={rotate > 180 ? rotate - 360 : rotate}
               onChange={e => onUpdate({ rotate: parseInt(e.target.value, 10), scale, posX, posY })}
-              className="flex-1 h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF3F1A]"
+              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF3F1A]"
             />
             <button
               type="button"
               onClick={() => onUpdate({ rotate: (rotate + 90) % 360, scale, posX, posY })}
-              className="px-2 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs flex-none"
-              title="Girar 90° horario"
+              className="px-2 h-7 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
             >
               +90°
             </button>
           </div>
         </div>
 
-        {/* Quick Adjustment Action Buttons */}
-        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/80 dark:border-zinc-800 flex-wrap">
-          <div className="flex items-center gap-1.5">
+        {/* Quick presets row */}
+        <div className="flex items-center justify-between pt-2 border-t border-zinc-200/80 dark:border-zinc-800 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setFitMode(fitMode === "cover" ? "contain" : "cover")}
-              className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
             >
-              <Sparkles className="w-3 h-3 text-[#FF3F1A]" />
+              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>{fitMode === "cover" ? "Ajustar al Marco" : "Llenar Marco"}</span>
             </button>
+
             <button
               type="button"
               onClick={() => onUpdate({ rotate, scale, posX: 0, posY: 0 })}
-              className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
             >
-              <Move className="w-3 h-3 text-[#190088] dark:text-blue-400" />
+              <Move className="w-3.5 h-3.5 text-[#190088] dark:text-blue-400" />
               <span>Centrar</span>
             </button>
           </div>
@@ -378,9 +385,9 @@ const InteractiveImageViewport: React.FC<{
               setFitMode("cover");
               onUpdate({ rotate: 0, scale: 1, posX: 0, posY: 0 });
             }}
-            className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className="w-3.5 h-3.5" />
             <span>Restablecer</span>
           </button>
         </div>
@@ -476,13 +483,13 @@ export const BusinessSettingsModal: React.FC<{
       setCurrency(business.currency);
       setIconKey(business.iconKey);
 
-      setLogoUrl(business.logoUrl || "");
+      setLogoUrl(business.logoUrl || USER_AVATAR_URL);
       setLogoRotate(business.logoTransform?.rotate || 0);
       setLogoScale(business.logoTransform?.scale || 1);
       setLogoPosX(business.logoTransform?.posX || 0);
       setLogoPosY(business.logoTransform?.posY || 0);
 
-      setBannerUrl(business.bannerUrl || "");
+      setBannerUrl(business.bannerUrl || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=1200&auto=format&fit=crop&q=80");
       setBannerRotate(business.bannerTransform?.rotate || 0);
       setBannerScale(business.bannerTransform?.scale || 1);
       setBannerPosX(business.bannerTransform?.posX || 0);
@@ -1080,19 +1087,41 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   <div className="space-y-4">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>{logoUrl ? "Reemplazar Imagen de Logo" : "Subir Logotipo"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{logoUrl ? "Reemplazar con Archivo" : "Subir Logotipo"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLogoUrl(USER_AVATAR_URL);
+                          setLogoRotate(0);
+                          setLogoScale(1);
+                          setLogoPosX(0);
+                          setLogoPosY(0);
+                        }}
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-[#190088]/30 dark:border-zinc-700 text-xs font-bold text-[#190088] dark:text-[#EFE6D3] hover:bg-[#190088]/5 transition-all cursor-pointer shadow-2xs"
+                        title="Usar la foto de perfil del usuario como logotipo"
+                      >
+                        <img
+                          src={USER_AVATAR_URL}
+                          alt="Foto de Perfil"
+                          className="w-5 h-5 rounded-full object-cover border border-[#190088]/40"
+                        />
+                        <span>Usar mi foto de perfil</span>
+                      </button>
+                    </div>
 
                     {logoUrl ? (
-                      <div className="p-5 bg-zinc-50 dark:bg-[#0E0F12] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
+                      <div className="space-y-4">
                         <InteractiveImageViewport
                           imageUrl={logoUrl}
                           rotate={logoRotate}
@@ -1113,7 +1142,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="w-full h-44 rounded-3xl bg-zinc-50 dark:bg-[#0E0F12] border-2 border-dashed border-zinc-300 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400">
                         <Camera className="w-8 h-8 mb-1.5" />
                         <span className="text-xs font-bold">Sin Logotipo Cargado</span>
-                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una imagen cuadrada o PNG para encuadrarla en el visor</span>
+                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una imagen cuadrada o hacé clic en "Usar mi foto de perfil"</span>
                       </div>
                     )}
                   </div>
@@ -1164,7 +1193,7 @@ export const BusinessSettingsModal: React.FC<{
                     </label>
 
                     {bannerUrl ? (
-                      <div className="p-5 bg-zinc-50 dark:bg-[#0E0F12] rounded-3xl border border-zinc-200/80 dark:border-zinc-800 space-y-4">
+                      <div className="space-y-4">
                         <InteractiveImageViewport
                           imageUrl={bannerUrl}
                           rotate={bannerRotate}

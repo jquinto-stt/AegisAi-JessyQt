@@ -264,6 +264,7 @@ const DEFAULT_BUSINESS: BusinessInstance = {
   slug: "burger-house-central",
   businessType: "restaurant_virtual",
   iconKey: "utensils",
+  logoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
   currency: "COP",
   city: "Bogotá, Colombia",
   channels: {
