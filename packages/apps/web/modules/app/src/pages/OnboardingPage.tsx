@@ -536,13 +536,15 @@ export default function OnboardingPage() {
                       </div>
                     </div>
 
-                    <Badge
-                      variant={isMetaConnected ? "success" : "warning"}
-                      intent="onboarding.meta.status"
-                      className="self-start sm:self-center"
-                    >
-                      {isMetaConnected ? "Conectado" : "Pendiente de Conexión"}
-                    </Badge>
+                    {isMetaConnected && (
+                      <Badge
+                        variant="success"
+                        intent="onboarding.meta.status"
+                        className="self-start sm:self-center"
+                      >
+                        Conectado
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-zinc-200/80 dark:border-zinc-800">
