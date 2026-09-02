@@ -14,12 +14,13 @@ import {
   Zap,
   DollarSign,
   Sparkles,
-  CheckCircle2,
   BarChart2,
   History,
   Store,
   Plus,
   Settings,
+  Banknote,
+  PackageCheck,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -88,8 +89,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
             <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Ventas Totales Hoy
             </span>
-            <div className="w-7 h-7 rounded-xl bg-red-50 dark:bg-red-950/50 text-red-500 dark:text-red-400 flex items-center justify-center flex-none">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-none">
+              <DollarSign className="w-3.5 h-3.5" />
             </div>
           </div>
 
@@ -109,8 +110,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
             <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Pedidos Despachados
             </span>
-            <div className="w-7 h-7 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-none font-bold text-xs font-mono">
-              %
+            <div className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-none">
+              <PackageCheck className="w-3.5 h-3.5" />
             </div>
           </div>
 
@@ -130,8 +131,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
             <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
               Ticket Promedio
             </span>
-            <div className="w-7 h-7 rounded-xl bg-[#EFE6D3] dark:bg-[#37332A] text-amber-800 dark:text-[#EFE6D3] flex items-center justify-center flex-none font-bold text-xs font-mono">
-              $
+            <div className="w-7 h-7 rounded-xl bg-[#EFE6D3] dark:bg-[#37332A] text-amber-800 dark:text-[#EFE6D3] flex items-center justify-center flex-none">
+              <Banknote className="w-3.5 h-3.5" />
             </div>
           </div>
 
