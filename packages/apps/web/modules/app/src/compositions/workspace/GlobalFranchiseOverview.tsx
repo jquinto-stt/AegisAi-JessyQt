@@ -249,9 +249,9 @@ export const GlobalFranchiseOverview: React.FC = () => {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-6 pt-0 space-y-5 flex-1 flex flex-col justify-between">
-                  {/* Avatar overlapping the banner */}
-                  <div className="flex items-end gap-3.5 -mt-8 z-10">
+                <div className="p-6 pt-3 space-y-5 flex-1 flex flex-col justify-between">
+                  {/* Floating Logo / Avatar Row */}
+                  <div className="flex items-center justify-between -mt-10 mb-1 z-10">
                     <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-800 border-2 border-white dark:border-zinc-700 flex items-center justify-center flex-none shadow-lg overflow-hidden ring-4 ring-black/5 dark:ring-black/20">
                       {biz.logoUrl ? (
                         <img
@@ -268,19 +268,24 @@ export const GlobalFranchiseOverview: React.FC = () => {
                         <BusinessIcon iconKey={biz.iconKey} className="w-8 h-8 text-[#FF3F1A]" />
                       )}
                     </div>
-                    <div className="min-w-0 pb-1 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors truncate">
-                          {biz.name}
-                        </h4>
-                        <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 group-hover:text-[#FF3F1A] flex items-center gap-1.5 transition-colors flex-none">
-                          <span className="hidden sm:inline">Entrar al local</span>
-                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </span>
-                      </div>
-                      <p className="text-xs text-zinc-400 font-medium mt-0.5">
-                        {biz.city} · <span className="text-zinc-500 font-mono font-bold">{biz.currency}</span>
-                      </p>
+
+                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 group-hover:bg-[#FF3F1A] group-hover:text-white border border-zinc-200 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
+                      <span>Entrar al local</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </div>
+
+                  {/* Title & Metadata (100% in card body with crystal-clear contrast) */}
+                  <div className="space-y-1">
+                    <h4 className="text-lg sm:text-xl font-black text-zinc-950 dark:text-zinc-50 leading-snug group-hover:text-[#FF3F1A] transition-colors truncate">
+                      {biz.name}
+                    </h4>
+                    <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                      <span>{biz.city}</span>
+                      <span>•</span>
+                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 font-mono font-bold text-[10px] text-zinc-700 dark:text-zinc-300">
+                        {biz.currency}
+                      </span>
                     </div>
                   </div>
 
