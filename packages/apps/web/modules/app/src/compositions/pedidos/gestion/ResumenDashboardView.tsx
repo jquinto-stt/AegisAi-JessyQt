@@ -67,37 +67,37 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion?: (tab: GestionT
     .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
     .slice(0, 4);
 
-  // Channels 360° Intelligence
+  // Channels 360° Intelligence (Following Figma Palette: #190088, #FF3F1A, #8B6B38 / #EFE6D3)
   const channelMetrics = [
     {
-      channel: "WhatsApp IA",
+      channel: "Redes Sociales & WhatsApp",
       ticket: 14200,
       orders: 156,
       revenue: "$ 2.215.200",
       pct: 54,
       growth: "+18.4%",
-      icon: <MessageCircle className="w-4 h-4 text-[#FF3F1A]" />,
-      color: "bg-[#FF3F1A]",
+      icon: <MessageCircle className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />,
+      color: "bg-[#190088]",
     },
     {
-      channel: "Portal Web Directo",
+      channel: "Portal Web & Correo Directo",
       ticket: 12800,
       orders: 84,
       revenue: "$ 1.075.200",
       pct: 28,
       growth: "+12.1%",
-      icon: <Globe className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />,
-      color: "bg-[#190088] dark:bg-[#97D6DF]",
+      icon: <Globe className="w-4 h-4 text-[#FF3F1A]" />,
+      color: "bg-[#FF3F1A]",
     },
     {
-      channel: "Mostrador / Salón",
+      channel: "Enlace Directo & Salón",
       ticket: 8400,
       orders: 42,
       revenue: "$ 352.800",
       pct: 12,
       growth: "+5.2%",
-      icon: <Store className="w-4 h-4 text-zinc-600 dark:text-zinc-400" />,
-      color: "bg-zinc-600 dark:bg-zinc-400",
+      icon: <Store className="w-4 h-4 text-[#8B6B38] dark:text-[#EFE6D3]" />,
+      color: "bg-[#8B6B38] dark:bg-[#C9A96E]",
     },
     {
       channel: "Atención Telefónica",
@@ -107,7 +107,7 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion?: (tab: GestionT
       pct: 6,
       growth: "-2.8%",
       icon: <Phone className="w-4 h-4 text-zinc-400" />,
-      color: "bg-zinc-400",
+      color: "bg-[#EFE6D3] dark:bg-[#37332A]",
     },
   ];
 
