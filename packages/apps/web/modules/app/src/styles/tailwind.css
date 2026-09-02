@@ -5,7 +5,8 @@
 
 @theme {
   --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'DM Sans', sans-serif;
+  --font-display: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'DM Sans', monospace;
 
   --color-necto-principal: #FF3F1A;
   --color-necto-terciario: #190088;
@@ -14,5 +15,3 @@
   --color-necto-fuente: #212121;
   --color-necto-detalles: #EFE6D3;
 }
-
-

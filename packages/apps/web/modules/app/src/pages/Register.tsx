@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { Zap, CheckCircle2 } from 'lucide-react';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -44,7 +45,10 @@ export default function Register() {
     return (
       <div className="auth-container">
         <div className="auth-header">
-          <span className="brand-badge">⚡ Email Verification</span>
+          <span className="brand-badge inline-flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Email Verification</span>
+          </span>
           <h2>Enter Verification Code</h2>
           <p>We've sent a 6-digit code to <strong>{email}</strong></p>
         </div>
@@ -76,7 +80,10 @@ export default function Register() {
   return (
     <div className="auth-container">
       <div className="auth-header">
-        <span className="brand-badge">⚡ Necto Cloud</span>
+        <span className="brand-badge inline-flex items-center gap-1">
+          <Zap className="w-3.5 h-3.5 text-[#FF3F1A]" />
+          <span>Necto Cloud</span>
+        </span>
         <h2>Create Account</h2>
         <p>Get started with automated inventory tracking</p>
       </div>

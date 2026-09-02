@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   BarChart2,
   History,
+  Store,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -32,10 +33,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
   ) => {
     e.stopPropagation();
     switchBusiness(bizId);
-    navigate("/", {
+    navigate("/analitica", {
       state: {
-        section: "analitica",
-        geTab,
+        bizId,
+        tab: geTab,
       },
     });
   };
@@ -47,10 +48,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
   const avgTicket = "$ 101.000";
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 bg-[#FAFAFA] dark:bg-[#1E1E22] text-zinc-900 dark:text-zinc-100 antialiased">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 sm:space-y-8 bg-[#ECECEC] dark:bg-[#212121] text-[#212121] dark:text-[#ECECEC] antialiased">
       {/* Executive Header Banner */}
-      <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 text-white dark:from-[#121214] dark:via-[#18181B] dark:to-[#121214] p-6 sm:p-8 rounded-3xl border border-zinc-800 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-[#FF3F1A]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-gradient-to-r from-[#190088] via-[#14006e] to-[#190088] text-white p-6 sm:p-8 rounded-3xl border border-[#190088]/80 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-[#FF3F1A]/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -181,27 +182,60 @@ export const GlobalFranchiseOverview: React.FC = () => {
               <div
                 key={biz.id}
                 onClick={() => setRoleSelectBiz(biz)}
-                className="relative p-6 rounded-3xl bg-white dark:bg-[#2A2B30] border border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between space-y-5 overflow-hidden group cursor-pointer"
+                className="relative rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-md flex flex-col justify-between overflow-hidden group cursor-pointer"
               >
-                {/* Background Banner Watermark if uploaded */}
-                {biz.bannerUrl && (
-                  <div className="absolute inset-0 opacity-[0.06] dark:opacity-[0.10] pointer-events-none overflow-hidden">
-                    <img src={biz.bannerUrl} alt="" className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500" />
-                  </div>
-                )}
+                {/* Top Banner Cover Photo - 100% Nítido y Vívido */}
+                <div className="h-28 sm:h-32 w-full relative overflow-hidden bg-zinc-900 flex-none select-none">
+                  {biz.bannerUrl ? (
+                    <img
+                      src={biz.bannerUrl}
+                      alt={biz.name}
+                      style={{
+                        transform: biz.bannerTransform
+                          ? `rotate(${biz.bannerTransform.rotate || 0}deg) scale(${biz.bannerTransform.scale || 1}) translate(${biz.bannerTransform.posX || 0}%, ${biz.bannerTransform.posY || 0}%)`
+                          : undefined,
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-r from-[#190088] via-[#FF3F1A] to-[#190088] opacity-80 flex items-center justify-center">
+                      <Store className="w-8 h-8 text-white/40" />
+                    </div>
+                  )}
+                  {/* Subtle bottom shadow */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-                {/* Branch Header */}
-                <div className="flex items-start justify-between gap-4 z-10">
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs overflow-hidden">
+                  {/* Status Badge floating on top right of banner */}
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1 border border-emerald-500/30 shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Operando
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6 pt-0 space-y-5 flex-1 flex flex-col justify-between">
+                  {/* Avatar overlapping the banner */}
+                  <div className="flex items-end gap-3.5 -mt-7 z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-white dark:bg-zinc-800 border-2 border-white dark:border-zinc-700 flex items-center justify-center flex-none shadow-md overflow-hidden ring-4 ring-black/5 dark:ring-black/20">
                       {biz.logoUrl ? (
-                        <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
+                        <img
+                          src={biz.logoUrl}
+                          alt={biz.name}
+                          style={{
+                            transform: biz.logoTransform
+                              ? `rotate(${biz.logoTransform.rotate || 0}deg) scale(${biz.logoTransform.scale || 1}) translate(${biz.logoTransform.posX || 0}%, ${biz.logoTransform.posY || 0}%)`
+                              : undefined,
+                          }}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <BusinessIcon iconKey={biz.iconKey} className="w-6 h-6 text-[#FF3F1A]" />
+                        <BusinessIcon iconKey={biz.iconKey} className="w-7 h-7 text-[#FF3F1A]" />
                       )}
                     </div>
-                    <div>
-                      <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors">
+                    <div className="min-w-0 pb-1 flex-1">
+                      <h4 className="text-base font-bold text-zinc-950 dark:text-zinc-50 leading-tight group-hover:text-[#FF3F1A] transition-colors truncate">
                         {biz.name}
                       </h4>
                       <p className="text-xs text-zinc-400 font-medium mt-0.5">
@@ -210,65 +244,48 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Operando
-                  </span>
-                </div>
+                  {/* Branch Live Metrics Row */}
+                  <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-center">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Ventas</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockRevenue}</span>
+                    </div>
+                    <div className="border-x border-zinc-200 dark:border-zinc-800">
+                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Volumen</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockTickets}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">KDS Cocina</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-[#FF3F1A]">{mockInKitchen} activos</span>
+                    </div>
+                  </div>
 
-                {/* Branch Live Metrics Row */}
-                <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-100 dark:border-zinc-700/60 text-center">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Ventas</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockRevenue}</span>
-                  </div>
-                  <div className="border-x border-zinc-200 dark:border-zinc-700">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Volumen</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockTickets}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">KDS Cocina</span>
-                    <span className="text-xs sm:text-sm font-extrabold text-[#FF3F1A]">{mockInKitchen} activos</span>
-                  </div>
-                </div>
-
-                {/* 3 Analítica & Reportes Quick Actions */}
+                {/* 2 Analítica & Reportes Quick Actions */}
                 <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
                   <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold tracking-wider block">
-                    Analítica & Reportes de esta Franquicia
+                    Analítica Corporativa & Auditoría
                   </span>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <Button
                       variant="ghost"
                       intent="franchise.analitica.resumen"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "resumen")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
-                      title="Ver Dashboard de Pedidos"
+                      className="p-2.5 rounded-2xl bg-zinc-100/80 hover:bg-[#EFE6D3] dark:bg-zinc-800/80 dark:hover:bg-[#37332A] text-zinc-800 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group/btn"
+                      title="Ver Dashboard Ejecutivo 360°"
                     >
-                      <BarChart2 className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
-                      <span className="text-[10px] font-medium leading-tight">Dashboard</span>
+                      <BarChart2 className="w-4 h-4 text-[#FF3F1A]" />
+                      <span className="text-xs font-bold">Dashboard 360°</span>
                     </Button>
 
                     <Button
                       variant="ghost"
                       intent="franchise.analitica.historial"
                       onClick={e => handleNavigateToAnalitica(e, biz.id, "historial")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
-                      title="Ver Historial de Ventas"
+                      className="p-2.5 rounded-2xl bg-zinc-100/80 hover:bg-[#EFE6D3] dark:bg-zinc-800/80 dark:hover:bg-[#37332A] text-zinc-800 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group/btn"
+                      title="Ver Historial de Ventas y Arqueos"
                     >
-                      <History className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
-                      <span className="text-[10px] font-medium leading-tight">Historial</span>
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      intent="franchise.analitica.rendimiento"
-                      onClick={e => handleNavigateToAnalitica(e, biz.id, "analitica")}
-                      className="p-2 rounded-xl bg-zinc-100/80 hover:bg-[#FF3F1A] hover:text-white dark:bg-zinc-800 dark:hover:bg-[#FF3F1A] text-zinc-800 dark:text-zinc-200 text-xs font-bold transition-all flex flex-col items-center gap-1 cursor-pointer shadow-2xs group/btn"
-                      title="Ver Rendimiento & Canales"
-                    >
-                      <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A] group-hover/btn:text-white transition-colors" />
-                      <span className="text-[10px] font-medium leading-tight">Rendimiento</span>
+                      <History className="w-4 h-4 text-[#FF3F1A]" />
+                      <span className="text-xs font-bold">Historial de Ventas</span>
                     </Button>
                   </div>
                 </div>
@@ -286,6 +303,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                   <span>Entrar al Tablero de Comandas</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
+                </div>
               </div>
             );
           })}

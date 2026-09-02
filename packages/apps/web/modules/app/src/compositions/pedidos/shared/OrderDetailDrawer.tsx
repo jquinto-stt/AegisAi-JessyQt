@@ -21,12 +21,14 @@ import {
   Truck,
   Printer,
   ExternalLink,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/elements";
 
 export const OrderDetailDrawer: React.FC = () => {
   const {
     orders,
+    programados,
     selectedOrderId,
     setSelectedOrderId,
     confirmOrder,
@@ -34,6 +36,7 @@ export const OrderDetailDrawer: React.FC = () => {
     markOrderReady,
     deliverOrder,
     adjustEstimate,
+    injectScheduledOrderToLive,
     setRejectModalOrder,
     setCancelModalOrder,
     setAiModalOrder,
@@ -44,7 +47,7 @@ export const OrderDetailDrawer: React.FC = () => {
 
   const [whatsappSent, setWhatsappSent] = useState(false);
 
-  const order = orders.find(o => o.id === selectedOrderId);
+  const order = orders.find(o => o.id === selectedOrderId) || programados.find(p => p.id === selectedOrderId);
 
   if (!order) return null;
 
@@ -435,7 +438,22 @@ export const OrderDetailDrawer: React.FC = () => {
 
         {/* Drawer Footer Actions */}
         <div className="p-5 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex items-center gap-3 flex-none">
-          {order.status === "NUEVO" && (
+          {programados.some(p => p.id === order.id) && (
+            <Button
+              variant="primary"
+              intent="order-detail.inject"
+              onClick={() => {
+                injectScheduledOrderToLive(order.id, true);
+                setSelectedOrderId(order.id);
+              }}
+              className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#FF3F1A] hover:bg-[#e03715] text-white font-bold"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Activar Pedido en Cocina (Pasar a En Vivo)</span>
+            </Button>
+          )}
+
+          {!programados.some(p => p.id === order.id) && order.status === "NUEVO" && (
             <>
               <Button
                 variant="primary"
@@ -457,7 +475,7 @@ export const OrderDetailDrawer: React.FC = () => {
             </>
           )}
 
-          {order.status === "CONFIRMADO" && (
+          {!programados.some(p => p.id === order.id) && order.status === "CONFIRMADO" && (
             <Button
               variant="accent"
               intent="order-detail.send-kitchen"

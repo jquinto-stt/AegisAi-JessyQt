@@ -297,8 +297,8 @@ function Sidebar({
           title={label}
           className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-medium transition-all cursor-pointer ${
             active
-              ? "bg-[#FF3F1A] text-white shadow-md"
-              : "text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+              ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] border border-[#EFE6D3] dark:border-[#37332A]"
+              : "text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
           }`}
         >
           {icon}
@@ -311,14 +311,14 @@ function Sidebar({
         variant="ghost"
         intent="shell.nav.item"
         onClick={handleItemClick}
-        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer ${
+        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer group ${
           active
-            ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
-            : "text-gray-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+            ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] font-bold border border-[#EFE6D3] dark:border-[#37332A]"
+            : "text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
         } ${indent ? "pl-7" : ""}`}
       >
-        <span className={`flex-none ${active ? "text-white" : "text-gray-400 dark:text-gray-400"}`}>{icon}</span>
-        <span className="flex-1 truncate">{label}</span>
+        <span className={`flex-none transition-colors ${active ? "text-[#FF3F1A]" : "text-zinc-400 dark:text-zinc-500 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
+        <span className="flex-1 truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
       </Button>
     );
   }
@@ -348,7 +348,7 @@ function Sidebar({
           className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-semibold transition-all cursor-pointer ${
             active
               ? "bg-[#FF3F1A] text-white shadow-sm"
-              : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800"
+              : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
           }`}
         >
           {icon}
@@ -361,15 +361,19 @@ function Sidebar({
         variant="ghost"
         intent="shell.nav.section"
         onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
+        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer group ${
           active
             ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
-            : "text-gray-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+            : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
         }`}
       >
-        <span className={`flex-none ${active ? "text-white" : "text-gray-500 dark:text-gray-400"}`}>{icon}</span>
-        <span className="flex-1 text-left truncate">{label}</span>
-        {expanded[section] ? <ChevronDown className="w-3.5 h-3.5 flex-none" /> : <ChevronRight className="w-3.5 h-3.5 flex-none" />}
+        <span className={`flex-none transition-colors ${active ? "text-white" : "text-zinc-500 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
+        <span className="flex-1 text-left truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
+        {expanded[section] ? (
+          <ChevronDown className={`w-3.5 h-3.5 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
+        ) : (
+          <ChevronRight className={`w-3.5 h-3.5 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
+        )}
       </Button>
     );
   }
@@ -558,11 +562,10 @@ function Sidebar({
         {/* Bottom Action Section */}
         <div className="p-2 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
           <NavItem
-            icon={<Building2 className="w-4 h-4 text-[#FF3F1A]" />}
-            label="Hub de Negocios"
+            icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
+            label="Configuración"
             onClick={() => navigate("/workspaces")}
           />
-          <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} />
           <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} />
           <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { signOut(); navigate("/login"); }} />
         </div>
@@ -600,15 +603,14 @@ function Sidebar({
             {/* Drawer Footer */}
             <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1 bg-slate-50/50 dark:bg-gray-800/40">
               <NavItem
-                icon={<Building2 className="w-4 h-4 text-[#FF3F1A]" />}
-                label="Hub de Negocios"
+                icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
+                label="Configuración"
                 onClick={() => {
                   onCloseMobile?.();
                   navigate("/workspaces");
                 }}
                 isMobile={true}
               />
-              <NavItem icon={<Settings className="w-4 h-4" />} label="Configuración" onClick={() => {}} isMobile={true} />
               <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} isMobile={true} />
               <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { onCloseMobile?.(); signOut(); navigate("/login"); }} isMobile={true} />
             </div>
@@ -741,18 +743,22 @@ export default function App() {
   });
   const [pedidosGeTab, setPedidosGeTab] = useState<GestionTab>(() => {
     const t = searchParams.get("tab") as GestionTab | null;
-    return t || "resumen";
+    return t || "catalogo";
   });
 
   const handleNavigatePedidos = (section: PedidosSection, tab: any) => {
     setActiveModule("pedidos");
     setPedidosSection(section);
     if (section === "operacion") {
-      setPedidosOpTab(tab);
+      setPedidosOpTab(tab || "en-vivo");
+    } else if (section === "menu") {
+      setPedidosGeTab(tab || "catalogo");
+    } else if (section === "configuracion") {
+      setPedidosGeTab(tab || "roles");
     } else {
       setPedidosGeTab(tab);
     }
-    setSearchParams({ section, tab }, { replace: true });
+    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : "roles") }, { replace: true });
   };
 
   // Synchronize when URL parameters change (e.g. from CommandPalette, direct links, or Hub)

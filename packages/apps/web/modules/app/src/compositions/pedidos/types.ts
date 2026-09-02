@@ -271,12 +271,13 @@ export type ConversationStatus =
 
 /** Motivo por el que la IA (o el cliente) solicita intervención humana. */
 export type HandoffReason =
-  | "AMBIGUO"                // El pedido/mensaje es ambiguo
-  | "FUERA_DE_ALCANCE"       // La IA no puede resolver la solicitud
-  | "MODIFICACION_ESPECIAL"  // El cliente pide una modificación especial
-  | "CONFIRMAR_DATO"         // Hay que confirmar un dato antes de procesar
-  | "CLIENTE_PIDE_HUMANO"    // El cliente pidió explícitamente hablar con alguien
-  | "BAJA_CONFIANZA";        // La interpretación de la IA tiene confianza baja
+  | "AMBIGUO"                     // El pedido/mensaje es ambiguo
+  | "FUERA_DE_ALCANCE"            // La IA no puede resolver la solicitud
+  | "MODIFICACION_ESPECIAL"       // El cliente pide una modificación especial
+  | "CONFIRMAR_DATO"              // Hay que confirmar un dato antes de procesar
+  | "CLIENTE_PIDE_HUMANO"         // El cliente pidió explícitamente hablar con alguien
+  | "BAJA_CONFIANZA"              // La interpretación de la IA tiene confianza baja
+  | "VERIFICAR_PAGO_TRANSFERENCIA"; // Cliente envió comprobante Nequi/Bancolombia/QR
 
 /** Quién emitió un mensaje del hilo. */
 export type MessageSender = "cliente" | "ia" | "humano";
@@ -288,6 +289,14 @@ export interface ChatMessage {
   authorName?: string;
   text: string;
   timestamp: string;
+  attachmentUrl?: string;
+  attachmentType?: "image" | "comprobante" | "audio";
+  attachmentMeta?: {
+    bank?: "Nequi" | "Bancolombia" | "Daviplata" | "QR Interbancario" | "Transferencia";
+    amount?: number;
+    reference?: string;
+    status?: "PENDIENTE_VERIFICACION" | "VERIFICADO_OK" | "RECHAZADO";
+  };
 }
 
 /** Evento de auditoría de una transición de control (análogo a OrderEvent). */
@@ -303,6 +312,7 @@ export interface Conversation {
   id: string;
   customerName: string;
   customerPhone: string;
+  avatarUrl?: string;
   channel: OrderChannel;
   status: ConversationStatus;
   /** Operador que tiene el control ahora (fuente de verdad de exclusión mutua). */

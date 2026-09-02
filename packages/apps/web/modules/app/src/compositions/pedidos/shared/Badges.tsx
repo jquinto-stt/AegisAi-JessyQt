@@ -50,10 +50,10 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
     },
     LISTO: {
       label: "Listo",
-      bg: "bg-zinc-950 dark:bg-white",
-      text: "text-white dark:text-zinc-950",
-      border: "border-zinc-950 dark:border-white",
-      icon: <CheckCircle2 className="w-3 h-3 text-[#FF3F1A]" />,
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+      text: "text-emerald-700 dark:text-emerald-400",
+      border: "border-emerald-200 dark:border-emerald-800/60",
+      icon: <CheckCircle2 className="w-3 h-3 text-emerald-500" />,
     },
     FINALIZADO: {
       label: "Entregado",
@@ -121,30 +121,30 @@ export const ChannelBadge: React.FC<{ channel: OrderChannel }> = ({ channel }) =
   const configs: Record<OrderChannel, { label: string; icon: React.ReactNode; color: string }> = {
     whatsapp: {
       label: "WhatsApp",
-      icon: <MessageSquare className="w-3 h-3 text-emerald-500" />,
-      color: "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300",
+      icon: <MessageSquare className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />,
+      color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     },
     web: {
       label: "Web",
-      icon: <Globe className="w-3 h-3 text-blue-500" />,
-      color: "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300",
+      icon: <Globe className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />,
+      color: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
     },
     presencial: {
       label: "POS",
-      icon: <Store className="w-3 h-3 text-zinc-500" />,
-      color: "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300",
+      icon: <Store className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />,
+      color: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
     },
     telefono: {
       label: "Teléfono",
-      icon: <Phone className="w-3 h-3 text-amber-500" />,
-      color: "border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300",
+      icon: <Phone className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />,
+      color: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
     },
   };
 
-  const c = configs[channel];
+  const c = configs[channel] || configs.web;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border bg-zinc-50 dark:bg-zinc-900 ${c.color}`}>
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium select-none ${c.color}`}>
       {c.icon}
       <span>{c.label}</span>
     </span>
@@ -234,6 +234,7 @@ export const HandoffReasonBadge: React.FC<{ reason: HandoffReason }> = ({ reason
     CONFIRMAR_DATO: "Confirmar dato",
     CLIENTE_PIDE_HUMANO: "Pidió un humano",
     BAJA_CONFIANZA: "Baja confianza IA",
+    VERIFICAR_PAGO_TRANSFERENCIA: "Comprobante Nequi / Bancolombia",
   };
 
   return (

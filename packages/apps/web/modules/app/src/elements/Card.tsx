@@ -14,13 +14,13 @@ export interface CardProps
 export const Card = ui_dsl<CardProps>({
   nodeId: 'necto.el.card',
   intent: ['surface.container'],
-  base: 'rounded-3xl bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100',
+  base: 'rounded-3xl bg-white dark:bg-[#2C2D31] text-[#212121] dark:text-[#ECECEC]',
   variants: {
-    default: 'border border-zinc-200/80 dark:border-zinc-800 shadow-2xs',
+    default: 'border border-[#ECECEC] dark:border-zinc-700 shadow-2xs',
     elevated:
-      'border border-zinc-200 dark:border-zinc-800 shadow-sm',
+      'border border-[#ECECEC] dark:border-zinc-700 shadow-sm',
     dashed:
-      'border border-dashed border-zinc-300 dark:border-zinc-700 bg-transparent',
+      'border border-dashed border-[#FF3F1A]/50 bg-transparent',
   },
   render: ({ nodeId, intent, className, props, children }) => (
     <div

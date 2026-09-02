@@ -46,7 +46,7 @@ export function SegmentedControl<V extends string = string>({
   options,
   value,
   onValueChange,
-  tone = 'contrast',
+  tone = 'accent',
   intent = 'input.segmented',
   className = '',
 }: SegmentedControlProps<V>) {
@@ -54,18 +54,18 @@ export function SegmentedControl<V extends string = string>({
     tone === 'accent'
       ? 'bg-[#FF3F1A] text-white shadow-2xs'
       : tone === 'panel'
-        ? 'bg-white dark:bg-zinc-900 text-zinc-950 dark:text-white shadow-2xs'
-        : 'bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 shadow-2xs';
+        ? 'bg-white dark:bg-zinc-900 text-[#212121] dark:text-[#ECECEC] shadow-2xs'
+        : 'bg-[#190088] text-white shadow-2xs';
 
   const inactiveClass =
-    'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100';
+    'text-[#212121]/70 dark:text-[#ECECEC]/70 hover:text-[#212121] dark:hover:text-white';
 
   return (
     <div
       data-node-id={NODE_ID}
       data-intent={intent}
       role="tablist"
-      className={`inline-flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 ${className}`}
+      className={`inline-flex items-center gap-1 p-1 rounded-xl bg-[#ECECEC] dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700 ${className}`}
     >
       {options.map((opt) => {
         const active = opt.value === value;

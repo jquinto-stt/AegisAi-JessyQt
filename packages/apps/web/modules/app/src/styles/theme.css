@@ -44,9 +44,15 @@
 }
 
 
-html, body, input, button, select, textarea {
-  font-family: var(--font-family-primary);
-  font-feature-settings: "opsz" 14;
+html, body {
+  background-color: var(--color-secundario-fondos);
+  color: var(--color-fuente);
+}
+
+*, *::before, *::after, html, body, input, button, select, textarea, kbd, code, pre, table, th, td, span, div, h1, h2, h3, h4, h5, h6, p, label {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 

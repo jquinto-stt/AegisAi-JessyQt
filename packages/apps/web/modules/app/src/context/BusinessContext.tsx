@@ -41,6 +41,29 @@ export type UserWorkspaceRole = "owner" | "manager" | "staff";
 export type SoundAlertKey = "bell" | "chime" | "kitchen_ding" | "pos_beep" | "mute";
 
 
+export interface ImageTransformConfig {
+  scale: number;    // 0.5 to 3
+  rotate: number;   // -180 to 180 degrees
+  posX: number;     // -100 to 100 percentage offset
+  posY: number;     // -100 to 100 percentage offset
+}
+
+export interface WhatsAppBotConfig {
+  welcomeMessage?: string;
+  isWelcomeEnabled?: boolean;
+  paymentInfoMessage?: string;
+  isPaymentInfoEnabled?: boolean;
+  closedHoursMessage?: string;
+  isClosedHoursEnabled?: boolean;
+  handoffToHumanMessage?: string;
+  isHandoffEnabled?: boolean;
+  orderConfirmedMessage?: string;
+  isOrderConfirmedEnabled?: boolean;
+  nequiNumber?: string;
+  bancolombiaAccount?: string;
+  accountHolder?: string;
+}
+
 export interface BusinessInstance {
   id: string;
   name: string;
@@ -48,7 +71,9 @@ export interface BusinessInstance {
   businessType: BusinessType;
   iconKey: BusinessIconKey;
   logoUrl?: string;
+  logoTransform?: ImageTransformConfig;
   bannerUrl?: string;
+  bannerTransform?: ImageTransformConfig;
   brandColor?: string;
   soundAlert?: SoundAlertKey;
   currency: "COP" | "USD" | "MXN" | "ARS";
@@ -62,6 +87,7 @@ export interface BusinessInstance {
   activeModules: NectoModuleKey[];
   pauseConfig?: BusinessScheduledPause;
   setupProgress?: BusinessSetupProgress;
+  whatsappBotConfig?: WhatsAppBotConfig;
   createdAt: string;
 }
 

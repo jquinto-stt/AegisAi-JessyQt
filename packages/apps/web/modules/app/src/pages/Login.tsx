@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { Zap } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -27,7 +28,10 @@ export default function Login() {
   return (
     <div className="auth-container">
       <div className="auth-header">
-        <span className="brand-badge">⚡ Necto Cloud</span>
+        <span className="brand-badge inline-flex items-center gap-1">
+          <Zap className="w-3.5 h-3.5 text-[#FF3F1A]" />
+          <span>Necto Cloud</span>
+        </span>
         <h2>Welcome Back</h2>
         <p>Sign in to your account to manage inventory</p>
       </div>

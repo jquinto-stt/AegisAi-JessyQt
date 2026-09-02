@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import OnboardingPage from './pages/OnboardingPage';
 import WorkspacesPage from './pages/WorkspacesPage';
+import FranchiseAnalyticsPage from './pages/FranchiseAnalyticsPage';
 import NectoApp from './pages/NectoApp';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/workspaces" element={<WorkspacesPage />} />
+            <Route path="/analitica" element={<FranchiseAnalyticsPage />} />
             <Route path="/*" element={<NectoApp />} />
           </Routes>
         </BusinessProvider>

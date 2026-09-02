@@ -18,6 +18,9 @@ import {
   ChevronDown,
   Minimize2,
   Calendar,
+  GripVertical,
+  ArrowUpRight,
+  Info,
 } from "lucide-react";
 
 
@@ -25,6 +28,7 @@ import { useBusiness } from "@/context/BusinessContext";
 import { playOrderAlert } from "@/utils/audioAlerts";
 import { OperacionTab } from "../types";
 import { NectoBanner } from "../shared/NectoBanner";
+import { OrderStatusBadge, ChannelBadge } from "../shared/Badges";
 import { Button, Card, Field, Select, Textarea, SegmentedControl, SearchInput } from "@/elements";
 
 import {
@@ -173,58 +177,66 @@ export const PedidosEnVivoView: React.FC<{
   const columnDefs: Record<OrderStatus, {
     title: string;
     description: string;
-    headerColor: string;
-    badgeBg: string;
     icon: any;
+    iconBg: string;
+    iconColor: string;
+    badgeStyle: string;
   }> = {
     NUEVO: {
       title: "Nuevos & Por Confirmar",
-      description: "Recibidos por canales directos o IA",
-      headerColor: "text-zinc-900 dark:text-zinc-100 border-zinc-900",
-      badgeBg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
+      description: "Canales directos o IA",
       icon: Sparkles,
+      iconBg: "bg-orange-500/10 dark:bg-orange-500/20",
+      iconColor: "text-[#FF3F1A]",
+      badgeStyle: "bg-orange-500/10 text-[#FF3F1A] border-orange-500/20 dark:bg-orange-500/20",
     },
     CONFIRMADO: {
       title: "Confirmados (En Cola)",
-      description: "Aprobados y listos para entrar al fogón",
-      headerColor: "text-zinc-900 dark:text-zinc-100 border-zinc-900",
-      badgeBg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
+      description: "Pago validado en cola",
       icon: CheckCircle2,
+      iconBg: "bg-blue-500/10 dark:bg-blue-500/20",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      badgeStyle: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300",
     },
     EN_PREPARACION: {
       title: "En Cocina / Preparación",
-      description: "En horneado, armado o despacho",
-      headerColor: "text-[#FF3F1A] border-[#FF3F1A]",
-      badgeBg: "bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A]",
+      description: "En línea de cocción KDS",
       icon: ChefHat,
+      iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      badgeStyle: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-300",
     },
     LISTO: {
       title: "Listos para Entrega",
-      description: "En mostrador o esperando delivery",
-      headerColor: "text-zinc-900 dark:text-zinc-100 border-zinc-900",
-      badgeBg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100",
+      description: "En mostrador o pase",
       icon: Package,
+      iconBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      badgeStyle: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300",
     },
     FINALIZADO: {
       title: "Entregados Hoy",
-      description: "Completados con éxito en el turno",
-      headerColor: "text-zinc-700 dark:text-zinc-300 border-zinc-700",
-      badgeBg: "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400",
+      description: "Completados con éxito",
       icon: Check,
+      iconBg: "bg-zinc-500/10 dark:bg-zinc-500/20",
+      iconColor: "text-zinc-600 dark:text-zinc-400",
+      badgeStyle: "bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:bg-zinc-500/20 dark:text-zinc-300",
     },
     RECHAZADO: {
       title: "Rechazados",
-      description: "Rechazados",
-      headerColor: "text-rose-700",
-      badgeBg: "bg-rose-50",
+      description: "Descartados",
       icon: X,
+      iconBg: "bg-rose-500/10",
+      iconColor: "text-rose-600",
+      badgeStyle: "bg-rose-500/10 text-rose-600 border-rose-500/20",
     },
     CANCELADO: {
       title: "Cancelados",
       description: "Cancelados",
-      headerColor: "text-rose-700",
-      badgeBg: "bg-rose-50",
       icon: X,
+      iconBg: "bg-zinc-500/10",
+      iconColor: "text-zinc-500",
+      badgeStyle: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
     },
   };
 
@@ -235,9 +247,10 @@ export const PedidosEnVivoView: React.FC<{
       id: c.id,
       title: c.title || columnDefs[c.id].title,
       description: columnDefs[c.id].description,
-      headerColor: columnDefs[c.id].headerColor,
-      badgeBg: columnDefs[c.id].badgeBg,
       icon: columnDefs[c.id].icon,
+      iconBg: columnDefs[c.id].iconBg,
+      iconColor: columnDefs[c.id].iconColor,
+      badgeStyle: columnDefs[c.id].badgeStyle,
     }));
 
   const searchInputRef = React.useRef<HTMLInputElement>(null);
@@ -293,15 +306,15 @@ export const PedidosEnVivoView: React.FC<{
 
       {/* Compact Horizontal Toolbar (Toggleable) */}
       {layoutPrefs.showToolbar ? (
-        <div className="bg-white dark:bg-[#121214] rounded-2xl p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 border border-zinc-200/70 dark:border-zinc-800/80 shadow-none flex flex-wrap items-center justify-between gap-2.5">
           {/* Left: Search & Filter Dropdowns */}
           <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
             {/* Search with Ctrl+K shortcut */}
             <SearchInput
               ref={searchInputRef}
               intent="pedidos.search"
-              className="flex-1 min-w-[200px] max-w-sm"
-              placeholder="Buscar por ID, cliente, producto..."
+              className="flex-1 min-w-[180px] max-w-xs"
+              placeholder="Buscar pedido, cliente, producto..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onClear={() => setSearchQuery("")}
@@ -312,7 +325,7 @@ export const PedidosEnVivoView: React.FC<{
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value as any)}
-                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer"
+                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer hover:border-zinc-300 transition-colors"
               >
                 <option value="TODOS">Todos los Estados ({statusCounts.TODOS})</option>
                 <option value="NUEVO">Nuevos ({statusCounts.NUEVO})</option>
@@ -329,7 +342,7 @@ export const PedidosEnVivoView: React.FC<{
               <select
                 value={channelFilter}
                 onChange={e => setChannelFilter(e.target.value as any)}
-                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-semibold py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer"
+                className="appearance-none bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium py-2 pl-3 pr-7 rounded-xl focus:outline-none cursor-pointer hover:border-zinc-300 transition-colors"
               >
                 <option value="TODOS">Todos los Canales ({channelCounts.TODOS})</option>
                 <option value="whatsapp">WhatsApp ({channelCounts.whatsapp})</option>
@@ -347,19 +360,19 @@ export const PedidosEnVivoView: React.FC<{
               onClick={() => {
                 setUrgencyFilter(urgencyFilter === "RETRASADO" ? "TODOS" : "RETRASADO");
               }}
-              className={`p-0 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 border ${
+              className={`py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 border ${
                 urgencyFilter === "RETRASADO"
-                  ? "bg-rose-500 text-white border-rose-500 shadow-2xs"
-                  : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400"
+                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-900"
+                  : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
               }`}
             >
-              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-white" : "text-rose-500"}`} />
-              <span>Retrasos</span>
+              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-rose-500" : "text-zinc-400"}`} />
+              <span>Demoras</span>
               {delayedCount > 0 && (
                 <span
-                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded font-bold ${
+                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     urgencyFilter === "RETRASADO"
-                      ? "bg-white/20 text-white"
+                      ? "bg-rose-500 text-white"
                       : "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300"
                   }`}
                 >
@@ -368,8 +381,6 @@ export const PedidosEnVivoView: React.FC<{
               )}
             </Button>
           </div>
-
-
 
           {/* Right: View Mode Toggle, Customize & New Order */}
           <div className="flex items-center gap-2">
@@ -390,11 +401,11 @@ export const PedidosEnVivoView: React.FC<{
               variant="outline"
               intent="pedidos.toolbar.customize"
               onClick={() => setShowLayoutModal(true)}
-              className="py-2 px-3 bg-zinc-50 dark:bg-zinc-900 text-xs"
-              title="Personalizar columnas y diseño"
+              className="py-2 px-3 bg-zinc-50 dark:bg-zinc-900 text-xs border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-300"
+              title="Personalizar columnas y diseño del tablero"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="hidden md:inline">Estructura</span>
+              <span className="hidden md:inline">Vista Operativa</span>
             </Button>
 
             {!layoutPrefs.showTopHeader && (
@@ -407,7 +418,7 @@ export const PedidosEnVivoView: React.FC<{
                   localStorage.setItem("necto_pedidos_layout_prefs", JSON.stringify(newPrefs));
                   window.dispatchEvent(new Event("necto_layout_changed"));
                 }}
-                className="py-2 px-3 border-orange-200 dark:border-orange-900/60 bg-orange-50/90 dark:bg-orange-950/40 text-[#FF3F1A] hover:bg-[#FF3F1A] hover:text-white text-xs"
+                className="py-2 px-3 border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 text-xs"
                 title="Restaurar barra de navegación de módulos"
               >
                 <Minimize2 className="w-3.5 h-3.5" />
@@ -424,12 +435,11 @@ export const PedidosEnVivoView: React.FC<{
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Pedido</span>
             </Button>
-
           </div>
         </div>
       ) : (
         /* Floating mini-bar when toolbar is hidden to allow reopening */
-        <div className="flex items-center justify-between bg-white dark:bg-[#121214] p-2.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs">
+        <div className="flex items-center justify-between bg-white dark:bg-[#151518] p-2.5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-none">
           <span className="text-xs font-mono text-zinc-400 pl-2">MODO TABLERO ENFOCADO</span>
           <div className="flex items-center gap-2">
             <Button
@@ -439,7 +449,7 @@ export const PedidosEnVivoView: React.FC<{
               className="py-1.5 px-3 text-xs"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Estructura</span>
+              <span>Vista Operativa</span>
             </Button>
             <Button
               variant="primary"
@@ -455,7 +465,16 @@ export const PedidosEnVivoView: React.FC<{
 
       {/* KANBAN BOARD VIEW */}
       {viewMode === "kanban" ? (
-        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory min-h-[600px] scrollbar-thin">
+        <div className="space-y-2">
+          {/* Subtle Visual Guide for Operators */}
+          <div className="flex items-center justify-between px-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium select-none">
+            <span className="flex items-center gap-1.5">
+              <GripVertical className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span>Haz clic en cualquier tarjeta para abrir su comanda, o arrástrala entre columnas para avanzar su etapa</span>
+            </span>
+          </div>
+
+          <div className="flex gap-2.5 sm:gap-3 w-full overflow-x-auto pb-4 pt-1 items-start scrollbar-thin">
           {orderedVisibleColumns
             .filter(col => statusFilter === "TODOS" || col.id === statusFilter)
             .map(col => {
@@ -483,83 +502,71 @@ export const PedidosEnVivoView: React.FC<{
                   setDragOverCol(null);
                   setDraggedOrderId(null);
                 }}
-                className={`w-[86vw] sm:w-80 md:w-88 flex-none snap-center bg-zinc-100/60 dark:bg-[#121214]/60 rounded-2xl border p-3 flex flex-col justify-between shadow-2xs space-y-3 transition-all duration-200 ${
+                className={`flex-1 min-w-[210px] sm:min-w-[230px] lg:min-w-0 max-w-full bg-zinc-50/50 dark:bg-[#121214]/40 rounded-2xl border-2 border-dashed border-zinc-300/80 dark:border-zinc-800/90 p-2.5 sm:p-3 flex flex-col justify-between space-y-3 transition-colors ${
                   dragOverCol === col.id
-                    ? "border-[#FF3F1A] ring-2 ring-orange-500/20 bg-orange-50/20 dark:bg-orange-950/20"
-                    : "border-zinc-200/80 dark:border-zinc-800/80"
+                    ? "border-[#FF3F1A] border-solid ring-2 ring-[#FF3F1A]/20 bg-orange-50/20 dark:bg-orange-950/20"
+                    : ""
                 }`}
               >
-                {/* Column Header */}
-                <div className="space-y-1.5 flex-none">
-                  <div className="flex items-center justify-between pb-2 border-b border-zinc-200/60 dark:border-zinc-800/80">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300 flex items-center justify-center">
-                        <Icon className="w-3 h-3 text-[#FF3F1A]" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-xs text-zinc-950 dark:text-zinc-50 tracking-tight">
-                          {col.title}
-                        </h4>
-                      </div>
+                {/* Minimalist Column Header Card */}
+                <div className="bg-white dark:bg-[#18181B] rounded-xl border border-zinc-200/80 dark:border-zinc-800 p-2.5 sm:p-3 shadow-2xs flex items-center justify-between gap-2 flex-none">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${col.iconBg} ${col.iconColor} flex-none`}>
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
-
-                    <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-md bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
-                      {colOrders.length}
-                    </span>
+                    <h4 className="font-bold text-xs sm:text-[13px] text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+                      {col.title}
+                    </h4>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 px-0.5">
-                    <span className="truncate max-w-[180px]">{col.description}</span>
-                    <span className="font-bold text-zinc-600 dark:text-zinc-400 flex-none">
-                      ${(colTotalSum / 1000).toFixed(0)}k
-                    </span>
-                  </div>
+                  <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-full border ${col.badgeStyle} flex-none`}>
+                    {colOrders.length}
+                  </span>
                 </div>
 
                 {/* Tickets Container */}
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[calc(100vh-340px)]">
+                <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[calc(100vh-340px)]">
                   {col.id === "NUEVO" && programados.length > 0 && (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between px-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#FF3F1A]" /> Programados ({programados.length})
-                        </span>
-                      </div>
-
                       {programados.map(prog => (
                         <div
                           key={prog.id}
-                          className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200/80 dark:border-zinc-800 space-y-2 text-xs shadow-2xs transition-all hover:border-zinc-300"
+                          onClick={() => setSelectedOrderId(prog.id)}
+                          className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 space-y-2 text-xs transition-all cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs group select-none"
+                          title="Haz clic para ver el detalle de este pedido programado"
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-zinc-950 dark:text-zinc-50 flex items-center gap-1.5 text-[11px] truncate max-w-[140px]">
-                              {prog.customerName}
-                            </span>
-                            <span className="font-mono font-bold text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 px-2 py-0.5 rounded-md border border-zinc-200 dark:border-zinc-700">
-                              {prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}
-                            </span>
+                          <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-mono font-bold text-[10px] text-zinc-500 dark:text-zinc-400">
+                                {prog.id}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300">
+                                <Calendar className="w-2.5 h-2.5" />
+                                <span>{prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}</span>
+                              </span>
+                            </div>
+                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#FF3F1A] transition-colors flex-none" />
                           </div>
 
-                          <p className="text-[11px] text-zinc-500 line-clamp-2">
-                            {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                          </p>
+                          <div className="min-w-0">
+                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#FF3F1A] transition-colors">
+                              {prog.customerName}
+                            </h5>
+                          </div>
 
-                          <div className="flex items-center justify-between pt-1 border-t border-zinc-100 dark:border-zinc-800/80 text-[11px]">
+                          {layoutPrefs.showItemsSummary !== false && (
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                              {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between pt-1.5 border-t border-zinc-100 dark:border-zinc-800/60 text-[11px]">
                             <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                              ${prog.total.toLocaleString("es-AR")}
+                              ${prog.total.toLocaleString("es-CO")}
                             </span>
-                            <Button
-                              variant="primary"
-                              intent="pedidos.scheduled.inject"
-                              onClick={e => {
-                                e.stopPropagation();
-                                injectScheduledOrderToLive(prog.id, true);
-                              }}
-                              className="py-1.5 px-2.5 text-[10px]"
-                            >
-                              <Zap className="w-3 h-3 text-[#FF3F1A]" />
-                              <span>Inyectar a Cocina</span>
-                            </Button>
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              Programado
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -567,11 +574,10 @@ export const PedidosEnVivoView: React.FC<{
                   )}
 
                   {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
-                    <Card variant="dashed" intent="pedidos.column.empty" className="p-8 text-center text-zinc-400 text-xs font-medium">
+                    <Card variant="dashed" intent="pedidos.column.empty" className="p-6 text-center text-zinc-400 text-xs font-normal border-zinc-200/60 dark:border-zinc-800/60 rounded-xl">
                       <p>Sin pedidos en esta etapa</p>
                     </Card>
                   ) : (
-
                     colOrders.map(order => {
                       const isDelayed = order.urgency === "RETRASADO";
                       const isDragging = draggedOrderId === order.id;
@@ -594,117 +600,89 @@ export const PedidosEnVivoView: React.FC<{
                             setDragOverCol(null);
                           }}
                           onClick={() => setSelectedOrderId(order.id)}
-                          className={`bg-white dark:bg-[#18181B] rounded-3xl border p-4 shadow-2xs hover:shadow-md transition-all cursor-grab active:cursor-grabbing space-y-3 ${
+                          className={`bg-white dark:bg-[#18181B] rounded-xl border p-3 transition-all cursor-grab active:cursor-grabbing hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs space-y-2 group select-none ${
                             isDragging
-                              ? "opacity-40 scale-95 border-dashed border-[#FF3F1A] ring-2 ring-orange-500/20"
+                              ? "opacity-30 scale-95 border-dashed border-[#FF3F1A]"
                               : isDelayed
-                              ? "border-rose-500/40 bg-rose-500/[0.02] dark:bg-rose-500/[0.04]"
-                              : "border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700"
+                              ? "border-rose-300 dark:border-rose-900/60 bg-rose-50/[0.04]"
+                              : "border-zinc-200/80 dark:border-zinc-800"
                           }`}
+                          title="Haz clic para abrir comanda o arrastra para mover de etapa"
                         >
-                          {/* Cliente + total (jerarquía primaria) */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <h5 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 truncate flex items-center gap-1.5">
-                                {isDelayed && (
-                                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse flex-none" title="Retraso operativo" />
-                                )}
-                                {order.customerName}
-                              </h5>
-                              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                                {order.id} · {order.items.reduce((s, i) => s + i.quantity, 0)} ítems
-                              </p>
+                          {/* Top Row: Jira-style ID + Channel Badge + Total */}
+                          <div className="flex items-center justify-between gap-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <GripVertical className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 flex-none transition-colors" />
+                              <span className="font-mono font-bold text-[11px] text-zinc-500 dark:text-zinc-400">
+                                {order.id}
+                              </span>
+                              {layoutPrefs.showChannelBadge !== false && (
+                                <ChannelBadge channel={order.channel} />
+                              )}
                             </div>
-                            <span className="font-mono font-bold text-sm text-zinc-950 dark:text-zinc-50 flex-none">
-                              ${order.total.toLocaleString("es-CO")}
-                            </span>
+
+                            {layoutPrefs.showOrderTotal !== false && (
+                              <div className="flex items-center gap-1 flex-none">
+                                <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                                  ${order.total.toLocaleString("es-CO")}
+                                </span>
+                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#FF3F1A] transition-colors" />
+                              </div>
+                            )}
                           </div>
 
-                          {/* Tiempo: una sola señal (barra sólo en preparación) */}
-                          {order.status === "EN_PREPARACION" ? (
-                            <div className="space-y-1">
-                              <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
-                                  style={{ width: `${progressPercent}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <p className={`text-[10px] font-mono ${isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}`}>
-                              {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m de demora` : `${order.elapsedMinutes}m / ${order.estimatedMinutes}m`}
+                          {/* Customer Name & Items count */}
+                          <div className="min-w-0 pl-5">
+                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1.5 group-hover:text-[#FF3F1A] transition-colors">
+                              {isDelayed && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-none" title="Demorado" />
+                              )}
+                              <span>{order.customerName}</span>
+                              {layoutPrefs.showCustomerPhone && order.customerPhone && (
+                                <span className="font-mono text-[10px] text-zinc-400 font-normal">
+                                  · {order.customerPhone}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-zinc-400 font-normal font-mono">
+                                ({order.items.reduce((s, i) => s + i.quantity, 0)} ítems)
+                              </span>
+                            </h5>
+                          </div>
+
+                          {/* Resumen corto de productos */}
+                          {layoutPrefs.showItemsSummary !== false && (
+                            <p className="text-[11px] text-zinc-600 dark:text-zinc-400 line-clamp-2 pl-5 leading-relaxed">
+                              {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
                             </p>
                           )}
 
-                          {/* Quick Advancement Action Buttons */}
-                          <div
-                            className="pt-2 border-t border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between gap-1.5"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            {order.status === "NUEVO" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  intent="pedidos.order.discard"
-                                  onClick={() => setRejectModalOrder(order)}
-                                  className="py-1.5 px-2.5 text-[10px]"
-                                >
-                                  Descartar
-                                </Button>
-                                <Button
-                                  variant="primary"
-                                  intent="pedidos.order.confirm"
-                                  onClick={() => confirmOrder(order.id)}
-                                  className="flex-1 py-1.5 px-3 text-[11px]"
-                                >
-                                  <span>Confirmar</span>
-                                  <ArrowRight className="w-3 h-3 text-[#FF3F1A]" />
-                                </Button>
-                              </>
-                            )}
-
-                            {order.status === "CONFIRMADO" && (
-                              <Button
-                                variant="accent"
-                                intent="pedidos.order.send-kitchen"
-                                onClick={() => sendToKitchen(order.id)}
-                                className="w-full py-1.5 px-3 text-[11px]"
-                              >
-                                <ChefHat className="w-3.5 h-3.5" />
-                                <span>Pasar a Cocina</span>
-                              </Button>
-                            )}
-
-                            {order.status === "EN_PREPARACION" && (
-                              <Button
-                                variant="accent"
-                                intent="pedidos.order.mark-ready"
-                                onClick={() => markOrderReady(order.id)}
-                                className="w-full py-1.5 px-3 text-[11px]"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Marcar Listo</span>
-                              </Button>
-                            )}
-
-                            {order.status === "LISTO" && (
-                              <Button
-                                variant="primary"
-                                intent="pedidos.order.deliver"
-                                onClick={() => deliverOrder(order.id)}
-                                className="w-full py-1.5 px-3 text-[11px]"
-                              >
-                                <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                                <span>Entregar Pedido</span>
-                              </Button>
-                            )}
-
-                            {order.status === "FINALIZADO" && (
-                              <div className="w-full text-center py-1 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl">
-                                Pedido Finalizado
-                              </div>
-                            )}
-                          </div>
+                          {/* Tiempo y estado en el pie de la tarjeta */}
+                          {layoutPrefs.showSlaProgress !== false && (
+                            <div className="pt-1.5 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-between pl-5">
+                              {order.status === "EN_PREPARACION" ? (
+                                <div className="w-full space-y-1">
+                                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full transition-all ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
+                                      style={{ width: `${progressPercent}%` }}
+                                    />
+                                  </div>
+                                  <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                                    <span>{order.elapsedMinutes}m / {order.estimatedMinutes}m</span>
+                                    {isDelayed && <span className="text-rose-500 font-medium">Demorado</span>}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-full flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                                  <span className={isDelayed ? "text-rose-500 font-medium" : ""}>
+                                    {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${order.elapsedMinutes}m transcurridos`}
+                                  </span>
+                                  <span className="text-zinc-300 dark:text-zinc-700 font-sans">·</span>
+                                  <span>{order.createdAt}</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -713,33 +691,204 @@ export const PedidosEnVivoView: React.FC<{
               </div>
             );
           })}
+          </div>
         </div>
       ) : (
-        /* GRID VIEW (Compact cards fallback) */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filterOrdersList(orders).map(order => (
-            <Card
-              key={order.id}
-              intent="pedidos.grid.card"
-              onClick={() => setSelectedOrderId(order.id)}
-              className="dark:bg-[#18181B] p-5 hover:border-[#FF3F1A] transition-all cursor-pointer space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono font-bold text-xs text-zinc-950 dark:text-zinc-50">{order.id}</span>
-                <span className="text-xs font-bold text-zinc-950 dark:text-zinc-50 font-mono">
-                  ${order.total.toLocaleString("es-CO")}
-                </span>
+        /* HIGH-DENSITY OPERATIONAL LIST / TABLE VIEW */
+        <div className="space-y-3">
+          {/* List Summary Bar */}
+          <div className="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+              Mostrando {filterOrdersList(orders).length} pedidos en vivo
+              {programados.length > 0 ? ` + ${programados.length} programados` : ""}
+            </span>
+            <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+              <Info className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Haz clic en cualquier fila para ver la comanda completa</span>
+            </span>
+          </div>
+
+          {/* Scheduled Orders Section in List Mode */}
+          {programados.length > 0 && statusFilter === "TODOS" && (
+            <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-2xs">
+              <div className="px-4 py-2.5 bg-zinc-50/80 dark:bg-zinc-900/80 border-b border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                    Pedidos Programados & Reservas
+                  </span>
+                  <span className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100/70 text-[#FF3F1A] dark:bg-orange-950/40">
+                    {programados.length}
+                  </span>
+                </div>
               </div>
-              <h5 className="font-bold text-sm text-zinc-950 dark:text-zinc-50">{order.customerName}</h5>
-              <p className="text-xs text-zinc-500">
-                {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-              </p>
-              <div className="text-[11px] font-bold text-zinc-400 flex justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                <span className="text-zinc-950 dark:text-zinc-50 font-bold">{order.status}</span>
-                <span>{order.createdAt}</span>
+
+              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {programados.map(prog => (
+                  <div
+                    key={prog.id}
+                    onClick={() => setSelectedOrderId(prog.id)}
+                    className="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-900/40 flex items-center justify-center flex-none">
+                        <Calendar className="w-4 h-4 text-[#FF3F1A]" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
+                            {prog.customerName}
+                          </span>
+                          <span className="font-mono text-[10px] text-zinc-400">
+                            {prog.id}
+                          </span>
+                          <ChannelBadge channel={prog.channel} />
+                        </div>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                          {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-none justify-between sm:justify-end">
+                      <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-300 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                        Programado: {prog.scheduledDate} {prog.scheduledTime}
+                      </span>
+                      <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                        ${prog.total.toLocaleString("es-AR")}
+                      </span>
+                      <Button
+                        variant="outline"
+                        intent="pedidos.scheduled.inject"
+                        onClick={e => {
+                          e.stopPropagation();
+                          injectScheduledOrderToLive(prog.id, true);
+                        }}
+                        className="py-1 px-2.5 text-[10px] font-semibold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
+                        title="Adelantar y pasar a preparación en vivo"
+                      >
+                        <Zap className="w-3 h-3 text-[#FF3F1A]" />
+                        <span>Pasar a En Vivo</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </Card>
-          ))}
+            </div>
+          )}
+
+          {/* Main Orders Table */}
+          <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-2xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-semibold text-[11px]">
+                    <th className="py-3 px-4">Comanda & Canal</th>
+                    <th className="py-3 px-4">Cliente & Contacto</th>
+                    <th className="py-3 px-4">Productos & Ítems</th>
+                    <th className="py-3 px-4">Estado Actual</th>
+                    <th className="py-3 px-4">Tiempos / SLA</th>
+                    <th className="py-3 px-4 text-right">Total</th>
+                    <th className="py-3 px-4 text-center">Detalle</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                  {filterOrdersList(orders).length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-zinc-400 font-medium">
+                        No se encontraron pedidos con los filtros actuales.
+                      </td>
+                    </tr>
+                  ) : (
+                    filterOrdersList(orders).map(order => {
+                      const isDelayed = order.urgency === "RETRASADO";
+                      const progressPercent = Math.min(
+                        100,
+                        Math.round((order.elapsedMinutes / Math.max(1, order.estimatedMinutes)) * 100)
+                      );
+
+                      return (
+                        <tr
+                          key={order.id}
+                          onClick={() => setSelectedOrderId(order.id)}
+                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group"
+                        >
+                          {/* ID & Canal */}
+                          <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
+                                {order.id}
+                              </span>
+                              <ChannelBadge channel={order.channel} />
+                            </div>
+                            <span className="font-mono text-[10px] text-zinc-400 block mt-0.5">
+                              Ingreso: {order.createdAt}
+                            </span>
+                          </td>
+
+                          {/* Cliente */}
+                          <td className="py-3.5 px-4 align-middle">
+                            <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate max-w-[160px]">
+                              {order.customerName}
+                            </div>
+                            <span className="text-[11px] text-zinc-400 block mt-0.5">
+                              {order.items.reduce((s, i) => s + i.quantity, 0)} ítems totales
+                            </span>
+                          </td>
+
+                          {/* Productos */}
+                          <td className="py-3.5 px-4 align-middle">
+                            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 line-clamp-1 max-w-[280px]">
+                              {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                            </p>
+                          </td>
+
+                          {/* Estado */}
+                          <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                            <OrderStatusBadge status={order.status} size="sm" />
+                          </td>
+
+                          {/* Tiempos / SLA */}
+                          <td className="py-3.5 px-4 align-middle whitespace-nowrap min-w-[140px]">
+                            {order.status === "EN_PREPARACION" ? (
+                              <div className="space-y-1 w-28">
+                                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
+                                    style={{ width: `${progressPercent}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                                  <span>{order.elapsedMinutes}m / {order.estimatedMinutes}m</span>
+                                  {isDelayed && <span className="text-rose-500 font-bold">Demora</span>}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className={`font-mono text-[11px] ${isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}`}>
+                                {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${order.elapsedMinutes}m activos`}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Total */}
+                          <td className="py-3.5 px-4 align-middle text-right font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                            ${order.total.toLocaleString("es-CO")}
+                          </td>
+
+                          {/* Acción / Abrir */}
+                          <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap">
+                            <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#FF3F1A] group-hover:text-white flex items-center justify-center transition-all mx-auto text-zinc-400">
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

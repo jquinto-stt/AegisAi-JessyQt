@@ -593,11 +593,11 @@ export const CatalogoInteligenteView: React.FC<{
             Satisfacción de Clientes
           </span>
           <div className="flex items-baseline justify-between">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
                 4.9
               </p>
-              <span className="text-[#FF3F1A] font-bold text-sm">★</span>
+              <Star className="w-5 h-5 fill-[#FF3F1A] text-[#FF3F1A]" />
             </div>
             <span className="text-xs font-bold text-zinc-500">
               {allReviews.length * 15 + 45} reseñas
@@ -656,14 +656,14 @@ export const CatalogoInteligenteView: React.FC<{
                     variant="ghost"
                     intent="catalog.category.select"
                     onClick={() => setSelectedCategory(cat)}
-                    className={`p-0 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
+                    className={`p-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
                       selectedCategory === cat
-                        ? "bg-[#FF3F1A] text-white shadow-xs"
-                        : "bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+                        ? "bg-white text-[#212121] dark:bg-zinc-800 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs"
+                        : "bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
                     }`}
                   >
                     <span>{cat}</span>
-                    <span className="text-[10px] opacity-80 font-mono">({count})</span>
+                    <span className="text-[10px] text-zinc-400 font-mono">({count})</span>
                   </Button>
                 );
               })}
@@ -842,7 +842,14 @@ export const CatalogoInteligenteView: React.FC<{
                     : "bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300"
                 }`}
               >
-                {r === "TODOS" ? "Todas las opiniones" : `${r} Estrellas ★`}
+                {r === "TODOS" ? (
+                  "Todas las opiniones"
+                ) : (
+                  <span className="flex items-center gap-1">
+                    <span>{r}</span>
+                    <Star className="w-3 h-3 fill-current inline" />
+                  </span>
+                )}
               </Button>
             ))}
           </div>
@@ -865,9 +872,11 @@ export const CatalogoInteligenteView: React.FC<{
                       <h4 className="text-xs font-bold text-zinc-950 dark:text-zinc-50">
                         {rev.productName}
                       </h4>
-                      <div className="flex items-center gap-1 text-[#FF3F1A] text-xs font-bold">
-                        {"★".repeat(rev.rating)}
-                        <span className="text-zinc-400 text-[10px] ml-1 font-normal">
+                      <div className="flex items-center gap-0.5 text-[#FF3F1A] text-xs font-bold mt-0.5">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-3 h-3 fill-[#FF3F1A] text-[#FF3F1A]" />
+                        ))}
+                        <span className="text-zinc-400 text-[10px] ml-1.5 font-normal">
                           por {rev.author} · {rev.date}
                         </span>
                       </div>

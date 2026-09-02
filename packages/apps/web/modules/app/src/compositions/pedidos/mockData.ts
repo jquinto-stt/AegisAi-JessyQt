@@ -878,101 +878,124 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
 // completo: IA atendiendo → requiere intervención → humano → resuelto → IA.
 // ============================================================================
 export const INITIAL_CONVERSATIONS: Conversation[] = [
-  // 1) REQUIERE_INTERVENCION — cliente pide explícitamente un humano
+  // 1) Conversación detallada con Comprobante de Pago Nequi / Transferencia (Requiere validación humana)
   {
     id: "CONV-01",
     customerName: "Camila Benítez",
-    customerPhone: "+54 11 6789-1234",
+    customerPhone: "+57 312 456-7890",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "VERIFICAR_PAGO_TRANSFERENCIA",
+    aiConfidence: "Alta",
+    orderId: "PED-1021",
+    lastMessageAt: "20:16",
+    unreadForOperator: true,
+    messages: [
+      {
+        id: "m1",
+        sender: "cliente",
+        text: "¡Hola! Buenas noches. Quiero encargar 1 docena de empanadas surtidas para enviar a Calle 72 # 11-45 en Bogotá.",
+        timestamp: "20:10",
+      },
+      {
+        id: "m2",
+        sender: "ia",
+        text: "¡Hola Camila! Con gusto te ayudo. ¿Qué sabores te gustaría incluir en tu docena?\n- Carne a Cuchillo\n- Pollo al Verdeo\n- Jamón y Queso\n- Espinaca y Parmesano\n\nDocena surtida: $63.900 COP (Envío incluido).",
+        timestamp: "20:11",
+      },
+      {
+        id: "m3",
+        sender: "cliente",
+        text: "Por favor 6 de Carne al Horno y 6 de Pollo al Verdeo. ¿Me pasan el QR o número para pagar por Nequi o Bancolombia?",
+        timestamp: "20:13",
+      },
+      {
+        id: "m4",
+        sender: "ia",
+        text: "¡Excelente elección! He generado tu pre-orden #PED-1021.\n\n**Datos de Pago Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Necto Gourmet S.A.S.\n• **Total:** $63.900 COP\n\nPor favor envía la captura del comprobante aquí.",
+        timestamp: "20:14",
+      },
+      {
+        id: "m5",
+        sender: "cliente",
+        text: "Listo! Ya les transferí los $63.900 desde mi Nequi. Acá les adjunto la captura de pantalla con el número de aprobación.",
+        timestamp: "20:16",
+        attachmentUrl: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80",
+        attachmentType: "comprobante",
+        attachmentMeta: {
+          bank: "Nequi",
+          amount: 63900,
+          reference: "NQ-8941208B",
+          status: "PENDIENTE_VERIFICACION",
+        },
+      },
+      {
+        id: "m6",
+        sender: "ia",
+        text: "He recibido tu comprobante de Nequi por $63.900 (Ref: #NQ-8941208B).\n\n*Por seguridad bancaria, un Administrador está validando la acreditación en la cuenta del restaurante para autorizar la preparación inmediata en cocina.*",
+        timestamp: "20:16",
+      },
+    ],
+    handoffHistory: [
+      { timestamp: "20:16", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Comprobante Nequi adjunto: requiere validación de fondos en app bancaria por parte de un humano." },
+    ],
+  },
+
+  // 2) REQUIERE_INTERVENCION — Pedido corporativo con solicitud de factura electrónica
+  {
+    id: "CONV-02",
+    customerName: "Tech Solutions (Federico)",
+    customerPhone: "+57 301 555-4321",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "AMBIGUO",
+    aiConfidence: "Media",
+    orderId: "PED-1020",
+    lastMessageAt: "18:24",
+    unreadForOperator: true,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Buenas tardes, necesitamos 8 docenas de empanadas surtidas para una reunión de directorio mañana a las 12:30 hs puntual. ¿Hacen Factura Electrónica con RUT a nombre de Tech Solutions S.A.S NIT 901.234.567-8?", timestamp: "18:20" },
+      { id: "m2", sender: "ia", text: "¡Hola Federico! Sí, emitimos Factura Electrónica DIAN y preparamos pedidos corporativos programados. El total por 8 docenas (96 empanadas surtidas) es de $440.000 COP con entrega bonificada.", timestamp: "18:21" },
+      { id: "m3", sender: "cliente", text: "¿Nos pueden mandar 3 docenas de Carne, 3 de Jamón y Queso, y 2 de Humita en cajas térmicas separadas? Si me confirman la factura les transfiero por Bancolombia ya.", timestamp: "18:24" },
+    ],
+    handoffHistory: [
+      { timestamp: "18:24", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Pedido corporativo de alto volumen: requiere validar NIT y emisión de Factura Electrónica." },
+    ],
+  },
+
+  // 3) REQUIERE_INTERVENCION — Modificación de dirección en pedido en curso
+  {
+    id: "CONV-03",
+    customerName: "Lucía Paredes",
+    customerPhone: "+57 318 889-0011",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
     channel: "whatsapp",
     status: "REQUIERE_INTERVENCION",
     controlledBy: null,
     requiresHandoffReason: "CLIENTE_PIDE_HUMANO",
     aiConfidence: "Media",
-    orderId: "PED-1021",
-    lastMessageAt: "20:14",
+    lastMessageAt: "19:08",
     unreadForOperator: true,
     messages: [
-      { id: "m1", sender: "cliente", text: "Hola, hice un pedido hace un rato pero necesito cambiar la dirección de entrega.", timestamp: "20:10" },
-      { id: "m2", sender: "ia", text: "¡Hola Camila! Con gusto. ¿A qué dirección querés que enviemos tu pedido?", timestamp: "20:11" },
-      { id: "m3", sender: "cliente", text: "Es complicado, prefiero hablar con una persona por favor.", timestamp: "20:14" },
+      { id: "m1", sender: "cliente", text: "Hola! Hice un pedido por la web hace 5 minutos (#PED-1025) pero me equivoqué en el número de departamento. Puse Apto 402 y es Torre 2 Apto 1402.", timestamp: "19:05" },
+      { id: "m2", sender: "ia", text: "¡Hola Lucía! He ubicado tu pedido #PED-1025 en cocina. Para modificar los datos de entrega de un ticket ya confirmado, transfiero de inmediato tu solicitud al operador.", timestamp: "19:06" },
+      { id: "m3", sender: "cliente", text: "Por favor que no se vaya el repartidor al bloque equivocado, estoy esperando abajo.", timestamp: "19:08" },
     ],
     handoffHistory: [
-      { timestamp: "20:14", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "El cliente solicitó hablar con una persona." },
+      { timestamp: "19:06", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Cambio de dirección en comanda activa." },
     ],
   },
 
-  // 2) REQUIERE_INTERVENCION — baja confianza / pedido ambiguo
-  {
-    id: "CONV-02",
-    customerName: "Tech Solutions S.A.",
-    customerPhone: "+54 11 4455-6677",
-    channel: "whatsapp",
-    status: "REQUIERE_INTERVENCION",
-    controlledBy: null,
-    requiresHandoffReason: "AMBIGUO",
-    aiConfidence: "Baja",
-    orderId: "PED-1020",
-    lastMessageAt: "18:22",
-    unreadForOperator: true,
-    messages: [
-      { id: "m1", sender: "cliente", text: "Buenas, para la reunión de mañana queremos las de siempre pero un poco más que la vez pasada.", timestamp: "18:20" },
-      { id: "m2", sender: "ia", text: "¡Hola! Para asegurarme, ¿podrías confirmarme cantidades y variedades exactas?", timestamp: "18:21" },
-      { id: "m3", sender: "cliente", text: "Ustedes ya saben lo que pedimos siempre, mandenlo igual.", timestamp: "18:22" },
-    ],
-    handoffHistory: [
-      { timestamp: "18:22", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Pedido ambiguo: el cliente no confirma cantidades (confianza Baja)." },
-    ],
-  },
-
-  // 3) REQUIERE_INTERVENCION — modificación especial fuera del catálogo
-  {
-    id: "CONV-03",
-    customerName: "Lucía Paredes",
-    customerPhone: "+54 11 8899-0011",
-    channel: "whatsapp",
-    status: "REQUIERE_INTERVENCION",
-    controlledBy: null,
-    requiresHandoffReason: "MODIFICACION_ESPECIAL",
-    aiConfidence: "Media",
-    lastMessageAt: "19:05",
-    unreadForOperator: false,
-    messages: [
-      { id: "m1", sender: "cliente", text: "Hola! ¿Pueden hacer las empanadas sin sal? Es por tema de salud.", timestamp: "19:03" },
-      { id: "m2", sender: "ia", text: "Voy a consultar con la cocina si es posible esa preparación especial.", timestamp: "19:05" },
-    ],
-    handoffHistory: [
-      { timestamp: "19:05", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Modificación especial no contemplada en el catálogo." },
-    ],
-  },
-
-  // 4) HUMANO_ATENDIENDO — un operador ya tomó el control
-  {
-    id: "CONV-04",
-    customerName: "Gonzalo Herrera",
-    customerPhone: "+54 11 2233-4455",
-    channel: "whatsapp",
-    status: "HUMANO_ATENDIENDO",
-    controlledBy: "Operador de Caja",
-    requiresHandoffReason: "CONFIRMAR_DATO",
-    aiConfidence: "Media",
-    lastMessageAt: "20:02",
-    unreadForOperator: false,
-    messages: [
-      { id: "m1", sender: "cliente", text: "¿El local sigue abierto? Quiero pasar a retirar.", timestamp: "19:58" },
-      { id: "m2", sender: "ia", text: "Déjame confirmar el horario con el equipo.", timestamp: "19:59" },
-      { id: "m3", sender: "humano", authorName: "Operador de Caja", text: "¡Hola Gonzalo! Sí, estamos abiertos hasta las 23:30. Te esperamos.", timestamp: "20:02" },
-    ],
-    handoffHistory: [
-      { timestamp: "19:59", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Requiere confirmar un dato operativo." },
-      { timestamp: "20:00", fromStatus: "REQUIERE_INTERVENCION", toStatus: "HUMANO_ATENDIENDO", user: "Operador de Caja", note: "Operador tomó el control de la conversación." },
-    ],
-  },
-
-  // 5) IA_ATENDIENDO — conversación sana, sin necesidad de intervención
+  // 4) IA_ATENDIENDO — Pedido rápido cerrado 100% automático por IA
   {
     id: "CONV-05",
     customerName: "Mariana Silva",
-    customerPhone: "+54 11 9482-1102",
+    customerPhone: "+57 315 948-1102",
+    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
     channel: "whatsapp",
     status: "IA_ATENDIENDO",
     controlledBy: null,
@@ -981,18 +1004,20 @@ export const INITIAL_CONVERSATIONS: Conversation[] = [
     lastMessageAt: "20:08",
     unreadForOperator: false,
     messages: [
-      { id: "m1", sender: "cliente", text: "Hola! Queremos media docena de carne a cuchillo y media de pollo al verdeo, y dos cocas frías porfa.", timestamp: "20:06" },
-      { id: "m2", sender: "ia", text: "¡Perfecto Mariana! Tomé tu pedido: 6 carne a cuchillo, 6 pollo al verdeo y 2 Coca-Cola. Total $X. ¿Confirmás?", timestamp: "20:07" },
-      { id: "m3", sender: "cliente", text: "Sí, confirmo! Gracias.", timestamp: "20:08" },
+      { id: "m1", sender: "cliente", text: "Hola! Quiero 6 empanadas de carne cortada a cuchillo al horno y 2 gaseosas de 500ml.", timestamp: "20:06" },
+      { id: "m2", sender: "ia", text: "¡Hola Mariana! Registrado:\n- 6x Empanadas de Carne a Cuchillo ($33.000 COP)\n- 2x Coca-Cola 500ml ($8.000 COP)\n\nTotal: $41.000 COP.\nDirección registrada: Cra 15 # 85-30, Apto 301.\n¿Confirmamos con pago contra entrega en efectivo?", timestamp: "20:07" },
+      { id: "m3", sender: "cliente", text: "Sí, confirmo! Pago con billete de $50.000 al recibir.", timestamp: "20:08" },
+      { id: "m4", sender: "ia", text: "¡Comanda #PED-1024 confirmada y enviada a cocina! El repartidor llevará $9.000 de cambio. Tiempo estimado: 20 minutos.", timestamp: "20:08" },
     ],
     handoffHistory: [],
   },
 
-  // 6) RESUELTO — caso cerrado por el humano
+  // 5) RESUELTO — Consulta cerrada
   {
     id: "CONV-06",
     customerName: "Ignacio Ferreyra",
-    customerPhone: "+54 11 3341-9988",
+    customerPhone: "+57 320 334-9988",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
     channel: "whatsapp",
     status: "RESUELTO",
     controlledBy: null,
@@ -1001,14 +1026,13 @@ export const INITIAL_CONVERSATIONS: Conversation[] = [
     lastMessageAt: "17:40",
     unreadForOperator: false,
     messages: [
-      { id: "m1", sender: "cliente", text: "Quería saber si llegó bien mi transferencia.", timestamp: "17:30" },
-      { id: "m2", sender: "humano", authorName: "Supervisor de Turno", text: "¡Hola Ignacio! Sí, confirmamos el pago. Tu pedido ya está en preparación.", timestamp: "17:35" },
-      { id: "m3", sender: "cliente", text: "Genial, muchas gracias!", timestamp: "17:40" },
+      { id: "m1", sender: "cliente", text: "Hola, ¿tienen opción vegetariana hoy?", timestamp: "17:30" },
+      { id: "m2", sender: "ia", text: "¡Hola Ignacio! Sí, disponemos de Espinaca a la Crema con Parmesano, Cuatro Quesos, y Caprese con Albahaca Fresca.", timestamp: "17:31" },
+      { id: "m3", sender: "cliente", text: "Genial, paso por el local en 20 minutos a retirar una docena surtida de esas.", timestamp: "17:35" },
+      { id: "m4", sender: "ia", text: "¡Te esperamos! Tu pedido para retirar en mostrador quedó listo.", timestamp: "17:36" },
     ],
     handoffHistory: [
-      { timestamp: "17:32", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Consulta de pago fuera del alcance del asistente." },
-      { timestamp: "17:33", fromStatus: "REQUIERE_INTERVENCION", toStatus: "HUMANO_ATENDIENDO", user: "Supervisor de Turno" },
-      { timestamp: "17:40", fromStatus: "HUMANO_ATENDIENDO", toStatus: "RESUELTO", user: "Supervisor de Turno", note: "Pago confirmado. Caso resuelto." },
+      { timestamp: "17:40", toStatus: "RESUELTO", user: "Asistente IA", note: "Consulta completada exitosamente." },
     ],
   },
 ];

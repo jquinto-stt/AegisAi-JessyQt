@@ -288,7 +288,7 @@ export const CommandPalette: React.FC = () => {
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-2xl cursor-pointer transition-all ${
                     isSelected
-                      ? "bg-zinc-950 text-white dark:bg-zinc-800 shadow-md"
+                      ? "bg-[#FF3F1A] text-white shadow-md"
                       : item.active
                       ? "bg-orange-50/70 dark:bg-orange-950/30 text-zinc-900 dark:text-zinc-100"
                       : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"

@@ -46,9 +46,9 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           value={value}
           onChange={onChange}
           className={[
-            'w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900 py-2 text-xs text-zinc-900 dark:text-zinc-100 font-medium outline-none transition-colors',
+            'w-full rounded-xl border bg-[#ECECEC]/60 dark:bg-zinc-900 py-2 text-xs text-[#212121] dark:text-[#ECECEC] font-medium outline-none transition-colors',
             'border-zinc-200 dark:border-zinc-800 focus:border-[#FF3F1A] dark:focus:border-[#FF3F1A]',
-            'placeholder:text-zinc-400 dark:placeholder:text-zinc-600',
+            'placeholder:text-zinc-400 dark:placeholder:text-zinc-500',
             'pl-9',
             value && onClear ? 'pr-9' : shortcut ? 'pr-14' : 'pr-3',
           ].join(' ')}

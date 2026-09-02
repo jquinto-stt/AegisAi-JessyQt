@@ -12,7 +12,8 @@
   ],
   "devDependencies": {
     "@webiai/devlink": "^2.8.1",
-    "@webiai/sdk.cli": "0.23.11"
+    "@webiai/sdk.cli": "0.23.11",
+    "untun": "^0.2.2"
   },
   "overrides": {
     "google-protobuf": "3.21.2"

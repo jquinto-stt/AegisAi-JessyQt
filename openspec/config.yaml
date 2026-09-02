@@ -1,0 +1,49 @@
+# Necto Orders Module — OpenSpec Configuration
+# Focused exclusively on the Pedidos (Orders) service domain
+
+context: |
+  Project: Necto — Módulo de Pedidos (@stt/necto.pedidos)
+  Stack:
+    - Frontend: React 18, Vite 6, TypeScript 5.7, Tailwind CSS 4 (`compositions/pedidos`, `elements/`)
+    - Backend: AWS CDK / SST v3, Pulumi AWS, WebiAI SDK, AWS Lambda (Node.js 22)
+    - Database: DynamoDB (`Pedidos@Table` dedicated single-table)
+    - Channel: WhatsApp Business API conversational flows + Web SPA dashboard
+  Domain: Pedidos (Product catalog, order lifecycle, real-time dispatch, WhatsApp notifications)
+  Conventions:
+    - Dedicated resources for Pedidos domain only (no shared tables with other modules)
+    - Customer identification via WhatsApp phone number (zero friction)
+    - State lifecycle: RECEIVED -> PREPARING -> READY -> DELIVERED (or CANCELLED)
+
+strict_tdd: false
+
+testing:
+  runner: none
+  command: null
+  framework: null
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage:
+    available: false
+    command: null
+  quality:
+    linter: true
+    type_checker: true
+    formatter: true
+
+phases:
+  propose:
+    requires: [exploration]
+  spec:
+    requires: [proposal]
+  design:
+    requires: [proposal]
+  tasks:
+    requires: [spec, design]
+  apply:
+    requires: [tasks]
+  verify:
+    requires: [spec, tasks, apply-progress]
+  archive:
+    requires: [all]

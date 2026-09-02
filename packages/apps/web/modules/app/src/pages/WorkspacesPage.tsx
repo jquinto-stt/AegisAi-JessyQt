@@ -44,23 +44,22 @@ export default function WorkspacesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
+    <div className="min-h-screen bg-[#ECECEC] dark:bg-[#212121] text-[#212121] dark:text-[#ECECEC] flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
       {/* Top Minimal Header */}
-      <header className="px-4 sm:px-12 py-4 sm:py-5 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-white/80 dark:bg-[#09090B]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3">
+      <header className="px-4 sm:px-12 py-4 sm:py-5 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-[#2C2D31]/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3">
         <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <NectoLogo size="xs" inline />
 
-
           {/* Hub Navigation Tabs - Visible on all devices */}
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-1 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700/60">
             <Button
               variant="ghost"
               intent="workspaces.hub.tab"
               onClick={() => setHubTab("workspaces_list")}
-              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 hubTab === "workspaces_list"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs"
+                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
               }`}
             >
               <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
@@ -70,13 +69,13 @@ export default function WorkspacesPage() {
               variant="ghost"
               intent="workspaces.hub.tab"
               onClick={() => setHubTab("franchise_overview")}
-              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`p-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                 hubTab === "franchise_overview"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-white shadow-2xs"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs"
+                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <Layers className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
               <span>Visión Franquicia</span>
             </Button>
           </div>
@@ -138,13 +137,23 @@ export default function WorkspacesPage() {
                 className={`relative p-5 sm:p-6 rounded-3xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group overflow-hidden ${
                   isActive
                     ? "bg-white dark:bg-zinc-900 border-zinc-950 dark:border-zinc-100 shadow-sm"
-                    : "bg-white/70 dark:bg-zinc-900/50 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 shadow-2xs"
+                    : "bg-white dark:bg-zinc-900 border-zinc-200/90 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 shadow-2xs"
                 }`}
               >
-                {/* Background Banner Watermark if uploaded */}
+                {/* Crisp Sharp Banner Accent */}
                 {biz.bannerUrl && (
-                  <div className="absolute inset-0 opacity-[0.07] dark:opacity-[0.12] pointer-events-none overflow-hidden">
-                    <img src={biz.bannerUrl} alt="" className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500" />
+                  <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-30 dark:opacity-25 pointer-events-none overflow-hidden select-none">
+                    <img
+                      src={biz.bannerUrl}
+                      alt=""
+                      style={{
+                        transform: biz.bannerTransform
+                          ? `rotate(${biz.bannerTransform.rotate || 0}deg) scale(${biz.bannerTransform.scale || 1}) translate(${biz.bannerTransform.posX || 0}%, ${biz.bannerTransform.posY || 0}%)`
+                          : undefined,
+                      }}
+                      className="w-full h-full object-cover scale-105 group-hover:scale-100 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/70 to-transparent dark:from-zinc-900 dark:via-zinc-900/70 dark:to-transparent" />
                   </div>
                 )}
 
@@ -171,11 +180,11 @@ export default function WorkspacesPage() {
                           EN PAUSA {biz.pauseConfig.pauseEndDate ? `· REABRE ${new Date(biz.pauseConfig.pauseEndDate).toLocaleDateString()}` : ""}
                         </span>
                       ) : isActive ? (
-                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-zinc-950 text-white dark:bg-white dark:text-zinc-950">
-                          ACTIVO
+                        <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#FF3F1A] text-white shadow-2xs">
+                          SEDE ACTIVA
                         </span>
                       ) : (
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/30">
                           SUCURSAL
                         </span>
                       )}
@@ -197,79 +206,79 @@ export default function WorkspacesPage() {
                       {biz.activeModules && biz.activeModules.map(m => (
                         <span
                           key={m}
-                          className="inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700"
+                          className="inline-flex items-center gap-1 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#ECECEC]/80 dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] border border-zinc-200 dark:border-zinc-700"
                         >
-                          {m}
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A]" />
+                          <span>{m}</span>
                         </span>
                       ))}
 
-                      {/* Channels */}
-                      {biz.channels.whatsapp && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60">
-                          <MessageSquare className="w-2.5 h-2.5" /> WhatsApp
-                        </span>
-                      )}
-                      {biz.channels.web && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                          <Globe className="w-2.5 h-2.5" /> Web
-                        </span>
-                      )}
+                      {/* Channels Indicator */}
+                      <div className="flex items-center gap-1.5 ml-1 border-l border-zinc-200 dark:border-zinc-800 pl-2">
+                        {biz.channels.whatsapp && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/40 flex items-center gap-1">
+                            <MessageSquare className="w-3 h-3 text-[#FF3F1A]" /> WhatsApp
+                          </span>
+                        )}
+                        {biz.channels.web && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/30 flex items-center gap-1">
+                            <Globe className="w-3 h-3 text-[#190088]" /> Web
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
 
-                {/* Right Actions */}
-                <div className="flex items-center gap-2 sm:self-center flex-none pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100 dark:border-zinc-800">
+                {/* Right Actions: Enter Workspace or Settings Gear */}
+                <div className="flex items-center gap-2 flex-none z-10 justify-end">
                   <Button
-                    variant="outline"
-                    intent="workspaces.business.settings"
-                    onClick={e => handleOpenSettings(e, biz)}
-                    className="py-2 px-3 text-xs"
-                    title={`Configuración y eliminación de ${biz.name}`}
+                    variant="ghost"
+                    intent="workspaces.settings.open"
+                    onClick={(e) => handleOpenSettings(e, biz)}
+                    className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC] hover:bg-[#ECECEC] dark:hover:bg-zinc-800 transition-colors"
+                    title="Configuración de esta sede"
                   >
-                    <Settings className="w-3.5 h-3.5 text-zinc-500 group-hover:rotate-45 transition-transform" />
-                    <span>Ajustes</span>
+                    <Settings className="w-4 h-4" />
                   </Button>
 
                   <Button
                     variant="primary"
-                    intent="workspaces.business.enter"
-                    onClick={e => {
-                      e.stopPropagation();
-                      setRoleSelectBiz(biz);
-                    }}
-                    className="py-2 px-4 text-xs"
+                    intent="workspaces.enter"
+                    onClick={() => handleSelectBusiness(biz.id)}
+                    className="py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2"
                   >
-                    <span>Entrar al Tablero</span>
+                    <span>{isActive ? "Panel Activo" : "Ingresar"}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-
               </div>
             );
           })}
 
-          {/* Add New Business Row */}
+          {/* Add New Business / Franchise Card */}
           <div
             onClick={() => navigate("/onboarding")}
-            className="p-5 rounded-2xl border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-zinc-900 dark:hover:border-zinc-100 transition-all cursor-pointer flex items-center justify-between group"
+            className="p-6 rounded-3xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all cursor-pointer flex items-center justify-between group bg-white/40 dark:bg-zinc-900/30"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-zinc-950 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-zinc-950 text-zinc-500 flex items-center justify-center transition-colors">
-                <Plus className="w-4 h-4" />
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[#FF3F1A] shadow-2xs group-hover:scale-110 transition-transform">
+                <Plus className="w-6 h-6 stroke-[2.5]" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
-                  Crear un nuevo restaurante o sucursal
-                </p>
-                <p className="text-xs text-zinc-400 font-mono">
-                  Configura un espacio independiente en 2 minutos
+                <h4 className="text-sm font-bold text-[#212121] dark:text-[#ECECEC] group-hover:text-[#FF3F1A] transition-colors">
+                  Añadir Nueva Sede o Sucursal
+                </h4>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Conecta una nueva franquicia, sucursal virtual o tienda comercial a Necto.
                 </p>
               </div>
             </div>
 
-            <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:translate-x-1 transition-transform" />
+            <div className="w-8 h-8 rounded-lg bg-[#190088] text-white flex items-center justify-center group-hover:bg-[#FF3F1A] transition-colors">
+              <ChevronRight className="w-4 h-4" />
+            </div>
           </div>
         </div>
       </main>

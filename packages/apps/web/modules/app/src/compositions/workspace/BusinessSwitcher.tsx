@@ -113,7 +113,7 @@ export const BusinessSwitcher: React.FC = () => {
               setIsOpen(false);
               navigate("/workspaces");
             }}
-            className="w-full p-3 rounded-2xl bg-zinc-950 text-white dark:bg-zinc-800/90 dark:hover:bg-zinc-700/90 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] transition-all flex items-center justify-between group cursor-pointer shadow-sm text-left"
+            className="w-full p-3 rounded-2xl bg-[#190088] text-white hover:bg-[#FF3F1A] transition-all flex items-center justify-between group cursor-pointer shadow-sm text-left"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center flex-none">
