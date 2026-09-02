@@ -7,6 +7,7 @@ import {
   Check,
   LayoutGrid,
   Building2,
+  Layers,
   ArrowRight,
   ShieldCheck,
   Clock,
