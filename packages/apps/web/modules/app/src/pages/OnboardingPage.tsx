@@ -791,11 +791,11 @@ export default function OnboardingPage() {
           {/* High-Resolution Background Photography */}
           <img
             src={
-              step === 2
-                ? "/onboarding-whatsapp-orders.jpg"
-                : step === 3
+              step === 1
                 ? "/onboarding-modular-sync.jpg"
-                : activeArchetype.image
+                : step === 2
+                ? "/onboarding-whatsapp-orders.jpg"
+                : "/onboarding-restaurant.jpg"
             }
             alt={activeArchetype.title}
             className="absolute inset-0 w-full h-full object-cover opacity-85 dark:opacity-80 transition-all duration-700 scale-100"
