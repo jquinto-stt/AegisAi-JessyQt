@@ -21,7 +21,7 @@ import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdow
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
-import { NectoLogo } from "@/compositions/shared/NectoLogo";
+import { NectoLogo, NectoSidebarLogo } from "@/compositions/shared/NectoLogo";
 import { useBusiness } from "@/context/BusinessContext";
 import { useAuth } from "@/auth/AuthContext";
 import { Button, Badge } from "@/elements";
@@ -535,36 +535,12 @@ function Sidebar({
           isCollapsed ? "w-16" : "w-72"
         } hidden lg:flex sticky top-3 self-start h-[calc(100vh-24px)] transition-all duration-300 flex-none bg-white dark:bg-[#2C2D31] dark:border dark:border-[#374151] rounded-2xl shadow-sm overflow-hidden flex-col`}
       >
-        {/* Top Header with Logo & Circular Collapse Toggle */}
-        <div className="p-3.5 px-4 pt-4.5 flex items-center justify-between">
-          {!isCollapsed ? (
-            <>
-              <NectoLogo size="xs" inline />
-              <button
-                type="button"
-                onClick={() => handleSetCollapsed(true)}
-                title="Colapsar barra lateral"
-                className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center transition-all cursor-pointer shadow-2xs group flex-none"
-              >
-                <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A] transition-colors" />
-              </button>
-            </>
-          ) : (
-            <div className="flex items-center justify-center w-full">
-              <button
-                type="button"
-                onClick={() => handleSetCollapsed(false)}
-                title="Expandir barra lateral"
-                className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] flex items-center justify-center shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group flex-none"
-              >
-                <NectoLogo
-                  iconOnly
-                  size="sm"
-                  className="group-hover:scale-110 transition-transform"
-                />
-              </button>
-            </div>
-          )}
+        {/* Top Header with Animated Logo & Collapse Toggle */}
+        <div className="p-3.5 px-4 pt-4.5">
+          <NectoSidebarLogo
+            isCollapsed={isCollapsed}
+            onToggle={() => handleSetCollapsed(!isCollapsed)}
+          />
         </div>
 
         {/* Navigation Links */}
