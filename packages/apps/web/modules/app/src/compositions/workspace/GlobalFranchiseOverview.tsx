@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useBusiness, BusinessInstance } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
 import { RoleSelectionModal } from "./RoleSelectionModal";
+import { BusinessSettingsModal } from "./BusinessSettingsModal";
 import {
   Building2,
   TrendingUp,
@@ -17,6 +18,8 @@ import {
   BarChart2,
   History,
   Store,
+  Plus,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -24,6 +27,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
   const navigate = useNavigate();
   const { businesses, switchBusiness, setIsCommandPaletteOpen } = useBusiness();
   const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
+  const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
 
   const handleNavigateToAnalitica = (
@@ -158,16 +163,28 @@ export const GlobalFranchiseOverview: React.FC = () => {
 
       {/* Branch Breakdown Section */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <Building2 className="w-5 h-5 text-[#FF3F1A]" />
-            <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-100">
-              Sucursales y Marcas del Grupo
-            </h2>
+            <div>
+              <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-100 leading-tight">
+                Sucursales y Marcas del Grupo
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Accede a la analítica o entra al panel operativo de cada franquicia
+              </p>
+            </div>
           </div>
-          <span className="text-xs text-zinc-400">
-            Accede a la analítica o panel operativo de cada franquicia
-          </span>
+
+          <Button
+            variant="primary"
+            intent="franchise.create.open"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Crear Nueva Sucursal / Tienda</span>
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -206,8 +223,20 @@ export const GlobalFranchiseOverview: React.FC = () => {
                   {/* Subtle bottom shadow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Status Badge floating on top right of banner */}
-                  <div className="absolute top-3 right-3 z-10">
+                  {/* Top Floating Actions: Settings Gear & Status Badge */}
+                  <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBusinessForSettings(biz);
+                      }}
+                      title="Configurar Local, Branding y Bot"
+                      className="p-1.5 rounded-full bg-black/60 hover:bg-[#FF3F1A] backdrop-blur-md text-zinc-300 hover:text-white border border-white/20 hover:border-[#FF3F1A] transition-all cursor-pointer shadow-md flex items-center justify-center"
+                    >
+                      <Settings className="w-3.5 h-3.5" />
+                    </button>
+
                     <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1 border border-emerald-500/30 shadow-md">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Operando
@@ -308,6 +337,23 @@ export const GlobalFranchiseOverview: React.FC = () => {
         business={roleSelectBiz}
         isOpen={Boolean(roleSelectBiz)}
         onClose={() => setRoleSelectBiz(null)}
+      />
+
+      {/* Business Settings Modal (Edit Mode) */}
+      {selectedBusinessForSettings && (
+        <BusinessSettingsModal
+          business={selectedBusinessForSettings}
+          isOpen={Boolean(selectedBusinessForSettings)}
+          onClose={() => setSelectedBusinessForSettings(null)}
+        />
+      )}
+
+      {/* Business Settings Modal (Create Mode) */}
+      <BusinessSettingsModal
+        business={null}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        isCreateMode={true}
       />
     </div>
   );

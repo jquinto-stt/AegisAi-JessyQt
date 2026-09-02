@@ -315,8 +315,9 @@ export const BusinessSettingsModal: React.FC<{
   business: BusinessInstance | null;
   isOpen: boolean;
   onClose: () => void;
-}> = ({ business, isOpen, onClose }) => {
-  const { updateBusiness, deleteBusiness } = useBusiness();
+  isCreateMode?: boolean;
+}> = ({ business, isOpen, onClose, isCreateMode = false }) => {
+  const { updateBusiness, deleteBusiness, createBusiness } = useBusiness();
 
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState<
@@ -464,10 +465,52 @@ export const BusinessSettingsModal: React.FC<{
           `Hola! ${business.name} se encuentra cerrado temporalmente por vacaciones. Volveremos a recibir pedidos pronto. Gracias por tu comprensión.`
       );
       setConfirmDelete(false);
+    } else {
+      // Create Mode Defaults
+      setName("");
+      setBusinessType("restaurant_virtual");
+      setCity("Bogotá, Colombia");
+      setCountry("Colombia");
+      setCurrency("COP");
+      setIconKey("utensils");
+      setLogoUrl("");
+      setLogoRotate(0);
+      setLogoScale(1);
+      setLogoPosX(0);
+      setLogoPosY(0);
+      setBannerUrl("");
+      setBannerRotate(0);
+      setBannerScale(1);
+      setBannerPosX(0);
+      setBannerPosY(0);
+      setBrandColor("#FF3F1A");
+      setSoundAlert("bell");
+      setEnableWhatsapp(true);
+      setEnableWeb(true);
+      setEnablePos(true);
+      setSlug("");
+      setContactPhone("+57 300 123 4567");
+      setContactEmail("contacto@negocio.com");
+      setKitchenBufferMin(20);
+      setActiveModules(["pedidos", "inventarios"]);
+      setIsWelcomeEnabled(true);
+      setWelcomeMessage("¡Hola! Te damos la bienvenida. ¿En qué podemos ayudarte hoy?");
+      setIsPaymentInfoEnabled(true);
+      setNequiNumber("310 987 6543");
+      setBancolombiaAccount("104-892134-55");
+      setAccountHolder("Necto Gourmet S.A.S");
+      setIsClosedHoursEnabled(true);
+      setClosedHoursMessage("En este momento nuestras cocinas están fuera de servicio.");
+      setIsHandoffEnabled(true);
+      setHandoffToHumanMessage("Un operador humano te responderá en este chat a la brevedad.");
+      setIsOrderConfirmedEnabled(true);
+      setOrderConfirmedMessage("¡Comanda confirmada e ingresada a cocina!");
+      setIsPaused(false);
+      setConfirmDelete(false);
     }
   }, [business, isOpen]);
 
-  if (!isOpen || !business) return null;
+  if (!isOpen) return null;
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -509,7 +552,7 @@ export const BusinessSettingsModal: React.FC<{
     e.preventDefault();
     if (!name.trim()) return;
 
-    updateBusiness(business.id, {
+    const payload = {
       name: name.trim(),
       businessType,
       city: city.trim(),
@@ -532,7 +575,7 @@ export const BusinessSettingsModal: React.FC<{
       },
       brandColor,
       soundAlert,
-      slug: slug.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      slug: (slug.trim() || name.trim()).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       contactPhone: contactPhone.trim(),
       contactEmail: contactEmail.trim(),
       kitchenBufferMin,
@@ -564,13 +607,28 @@ export const BusinessSettingsModal: React.FC<{
         reason: pauseReason,
         autoReplyMessage: pauseMessage,
       },
-    });
+      specialty: "Restaurante & Gastronomía",
+      setupProgress: {
+        whatsappConnected: enableWhatsapp,
+        menuConfigured: true,
+        kitchenConfigured: true,
+        teamInvited: false,
+      },
+    };
+
+    if (business && business.id && business.id !== "new") {
+      updateBusiness(business.id, payload);
+    } else {
+      createBusiness(payload);
+    }
 
     onClose();
   };
 
   const handleDelete = () => {
-    deleteBusiness(business.id);
+    if (business?.id) {
+      deleteBusiness(business.id);
+    }
     onClose();
   };
 
@@ -636,13 +694,17 @@ export const BusinessSettingsModal: React.FC<{
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                <span>Configuración de Sede</span>
-                <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
-                  {business.name}
-                </span>
+                <span>{business?.id ? "Configuración de Sede" : "Crear Nueva Franquicia / Sucursal"}</span>
+                {business?.name && (
+                  <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                    {business.name}
+                  </span>
+                )}
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Ajusta la marca, imágenes, respuestas automáticas de WhatsApp y parámetros operativos.
+                {business?.id
+                  ? "Ajusta la marca, imágenes, respuestas automáticas de WhatsApp y parámetros operativos."
+                  : "Registra una nueva marca o punto de venta para operar en tiempo real."}
               </p>
             </div>
           </div>
