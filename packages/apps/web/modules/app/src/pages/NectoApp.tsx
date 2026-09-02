@@ -886,58 +886,57 @@ export default function App() {
           onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
-        {/* Main Content Area */}
-        <div className="flex-1 min-w-0 min-h-[calc(100vh-24px)] sm:rounded-2xl rounded-xl shadow-sm overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
-          <div className="flex flex-col flex-1 min-h-0">
-            {/* Top Bar with TailAdmin Breadcrumb & Module Switchers */}
-            <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex-none">
-              <div className="flex items-center gap-2 sm:gap-3">
-                {/* Mobile Menu Toggle Button */}
-                <Button
-                  variant="ghost"
-                  intent="shell.sidebar.openMobile"
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="p-0 lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 shadow-sm hover:scale-105 active:scale-95 cursor-pointer flex-none"
-                  title="Abrir menú de navegación"
-                >
-                  <Menu className="w-5 h-5" />
-                </Button>
+        {/* Right Column: Independent Separated Navbar + Separated Content Screen */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3 min-h-[calc(100vh-24px)]">
+          {/* Top Bar Floating Card (Separated) */}
+          <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:rounded-2xl rounded-xl shadow-xs transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] flex-none sticky top-1.5 sm:top-3 z-20">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* Mobile Menu Toggle Button */}
+              <Button
+                variant="ghost"
+                intent="shell.sidebar.openMobile"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-0 lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 shadow-sm hover:scale-105 active:scale-95 cursor-pointer flex-none"
+                title="Abrir menú de navegación"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
 
-                <TailAdminBreadcrumb
-                  moduleName={activeModule === "pedidos" ? (activeBusiness?.name || "Módulo Pedidos") : "Inventarios SST"}
-                  roleName={currentRoleName}
-                  pageName={currentPageName}
-                  onNavigateHome={() => handleNavigatePedidos("operacion", "en-vivo")}
-                  onNavigateSection={() =>
-                    handleNavigatePedidos(
-                      pedidosSection,
-                      pedidosSection === "operacion"
-                        ? "en-vivo"
-                        : pedidosSection === "menu"
-                        ? "catalogo"
-                        : "roles"
-                    )
-                  }
-                />
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-2.5">
-                <div className="hidden sm:block"><GlobalSearchButton /></div>
-
-                <NotificationBellDropdown
-                  notifications={notifications}
-                  setNotifications={setNotifications}
-                  onNavigate={handleNavigateFromNotification}
-                />
-
-                <ThemeToggle />
-
-                <UserProfileDropdown />
-              </div>
-
+              <TailAdminBreadcrumb
+                moduleName={activeModule === "pedidos" ? (activeBusiness?.name || "Módulo Pedidos") : "Inventarios SST"}
+                roleName={currentRoleName}
+                pageName={currentPageName}
+                onNavigateHome={() => handleNavigatePedidos("operacion", "en-vivo")}
+                onNavigateSection={() =>
+                  handleNavigatePedidos(
+                    pedidosSection,
+                    pedidosSection === "operacion"
+                      ? "en-vivo"
+                      : pedidosSection === "menu"
+                      ? "catalogo"
+                      : "roles"
+                  )
+                }
+              />
             </div>
 
-            {/* Active Local Operational Container */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="hidden sm:block"><GlobalSearchButton /></div>
+
+              <NotificationBellDropdown
+                notifications={notifications}
+                setNotifications={setNotifications}
+                onNavigate={handleNavigateFromNotification}
+              />
+
+              <ThemeToggle />
+
+              <UserProfileDropdown />
+            </div>
+          </header>
+
+          {/* Main Content Screen Floating Card (Separated) */}
+          <main className="flex-1 min-w-0 sm:rounded-2xl rounded-xl shadow-xs overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
             <div className="flex-1 overflow-auto">
               <PedidosModule
                 sectionProp={activeModule === "inventarios" ? "gestion" : pedidosSection}
@@ -951,8 +950,7 @@ export default function App() {
                 onGeTabChange={t => handleNavigatePedidos(pedidosSection === "operacion" ? "menu" : pedidosSection, t)}
               />
             </div>
-
-          </div>
+          </main>
         </div>
       </div>
 
