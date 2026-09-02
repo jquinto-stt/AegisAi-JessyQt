@@ -127,48 +127,42 @@ export const GlobalFranchiseOverview: React.FC = () => {
           </div>
         </div>
 
-        {/* Metric 3: Active Kitchen Orders */}
+        {/* Metric 3: SLA / Cumplimiento de Entrega */}
         <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 dark:bg-orange-950/50 text-[#FF3F1A] shadow-2xs">
-              <Flame className="w-6 h-6" />
-            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
+              Cumplimiento / SLA
+            </span>
             <span className="flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 py-1 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              En tiempo
+              98.2% a tiempo
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
-              En Cocina (KDS)
-            </span>
-            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-[#FF3F1A] tracking-tight">
-              {activeOrdersInKitchen}
+            <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
+              98.2%
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Tiempo prom. preparación: 18m</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Puntualidad en despachos y entregas</p>
           </div>
         </div>
 
         {/* Metric 4: Avg Ticket */}
         <div className="rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 shadow-2xs">
-              <Zap className="w-6 h-6" />
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-purple-50 dark:bg-purple-950/60 py-1 px-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/60 font-mono">
-              COP
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
+              Ticket Promedio
+            </span>
+            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 font-mono">
+              Consolidado
             </span>
           </div>
 
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 block">
-              Ticket Promedio
-            </span>
             <h4 className="mt-1 text-2xl sm:text-3xl font-black text-zinc-950 dark:text-white tracking-tight">
               {avgTicket}
             </h4>
-            <p className="text-[11px] text-zinc-400 mt-1">Gasto medio por cliente</p>
+            <p className="text-[11px] text-zinc-400 mt-1">Gasto promedio por comanda</p>
           </div>
         </div>
       </div>
