@@ -289,28 +289,28 @@ function Sidebar({
 
     if (isCollapsed && !isMobile) {
       return (
-        <Button
-          variant="ghost"
-          intent="shell.nav.item"
+        <button
+          type="button"
           onClick={handleItemClick}
           title={label}
-          className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-medium transition-all cursor-pointer ${
+          className={`w-10 h-10 mx-auto rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-2xs group flex-none ${
             active
-              ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] border border-[#EFE6D3] dark:border-[#37332A]"
+              ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] font-bold border border-[#EFE6D3] dark:border-[#37332A]"
               : "text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
           }`}
         >
-          {icon}
-        </Button>
+          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-[#FF3F1A]" : "text-zinc-600 dark:text-zinc-300 group-hover:text-[#FF3F1A]"}`}>
+            {icon}
+          </span>
+        </button>
       );
     }
 
     return (
-      <Button
-        variant="ghost"
-        intent="shell.nav.item"
+      <button
+        type="button"
         onClick={handleItemClick}
-        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer group ${
+        className={`justify-start w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer group ${
           active
             ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] font-bold border border-[#EFE6D3] dark:border-[#37332A]"
             : "text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
@@ -318,7 +318,7 @@ function Sidebar({
       >
         <span className={`flex-none transition-colors ${active ? "text-[#FF3F1A]" : "text-zinc-400 dark:text-zinc-500 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
         <span className="flex-1 truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
-      </Button>
+      </button>
     );
   }
 
@@ -339,28 +339,28 @@ function Sidebar({
   }) {
     if (isCollapsed && !isMobile) {
       return (
-        <Button
-          variant="ghost"
-          intent="shell.nav.section"
+        <button
+          type="button"
           onClick={() => { if (onHeaderClick) onHeaderClick(); else toggle(section); }}
           title={label}
-          className={`p-0 w-10 h-10 mx-auto rounded-xl flex items-center justify-center text-sm font-semibold transition-all cursor-pointer ${
+          className={`w-10 h-10 mx-auto rounded-2xl flex items-center justify-center transition-all cursor-pointer shadow-2xs group flex-none ${
             active
-              ? "bg-[#FF3F1A] text-white shadow-sm"
+              ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
               : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
           }`}
         >
-          {icon}
-        </Button>
+          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-white" : "text-zinc-700 dark:text-zinc-300 group-hover:text-[#FF3F1A]"}`}>
+            {icon}
+          </span>
+        </button>
       );
     }
 
     return (
-      <Button
-        variant="ghost"
-        intent="shell.nav.section"
+      <button
+        type="button"
         onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-        className={`justify-start p-0 w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer group ${
+        className={`justify-start w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer group ${
           active
             ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
             : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
@@ -373,7 +373,7 @@ function Sidebar({
         ) : (
           <ChevronRight className={`w-3.5 h-3.5 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
         )}
-      </Button>
+      </button>
     );
   }
 
