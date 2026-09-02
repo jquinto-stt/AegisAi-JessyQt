@@ -19,6 +19,8 @@ import { RejectCancelModal } from "./shared/RejectCancelModal";
 import { IncidenciasDrawer } from "./shared/IncidenciasDrawer";
 import { ThermalTicketModal } from "./shared/ThermalTicketModal";
 import { WhatsAppFloatingWidget } from "./shared/WhatsAppFloatingWidget";
+import { NectoMobileShell } from "./mobile/NectoMobileShell";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import {
   DEFAULT_LAYOUT_PREFS,
   LayoutPreferences,
@@ -135,6 +137,49 @@ const PedidosContent: React.FC<{
   const pendingConversationsCount = conversations.filter(c => c.status === "REQUIERE_INTERVENCION").length;
   const isKanbanActive = section === "operacion" && opTab === "en-vivo";
   const shouldShowTopHeader = isKanbanActive ? layoutPrefs.showTopHeader : true;
+
+  const isMobileViewport = useIsMobile();
+  // Permite forzar el modo móvil con ?mobile=1 (útil para depurar / previsualizar
+  // en un iframe cuyo ancho no coincide con el viewport real).
+  const forceMobile =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("mobile") === "1";
+  const isMobile = isMobileViewport || forceMobile;
+
+  // ── Experiencia móvil (mobile-first) ──────────────────────────────────────
+  // En viewports < lg renderizamos el shell móvil dedicado (bottom nav + hojas
+  // inferiores) en lugar del layout de escritorio reflejado. Los modales y
+  // drawers compartidos (detalle, rechazo, ticket térmico) se montan igual para
+  // que las acciones del móvil (setRejectModalOrder / setPrintTicketOrder)
+  // sigan funcionando.
+  if (isMobile) {
+    const handleMobileNavigate = (s: PedidosSection, tab: any) => {
+      handleSectionSwitch(s);
+      if (s === "operacion") {
+        handleOpTabSwitch((tab as OperacionTab) || "en-vivo");
+      } else {
+        handleGeTabSwitch((tab as GestionTab) || (s === "menu" ? "catalogo" : "roles"));
+      }
+    };
+
+    return (
+      <>
+        <NectoMobileShell
+          section={section}
+          opTab={opTab}
+          geTab={geTab}
+          onNavigate={handleMobileNavigate}
+        />
+
+        {/* Modales / drawers compartidos (disparados desde las vistas móviles) */}
+        <OrderDetailDrawer />
+        <AIInterpretationModal />
+        <RejectCancelModal />
+        <IncidenciasDrawer />
+        <ThermalTicketModal />
+      </>
+    );
+  }
 
 
   return (
