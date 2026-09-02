@@ -11,7 +11,8 @@ import {
   Users,
   ArrowRight,
   X,
-  Sparkles,
+  Check,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -47,188 +48,225 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
   };
 
   const getRoleIcon = (roleId: string) => {
-    if (roleId === "role-owner") return <ShieldCheck className="w-4 h-4 text-rose-500" />;
-    if (roleId === "role-admin") return <Shield className="w-4 h-4 text-sky-500" />;
-    if (roleId === "role-cook") return <Flame className="w-4 h-4 text-amber-500" />;
-    if (roleId === "role-waiter") return <ShoppingBag className="w-4 h-4 text-emerald-500" />;
-    if (roleId === "role-inventory") return <Package className="w-4 h-4 text-purple-500" />;
-    return <Users className="w-4 h-4 text-zinc-500" />;
+    if (roleId === "role-owner") return <Crown className="w-5 h-5" />;
+    if (roleId === "role-admin") return <Shield className="w-5 h-5" />;
+    if (roleId === "role-cook") return <Flame className="w-5 h-5" />;
+    if (roleId === "role-waiter") return <ShoppingBag className="w-5 h-5" />;
+    if (roleId === "role-inventory") return <Package className="w-5 h-5" />;
+    return <Users className="w-5 h-5" />;
   };
 
-  const getBadgeStyle = (color: RolePermission["badgeColor"]) => {
-    switch (color) {
-      case "rose":
-        return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20";
-      case "blue":
-        return "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20";
-      case "amber":
-        return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-      case "emerald":
-        return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-      case "purple":
-        return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
-      default:
-        return "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20";
-    }
+  const getRoleAccent = (roleId: string) => {
+    if (roleId === "role-owner")
+      return {
+        bg: "bg-gradient-to-br from-rose-500 to-orange-500",
+        ring: "ring-rose-500/30",
+        text: "text-rose-600 dark:text-rose-400",
+        lightBg: "bg-rose-50 dark:bg-rose-950/30",
+        border: "border-rose-200 dark:border-rose-800/50",
+        hoverBorder: "hover:border-rose-400 dark:hover:border-rose-600",
+        activeBg: "bg-rose-50 dark:bg-rose-950/20",
+      };
+    if (roleId === "role-admin")
+      return {
+        bg: "bg-gradient-to-br from-sky-500 to-blue-600",
+        ring: "ring-sky-500/30",
+        text: "text-sky-600 dark:text-sky-400",
+        lightBg: "bg-sky-50 dark:bg-sky-950/30",
+        border: "border-sky-200 dark:border-sky-800/50",
+        hoverBorder: "hover:border-sky-400 dark:hover:border-sky-600",
+        activeBg: "bg-sky-50 dark:bg-sky-950/20",
+      };
+    if (roleId === "role-cook")
+      return {
+        bg: "bg-gradient-to-br from-amber-400 to-orange-500",
+        ring: "ring-amber-500/30",
+        text: "text-amber-600 dark:text-amber-400",
+        lightBg: "bg-amber-50 dark:bg-amber-950/30",
+        border: "border-amber-200 dark:border-amber-800/50",
+        hoverBorder: "hover:border-amber-400 dark:hover:border-amber-600",
+        activeBg: "bg-amber-50 dark:bg-amber-950/20",
+      };
+    if (roleId === "role-waiter")
+      return {
+        bg: "bg-gradient-to-br from-emerald-400 to-teal-500",
+        ring: "ring-emerald-500/30",
+        text: "text-emerald-600 dark:text-emerald-400",
+        lightBg: "bg-emerald-50 dark:bg-emerald-950/30",
+        border: "border-emerald-200 dark:border-emerald-800/50",
+        hoverBorder: "hover:border-emerald-400 dark:hover:border-emerald-600",
+        activeBg: "bg-emerald-50 dark:bg-emerald-950/20",
+      };
+    if (roleId === "role-inventory")
+      return {
+        bg: "bg-gradient-to-br from-purple-400 to-violet-500",
+        ring: "ring-purple-500/30",
+        text: "text-purple-600 dark:text-purple-400",
+        lightBg: "bg-purple-50 dark:bg-purple-950/30",
+        border: "border-purple-200 dark:border-purple-800/50",
+        hoverBorder: "hover:border-purple-400 dark:hover:border-purple-600",
+        activeBg: "bg-purple-50 dark:bg-purple-950/20",
+      };
+    return {
+      bg: "bg-gradient-to-br from-zinc-400 to-zinc-500",
+      ring: "ring-zinc-500/30",
+      text: "text-zinc-600 dark:text-zinc-400",
+      lightBg: "bg-zinc-50 dark:bg-zinc-900",
+      border: "border-zinc-200 dark:border-zinc-700",
+      hoverBorder: "hover:border-zinc-400 dark:hover:border-zinc-600",
+      activeBg: "bg-zinc-50 dark:bg-zinc-900/50",
+    };
+  };
+
+  const getPermissionsList = (role: RolePermission) => {
+    const perms: string[] = [];
+    if (role.permissions.canViewBandeja) perms.push("Órdenes");
+    if (role.permissions.canViewKDS) perms.push("KDS Cocina");
+    if (role.permissions.canViewCatalogo) perms.push("Catálogo");
+    if (role.permissions.canViewInsumos) perms.push("Insumos");
+    if (role.permissions.canViewAnalitica) perms.push("Analítica");
+    if (role.permissions.canManageRoles) perms.push("Roles");
+    return perms;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs overflow-hidden">
-              {business.logoUrl ? (
-                <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
-              ) : (
-                <BusinessIcon iconKey={business.iconKey} className="w-6 h-6 text-[#FF3F1A]" />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-                  Ingreso a Sucursal
-                </span>
-                <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                <span className="text-xs font-mono text-zinc-500">{business.city}</span>
-              </div>
-              <h3 className="text-lg font-bold text-zinc-950 dark:text-zinc-50">
-                {business.name}
-              </h3>
-            </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ animation: "fadeIn 150ms ease-out" }}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div
+        className="relative w-full max-w-lg bg-white dark:bg-[#1C1C1F] rounded-2xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[85vh]"
+        style={{ animation: "slideUp 200ms ease-out" }}
+      >
+        {/* Compact Header */}
+        <div className="px-6 pt-5 pb-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none shadow-xs overflow-hidden">
+            {business.logoUrl ? (
+              <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+            ) : (
+              <BusinessIcon iconKey={business.iconKey} className="w-5 h-5 text-[#FF3F1A]" />
+            )}
           </div>
-
-          <Button
-            variant="ghost"
-            intent="role-select.close"
-            onClick={onClose}
-            className="w-8 h-8 p-0 rounded-xl text-zinc-400"
-          >
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Modal Body: Instructions & Role Options */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-          <div className="space-y-1">
-            <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#FF3F1A]" />
-              Selecciona tu Perfil / Estación de Acceso
-            </h4>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Elige el rol con el que vas a operar. La barra de navegación y las pantallas se adaptarán automáticamente según los permisos de cada estación.
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">
+              {business.name}
+            </h3>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              {business.city} &middot; Select access profile
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* Roles Selection Cards */}
-          <div className="grid grid-cols-1 gap-3 pt-2">
-            {roles.map(role => {
-              const isOwner = role.id === "role-owner";
-              const isCurrentlyActive = role.id === activeRoleId;
-              const permissionsCount = Object.values(role.permissions).filter(Boolean).length;
+        {/* Roles Grid */}
+        <div className="flex-1 overflow-y-auto px-6 pb-5 space-y-2">
+          {roles.map((role) => {
+            const accent = getRoleAccent(role.id);
+            const isOwner = role.id === "role-owner";
+            const isActive = role.id === activeRoleId;
+            const perms = getPermissionsList(role);
 
-              return (
-                <div
-                  key={role.id}
-                  onClick={() => handleSelectRole(role)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 group hover:shadow-md ${
-                    isOwner
-                      ? "bg-rose-500/[0.02] dark:bg-rose-500/[0.04] border-rose-500/30 hover:border-rose-500"
-                      : "bg-white dark:bg-zinc-900/70 border-zinc-200/90 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600"
-                  }`}
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center flex-none group-hover:scale-105 transition-transform">
-                      {getRoleIcon(role.id)}
-                    </div>
-
-                    <div className="space-y-1 min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h5 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 group-hover:text-[#FF3F1A] transition-colors">
-                          {role.name}
-                        </h5>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getBadgeStyle(role.badgeColor)}`}>
-                          {isOwner ? "Sin Restricciones" : `${permissionsCount} permisos`}
-                        </span>
-                        {isCurrentlyActive && (
-                          <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
-                            (Sesión anterior)
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-                        {role.description}
-                      </p>
-
-                      {/* Permissions Tags */}
-                      <div className="flex items-center gap-1.5 pt-1 flex-wrap">
-                        {role.permissions.canViewBandeja && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                            Órdenes
-                          </span>
-                        )}
-                        {role.permissions.canViewKDS && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300">
-                            KDS Cocina
-                          </span>
-                        )}
-                        {role.permissions.canViewCatalogo && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                            Catálogo
-                          </span>
-                        )}
-                        {role.permissions.canViewInsumos && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                            Insumos
-                          </span>
-                        )}
-                        {role.permissions.canViewAnalitica && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-100/70 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300">
-                            Finanzas & Métricas
-                          </span>
-                        )}
-                        {role.permissions.canManageRoles && (
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-100/70 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300">
-                            Gestión Roles
-                          </span>
-                        )}
-                      </div>
-                    </div>
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => handleSelectRole(role)}
+                className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer group relative ${
+                  isActive
+                    ? `${accent.activeBg} ${accent.border} ring-2 ${accent.ring}`
+                    : `bg-white dark:bg-zinc-900/50 border-zinc-200/80 dark:border-zinc-800 ${accent.hoverBorder} hover:shadow-md`
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Icon Circle */}
+                  <div
+                    className={`w-10 h-10 rounded-xl ${accent.bg} text-white flex items-center justify-center flex-none shadow-sm group-hover:scale-105 transition-transform`}
+                  >
+                    {getRoleIcon(role.id)}
                   </div>
 
-                  <Button
-                    variant={isOwner ? "primary" : "outline"}
-                    intent="role-select.enter"
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleSelectRole(role);
-                    }}
-                    className="py-2 px-3.5 text-xs flex-none self-end sm:self-center"
-                  >
-                    <span>Entrar como {role.name.split("/")[0].trim()}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
+                  {/* Role Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">
+                        {role.name}
+                      </span>
+                      {isOwner && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-gradient-to-r from-rose-500 to-orange-500 text-white">
+                          Full Access
+                        </span>
+                      )}
+                      {isActive && (
+                        <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${accent.lightBg} ${accent.text}`}>
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-1 mt-0.5">
+                      {role.description}
+                    </p>
+                  </div>
+
+                  {/* Arrow */}
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-none transition-all ${
+                    isActive
+                      ? `${accent.bg} text-white`
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:bg-zinc-200 dark:group-hover:bg-zinc-700 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
+                  }`}>
+                    {isActive ? <Check className="w-4 h-4" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Permissions Row */}
+                {perms.length > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2.5 pl-[52px] flex-wrap">
+                    {perms.map((perm) => (
+                      <span
+                        key={perm}
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50"
+                      >
+                        {perm}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-between text-xs text-zinc-400">
-          <span>Podrás cambiar de rol o simular otra vista en cualquier momento desde la barra superior.</span>
-          <Button
-            variant="ghost"
-            intent="role-select.cancel"
-            onClick={onClose}
-            className="p-0 font-bold text-zinc-600 dark:text-zinc-300 hover:underline hover:bg-transparent cursor-pointer"
-          >
-            Cancelar
-          </Button>
+        <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/50">
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 text-center">
+            You can switch profiles anytime from the top bar
+          </p>
         </div>
       </div>
+
+      {/* Inline Keyframes */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(12px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
 };
