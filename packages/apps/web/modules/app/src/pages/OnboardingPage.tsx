@@ -22,7 +22,6 @@ import {
   Phone,
   UtensilsCrossed,
   Store,
-  Sparkles,
   Activity,
   Layers,
   CheckCircle2,
@@ -524,7 +523,7 @@ export default function OnboardingPage() {
                       </div>
                       <div>
                         <h3 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white">
-                          WhatsApp Business Web & Bot IA
+                          WhatsApp Business Cloud & Comandas
                         </h3>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
                           {isMetaConnected
@@ -562,7 +561,7 @@ export default function OnboardingPage() {
                         </>
                       ) : (
                         <>
-                          <Zap className="w-4 h-4" />
+                          <Smartphone className="w-4 h-4" />
                           <span>Conectar con WhatsApp Web</span>
                         </>
                       )}
@@ -762,12 +761,12 @@ export default function OnboardingPage() {
                 {isDeploying ? (
                   <>
                     <Activity className="w-4 h-4 animate-spin" />
-                    <span>Desplegando Espacio...</span>
+                    <span>Configurando Espacio...</span>
                   </>
                 ) : (
                   <>
                     <span>Finalizar & Lanzar Espacio</span>
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Store className="w-4 h-4" />
                   </>
                 )}
               </Button>
@@ -797,8 +796,8 @@ export default function OnboardingPage() {
           {/* Top Brand & Trust Badge */}
           <div className="relative z-10 flex items-center justify-between">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-              <span>Plataforma Todo-en-Uno</span>
+              <Layers className="w-3.5 h-3.5 text-orange-400" />
+              <span>Plataforma Modular Operativa</span>
             </div>
 
             <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15">
@@ -814,7 +813,7 @@ export default function OnboardingPage() {
                   ? activeArchetype.title
                   : step === 2
                   ? "Canal Oficial WhatsApp & Meta"
-                  : "Operaciones Inteligentes"}
+                  : "Operaciones & Control Total"}
               </span>
 
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight drop-shadow-md">
