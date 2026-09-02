@@ -261,7 +261,7 @@ export function NectoSidebarLogo({
       >
         {/* Anchor N Isotype */}
         <div
-          className="w-8 h-8 flex items-center justify-center flex-none"
+          className="w-6 h-6 flex items-center justify-center flex-none"
           style={{ transition: "transform 120ms ease-out" }}
         >
           <svg
