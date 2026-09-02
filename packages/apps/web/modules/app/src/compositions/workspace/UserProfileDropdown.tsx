@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
@@ -21,6 +21,8 @@ import { Button, Badge } from "@/elements";
 
 export const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOnHub = location.pathname === "/workspaces";
   const { user, signOut } = useAuth();
   const {
     businesses,
@@ -145,17 +147,6 @@ export const UserProfileDropdown: React.FC = () => {
                     <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
                       Sucursales Activas ({businesses.length})
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigate("/workspaces");
-                        setIsOpen(false);
-                      }}
-                      className="text-[10px] text-[#190088] dark:text-blue-400 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
-                    >
-                      <span>Ver Dashboard</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
                   </div>
 
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
@@ -232,20 +223,22 @@ export const UserProfileDropdown: React.FC = () => {
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  navigate("/workspaces");
-                  setIsOpen(false);
-                }}
-                className="w-full px-3 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center justify-between cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Layers className="w-4 h-4 text-[#190088] dark:text-blue-400" />
-                  <span>Dashboard de Franquicias</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-              </button>
+              {!isOnHub && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigate("/workspaces");
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-950 dark:hover:text-white transition-colors flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Layers className="w-4 h-4 text-[#190088] dark:text-blue-400" />
+                    <span>Dashboard de Franquicias</span>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                </button>
+              )}
 
               <button
                 type="button"
