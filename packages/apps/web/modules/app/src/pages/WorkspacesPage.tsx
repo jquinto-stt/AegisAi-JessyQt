@@ -38,10 +38,6 @@ export default function WorkspacesPage() {
       <header className="px-4 sm:px-12 py-3.5 sm:py-4 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-[#2C2D31]/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 sm:gap-4">
           <NectoLogo size="xs" inline />
-          <span className="hidden sm:inline-block h-4 w-px bg-zinc-300 dark:bg-zinc-700" />
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
-            Hub de Franquicias & Sucursales
-          </span>
         </div>
 
         {/* Right Controls: Search, Theme Toggle & Account Dropdown */}
@@ -114,9 +110,9 @@ export default function WorkspacesPage() {
       </header>
 
       {/* Main Hub Content Area: Direct Unified Franchise & Workspaces Overview */}
-      <div className="flex-1 max-w-6xl w-full mx-auto">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-10 py-6 sm:py-8">
         <GlobalFranchiseOverview />
-      </div>
+      </main>
 
       {/* Account Settings Modal */}
       <AccountSettingsModal
