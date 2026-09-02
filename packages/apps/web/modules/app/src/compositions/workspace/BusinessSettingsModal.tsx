@@ -135,122 +135,111 @@ const InteractiveImageViewport: React.FC<{
 }> = ({ imageUrl, rotate, scale, posX, posY, onUpdate, aspectRatio = "square", label = "Imagen" }) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<"pan" | "rotate" | null>(null);
-  const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
+  const [fitMode, setFitMode] = useState<"contain" | "cover">("cover");
 
   const dragStartRef = React.useRef<{
     startX: number;
     startY: number;
     initialPosX: number;
     initialPosY: number;
-    initialRotate: number;
-    centerX: number;
-    centerY: number;
-    startAngle: number;
+    containerWidth: number;
+    containerHeight: number;
   }>({
     startX: 0,
     startY: 0,
     initialPosX: 0,
     initialPosY: 0,
-    initialRotate: 0,
-    centerX: 0,
-    centerY: 0,
-    startAngle: 0,
+    containerWidth: 300,
+    containerHeight: 300,
   });
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, mode: "pan" | "rotate") => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const startAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
 
     dragStartRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       initialPosX: posX,
       initialPosY: posY,
-      initialRotate: rotate,
-      centerX,
-      centerY,
-      startAngle,
+      containerWidth: rect.width || 300,
+      containerHeight: rect.height || 300,
     };
     setIsDragging(true);
-    setDragMode(mode);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !dragMode) return;
+    if (!isDragging) return;
 
-    if (dragMode === "pan") {
-      const deltaX = (e.clientX - dragStartRef.current.startX) / (scale * 1.2);
-      const deltaY = (e.clientY - dragStartRef.current.startY) / (scale * 1.2);
-      onUpdate({
-        rotate,
-        scale,
-        posX: Math.max(-250, Math.min(250, Math.round(dragStartRef.current.initialPosX + deltaX))),
-        posY: Math.max(-250, Math.min(250, Math.round(dragStartRef.current.initialPosY + deltaY))),
-      });
-    } else if (dragMode === "rotate") {
-      const currentAngle =
-        Math.atan2(e.clientY - dragStartRef.current.centerY, e.clientX - dragStartRef.current.centerX) *
-        (180 / Math.PI);
-      const angleDelta = currentAngle - dragStartRef.current.startAngle;
-      const newRotate = Math.round((dragStartRef.current.initialRotate + angleDelta) % 360);
-      onUpdate({
-        rotate: newRotate,
-        scale,
-        posX,
-        posY,
-      });
-    }
+    const rawDeltaX = e.clientX - dragStartRef.current.startX;
+    const rawDeltaY = e.clientY - dragStartRef.current.startY;
+
+    // Convert pixel delta to percentage of container
+    const percentX = (rawDeltaX / dragStartRef.current.containerWidth) * 100;
+    const percentY = (rawDeltaY / dragStartRef.current.containerHeight) * 100;
+
+    // Rotate delta to match image local coordinate space so drag always follows mouse movement
+    const rad = (-rotate * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const projectedDeltaX = (percentX * cos - percentY * sin) / Math.max(0.2, scale);
+    const projectedDeltaY = (percentX * sin + percentY * cos) / Math.max(0.2, scale);
+
+    const newPosX = Math.max(-200, Math.min(200, Math.round(dragStartRef.current.initialPosX + projectedDeltaX)));
+    const newPosY = Math.max(-200, Math.min(200, Math.round(dragStartRef.current.initialPosY + projectedDeltaY)));
+
+    onUpdate({
+      rotate,
+      scale,
+      posX: newPosX,
+      posY: newPosY,
+    });
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(false);
-    setDragMode(null);
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch (err) {}
+    } catch {}
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const delta = -e.deltaY * 0.0025;
-    const newScale = Math.max(0.1, Math.min(6, Number((scale + delta).toFixed(2))));
+    const delta = -e.deltaY * 0.0015;
+    const newScale = Math.max(0.5, Math.min(3.5, Number((scale + delta).toFixed(2))));
     onUpdate({ rotate, scale: newScale, posX, posY });
   };
 
   return (
-    <div className="space-y-4 select-none w-full">
-      {/* High-End Studio Viewport Frame */}
+    <div className="space-y-4 select-none w-full font-sans">
+      {/* Interactive Canvas Viewport */}
       <div
         ref={containerRef}
         onWheel={handleWheel}
-        onPointerDown={e => handlePointerDown(e, "pan")}
+        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        className={`relative overflow-hidden rounded-3xl bg-[#090A0D] border-2 border-zinc-800 shadow-2xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none transition-all ${
+        className={`relative overflow-hidden rounded-3xl bg-slate-950 dark:bg-[#090A0E] border-2 border-slate-700/60 shadow-xl flex items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
           aspectRatio === "square"
-            ? "w-full sm:w-[360px] h-[320px] sm:h-[360px] mx-auto"
-            : "w-full h-64 sm:h-80 md:h-[360px]"
+            ? "w-full sm:w-[320px] h-[280px] sm:h-[320px] mx-auto"
+            : "w-full h-56 sm:h-72 md:h-80"
         }`}
       >
-        {/* Subtle radial studio light ambient */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06)_0%,transparent_70%)] pointer-events-none" />
+        {/* Ambient Grid Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-        {/* The Image being transformed */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+        {/* The Transformed Image */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-3">
           <img
             src={imageUrl}
             alt={label}
             style={{
-              transform: `translate(${posX}%, ${posY}%) rotate(${rotate}deg) scale(${scale})`,
-              transition: isDragging ? "none" : "transform 0.1s ease-out",
+              transform: `rotate(${rotate}deg) scale(${scale}) translate(${posX}%, ${posY}%)`,
+              transition: isDragging ? "none" : "transform 0.08s ease-out",
             }}
-            className={`pointer-events-none transition-all shadow-xl ${
+            className={`pointer-events-none transition-all ${
               fitMode === "contain"
                 ? "max-w-full max-h-full object-contain"
                 : "w-full h-full object-cover"
@@ -259,126 +248,140 @@ const InteractiveImageViewport: React.FC<{
           />
         </div>
 
-        {/* Viewfinder Reticles & Golden Ratio Grid */}
-        <div className="absolute inset-4 pointer-events-none rounded-2xl border border-white/15">
-          {/* 4 Precision L-Shaped Corner Marks */}
-          <div className="absolute -top-1 -left-1 w-4 h-4 border-t-2 border-l-2 border-[#FF3F1A]" />
-          <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-[#FF3F1A]" />
-          <div className="absolute -bottom-1 -left-1 w-4 h-4 border-b-2 border-l-2 border-[#FF3F1A]" />
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 border-b-2 border-r-2 border-[#FF3F1A]" />
-
-          {/* Precision 3x3 Grid */}
-          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 opacity-15">
-            <div className="border-r border-b border-white" />
-            <div className="border-r border-b border-white" />
-            <div className="border-b border-white" />
-            <div className="border-r border-b border-white" />
-            <div className="border-r border-b border-white" />
-            <div className="border-b border-white" />
-            <div className="border-r border-white" />
-            <div className="border-r border-white" />
-            <div />
-          </div>
-
-          {/* Center Crosshair */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none opacity-40">
-            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-white" />
-            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-white" />
-          </div>
+        {/* Crop Frame Overlay Guides */}
+        <div className="absolute inset-3 pointer-events-none rounded-2xl border border-white/20">
+          <div className="absolute -top-1 -left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#FF3F1A]" />
+          <div className="absolute -top-1 -right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#FF3F1A]" />
+          <div className="absolute -bottom-1 -left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#FF3F1A]" />
+          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#FF3F1A]" />
         </div>
 
-        {/* Top HUD: Status Bar */}
-        <div className="absolute top-3 left-3 right-14 flex items-center justify-between pointer-events-none z-10">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md border border-white/10 text-white font-mono text-[11px] font-bold shadow-lg">
-            <span className="text-[#FF3F1A]">{rotate}°</span>
-            <span className="text-zinc-500">·</span>
-            <span>{scale.toFixed(2)}x</span>
-            <span className="text-zinc-500">·</span>
-            <span className="text-zinc-400 text-[10px]">({posX}%, {posY}%)</span>
-          </div>
-
-          <span className="px-2.5 py-1 rounded-xl bg-black/75 backdrop-blur-md border border-white/10 text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 hidden sm:inline shadow-lg">
-            {fitMode === "contain" ? "Ajuste Completo" : "Llenado Total"}
+        {/* Floating Readout Badges */}
+        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 pointer-events-none z-10">
+          <span className="px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md border border-white/10 text-white font-mono text-[10px] font-bold shadow-md">
+            Zoom: {Math.round(scale * 100)}% · Giro: {rotate}°
           </span>
         </div>
 
-        {/* Interactive Rotation Dial Handle (Top-Right Precision Knob) */}
-        <div
-          onPointerDown={e => handlePointerDown(e, "rotate")}
-          className="absolute top-3 right-3 w-10 h-10 rounded-2xl bg-zinc-900/90 text-white border-2 border-[#FF3F1A] shadow-2xl backdrop-blur-md flex items-center justify-center cursor-ew-resize hover:scale-110 active:scale-95 transition-all z-20 group"
-          title="Arrastra con el mouse para rotar libremente en 360°"
-        >
-          <RotateCw className="w-5 h-5 text-[#FF3F1A] group-hover:rotate-45 transition-transform" />
-        </div>
-
-        {/* Bottom Floating Canvas Guide */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-center pointer-events-none text-[10px] font-mono text-zinc-400 z-10">
-          <span className="px-3 py-1 rounded-xl bg-black/75 backdrop-blur-md border border-white/10 shadow-lg">
-            Arrastra sobre la imagen para mover · Rueda para zoom · Pomo para girar
+        {/* Drag Hint at bottom */}
+        <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none z-10">
+          <span className="px-2.5 py-0.5 rounded-lg bg-slate-900/80 backdrop-blur-md text-slate-300 font-mono text-[9px] shadow-sm">
+            {isDragging ? "Moviendo..." : "Arrastra la imagen para encuadrar"}
           </span>
         </div>
       </div>
 
-      {/* Luxury Studio Floating Micro-Toolbar */}
-      <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 shadow-xs flex-wrap">
-        <div className="flex items-center gap-1.5">
-          {/* Fit / Cover toggle */}
+      {/* Direct Controls & Precision Sliders */}
+      <div className="p-4 rounded-2xl bg-[#F7F4EC] dark:bg-[#15161A] border border-[#190088]/15 dark:border-zinc-800 space-y-3.5 shadow-xs">
+        {/* Zoom Slider */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <ZoomIn className="w-3.5 h-3.5 text-[#190088] dark:text-blue-400" />
+              <span>Tamaño / Zoom</span>
+            </span>
+            <span className="font-mono font-bold text-xs text-[#190088] dark:text-blue-400">
+              {Math.round(scale * 100)}%
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onUpdate({ rotate, scale: Math.max(0.5, Number((scale - 0.1).toFixed(2))), posX, posY })}
+              className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+            >
+              -
+            </button>
+            <input
+              type="range"
+              min={0.5}
+              max={3.0}
+              step={0.05}
+              value={scale}
+              onChange={e => onUpdate({ rotate, scale: parseFloat(e.target.value), posX, posY })}
+              className="flex-1 h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#190088]"
+            />
+            <button
+              type="button"
+              onClick={() => onUpdate({ rotate, scale: Math.min(3.0, Number((scale + 0.1).toFixed(2))), posX, posY })}
+              className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* Rotation Slider */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <RotateCw className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span>Ángulo de Rotación</span>
+            </span>
+            <span className="font-mono font-bold text-xs text-[#FF3F1A]">
+              {rotate}°
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onUpdate({ rotate: (rotate - 90) % 360, scale, posX, posY })}
+              className="px-2 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs flex-none"
+              title="Girar 90° antihorario"
+            >
+              -90°
+            </button>
+            <input
+              type="range"
+              min={-180}
+              max={180}
+              step={1}
+              value={rotate > 180 ? rotate - 360 : rotate}
+              onChange={e => onUpdate({ rotate: parseInt(e.target.value, 10), scale, posX, posY })}
+              className="flex-1 h-2 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF3F1A]"
+            />
+            <button
+              type="button"
+              onClick={() => onUpdate({ rotate: (rotate + 90) % 360, scale, posX, posY })}
+              className="px-2 h-7 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs flex-none"
+              title="Girar 90° horario"
+            >
+              +90°
+            </button>
+          </div>
+        </div>
+
+        {/* Quick Adjustment Action Buttons */}
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/80 dark:border-zinc-800 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setFitMode(fitMode === "cover" ? "contain" : "cover")}
+              className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3 text-[#FF3F1A]" />
+              <span>{fitMode === "cover" ? "Ajustar al Marco" : "Llenar Marco"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdate({ rotate, scale, posX: 0, posY: 0 })}
+              className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-700 dark:text-slate-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
+            >
+              <Move className="w-3 h-3 text-[#190088] dark:text-blue-400" />
+              <span>Centrar</span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => {
-              const next = fitMode === "contain" ? "cover" : "contain";
-              setFitMode(next);
-              onUpdate({ rotate, scale: 1, posX: 0, posY: 0 });
+              setFitMode("cover");
+              onUpdate({ rotate: 0, scale: 1, posX: 0, posY: 0 });
             }}
-            className="px-3 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white text-xs font-bold transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
-            title="Alternar entre ver la imagen completa sin recortar o llenar el recuadro"
+            className="px-2.5 py-1 rounded-xl bg-white dark:bg-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-700 text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
           >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{fitMode === "contain" ? "Llenar Marco" : "Ver Completa"}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onUpdate({ rotate: (rotate - 90) % 360, scale, posX, posY })}
-            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            title="Girar 90° antihorario"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> -90°
-          </button>
-          <button
-            type="button"
-            onClick={() => onUpdate({ rotate: (rotate + 90) % 360, scale, posX, posY })}
-            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            title="Girar 90° horario"
-          >
-            <RotateCw className="w-3.5 h-3.5" /> +90°
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onUpdate({ rotate, scale: Math.max(0.1, Number((scale - 0.2).toFixed(2))), posX, posY })}
-            className="p-1.5 px-2.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            title="Alejar zoom"
-          >
-            <ZoomOut className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onUpdate({ rotate, scale: Math.min(6, Number((scale + 0.2).toFixed(2))), posX, posY })}
-            className="p-1.5 px-2.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            title="Acercar zoom"
-          >
-            <ZoomIn className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onUpdate({ rotate: 0, scale: 1, posX: 0, posY: 0 })}
-            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-semibold text-zinc-500 hover:text-zinc-950 dark:hover:text-white border border-zinc-200/80 dark:border-zinc-700 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-            title="Restablecer posición, escala y ángulo"
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> Reset
+            <RefreshCw className="w-3 h-3" />
+            <span>Restablecer</span>
           </button>
         </div>
       </div>
