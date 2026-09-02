@@ -786,9 +786,9 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Column: Aspirational Client-First Visual Showcase */}
-        <div className="lg:col-span-5 relative bg-zinc-900 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
-          {/* High-Resolution Background Photography */}
+        {/* Right Column: Aspirational Client-First Visual Showcase with Necto Brand Identity */}
+        <div className="lg:col-span-5 relative bg-gradient-to-br from-[#190088] via-[#FF3F1A]/90 to-[#FF3F1A] text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
+          {/* High-Resolution Background Photography with Brand Blend */}
           <img
             src={
               step === 1
@@ -798,28 +798,30 @@ export default function OnboardingPage() {
                 : "/onboarding-restaurant.jpg"
             }
             alt={activeArchetype.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-85 dark:opacity-80 transition-all duration-700 scale-100"
+            className="absolute inset-0 w-full h-full object-cover opacity-45 mix-blend-overlay transition-all duration-700 scale-100"
           />
 
-          {/* Balanced Gradient Overlay: keeping photo bright and colorful while ensuring text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/30" />
+          {/* Warm Necto Orange & Deep Blue Atmospheric Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#190088]/95 via-[#190088]/40 to-[#FF3F1A]/30" />
+          <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-[#FF3F1A]/40 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-[#190088]/60 blur-3xl pointer-events-none" />
 
           {/* Top Brand & Trust Badge */}
           <div className="relative z-10 flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-xs font-medium">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-bold shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#EFE6D3]" />
               <span>Plataforma Todo-en-Uno</span>
             </div>
 
-            <span className="text-[11px] font-mono text-white/90 uppercase tracking-wider px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10">
-              Necto Business
+            <span className="text-[11px] font-mono text-[#EFE6D3] uppercase tracking-wider px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 font-bold">
+              Necto Core
             </span>
           </div>
 
           {/* Center Value Content */}
           <div className="relative z-10 space-y-6 my-auto py-8">
             <div className="space-y-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30 inline-block">
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#EFE6D3] px-3 py-1 rounded-lg bg-white/15 backdrop-blur-md border border-white/25 inline-block shadow-sm">
                 {step === 1
                   ? activeArchetype.title
                   : step === 2
@@ -827,7 +829,7 @@ export default function OnboardingPage() {
                   : "Operaciones Inteligentes"}
               </span>
 
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight drop-shadow-md">
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight drop-shadow-md">
                 {step === 1
                   ? `La forma más simple y potente de gestionar ${companyName.trim() || "tu negocio"}.`
                   : step === 2
@@ -835,7 +837,7 @@ export default function OnboardingPage() {
                   : "Todo tu negocio sincronizado en un solo lugar."}
               </h2>
 
-              <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed max-w-md drop-shadow-sm">
+              <p className="text-xs sm:text-sm text-white/90 leading-relaxed max-w-md drop-shadow-sm font-medium">
                 {step === 1
                   ? activeArchetype.tagline
                   : step === 2
@@ -866,27 +868,27 @@ export default function OnboardingPage() {
               ).map((benefit, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/20 text-xs text-white shadow-sm"
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-xs text-white shadow-md transition-all hover:bg-white/20"
                 >
-                  <div className="w-5 h-5 rounded-full bg-[#FF3F1A] text-white flex items-center justify-center flex-none">
-                    <Check className="w-3 h-3 stroke-[3]" />
+                  <div className="w-5 h-5 rounded-full bg-white text-[#190088] flex items-center justify-center flex-none font-bold shadow-xs">
+                    <Check className="w-3.5 h-3.5 stroke-[3] text-[#190088]" />
                   </div>
-                  <span className="font-medium">{benefit}</span>
+                  <span className="font-semibold text-white leading-tight">{benefit}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Bottom Social Proof Card */}
-          <div className="relative z-10 p-4 rounded-2xl bg-black/70 backdrop-blur-md border border-white/20 flex items-center gap-3.5 shadow-lg">
-            <div className="w-10 h-10 rounded-xl bg-white text-zinc-950 flex items-center justify-center font-bold text-sm flex-none shadow-sm">
+          <div className="relative z-10 p-4 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center gap-3.5 shadow-xl">
+            <div className="w-10 h-10 rounded-xl bg-white text-[#190088] flex items-center justify-center font-black text-sm flex-none shadow-md">
               {companyName ? companyName.charAt(0).toUpperCase() : "N"}
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-white">
                 {companyName.trim() || "Tu nuevo espacio en Necto"}
               </p>
-              <p className="text-[11px] text-zinc-300">
+              <p className="text-[11px] text-[#EFE6D3] font-medium">
                 {country} · {selectedModules.length} módulos listos para usar
               </p>
             </div>
