@@ -1845,9 +1845,156 @@ export const BusinessSettingsModal: React.FC<{
                           placeholder="310 987 6543"
                         />
                         <Field
-            )}
+                          label="Número Daviplata"
+                          labelStyle="bold"
+                          intent="bot.daviplata"
+                          type="text"
+                          value={daviplataNumber}
+                          onChange={e => setDaviplataNumber(e.target.value)}
+                          placeholder="310 987 6543"
+                        />
+                      </div>
 
-            {/* TAB 4: MÓDULOS OPERATIVOS */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="sm:col-span-1">
+                          <Field
+                            label="Cuenta Bancolombia"
+                            labelStyle="bold"
+                            intent="bot.bancolombia"
+                            type="text"
+                            value={bancolombiaAccount}
+                            onChange={e => setBancolombiaAccount(e.target.value)}
+                            placeholder="104-892134-55"
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <Field
+                            label="Titular de la Cuenta"
+                            labelStyle="bold"
+                            intent="bot.holder"
+                            type="text"
+                            value={accountHolder}
+                            onChange={e => setAccountHolder(e.target.value)}
+                            placeholder="Necto Gourmet S.A.S"
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <Field
+                            label="NIT / Cédula"
+                            labelStyle="bold"
+                            intent="bot.nit"
+                            type="text"
+                            value={accountNit}
+                            onChange={e => setAccountNit(e.target.value)}
+                            placeholder="901.458.789-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Métodos de Pago en Sitio / Contra Entrega */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                      <Banknote className="w-4 h-4 text-emerald-600" />
+                      <span>Métodos de Pago Físicos & Contra Entrega</span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Opciones disponibles para comensales que reciben pedidos a domicilio o en mostrador.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                          <Coins className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Efectivo Contra Entrega</span>
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                          El cliente paga al recibir el pedido.
+                        </p>
+                      </div>
+                      <Toggle
+                        intent="payment.cash.toggle"
+                        checked={allowCashOnDelivery}
+                        onChange={setAllowCashOnDelivery}
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5 text-blue-500" />
+                          <span>Datáfono Móvil en Domicilio</span>
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                          El domiciliario lleva datáfono para tarjeta.
+                        </p>
+                      </div>
+                      <Toggle
+                        intent="payment.pos.toggle"
+                        checked={allowCardTerminal}
+                        onChange={setAllowCardTerminal}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Plantilla de Instrucciones de Pago */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-[#00A884]" />
+                        <span>Mensaje de Cobro Automático para WhatsApp</span>
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        Plantilla con variables dinámicas que el bot envía al seleccionar pago por transferencia.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPaymentInfoMessage(
+                          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido en cocina.`
+                        )
+                      }
+                      className="text-[10px] font-bold text-[#190088] dark:text-blue-400 hover:underline flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Restablecer formato</span>
+                    </button>
+                  </div>
+
+                  <Textarea
+                    intent="bot.payment.text"
+                    rows={4}
+                    value={paymentInfoMessage}
+                    onChange={e => setPaymentInfoMessage(e.target.value)}
+                    placeholder="Instrucciones con {nequi}, {bancolombia}, {titular}, {nit}..."
+                  />
+
+                  {/* Vista Previa Interactiva */}
+                  <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 space-y-1.5">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>Vista Previa del Mensaje en WhatsApp:</span>
+                    </span>
+                    <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200 whitespace-pre-line leading-relaxed bg-white dark:bg-zinc-900 p-3 rounded-xl border border-emerald-100 dark:border-emerald-950/60">
+                      {paymentInfoMessage
+                        .replace("{nequi}", nequiNumber)
+                        .replace("{bancolombia}", bancolombiaAccount)
+                        .replace("{titular}", accountHolder)
+                        .replace("{nit}", accountNit)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === "modules" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
