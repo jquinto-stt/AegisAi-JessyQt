@@ -557,9 +557,11 @@ function Sidebar({
                 title="Expandir barra lateral"
                 className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] flex items-center justify-center shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group flex-none"
               >
-                <span className="font-black text-xl text-[#FF3F1A] tracking-tighter group-hover:scale-110 transition-transform">
-                  N
-                </span>
+                <NectoLogo
+                  iconOnly
+                  size="sm"
+                  className="group-hover:scale-110 transition-transform"
+                />
               </button>
             </div>
           )}

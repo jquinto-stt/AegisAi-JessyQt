@@ -6,6 +6,47 @@ export interface NectoLogoProps {
   className?: string;
   style?: React.CSSProperties;
   inline?: boolean;
+  iconOnly?: boolean;
+}
+
+export interface NectoIsotypeProps {
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export function NectoIsotype({
+  size = "md",
+  className = "",
+  style,
+}: NectoIsotypeProps) {
+  const dims = {
+    xs: "w-5 h-5",
+    sm: "w-6 h-6",
+    md: "w-8 h-8",
+    lg: "w-10 h-10",
+    xl: "w-12 h-12",
+  }[size];
+
+  return (
+    <div className={`relative ${dims} select-none flex-none ${className}`} style={style}>
+      <svg
+        className="block w-full h-full"
+        fill="none"
+        viewBox="0 0 50 50.3601"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <g id="NectoIsotype">
+          <path d={svgPaths.p31604a80} fill="#FF3F1A" />
+          <path
+            d={svgPaths.p1b22ab80}
+            className="fill-[#190088]"
+            fill="#190088"
+          />
+        </g>
+      </svg>
+    </div>
+  );
 }
 
 export function NectoLogo({
@@ -13,7 +54,12 @@ export function NectoLogo({
   className = "",
   style,
   inline = false,
+  iconOnly = false,
 }: NectoLogoProps) {
+  if (iconOnly) {
+    return <NectoIsotype size={size} className={className} style={style} />;
+  }
+
   if (inline) {
     const mainWidths = { xs: "w-20", sm: "w-24", md: "w-32", lg: "w-40" };
     const subWidths = { xs: "w-12", sm: "w-14", md: "w-18", lg: "w-22" };
