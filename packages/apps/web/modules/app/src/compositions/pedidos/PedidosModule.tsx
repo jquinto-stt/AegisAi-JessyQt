@@ -25,7 +25,7 @@ import {
   LayoutPreferences,
 } from "./shared/CustomLayoutModal";
 import {
-  Zap,
+  Activity,
   ShoppingBag,
   ChefHat,
   Layers,
@@ -33,6 +33,7 @@ import {
   Users,
   BarChart2,
   Shield,
+  SlidersHorizontal,
   ShieldAlert,
   History,
   Volume2,
@@ -159,7 +160,7 @@ const PedidosContent: React.FC<{
                   : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
               }`}
             >
-              <Zap className={`w-3.5 h-3.5 ${section === "operacion" ? "text-white" : "text-[#FF3F1A]"}`} />
+              <Activity className={`w-3.5 h-3.5 ${section === "operacion" ? "text-white" : "text-[#FF3F1A]"}`} />
               <span>Operación</span>
               {newOrdersCount + pendingConversationsCount > 0 && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${section === "operacion" ? "bg-white text-[#190088]" : "bg-[#FF3F1A] text-white"}`}>
@@ -327,7 +328,7 @@ const PedidosContent: React.FC<{
             <>
               {[
                 { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="w-3.5 h-3.5 flex-none" /> },
-                { id: "automatizaciones" as GestionTab, label: "Automatizaciones & WhatsApp IA", icon: <Zap className="w-3.5 h-3.5 flex-none" /> },
+                { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="w-3.5 h-3.5 flex-none" /> },
                 { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="w-3.5 h-3.5 flex-none" /> },
               ].map(tab => (
                 <Button

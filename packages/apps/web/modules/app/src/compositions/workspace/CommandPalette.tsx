@@ -7,7 +7,7 @@ import {
   Building2,
   Plus,
   LayoutGrid,
-  Zap,
+  SlidersHorizontal,
   ShoppingBag,
   Flame,
   BarChart3,
@@ -178,9 +178,9 @@ export const CommandPalette: React.FC = () => {
     {
       id: "mod-automatizaciones",
       category: "Acceso Rápido a Módulos",
-      title: "Automatizaciones & WhatsApp IA",
-      subtitle: "Reglas automáticas de despacho y respuestas con IA",
-      icon: <Zap className="w-4 h-4 text-yellow-500" />,
+      title: "Automatizaciones & Reglas WhatsApp",
+      subtitle: "Reglas de despacho automático y atención configurada",
+      icon: <SlidersHorizontal className="w-4 h-4 text-orange-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/?section=configuracion&tab=automatizaciones");

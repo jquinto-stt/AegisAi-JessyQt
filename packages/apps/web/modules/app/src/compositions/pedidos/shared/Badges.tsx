@@ -1,22 +1,23 @@
 import React from "react";
 import { OrderStatus, UrgencyLevel, OrderChannel, AIConfidence, ConversationStatus, HandoffReason } from "../types";
 import {
-  Sparkles,
+  ShoppingBag,
   Clock,
   CheckCircle,
   ChefHat,
   XCircle,
   AlertTriangle,
   MessageSquare,
+  MessageSquareText,
   Globe,
   Store,
   Phone,
   CheckCircle2,
   Flame,
-  Bot,
   Hand,
   UserCheck,
   HelpCircle,
+  PlusCircle,
 } from "lucide-react";
 
 export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md" }> = ({
@@ -32,7 +33,7 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
       bg: "bg-zinc-100 dark:bg-zinc-800",
       text: "text-zinc-900 dark:text-zinc-100",
       border: "border-zinc-200 dark:border-zinc-700",
-      icon: <Sparkles className="w-3 h-3 text-[#FF3F1A]" />,
+      icon: <ShoppingBag className="w-3 h-3 text-[#FF3F1A]" />,
     },
     CONFIRMADO: {
       label: "Confirmado",
@@ -161,11 +162,11 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
     { label: string; bg: string; text: string; border: string; icon: React.ReactNode; pulse?: boolean }
   > = {
     IA_ATENDIENDO: {
-      label: "IA atendiendo",
+      label: "Auto-atendiendo",
       bg: "bg-zinc-100 dark:bg-zinc-800",
       text: "text-zinc-700 dark:text-zinc-300",
       border: "border-zinc-200 dark:border-zinc-700",
-      icon: <Bot className="w-3 h-3 text-[#FF3F1A]" />,
+      icon: <MessageSquare className="w-3 h-3 text-[#008069]" />,
     },
     REQUIERE_INTERVENCION: {
       label: "Requiere intervención",
@@ -176,7 +177,7 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
       pulse: true,
     },
     HUMANO_ATENDIENDO: {
-      label: "Humano atendiendo",
+      label: "Operador en vivo",
       bg: "bg-zinc-950 dark:bg-white",
       text: "text-white dark:text-zinc-950",
       border: "border-zinc-950 dark:border-white",
@@ -211,9 +212,9 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
  */
 export const ConversationStatusDot: React.FC<{ status: ConversationStatus }> = ({ status }) => {
   const configs: Record<ConversationStatus, { label: string; dot: string; text: string; pulse?: boolean }> = {
-    IA_ATENDIENDO: { label: "IA", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
+    IA_ATENDIENDO: { label: "Auto", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
     REQUIERE_INTERVENCION: { label: "Requiere atención", dot: "bg-[#FF3F1A]", text: "text-[#FF3F1A]", pulse: true },
-    HUMANO_ATENDIENDO: { label: "Humano", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+    HUMANO_ATENDIENDO: { label: "Operador", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
     RESUELTO: { label: "Resuelto", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
   };
   const c = configs[status];
@@ -232,8 +233,8 @@ export const HandoffReasonBadge: React.FC<{ reason: HandoffReason }> = ({ reason
     FUERA_DE_ALCANCE: "Fuera de alcance",
     MODIFICACION_ESPECIAL: "Modificación especial",
     CONFIRMAR_DATO: "Confirmar dato",
-    CLIENTE_PIDE_HUMANO: "Pidió un humano",
-    BAJA_CONFIANZA: "Baja confianza IA",
+    CLIENTE_PIDE_HUMANO: "Pidió un operador",
+    BAJA_CONFIANZA: "Baja confianza",
     VERIFICAR_PAGO_TRANSFERENCIA: "Comprobante Nequi / Bancolombia",
   };
 
@@ -254,10 +255,10 @@ export const AIBadge: React.FC<{ confidence?: AIConfidence; onClick?: (e: any) =
       type="button"
       onClick={onClick}
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-[#FF3F1A] transition-colors cursor-pointer"
-      title="Procesado por Asistente IA"
+      title="Procesado automáticamente vía WhatsApp"
     >
-      <Bot className="w-3 h-3 text-[#FF3F1A]" />
-      <span>IA {confidence ? `· ${confidence}` : ""}</span>
+      <MessageSquareText className="w-3 h-3 text-[#FF3F1A]" />
+      <span>WhatsApp {confidence ? `· ${confidence}` : ""}</span>
     </button>
   );
 };

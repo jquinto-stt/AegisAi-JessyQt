@@ -4,9 +4,8 @@ import { Conversation, ChatMessage } from "../types";
 import {
   Send,
   Lock,
-  Sparkles,
+  MessageSquare,
   ShieldCheck,
-  Bot,
   User,
   CheckCheck,
   Smile,
@@ -19,7 +18,7 @@ import {
   AlertTriangle,
   Smartphone,
   Shield,
-  Zap,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -147,11 +146,11 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                     : "bg-[#D9FDD3] dark:bg-[#005C4B] text-[#111B21] dark:text-[#E9EDEF] rounded-br-xs border-2 border-[#00A884]"
                 }`}
               >
-                {/* Header Tag for Bot and Admin */}
+                {/* Header Tag for Auto and Admin */}
                 {isBot && (
                   <div className="flex items-center gap-1.5 mb-1 pb-1 border-b border-emerald-600/15 text-[10px] font-bold text-[#008069] dark:text-[#25D366]">
-                    <Bot className="w-3.5 h-3.5" />
-                    <span>Bot Asistente IA (WhatsApp)</span>
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Auto-Respuesta (WhatsApp)</span>
                   </div>
                 )}
 
@@ -358,10 +357,10 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
         ) : (
           <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/80 dark:bg-[#2A3942]/80 rounded-xl text-xs text-[#54656F] dark:text-[#AEBAC1]">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#00A884] flex-none" />
+              <MessageSquare className="w-4 h-4 text-[#00A884] flex-none" />
               <span className="text-[11px] font-medium">
                 {isAI
-                  ? "El Bot IA está respondiendo automáticamente. Si el cliente envía comprobante, transferirá a humano."
+                  ? "El canal está respondiendo automáticamente. Si el cliente envía comprobante o solicita ayuda, transferirá al operador."
                   : "Esta conversación requiere atención. Haz clic en 'Tomar Control' para escribir."}
               </span>
             </div>
@@ -412,8 +411,8 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
               }}
               className="font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer inline-flex items-center gap-1"
             >
-              <Bot className="w-3 h-3 inline" />
-              <span>+ Respuesta Bot</span>
+              <MessageSquare className="w-3 h-3 inline" />
+              <span>+ Auto-Respuesta</span>
             </button>
           )}
         </div>

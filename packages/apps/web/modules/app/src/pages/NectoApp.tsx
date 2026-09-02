@@ -8,7 +8,7 @@ import {
   FileText, BarChart2, UserCircle, Bell,
   Shield,
   ShieldAlert, ShoppingBag,
-  ChefHat, Layers, Zap, Menu,
+  ChefHat, Layers, SlidersHorizontal, Activity, Menu,
   Building2,
   MessageSquare
 } from "lucide-react";
@@ -394,7 +394,7 @@ function Sidebar({
         {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
           <div className="flex flex-col gap-1">
             <SectionHeader
-              icon={<Zap className="w-4 h-4" />}
+              icon={<Activity className="w-4 h-4" />}
               label="Operación"
               section="operacion"
               active={activeModule === "pedidos" && pedidosSection === "operacion"}
@@ -501,8 +501,8 @@ function Sidebar({
                 )}
                 {canAccess("canViewAutomatizaciones") && (
                   <NavItem
-                    icon={<Zap className="w-4 h-4" />}
-                    label="Automatizaciones & IA"
+                    icon={<SlidersHorizontal className="w-4 h-4" />}
+                    label="Automatizaciones"
                     active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
                     onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
                     indent

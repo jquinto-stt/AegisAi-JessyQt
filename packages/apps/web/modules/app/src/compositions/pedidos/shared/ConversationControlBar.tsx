@@ -148,8 +148,8 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
                 onClick={() => releaseToAI(conversation.id)}
                 className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
               >
-                <Bot className="w-3.5 h-3.5" />
-                <span>Devolver al Bot IA</span>
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Reanudar Auto-Respuesta</span>
               </button>
 
               <button
@@ -165,8 +165,8 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
 
           {conversation.status === "IA_ATENDIENDO" && (
             <span className="flex items-center gap-1.5 text-[#008069] dark:text-[#00A884] font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 text-[11px]">
-              <Bot className="w-3.5 h-3.5" />
-              <span>Bot IA respondiendo en automático</span>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Canal en Auto-Respuesta WhatsApp</span>
             </span>
           )}
         </div>

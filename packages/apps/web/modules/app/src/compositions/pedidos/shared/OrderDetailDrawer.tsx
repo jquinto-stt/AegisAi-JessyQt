@@ -10,7 +10,7 @@ import {
   ChefHat,
   CheckCircle2,
   Check,
-  Sparkles,
+  MessageSquareText,
   History,
   Minus,
   Plus,
@@ -21,7 +21,6 @@ import {
   Truck,
   Printer,
   ExternalLink,
-  Zap,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -198,14 +197,14 @@ export const OrderDetailDrawer: React.FC = () => {
             </div>
           )}
 
-          {/* AI Banner if Origin IA */}
+          {/* Origin Banner */}
           {order.isAIOrigin && (
             <div className="bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 rounded-3xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                  <MessageSquareText className="w-3.5 h-3.5 text-[#FF3F1A]" />
                   <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
-                    Interpretación Necto IA · Confianza {order.aiConfidence}
+                    Recepción WhatsApp Cloud · Confianza {order.aiConfidence}
                   </span>
                 </div>
                 <Button
@@ -448,8 +447,8 @@ export const OrderDetailDrawer: React.FC = () => {
               }}
               className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#FF3F1A] hover:bg-[#e03715] text-white font-bold"
             >
-              <Zap className="w-4 h-4" />
-              <span>Activar Pedido en Cocina (Pasar a En Vivo)</span>
+              <ChefHat className="w-4 h-4" />
+              <span>Enviar a Cocina KDS (Pasar a En Vivo)</span>
             </Button>
           )}
 
