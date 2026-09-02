@@ -70,7 +70,7 @@ export const Select = ui_dsl<SelectProps>({
         htmlFor={selectId}
         className={className}
       >
-        <span className="text-xs font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+        <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
           {label}
         </span>
         {control}

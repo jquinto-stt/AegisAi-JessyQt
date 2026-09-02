@@ -39,7 +39,7 @@ export const Field = ui_dsl<FieldProps>({
       error,
       hint,
       id,
-      labelStyle = 'mono',
+      labelStyle = 'bold',
       mono = false,
       ...inputProps
     } = props as FieldProps;
@@ -47,9 +47,9 @@ export const Field = ui_dsl<FieldProps>({
     const invalid = Boolean(error);
 
     const labelClass =
-      labelStyle === 'bold'
-        ? 'text-xs font-bold text-zinc-900 dark:text-zinc-100'
-        : 'text-xs font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400';
+      labelStyle === 'mono'
+        ? 'text-xs font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400'
+        : 'text-xs font-bold text-slate-800 dark:text-zinc-200';
 
     return (
       <label

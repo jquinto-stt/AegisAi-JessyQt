@@ -1566,7 +1566,7 @@ export const BusinessSettingsModal: React.FC<{
                 <div className="pt-6 border-t border-red-200/80 dark:border-red-950/60 space-y-3">
                   <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <ShieldAlert className="w-4 h-4" />
-                    <h4 className="text-xs font-bold uppercase tracking-wider">
+                    <h4 className="text-xs font-bold text-red-700 dark:text-red-300">
                       Zona de Eliminación Permanente
                     </h4>
                   </div>
