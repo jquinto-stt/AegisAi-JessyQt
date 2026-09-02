@@ -792,9 +792,9 @@ export default function OnboardingPage() {
           <img
             src={
               step === 2
-                ? "/whatsapp-meta-hero.jpg"
+                ? "/onboarding-whatsapp-orders.jpg"
                 : step === 3
-                ? "/onboarding-operations.jpg"
+                ? "/onboarding-modular-sync.jpg"
                 : activeArchetype.image
             }
             alt={activeArchetype.title}
