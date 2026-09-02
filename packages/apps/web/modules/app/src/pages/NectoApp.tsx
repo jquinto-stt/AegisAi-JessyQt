@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
 
   Home, Eye, Users, Settings, HelpCircle, LogOut,
-  ChevronDown, ChevronRight, X, Mail, Megaphone, Package, Gift,
+  ChevronDown, ChevronRight, ChevronLeft, PanelLeftClose, PanelLeftOpen, X, Mail, Megaphone, Package, Gift,
   FileText, BarChart2, UserCircle, Bell,
   Shield,
   ShieldAlert, ShoppingBag,
@@ -535,9 +535,9 @@ function Sidebar({
                 intent="shell.sidebar.collapse"
                 onClick={() => handleSetCollapsed(true)}
                 title="Colapsar barra lateral"
-                className="p-0 w-7 h-7 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
               >
-                <ChevronRight className="w-4 h-4 rotate-180" />
+                <ChevronLeft className="w-4 h-4 text-zinc-700 dark:text-zinc-200 hover:text-[#FF3F1A]" />
               </Button>
             </>
           ) : (
