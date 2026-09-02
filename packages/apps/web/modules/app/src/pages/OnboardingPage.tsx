@@ -236,20 +236,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#09090B] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
-      {/* Top Navbar */}
+      {/* Top Standard Navigation Header */}
       <header className="h-14 px-4 sm:px-8 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-[#09090B]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            intent="onboarding.back-btn"
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:text-zinc-950 dark:hover:text-white px-3 py-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 cursor-pointer shadow-2xs"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Volver</span>
-          </Button>
-
-          <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
           <NectoLogo size="xs" inline />
         </div>
 
@@ -262,7 +251,7 @@ export default function OnboardingPage() {
           <Button
             variant="outline"
             intent="onboarding.cancel-exit"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/workspaces")}
             className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white border-zinc-200 dark:border-zinc-800 cursor-pointer"
           >
             Cancelar y salir
@@ -743,7 +732,7 @@ export default function OnboardingPage() {
               <Button
                 variant="ghost"
                 intent="onboarding.step.cancel"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate("/workspaces")}
                 className="py-2.5 px-4 text-xs font-bold text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
