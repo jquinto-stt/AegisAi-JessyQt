@@ -58,59 +58,72 @@ import {
   Send,
   MessageCircle,
   Coins,
+  Smile,
+  ChefHat,
+  Skull,
+  TreePine,
+  PartyPopper,
+  Tag,
+  Flame,
 } from "lucide-react";
 import { Button, Field, Select, Textarea, Badge, Toggle } from "@/elements";
 
 const HOLIDAY_PRESETS: Record<
   HolidayTheme,
-  { label: string; icon: string; title: string; defaultMsg: string; accentColor: string }
+  { label: string; icon: React.ComponentType<{ className?: string }>; title: string; defaultMsg: string; accentColor: string; iconColor: string }
 > = {
   none: {
     label: "Estándar (Sin Festividad)",
-    icon: "✨",
+    icon: Sparkles,
     title: "Modo Habitual",
     defaultMsg: "",
     accentColor: "bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300",
+    iconColor: "text-slate-500",
   },
   halloween: {
     label: "Halloween",
-    icon: "🎃",
+    icon: Skull,
     title: "Temporada de Terror & Promos",
     defaultMsg:
-      "¡Boo! 👻 Bienvenido a {negocio}. En esta noche de brujas tenemos promociones monstruosas y combos espeluznantes. ¿Te apetece ver nuestro menú especial de Halloween? 🎃🍔",
+      "Bienvenido a {negocio}. En esta noche de Halloween tenemos promociones especiales y combos de temporada. ¿Deseas consultar nuestra carta?",
     accentColor: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+    iconColor: "text-orange-500",
   },
   navidad: {
     label: "Navidad & Fiestas",
-    icon: "🎄",
+    icon: TreePine,
     title: "Temporada Navideña & Fin de Año",
     defaultMsg:
-      "¡Felices Fiestas! 🎅✨ En {negocio} queremos celebrar la Navidad contigo. Escribe 'menú' para descubrir nuestros combos navideños familiares y postres de temporada. 🎁🍗",
+      "¡Felices Fiestas! En {negocio} preparamos lo mejor para compartir en familia. Escribe 'menú' para descubrir nuestros combos navideños y postres de temporada.",
     accentColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+    iconColor: "text-emerald-500",
   },
   ano_nuevo: {
     label: "Año Nuevo",
-    icon: "🎆",
+    icon: PartyPopper,
     title: "Bienvenida al Nuevo Año",
     defaultMsg:
-      "¡Feliz Año Nuevo! 🥂✨ En {negocio} te deseamos un año lleno de éxitos y buen sabor. ¿Qué se te antoja ordenar hoy para comenzar el año celebrando?",
+      "¡Feliz Año Nuevo! En {negocio} te deseamos un año lleno de éxitos y buen sabor. ¿Qué deseas ordenar hoy para comenzar el año celebrando?",
     accentColor: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    iconColor: "text-amber-500",
   },
   black_friday: {
     label: "Black Friday / Sale",
-    icon: "🔥",
+    icon: Tag,
     title: "Descuentos & Ofertas Flash",
     defaultMsg:
-      "¡Llegó el Black Friday a {negocio}! 🔥🏷️ Aprovecha hasta 30% OFF en platos y combos seleccionados por tiempo limitado. Escribe 'promos' para ver las ofertas activas hoy.",
+      "¡Llegó el Black Friday a {negocio}! Aprovecha hasta 30% OFF en platos y combos seleccionados por tiempo limitado. Escribe 'promos' para ver las ofertas activas.",
     accentColor: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+    iconColor: "text-rose-500",
   },
   san_valentin: {
     label: "Amor & Amistad / San Valentín",
-    icon: "💖",
+    icon: Heart,
     title: "Especial Parejas & Amigos",
     defaultMsg:
-      "¡Celebra el amor y la buena comida en {negocio}! 💖 Disfruta de nuestros combos para compartir en pareja o con amigos. ¿Deseas ver nuestra carta especial de enamorados? 🍷✨",
+      "Celebra el amor y la buena comida en {negocio}. Disfruta de nuestros combos para compartir en pareja o con amigos. ¿Deseas ver nuestra carta especial?",
     accentColor: "bg-pink-500/10 text-pink-600 border-pink-500/20",
+    iconColor: "text-pink-500",
   },
 };
 
@@ -119,35 +132,40 @@ const BOT_PERSONALITY_OPTIONS: Array<{
   title: string;
   tag: string;
   desc: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
 }> = [
   {
     id: "amigable",
     title: "Amigable & Cálido",
     tag: "Recomendado",
-    desc: "Usa emojis, tono cercano y amable como un anfitrión acogedor.",
-    icon: "😊",
+    desc: "Tono cercano, educado y amable como un anfitrión acogedor.",
+    icon: Smile,
+    iconColor: "text-amber-500",
   },
   {
     id: "ejecutivo",
     title: "Ejecutivo & Rápido",
     tag: "Corporativo",
     desc: "Directo al grano, conciso, ideal para pedidos express y oficinistas.",
-    icon: "⚡",
+    icon: Zap,
+    iconColor: "text-blue-500",
   },
   {
     id: "chef",
     title: "Chef de Autor",
     tag: "Gourmet",
     desc: "Explica ingredientes, maridajes sugeridos y detalles gastronómicos.",
-    icon: "👨‍🍳",
+    icon: ChefHat,
+    iconColor: "text-emerald-500",
   },
   {
     id: "dinamico",
     title: "Dinámico & Juvenil",
     tag: "Casual",
     desc: "Tono relajado y enérgico, perfecto para hamburgueserías, pizzas y cafeterías.",
-    icon: "🚀",
+    icon: Flame,
+    iconColor: "text-[#FF3F1A]",
   },
 ];
 
@@ -1456,19 +1474,22 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                     {BOT_PERSONALITY_OPTIONS.map(opt => {
                       const isSelected = botPersonality === opt.id;
+                      const Icon = opt.icon;
                       return (
                         <div
                           key={opt.id}
                           onClick={() => setBotPersonality(opt.id)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
                             isSelected
                               ? "bg-[#190088]/5 dark:bg-[#190088]/25 border-[#190088] dark:border-[#190088]/70 shadow-xs ring-1 ring-[#190088]/30"
                               : "bg-zinc-50/60 dark:bg-zinc-900/50 border-zinc-200/70 dark:border-zinc-800 hover:border-zinc-300"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg">{opt.icon}</span>
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-none bg-zinc-100 dark:bg-zinc-800 ${opt.iconColor}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
                               <div>
                                 <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
                                   {opt.title}
@@ -1528,6 +1549,7 @@ export const BusinessSettingsModal: React.FC<{
                             if (themeKey === "none") return null;
                             const item = HOLIDAY_PRESETS[themeKey];
                             const isSelected = activeHolidayTheme === themeKey;
+                            const Icon = item.icon;
 
                             return (
                               <button
@@ -1543,7 +1565,7 @@ export const BusinessSettingsModal: React.FC<{
                                     : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100"
                                 }`}
                               >
-                                <span className="text-base">{item.icon}</span>
+                                <Icon className={`w-4 h-4 flex-none ${isSelected ? "text-white" : item.iconColor}`} />
                                 <span className="text-xs font-bold truncate">{item.label}</span>
                               </button>
                             );
