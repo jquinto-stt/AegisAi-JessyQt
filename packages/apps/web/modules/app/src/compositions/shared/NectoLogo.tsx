@@ -249,7 +249,7 @@ export function NectoSidebarLogo({
 }: NectoSidebarLogoProps) {
   return (
     <div
-      className={`flex items-center justify-between w-full select-none transition-all duration-300 ${className}`}
+      className={`flex items-center justify-between w-full select-none transition-all duration-150 ${className}`}
     >
       <button
         type="button"
@@ -261,7 +261,7 @@ export function NectoSidebarLogo({
       >
         {/* Anchor: The 'N' Isotype (Always visible, lead glyph) */}
         <div
-          className={`w-8 h-8 flex items-center justify-center flex-none transition-all duration-300 ${
+          className={`w-8 h-8 flex items-center justify-center flex-none transition-all duration-150 ${
             isCollapsed
               ? "p-1.5 rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-2xs group-hover:border-[#FF3F1A] dark:group-hover:border-[#FF3F1A] group-hover:scale-105 active:scale-95"
               : ""
@@ -286,14 +286,14 @@ export function NectoSidebarLogo({
 
         {/* The Emerging Letters: E, C, T, O sliding out from the N on expansion */}
         <div
-          className={`overflow-hidden flex items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          className={`overflow-hidden flex items-center transition-all duration-200 ease-out ${
             isCollapsed
-              ? "max-w-0 opacity-0 -translate-x-8 scale-90 pointer-events-none"
-              : "max-w-[190px] opacity-100 translate-x-0 scale-100"
+              ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
+              : "max-w-[190px] opacity-100 translate-x-0"
           }`}
         >
           {/* Letters E - C - T - O */}
-          <div className="relative w-[84px] h-6 flex-none transition-transform duration-500">
+          <div className="relative w-[84px] h-6 flex-none transition-transform duration-200">
             <svg
               className="block w-full h-full"
               fill="none"
@@ -310,7 +310,7 @@ export function NectoSidebarLogo({
           </div>
 
           {/* Secondary Wordmark Tag */}
-          <div className="relative w-11 h-4 ml-1.5 flex-none transition-all duration-500 delay-75">
+          <div className="relative w-11 h-4 ml-1.5 flex-none transition-all duration-200 delay-[50ms]">
             <svg
               className="block w-full h-full"
               fill="none"
