@@ -179,7 +179,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
           <Button
             variant="primary"
             intent="franchise.create.open"
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => navigate("/onboarding")}
             className="py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
@@ -347,14 +347,6 @@ export const GlobalFranchiseOverview: React.FC = () => {
           onClose={() => setSelectedBusinessForSettings(null)}
         />
       )}
-
-      {/* Business Settings Modal (Create Mode) */}
-      <BusinessSettingsModal
-        business={null}
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        isCreateMode={true}
-      />
     </div>
   );
 };
