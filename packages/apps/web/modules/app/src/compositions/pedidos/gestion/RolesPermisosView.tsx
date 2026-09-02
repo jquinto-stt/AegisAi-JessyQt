@@ -368,7 +368,7 @@ export const RolesPermisosView: React.FC = () => {
       items: [
         {
           key: "canViewBandeja" as keyof RolePermissions,
-          label: "Bandeja Unificada de Pedidos",
+          label: "Pedidos en Vivo (Monitor Operativo)",
           desc: "Acceso omnicanal a comandas por WhatsApp, Web y Mostrador.",
         },
         {

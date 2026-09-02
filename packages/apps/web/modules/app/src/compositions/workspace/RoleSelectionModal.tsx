@@ -166,7 +166,7 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
                       <div className="flex items-center gap-1.5 pt-1 flex-wrap">
                         {role.permissions.canViewBandeja && (
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                            Bandeja Pedidos
+                            Pedidos en Vivo
                           </span>
                         )}
                         {role.permissions.canViewKDS && (

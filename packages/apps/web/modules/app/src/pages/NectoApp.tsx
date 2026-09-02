@@ -405,7 +405,7 @@ function Sidebar({
                 {canAccess("canViewBandeja") && (
                   <NavItem
                     icon={<ShoppingBag className="w-4 h-4" />}
-                    label="Bandeja Unificada"
+                    label="Pedidos en Vivo"
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
                     onClick={() => onNavigatePedidos("operacion", "en-vivo")}
                     indent

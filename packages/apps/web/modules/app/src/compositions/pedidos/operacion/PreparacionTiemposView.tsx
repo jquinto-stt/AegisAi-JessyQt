@@ -311,7 +311,7 @@ export const PreparacionTiemposView: React.FC<{
                 </Badge>
               </div>
               <p className="text-xs text-zinc-400 font-medium">
-                Comandas en preparación activa sincronizadas con la Bandeja Unificada
+                Comandas en preparación activa sincronizadas con los Pedidos en Vivo
               </p>
             </div>
           </div>
