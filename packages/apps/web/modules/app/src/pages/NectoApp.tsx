@@ -886,10 +886,10 @@ export default function App() {
           onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
-        {/* Right Column: Independent Separated Navbar + Separated Content Screen */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3 min-h-[calc(100vh-24px)]">
-          {/* Top Bar Floating Card (Separated) */}
-          <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:rounded-2xl rounded-xl shadow-xs transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] flex-none sticky top-1.5 sm:top-3 z-20">
+        {/* Right Column: Fixed Top Navbar + Independently Scrolling Content Screen */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3 lg:h-[calc(100vh-24px)] lg:sticky lg:top-3 lg:self-start">
+          {/* Top Bar Floating Card (Permanently Fixed at Top) */}
+          <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:rounded-2xl rounded-xl shadow-xs transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] flex-none sticky top-1.5 sm:top-3 lg:static z-20">
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Mobile Menu Toggle Button */}
               <Button
@@ -935,9 +935,9 @@ export default function App() {
             </div>
           </header>
 
-          {/* Main Content Screen Floating Card (Separated) */}
-          <main className="flex-1 min-w-0 sm:rounded-2xl rounded-xl shadow-xs overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
-            <div className="flex-1 overflow-auto">
+          {/* Main Content Screen Floating Card (Independently Scrolling) */}
+          <main className="flex-1 min-w-0 min-h-0 sm:rounded-2xl rounded-xl shadow-xs overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
               <PedidosModule
                 sectionProp={activeModule === "inventarios" ? "gestion" : pedidosSection}
                 opTabProp={pedidosOpTab}
