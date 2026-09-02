@@ -153,14 +153,14 @@ const PedidosContent: React.FC<{
               onClick={() => handleSectionSwitch("operacion")}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "operacion"
-                  ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#212121] dark:hover:text-white"
+                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
               }`}
             >
-              <Zap className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <Zap className={`w-3.5 h-3.5 ${section === "operacion" ? "text-white" : "text-[#FF3F1A]"}`} />
               <span>Operación</span>
               {newOrdersCount + pendingConversationsCount > 0 && (
-                <span className="text-[10px] bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full font-bold">
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${section === "operacion" ? "bg-white text-[#190088]" : "bg-[#FF3F1A] text-white"}`}>
                   {newOrdersCount + pendingConversationsCount}
                 </span>
               )}
@@ -172,11 +172,11 @@ const PedidosContent: React.FC<{
               onClick={() => handleSectionSwitch("menu")}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "menu"
-                  ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#212121] dark:hover:text-white"
+                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-zinc-400" />
+              <Layers className="w-3.5 h-3.5" />
               <span>Menú & Stock</span>
             </Button>
 
@@ -186,11 +186,11 @@ const PedidosContent: React.FC<{
               onClick={() => handleSectionSwitch("configuracion")}
               className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "configuracion"
-                  ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#212121] dark:hover:text-white"
+                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
               }`}
             >
-              <Users className="w-3.5 h-3.5 text-zinc-400" />
+              <Users className="w-3.5 h-3.5" />
               <span>Configuración</span>
             </Button>
           </div>
@@ -220,7 +220,7 @@ const PedidosContent: React.FC<{
                 className={`py-2 px-3.5 text-xs flex-none ${
                   activeIncCount > 0
                     ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
-                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-zinc-100"
+                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-zinc-100 hover:border-[#190088] hover:text-[#190088]"
                 }`}
               >
                 <ShieldAlert className={`w-4 h-4 ${activeIncCount > 0 ? "text-[#FF3F1A]" : "text-zinc-400"}`} />
@@ -268,8 +268,8 @@ const PedidosContent: React.FC<{
                   onClick={() => handleOpTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     opTab === tab.id
-                      ? "bg-white text-[#212121] dark:bg-zinc-900 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-2xs"
-                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
                   }`}
                 >
                   {tab.icon}
@@ -278,7 +278,7 @@ const PedidosContent: React.FC<{
                     <span
                       className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
                         opTab === tab.id
-                          ? "bg-zinc-100 dark:bg-zinc-800 text-[#212121] dark:text-zinc-200"
+                          ? "bg-white/20 text-white"
                           : "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                       }`}
                     >
@@ -286,7 +286,7 @@ const PedidosContent: React.FC<{
                     </span>
                   )}
                   {tab.highlightBadge && (
-                    <span className="text-[10px] bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full font-bold animate-pulse">
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse ${opTab === tab.id ? "bg-white text-[#190088]" : "bg-[#FF3F1A] text-white"}`}>
                       {tab.highlightBadge}
                     </span>
                   )}
@@ -309,8 +309,8 @@ const PedidosContent: React.FC<{
                   onClick={() => handleGeTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-800"
+                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
                   }`}
                 >
                   {tab.icon}
@@ -335,8 +335,8 @@ const PedidosContent: React.FC<{
                   onClick={() => handleGeTabSwitch(tab.id)}
                   className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
-                      ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-800"
+                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
                   }`}
                 >
                   {tab.icon}
