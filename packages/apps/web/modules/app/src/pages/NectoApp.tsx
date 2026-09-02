@@ -16,6 +16,7 @@ import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
 import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
+import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
@@ -79,14 +80,14 @@ function NotificationBellDropdown({
         variant="ghost"
         intent="shell.notifications.toggle"
         onClick={() => setOpen(!open)}
-        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-500 transition-colors hover:bg-slate-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-colors hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
         title="Notificaciones de Necto IA"
       >
-        <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+        <Bell className="w-6 h-6 sm:w-6.5 sm:h-6.5 text-gray-700 dark:text-gray-200 stroke-[2.2]" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+          <span className="absolute top-1 right-1 flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#FF3F1A]"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF3F1A] border-2 border-white dark:border-gray-900"></span>
           </span>
         )}
       </Button>
@@ -934,8 +935,6 @@ export default function App() {
 
               <div className="flex items-center gap-2 sm:gap-2.5">
                 <div className="hidden sm:block"><GlobalSearchButton /></div>
-                <div className="hidden sm:block"><BusinessSwitcher /></div>
-
 
                 <NotificationBellDropdown
                   notifications={notifications}
@@ -944,6 +943,8 @@ export default function App() {
                 />
 
                 <ThemeToggle />
+
+                <UserProfileDropdown />
               </div>
 
             </div>
