@@ -9,7 +9,8 @@ import {
   Shield,
   ShieldAlert, ShoppingBag,
   ChefHat, Layers, Zap, Menu,
-  Building2
+  Building2,
+  MessageSquare
 } from "lucide-react";
 
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
@@ -418,6 +419,16 @@ function Sidebar({
                     label="KDS Cocina"
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
                     onClick={() => onNavigatePedidos("operacion", "preparacion")}
+                    indent
+                    isMobile={isMobile}
+                  />
+                )}
+                {canAccess("canViewBandeja") && (
+                  <NavItem
+                    icon={<MessageSquare className="w-4 h-4" />}
+                    label="Atención al Cliente"
+                    active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "conversaciones"}
+                    onClick={() => onNavigatePedidos("operacion", "conversaciones")}
                     indent
                     isMobile={isMobile}
                   />
