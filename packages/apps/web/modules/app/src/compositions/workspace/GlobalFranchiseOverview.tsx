@@ -102,6 +102,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
               ↑12%
             </span>
           </div>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Ingresos consolidados de todas las sedes hoy</p>
         </div>
 
         {/* Metric 2: Tasa de Conversión / Pedidos Despachados */}
@@ -123,6 +124,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
               ↑0.5%
             </span>
           </div>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Órdenes completadas y entregadas en el día</p>
         </div>
 
         {/* Metric 3: ROI / Ticket Promedio */}
@@ -144,6 +146,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
               ↑18%
             </span>
           </div>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Promedio de gasto por cliente por pedido</p>
         </div>
 
         {/* Metric 4: Tasa de Crecimiento */}
@@ -165,6 +168,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
               ↑2%
             </span>
           </div>
+          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Variación de ingresos vs. el mes anterior</p>
         </div>
       </div>
 
