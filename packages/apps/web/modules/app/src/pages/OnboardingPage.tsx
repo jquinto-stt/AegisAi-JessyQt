@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness, NectoModuleKey, BusinessType, BusinessIconKey } from "../context/BusinessContext";
-import { NectoLogo } from "../compositions/shared/NectoLogo";
+import { NectoLogo, NectoIsotype } from "../compositions/shared/NectoLogo";
 import { Button, Badge } from "@/elements";
 import {
   Users,
@@ -869,8 +869,14 @@ export default function OnboardingPage() {
 
           {/* Bottom Social Proof Card */}
           <div className="relative z-10 p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 flex items-center gap-3.5 shadow-xl">
-            <div className="w-10 h-10 rounded-xl bg-white text-[#FF3F1A] flex items-center justify-center font-black text-sm flex-none shadow-md">
-              {companyName ? companyName.charAt(0).toUpperCase() : "N"}
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-none shadow-md overflow-hidden p-1.5">
+              {companyName ? (
+                <span className="font-black text-sm text-[#FF3F1A]">
+                  {companyName.charAt(0).toUpperCase()}
+                </span>
+              ) : (
+                <NectoIsotype size="sm" />
+              )}
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-white">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { NectoIsotype } from '../compositions/shared/NectoLogo';
 import { Zap, CheckCircle2 } from 'lucide-react';
 
 export default function Register() {
@@ -80,8 +81,8 @@ export default function Register() {
   return (
     <div className="auth-container">
       <div className="auth-header">
-        <span className="brand-badge inline-flex items-center gap-1">
-          <Zap className="w-3.5 h-3.5 text-[#FF3F1A]" />
+        <span className="brand-badge inline-flex items-center gap-1.5">
+          <NectoIsotype size="xs" />
           <span>Necto Cloud</span>
         </span>
         <h2>Create Account</h2>
