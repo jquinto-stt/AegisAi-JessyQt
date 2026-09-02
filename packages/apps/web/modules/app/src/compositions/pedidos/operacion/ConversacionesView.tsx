@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { Conversation, ConversationStatus } from "../types";
 import { ConversationThread } from "../shared/ConversationThread";
@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Phone,
   Tag,
+  ArrowLeft,
 } from "lucide-react";
 
 type StatusFilter = "todas" | "intervencion" | "humano" | "ia" | "resueltas";
@@ -71,6 +72,10 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
     if (conv.unreadForOperator) markConversationRead(conv.id);
   };
 
+  const handleMobileBack = useCallback(() => {
+    setSelectedConversationId(null);
+  }, [setSelectedConversationId]);
+
   return (
     <div
       className={`flex h-[calc(100vh-140px)] min-h-[580px] w-full ${
@@ -79,8 +84,8 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
           : "rounded-3xl shadow-xl border border-zinc-200/90 dark:border-zinc-800"
       } bg-[#F0F2F5] dark:bg-[#111B21] animate-fade-in overflow-hidden`}
     >
-      {/* Left Panel: WhatsApp Business Chats Sidebar */}
-      <div className="flex flex-col w-full sm:w-[340px] md:w-[380px] lg:w-[410px] flex-none min-h-0 h-full bg-white dark:bg-[#111B21] border-r border-zinc-200 dark:border-[#222E35] overflow-hidden">
+      {/* Left Panel: WhatsApp Business Chats Sidebar — hidden on mobile when chat is open */}
+      <div className={`flex flex-col w-full sm:w-[340px] md:w-[380px] lg:w-[410px] flex-none min-h-0 h-full bg-white dark:bg-[#111B21] border-r border-zinc-200 dark:border-[#222E35] overflow-hidden ${selected ? 'hidden sm:flex' : 'flex'}`}>
         {/* WhatsApp Business Top Header */}
         <div className="flex-none px-4 py-3 bg-[#F0F2F5] dark:bg-[#202C33] flex items-center justify-between border-b border-zinc-200 dark:border-[#222E35]">
           <div className="flex items-center gap-3">
@@ -288,10 +293,29 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
         </div>
       </div>
 
-      {/* Right Panel: WhatsApp Active Chat Thread + Control Header */}
-      <div className="flex-1 min-w-0 min-h-0 h-full bg-[#EAE6DF] dark:bg-[#0B141A] flex flex-col relative overflow-hidden">
+      {/* Right Panel: WhatsApp Active Chat Thread + Control Header — on mobile, shown fullscreen when selected */}
+      <div className={`flex-1 min-w-0 min-h-0 h-full bg-[#EAE6DF] dark:bg-[#0B141A] flex flex-col relative overflow-hidden ${selected ? 'flex' : 'hidden sm:flex'}`}>
         {selected ? (
           <>
+            {/* Mobile back button */}
+            <div className="sm:hidden flex items-center gap-2 px-3 py-2.5 bg-[#008069] text-white flex-none">
+              <button
+                type="button"
+                onClick={handleMobileBack}
+                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors cursor-pointer"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center flex-none">
+                  <User className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-sm font-bold truncate">{selected.customerName}</h4>
+                  <p className="text-[10px] opacity-80">{selected.customerPhone}</p>
+                </div>
+              </div>
+            </div>
             <ConversationControlBar conversation={selected} />
             <ConversationThread conversation={selected} />
           </>

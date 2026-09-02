@@ -308,13 +308,13 @@ export const PedidosEnVivoView: React.FC<{
       {layoutPrefs.showToolbar ? (
         <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 border border-zinc-200/70 dark:border-zinc-800/80 shadow-none flex flex-wrap items-center justify-between gap-2.5">
           {/* Left: Search & Filter Dropdowns */}
-          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+          <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
             {/* Search with Ctrl+K shortcut */}
             <SearchInput
               ref={searchInputRef}
               intent="pedidos.search"
-              className="flex-1 min-w-[180px] max-w-xs"
-              placeholder="Buscar pedido, cliente, producto..."
+              className="flex-1 min-w-[140px] sm:min-w-[180px] max-w-xs"
+              placeholder="Buscar pedido..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onClear={() => setSearchQuery("")}
@@ -433,7 +433,7 @@ export const PedidosEnVivoView: React.FC<{
               className="py-2 px-3.5 text-xs flex-none"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Nuevo Pedido</span>
+              <span className="hidden sm:inline">Nuevo Pedido</span>
             </Button>
           </div>
         </div>
@@ -466,8 +466,8 @@ export const PedidosEnVivoView: React.FC<{
       {/* KANBAN BOARD VIEW */}
       {viewMode === "kanban" ? (
         <div className="space-y-2">
-          {/* Subtle Visual Guide for Operators */}
-          <div className="flex items-center justify-between px-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium select-none">
+          {/* Subtle Visual Guide for Operators — hidden on mobile (no drag support on touch) */}
+          <div className="hidden sm:flex items-center justify-between px-1 text-[11px] text-zinc-500 dark:text-zinc-400 font-medium select-none">
             <span className="flex items-center gap-1.5">
               <GripVertical className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>Haz clic en cualquier tarjeta para abrir su comanda, o arrástrala entre columnas para avanzar su etapa</span>
@@ -702,7 +702,7 @@ export const PedidosEnVivoView: React.FC<{
               Mostrando {filterOrdersList(orders).length} pedidos en vivo
               {programados.length > 0 ? ` + ${programados.length} programados` : ""}
             </span>
-            <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+            <span className="text-[11px] text-zinc-400 items-center gap-1 hidden sm:flex">
               <Info className="w-3.5 h-3.5 text-zinc-400" />
               <span>Haz clic en cualquier fila para ver la comanda completa</span>
             </span>
@@ -781,7 +781,8 @@ export const PedidosEnVivoView: React.FC<{
           <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead>
+                {/* Desktop Table Header — hidden on mobile */}
+                <thead className="hidden sm:table-header-group">
                   <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-semibold text-[11px]">
                     <th className="py-3 px-4">Comanda & Canal</th>
                     <th className="py-3 px-4">Cliente & Contacto</th>
@@ -811,45 +812,44 @@ export const PedidosEnVivoView: React.FC<{
                         <tr
                           key={order.id}
                           onClick={() => setSelectedOrderId(order.id)}
-                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group"
+                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group sm:table-row flex flex-col p-3 sm:p-0 border-b border-zinc-100 dark:border-zinc-800/60 last:border-b-0"
                         >
                           {/* ID & Canal */}
-                          <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                          <td className="py-2 sm:py-3.5 px-0 sm:px-4 align-middle whitespace-nowrap sm:table-cell flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
                                 {order.id}
                               </span>
                               <ChannelBadge channel={order.channel} />
                             </div>
-                            <span className="font-mono text-[10px] text-zinc-400 block mt-0.5">
-                              Ingreso: {order.createdAt}
+                            {/* Mobile-only: show total inline */}
+                            <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 sm:hidden">
+                              ${order.total.toLocaleString("es-CO")}
                             </span>
                           </td>
 
                           {/* Cliente */}
-                          <td className="py-3.5 px-4 align-middle">
-                            <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate max-w-[160px]">
+                          <td className="py-1 sm:py-3.5 px-0 sm:px-4 align-middle sm:table-cell flex items-center justify-between">
+                            <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate max-w-[200px] sm:max-w-[160px]">
                               {order.customerName}
                             </div>
-                            <span className="text-[11px] text-zinc-400 block mt-0.5">
-                              {order.items.reduce((s, i) => s + i.quantity, 0)} ítems totales
-                            </span>
+                            <OrderStatusBadge status={order.status} size="sm" />
                           </td>
 
-                          {/* Productos */}
-                          <td className="py-3.5 px-4 align-middle">
+                          {/* Productos — hidden on mobile */}
+                          <td className="py-3.5 px-4 align-middle hidden sm:table-cell">
                             <p className="text-[11px] text-zinc-600 dark:text-zinc-300 line-clamp-1 max-w-[280px]">
                               {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
                             </p>
                           </td>
 
-                          {/* Estado */}
-                          <td className="py-3.5 px-4 align-middle whitespace-nowrap">
+                          {/* Estado — desktop only (mobile shows inline with client name) */}
+                          <td className="py-3.5 px-4 align-middle whitespace-nowrap hidden sm:table-cell">
                             <OrderStatusBadge status={order.status} size="sm" />
                           </td>
 
-                          {/* Tiempos / SLA */}
-                          <td className="py-3.5 px-4 align-middle whitespace-nowrap min-w-[140px]">
+                          {/* Tiempos / SLA — hidden on mobile */}
+                          <td className="py-3.5 px-4 align-middle whitespace-nowrap min-w-[140px] hidden sm:table-cell">
                             {order.status === "EN_PREPARACION" ? (
                               <div className="space-y-1 w-28">
                                 <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
@@ -870,13 +870,13 @@ export const PedidosEnVivoView: React.FC<{
                             )}
                           </td>
 
-                          {/* Total */}
-                          <td className="py-3.5 px-4 align-middle text-right font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                          {/* Total — hidden on mobile (shown inline in ID row) */}
+                          <td className="py-3.5 px-4 align-middle text-right font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 whitespace-nowrap hidden sm:table-cell">
                             ${order.total.toLocaleString("es-CO")}
                           </td>
 
-                          {/* Acción / Abrir */}
-                          <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap">
+                          {/* Acción / Abrir — hidden on mobile (whole row is clickable) */}
+                          <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap hidden sm:table-cell">
                             <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#FF3F1A] group-hover:text-white flex items-center justify-center transition-all mx-auto text-zinc-400">
                               <ArrowUpRight className="w-3.5 h-3.5" />
                             </div>

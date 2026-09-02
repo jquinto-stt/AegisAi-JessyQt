@@ -898,7 +898,7 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 min-w-0 min-h-[calc(100vh-24px)] rounded-2xl shadow-sm overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
+        <div className="flex-1 min-w-0 min-h-[calc(100vh-24px)] sm:rounded-2xl rounded-xl shadow-sm overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
           <div className="flex flex-col flex-1 min-h-0">
             {/* Top Bar with TailAdmin Breadcrumb & Module Switchers */}
             <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex-none">
@@ -932,10 +932,9 @@ export default function App() {
                 />
               </div>
 
-              {/* Right Side Header Actions: Search, Business Switcher, Notifications & Theme */}
               <div className="flex items-center gap-2 sm:gap-2.5">
-                <GlobalSearchButton />
-                <BusinessSwitcher />
+                <div className="hidden sm:block"><GlobalSearchButton /></div>
+                <div className="hidden sm:block"><BusinessSwitcher /></div>
 
 
                 <NotificationBellDropdown
@@ -968,7 +967,10 @@ export default function App() {
         </div>
       </div>
 
-      <Footer />
+      {/* Footer — hidden on mobile to maximize content area */}
+      <div className="hidden lg:block">
+        <Footer />
+      </div>
       <CommandPalette />
     </div>
   );
