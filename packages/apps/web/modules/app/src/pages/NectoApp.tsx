@@ -80,7 +80,7 @@ function NotificationBellDropdown({
         variant="ghost"
         intent="shell.notifications.toggle"
         onClick={() => setOpen(!open)}
-        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-colors hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-colors hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
         title="Notificaciones de Necto IA"
       >
         <Bell className="w-6 h-6 sm:w-6.5 sm:h-6.5 text-gray-700 dark:text-gray-200 stroke-[2.2]" />

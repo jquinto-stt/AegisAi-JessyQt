@@ -36,6 +36,8 @@ export const UserProfileDropdown: React.FC = () => {
   const username = user?.getUsername?.() || "admin@necto.app";
   const displayName = "Administrador Master";
 
+  const userAvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+
   // Close when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,7 +55,7 @@ export const UserProfileDropdown: React.FC = () => {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Profile Trigger Button */}
+        {/* Profile Trigger Button - Circular with Person Photo */}
         <Button
           variant="ghost"
           intent="shell.profile.toggle"
@@ -61,12 +63,14 @@ export const UserProfileDropdown: React.FC = () => {
             setIsOpen(!isOpen);
             if (!isOpen) setShowBranches(false);
           }}
-          className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-slate-200 bg-white dark:border-gray-800 dark:bg-gray-900 transition-all hover:bg-slate-100 dark:hover:bg-gray-800 shadow-sm hover:scale-105 active:scale-95 cursor-pointer group"
+          className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square items-center justify-center rounded-full border border-slate-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 transition-all hover:ring-2 hover:ring-[#FF3F1A]/30 dark:hover:ring-[#FF3F1A]/40 shadow-sm hover:scale-105 active:scale-95 cursor-pointer group overflow-visible"
           title="Perfil de Usuario y Sucursales"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-[#190088] to-[#FF3F1A] text-white flex items-center justify-center font-black text-xs shadow-2xs">
-            {displayName.charAt(0)}
-          </div>
+          <img
+            src={userAvatarUrl}
+            alt={displayName}
+            className="w-full h-full rounded-full object-cover"
+          />
           <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900" />
         </Button>
 
@@ -75,9 +79,11 @@ export const UserProfileDropdown: React.FC = () => {
           <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-88 rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 shadow-2xl p-3.5 z-50 animate-scale-up space-y-3 font-sans">
             {/* User Identity Header */}
             <div className="p-3 rounded-2xl bg-zinc-50/90 dark:bg-zinc-900/90 border border-zinc-200/70 dark:border-zinc-800/80 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#190088] to-[#FF3F1A] text-white flex items-center justify-center font-bold text-base shadow-sm flex-none">
-                {displayName.charAt(0)}
-              </div>
+              <img
+                src={userAvatarUrl}
+                alt={displayName}
+                className="w-12 h-12 rounded-full object-cover shadow-sm flex-none border-2 border-white dark:border-zinc-700"
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-black text-zinc-900 dark:text-zinc-100 truncate">
@@ -147,7 +153,7 @@ export const UserProfileDropdown: React.FC = () => {
                       }}
                       className="text-[10px] text-[#190088] dark:text-blue-400 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
                     >
-                      <span>Ver Hub</span>
+                      <span>Ver Dashboard</span>
                       <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
@@ -236,7 +242,7 @@ export const UserProfileDropdown: React.FC = () => {
               >
                 <div className="flex items-center gap-2.5">
                   <Layers className="w-4 h-4 text-[#190088] dark:text-blue-400" />
-                  <span>Hub de Franquicias</span>
+                  <span>Dashboard de Franquicias</span>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>

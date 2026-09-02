@@ -96,7 +96,7 @@ export const BusinessSwitcher: React.FC = () => {
               </div>
               <div className="text-left">
                 <p className="text-xs font-bold leading-tight flex items-center gap-1.5">
-                  <span>Hub de Franquicias</span>
+                  <span>Dashboard de Franquicias</span>
                   <span className="text-[9px] font-mono bg-white/20 px-1.5 py-0.2 rounded font-normal">Visión Global</span>
                 </p>
                 <p className="text-[10px] text-zinc-300 dark:text-zinc-400 group-hover:text-white/90 transition-colors">
