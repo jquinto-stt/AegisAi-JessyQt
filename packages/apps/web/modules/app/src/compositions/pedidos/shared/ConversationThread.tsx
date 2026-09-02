@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Smartphone,
   Shield,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/elements";
 

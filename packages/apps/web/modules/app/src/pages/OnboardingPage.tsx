@@ -251,11 +251,11 @@ export default function OnboardingPage() {
           {businesses.length > 0 && (
             <Button
               variant="outline"
-              intent="onboarding.back-to-hub"
-              onClick={() => navigate("/workspaces")}
-              className="text-xs font-mono px-3 py-1.5 bg-white dark:bg-zinc-900"
+              intent="onboarding.back-to-home"
+              onClick={() => navigate("/")}
+              className="text-xs font-mono px-3 py-1.5 bg-white dark:bg-zinc-900 cursor-pointer"
             >
-              Volver al Hub
+              Volver al Inicio
             </Button>
           )}
         </div>
