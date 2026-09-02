@@ -522,8 +522,7 @@ function Sidebar({
       <div
         className={`${
           isCollapsed ? "w-16" : "w-64"
-        } hidden lg:flex transition-all duration-300 flex-none bg-white dark:bg-[#2C2D31] dark:border dark:border-[#374151] rounded-2xl shadow-sm overflow-hidden flex-col`}
-        style={{ minHeight: 0 }}
+        } hidden lg:flex transition-all duration-300 flex-none h-full bg-white dark:bg-[#2C2D31] dark:border dark:border-[#374151] rounded-2xl shadow-sm overflow-hidden flex-col`}
       >
         {/* Top Header with Logo & Circular Collapse Toggle */}
         <div className="p-3 px-3.5 pt-4 flex items-center justify-between">
@@ -883,10 +882,10 @@ export default function App() {
 
   return (
     <div
-      className="min-h-screen flex flex-col transition-colors bg-[#ECECEC] dark:bg-[#212121] text-[#212121] dark:text-[#ECECEC]"
+      className="h-screen w-screen overflow-hidden flex flex-col transition-colors bg-[#ECECEC] dark:bg-[#212121] text-[#212121] dark:text-[#ECECEC]"
       style={{ fontFamily: "DM Sans, sans-serif" }}
     >
-      <div className="flex flex-1 gap-2 sm:gap-3 p-1.5 sm:p-3 min-h-0" style={{ minHeight: "calc(100vh - 24px)" }}>
+      <div className="flex flex-1 gap-2 sm:gap-3 p-1.5 sm:p-3 h-full min-h-0 overflow-hidden">
         {/* Sidebar */}
         <Sidebar
           activeModule={activeModule}
@@ -899,7 +898,7 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 rounded-2xl shadow-sm overflow-hidden flex flex-col min-w-0 transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
+        <div className="flex-1 h-full rounded-2xl shadow-sm overflow-hidden flex flex-col min-w-0 transition-colors bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] text-[#212121] dark:text-[#ECECEC]">
           <div className="flex flex-col flex-1 min-h-0">
             {/* Top Bar with TailAdmin Breadcrumb & Module Switchers */}
             <div className="flex items-center justify-between px-3 sm:px-6 py-3 border-b border-gray-100 dark:border-gray-700 flex-none">
