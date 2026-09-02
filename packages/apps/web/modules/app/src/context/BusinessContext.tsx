@@ -48,6 +48,9 @@ export interface ImageTransformConfig {
   posY: number;     // -100 to 100 percentage offset
 }
 
+export type BotPersonality = "amigable" | "ejecutivo" | "chef" | "dinamico";
+export type HolidayTheme = "none" | "halloween" | "navidad" | "ano_nuevo" | "black_friday" | "san_valentin";
+
 export interface WhatsAppBotConfig {
   welcomeMessage?: string;
   isWelcomeEnabled?: boolean;
@@ -59,9 +62,30 @@ export interface WhatsAppBotConfig {
   isHandoffEnabled?: boolean;
   orderConfirmedMessage?: string;
   isOrderConfirmedEnabled?: boolean;
+
+  // AI & Personality
+  botPersonality?: BotPersonality;
+  isAiUpsellEnabled?: boolean;
+  upsellMessage?: string;
+  isAutoConfirmOrders?: boolean;
+  autoConfirmMaxAmount?: number;
+  delayAlertMinutes?: number;
+  isDelayAlertEnabled?: boolean;
+
+  // Holiday / Seasonal Profiles
+  activeHolidayTheme?: HolidayTheme;
+  isHolidayMessageEnabled?: boolean;
+  holidayMessage?: string;
+
+  // Payment Accounts & Methods
   nequiNumber?: string;
+  daviplataNumber?: string;
   bancolombiaAccount?: string;
   accountHolder?: string;
+  accountNit?: string;
+  allowCashOnDelivery?: boolean;
+  allowCardTerminal?: boolean;
+  paymentInstructions?: string;
 }
 
 export interface BusinessInstance {

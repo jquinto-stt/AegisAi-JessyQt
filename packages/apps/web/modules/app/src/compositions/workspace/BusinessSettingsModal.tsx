@@ -8,6 +8,8 @@ import {
   SoundAlertKey,
   ImageTransformConfig,
   WhatsAppBotConfig,
+  BotPersonality,
+  HolidayTheme,
 } from "../../context/BusinessContext";
 import { playOrderAlert } from "../../utils/audioAlerts";
 import {
@@ -45,8 +47,109 @@ import {
   CheckCircle2,
   Sparkles,
   Smartphone,
+  Wallet,
+  Banknote,
+  QrCode,
+  Zap,
+  Gift,
+  Heart,
+  HelpCircle,
+  AlertTriangle,
+  Send,
+  MessageCircle,
+  Coins,
 } from "lucide-react";
 import { Button, Field, Select, Textarea, Badge, Toggle } from "@/elements";
+
+const HOLIDAY_PRESETS: Record<
+  HolidayTheme,
+  { label: string; icon: string; title: string; defaultMsg: string; accentColor: string }
+> = {
+  none: {
+    label: "Estándar (Sin Festividad)",
+    icon: "✨",
+    title: "Modo Habitual",
+    defaultMsg: "",
+    accentColor: "bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+  halloween: {
+    label: "Halloween",
+    icon: "🎃",
+    title: "Temporada de Terror & Promos",
+    defaultMsg:
+      "¡Boo! 👻 Bienvenido a {negocio}. En esta noche de brujas tenemos promociones monstruosas y combos espeluznantes. ¿Te apetece ver nuestro menú especial de Halloween? 🎃🍔",
+    accentColor: "bg-orange-500/10 text-orange-600 border-orange-500/20",
+  },
+  navidad: {
+    label: "Navidad & Fiestas",
+    icon: "🎄",
+    title: "Temporada Navideña & Fin de Año",
+    defaultMsg:
+      "¡Felices Fiestas! 🎅✨ En {negocio} queremos celebrar la Navidad contigo. Escribe 'menú' para descubrir nuestros combos navideños familiares y postres de temporada. 🎁🍗",
+    accentColor: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+  },
+  ano_nuevo: {
+    label: "Año Nuevo",
+    icon: "🎆",
+    title: "Bienvenida al Nuevo Año",
+    defaultMsg:
+      "¡Feliz Año Nuevo! 🥂✨ En {negocio} te deseamos un año lleno de éxitos y buen sabor. ¿Qué se te antoja ordenar hoy para comenzar el año celebrando?",
+    accentColor: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
+  black_friday: {
+    label: "Black Friday / Sale",
+    icon: "🔥",
+    title: "Descuentos & Ofertas Flash",
+    defaultMsg:
+      "¡Llegó el Black Friday a {negocio}! 🔥🏷️ Aprovecha hasta 30% OFF en platos y combos seleccionados por tiempo limitado. Escribe 'promos' para ver las ofertas activas hoy.",
+    accentColor: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+  },
+  san_valentin: {
+    label: "Amor & Amistad / San Valentín",
+    icon: "💖",
+    title: "Especial Parejas & Amigos",
+    defaultMsg:
+      "¡Celebra el amor y la buena comida en {negocio}! 💖 Disfruta de nuestros combos para compartir en pareja o con amigos. ¿Deseas ver nuestra carta especial de enamorados? 🍷✨",
+    accentColor: "bg-pink-500/10 text-pink-600 border-pink-500/20",
+  },
+};
+
+const BOT_PERSONALITY_OPTIONS: Array<{
+  id: BotPersonality;
+  title: string;
+  tag: string;
+  desc: string;
+  icon: string;
+}> = [
+  {
+    id: "amigable",
+    title: "Amigable & Cálido",
+    tag: "Recomendado",
+    desc: "Usa emojis, tono cercano y amable como un anfitrión acogedor.",
+    icon: "😊",
+  },
+  {
+    id: "ejecutivo",
+    title: "Ejecutivo & Rápido",
+    tag: "Corporativo",
+    desc: "Directo al grano, conciso, ideal para pedidos express y oficinistas.",
+    icon: "⚡",
+  },
+  {
+    id: "chef",
+    title: "Chef de Autor",
+    tag: "Gourmet",
+    desc: "Explica ingredientes, maridajes sugeridos y detalles gastronómicos.",
+    icon: "👨‍🍳",
+  },
+  {
+    id: "dinamico",
+    title: "Dinámico & Juvenil",
+    tag: "Casual",
+    desc: "Tono relajado y enérgico, perfecto para hamburgueserías, pizzas y cafeterías.",
+    icon: "🚀",
+  },
+];
 
 const CITIES_BY_COUNTRY: Record<string, string[]> = {
   Colombia: [
@@ -410,7 +513,7 @@ export const BusinessSettingsModal: React.FC<{
 
   // Active Navigation Tab
   const [activeTab, setActiveTab] = useState<
-    "general" | "branding" | "whatsapp_bot" | "modules" | "channels" | "schedule" | "advanced"
+    "general" | "branding" | "whatsapp_bot" | "payments" | "modules" | "channels" | "schedule" | "advanced"
   >("general");
 
   // General States
@@ -443,12 +546,6 @@ export const BusinessSettingsModal: React.FC<{
   const [isWelcomeEnabled, setIsWelcomeEnabled] = useState(true);
   const [welcomeMessage, setWelcomeMessage] = useState("");
 
-  const [isPaymentInfoEnabled, setIsPaymentInfoEnabled] = useState(true);
-  const [paymentInfoMessage, setPaymentInfoMessage] = useState("");
-  const [nequiNumber, setNequiNumber] = useState("310 987 6543");
-  const [bancolombiaAccount, setBancolombiaAccount] = useState("104-892134-55");
-  const [accountHolder, setAccountHolder] = useState("Necto Gourmet S.A.S");
-
   const [isClosedHoursEnabled, setIsClosedHoursEnabled] = useState(true);
   const [closedHoursMessage, setClosedHoursMessage] = useState("");
 
@@ -457,6 +554,33 @@ export const BusinessSettingsModal: React.FC<{
 
   const [isOrderConfirmedEnabled, setIsOrderConfirmedEnabled] = useState(true);
   const [orderConfirmedMessage, setOrderConfirmedMessage] = useState("");
+
+  // Bot AI Intelligence & Personality
+  const [botPersonality, setBotPersonality] = useState<BotPersonality>("amigable");
+  const [isAiUpsellEnabled, setIsAiUpsellEnabled] = useState(true);
+  const [upsellMessage, setUpsellMessage] = useState(
+    "¿Te gustaría acompañar tu pedido con una bebida refrescante o una porción extra por solo $4.500?"
+  );
+  const [isAutoConfirmOrders, setIsAutoConfirmOrders] = useState(true);
+  const [autoConfirmMaxAmount, setAutoConfirmMaxAmount] = useState(150000);
+  const [isDelayAlertEnabled, setIsDelayAlertEnabled] = useState(true);
+  const [delayAlertMinutes, setDelayAlertMinutes] = useState(15);
+
+  // Holiday / Seasonal Profiles
+  const [activeHolidayTheme, setActiveHolidayTheme] = useState<HolidayTheme>("none");
+  const [isHolidayMessageEnabled, setIsHolidayMessageEnabled] = useState(false);
+  const [holidayMessage, setHolidayMessage] = useState("");
+
+  // Payment Accounts & Methods States
+  const [isPaymentInfoEnabled, setIsPaymentInfoEnabled] = useState(true);
+  const [paymentInfoMessage, setPaymentInfoMessage] = useState("");
+  const [nequiNumber, setNequiNumber] = useState("310 987 6543");
+  const [daviplataNumber, setDaviplataNumber] = useState("310 987 6543");
+  const [bancolombiaAccount, setBancolombiaAccount] = useState("104-892134-55");
+  const [accountHolder, setAccountHolder] = useState("Necto Gourmet S.A.S");
+  const [accountNit, setAccountNit] = useState("901.458.789-1");
+  const [allowCashOnDelivery, setAllowCashOnDelivery] = useState(true);
+  const [allowCardTerminal, setAllowCardTerminal] = useState(true);
 
   // Channels States
   const [enableWhatsapp, setEnableWhatsapp] = useState(true);
@@ -518,15 +642,6 @@ export const BusinessSettingsModal: React.FC<{
           `¡Hola! Te damos la bienvenida a ${business.name}. ¿En qué podemos ayudarte hoy? Escribe "menú" para ver nuestra carta o envíanos tu pedido directamente.`
       );
 
-      setIsPaymentInfoEnabled(botCfg?.isPaymentInfoEnabled ?? true);
-      setNequiNumber(botCfg?.nequiNumber || "310 987 6543");
-      setBancolombiaAccount(botCfg?.bancolombiaAccount || "104-892134-55");
-      setAccountHolder(botCfg?.accountHolder || business.name);
-      setPaymentInfoMessage(
-        botCfg?.paymentInfoMessage ||
-          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n\nEnvía la captura de tu comprobante por este canal para validar los fondos y activar tu pedido en cocina.`
-      );
-
       setIsClosedHoursEnabled(botCfg?.isClosedHoursEnabled ?? true);
       setClosedHoursMessage(
         botCfg?.closedHoursMessage ||
@@ -543,6 +658,42 @@ export const BusinessSettingsModal: React.FC<{
       setOrderConfirmedMessage(
         botCfg?.orderConfirmedMessage ||
           `¡Comanda #{numero_pedido} confirmada e ingresada a cocina! Tiempo estimado de preparación y entrega: 25 a 35 minutos. ¡Muchas gracias por tu compra!`
+      );
+
+      // AI Bot Intelligence
+      setBotPersonality(botCfg?.botPersonality || "amigable");
+      setIsAiUpsellEnabled(botCfg?.isAiUpsellEnabled ?? true);
+      setUpsellMessage(
+        botCfg?.upsellMessage ||
+          `¿Te gustaría acompañar tu pedido con una bebida refrescante o una porción extra por solo $4.500?`
+      );
+      setIsAutoConfirmOrders(botCfg?.isAutoConfirmOrders ?? true);
+      setAutoConfirmMaxAmount(botCfg?.autoConfirmMaxAmount || 150000);
+      setIsDelayAlertEnabled(botCfg?.isDelayAlertEnabled ?? true);
+      setDelayAlertMinutes(botCfg?.delayAlertMinutes || 15);
+
+      // Holiday Profiles
+      setActiveHolidayTheme(botCfg?.activeHolidayTheme || "none");
+      setIsHolidayMessageEnabled(botCfg?.isHolidayMessageEnabled ?? false);
+      setHolidayMessage(
+        botCfg?.holidayMessage ||
+          (botCfg?.activeHolidayTheme && botCfg.activeHolidayTheme !== "none"
+            ? HOLIDAY_PRESETS[botCfg.activeHolidayTheme]?.defaultMsg.replace("{negocio}", business.name)
+            : "")
+      );
+
+      // Payments
+      setIsPaymentInfoEnabled(botCfg?.isPaymentInfoEnabled ?? true);
+      setNequiNumber(botCfg?.nequiNumber || "310 987 6543");
+      setDaviplataNumber(botCfg?.daviplataNumber || "310 987 6543");
+      setBancolombiaAccount(botCfg?.bancolombiaAccount || "104-892134-55");
+      setAccountHolder(botCfg?.accountHolder || business.name);
+      setAccountNit(botCfg?.accountNit || "901.458.789-1");
+      setAllowCashOnDelivery(botCfg?.allowCashOnDelivery ?? true);
+      setAllowCardTerminal(botCfg?.allowCardTerminal ?? true);
+      setPaymentInfoMessage(
+        botCfg?.paymentInfoMessage ||
+          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido en cocina.`
       );
 
       setIsPaused(business.pauseConfig?.isPaused || false);
@@ -683,17 +834,37 @@ export const BusinessSettingsModal: React.FC<{
       whatsappBotConfig: {
         isWelcomeEnabled,
         welcomeMessage,
-        isPaymentInfoEnabled,
-        paymentInfoMessage,
-        nequiNumber,
-        bancolombiaAccount,
-        accountHolder,
         isClosedHoursEnabled,
         closedHoursMessage,
         isHandoffEnabled,
         handoffToHumanMessage,
         isOrderConfirmedEnabled,
         orderConfirmedMessage,
+
+        // Bot Personality & AI
+        botPersonality,
+        isAiUpsellEnabled,
+        upsellMessage,
+        isAutoConfirmOrders,
+        autoConfirmMaxAmount,
+        isDelayAlertEnabled,
+        delayAlertMinutes,
+
+        // Seasonal & Holiday Specials
+        activeHolidayTheme,
+        isHolidayMessageEnabled,
+        holidayMessage,
+
+        // Payments & Transfer Accounts
+        isPaymentInfoEnabled,
+        paymentInfoMessage,
+        nequiNumber,
+        daviplataNumber,
+        bancolombiaAccount,
+        accountHolder,
+        accountNit,
+        allowCashOnDelivery,
+        allowCardTerminal,
       },
       pauseConfig: {
         isPaused,
@@ -833,9 +1004,15 @@ export const BusinessSettingsModal: React.FC<{
               },
               {
                 id: "whatsapp_bot",
-                label: "Bot WhatsApp & Pagos",
-                desc: "Respuestas, Nequi y QR",
+                label: "Bot de WhatsApp IA",
+                desc: "Personalidad, flujos y festividades",
                 icon: Bot,
+              },
+              {
+                id: "payments",
+                label: "Cuentas & Pagos",
+                desc: "Nequi, Bancolombia y métodos",
+                icon: CreditCard,
               },
               {
                 id: "modules",
@@ -948,9 +1125,12 @@ export const BusinessSettingsModal: React.FC<{
                                 : "bg-zinc-50 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#190088]/40"
                             }`}
                           >
-                            <Icon className={`w-4 h-4 ${isSelected ? "text-[#FF3F1A]" : "text-[#190088] dark:text-blue-400"}`} />
-                            <span className="text-xs font-bold leading-tight">{archetype.label}</span>
-                            <span className={`text-[10px] ${isSelected ? "text-blue-100" : "text-zinc-400"}`}>
+                            <div className="flex items-center justify-between w-full">
+                              <Icon className={`w-4 h-4 ${isSelected ? "text-[#EFE6D3]" : "text-[#FF3F1A]"}`} />
+                              {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                            </div>
+                            <span className="text-xs font-bold mt-1 leading-tight">{archetype.label}</span>
+                            <span className={`text-[10px] leading-tight ${isSelected ? "text-blue-100" : "text-zinc-400"}`}>
                               {archetype.desc}
                             </span>
                           </Button>
@@ -959,19 +1139,18 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
                   </div>
 
-                  {/* País, Ciudad y Moneda */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  {/* País & Ciudad con selector dinámico */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select
-                      label="País"
+                      label="País de Operación"
+                      labelStyle="bold"
                       intent="business.country"
                       value={country}
                       onChange={e => {
                         const newCountry = e.target.value;
                         setCountry(newCountry);
-                        const countryCities = CITIES_BY_COUNTRY[newCountry] || [];
-                        if (countryCities.length > 0 && !countryCities.includes(city)) {
-                          setCity(countryCities[0]);
-                        }
+                        const firstCity = CITIES_BY_COUNTRY[newCountry]?.[0] || "";
+                        setCity(firstCity ? `${firstCity}, ${newCountry}` : "");
                       }}
                       options={[
                         { value: "Colombia", label: "Colombia" },
@@ -984,49 +1163,84 @@ export const BusinessSettingsModal: React.FC<{
                     />
 
                     <Select
-                      label="Ciudad / Zona"
+                      label="Ciudad / Zona de Cobertura"
+                      labelStyle="bold"
                       intent="business.city"
-                      value={city}
-                      onChange={e => setCity(e.target.value)}
-                      options={(() => {
-                        const currentCities = CITIES_BY_COUNTRY[country] || CITIES_BY_COUNTRY["Colombia"] || [];
-                        const list = (city && !currentCities.includes(city))
-                          ? [city, ...currentCities]
-                          : currentCities;
-                        return list.map(c => ({ value: c, label: c }));
-                      })()}
+                      value={city.split(",")[0].trim()}
+                      onChange={e => {
+                        const selectedCityName = e.target.value;
+                        setCity(`${selectedCityName}, ${country}`);
+                      }}
+                      options={(CITIES_BY_COUNTRY[country] || ["Principal"]).map(cityName => ({
+                        value: cityName,
+                        label: cityName,
+                      }))}
                     />
+                  </div>
 
+                  {/* Moneda & Alertas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Select
-                      label="Moneda Base"
+                      label="Moneda Oficial"
+                      labelStyle="bold"
                       intent="business.currency"
                       value={currency}
                       onChange={e => setCurrency(e.target.value as any)}
                       options={[
-                        { value: "COP", label: "COP ($ Colombia)" },
-                        { value: "USD", label: "USD ($ Dólares)" },
-                        { value: "MXN", label: "MXN ($ México)" },
-                        { value: "ARS", label: "ARS ($ Argentina)" },
+                        { value: "COP", label: "COP — Peso Colombiano ($)" },
+                        { value: "USD", label: "USD — Dólar Americano ($)" },
+                        { value: "MXN", label: "MXN — Peso Mexicano ($)" },
+                        { value: "ARS", label: "ARS — Peso Argentino ($)" },
                       ]}
                     />
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          Alarma Sonora de Pedido
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => playOrderAlert(soundAlert)}
+                          className="text-[11px] font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Play className="w-3 h-3 fill-[#FF3F1A]" />
+                          <span>Probar sonido</span>
+                        </button>
+                      </div>
+
+                      <Select
+                        intent="business.sound"
+                        value={soundAlert}
+                        onChange={e => {
+                          const newSound = e.target.value as SoundAlertKey;
+                          setSoundAlert(newSound);
+                          playOrderAlert(newSound);
+                        }}
+                        options={[
+                          { value: "bell", label: "Campana Clásica (Bell)" },
+                          { value: "kitchen_ding", label: "Ding de Cocina (Restaurant)" },
+                          { value: "chime", label: "Chime Armónico (Suave)" },
+                          { value: "pos_beep", label: "Bip de POS (Comercial)" },
+                          { value: "mute", label: "Silencioso (Mute)" },
+                        ]}
+                      />
+                    </div>
                   </div>
 
-                  {/* Slug y Teléfono */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  {/* Contacto */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        Identificador / Slug URL
+                        Correo de Contacto
                       </label>
-                      <div className="flex items-center px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus-within:border-[#FF3F1A]">
-                        <span className="text-zinc-400 select-none">necto.app/</span>
-                        <input
-                          type="text"
-                          value={slug}
-                          onChange={e => setSlug(e.target.value)}
-                          placeholder="mi-negocio"
-                          className="flex-1 bg-transparent font-mono font-bold text-zinc-950 dark:text-white focus:outline-none ml-1"
-                        />
-                      </div>
+                      <input
+                        type="email"
+                        value={contactEmail}
+                        onChange={e => setContactEmail(e.target.value)}
+                        placeholder="contacto@restaurante.com"
+                        className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#FF3F1A]"
+                      />
                     </div>
 
                     <div className="space-y-1.5">
@@ -1049,7 +1263,7 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
-            {/* TAB 2: BRANDING, LOGO & PORTADA (Con controles de Ángulo, Zoom y Posición) */}
+            {/* TAB 2: BRANDING */}
             {activeTab === "branding" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
@@ -1132,7 +1346,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="w-full h-44 rounded-3xl bg-zinc-50 dark:bg-[#0E0F12] border-2 border-dashed border-zinc-300 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400">
                         <Camera className="w-8 h-8 mb-1.5" />
                         <span className="text-xs font-bold">Sin Logotipo Cargado</span>
-                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una imagen cuadrada o hacé clic en "Usar mi foto de perfil"</span>
+                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una imagen para encuadrarla y rotarla en vivo</span>
                       </div>
                     )}
                   </div>
@@ -1212,62 +1426,402 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
-            {/* TAB 3: BOT DE WHATSAPP & MENSAJES AUTOMÁTICOS */}
+            {/* TAB 3: BOT DE WHATSAPP IA (Configuración Total, Flujos, IA y Festividades) */}
             {activeTab === "whatsapp_bot" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
                   <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#00A884]" />
-                    <span>Mensajes Automáticos del Bot de WhatsApp</span>
+                    <span>Configuración Total del Bot de WhatsApp & IA</span>
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
-                    Configura las respuestas automáticas, cuentas de transferencia (Nequi / Bancolombia) y mensajes fuera de horario.
+                    Personaliza el tono del bot, los flujos conversacionales, las reglas inteligentes y las campañas festivas de temporada.
                   </p>
                 </div>
 
-                {/* 1. Mensaje de Bienvenida */}
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
+                {/* SECCIÓN A: Personalidad & Tono IA del Bot */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <span>1. Saludo Inicial / Bienvenida</span>
-                        <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-2 py-0.2 rounded-full font-bold">
-                          Al escribir por primera vez
-                        </span>
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#FF3F1A]" />
+                        <span>Personalidad & Estilo de Comunicación IA</span>
                       </h4>
                       <p className="text-[11px] text-zinc-500 mt-0.5">
-                        El bot saluda automáticamente y ofrece las opciones del menú.
+                        Define cómo se expresa el bot al interactuar con tus comensales en WhatsApp.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {BOT_PERSONALITY_OPTIONS.map(opt => {
+                      const isSelected = botPersonality === opt.id;
+                      return (
+                        <div
+                          key={opt.id}
+                          onClick={() => setBotPersonality(opt.id)}
+                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                            isSelected
+                              ? "bg-[#190088]/5 dark:bg-[#190088]/25 border-[#190088] dark:border-[#190088]/70 shadow-xs ring-1 ring-[#190088]/30"
+                              : "bg-zinc-50/60 dark:bg-zinc-900/50 border-zinc-200/70 dark:border-zinc-800 hover:border-zinc-300"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{opt.icon}</span>
+                              <div>
+                                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
+                                  {opt.title}
+                                </p>
+                                <span className="text-[9px] font-mono text-[#190088] dark:text-blue-300 font-bold">
+                                  {opt.tag}
+                                </span>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <span className="w-4 h-4 rounded-full bg-[#190088] text-white flex items-center justify-center flex-none">
+                                <Check className="w-2.5 h-2.5 stroke-[3]" />
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                            {opt.desc}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* SECCIÓN B: Perfiles de Festividades & Mensajes de Temporada */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-purple-600" />
+                        <span>Campaña por Festividad & Fechas Especiales</span>
+                        <Badge variant="accent" intent="business.bot.holiday" className="text-[9px] py-0 px-1.5 font-bold uppercase">
+                          Temporadas
+                        </Badge>
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 mt-0.5">
+                        Activa saludos y promociones temáticas para fechas como Halloween, Navidad, Año Nuevo y Black Friday.
                       </p>
                     </div>
 
                     <Toggle
-                      intent="bot.welcome.toggle"
-                      checked={isWelcomeEnabled}
-                      onChange={setIsWelcomeEnabled}
+                      intent="bot.holiday.toggle"
+                      checked={isHolidayMessageEnabled}
+                      onChange={setIsHolidayMessageEnabled}
                     />
                   </div>
 
-                  {isWelcomeEnabled && (
-                    <Textarea
-                      intent="bot.welcome.text"
-                      rows={3}
-                      value={welcomeMessage}
-                      onChange={e => setWelcomeMessage(e.target.value)}
-                      placeholder="Mensaje de saludo inicial..."
-                    />
+                  {isHolidayMessageEnabled && (
+                    <div className="space-y-4 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 animate-fade-in">
+                      {/* Selector de Festividad */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                          Selecciona la Festividad Activa:
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {(Object.keys(HOLIDAY_PRESETS) as HolidayTheme[]).map(themeKey => {
+                            if (themeKey === "none") return null;
+                            const item = HOLIDAY_PRESETS[themeKey];
+                            const isSelected = activeHolidayTheme === themeKey;
+
+                            return (
+                              <button
+                                key={themeKey}
+                                type="button"
+                                onClick={() => {
+                                  setActiveHolidayTheme(themeKey);
+                                  setHolidayMessage(item.defaultMsg.replace("{negocio}", name || "nuestro restaurante"));
+                                }}
+                                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
+                                  isSelected
+                                    ? "bg-[#190088] text-white border-[#190088] shadow-2xs font-bold"
+                                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100"
+                                }`}
+                              >
+                                <span className="text-base">{item.icon}</span>
+                                <span className="text-xs font-bold truncate">{item.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Editor del Mensaje Festivo */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <span>Mensaje Festivo que enviará el Bot:</span>
+                            <span className="font-mono text-[10px] text-zinc-400">({"{negocio}"} se reemplaza auto)</span>
+                          </label>
+                          {activeHolidayTheme !== "none" && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setHolidayMessage(
+                                  HOLIDAY_PRESETS[activeHolidayTheme].defaultMsg.replace("{negocio}", name || "nuestro restaurante")
+                                )
+                              }
+                              className="text-[10px] font-bold text-[#190088] dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              <span>Cargar plantilla oficial</span>
+                            </button>
+                          )}
+                        </div>
+                        <Textarea
+                          intent="bot.holiday.text"
+                          rows={3}
+                          value={holidayMessage}
+                          onChange={e => setHolidayMessage(e.target.value)}
+                          placeholder="Escribe el mensaje festivo que saludará a los comensales en esta temporada..."
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                {/* 2. Cuentas de Transferencia & Pago (Nequi / Bancolombia / QR) */}
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                {/* SECCIÓN C: Automatizaciones & Reglas IA */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span>Automatizaciones IA & Reglas Operativas</span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Reglas inteligentes en segundo plano inspiradas en el módulo de Automatizaciones & IA.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    {/* Regla 1: Upselling IA */}
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 pr-3">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                            <span>Sugerencias Inteligentes de Venta Cruzada (Upselling)</span>
+                            <span className="text-[9px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.2 rounded-full font-bold">
+                              IA Activa
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            El bot sugiere bebidas, adiciones o postres antes de que el cliente cierre su comanda.
+                          </p>
+                        </div>
+                        <Toggle
+                          intent="bot.upsell.toggle"
+                          checked={isAiUpsellEnabled}
+                          onChange={setIsAiUpsellEnabled}
+                        />
+                      </div>
+
+                      {isAiUpsellEnabled && (
+                        <Textarea
+                          intent="bot.upsell.text"
+                          rows={2}
+                          value={upsellMessage}
+                          onChange={e => setUpsellMessage(e.target.value)}
+                          placeholder="Pregunta de sugerencia de acompañamiento o adición..."
+                        />
+                      )}
+                    </div>
+
+                    {/* Regla 2: Auto-confirmación de pedidos */}
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 pr-3">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                            <span>Confirmación Automática de Pedidos con Stock 100%</span>
+                            <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded-full font-bold">
+                              Auto-KDS
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            Ingresa automáticamente a cocina los pedidos que cumplan con stock sin requerir clic manual del cajero.
+                          </p>
+                        </div>
+                        <Toggle
+                          intent="bot.autoconfirm.toggle"
+                          checked={isAutoConfirmOrders}
+                          onChange={setIsAutoConfirmOrders}
+                        />
+                      </div>
+
+                      {isAutoConfirmOrders && (
+                        <div className="flex items-center gap-3 pt-1">
+                          <label className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 flex-none">
+                            Monto Máximo para Auto-Aprobar:
+                          </label>
+                          <input
+                            type="number"
+                            value={autoConfirmMaxAmount}
+                            onChange={e => setAutoConfirmMaxAmount(Number(e.target.value))}
+                            className="w-36 px-3 py-1.5 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl font-mono font-bold text-zinc-900 dark:text-zinc-100"
+                            placeholder="150000"
+                          />
+                          <span className="text-[10px] text-zinc-400 font-mono">{currency}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Regla 3: Alerta temprana de demora */}
+                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 pr-3">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                            <span>Alerta Temprana de Demora en Cocina (+{delayAlertMinutes} min)</span>
+                          </p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            Avisa proactivamente al cliente si la preparación toma más tiempo del estimado para evitar quejas.
+                          </p>
+                        </div>
+                        <Toggle
+                          intent="bot.delay.toggle"
+                          checked={isDelayAlertEnabled}
+                          onChange={setIsDelayAlertEnabled}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECCIÓN D: Flujos y Mensajes Básicos */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                  <div>
+                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#190088] dark:text-blue-400" />
+                      <span>Flujos Conversacionales Estándar</span>
+                    </h4>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      Respuestas base para inicio, cierre de cocina y derivación a personal humano.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 pt-1">
+                    {/* 1. Saludo / Bienvenida */}
+                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          1. Saludo Inicial / Bienvenida
+                        </span>
+                        <Toggle
+                          intent="bot.welcome.toggle"
+                          checked={isWelcomeEnabled}
+                          onChange={setIsWelcomeEnabled}
+                        />
+                      </div>
+                      {isWelcomeEnabled && (
+                        <Textarea
+                          intent="bot.welcome.text"
+                          rows={3}
+                          value={welcomeMessage}
+                          onChange={e => setWelcomeMessage(e.target.value)}
+                          placeholder="Mensaje de saludo inicial..."
+                        />
+                      )}
+                    </div>
+
+                    {/* 2. Confirmación de Pedido */}
+                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          2. Confirmación de Pedido Ingresado a Cocina
+                        </span>
+                        <Toggle
+                          intent="bot.confirmed.toggle"
+                          checked={isOrderConfirmedEnabled}
+                          onChange={setIsOrderConfirmedEnabled}
+                        />
+                      </div>
+                      {isOrderConfirmedEnabled && (
+                        <Textarea
+                          intent="bot.confirmed.text"
+                          rows={2}
+                          value={orderConfirmedMessage}
+                          onChange={e => setOrderConfirmedMessage(e.target.value)}
+                          placeholder="Mensaje de comanda confirmada..."
+                        />
+                      )}
+                    </div>
+
+                    {/* 3. Fuera de Horario */}
+                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <span>3. Mensaje Fuera de Horario / Cocina Cerrada</span>
+                        </span>
+                        <Toggle
+                          intent="bot.closed.toggle"
+                          checked={isClosedHoursEnabled}
+                          onChange={setIsClosedHoursEnabled}
+                        />
+                      </div>
+                      {isClosedHoursEnabled && (
+                        <Textarea
+                          intent="bot.closed.text"
+                          rows={2}
+                          value={closedHoursMessage}
+                          onChange={e => setClosedHoursMessage(e.target.value)}
+                          placeholder="Mensaje de local cerrado..."
+                        />
+                      )}
+                    </div>
+
+                    {/* 4. Derivación a Humano */}
+                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                          4. Derivación a Operador Humano en Vivo
+                        </span>
+                        <Toggle
+                          intent="bot.handoff.toggle"
+                          checked={isHandoffEnabled}
+                          onChange={setIsHandoffEnabled}
+                        />
+                      </div>
+                      {isHandoffEnabled && (
+                        <Textarea
+                          intent="bot.handoff.text"
+                          rows={2}
+                          value={handoffToHumanMessage}
+                          onChange={e => setHandoffToHumanMessage(e.target.value)}
+                          placeholder="Mensaje de derivación a humano..."
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: CUENTAS & MÉTODOS DE PAGO (Nequi, Bancolombia, QR, Efectivo y Datáfono) */}
+            {activeTab === "payments" && (
+              <div className="space-y-6 animate-fade-in max-w-2xl">
+                <div>
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-purple-600" />
+                    <span>Cuentas Bancarias & Métodos de Pago</span>
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Configura las cuentas oficiales de transferencia (Nequi, Bancolombia, Daviplata), pagos contra entrega y plantilla de cobro.
+                  </p>
+                </div>
+
+                {/* 1. Transferencias Móviles & Digitales */}
+                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-purple-600" />
-                        <span>2. Datos de Transferencia & Pagos (Nequi / Bancolombia)</span>
+                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-purple-600" />
+                        <span>Transferencias Digitales (Nequi, Daviplata, Bancolombia)</span>
                       </h4>
                       <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Información bancaria que el bot envía cuando el cliente pide pagar por transferencia o QR.
+                        Cuentas que se enviarán a los clientes para transferencias y llaves QR.
                       </p>
                     </div>
 
@@ -1279,10 +1833,10 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   {isPaymentInfoEnabled && (
-                    <div className="space-y-3 pt-1">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-4 pt-1 animate-fade-in">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Field
-                          label="Número Nequi / Daviplata"
+                          label="Número Nequi"
                           labelStyle="bold"
                           intent="bot.nequi"
                           type="text"
@@ -1291,132 +1845,6 @@ export const BusinessSettingsModal: React.FC<{
                           placeholder="310 987 6543"
                         />
                         <Field
-                          label="Cuenta Bancolombia"
-                          labelStyle="bold"
-                          intent="bot.bancolombia"
-                          type="text"
-                          value={bancolombiaAccount}
-                          onChange={e => setBancolombiaAccount(e.target.value)}
-                          placeholder="104-892134-55"
-                        />
-                        <Field
-                          label="Titular de la Cuenta"
-                          labelStyle="bold"
-                          intent="bot.holder"
-                          type="text"
-                          value={accountHolder}
-                          onChange={e => setAccountHolder(e.target.value)}
-                          placeholder="Necto Gourmet S.A.S"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300">
-                          Mensaje que enviará el Bot:
-                        </label>
-                        <Textarea
-                          intent="bot.payment.text"
-                          rows={4}
-                          value={paymentInfoMessage}
-                          onChange={e => setPaymentInfoMessage(e.target.value)}
-                          placeholder="Mensaje con las instrucciones de pago..."
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Fuera de Horario */}
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-amber-500" />
-                        <span>3. Mensaje Fuera de Horario / Local Cerrado</span>
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Se envía automáticamente cuando un comensal escribe fuera del horario de cocina.
-                      </p>
-                    </div>
-
-                    <Toggle
-                      intent="bot.closed.toggle"
-                      checked={isClosedHoursEnabled}
-                      onChange={setIsClosedHoursEnabled}
-                    />
-                  </div>
-
-                  {isClosedHoursEnabled && (
-                    <Textarea
-                      intent="bot.closed.text"
-                      rows={3}
-                      value={closedHoursMessage}
-                      onChange={e => setClosedHoursMessage(e.target.value)}
-                      placeholder="Mensaje de local cerrado..."
-                    />
-                  )}
-                </div>
-
-                {/* 4. Derivación a Humano */}
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <span>4. Notificación de Derivación a Operador Humano</span>
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Avisa al cliente que su caso fue transferido a un administrador en vivo.
-                      </p>
-                    </div>
-
-                    <Toggle
-                      intent="bot.handoff.toggle"
-                      checked={isHandoffEnabled}
-                      onChange={setIsHandoffEnabled}
-                    />
-                  </div>
-
-                  {isHandoffEnabled && (
-                    <Textarea
-                      intent="bot.handoff.text"
-                      rows={2}
-                      value={handoffToHumanMessage}
-                      onChange={e => setHandoffToHumanMessage(e.target.value)}
-                      placeholder="Mensaje de derivación..."
-                    />
-                  )}
-                </div>
-
-                {/* 5. Confirmación de Pedido y Despacho a Cocina */}
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <span>5. Confirmación de Pedido Ingresado a Cocina</span>
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Mensaje enviado al comensal cuando el ticket entra al KDS.
-                      </p>
-                    </div>
-
-                    <Toggle
-                      intent="bot.confirmed.toggle"
-                      checked={isOrderConfirmedEnabled}
-                      onChange={setIsOrderConfirmedEnabled}
-                    />
-                  </div>
-
-                  {isOrderConfirmedEnabled && (
-                    <Textarea
-                      intent="bot.confirmed.text"
-                      rows={2}
-                      value={orderConfirmedMessage}
-                      onChange={e => setOrderConfirmedMessage(e.target.value)}
-                      placeholder="Mensaje de comanda confirmada..."
-                    />
-                  )}
-                </div>
-              </div>
             )}
 
             {/* TAB 4: MÓDULOS OPERATIVOS */}
