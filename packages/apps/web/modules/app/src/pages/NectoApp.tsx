@@ -310,11 +310,11 @@ function Sidebar({
       <button
         type="button"
         onClick={handleItemClick}
-        className={`justify-start w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer group ${
+        className={`justify-start w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left cursor-pointer group ${
           active
             ? "bg-[#EFE6D3] text-[#FF3F1A] dark:bg-[#37332A] dark:text-[#FF3F1A] font-bold border border-[#EFE6D3] dark:border-[#37332A]"
             : "text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-        } ${indent ? "pl-7" : ""}`}
+        } ${indent ? "pl-8 text-[13px]" : ""}`}
       >
         <span className={`flex-none transition-colors ${active ? "text-[#FF3F1A]" : "text-zinc-400 dark:text-zinc-500 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
         <span className="flex-1 truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
@@ -360,18 +360,18 @@ function Sidebar({
       <button
         type="button"
         onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-        className={`justify-start w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer group ${
+        className={`justify-start w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer group ${
           active
             ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
-            : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
+            : "text-zinc-800 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
         }`}
       >
-        <span className={`flex-none transition-colors ${active ? "text-white" : "text-zinc-500 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
+        <span className={`flex-none transition-colors ${active ? "text-white" : "text-zinc-600 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
         <span className="flex-1 text-left truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
         {expanded[section] ? (
-          <ChevronDown className={`w-3.5 h-3.5 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
+          <ChevronDown className={`w-4 h-4 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
         ) : (
-          <ChevronRight className={`w-3.5 h-3.5 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
+          <ChevronRight className={`w-4 h-4 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
         )}
       </button>
     );
@@ -388,10 +388,10 @@ function Sidebar({
         isMobile={isMobile}
       />
 
-      <div className="flex flex-col gap-1.5 mt-2.5">
+      <div className="flex flex-col gap-2.5 mt-3">
         {/* Subcategoría 1: Operación */}
         {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <SectionHeader
               icon={<Zap className="w-4 h-4 text-[#FF3F1A]" />}
               label="Operación"
@@ -401,10 +401,10 @@ function Sidebar({
               isMobile={isMobile}
             />
             {(!isCollapsed || isMobile) && expanded.operacion && (
-              <div className="flex flex-col gap-0.5 animate-fade-in">
+              <div className="flex flex-col gap-1 pl-1 animate-fade-in">
                 {canAccess("canViewBandeja") && (
                   <NavItem
-                    icon={<ShoppingBag className="w-3.5 h-3.5" />}
+                    icon={<ShoppingBag className="w-4 h-4" />}
                     label="Bandeja Unificada"
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
                     onClick={() => onNavigatePedidos("operacion", "en-vivo")}
@@ -414,7 +414,7 @@ function Sidebar({
                 )}
                 {canAccess("canViewKDS") && (
                   <NavItem
-                    icon={<ChefHat className="w-3.5 h-3.5" />}
+                    icon={<ChefHat className="w-4 h-4" />}
                     label="KDS Cocina"
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
                     onClick={() => onNavigatePedidos("operacion", "preparacion")}
@@ -429,7 +429,7 @@ function Sidebar({
 
         {/* Subcategoría 2: Menú & Abastecimiento */}
         {(canAccess("canViewCatalogo") || canAccess("canViewInsumos")) && (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <SectionHeader
               icon={<Layers className="w-4 h-4 text-[#FF3F1A]" />}
               label="Menú & Stock"
@@ -439,10 +439,10 @@ function Sidebar({
               isMobile={isMobile}
             />
             {(!isCollapsed || isMobile) && expanded.menu && (
-              <div className="flex flex-col gap-0.5 animate-fade-in">
+              <div className="flex flex-col gap-1 pl-1 animate-fade-in">
                 {canAccess("canViewCatalogo") && (
                   <NavItem
-                    icon={<Layers className="w-3.5 h-3.5" />}
+                    icon={<Layers className="w-4 h-4" />}
                     label="Catálogo de Platos"
                     active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "catalogo"}
                     onClick={() => onNavigatePedidos("menu", "catalogo")}
@@ -452,7 +452,7 @@ function Sidebar({
                 )}
                 {canAccess("canViewInsumos") && (
                   <NavItem
-                    icon={<Package className="w-3.5 h-3.5" />}
+                    icon={<Package className="w-4 h-4" />}
                     label="Insumos & Stock"
                     active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "insumos"}
                     onClick={() => onNavigatePedidos("menu", "insumos")}
@@ -467,7 +467,7 @@ function Sidebar({
 
         {/* Subcategoría 3: Configuración & Equipo */}
         {(canAccess("canViewAutomatizaciones") || canAccess("canViewTurnos") || canAccess("canManageRoles")) && (
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <SectionHeader
               icon={<Users className="w-4 h-4 text-[#FF3F1A]" />}
               label="Configuración"
@@ -477,10 +477,10 @@ function Sidebar({
               isMobile={isMobile}
             />
             {(!isCollapsed || isMobile) && expanded.configuracion && (
-              <div className="flex flex-col gap-0.5 animate-fade-in">
+              <div className="flex flex-col gap-1 pl-1 animate-fade-in">
                 {canAccess("canManageRoles") && (
                   <NavItem
-                    icon={<Shield className="w-3.5 h-3.5" />}
+                    icon={<Shield className="w-4 h-4" />}
                     label="Roles & Permisos"
                     active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "roles"}
                     onClick={() => onNavigatePedidos("configuracion", "roles")}
@@ -490,7 +490,7 @@ function Sidebar({
                 )}
                 {canAccess("canViewAutomatizaciones") && (
                   <NavItem
-                    icon={<Zap className="w-3.5 h-3.5" />}
+                    icon={<Zap className="w-4 h-4" />}
                     label="Automatizaciones & IA"
                     active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
                     onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
@@ -500,7 +500,7 @@ function Sidebar({
                 )}
                 {canAccess("canViewTurnos") && (
                   <NavItem
-                    icon={<Users className="w-3.5 h-3.5" />}
+                    icon={<Users className="w-4 h-4" />}
                     label="Turnos y Capacidad"
                     active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "turnos"}
                     onClick={() => onNavigatePedidos("configuracion", "turnos")}
@@ -521,11 +521,11 @@ function Sidebar({
       {/* 1. Desktop Sidebar (hidden on mobile, visible on lg and up) */}
       <div
         className={`${
-          isCollapsed ? "w-16" : "w-64"
+          isCollapsed ? "w-16" : "w-72"
         } hidden lg:flex transition-all duration-300 flex-none h-full bg-white dark:bg-[#2C2D31] dark:border dark:border-[#374151] rounded-2xl shadow-sm overflow-hidden flex-col`}
       >
         {/* Top Header with Logo & Circular Collapse Toggle */}
-        <div className="p-3 px-3.5 pt-4 flex items-center justify-between">
+        <div className="p-3.5 px-4 pt-4.5 flex items-center justify-between">
           {!isCollapsed ? (
             <>
               <NectoLogo size="xs" inline />
@@ -555,18 +555,18 @@ function Sidebar({
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+        <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5 scrollbar-thin">
           {renderNavLinks(false)}
         </nav>
 
         {/* Bottom Action Section */}
-        <div className="p-2 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
+        <div className="p-3 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
           <NavItem
             icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
             label="Configuración"
             onClick={() => navigate("/workspaces")}
           />
-          <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} />
+          <NavItem icon={<HelpCircle className="w-4 h-4 text-zinc-500" />} label="Ayuda" onClick={() => {}} />
           <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { signOut(); navigate("/login"); }} />
         </div>
       </div>
