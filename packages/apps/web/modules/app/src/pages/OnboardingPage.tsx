@@ -491,7 +491,7 @@ export default function OnboardingPage() {
                   {/* Content */}
                   <div className="relative z-10 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
                         {activeArchetype.category}
                       </span>
                       <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
@@ -605,7 +605,7 @@ export default function OnboardingPage() {
                   {/* Content Overlay */}
                   <div className="relative z-10 space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
                         NECTO X META
                       </span>
                       <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
@@ -708,7 +708,7 @@ export default function OnboardingPage() {
                   {/* Content */}
                   <div className="relative z-10 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
                         OPERACIONES INTEGRADAS
                       </span>
                       <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
@@ -808,7 +808,7 @@ export default function OnboardingPage() {
           {/* Top Brand & Trust Badge */}
           <div className="relative z-10 flex items-center justify-between">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <Sparkles className="w-3.5 h-3.5 text-orange-400" />
               <span>Plataforma Todo-en-Uno</span>
             </div>
 
@@ -820,7 +820,7 @@ export default function OnboardingPage() {
           {/* Center Value Content */}
           <div className="relative z-10 space-y-6 my-auto py-8">
             <div className="space-y-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF3F1A] px-3 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-[#FF3F1A]/30 inline-block shadow-sm">
+              <span className="text-xs font-mono font-bold uppercase tracking-widest text-orange-400 px-3 py-1 rounded-lg bg-orange-500/20 backdrop-blur-md border border-orange-500/40 inline-block shadow-sm">
                 {step === 1
                   ? activeArchetype.title
                   : step === 2
