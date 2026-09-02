@@ -76,21 +76,20 @@ function NotificationBellDropdown({
 
   return (
     <div className="relative">
-      <Button
-        variant="ghost"
-        intent="shell.notifications.toggle"
+      <button
+        type="button"
         onClick={() => setOpen(!open)}
-        className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-colors hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+        className="relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-all hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
         title="Notificaciones de Necto IA"
       >
-        <Bell className="w-6 h-6 sm:w-6.5 sm:h-6.5 text-gray-700 dark:text-gray-200 stroke-[2.2]" />
+        <Bell className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200 stroke-[2.2]" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-3 w-3">
+          <span className="absolute top-0.5 right-0.5 flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF3F1A] border-2 border-white dark:border-gray-900"></span>
           </span>
         )}
-      </Button>
+      </button>
 
       {open && (
         <>

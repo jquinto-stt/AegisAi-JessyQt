@@ -56,23 +56,24 @@ export const UserProfileDropdown: React.FC = () => {
     <>
       <div className="relative" ref={dropdownRef}>
         {/* Profile Trigger Button - Circular with Person Photo */}
-        <Button
-          variant="ghost"
-          intent="shell.profile.toggle"
+        <button
+          type="button"
           onClick={() => {
             setIsOpen(!isOpen);
             if (!isOpen) setShowBranches(false);
           }}
-          className="p-0 relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square items-center justify-center rounded-full border border-slate-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 transition-all hover:ring-2 hover:ring-[#FF3F1A]/30 dark:hover:ring-[#FF3F1A]/40 shadow-sm hover:scale-105 active:scale-95 cursor-pointer group overflow-visible"
+          className="relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border-2 border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-all hover:ring-2 hover:ring-[#FF3F1A]/50 shadow-sm hover:scale-105 active:scale-95 cursor-pointer p-0.5"
           title="Perfil de Usuario y Sucursales"
         >
-          <img
-            src={userAvatarUrl}
-            alt={displayName}
-            className="w-full h-full rounded-full object-cover"
-          />
+          <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-zinc-800">
+            <img
+              src={userAvatarUrl}
+              alt={displayName}
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
           <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-gray-900" />
-        </Button>
+        </button>
 
         {/* Dropdown Menu */}
         {isOpen && (
