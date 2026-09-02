@@ -349,7 +349,7 @@ function Sidebar({
               : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
           }`}
         >
-          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-white" : "text-zinc-700 dark:text-zinc-300 group-hover:text-[#FF3F1A]"}`}>
+          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-[#FF3F1A]"}`}>
             {icon}
           </span>
         </button>
@@ -366,7 +366,7 @@ function Sidebar({
             : "text-zinc-800 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
         }`}
       >
-        <span className={`flex-none transition-colors ${active ? "text-white" : "text-zinc-600 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
+        <span className={`flex-none transition-colors ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-zinc-600 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
         <span className="flex-1 text-left truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
         {expanded[section] ? (
           <ChevronDown className={`w-4 h-4 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
@@ -393,7 +393,7 @@ function Sidebar({
         {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
           <div className="flex flex-col gap-1">
             <SectionHeader
-              icon={<Zap className="w-4 h-4 text-[#FF3F1A]" />}
+              icon={<Zap className="w-4 h-4" />}
               label="Operación"
               section="operacion"
               active={activeModule === "pedidos" && pedidosSection === "operacion"}
@@ -431,7 +431,7 @@ function Sidebar({
         {(canAccess("canViewCatalogo") || canAccess("canViewInsumos")) && (
           <div className="flex flex-col gap-1">
             <SectionHeader
-              icon={<Layers className="w-4 h-4 text-[#FF3F1A]" />}
+              icon={<Layers className="w-4 h-4" />}
               label="Menú & Stock"
               section="menu"
               active={activeModule === "pedidos" && pedidosSection === "menu"}
@@ -469,7 +469,7 @@ function Sidebar({
         {(canAccess("canViewAutomatizaciones") || canAccess("canViewTurnos") || canAccess("canManageRoles")) && (
           <div className="flex flex-col gap-1">
             <SectionHeader
-              icon={<Users className="w-4 h-4 text-[#FF3F1A]" />}
+              icon={<Users className="w-4 h-4" />}
               label="Configuración"
               section="configuracion"
               active={activeModule === "pedidos" && pedidosSection === "configuracion"}
