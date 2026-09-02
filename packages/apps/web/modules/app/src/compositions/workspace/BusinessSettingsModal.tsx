@@ -48,6 +48,81 @@ import {
 } from "lucide-react";
 import { Button, Field, Select, Textarea, Badge, Toggle } from "@/elements";
 
+const CITIES_BY_COUNTRY: Record<string, string[]> = {
+  Colombia: [
+    "Bogotá D.C.",
+    "Medellín",
+    "Cali",
+    "Barranquilla",
+    "Cartagena",
+    "Bucaramanga",
+    "Pereira",
+    "Manizales",
+    "Santa Marta",
+    "Cúcuta",
+    "Ibagué",
+    "Pasto",
+    "Villavicencio",
+    "Envigado",
+    "Rionegro",
+    "Chía / Cota",
+  ],
+  México: [
+    "Ciudad de México (CDMX)",
+    "Guadalajara",
+    "Monterrey",
+    "Puebla",
+    "Querétaro",
+    "Cancún",
+    "Mérida",
+    "Tijuana",
+    "León",
+    "Zapopan",
+    "Playa del Carmen",
+  ],
+  "Estados Unidos": [
+    "Miami, FL",
+    "Orlando, FL",
+    "New York, NY",
+    "Los Angeles, CA",
+    "Houston, TX",
+    "Chicago, IL",
+    "Dallas, TX",
+    "Austin, TX",
+    "San Francisco, CA",
+  ],
+  España: [
+    "Madrid",
+    "Barcelona",
+    "Valencia",
+    "Sevilla",
+    "Málaga",
+    "Bilbao",
+    "Zaragoza",
+    "Palma de Mallorca",
+    "Alicante",
+  ],
+  Argentina: [
+    "Buenos Aires (CABA)",
+    "Córdoba",
+    "Rosario",
+    "Mendoza",
+    "La Plata",
+    "Mar del Plata",
+    "San Miguel de Tucumán",
+    "Salta",
+  ],
+  Chile: [
+    "Santiago",
+    "Valparaíso",
+    "Viña del Mar",
+    "Concepción",
+    "Antofagasta",
+    "La Serena",
+    "Temuco",
+  ],
+};
+
 const InteractiveImageViewport: React.FC<{
   imageUrl: string;
   rotate: number;
@@ -870,7 +945,14 @@ export const BusinessSettingsModal: React.FC<{
                       label="País"
                       intent="business.country"
                       value={country}
-                      onChange={e => setCountry(e.target.value)}
+                      onChange={e => {
+                        const newCountry = e.target.value;
+                        setCountry(newCountry);
+                        const countryCities = CITIES_BY_COUNTRY[newCountry] || [];
+                        if (countryCities.length > 0 && !countryCities.includes(city)) {
+                          setCity(countryCities[0]);
+                        }
+                      }}
                       options={[
                         { value: "Colombia", label: "Colombia" },
                         { value: "México", label: "México" },
@@ -881,14 +963,18 @@ export const BusinessSettingsModal: React.FC<{
                       ]}
                     />
 
-                    <Field
+                    <Select
                       label="Ciudad / Zona"
-                      labelStyle="bold"
                       intent="business.city"
-                      type="text"
                       value={city}
                       onChange={e => setCity(e.target.value)}
-                      placeholder="Ej: Bogotá, Chapinero"
+                      options={(() => {
+                        const currentCities = CITIES_BY_COUNTRY[country] || CITIES_BY_COUNTRY["Colombia"] || [];
+                        const list = (city && !currentCities.includes(city))
+                          ? [city, ...currentCities]
+                          : currentCities;
+                        return list.map(c => ({ value: c, label: c }));
+                      })()}
                     />
 
                     <Select
