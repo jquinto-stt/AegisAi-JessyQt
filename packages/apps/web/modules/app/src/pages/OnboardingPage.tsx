@@ -518,7 +518,7 @@ export default function OnboardingPage() {
                 <div className="p-6 sm:p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-6 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-[#25D366]/15 text-[#008069] dark:text-[#25D366] flex items-center justify-center border border-[#25D366]/30 font-bold flex-none shadow-2xs">
+                      <div className="w-14 h-14 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center border border-[#FF3F1A]/20 font-bold flex-none shadow-2xs">
                         <Smartphone className="w-7 h-7" />
                       </div>
                       <div>
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                         window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
                         setIsMetaConnected(true);
                       }}
-                      className="py-3.5 px-6 rounded-2xl text-sm font-bold bg-[#008069] hover:bg-[#006e5a] text-white flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
+                      className="py-3.5 px-6 rounded-2xl text-sm font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
                     >
                       {isMetaConnected ? (
                         <>
