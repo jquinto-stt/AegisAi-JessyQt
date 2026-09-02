@@ -687,16 +687,16 @@ export const BusinessSettingsModal: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div className="bg-white dark:bg-[#18181B] w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden animate-scale-up">
         {/* Top Header */}
-        <div className="px-6 py-4.5 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50 flex-none">
+        <div className="px-6 py-4.5 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between bg-gradient-to-r from-[#190088]/5 via-[#EFE6D3]/20 to-transparent dark:from-[#190088]/20 dark:via-zinc-900/50 dark:to-zinc-900/50 flex-none">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center shadow-xs">
+            <div className="w-10 h-10 rounded-2xl bg-[#190088] text-white flex items-center justify-center shadow-md">
               <Store className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
                 <span>{business?.id ? "Configuración de Sede" : "Crear Nueva Franquicia / Sucursal"}</span>
                 {business?.name && (
-                  <span className="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#190088]/10 dark:bg-[#190088]/30 text-[#190088] dark:text-blue-200 border border-[#190088]/20">
                     {business.name}
                   </span>
                 )}
@@ -778,21 +778,21 @@ export const BusinessSettingsModal: React.FC<{
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`w-full p-2.5 rounded-2xl text-left transition-all cursor-pointer flex items-start gap-2.5 group ${
                     isActive
-                      ? "bg-white dark:bg-zinc-800/90 text-zinc-950 dark:text-white shadow-xs border border-zinc-200/90 dark:border-zinc-700/80 font-bold"
-                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40 hover:text-zinc-950 dark:hover:text-zinc-200 border border-transparent"
+                      ? "bg-[#190088]/10 dark:bg-[#190088]/25 text-[#190088] dark:text-blue-200 shadow-xs border border-[#190088]/30 dark:border-[#190088]/50 font-bold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40 hover:text-[#190088] dark:hover:text-blue-300 border border-transparent"
                   }`}
                 >
                   <div
                     className={`w-7 h-7 rounded-xl flex items-center justify-center flex-none mt-0.5 transition-colors ${
                       isActive
-                        ? "bg-[#FF3F1A] text-white"
-                        : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
+                        ? "bg-[#190088] text-white shadow-2xs"
+                        : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-500 group-hover:text-[#190088] dark:group-hover:text-blue-300"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold leading-tight truncate">{tab.label}</p>
+                    <p className={`text-xs font-bold leading-tight truncate ${isActive ? "text-[#190088] dark:text-blue-200" : ""}`}>{tab.label}</p>
                     <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate mt-0.5 font-normal">
                       {tab.desc}
                     </p>
@@ -808,7 +808,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "general" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
                     Identidad Comercial & Ubicación
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -849,13 +849,13 @@ export const BusinessSettingsModal: React.FC<{
                             onClick={() => setBusinessType(archetype.id as BusinessType)}
                             className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
                               isSelected
-                                ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white shadow-sm font-bold"
-                                : "bg-zinc-50 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+                                ? "bg-[#190088] text-white border-[#190088] shadow-sm font-bold"
+                                : "bg-zinc-50 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#190088]/40"
                             }`}
                           >
-                            <Icon className="w-4 h-4 text-[#FF3F1A]" />
+                            <Icon className={`w-4 h-4 ${isSelected ? "text-[#FF3F1A]" : "text-[#190088] dark:text-blue-400"}`} />
                             <span className="text-xs font-bold leading-tight">{archetype.label}</span>
-                            <span className={`text-[10px] ${isSelected ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>
+                            <span className={`text-[10px] ${isSelected ? "text-blue-100" : "text-zinc-400"}`}>
                               {archetype.desc}
                             </span>
                           </Button>
@@ -947,9 +947,9 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "branding" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
                     <span>Personalización de Logo & Portada</span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/10 text-[#FF3F1A] border border-orange-500/20">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-blue-200 border border-[#190088]/20">
                       Controles de Ángulo & Encuadre
                     </span>
                   </h3>
@@ -991,7 +991,7 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   <div className="space-y-4">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs">
+                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
                       <Upload className="w-3.5 h-3.5" />
                       <span>{logoUrl ? "Reemplazar Imagen de Logo" : "Subir Logotipo"}</span>
                       <input
@@ -1063,7 +1063,7 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   <div className="space-y-4">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer shadow-xs">
+                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
                       <Upload className="w-3.5 h-3.5" />
                       <span>{bannerUrl ? "Reemplazar Foto de Portada" : "Subir Foto de Portada"}</span>
                       <input
@@ -1108,7 +1108,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "whatsapp_bot" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
                     <Bot className="w-5 h-5 text-[#00A884]" />
                     <span>Mensajes Automáticos del Bot de WhatsApp</span>
                   </h3>
@@ -1315,7 +1315,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "modules" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
                     Módulos Operativos de la Sede
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -1334,7 +1334,7 @@ export const BusinessSettingsModal: React.FC<{
                         onClick={() => handleToggleModule(mod.id)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                           isChecked
-                            ? "bg-white dark:bg-zinc-900/90 border-zinc-900 dark:border-zinc-100 shadow-xs"
+                            ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 shadow-xs"
                             : "bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
                         }`}
                       >
@@ -1342,7 +1342,7 @@ export const BusinessSettingsModal: React.FC<{
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center flex-none ${
                               isChecked
-                                ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-950"
+                                ? "bg-[#190088] text-white shadow-2xs"
                                 : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400"
                             }`}
                           >
@@ -1379,7 +1379,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "channels" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
                     Canales de Venta & Captura de Pedidos
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -1448,7 +1448,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "schedule" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
                     Pausa Temporal & Modo Vacaciones
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -1499,8 +1499,8 @@ export const BusinessSettingsModal: React.FC<{
                               }}
                               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                 pauseReason === opt
-                                  ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white font-bold shadow-2xs"
-                                  : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                                  ? "bg-[#190088] text-white border-[#190088] font-bold shadow-2xs"
+                                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-[#190088]/40"
                               }`}
                             >
                               {opt}
@@ -1531,7 +1531,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "advanced" && (
               <div className="space-y-6 animate-fade-in max-w-2xl">
                 <div>
-                  <h3 className="text-base font-bold text-zinc-950 dark:text-white">
+                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
                     Parámetros Operativos & Peligro
                   </h3>
                   <p className="text-xs text-zinc-500 mt-0.5">
@@ -1636,7 +1636,7 @@ export const BusinessSettingsModal: React.FC<{
             variant="accent"
             intent="business.save"
             onClick={handleSave}
-            className="py-2.5 px-6 rounded-2xl text-xs bg-[#FF3F1A] hover:bg-[#e03716] text-white font-bold cursor-pointer"
+            className="py-2.5 px-6 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer shadow-md"
           >
             <Check className="w-4 h-4 stroke-[3]" />
             <span>Guardar Configuración</span>

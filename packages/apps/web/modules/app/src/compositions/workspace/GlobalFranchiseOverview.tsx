@@ -219,8 +219,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
 
                   {/* Status Badge floating on top-left of banner */}
                   <div className="absolute top-3.5 left-3.5 z-10">
-                    <span className="px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-emerald-400 text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1.5 border border-emerald-500/30 shadow-md">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="px-3 py-1 rounded-full bg-[#190088]/80 backdrop-blur-md text-emerald-300 text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1.5 border border-emerald-400/40 shadow-md">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                       Operando
                     </span>
                   </div>
@@ -234,10 +234,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
                         setSelectedBusinessForSettings(biz);
                       }}
                       title="Configuración de Sede, Branding y Bot"
-                      className="h-9 px-3.5 rounded-2xl bg-black/75 hover:bg-[#FF3F1A] backdrop-blur-md text-white border border-white/30 hover:border-[#FF3F1A] shadow-xl flex items-center gap-2 font-bold text-xs hover:scale-105 active:scale-95 transition-all group/gear cursor-pointer"
+                      className="h-9 px-3.5 rounded-2xl bg-[#190088]/90 hover:bg-[#FF3F1A] backdrop-blur-md text-white border border-white/40 hover:border-[#FF3F1A] shadow-xl flex items-center gap-2 font-bold text-xs hover:scale-105 active:scale-95 transition-all group/gear cursor-pointer"
                     >
-                      <Settings className="w-4 h-4 group-hover/gear:rotate-90 transition-transform duration-300" />
-                      <span className="font-bold">Configurar Sede</span>
+                      <Settings className="w-4 h-4 group-hover/gear:rotate-90 transition-transform duration-300 text-[#EFE6D3]" />
+                      <span className="font-bold text-white">Configurar Sede</span>
                     </button>
                   </div>
                 </div>
@@ -246,7 +246,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                 <div className="p-6 pt-3 space-y-5 flex-1 flex flex-col justify-between">
                   {/* Floating Logo / Avatar Row */}
                   <div className="flex items-center justify-between -mt-10 mb-1 z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-800 border-2 border-white dark:border-zinc-700 flex items-center justify-center flex-none shadow-lg overflow-hidden ring-4 ring-black/5 dark:ring-black/20">
+                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-800 border-2 border-white dark:border-zinc-700 flex items-center justify-center flex-none shadow-lg overflow-hidden ring-4 ring-[#190088]/10 dark:ring-white/10">
                       {biz.logoUrl ? (
                         <img
                           src={biz.logoUrl}
@@ -263,7 +263,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="px-3.5 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 group-hover:bg-[#FF3F1A] group-hover:text-white border border-zinc-200 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
+                    <div className="px-3.5 py-1.5 rounded-full bg-[#EFE6D3] dark:bg-[#323028] text-[#190088] dark:text-[#EFE6D3] group-hover:bg-[#FF3F1A] group-hover:text-white border border-[#190088]/20 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
                       <span>Entrar al local</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
@@ -271,23 +271,23 @@ export const GlobalFranchiseOverview: React.FC = () => {
 
                   {/* Title & Metadata (100% in card body with crystal-clear contrast) */}
                   <div className="space-y-1">
-                    <h4 className="text-lg sm:text-xl font-black text-zinc-950 dark:text-zinc-50 leading-snug group-hover:text-[#FF3F1A] transition-colors truncate">
+                    <h4 className="text-lg sm:text-xl font-black text-[#190088] dark:text-[#EFE6D3] leading-snug group-hover:text-[#FF3F1A] transition-colors truncate">
                       {biz.name}
                     </h4>
                     <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
                       <span>{biz.city}</span>
                       <span>•</span>
-                      <span className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 font-mono font-bold text-[10px] text-zinc-700 dark:text-zinc-300">
+                      <span className="px-2 py-0.5 rounded-md bg-[#190088]/10 dark:bg-[#190088]/30 font-mono font-bold text-[10px] text-[#190088] dark:text-blue-200 border border-[#190088]/20">
                         {biz.currency}
                       </span>
                     </div>
                   </div>
 
                   {/* Branch Live Metrics Row */}
-                  <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-center">
+                  <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-[#F7F4EC]/60 dark:bg-zinc-900 border border-[#190088]/15 dark:border-zinc-800 text-center">
                     <div>
                       <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Ventas Hoy</span>
-                      <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockRevenue}</span>
+                      <span className="text-xs sm:text-sm font-extrabold text-[#190088] dark:text-blue-300">{mockRevenue}</span>
                     </div>
                     <div className="border-x border-zinc-200 dark:border-zinc-800">
                       <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Volumen</span>
