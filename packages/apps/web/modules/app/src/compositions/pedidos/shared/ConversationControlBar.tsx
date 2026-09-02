@@ -54,8 +54,8 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
                 className="w-10 h-10 rounded-full object-cover shadow-2xs border border-white dark:border-zinc-700"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-[#008069] text-white flex items-center justify-center shadow-xs">
-                <User className="w-5 h-5" />
+              <div className="w-10 h-10 rounded-full bg-[#008069] text-white flex items-center justify-center shadow-xs font-bold text-sm">
+                {conversation.customerName.charAt(0)}
               </div>
             )}
             <span className="w-2.5 h-2.5 rounded-full bg-[#25D366] border-2 border-white dark:border-[#202C33] absolute bottom-0 right-0" />
@@ -63,10 +63,11 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm text-[#111B21] dark:text-[#E9EDEF] truncate">
+              <h3 className="font-extrabold text-sm text-[#111B21] dark:text-[#E9EDEF] truncate">
                 {conversation.customerName}
               </h3>
-              <span className="text-[10px] bg-emerald-500/15 text-[#008069] dark:text-[#00A884] px-1.5 py-0.2 rounded font-bold font-mono">
+              <CheckCircle className="w-3.5 h-3.5 text-[#00A884] flex-none" title="Empresa Verificada por Meta" />
+              <span className="text-[10px] bg-emerald-500/15 text-[#008069] dark:text-[#00A884] px-2 py-0.5 rounded-full font-bold font-mono">
                 WhatsApp Business
               </span>
             </div>
@@ -76,36 +77,48 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
           </div>
         </div>
 
-        {/* WhatsApp Action Icons */}
-        <div className="flex items-center gap-1 text-[#54656F] dark:text-[#AEBAC1]">
-          <button
-            type="button"
-            className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-            title="Llamada de voz"
-          >
-            <Phone className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-            title="Videollamada"
-          >
-            <Video className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-            title="Buscar en el chat"
-          >
-            <Search className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-            title="Más opciones"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+        {/* WhatsApp Action Icons & Linked Order Chip */}
+        <div className="flex items-center gap-2">
+          {order && (
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-xl bg-white dark:bg-[#111B21] border border-zinc-200 dark:border-zinc-700 text-xs shadow-2xs">
+              <Receipt className="w-3.5 h-3.5 text-[#FF3F1A]" />
+              <span className="font-mono font-bold text-zinc-900 dark:text-white">#{order.code}</span>
+              <span className="text-zinc-400">·</span>
+              <span className="font-extrabold text-[#008069] dark:text-[#00A884]">${order.total.toLocaleString()}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-0.5 text-[#54656F] dark:text-[#AEBAC1]">
+            <button
+              type="button"
+              onClick={() => window.open(`https://wa.me/${conversation.customerPhone.replace(/\D/g, '')}`, "_blank")}
+              className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+              title="Abrir chat directo en WhatsApp"
+            >
+              <Phone className="w-4 h-4 text-[#008069] dark:text-[#00A884]" />
+            </button>
+            <button
+              type="button"
+              className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+              title="Videollamada"
+            >
+              <Video className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+              title="Buscar en el chat"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+              title="Más opciones"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

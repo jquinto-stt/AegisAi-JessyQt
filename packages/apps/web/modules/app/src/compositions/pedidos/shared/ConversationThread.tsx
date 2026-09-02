@@ -278,8 +278,34 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
         <div ref={endRef} />
       </div>
 
-      {/* WhatsApp Input Bar */}
-      <div className="flex-none p-3 bg-[#F0F2F5] dark:bg-[#202C33] border-t border-zinc-200 dark:border-[#222E35] z-10 space-y-2">
+      {/* WhatsApp Business Quick Responses & Input Bar */}
+      <div className="flex-none p-3 bg-[#F0F2F5] dark:bg-[#202C33] border-t border-zinc-200 dark:border-[#222E35] z-10 space-y-2.5">
+        {/* Business Quick Response Templates */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <span className="text-[10px] font-mono font-bold uppercase text-[#54656F] dark:text-[#8696A0] flex items-center gap-1 mr-1 flex-none">
+            <Zap className="w-3 h-3 text-[#008069] dark:text-[#00A884]" />
+            Plantillas:
+          </span>
+          {[
+            { label: "👨‍🍳 En Preparación", text: "¡Hola! Tu comanda ya ingresó a cocina y nuestro equipo la está preparando con el mayor cuidado." },
+            { label: "💳 Solicitar Comprobante", text: "Hola, por favor compártenos el comprobante bancario para validar la acreditación de tu pago." },
+            { label: "🛵 En Camino", text: "¡Tu pedido va en camino con nuestro repartidor! Te avisaremos apenas esté en tu puerta." },
+            { label: "⭐ Gracias", text: "¡Muchas gracias por elegirnos! Esperamos que disfrutes tu pedido. Cualquier duda quedamos a tu orden." },
+          ].map(tpl => (
+            <button
+              key={tpl.label}
+              type="button"
+              onClick={() => {
+                if (!isMine) takeControl(conversation.id);
+                setDraft(tpl.text);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#111B21] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] text-[#111B21] dark:text-zinc-200 hover:text-[#008069] dark:hover:text-[#00A884] border border-zinc-200/80 dark:border-zinc-700 text-[11px] font-bold flex-none transition-all cursor-pointer shadow-2xs"
+            >
+              {tpl.label}
+            </button>
+          ))}
+        </div>
+
         {isMine ? (
           <div className="flex items-center gap-2">
             <button
@@ -309,7 +335,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                   }
                 }}
                 placeholder="Escribe un mensaje oficial como Administrador..."
-                className="w-full px-4 py-2.5 text-xs rounded-lg bg-white dark:bg-[#2A3942] text-[#111B21] dark:text-[#E9EDEF] placeholder-[#54656F] dark:placeholder-[#8696A0] focus:outline-none shadow-2xs"
+                className="w-full px-4 py-2.5 text-xs rounded-xl bg-white dark:bg-[#2A3942] text-[#111B21] dark:text-[#E9EDEF] placeholder-[#54656F] dark:placeholder-[#8696A0] focus:outline-none shadow-2xs"
               />
             </div>
 
@@ -329,7 +355,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             <span>Atendido en vivo por {conversation.controlledBy}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/80 dark:bg-[#2A3942]/80 rounded-lg text-xs text-[#54656F] dark:text-[#AEBAC1]">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/80 dark:bg-[#2A3942]/80 rounded-xl text-xs text-[#54656F] dark:text-[#AEBAC1]">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#00A884] flex-none" />
               <span className="text-[11px] font-medium">
@@ -338,6 +364,15 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                   : "Esta conversación requiere atención. Haz clic en 'Tomar Control' para escribir."}
               </span>
             </div>
+            {!isMine && (
+              <button
+                type="button"
+                onClick={() => takeControl(conversation.id)}
+                className="px-3 py-1 rounded-lg bg-[#008069] text-white font-bold text-xs hover:bg-[#006e5a] transition-colors cursor-pointer flex-none"
+              >
+                Tomar Control
+              </button>
+            )}
           </div>
         )}
 

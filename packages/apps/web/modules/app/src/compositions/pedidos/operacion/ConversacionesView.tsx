@@ -15,6 +15,11 @@ import {
   AlertTriangle,
   Shield,
   Bot,
+  ExternalLink,
+  Sparkles,
+  CheckCircle2,
+  Phone,
+  Tag,
 } from "lucide-react";
 
 type StatusFilter = "todas" | "intervencion" | "humano" | "ia" | "resueltas";
@@ -68,40 +73,48 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
 
   return (
     <div
-      className={`flex h-full min-h-0 max-h-full ${
+      className={`flex h-[calc(100vh-140px)] min-h-[580px] w-full ${
         isEmbedded
           ? "rounded-none border-0 shadow-none"
-          : "rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800"
+          : "rounded-3xl shadow-xl border border-zinc-200/90 dark:border-zinc-800"
       } bg-[#F0F2F5] dark:bg-[#111B21] animate-fade-in overflow-hidden`}
     >
-      {/* Left Panel: WhatsApp Chats List */}
-      <div className="flex flex-col w-full sm:w-[320px] md:w-[360px] lg:w-[390px] flex-none min-h-0 h-full bg-white dark:bg-[#111B21] border-r border-zinc-200 dark:border-[#222E35] overflow-hidden">
-        {/* WhatsApp Sidebar Header */}
+      {/* Left Panel: WhatsApp Business Chats Sidebar */}
+      <div className="flex flex-col w-full sm:w-[340px] md:w-[380px] lg:w-[410px] flex-none min-h-0 h-full bg-white dark:bg-[#111B21] border-r border-zinc-200 dark:border-[#222E35] overflow-hidden">
+        {/* WhatsApp Business Top Header */}
         <div className="flex-none px-4 py-3 bg-[#F0F2F5] dark:bg-[#202C33] flex items-center justify-between border-b border-zinc-200 dark:border-[#222E35]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#008069] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              <MessageSquare className="w-4 h-4 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-[#008069] text-white flex items-center justify-center font-bold text-sm shadow-sm">
+              <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-sm text-[#111B21] dark:text-[#E9EDEF] flex items-center gap-1.5 leading-none">
-                WhatsApp Web
-              </h2>
-              <span className="text-[10px] text-[#008069] dark:text-[#00A884] font-medium leading-none mt-1 block">
-                Bandeja Oficial Necto
+              <div className="flex items-center gap-1.5">
+                <h2 className="font-extrabold text-sm text-[#111B21] dark:text-[#E9EDEF] leading-none">
+                  WhatsApp Business
+                </h2>
+                <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
+              </div>
+              <span className="text-[10px] text-[#008069] dark:text-[#00A884] font-bold leading-none mt-1 block">
+                Bandeja Oficial Conectada
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[#54656F] dark:text-[#AEBAC1]">
-            {pendingCount > 0 && (
-              <span className="text-[10px] bg-[#25D366] text-white px-2 py-0.5 rounded-full font-black animate-pulse shadow-2xs">
-                {pendingCount} Alerta{pendingCount > 1 ? "s" : ""}
-              </span>
-            )}
+          <div className="flex items-center gap-1.5 text-[#54656F] dark:text-[#AEBAC1]">
             <button
               type="button"
-              className="p-1.5 rounded-full hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
-              title="Opciones"
+              onClick={() => window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer")}
+              className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#111B21] text-[#008069] dark:text-[#00A884] hover:bg-[#008069] hover:text-white dark:hover:bg-[#008069] dark:hover:text-white border border-zinc-200 dark:border-zinc-700 font-bold text-[11px] flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              title="Abrir WhatsApp Web en pestaña nueva"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">WhatsApp Web</span>
+            </button>
+
+            <button
+              type="button"
+              className="p-1.5 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60 transition-colors cursor-pointer"
+              title="Opciones del canal"
             >
               <MoreVertical className="w-4 h-4" />
             </button>
@@ -109,15 +122,15 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
         </div>
 
         {/* Search & Filter Bar */}
-        <div className="p-2.5 space-y-2 bg-white dark:bg-[#111B21] border-b border-zinc-100 dark:border-[#222E35]">
+        <div className="p-3 space-y-2.5 bg-white dark:bg-[#111B21] border-b border-zinc-100 dark:border-[#222E35]">
           <div className="relative flex items-center">
             <Search className="w-4 h-4 text-[#54656F] dark:text-[#AEBAC1] absolute left-3.5 pointer-events-none" />
             <input
               type="text"
-              placeholder="Buscar un chat o iniciar uno nuevo"
+              placeholder="Buscar por cliente o teléfono..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-1.5 text-xs rounded-lg bg-[#F0F2F5] dark:bg-[#202C33] text-[#111B21] dark:text-[#E9EDEF] placeholder-[#54656F] dark:placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884] transition-all"
+              className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-[#F0F2F5] dark:bg-[#202C33] text-[#111B21] dark:text-[#E9EDEF] placeholder-[#54656F] dark:placeholder-[#8696A0] focus:outline-none focus:ring-1 focus:ring-[#00A884] transition-all"
             />
           </div>
 
@@ -126,7 +139,7 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
             {[
               { id: "todas" as StatusFilter, label: "Todos" },
               { id: "intervencion" as StatusFilter, label: "Intervención", count: pendingCount },
-              { id: "ia" as StatusFilter, label: "IA Atendiendo" },
+              { id: "ia" as StatusFilter, label: "Bot IA" },
               { id: "humano" as StatusFilter, label: "Admin en Vivo" },
               { id: "resueltas" as StatusFilter, label: "Resueltos" },
             ].map(tab => (
@@ -134,15 +147,15 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
                 key={tab.id}
                 type="button"
                 onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer flex-none flex items-center gap-1.5 select-none ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex-none flex items-center gap-1.5 select-none ${
                   filter === tab.id
-                    ? "bg-[#008069] text-white font-bold shadow-2xs"
+                    ? "bg-[#008069] text-white font-bold shadow-xs"
                     : "bg-[#F0F2F5] dark:bg-[#202C33] text-[#54656F] dark:text-[#8696A0] hover:bg-zinc-200 dark:hover:bg-[#2A3942]"
                 }`}
               >
                 <span>{tab.label}</span>
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-white text-[#008069] text-[9px] font-black flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full bg-[#FF3F1A] text-white text-[9px] font-black flex items-center justify-center">
                     {tab.count}
                   </span>
                 )}
@@ -170,9 +183,9 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
                 <div
                   key={conv.id}
                   onClick={() => handleSelect(conv)}
-                  className={`px-3.5 py-3 transition-colors cursor-pointer flex items-center gap-3 relative select-none ${
+                  className={`px-4 py-3.5 transition-colors cursor-pointer flex items-center gap-3 relative select-none ${
                     isSelected
-                      ? "bg-[#F0F2F5] dark:bg-[#2A3942]"
+                      ? "bg-[#F0F2F5] dark:bg-[#2A3942] border-l-4 border-[#008069]"
                       : "hover:bg-[#F5F6F6] dark:hover:bg-[#202C33]"
                   }`}
                 >
@@ -182,11 +195,11 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
                       <img
                         src={conv.avatarUrl}
                         alt={conv.customerName}
-                        className="w-11 h-11 rounded-full object-cover shadow-2xs border border-white dark:border-zinc-700"
+                        className="w-12 h-12 rounded-full object-cover shadow-2xs border border-white dark:border-zinc-700"
                       />
                     ) : (
-                      <div className="w-11 h-11 rounded-full bg-[#008069] text-white flex items-center justify-center shadow-xs">
-                        <User className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-full bg-[#008069] text-white flex items-center justify-center shadow-xs">
+                        <User className="w-6 h-6" />
                       </div>
                     )}
                     {/* Role / Alert Badge Ring */}
@@ -245,7 +258,7 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-1 mt-0.5">
+                    <div className="flex items-center justify-between gap-1 mt-1">
                       <p
                         className={`text-xs truncate flex items-center gap-1 ${
                           conv.unreadForOperator
@@ -284,20 +297,20 @@ export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbed
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-[#F0F2F5] dark:bg-[#222E35] text-[#54656F] dark:text-[#8696A0] space-y-4">
-            <div className="w-16 h-16 rounded-full bg-[#008069]/10 text-[#008069] flex items-center justify-center">
-              <MessageSquare className="w-8 h-8" />
+            <div className="w-20 h-20 rounded-full bg-[#008069]/10 text-[#008069] flex items-center justify-center shadow-sm">
+              <MessageSquare className="w-10 h-10" />
             </div>
-            <div className="space-y-1 max-w-sm">
-              <h3 className="text-lg font-bold text-[#111B21] dark:text-[#E9EDEF]">
-                WhatsApp Web para Negocios
+            <div className="space-y-1.5 max-w-sm">
+              <h3 className="text-xl font-black text-[#111B21] dark:text-[#E9EDEF]">
+                WhatsApp Business Web
               </h3>
-              <p className="text-xs leading-relaxed">
-                Seleccioná un chat de la lista para leer el historial, certificar pagos y responder en vivo a tus clientes.
+              <p className="text-xs text-zinc-500 leading-relaxed">
+                Selecciona una conversación de la lista para gestionar pedidos en vivo, certificar pagos y atender a tus clientes con asistencia IA.
               </p>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-[#8696A0]">
+            <div className="flex items-center gap-2 text-xs text-[#008069] dark:text-[#00A884] font-bold bg-[#008069]/10 px-3 py-1.5 rounded-full">
               <Lock className="w-3.5 h-3.5" />
-              <span>Cifrado de extremo a extremo con Human-in-the-loop</span>
+              <span>Cifrado de extremo a extremo · Cloud API</span>
             </div>
           </div>
         )}

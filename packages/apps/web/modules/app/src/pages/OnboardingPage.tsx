@@ -563,9 +563,9 @@ export default function OnboardingPage() {
                         <Smartphone className="w-5 h-5" />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-zinc-950 dark:text-white">WhatsApp Business Cloud API</h4>
+                        <h4 className="text-xs font-bold text-zinc-950 dark:text-white">WhatsApp Business & Web</h4>
                         <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono">
-                          {isMetaConnected ? "Vinculación Exitosa · Auth Token OK" : "Pendiente de autorización con Meta"}
+                          {isMetaConnected ? "Vinculación Exitosa · WhatsApp Web & Cloud API Activos" : "Conecta tu dispositivo vía WhatsApp Web o Meta Cloud API"}
                         </p>
                       </div>
                     </div>
@@ -578,22 +578,25 @@ export default function OnboardingPage() {
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
                     <Button
                       variant={isMetaConnected ? "outline" : "accent"}
                       intent="onboarding.meta.toggle"
-                      onClick={() => setIsMetaConnected(!isMetaConnected)}
-                      className="py-2.5 px-5 text-xs"
+                      onClick={() => {
+                        window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
+                        setIsMetaConnected(true);
+                      }}
+                      className="py-2.5 px-5 text-xs flex items-center gap-2 cursor-pointer shadow-md"
                     >
                       {isMetaConnected ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          <span>Desconectar Meta API</span>
+                          <span>Reabrir WhatsApp Web</span>
                         </>
                       ) : (
                         <>
                           <Zap className="w-4 h-4" />
-                          <span>Autorizar con Meta</span>
+                          <span>Conectar con WhatsApp Web</span>
                         </>
                       )}
                     </Button>
@@ -604,7 +607,7 @@ export default function OnboardingPage() {
                       onClick={() => setStep(3)}
                       className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white font-mono px-3 py-2 cursor-pointer transition-colors"
                     >
-                      Vincular más tarde →
+                      Continuar al siguiente paso →
                     </Button>
                   </div>
                 </div>
