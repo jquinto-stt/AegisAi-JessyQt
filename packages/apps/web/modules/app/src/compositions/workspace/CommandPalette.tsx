@@ -112,7 +112,7 @@ export const CommandPalette: React.FC = () => {
     {
       id: "mod-pedidos",
       category: "Acceso Rápido a Módulos",
-      title: "Pedidos en Vivo",
+      title: "Órdenes",
       subtitle: "Monitor omnicanal de comandas (WhatsApp, Web y POS)",
       icon: <ShoppingBag className="w-4 h-4 text-orange-500" />,
       action: () => {

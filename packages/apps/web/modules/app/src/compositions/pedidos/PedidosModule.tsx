@@ -242,7 +242,7 @@ const PedidosContent: React.FC<{
               {[
                 {
                   id: "en-vivo" as OperacionTab,
-                  label: "Pedidos en Vivo",
+                  label: "Órdenes",
                   icon: <ShoppingBag className="w-3.5 h-3.5 flex-none" />,
                   count: orders.length,
                   highlightBadge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
