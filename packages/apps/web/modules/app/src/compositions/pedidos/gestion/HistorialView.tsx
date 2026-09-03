@@ -18,14 +18,14 @@ import {
 import { Button, Select, SearchInput } from "@/elements";
 
 export const HistorialView: React.FC = () => {
-  const { orders, setSelectedOrderId } = usePedidos();
+  const { allOrders, setSelectedOrderId } = usePedidos();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "TODOS">("TODOS");
   const [channelFilter, setChannelFilter] = useState<OrderChannel | "TODOS">("TODOS");
   const [search, setSearch] = useState("");
   const [closingDate, setClosingDate] = useState<string>(new Date().toISOString().split("T")[0]);
 
-  // Filtering
-  const filtered = orders.filter(o => {
+  // Filtering over complete audit log
+  const filtered = allOrders.filter(o => {
     if (statusFilter !== "TODOS" && o.status !== statusFilter) return false;
     if (channelFilter !== "TODOS" && o.channel !== channelFilter) return false;
     if (search.trim()) {
@@ -72,9 +72,10 @@ export const HistorialView: React.FC = () => {
   };
 
   // Cash Register Closure Metrics
-  const activeOrders = orders.filter(o => o.status !== "CANCELADO" && o.status !== "RECHAZADO");
+  const activeOrders = allOrders.filter(o => o.status !== "CANCELADO" && o.status !== "RECHAZADO");
   const totalSales = activeOrders.reduce((sum, o) => sum + o.total, 0);
-  const completedCount = orders.filter(o => o.status === "FINALIZADO").length;
+  const completedCount = allOrders.filter(o => o.status === "FINALIZADO").length;
+  const avgTicket = activeOrders.length > 0 ? Math.round(totalSales / activeOrders.length) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -82,32 +83,32 @@ export const HistorialView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
           <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            Total Facturado
+            Total Facturado del Día
           </span>
-          <p className="text-2xl font-black text-zinc-950 dark:text-white">
-            ${totalSales.toLocaleString()}
+          <p className="text-2xl font-black text-zinc-950 dark:text-white font-mono">
+            ${totalSales.toLocaleString("es-CO")} COP
           </p>
-          <span className="text-[11px] text-zinc-400">En {activeOrders.length} transacciones activas</span>
+          <span className="text-[11px] text-zinc-400">En {activeOrders.length} transacciones cobradas</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
           <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
             Órdenes Completadas
           </span>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
             {completedCount}
           </p>
-          <span className="text-[11px] text-zinc-400">Entregadas con éxito al cliente</span>
+          <span className="text-[11px] text-zinc-400">Despachadas con éxito al cliente</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
           <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            Ticket Promedio
+            Ticket Promedio Consolidado
           </span>
-          <p className="text-2xl font-black text-[#FF3F1A]">
-            ${activeOrders.length ? Math.round(totalSales / activeOrders.length).toLocaleString() : 0}
+          <p className="text-2xl font-black text-[#FF3F1A] font-mono">
+            ${avgTicket.toLocaleString("es-CO")} COP
           </p>
-          <span className="text-[11px] text-zinc-400">Gasto medio por comanda</span>
+          <span className="text-[11px] text-zinc-400">Promedio por comanda efectiva</span>
         </div>
       </div>
 

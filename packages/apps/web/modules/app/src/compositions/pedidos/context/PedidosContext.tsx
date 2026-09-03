@@ -19,6 +19,7 @@ import {
 } from "../types";
 import {
   INITIAL_ORDERS,
+  INITIAL_HISTORIAL_ORDERS,
   INITIAL_PRODUCTS,
   INITIAL_AUTOMATIONS,
   INITIAL_RECURRENCES,
@@ -42,6 +43,8 @@ import { toProductItem, toApiProduct } from "../adapters/productAdapter";
 
 interface PedidosContextType {
   orders: Pedido[];
+  historialOrders: Pedido[];
+  allOrders: Pedido[];
   programados: Pedido[];
   products: ProductItem[];
   ingredients: StockIngredientItem[];
@@ -129,7 +132,10 @@ const PedidosContext = createContext<PedidosContextType | null>(null);
 export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { getIdToken, user } = useAuth();
   const [orders, setOrders] = useState<Pedido[]>(INITIAL_ORDERS);
+  const [historialOrders, setHistorialOrders] = useState<Pedido[]>(INITIAL_HISTORIAL_ORDERS);
   const [programados, setProgramados] = useState<Pedido[]>(INITIAL_PROGRAMADOS);
+
+  const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
   const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
   const [ingredients, setIngredients] = useState<StockIngredientItem[]>(INITIAL_INGREDIENTS);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(INITIAL_MOVEMENTS);
@@ -248,19 +254,22 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Recalculate KPIs when orders change
+  // Recalculate KPIs when orders or historial change
   useEffect(() => {
-    const todayOrders = orders;
-    const completed = todayOrders.filter(o => o.status === "FINALIZADO").length;
-    const inProcess = todayOrders.filter(o => ["CONFIRMADO", "EN_PREPARACION", "LISTO"].includes(o.status)).length;
-    const canceled = todayOrders.filter(o => o.status === "CANCELADO").length;
-    const rejected = todayOrders.filter(o => o.status === "RECHAZADO").length;
-    const totalRev = todayOrders.filter(o => o.status !== "CANCELADO" && o.status !== "RECHAZADO").reduce((sum, o) => sum + o.total, 0);
-    const avgTicket = todayOrders.length > 0 ? Math.round(totalRev / (todayOrders.length - canceled - rejected || 1)) : 0;
+    const allDayOrders = [...orders, ...historialOrders];
+    const completed = allDayOrders.filter(o => o.status === "FINALIZADO").length;
+    const inProcess = orders.filter(o => ["CONFIRMADO", "EN_PREPARACION", "LISTO"].includes(o.status)).length;
+    const canceled = allDayOrders.filter(o => o.status === "CANCELADO").length;
+    const rejected = allDayOrders.filter(o => o.status === "RECHAZADO").length;
+    const totalRev = allDayOrders
+      .filter(o => o.status !== "CANCELADO" && o.status !== "RECHAZADO")
+      .reduce((sum, o) => sum + o.total, 0);
+    const validCount = allDayOrders.length - canceled - rejected;
+    const avgTicket = validCount > 0 ? Math.round(totalRev / validCount) : 0;
 
     setKpis(prev => ({
       ...prev,
-      pedidosHoy: todayOrders.length,
+      pedidosHoy: allDayOrders.length,
       completados: completed,
       enProceso: inProcess,
       cancelados: canceled,
@@ -268,7 +277,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ingresosTotales: totalRev,
       ticketPromedio: avgTicket,
     }));
-  }, [orders]);
+  }, [orders, historialOrders]);
 
   const addIncidencia = (inc: Omit<Incidencia, "id" | "timestamp" | "isResolved">) => {
     const now = new Date();
@@ -966,6 +975,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <PedidosContext.Provider
       value={{
         orders,
+        historialOrders,
+        allOrders,
         programados,
         products,
         ingredients,
