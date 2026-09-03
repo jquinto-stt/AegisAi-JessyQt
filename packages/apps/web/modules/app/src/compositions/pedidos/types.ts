@@ -279,7 +279,8 @@ export type HandoffReason =
   | "CONFIRMAR_DATO"              // Hay que confirmar un dato antes de procesar
   | "CLIENTE_PIDE_HUMANO"         // El cliente pidió explícitamente hablar con alguien
   | "BAJA_CONFIANZA"              // La interpretación de la IA tiene confianza baja
-  | "VERIFICAR_PAGO_TRANSFERENCIA"; // Cliente envió comprobante Nequi/Bancolombia/QR
+  | "VERIFICAR_PAGO_TRANSFERENCIA" // Cliente envió comprobante Nequi/Bancolombia/QR
+  | "RECLAMO_INCIDENCIA";         // Cliente reclama demora o pedido incorrecto
 
 /** Quién emitió un mensaje del hilo. */
 export type MessageSender = "cliente" | "ia" | "humano";
@@ -310,6 +311,17 @@ export interface ConversationEvent {
   note?: string;
 }
 
+export interface DraftOrder {
+  items: OrderItem[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  deliveryType?: "domicilio" | "pickup";
+  deliveryAddress?: string;
+  paymentMethod?: "nequi" | "bancolombia" | "daviplata" | "efectivo" | "datafono";
+  notes?: string;
+}
+
 export interface Conversation {
   id: string;
   customerName: string;
@@ -322,8 +334,10 @@ export interface Conversation {
   /** Motivo del handoff cuando el estado es REQUIERE_INTERVENCION. */
   requiresHandoffReason?: HandoffReason;
   aiConfidence?: AIConfidence;
-  /** Pedido asociado (si ya se generó); enlaza con Pedido.id. */
+  /** Pedido asociado (si ya se confirmó y pasó al Kanban); enlaza con Pedido.id. */
   orderId?: string;
+  /** Comanda en borrador que se está armando en el chat antes del pago. */
+  draftOrder?: DraftOrder;
   messages: ChatMessage[];
   handoffHistory: ConversationEvent[];
   lastMessageAt: string;

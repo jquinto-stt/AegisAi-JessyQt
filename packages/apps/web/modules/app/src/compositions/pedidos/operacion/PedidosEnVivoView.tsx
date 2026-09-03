@@ -3,9 +3,10 @@ import { usePedidos } from "../context/PedidosContext";
 import { OrderStatus, OrderChannel, UrgencyLevel, Pedido } from "../types";
 import {
   Plus,
-  Sparkles,
+  ShoppingBag,
   ChefHat,
   CheckCircle2,
+  CheckCheck,
   LayoutGrid,
   Kanban,
   AlertTriangle,
@@ -52,6 +53,7 @@ export const PedidosEnVivoView: React.FC<{
     setCancelModalOrder,
     injectScheduledOrderToLive,
     transitionOrder,
+    openWhatsAppConversation,
   } = usePedidos();
   const { activeBusiness } = useBusiness();
 
@@ -217,59 +219,59 @@ export const PedidosEnVivoView: React.FC<{
   }> = {
     NUEVO: {
       title: "Nuevos & Por Confirmar",
-      description: "Canales directos o IA",
-      icon: Sparkles,
-      iconBg: "bg-orange-500/10 dark:bg-orange-500/20",
-      iconColor: "text-[#FF3F1A]",
-      badgeStyle: "bg-orange-500/10 text-[#FF3F1A] border-orange-500/20 dark:bg-orange-500/20",
+      description: "Canales directos o WhatsApp",
+      icon: ShoppingBag,
+      iconBg: "bg-[#190088]/10 dark:bg-[#190088]/20",
+      iconColor: "text-[#190088] dark:text-[#97D6DF]",
+      badgeStyle: "bg-[#ECECEC] text-[#212121] dark:bg-zinc-800 dark:text-[#ECECEC] border-zinc-200 dark:border-zinc-700",
     },
     CONFIRMADO: {
       title: "Confirmados (En Cola)",
       description: "Pago validado en cola",
       icon: CheckCircle2,
-      iconBg: "bg-blue-500/10 dark:bg-blue-500/20",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      badgeStyle: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:bg-blue-500/20 dark:text-blue-300",
+      iconBg: "bg-[#190088]/10 dark:bg-[#190088]/20",
+      iconColor: "text-[#190088] dark:text-[#97D6DF]",
+      badgeStyle: "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20",
     },
     EN_PREPARACION: {
       title: "En Cocina / Preparación",
       description: "En línea de cocción KDS",
       icon: ChefHat,
-      iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
-      iconColor: "text-amber-600 dark:text-amber-400",
-      badgeStyle: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-500/20 dark:text-amber-300",
+      iconBg: "bg-[#FF3F1A]/10 dark:bg-[#FF3F1A]/20",
+      iconColor: "text-[#FF3F1A]",
+      badgeStyle: "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/20",
     },
     LISTO: {
       title: "Listos para Entrega",
       description: "En mostrador o pase",
       icon: Package,
-      iconBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
-      badgeStyle: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-500/20 dark:text-emerald-300",
+      iconBg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
+      iconColor: "text-[#190088] dark:text-[#97D6DF]",
+      badgeStyle: "bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border-[#97D6DF]/40",
     },
     FINALIZADO: {
       title: "Entregados Hoy",
       description: "Completados con éxito",
-      icon: Check,
-      iconBg: "bg-zinc-500/10 dark:bg-zinc-500/20",
+      icon: CheckCheck,
+      iconBg: "bg-[#ECECEC] dark:bg-zinc-800",
       iconColor: "text-zinc-600 dark:text-zinc-400",
-      badgeStyle: "bg-zinc-500/10 text-zinc-600 border-zinc-500/20 dark:bg-zinc-500/20 dark:text-zinc-300",
+      badgeStyle: "bg-[#ECECEC] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
     },
     RECHAZADO: {
       title: "Rechazados",
       description: "Descartados",
       icon: X,
-      iconBg: "bg-rose-500/10",
-      iconColor: "text-rose-600",
-      badgeStyle: "bg-rose-500/10 text-rose-600 border-rose-500/20",
+      iconBg: "bg-[#ECECEC] dark:bg-zinc-800",
+      iconColor: "text-zinc-500",
+      badgeStyle: "bg-[#ECECEC] text-zinc-600 border-zinc-300 dark:border-zinc-700",
     },
     CANCELADO: {
       title: "Cancelados",
       description: "Cancelados",
       icon: X,
-      iconBg: "bg-zinc-500/10",
+      iconBg: "bg-[#ECECEC] dark:bg-zinc-800",
       iconColor: "text-zinc-500",
-      badgeStyle: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
+      badgeStyle: "bg-[#ECECEC] text-zinc-500 border-zinc-200 dark:border-zinc-700",
     },
   };
 
@@ -395,18 +397,18 @@ export const PedidosEnVivoView: React.FC<{
               }}
               className={`py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center gap-1.5 border ${
                 urgencyFilter === "RETRASADO"
-                  ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-900"
+                  ? "bg-[#190088]/10 dark:bg-[#190088]/25 text-[#190088] dark:text-[#97D6DF] border-[#190088]/30"
                   : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
               }`}
             >
-              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-rose-500" : "text-zinc-400"}`} />
+              <AlertTriangle className={`w-3.5 h-3.5 ${urgencyFilter === "RETRASADO" ? "text-[#190088] dark:text-[#97D6DF]" : "text-zinc-400"}`} />
               <span>Demoras</span>
               {delayedCount > 0 && (
                 <span
                   className={`font-mono text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                     urgencyFilter === "RETRASADO"
-                      ? "bg-rose-500 text-white"
-                      : "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300"
+                      ? "bg-[#190088] text-white"
+                      : "bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/20 dark:text-[#97D6DF]"
                   }`}
                 >
                   {delayedCount}
@@ -535,10 +537,10 @@ export const PedidosEnVivoView: React.FC<{
                   setDragOverCol(null);
                   setDraggedOrderId(null);
                 }}
-                className={`flex-1 min-w-[210px] sm:min-w-[230px] lg:min-w-0 max-w-full bg-zinc-50/50 dark:bg-[#121214]/40 rounded-2xl border-2 border-dashed border-zinc-300/80 dark:border-zinc-800/90 p-2.5 sm:p-3 flex flex-col justify-between space-y-3 transition-colors ${
+                className={`flex-1 min-w-[210px] sm:min-w-[230px] lg:min-w-0 max-w-full bg-[#ECECEC]/40 dark:bg-[#151518]/70 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 p-2.5 sm:p-3 flex flex-col justify-between space-y-3 transition-all shadow-2xs ${
                   dragOverCol === col.id
-                    ? "border-[#FF3F1A] border-solid ring-2 ring-[#FF3F1A]/20 bg-orange-50/20 dark:bg-orange-950/20"
-                    : ""
+                    ? "ring-2 ring-[#FF3F1A]/40 border-[#FF3F1A] bg-[#FF3F1A]/5 dark:bg-[#FF3F1A]/10 shadow-md"
+                    : "hover:border-zinc-300 dark:hover:border-zinc-700/80"
                 }`}
               >
                 {/* Minimalist Column Header Card */}
@@ -573,8 +575,8 @@ export const PedidosEnVivoView: React.FC<{
                               <span className="font-mono font-bold text-[10px] text-zinc-500 dark:text-zinc-400">
                                 {prog.id}
                               </span>
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-purple-500/10 text-purple-700 dark:text-purple-300">
-                                <Calendar className="w-2.5 h-2.5" />
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#EFE6D3]/60 dark:bg-[#EFE6D3]/15 text-[#212121] dark:text-[#ECECEC] border border-[#EFE6D3] dark:border-[#EFE6D3]/30">
+                                <Calendar className="w-2.5 h-2.5 text-[#FF3F1A]" />
                                 <span>{prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}</span>
                               </span>
                             </div>
@@ -607,9 +609,9 @@ export const PedidosEnVivoView: React.FC<{
                   )}
 
                   {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
-                    <Card variant="dashed" intent="pedidos.column.empty" className="p-6 text-center text-zinc-400 text-xs font-normal border-zinc-200/60 dark:border-zinc-800/60 rounded-xl">
+                    <div className="p-6 text-center text-zinc-400 dark:text-zinc-500 text-xs font-medium rounded-xl bg-white/50 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800/60">
                       <p>Sin pedidos en esta etapa</p>
-                    </Card>
+                    </div>
                   ) : (
                     colOrders.map(order => {
                       const isDelayed = order.urgency === "RETRASADO";
@@ -633,12 +635,8 @@ export const PedidosEnVivoView: React.FC<{
                             setDragOverCol(null);
                           }}
                           onClick={() => setSelectedOrderId(order.id)}
-                          className={`bg-white dark:bg-[#18181B] rounded-xl border p-3 transition-all cursor-grab active:cursor-grabbing hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs space-y-2 group select-none ${
-                            isDragging
-                              ? "opacity-30 scale-95 border-dashed border-[#FF3F1A]"
-                              : isDelayed
-                              ? "border-rose-300 dark:border-rose-900/60 bg-rose-50/[0.04]"
-                              : "border-zinc-200/80 dark:border-zinc-800"
+                          className={`bg-white dark:bg-[#18181B] rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 transition-all cursor-grab active:cursor-grabbing hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs space-y-2 group select-none ${
+                            isDragging ? "opacity-30 scale-95 border-dashed border-[#FF3F1A]" : ""
                           }`}
                           title="Haz clic para abrir comanda o arrastra para mover de etapa"
                         >
@@ -650,7 +648,19 @@ export const PedidosEnVivoView: React.FC<{
                                 {order.id}
                               </span>
                               {layoutPrefs.showChannelBadge !== false && (
-                                <ChannelBadge channel={order.channel} />
+                                <button
+                                  type="button"
+                                  onClick={e => {
+                                    if (order.channel === "whatsapp") {
+                                      e.stopPropagation();
+                                      openWhatsAppConversation(order.id);
+                                    }
+                                  }}
+                                  className={order.channel === "whatsapp" ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+                                  title={order.channel === "whatsapp" ? "Abrir chat en WhatsApp" : undefined}
+                                >
+                                  <ChannelBadge channel={order.channel} />
+                                </button>
                               )}
                             </div>
 
@@ -659,16 +669,16 @@ export const PedidosEnVivoView: React.FC<{
                                 <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
                                   ${order.total.toLocaleString("es-CO")}
                                 </span>
-                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#FF3F1A] transition-colors" />
+                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors" />
                               </div>
                             )}
                           </div>
 
                           {/* Customer Name & Items count */}
                           <div className="min-w-0 pl-5">
-                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1.5 group-hover:text-[#FF3F1A] transition-colors">
+                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1.5 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
                               {isDelayed && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-none" title="Demorado" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] flex-none" title="Demorado" />
                               )}
                               <span>{order.customerName}</span>
                               {layoutPrefs.showCustomerPhone && order.customerPhone && (
@@ -696,18 +706,18 @@ export const PedidosEnVivoView: React.FC<{
                                 <div className="w-full space-y-1">
                                   <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
                                     <div
-                                      className={`h-full rounded-full transition-all ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
+                                      className={`h-full rounded-full transition-all ${isDelayed ? "bg-[#190088]" : "bg-[#97D6DF]"}`}
                                       style={{ width: `${progressPercent}%` }}
                                     />
                                   </div>
                                   <div className="flex justify-between text-[10px] font-mono text-zinc-400">
                                     <span>{order.elapsedMinutes}m / {order.estimatedMinutes}m</span>
-                                    {isDelayed && <span className="text-rose-500 font-medium">Demorado</span>}
+                                    {isDelayed && <span className="text-[#190088] dark:text-[#97D6DF] font-medium">Demorado</span>}
                                   </div>
                                 </div>
                               ) : (
                                 <div className="w-full flex items-center justify-between text-[10px] font-mono text-zinc-400">
-                                  <span className={isDelayed ? "text-rose-500 font-medium" : ""}>
+                                  <span className={isDelayed ? "text-[#190088] dark:text-[#97D6DF] font-medium" : ""}>
                                     {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${order.elapsedMinutes}m transcurridos`}
                                   </span>
                                   <span className="text-zinc-300 dark:text-zinc-700 font-sans">·</span>

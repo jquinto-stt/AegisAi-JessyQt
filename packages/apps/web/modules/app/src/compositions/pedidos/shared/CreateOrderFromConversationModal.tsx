@@ -40,7 +40,7 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
 
   const [customerName, setCustomerName] = useState(conversation.customerName);
   const [customerPhone, setCustomerPhone] = useState(conversation.customerPhone);
-  const [deliveryAddress, setDeliveryAddress] = useState(conversation.customerAddress || "");
+  const [deliveryAddress, setDeliveryAddress] = useState(conversation.draftOrder?.deliveryAddress || "");
   const [paymentMethod, setPaymentMethod] = useState<string>("transferencia");
   const [estimatedMinutes, setEstimatedMinutes] = useState(25);
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -143,10 +143,10 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
       // Send confirmation message to chat
       sendOperatorMessage(
         conversation.id,
-        `🧾 ¡Comanda generada con éxito! Detalle: ${selectedItems
+        `¡Comanda generada con éxito! Detalle: ${selectedItems
           .map(i => `${i.quantity}x ${i.name}`)
           .join(", ")} por un total de $${total.toLocaleString("es-CO")} COP. ${
-          directToKitchen ? "Tu pedido ya está en preparación en cocina 🍳." : "Confirmado en cola de despacho."
+          directToKitchen ? "Tu pedido ya está en preparación en cocina." : "Confirmado en cola de despacho."
         }`
       );
     }, 100);
@@ -330,23 +330,23 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
                   </div>
 
                   <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-1 shadow-2xs">
+                    <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl p-1 shadow-2xs">
                       <button
                         type="button"
                         onClick={() => handleUpdateQty(idx, -1)}
-                        className="w-6 h-6 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center cursor-pointer"
+                        className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-[#212121] dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-600 flex items-center justify-center cursor-pointer shadow-xs transition-all active:scale-95"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-3.5 h-3.5 stroke-[3]" />
                       </button>
-                      <span className="text-xs font-bold font-mono px-1 min-w-4 text-center">
+                      <span className="text-xs font-bold font-mono px-1.5 min-w-5 text-center text-[#212121] dark:text-zinc-100">
                         {item.quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => handleUpdateQty(idx, 1)}
-                        className="w-6 h-6 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-center cursor-pointer"
+                        className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-[#212121] dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-600 flex items-center justify-center cursor-pointer shadow-xs transition-all active:scale-95"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
                       </button>
                     </div>
 

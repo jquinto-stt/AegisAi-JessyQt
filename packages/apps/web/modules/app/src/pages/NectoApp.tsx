@@ -758,8 +758,8 @@ export default function App() {
       setActiveModule("pedidos");
       setPedidosSection(s);
       if (s === "operacion") {
-        if (t === "en-vivo" || t === "preparacion") {
-          setPedidosOpTab(t);
+        if (t === "en-vivo" || t === "preparacion" || t === "programados" || t === "conversaciones") {
+          setPedidosOpTab(t as OperacionTab);
         }
       } else {
         if (t) {
@@ -768,6 +768,16 @@ export default function App() {
       }
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const handleNavigate = (e: any) => {
+      if (e.detail?.section) {
+        handleNavigatePedidos(e.detail.section, e.detail.opTab || e.detail.geTab);
+      }
+    };
+    window.addEventListener("necto_navigate_pedidos", handleNavigate);
+    return () => window.removeEventListener("necto_navigate_pedidos", handleNavigate);
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {

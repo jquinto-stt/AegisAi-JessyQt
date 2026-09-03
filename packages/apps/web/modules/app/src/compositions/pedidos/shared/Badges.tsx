@@ -17,7 +17,6 @@ import {
   Hand,
   UserCheck,
   HelpCircle,
-  PlusCircle,
 } from "lucide-react";
 
 export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md" }> = ({
@@ -30,31 +29,31 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
   > = {
     NUEVO: {
       label: "Nuevo",
-      bg: "bg-zinc-100 dark:bg-zinc-800",
-      text: "text-zinc-900 dark:text-zinc-100",
+      bg: "bg-[#ECECEC] dark:bg-zinc-800",
+      text: "text-[#212121] dark:text-[#ECECEC]",
       border: "border-zinc-200 dark:border-zinc-700",
-      icon: <ShoppingBag className="w-3 h-3 text-[#FF3F1A]" />,
+      icon: <ShoppingBag className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     CONFIRMADO: {
       label: "Confirmado",
-      bg: "bg-zinc-100 dark:bg-zinc-800",
-      text: "text-zinc-900 dark:text-zinc-100",
-      border: "border-zinc-200 dark:border-zinc-700",
-      icon: <CheckCircle className="w-3 h-3 text-zinc-600 dark:text-zinc-300" />,
+      bg: "bg-[#190088]/10 dark:bg-[#190088]/25",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+      border: "border-[#190088]/20 dark:border-[#190088]/40",
+      icon: <CheckCircle className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     EN_PREPARACION: {
       label: "En Cocina",
-      bg: "bg-orange-50 dark:bg-orange-950/40",
-      text: "text-[#FF3F1A]",
-      border: "border-orange-200/80 dark:border-orange-900/60",
-      icon: <ChefHat className="w-3 h-3 text-[#FF3F1A]" />,
+      bg: "bg-[#190088]/10 dark:bg-[#190088]/25",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+      border: "border-[#190088]/20 dark:border-[#190088]/40",
+      icon: <ChefHat className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     LISTO: {
       label: "Listo",
-      bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      text: "text-emerald-700 dark:text-emerald-400",
-      border: "border-emerald-200 dark:border-emerald-800/60",
-      icon: <CheckCircle2 className="w-3 h-3 text-emerald-500" />,
+      bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+      border: "border-[#97D6DF]/40",
+      icon: <CheckCircle2 className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     FINALIZADO: {
       label: "Entregado",
@@ -65,10 +64,10 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
     },
     RECHAZADO: {
       label: "Rechazado",
-      bg: "bg-red-50 dark:bg-red-950/40",
-      text: "text-red-600 dark:text-red-400",
-      border: "border-red-200 dark:border-red-900/40",
-      icon: <XCircle className="w-3 h-3 text-red-500" />,
+      bg: "bg-zinc-100 dark:bg-zinc-800",
+      text: "text-zinc-600 dark:text-zinc-300",
+      border: "border-zinc-300 dark:border-zinc-700",
+      icon: <XCircle className="w-3 h-3 text-zinc-500" />,
     },
     CANCELADO: {
       label: "Cancelado",
@@ -84,7 +83,7 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono font-medium rounded-md border ${padding} ${c.bg} ${c.text} ${c.border}`}
+      className={`inline-flex items-center gap-1.5 font-mono font-bold rounded-md border ${padding} ${c.bg} ${c.text} ${c.border}`}
     >
       {c.icon}
       <span>{c.label}</span>
@@ -99,8 +98,8 @@ export const UrgencyBadge: React.FC<{ urgency: UrgencyLevel; elapsedMin?: number
 }) => {
   if (urgency === "RETRASADO") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/60">
-        <Flame className="w-3 h-3 text-red-500" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#190088]/15 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/30">
+        <Flame className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />
         <span>RETRASO {elapsedMin && estMin ? `(+${elapsedMin - estMin}m)` : ""}</span>
       </span>
     );
@@ -108,8 +107,8 @@ export const UrgencyBadge: React.FC<{ urgency: UrgencyLevel; elapsedMin?: number
 
   if (urgency === "PROXIMO") {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/60">
-        <Clock className="w-3 h-3 text-amber-500" />
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20">
+        <Clock className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />
         <span>POR VENCER</span>
       </span>
     );
@@ -119,40 +118,43 @@ export const UrgencyBadge: React.FC<{ urgency: UrgencyLevel; elapsedMin?: number
 };
 
 export const ChannelBadge: React.FC<{ channel: OrderChannel }> = ({ channel }) => {
-  const configs: Record<OrderChannel, { label: string; icon: React.ReactNode; color: string }> = {
+  const configs: Record<OrderChannel, { label: string; icon: React.ReactNode; color: string; border: string }> = {
     whatsapp: {
       label: "WhatsApp",
-      icon: <MessageSquare className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />,
-      color: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      icon: <MessageSquare className="w-2.5 h-2.5 text-[#190088] dark:text-[#97D6DF]" />,
+      color: "bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF]",
+      border: "border border-[#97D6DF]/40",
     },
     web: {
       label: "Web",
-      icon: <Globe className="w-2.5 h-2.5 text-indigo-600 dark:text-indigo-400" />,
-      color: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
+      icon: <Globe className="w-2.5 h-2.5 text-[#190088] dark:text-[#97D6DF]" />,
+      color: "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF]",
+      border: "border border-[#190088]/20 dark:border-[#190088]/40",
     },
     presencial: {
       label: "POS",
-      icon: <Store className="w-2.5 h-2.5 text-zinc-500 dark:text-zinc-400" />,
-      color: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
+      icon: <Store className="w-2.5 h-2.5 text-[#212121] dark:text-[#ECECEC]" />,
+      color: "bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC]",
+      border: "border border-zinc-200 dark:border-zinc-700",
     },
     telefono: {
       label: "Teléfono",
-      icon: <Phone className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />,
-      color: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+      icon: <Phone className="w-2.5 h-2.5 text-[#FF3F1A]" />,
+      color: "bg-[#EFE6D3]/60 dark:bg-[#EFE6D3]/15 text-[#212121] dark:text-[#ECECEC]",
+      border: "border border-[#EFE6D3] dark:border-[#EFE6D3]/30",
     },
   };
 
   const c = configs[channel] || configs.web;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium select-none ${c.color}`}>
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold select-none ${c.color} ${c.border}`}>
       {c.icon}
       <span>{c.label}</span>
     </span>
   );
 };
 
-/** Estado del control de una conversación HITL (IA / requiere / humano / resuelto). */
 export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; size?: "sm" | "md" }> = ({
   status,
   size = "md",
@@ -163,32 +165,32 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
   > = {
     IA_ATENDIENDO: {
       label: "Auto-atendiendo",
-      bg: "bg-zinc-100 dark:bg-zinc-800",
-      text: "text-zinc-700 dark:text-zinc-300",
-      border: "border-zinc-200 dark:border-zinc-700",
-      icon: <MessageSquare className="w-3 h-3 text-[#008069]" />,
+      bg: "bg-[#190088]/10 dark:bg-[#190088]/25",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+      border: "border-[#190088]/20 dark:border-[#190088]/40",
+      icon: <MessageSquare className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     REQUIERE_INTERVENCION: {
       label: "Requiere intervención",
-      bg: "bg-orange-50 dark:bg-orange-950/40",
+      bg: "bg-[#FF3F1A]/10 dark:bg-[#FF3F1A]/20",
       text: "text-[#FF3F1A]",
-      border: "border-orange-200/80 dark:border-orange-900/60",
+      border: "border-[#FF3F1A]/25 dark:border-[#FF3F1A]/40",
       icon: <Hand className="w-3 h-3 text-[#FF3F1A]" />,
       pulse: true,
     },
     HUMANO_ATENDIENDO: {
       label: "Operador en vivo",
-      bg: "bg-zinc-950 dark:bg-white",
-      text: "text-white dark:text-zinc-950",
-      border: "border-zinc-950 dark:border-white",
+      bg: "bg-[#212121] dark:bg-zinc-800",
+      text: "text-white dark:text-zinc-100",
+      border: "border-[#212121] dark:border-zinc-700",
       icon: <UserCheck className="w-3 h-3 text-[#FF3F1A]" />,
     },
     RESUELTO: {
       label: "Resuelto",
-      bg: "bg-zinc-100 dark:bg-zinc-800",
-      text: "text-zinc-500 dark:text-zinc-400",
-      border: "border-zinc-200 dark:border-zinc-700",
-      icon: <CheckCircle className="w-3 h-3 text-emerald-500" />,
+      bg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
+      text: "text-[#190088] dark:text-[#97D6DF]",
+      border: "border-[#97D6DF]/40",
+      icon: <CheckCircle className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
   };
 
@@ -197,7 +199,7 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-mono font-medium rounded-md border ${padding} ${c.bg} ${c.text} ${c.border} ${c.pulse ? "animate-pulse" : ""}`}
+      className={`inline-flex items-center gap-1.5 font-mono font-bold rounded-md border ${padding} ${c.bg} ${c.text} ${c.border} ${c.pulse ? "animate-pulse" : ""}`}
     >
       {c.icon}
       <span>{c.label}</span>
@@ -205,16 +207,11 @@ export const ConversationStatusBadge: React.FC<{ status: ConversationStatus; siz
   );
 };
 
-/**
- * Indicador de estado de conversación MINIMALISTA para listas densas.
- * Un punto de color + etiqueta corta. Pensado para escanear rápido la bandeja
- * sin el peso visual del ConversationStatusBadge (fondo + borde + icono).
- */
 export const ConversationStatusDot: React.FC<{ status: ConversationStatus }> = ({ status }) => {
   const configs: Record<ConversationStatus, { label: string; dot: string; text: string; pulse?: boolean }> = {
-    IA_ATENDIENDO: { label: "Auto", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
+    IA_ATENDIENDO: { label: "Auto", dot: "bg-[#190088]", text: "text-[#190088] dark:text-[#97D6DF]" },
     REQUIERE_INTERVENCION: { label: "Requiere atención", dot: "bg-[#FF3F1A]", text: "text-[#FF3F1A]", pulse: true },
-    HUMANO_ATENDIENDO: { label: "Operador", dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+    HUMANO_ATENDIENDO: { label: "Operador", dot: "bg-[#97D6DF]", text: "text-[#190088] dark:text-[#97D6DF]" },
     RESUELTO: { label: "Resuelto", dot: "bg-zinc-300 dark:bg-zinc-600", text: "text-zinc-400" },
   };
   const c = configs[status];
@@ -226,7 +223,6 @@ export const ConversationStatusDot: React.FC<{ status: ConversationStatus }> = (
   );
 };
 
-/** Motivo por el que una conversación requiere intervención humana. */
 export const HandoffReasonBadge: React.FC<{ reason: HandoffReason }> = ({ reason }) => {
   const labels: Record<HandoffReason, string> = {
     AMBIGUO: "Pedido ambiguo",
@@ -236,11 +232,12 @@ export const HandoffReasonBadge: React.FC<{ reason: HandoffReason }> = ({ reason
     CLIENTE_PIDE_HUMANO: "Pidió un operador",
     BAJA_CONFIANZA: "Baja confianza",
     VERIFICAR_PAGO_TRANSFERENCIA: "Comprobante Nequi / Bancolombia",
+    RECLAMO_INCIDENCIA: "Reclamo / Incidencia",
   };
 
   return (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
-      <HelpCircle className="w-3 h-3 text-amber-500" />
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+      <HelpCircle className="w-3 h-3 text-[#FF3F1A]" />
       <span>{labels[reason]}</span>
     </span>
   );
@@ -254,7 +251,7 @@ export const AIBadge: React.FC<{ confidence?: AIConfidence; onClick?: (e: any) =
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-[#FF3F1A] transition-colors cursor-pointer"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-[#FF3F1A] transition-colors cursor-pointer"
       title="Procesado automáticamente vía WhatsApp"
     >
       <MessageSquareText className="w-3 h-3 text-[#FF3F1A]" />

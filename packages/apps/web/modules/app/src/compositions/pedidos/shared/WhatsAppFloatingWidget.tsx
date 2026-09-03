@@ -104,7 +104,7 @@ export const WhatsAppFloatingWidget: React.FC<{
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onClick={handleClick}
-            className={`group relative flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#008069] hover:bg-[#00705c] text-white shadow-xl hover:shadow-2xl transition-all duration-200 cursor-grab active:cursor-grabbing border border-[#00a884]/40 ${
+            className={`group relative flex items-center gap-2.5 px-3.5 py-2.5 rounded-full bg-[#FF3F1A] hover:bg-[#e03413] text-white shadow-xl hover:shadow-2xl transition-all duration-200 cursor-grab active:cursor-grabbing border border-white/20 ${
               isDraggingFab ? "scale-105 opacity-90 shadow-2xl" : ""
             }`}
             title="Arrastra para mover a cualquier posición o haz clic para abrir chats de WhatsApp"
@@ -112,22 +112,35 @@ export const WhatsAppFloatingWidget: React.FC<{
             {/* Animated Pulse Ring if there are pending alerts */}
             {totalAlerts > 0 && (
               <span className="absolute -top-1 -right-1 flex h-4 w-4 pointer-events-none">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 text-[10px] font-black text-white items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#190088] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-[#190088] text-[10px] font-black text-white items-center justify-center border border-white/40">
                   {totalAlerts}
                 </span>
               </span>
             )}
 
-            <div className="relative pointer-events-none">
-              <MessageSquare className="w-5 h-5 text-white" />
+            {/* 9-dot grip drag indicator */}
+            <div className="grid grid-cols-3 gap-[2px] w-3 h-3 opacity-75 group-hover:opacity-100 flex-none pointer-events-none">
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
+              <span className="w-[3px] h-[3px] rounded-full bg-white" />
             </div>
 
-            <div className="flex flex-col text-left pointer-events-none">
-              <span className="text-xs font-bold tracking-tight leading-none">
+            <div className="relative pointer-events-none">
+              <MessageSquare className="w-4.5 h-4.5 text-white" />
+            </div>
+
+            <div className="flex flex-col text-left pointer-events-none pr-1">
+              <span className="text-xs font-bold tracking-tight leading-none text-white">
                 WhatsApp IA
               </span>
-              <span className="text-[10px] font-medium text-emerald-100/90 leading-none mt-0.5">
+              <span className="text-[10px] font-medium text-white/80 leading-none mt-1">
                 {pendingInterventions > 0
                   ? `${pendingInterventions} requieren atención`
                   : `${conversations.length} chats activos`}

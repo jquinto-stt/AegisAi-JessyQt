@@ -21,6 +21,13 @@ import {
   Activity,
   ShoppingBag,
   CreditCard,
+  ChefHat,
+  Bike,
+  Sparkles,
+  Plus,
+  MapPin,
+  FileText,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -32,6 +39,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
     simulateAIReply,
     takeControl,
     confirmOrder,
+    confirmDraftOrder,
   } = usePedidos();
   const [draft, setDraft] = useState("");
   const [customerDraft, setCustomerDraft] = useState("");
@@ -73,16 +81,14 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
     // 2. Mark message receipt verified
     setVerifiedMessages(prev => ({ ...prev, [msgId]: "VERIFICADO_OK" }));
 
-    // 3. Confirm associated order if exists
-    if (conversation.orderId) {
-      confirmOrder(conversation.orderId);
-    }
+    // 3. Confirm draft order and deposit into live Kanban queue!
+    const effectiveOrderId = confirmDraftOrder(conversation.id) || conversation.orderId || "PED-1025";
 
     // 4. Send operator confirmation message
     const formattedAmount = `$${amount.toLocaleString("es-CO")} COP`;
     sendOperatorMessage(
       conversation.id,
-      `¡Transferencia ${bank} por ${formattedAmount} (${ref}) verificada en cuenta bancaria! Tu pedido #${conversation.orderId || "PED-1021"} ha sido ingresado a cocina. ¡Muchas gracias!`
+      `¡Transferencia ${bank} por ${formattedAmount} (${ref}) verificada en cuenta bancaria! Tu pedido #${effectiveOrderId} ha sido ingresado al horno y está en preparación. ¡Muchas gracias!`
     );
   };
 
@@ -126,6 +132,31 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             Hoy
           </span>
         </div>
+
+        {/* Active Draft Order Floating Banner */}
+        {conversation.draftOrder && !conversation.orderId && (
+          <div className="mx-2 my-1 p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 text-xs flex items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <ShoppingBag className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none" />
+              <div className="truncate">
+                <span className="font-bold text-amber-900 dark:text-amber-200">
+                  Borrador en Chat:
+                </span>{" "}
+                <span className="text-amber-800 dark:text-amber-300">
+                  {conversation.draftOrder.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-none">
+              <span className="font-mono font-extrabold text-amber-700 dark:text-amber-300">
+                ${conversation.draftOrder.total.toLocaleString("es-CO")} COP
+              </span>
+              <span className="text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-bold">
+                Sin ingresar a Cocina
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Message Bubbles */}
         {conversation.messages.map(msg => {
@@ -299,10 +330,10 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             Plantillas:
           </span>
           {[
-            { label: "👨‍🍳 En Preparación", text: "¡Hola! Tu comanda ya ingresó a cocina y nuestro equipo la está preparando con el mayor cuidado." },
-            { label: "💳 Solicitar Comprobante", text: "Hola, por favor compártenos el comprobante bancario para validar la acreditación de tu pago." },
-            { label: "🛵 En Camino", text: "¡Tu pedido va en camino con nuestro repartidor! Te avisaremos apenas esté en tu puerta." },
-            { label: "⭐ Gracias", text: "¡Muchas gracias por elegirnos! Esperamos que disfrutes tu pedido. Cualquier duda quedamos a tu orden." },
+            { icon: <ChefHat className="w-3.5 h-3.5" />, label: "En Preparación", text: "¡Hola! Tu comanda ya ingresó a cocina y nuestro equipo la está preparando con el mayor cuidado." },
+            { icon: <CreditCard className="w-3.5 h-3.5" />, label: "Solicitar Comprobante", text: "Hola, por favor compártenos el comprobante bancario para validar la acreditación de tu pago." },
+            { icon: <Bike className="w-3.5 h-3.5" />, label: "En Camino", text: "¡Tu pedido va en camino con nuestro repartidor! Te avisaremos apenas esté en tu puerta." },
+            { icon: <Sparkles className="w-3.5 h-3.5" />, label: "Agradecimiento", text: "¡Muchas gracias por elegirnos! Esperamos que disfrutes tu pedido. Cualquier duda quedamos a tu orden." },
           ].map(tpl => (
             <button
               key={tpl.label}
@@ -311,9 +342,10 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                 if (!isMine) takeControl(conversation.id);
                 setDraft(tpl.text);
               }}
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#111B21] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] text-[#111B21] dark:text-zinc-200 hover:text-[#008069] dark:hover:text-[#00A884] border border-zinc-200/80 dark:border-zinc-700 text-[11px] font-bold flex-none transition-all cursor-pointer shadow-2xs"
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#111B21] hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] text-[#111B21] dark:text-zinc-200 hover:text-[#008069] dark:hover:text-[#00A884] border border-zinc-200/80 dark:border-zinc-700 text-[11px] font-bold flex items-center gap-1.5 flex-none transition-all cursor-pointer shadow-2xs"
             >
-              {tpl.label}
+              {tpl.icon}
+              <span>{tpl.label}</span>
             </button>
           ))}
         </div>
@@ -368,13 +400,10 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/80 dark:bg-[#2A3942]/80 rounded-xl text-xs text-[#54656F] dark:text-[#AEBAC1]">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-300 text-xs">
             <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-[#00A884] flex-none" />
-              <span className="text-[11px] font-medium">
-                {isAI
-                  ? "El canal está respondiendo automáticamente. Si el cliente envía comprobante o solicita ayuda, transferirá al operador."
-                  : "Esta conversación requiere atención. Haz clic en 'Tomar Control' para escribir."}
-              </span>
+              <Lock className="w-3.5 h-3.5 text-zinc-400" />
+              <span>La IA está atendiendo esta conversación. Toma el control para responder.</span>
             </div>
             {!isMine && (
               <button
@@ -393,9 +422,9 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
           <div className="flex items-center justify-between text-[10px] font-mono font-bold text-zinc-500 uppercase">
             <span className="flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
-              <span>Simulador de Cliente (Prueba Interactiva Multi-Turno)</span>
+              <span>Simulador de Cliente</span>
             </span>
-            <span className="text-zinc-400 lowercase font-normal">escribe libremente o usa los pasos:</span>
+            <span className="text-zinc-400 lowercase font-normal">escribe libremente o usa los escenarios:</span>
           </div>
 
           {/* Free-text customer input */}
@@ -410,7 +439,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                   handleSendCustomerSimulated();
                 }
               }}
-              placeholder='Escribe como el cliente (ej: "Agrega salsa chimichurri", "¿Tienen queso?", "Enviar a Calle 72")...'
+              placeholder='Escribe como el cliente (ej: "Agrega salsa", "¿Tienen queso?", "Enviar a Calle 72")...'
               className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#202C33] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-[#00A884]"
             />
             <button
@@ -424,88 +453,181 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             </button>
           </div>
 
-          {/* Progressive Journey Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 text-[11px]">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-700/60 pb-1.5 pt-0.5">
             <button
               type="button"
-              onClick={() =>
-                handleSendCustomerSimulated(
-                  "¡Hola! Quiero pedir 6 empanadas de carne a cuchillo al horno y 2 gaseosas cola porfa."
-                )
-              }
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-orange-50 dark:hover:bg-orange-950/40 text-[#FF3F1A] border border-orange-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Paso 1: El cliente pide empanadas -> La IA genera la comanda y ofrece upsells"
+              onClick={() => setSimCategory("flujo")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                simCategory === "flujo"
+                  ? "bg-[#008069] text-white shadow-xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700/50"
+              }`}
             >
               <ShoppingBag className="w-3 h-3" />
-              <span>1. 🥟 Pedir 6 Empanadas</span>
+              <span>Flujo de Pedido (Paso 1-4)</span>
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                handleSendCustomerSimulated(
-                  "Sí porfa, agrégale 1 salsa chimichurri especial de la casa a la comanda."
-                )
-              }
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Paso 2: El cliente acepta upsell -> La IA actualiza la comanda y recalcula montos"
+              onClick={() => setSimCategory("hitl")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                simCategory === "hitl"
+                  ? "bg-amber-600 text-white shadow-xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700/50"
+              }`}
             >
-              <span>2. 🥫 Agregar Chimichurri (+Upsell)</span>
+              <User className="w-3 h-3" />
+              <span>Casos HITL / Humano</span>
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                handleSendCustomerSimulated(
-                  "Es para enviar a Calle 72 # 11-45 (Apto 402). Voy a pagar por Nequi."
-                )
-              }
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Paso 3: El cliente da dirección y pago -> La IA brinda datos de transferencia"
+              onClick={() => setSimCategory("faq")}
+              className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                simCategory === "faq"
+                  ? "bg-sky-600 text-white shadow-xs"
+                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700/50"
+              }`}
             >
-              <span>3. 📍 Dirección & Nequi</span>
+              <Sparkles className="w-3 h-3" />
+              <span>Consultas IA / FAQ</span>
             </button>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                simulateCustomerMessage(
-                  conversation.id,
-                  "Listo! Ya les transferí los $45.500 por Nequi. Aquí les adjunto la captura del comprobante.",
-                  { isReceipt: true }
-                );
-              }}
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Paso 4: El cliente manda comprobante -> La IA pide verificación humana y genera tarjeta de seguridad"
-            >
-              <CreditCard className="w-3 h-3" />
-              <span>4. 💳 Enviar Comprobante</span>
-            </button>
+          {/* Action Buttons for active category */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 text-[11px]">
+            {simCategory === "flujo" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated(
+                      "¡Hola! Quiero pedir 6 empanadas de carne a cuchillo al horno y 2 gaseosas cola porfa."
+                    )
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Paso 1: El cliente pide empanadas -> La IA genera la comanda y ofrece upsells"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
+                  <span>1. Pedir 6 Empanadas</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                handleSendCustomerSimulated(
-                  "¿Las empanadas de carne tienen cebolla o queso? Tengo intolerancia alimentaria."
-                )
-              }
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 font-medium flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Pregunta sobre alérgenos e ingredientes"
-            >
-              <Shield className="w-3 h-3" />
-              <span>5. 🛡️ Alérgenos</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated(
+                      "Sí porfa, agrégale 1 salsa chimichurri especial de la casa a la comanda."
+                    )
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Paso 2: El cliente acepta upsell -> La IA actualiza la comanda y recalcula montos"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
+                  <span>2. Agregar Chimichurri</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                handleSendCustomerSimulated("¿Cuánto tiempo demora el delivery a la Calle 72?")
-              }
-              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 font-medium flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
-              title="Pregunta sobre tiempos y horas de entrega"
-            >
-              <span>6. ⏱️ Demora</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated(
+                      "Es para enviar a Calle 72 # 11-45 (Apto 402). Voy a pagar por Nequi."
+                    )
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Paso 3: El cliente da dirección y pago -> La IA brinda datos de transferencia"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
+                  <span>3. Dirección & Pago</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    simulateCustomerMessage(
+                      conversation.id,
+                      "Listo! Ya les transferí los $45.500 por Nequi. Aquí les adjunto la captura del comprobante.",
+                      { isReceipt: true }
+                    );
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Paso 4: El cliente manda comprobante -> La IA pide verificación humana y genera tarjeta de seguridad"
+                >
+                  <CreditCard className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
+                  <span>4. Enviar Comprobante</span>
+                </button>
+              </>
+            )}
+
+            {simCategory === "hitl" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated("Necesito hablar con una persona real o asesor, por favor.")
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Disparador HITL: Cliente pide explícitamente ser atendido por un humano"
+                >
+                  <User className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Pedir Operador Humano</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated("¡Mi pedido está muy demorado! Ya pasaron 45 minutos y no llega nada.")
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Disparador HITL: Reclamo por demora o incidencia de servicio"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Reclamo / Incidencia</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated("Hola, necesitamos cotización para un evento corporativo de 50 personas con Factura Electrónica y RUT.")
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-bold flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Disparador HITL: Pedido corporativo fuera de alcance o facturación especial"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Factura / Evento Especial</span>
+                </button>
+              </>
+            )}
+
+            {simCategory === "faq" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated(
+                      "¿Las empanadas de carne tienen cebolla o queso? Tengo intolerancia alimentaria."
+                    )
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-medium flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Pregunta sobre alérgenos e ingredientes"
+                >
+                  <Shield className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Alérgenos e Ingredientes</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleSendCustomerSimulated("¿Cuánto tiempo demora el delivery a la Calle 72?")
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 font-medium flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs transition-all"
+                  title="Pregunta sobre tiempos y horas de entrega"
+                >
+                  <Clock className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Tiempos de Entrega</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

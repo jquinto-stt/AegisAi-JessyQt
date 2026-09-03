@@ -90,11 +90,29 @@ const PedidosContent: React.FC<{
     };
     window.addEventListener("necto_layout_changed", handleLayoutUpdate);
     window.addEventListener("storage", handleLayoutUpdate);
+
+    const handleNavigateEvent = (e: any) => {
+      if (e.detail?.section) {
+        setSection(e.detail.section);
+        if (onSectionChange) onSectionChange(e.detail.section);
+      }
+      if (e.detail?.opTab) {
+        setOpTab(e.detail.opTab);
+        if (onOpTabChange) onOpTabChange(e.detail.opTab);
+      }
+      if (e.detail?.geTab) {
+        setGeTab(e.detail.geTab);
+        if (onGeTabChange) onGeTabChange(e.detail.geTab);
+      }
+    };
+    window.addEventListener("necto_navigate_pedidos", handleNavigateEvent);
+
     return () => {
       window.removeEventListener("necto_layout_changed", handleLayoutUpdate);
       window.removeEventListener("storage", handleLayoutUpdate);
+      window.removeEventListener("necto_navigate_pedidos", handleNavigateEvent);
     };
-  }, []);
+  }, [onSectionChange, onOpTabChange, onGeTabChange]);
 
   useEffect(() => {
     setSection(sectionProp);

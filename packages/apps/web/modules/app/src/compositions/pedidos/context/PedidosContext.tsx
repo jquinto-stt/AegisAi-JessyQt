@@ -16,6 +16,7 @@ import {
   Conversation,
   ConversationStatus,
   HandoffReason,
+  ChatMessage,
 } from "../types";
 import {
   INITIAL_ORDERS,
@@ -121,10 +122,20 @@ interface PedidosContextType {
   flagForHandoff: (conversationId: string, reason: HandoffReason) => void;
   /** Marca la conversación como leída (limpia el badge de no-leído). */
   markConversationRead: (conversationId: string) => void;
+  /** Crea o confirma el Pedido oficial en el Kanban a partir del borrador de la conversación. */
+  confirmDraftOrder: (conversationId: string) => string | undefined;
   /** DEMO: simula un mensaje entrante del cliente. */
-  simulateCustomerMessage: (conversationId: string, text: string) => void;
+  simulateCustomerMessage: (
+    conversationId: string,
+    text: string,
+    options?: { isOrder?: boolean; isReceipt?: boolean }
+  ) => void;
   /** DEMO: simula una respuesta de la IA (solo si está en IA_ATENDIENDO). */
   simulateAIReply: (conversationId: string, text: string) => void;
+  /** Navega directamente al hilo de WhatsApp del cliente asociado al pedido */
+  openWhatsAppConversation: (orderIdOrConvId: string) => void;
+  /** Envía un mensaje / alerta operativo directamente al WhatsApp del cliente */
+  sendWhatsAppStatusAlert: (orderId: string, customMessage: string) => void;
 }
 
 const PedidosContext = createContext<PedidosContextType | null>(null);
@@ -318,6 +329,40 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (shouldConsumeStock) {
           setTimeout(() => consumeStockForOrder(order), 50);
+        }
+
+        // Automatic WhatsApp notification to the customer's chat thread
+        if (order.channel === "whatsapp") {
+          setTimeout(() => {
+            const statusMessages: Partial<Record<OrderStatus, string>> = {
+              CONFIRMADO: `¡Tu pedido #${order.id} fue confirmado! En breve entra a preparación en cocina.`,
+              EN_PREPARACION: `Tu comanda #${order.id} ya ingresó al horno de cocina y se está preparando.`,
+              LISTO: `¡Tu pedido #${order.id} está listo y empacado para retiro / entrega!`,
+              FINALIZADO: `¡Tu pedido #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
+              CANCELADO: `Tu pedido #${order.id} ha sido cancelado. Si tienes dudas, estamos a tu disposición.`,
+            };
+            const msgText = statusMessages[toStatus];
+            if (msgText) {
+              setConversations(prevConvs =>
+                prevConvs.map(c => {
+                  if (c.orderId === order.id || (c.customerPhone && order.customerPhone && c.customerPhone.replace(/\D/g, '') === order.customerPhone.replace(/\D/g, ''))) {
+                    const newMsg: ChatMessage = {
+                      id: `m-auto-${Date.now()}`,
+                      sender: "ia",
+                      text: msgText,
+                      timestamp: timeStr,
+                    };
+                    return {
+                      ...c,
+                      lastMessageAt: timeStr,
+                      messages: [...c.messages, newMsg],
+                    };
+                  }
+                  return c;
+                })
+              );
+            }
+          }, 60);
         }
 
         return {
@@ -928,6 +973,89 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  // --- Confirmar comanda desde borrador de chat al Kanban de Cocina ---
+  const confirmDraftOrder = (conversationId: string): string | undefined => {
+    const conv = conversations.find(c => c.id === conversationId);
+    if (!conv) return;
+
+    if (conv.orderId) {
+      confirmOrder(conv.orderId);
+      return conv.orderId;
+    }
+
+    const draft = conv.draftOrder;
+    const newOrderId = `PED-${Math.floor(1030 + Math.random() * 70)}`;
+    const customerPhone = conv.customerPhone || "+57 300 123 4567";
+    const customerName = conv.customerName || "Cliente WhatsApp";
+    const items =
+      draft?.items && draft.items.length > 0
+        ? draft.items
+        : [
+            {
+              productId: "prod-01",
+              name: "Empanada de Carne Cortada a Cuchillo",
+              quantity: 6,
+              unitPrice: 5500,
+              option: "Horneada",
+            },
+            {
+              productId: "prod-07",
+              name: "Gaseosa Cola 354ml",
+              quantity: 2,
+              unitPrice: 4500,
+            },
+            {
+              productId: "extra-01",
+              name: "Salsa Chimichurri Especial (120ml)",
+              quantity: 1,
+              unitPrice: 3500,
+            },
+          ];
+    const total = draft?.total || items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+
+    const newOrder: Pedido = {
+      id: newOrderId,
+      customerName,
+      customerPhone,
+      customerAddress: draft?.deliveryAddress || "Calle 72 # 11-45 (Apto 402)",
+      channel: "whatsapp",
+      type: "inmediato",
+      status: "CONFIRMADO",
+      items,
+      total,
+      createdAt: nowTime(),
+      estimatedMinutes: 20,
+      elapsedMinutes: 0,
+      urgency: "A_TIEMPO",
+      isAIOrigin: true,
+      aiConfidence: "Alta",
+      paymentMethod: draft?.paymentMethod === "efectivo" ? "efectivo" : "transferencia",
+      notes: draft?.notes || "Comanda WhatsApp confirmada tras validación de pago.",
+      history: [
+        {
+          timestamp: nowTime(),
+          toStatus: "NUEVO",
+          user: "Necto IA Bot (WhatsApp)",
+          note: "Borrador de chat completado y verificado.",
+        },
+        {
+          timestamp: nowTime(),
+          fromStatus: "NUEVO",
+          toStatus: "CONFIRMADO",
+          user: currentOperatorName || "Administrador",
+          note: "Pago comprobado. Comanda transferida al Kanban de Cocina en Vivo.",
+        },
+      ],
+    };
+
+    setOrders(prev => [newOrder, ...prev.filter(o => o.id !== newOrderId)]);
+    setConversations(prev =>
+      prev.map(c => (c.id === conversationId ? { ...c, orderId: newOrderId } : c))
+    );
+    if (isSoundEnabled) playNewOrderSound();
+    return newOrderId;
+  };
+
   // --- Simuladores de demo con respuesta y toma de pedido autónoma de IA ---
   const simulateCustomerMessage = (
     conversationId: string,
@@ -959,7 +1087,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                       "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=400&q=80",
                     attachmentMeta: {
                       bank: "Nequi",
-                      amount: 45000,
+                      amount: 45500,
                       reference: `NQ-${Math.floor(1000000 + Math.random() * 9000000)}`,
                       status: "PENDIENTE_VERIFICACION" as const,
                     },
@@ -1005,7 +1133,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Comprobante de Nequi recibido por $45.500 COP (Ref: #NQ-${Math.floor(100000 + Math.random() * 900000)})! 🧾\n\nPor seguridad financiera, un Administrador está validando la acreditación en la cuenta bancaria para autorizar el horneado inmediato. ¡Muchas gracias, ${customerName}!`,
+                      text: `Comprobante de Nequi recibido por $45.500 COP (Ref: #NQ-${Math.floor(100000 + Math.random() * 900000)})!\n\nPor seguridad financiera, un Administrador está validando la acreditación en la cuenta bancaria. Apenas se verifique el saldo, tu comanda entrará al horno inmediatamente. ¡Muchas gracias, ${customerName}!`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1014,7 +1142,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // CASO 2: Modificación / Upsell / Adición a comanda existente (si ya tiene un pedido)
+        // CASO 2: Modificación / Upsell / Adición a comanda en borrador
         const isAddingItems =
           lower.includes("agrega") ||
           lower.includes("sumale") ||
@@ -1026,49 +1154,53 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("coca") ||
           lower.includes("postre");
 
-        if (conv.orderId && isAddingItems) {
-          setOrders(prevOrders =>
-            prevOrders.map(ord => {
-              if (ord.id !== conv.orderId) return ord;
-              const hasChimi = ord.items.some(i => i.name.includes("Chimichurri"));
-              const newItems = hasChimi
-                ? [
-                    ...ord.items,
-                    { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 1, unitPrice: 4500 },
-                  ]
-                : [
-                    ...ord.items,
-                    { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
-                  ];
-              const newTotal = newItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-              return {
-                ...ord,
-                items: newItems,
-                total: newTotal,
-                notes: `${ord.notes || ""} + Agregado por IA en chat: ${hasChimi ? "Gaseosa Cola" : "Chimichurri Especial"}.`,
-              };
-            })
-          );
-          if (isSoundEnabled) playSuccessSound();
+        if (isAddingItems) {
+          return currentConvs.map(c => {
+            if (c.id !== conversationId) return c;
+            const currentDraft = c.draftOrder || {
+              items: [
+                { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 6, unitPrice: 5500, option: "Horneada" },
+                { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
+              ],
+              subtotal: 42000,
+              deliveryFee: 0,
+              total: 42000,
+            };
 
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "IA_ATENDIENDO" as const,
-                  lastMessageAt: replyTime,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `¡Listo, ${customerName}! ✨ Actualicé tu comanda #${conv.orderId}.\n\n➕ Agregué: 1x Salsa Chimichurri Especial de la Casa.\n💰 Nuevo total: $45.500 COP.\n\n📍 ¿Confirmamos entrega a tu dirección habitual (Calle 72 # 11-45) o prefieres retirar por el local?`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
+            const hasChimi = currentDraft.items.some(i => i.name.includes("Chimichurri"));
+            const newItems = hasChimi
+              ? [
+                  ...currentDraft.items,
+                  { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 1, unitPrice: 4500 },
+                ]
+              : [
+                  ...currentDraft.items,
+                  { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
+                ];
+            const newSubtotal = newItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+            const newTotal = newSubtotal + (currentDraft.deliveryFee || 0);
+
+            return {
+              ...c,
+              draftOrder: {
+                ...currentDraft,
+                items: newItems,
+                subtotal: newSubtotal,
+                total: newTotal,
+              },
+              status: "IA_ATENDIENDO" as const,
+              lastMessageAt: replyTime,
+              messages: [
+                ...c.messages,
+                {
+                  id: `m-${Date.now()}`,
+                  sender: "ia",
+                  text: `¡Listo, ${customerName}! Agregué: 1x ${hasChimi ? "Gaseosa Cola" : "Salsa Chimichurri Especial de la Casa"}.\nNuevo total: $${newTotal.toLocaleString("es-CO")} COP.\n\n¿Confirmamos entrega a tu dirección habitual (Calle 72 # 11-45) o prefieres retirar por el local? ¿Cómo deseas pagar (Nequi / Daviplata / Efectivo)?`,
+                  timestamp: replyTime,
+                },
+              ],
+            };
+          });
         }
 
         // CASO 3: Confirmación de Dirección / Método de Pago
@@ -1083,28 +1215,44 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("efectivo") ||
           lower.includes("transferencia");
 
-        if (conv.orderId && isAddressOrPayment) {
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "IA_ATENDIENDO" as const,
-                  lastMessageAt: replyTime,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `¡Perfecto! 🛵 Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n💳 **Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Necto Gourmet S.A.S.\n• **Total:** $45.500 COP\n\nPor favor envíanos la captura de tu comprobante por aquí para encender el horno y despachar tu pedido 🔥.`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
+        if (isAddressOrPayment) {
+          return currentConvs.map(c => {
+            if (c.id !== conversationId) return c;
+            const currentDraft = c.draftOrder || {
+              items: [
+                { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 6, unitPrice: 5500, option: "Horneada" },
+                { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
+                { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
+              ],
+              subtotal: 45500,
+              deliveryFee: 0,
+              total: 45500,
+            };
+
+            return {
+              ...c,
+              draftOrder: {
+                ...currentDraft,
+                deliveryAddress: "Calle 72 # 11-45 (Apto 402)",
+                deliveryType: "domicilio",
+                paymentMethod: "nequi",
+              },
+              status: "IA_ATENDIENDO" as const,
+              lastMessageAt: replyTime,
+              messages: [
+                ...c.messages,
+                {
+                  id: `m-${Date.now()}`,
+                  sender: "ia",
+                  text: `¡Perfecto! Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n**Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Necto Gourmet S.A.S.\n• **Total:** $${currentDraft.total.toLocaleString("es-CO")} COP\n\nPor favor envíanos la captura de tu comprobante por aquí para validar el pago y enviar tu pedido a cocina.`,
+                  timestamp: replyTime,
+                },
+              ],
+            };
+          });
         }
 
-        // CASO 4: Pedido nuevo o solicitud de comida
+        // CASO 4: Pedido nuevo o solicitud de comida (Construye el borrador en el chat)
         const isOrderRequest =
           options?.isOrder ||
           lower.includes("quiero") ||
@@ -1116,58 +1264,33 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("ordenar");
 
         if (isOrderRequest) {
-          const newOrderId = `PED-${Math.floor(1030 + Math.random() * 70)}`;
-          const customerPhone = conv.customerPhone || "+57 300 123 4567";
-
-          const newOrder: Pedido = {
-            id: newOrderId,
-            customerName,
-            customerPhone,
-            channel: "whatsapp",
-            type: "inmediato",
-            status: "NUEVO",
-            items: [
-              {
-                productId: "prod-01",
-                name: "Empanada de Carne Cortada a Cuchillo",
-                quantity: 6,
-                unitPrice: 5500,
-                option: "Horneada",
-              },
-              {
-                productId: "prod-07",
-                name: "Gaseosa Cola 354ml",
-                quantity: 2,
-                unitPrice: 4500,
-              },
-            ],
-            total: 42000,
-            createdAt: nowTime(),
-            estimatedMinutes: 20,
-            elapsedMinutes: 0,
-            urgency: "A_TIEMPO",
-            isAIOrigin: true,
-            aiConfidence: "Alta",
-            aiRawMessage: trimmed,
-            notes: "Tomado automáticamente por IA desde WhatsApp.",
-            history: [
-              {
-                timestamp: nowTime(),
-                toStatus: "NUEVO",
-                user: "Necto IA Bot (WhatsApp)",
-                note: "Pedido interpretado y depositado automáticamente en Pedidos en Vivo.",
-              },
-            ],
-          };
-
-          setOrders(prevOrders => [newOrder, ...prevOrders.filter(o => o.id !== newOrderId)]);
-          if (isSoundEnabled) playNewOrderSound();
+          const initialItems = [
+            {
+              productId: "prod-01",
+              name: "Empanada de Carne Cortada a Cuchillo",
+              quantity: 6,
+              unitPrice: 5500,
+              option: "Horneada",
+            },
+            {
+              productId: "prod-07",
+              name: "Gaseosa Cola 354ml",
+              quantity: 2,
+              unitPrice: 4500,
+            },
+          ];
+          const subtotal = 42000;
 
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
                   ...c,
-                  orderId: newOrderId,
+                  draftOrder: {
+                    items: initialItems,
+                    subtotal,
+                    deliveryFee: 0,
+                    total: subtotal,
+                  },
                   status: "IA_ATENDIENDO" as const,
                   lastMessageAt: replyTime,
                   messages: [
@@ -1175,7 +1298,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Hola ${customerName}! 🥟 Con gusto te armo el pedido. Registré la comanda #${newOrderId} en nuestro tablero:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa (Chimichurri o Criolla por $3.500) o unas empanadas dulces de postre?`,
+                      text: `¡Hola ${customerName}! Te armé el borrador de tu pedido:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa (Chimichurri o Criolla por $3.500) o confirmamos la dirección de entrega?`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1184,7 +1307,110 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // CASO 5: Preguntas sobre Alérgenos, Tiempos, Métodos de Pago o Carta
+        // CASO 5: Disparadores Human-in-the-Loop (HITL)
+        // 5a. Cliente solicita hablar con un operador humano
+        if (
+          lower.includes("humano") ||
+          lower.includes("persona") ||
+          lower.includes("asesor") ||
+          lower.includes("operador") ||
+          lower.includes("alguien real") ||
+          lower.includes("atención humana") ||
+          lower.includes("hablar con alguien")
+        ) {
+          if (isSoundEnabled) playUrgentAlertSound();
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "REQUIERE_INTERVENCION" as const,
+                  requiresHandoffReason: "CLIENTE_PIDE_HUMANO" as const,
+                  lastMessageAt: replyTime,
+                  unreadForOperator: true,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `¡Entendido, ${customerName}! Te estoy transfiriendo con un Administrador de nuestro equipo en vivo. En un momento un asesor tomará el control de este chat para asistirte.`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // 5b. Reclamos, pedidos demorados o incidencias de calidad
+        if (
+          lower.includes("reclamo") ||
+          lower.includes("queja") ||
+          lower.includes("no llega") ||
+          lower.includes("demorado") ||
+          lower.includes("está frío") ||
+          lower.includes("está fria") ||
+          lower.includes("llegó frío") ||
+          lower.includes("llegó mal") ||
+          lower.includes("incompleto") ||
+          lower.includes("pedido equivocado")
+        ) {
+          if (isSoundEnabled) playUrgentAlertSound();
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "REQUIERE_INTERVENCION" as const,
+                  requiresHandoffReason: "RECLAMO_INCIDENCIA" as const,
+                  lastMessageAt: replyTime,
+                  unreadForOperator: true,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `Lamentamos mucho el inconveniente, ${customerName}. He marcado este caso con máxima prioridad y transferido la conversación a la Administración para darte una solución inmediata.`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // 5c. Solicitudes especiales, cotizaciones o facturación electrónica
+        if (
+          lower.includes("personalizada") ||
+          lower.includes("modificación") ||
+          lower.includes("descuento") ||
+          lower.includes("50 personas") ||
+          lower.includes("evento") ||
+          lower.includes("factura electrónica") ||
+          lower.includes("rut")
+        ) {
+          if (isSoundEnabled) playUrgentAlertSound();
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "REQUIERE_INTERVENCION" as const,
+                  requiresHandoffReason: "MODIFICACION_ESPECIAL" as const,
+                  lastMessageAt: replyTime,
+                  unreadForOperator: true,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `Para solicitudes especiales o corporativas (${lower.includes("factura") ? "Facturación Electrónica" : "Personalización de Comanda"}), he derivado tu consulta al Administrador para cotizar y validar directamente con cocina.`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // CASO 6: Preguntas sobre Alérgenos, Tiempos o Carta
         if (
           lower.includes("alergia") ||
           lower.includes("alérgeno") ||
@@ -1205,7 +1431,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Muy buena pregunta, ${customerName}! 🛡️\n\nNuestras empanadas de carne a cuchillo y pollo al verdeo contienen cebolla salteada y masa de trigo tradicional. Si tienes intolerancia a los lácteos, te recomendamos las de carne o espinaca. Para celiaquía estricta, avísanos para activar el protocolo de horneado en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`,
+                      text: `¡Muy buena pregunta, ${customerName}!\n\nNuestras empanadas de carne a cuchillo y pollo al verdeo contienen cebolla salteada y masa de trigo tradicional. Si tienes intolerancia a los lácteos, te recomendamos las de carne o espinaca. Para celiaquía estricta, avísanos para activar el protocolo de horneado en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1232,7 +1458,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `⏱️ Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en horno de piedra + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`,
+                      text: `Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en horno de piedra + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1253,7 +1479,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                   {
                     id: `m-${Date.now()}`,
                     sender: "ia",
-                    text: `¡Hola ${customerName}! 😊 Con gusto te atiendo. Estamos en turno de despacho con nuestro menú de empanadas gourmet, bebidas y combos ejecutivos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`,
+                    text: `¡Hola ${customerName}! Con gusto te atiendo. Estamos en turno de despacho con nuestro menú de empanadas gourmet, bebidas y combos ejecutivos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`,
                     timestamp: replyTime,
                   },
                 ],
@@ -1281,6 +1507,99 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             { id: `m-${Date.now()}`, sender: "ia", text: trimmed, timestamp: timeStr },
           ],
         };
+      })
+    );
+  };
+
+  const openWhatsAppConversation = (orderIdOrConvId: string) => {
+    // 1. Find existing conversation by conv ID or order ID
+    let targetConv = conversations.find(
+      c => c.id === orderIdOrConvId || c.orderId === orderIdOrConvId
+    );
+
+    // 2. If not found by direct ID, search by order customer phone or name
+    const relatedOrder = allOrders.find(o => o.id === orderIdOrConvId);
+    if (!targetConv && relatedOrder) {
+      targetConv = conversations.find(
+        c =>
+          (c.customerPhone && relatedOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === relatedOrder.customerPhone.replace(/\D/g, "")) ||
+          c.customerName.toLowerCase() === relatedOrder.customerName.toLowerCase()
+      );
+    }
+
+    // 3. If still not found, create a realistic new conversation dynamically from the order details
+    if (!targetConv && relatedOrder) {
+      const newConvId = `CONV-${relatedOrder.id}`;
+      const newConv: Conversation = {
+        id: newConvId,
+        customerName: relatedOrder.customerName,
+        customerPhone: relatedOrder.customerPhone || "+54 11 0000-0000",
+        avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+        channel: "whatsapp",
+        status: "IA_ATENDIENDO",
+        controlledBy: null,
+        aiConfidence: relatedOrder.aiConfidence || "Alta",
+        orderId: relatedOrder.id,
+        lastMessageAt: relatedOrder.createdAt || "18:30",
+        unreadForOperator: false,
+        messages: [
+          {
+            id: `m-init-1`,
+            sender: "cliente",
+            text: relatedOrder.aiRawMessage || `Hola! Queremos: ${relatedOrder.items.map(i => `${i.quantity}× ${i.name}`).join(", ")} porfa.`,
+            timestamp: relatedOrder.createdAt || "18:28",
+          },
+          {
+            id: `m-init-2`,
+            sender: "ia",
+            text: `¡Hola ${relatedOrder.customerName}! Registrado con gusto:\n${relatedOrder.items.map(i => `• ${i.quantity}× ${i.name} ${i.option ? `(${i.option})` : ""}`).join("\n")}\n\nTotal: $${relatedOrder.total.toLocaleString("es-CO")} COP\n${relatedOrder.customerAddress ? `Dirección: ${relatedOrder.customerAddress}\n` : ""}Tu comanda #${relatedOrder.id} está registrada en el sistema.`,
+            timestamp: relatedOrder.createdAt || "18:29",
+          },
+        ],
+        handoffHistory: [],
+      };
+      setConversations(prev => [newConv, ...prev]);
+      targetConv = newConv;
+    }
+
+    const convId = targetConv ? targetConv.id : orderIdOrConvId;
+    setSelectedConversationId(convId);
+    setSelectedOrderId(null);
+    setAiModalOrder(null);
+
+    // Notify application to navigate to WhatsApp tab
+    window.dispatchEvent(
+      new CustomEvent("necto_navigate_pedidos", {
+        detail: { section: "operacion", opTab: "conversaciones", conversationId: convId },
+      })
+    );
+  };
+
+  const sendWhatsAppStatusAlert = (orderId: string, customMessage: string) => {
+    const targetOrder = allOrders.find(o => o.id === orderId);
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    setConversations(prevConvs =>
+      prevConvs.map(c => {
+        if (
+          c.orderId === orderId ||
+          (targetOrder && c.customerPhone && targetOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === targetOrder.customerPhone.replace(/\D/g, "")) ||
+          (targetOrder && c.customerName.toLowerCase() === targetOrder.customerName.toLowerCase())
+        ) {
+          const newMsg: ChatMessage = {
+            id: `m-alert-${Date.now()}`,
+            sender: "ia",
+            text: customMessage,
+            timestamp: timeStr,
+          };
+          return {
+            ...c,
+            lastMessageAt: timeStr,
+            messages: [...c.messages, newMsg],
+          };
+        }
+        return c;
       })
     );
   };
@@ -1355,8 +1674,11 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         sendOperatorMessage,
         flagForHandoff,
         markConversationRead,
+        confirmDraftOrder,
         simulateCustomerMessage,
         simulateAIReply,
+        openWhatsAppConversation,
+        sendWhatsAppStatusAlert,
       }}
     >
       {children}

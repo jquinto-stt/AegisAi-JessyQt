@@ -1,7 +1,7 @@
 import React from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { X, CheckCircle2, ShieldAlert, ArrowRight } from "lucide-react";
-import { Button, Badge } from "@/elements";
+import { Button } from "@/elements";
 
 export const IncidenciasDrawer: React.FC = () => {
   const { incidencias, isIncidenciasOpen, setIsIncidenciasOpen, resolveIncidencia, setSelectedOrderId } =
@@ -13,23 +13,23 @@ export const IncidenciasDrawer: React.FC = () => {
   const resolvedInc = incidencias.filter(i => i.isResolved);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end font-sans antialiased">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-[#212121]/60 backdrop-blur-xs transition-opacity animate-fade-in"
         onClick={() => setIsIncidenciasOpen(false)}
       />
 
       {/* Drawer Panel */}
       <div className="relative w-full max-w-md bg-white dark:bg-[#121214] shadow-2xl border-l border-zinc-200 dark:border-zinc-800 flex flex-col h-full z-10 animate-slide-left overflow-hidden">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50 flex-none">
+        <div className="p-4 sm:p-5 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between bg-[#ECECEC]/30 dark:bg-zinc-900/50 flex-none">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center flex-none border border-rose-500/20">
-              <ShieldAlert className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-2xl bg-[#190088] text-white flex items-center justify-center flex-none shadow-xs">
+              <ShieldAlert className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-zinc-950 dark:text-zinc-50 tracking-tight">
+              <h3 className="font-bold text-sm text-[#212121] dark:text-[#ECECEC] tracking-tight">
                 Incidencias Operativas
               </h3>
               <p className="text-xs text-zinc-400 font-medium">
@@ -41,65 +41,61 @@ export const IncidenciasDrawer: React.FC = () => {
             variant="ghost"
             intent="incidencias.close"
             onClick={() => setIsIncidenciasOpen(false)}
-            className="w-8 h-8 p-0 rounded-xl text-zinc-400"
+            className="w-8 h-8 p-0 rounded-xl text-zinc-400 hover:text-[#212121] dark:hover:text-white"
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 scrollbar-thin">
           {/* Active Incidences */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#FF3F1A] animate-pulse" />
                 Requieren Intervención ({activeInc.length})
               </span>
             </div>
 
             {activeInc.length === 0 ? (
-              <div className="text-center py-8 text-xs text-zinc-400 font-medium bg-zinc-50/50 dark:bg-zinc-900/30 rounded-3xl border border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-2 p-5">
-                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <div className="text-center py-8 text-xs text-zinc-400 font-medium bg-[#ECECEC]/30 dark:bg-zinc-900/30 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-2 p-5">
+                <CheckCircle2 className="w-5 h-5 text-[#190088] dark:text-[#97D6DF]" />
                 <span>No hay incidencias operativas activas en este turno.</span>
               </div>
             ) : (
               activeInc.map(inc => (
                 <div
                   key={inc.id}
-                  className="bg-white dark:bg-[#18181B] border border-rose-500/30 bg-rose-500/[0.02] dark:bg-rose-500/[0.04] rounded-3xl p-4 shadow-2xs space-y-2.5 transition-all"
+                  className="bg-[#ECECEC]/25 dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 rounded-2xl p-4 shadow-2xs space-y-2.5 transition-all"
                 >
                   <div className="flex items-center justify-between">
-                    <Badge
-                      variant={inc.severity === "Alta" ? "danger" : "warning"}
-                      intent="incidencias.severity"
-                      className="normal-case"
-                    >
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/40">
                       Severidad {inc.severity}
-                    </Badge>
+                    </span>
                     <span className="font-mono text-[10px] text-zinc-400">{inc.timestamp}</span>
                   </div>
 
-                  <p className="font-bold text-xs text-zinc-950 dark:text-zinc-50">
+                  <p className="font-bold text-xs text-[#212121] dark:text-[#ECECEC]">
                     {inc.title}
                   </p>
                   <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-snug">
                     {inc.description}
                   </p>
 
-                  <div className="pt-2 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">
+                  <div className="pt-2 flex items-center justify-between border-t border-zinc-200/60 dark:border-zinc-800">
                     {inc.orderId ? (
-                      <Button
-                        variant="ghost"
-                        intent="incidencias.order.view"
+                      <button
+                        type="button"
                         onClick={() => {
                           setSelectedOrderId(inc.orderId!);
                           setIsIncidenciasOpen(false);
                         }}
                         className="p-0 text-xs font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        Ver pedido {inc.orderId} <ArrowRight className="w-3 h-3" />
-                      </Button>
+                        <span>Ver pedido {inc.orderId}</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
                     ) : (
                       <div />
                     )}
@@ -108,7 +104,7 @@ export const IncidenciasDrawer: React.FC = () => {
                       variant="primary"
                       intent="incidencias.resolve"
                       onClick={() => resolveIncidencia(inc.id)}
-                      className="px-3 py-1.5 text-xs"
+                      className="px-3 py-1.5 text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03715] text-white"
                     >
                       Marcar Resuelta
                     </Button>
@@ -122,7 +118,7 @@ export const IncidenciasDrawer: React.FC = () => {
           {resolvedInc.length > 0 && (
             <div className="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Resueltas en este Turno ({resolvedInc.length})
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" /> Resueltas en este Turno ({resolvedInc.length})
               </span>
               <div className="space-y-2">
                 {resolvedInc.map(inc => (

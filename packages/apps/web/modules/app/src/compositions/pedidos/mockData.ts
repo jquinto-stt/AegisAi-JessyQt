@@ -1191,24 +1191,44 @@ export const INITIAL_CONVERSATIONS: Conversation[] = [
     ],
   },
 
-  // 4) IA_ATENDIENDO — Pedido rápido cerrado 100% automático por IA
+  // 4) IA_ATENDIENDO — Pedido rápido cerrado 100% automático por IA (Mariana Silva PED-1024)
   {
     id: "CONV-05",
     customerName: "Mariana Silva",
-    customerPhone: "+57 315 948-1102",
+    customerPhone: "+54 11 9482-1102",
     avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
     channel: "whatsapp",
     status: "IA_ATENDIENDO",
     controlledBy: null,
     aiConfidence: "Alta",
     orderId: "PED-1024",
-    lastMessageAt: "20:08",
+    lastMessageAt: "18:28",
     unreadForOperator: false,
     messages: [
-      { id: "m1", sender: "cliente", text: "Hola! Quiero 6 empanadas de carne cortada a cuchillo al horno y 2 gaseosas de 500ml.", timestamp: "20:06" },
-      { id: "m2", sender: "ia", text: "¡Hola Mariana! Registrado:\n- 6x Empanadas de Carne a Cuchillo ($33.000 COP)\n- 2x Coca-Cola 500ml ($8.000 COP)\n\nTotal: $41.000 COP.\nDirección registrada: Cra 15 # 85-30, Apto 301.\n¿Confirmamos con pago contra entrega en efectivo?", timestamp: "20:07" },
-      { id: "m3", sender: "cliente", text: "Sí, confirmo! Pago con billete de $50.000 al recibir.", timestamp: "20:08" },
-      { id: "m4", sender: "ia", text: "¡Comanda #PED-1024 confirmada y enviada a cocina! El repartidor llevará $9.000 de cambio. Tiempo estimado: 20 minutos.", timestamp: "20:08" },
+      {
+        id: "m1",
+        sender: "cliente",
+        text: "Hola! Queremos media docena de carne a cuchillo y media de pollo al verdeo, ambas al horno, y dos cocas frías porfa.",
+        timestamp: "18:26",
+      },
+      {
+        id: "m2",
+        sender: "ia",
+        text: "¡Hola Mariana! Qué delicia de pedido. Te confirmo la comanda:\n• 6× Empanadas de Carne a Cuchillo (Horneadas) — $33.000\n• 6× Empanadas de Pollo al Verdeo (Horneadas) — $33.000\n• 2× Gaseosa Cola 354ml Frías — $9.000\n\nTotal: $75.000 COP\nDirección registrada: Av. Santa Fe 3421, 4to B\n\n¿Deseas confirmar la orden para mandarla a cocina de inmediato?",
+        timestamp: "18:27",
+      },
+      {
+        id: "m3",
+        sender: "cliente",
+        text: "Sí, confirmo! Tocar timbre 4B directamente.",
+        timestamp: "18:28",
+      },
+      {
+        id: "m4",
+        sender: "ia",
+        text: "¡Perfecto! Hemos generado tu comanda #PED-1024 y ya está en cola de cocina para confirmación y horneado. Tiempo estimado: 20 min.",
+        timestamp: "18:28",
+      },
     ],
     handoffHistory: [],
   },
