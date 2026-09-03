@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { useBusiness } from "../../../context/BusinessContext";
+import { useBusiness } from "@/context/BusinessContext";
 import { OrderStatusBadge, UrgencyBadge, ChannelBadge } from "./Badges";
 import {
   X,
@@ -48,7 +48,6 @@ export const OrderDetailDrawer: React.FC = () => {
     setPrintTicketOrder,
     incidencias,
     resolveIncidencia,
-    products,
   } = usePedidos();
 
   const { activeRoleId } = useBusiness();

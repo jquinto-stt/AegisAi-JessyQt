@@ -228,11 +228,13 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
       </div>
 
       {/* Modal to create order pre-filled from this WhatsApp conversation */}
-      <CreateOrderFromConversationModal
-        conversation={conversation}
-        isOpen={isCreateOrderModalOpen}
-        onClose={() => setIsCreateOrderModalOpen(false)}
-      />
+      {isCreateOrderModalOpen && (
+        <CreateOrderFromConversationModal
+          conversation={conversation}
+          isOpen={isCreateOrderModalOpen}
+          onClose={() => setIsCreateOrderModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

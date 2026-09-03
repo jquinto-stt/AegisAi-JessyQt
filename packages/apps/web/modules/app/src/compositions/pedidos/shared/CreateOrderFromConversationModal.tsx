@@ -31,7 +31,7 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
   onClose,
 }) => {
   const {
-    products,
+    products = [],
     createManualOrder,
     sendToKitchen,
     sendOperatorMessage,
@@ -48,8 +48,7 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
 
   const [searchProductQuery, setSearchProductQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<OrderItem[]>(() => {
-    // Default initial item
-    const firstProd = products[0];
+    const firstProd = (products || [])[0];
     if (firstProd) {
       return [
         {
@@ -66,14 +65,15 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
 
   if (!isOpen) return null;
 
-  const filteredProducts = products.filter(
+  const productList = products || [];
+  const filteredProducts = productList.filter(
     p =>
-      p.name.toLowerCase().includes(searchProductQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchProductQuery.toLowerCase())
+      (p.name || "").toLowerCase().includes(searchProductQuery.toLowerCase()) ||
+      (p.category || "").toLowerCase().includes(searchProductQuery.toLowerCase())
   );
 
   const handleAddItem = (productId: string) => {
-    const prod = products.find(p => p.id === productId);
+    const prod = productList.find(p => p.id === productId);
     if (!prod) return;
 
     const existingIdx = selectedItems.findIndex(i => i.productId === productId);
