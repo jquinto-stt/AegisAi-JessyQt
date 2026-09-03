@@ -83,6 +83,7 @@ export interface Pedido {
   cancellationReason?: string;
   turnNumber?: number;
   notes?: string;
+  isStockConsumed?: boolean;
   history: OrderEvent[];
 }
 

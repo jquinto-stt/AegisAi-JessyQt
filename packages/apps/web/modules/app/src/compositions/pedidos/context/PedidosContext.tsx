@@ -303,8 +303,11 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           newTurn = Math.floor(Math.random() * 30) + 1;
         }
 
-        // Automatic Stock consumption when order enters preparation
-        if (toStatus === "EN_PREPARACION" && order.status !== "EN_PREPARACION") {
+        // Automatic Stock consumption whenever order reaches preparation, ready, or delivered stage (safely executed once)
+        const isProgressiveProduction = ["EN_PREPARACION", "LISTO", "FINALIZADO"].includes(toStatus);
+        const shouldConsumeStock = isProgressiveProduction && !order.isStockConsumed;
+
+        if (shouldConsumeStock) {
           setTimeout(() => consumeStockForOrder(order), 50);
         }
 
@@ -312,6 +315,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           ...order,
           status: toStatus,
           turnNumber: newTurn,
+          isStockConsumed: order.isStockConsumed || shouldConsumeStock,
           history: [...order.history, newEvent],
         };
       })
@@ -606,6 +610,29 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             registeredBy: "Motor de Pedidos",
           });
         });
+      } else if (ingredients.length > 0) {
+        // Fallback: match by common ingredient keywords
+        const nameLower = orderItem.name.toLowerCase();
+        const matchedIng =
+          ingredients.find(
+            ing =>
+              nameLower.includes(ing.name.toLowerCase()) ||
+              ing.name.toLowerCase().includes(nameLower.split(" ")[0])
+          ) || ingredients[0];
+
+        if (matchedIng) {
+          const qty = matchedIng.unit === "kg" ? 0.12 * orderItem.quantity : orderItem.quantity;
+          registerStockMovement({
+            ingredientId: matchedIng.id,
+            ingredientName: matchedIng.name,
+            type: "VENTA_PEDIDO",
+            quantity: -Number(qty.toFixed(2)),
+            unit: matchedIng.unit,
+            orderId: order.id,
+            reason: `Consumo proporcional por ${orderItem.quantity}x ${orderItem.name} (Comanda ${order.id})`,
+            registeredBy: "Motor de Pedidos",
+          });
+        }
       }
     });
   };
