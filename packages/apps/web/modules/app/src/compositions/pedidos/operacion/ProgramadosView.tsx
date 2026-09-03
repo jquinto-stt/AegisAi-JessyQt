@@ -6,9 +6,11 @@ import {
   Clock,
   MapPin,
   CheckCircle2,
-  Zap,
+  ChefHat,
+  ShoppingBag,
   ArrowLeft,
   CalendarDays,
+  Activity,
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 import { Button, SegmentedControl } from "@/elements";
@@ -29,12 +31,15 @@ export const ProgramadosView: React.FC<{
   const hoyList = programados.filter(p => p.scheduledDate === "Hoy");
   const mananaList = programados.filter(p => p.scheduledDate === "Mañana");
 
-  const totalHoyAmount = hoyList.reduce((sum, p) => sum + p.total, 0);
+  const pendingHoyList = hoyList.filter(p => !p.isInLiveQueue);
+  const activeInLiveCount = hoyList.filter(p => p.isInLiveQueue).length;
+
+  const totalHoyAmount = pendingHoyList.reduce((sum, p) => sum + p.total, 0);
   const totalMananaAmount = mananaList.reduce((sum, p) => sum + p.total, 0);
 
   const handleInjectNow = (orderId: string, customerName: string) => {
     injectScheduledOrderToLive(orderId, true);
-    setSuccessToast(`¡Pedido de ${customerName} inyectado a Cocina!`);
+    setSuccessToast(`¡Pedido de ${customerName} inyectado a Cocina KDS!`);
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
@@ -80,14 +85,21 @@ export const ProgramadosView: React.FC<{
             Programados para Hoy
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {hoyList.length}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
+                {pendingHoyList.length}
+              </p>
+              {activeInLiveCount > 0 && (
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+                  (+{activeInLiveCount} en vivo)
+                </span>
+              )}
+            </div>
             <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full font-mono">
               ${(totalHoyAmount / 1000).toFixed(0)}k COP
             </span>
           </div>
-          <p className="text-[11px] text-gray-400">Entregas comprometidas durante el turno</p>
+          <p className="text-[11px] text-gray-400">Entregas pendientes de activación</p>
         </div>
 
         {/* KPI 2: Mañana */}
@@ -183,12 +195,23 @@ export const ProgramadosView: React.FC<{
                 hoyList.map(item => (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-gray-700 p-5 shadow-xs space-y-4 hover:border-[#FF3F1A] transition-all"
+                    className={`bg-white dark:bg-[#2C2D31] rounded-2xl border p-5 shadow-xs space-y-4 transition-all ${
+                      item.isInLiveQueue
+                        ? "border-emerald-500/30 bg-emerald-500/[0.02]"
+                        : "border-slate-200 dark:border-gray-700 hover:border-[#FF3F1A]"
+                    }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
-                        {item.id}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-xs text-gray-900 dark:text-gray-100">
+                          {item.id}
+                        </span>
+                        {item.isInLiveQueue && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            En Cocina
+                          </span>
+                        )}
+                      </div>
                       <span className="font-mono font-black text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-gray-800 text-[#FF3F1A] flex items-center gap-1.5 border border-slate-200 dark:border-gray-700">
                         <Clock className="w-3.5 h-3.5" />
                         <span>Pactado: {item.scheduledTime}</span>
@@ -222,7 +245,7 @@ export const ProgramadosView: React.FC<{
                       </div>
                     </div>
 
-                    {/* Wake up action button */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-2 pt-1">
                       <Button
                         variant="outline"
@@ -233,15 +256,27 @@ export const ProgramadosView: React.FC<{
                         Ticket
                       </Button>
 
-                      <Button
-                        variant="accent"
-                        intent="programados.order.inject"
-                        onClick={() => handleInjectNow(item.id, item.customerName)}
-                        className="flex-1 py-2.5 px-3 text-xs"
-                      >
-                        <Zap className="w-4 h-4 text-white" />
-                        <span>Despertar e Inyectar a Cocina</span>
-                      </Button>
+                      {item.isInLiveQueue ? (
+                        <Button
+                          variant="primary"
+                          intent="programados.order.inlive"
+                          onClick={() => onNavigateOpTab?.("en-vivo")}
+                          className="flex-1 py-2.5 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                          <span>En Vivo (Ver Pedidos)</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="accent"
+                          intent="programados.order.inject"
+                          onClick={() => handleInjectNow(item.id, item.customerName)}
+                          className="flex-1 py-2.5 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <ChefHat className="w-4 h-4 text-white" />
+                          <span>Inyectar a Cocina</span>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -406,15 +441,27 @@ export const ProgramadosView: React.FC<{
                       ${item.total.toLocaleString("es-CO")}
                     </span>
 
-                    <Button
-                      variant="accent"
-                      intent="programados.timeline.inject"
-                      onClick={() => handleInjectNow(item.id, item.customerName)}
-                      className="py-2 px-3 text-xs"
-                    >
-                      <Zap className="w-3.5 h-3.5 text-white" />
-                      <span>Despertar Pedido</span>
-                    </Button>
+                    {item.isInLiveQueue ? (
+                      <Button
+                        variant="outline"
+                        intent="programados.timeline.view"
+                        onClick={() => onNavigateOpTab?.("en-vivo")}
+                        className="py-2 px-3 text-xs text-emerald-600 dark:text-emerald-400 font-bold border-emerald-500/30 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>En Vivo</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="accent"
+                        intent="programados.timeline.inject"
+                        onClick={() => handleInjectNow(item.id, item.customerName)}
+                        className="py-2 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ChefHat className="w-3.5 h-3.5 text-white" />
+                        <span>Inyectar a Cocina</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

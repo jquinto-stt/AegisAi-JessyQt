@@ -84,6 +84,7 @@ export interface Pedido {
   turnNumber?: number;
   notes?: string;
   isStockConsumed?: boolean;
+  isInLiveQueue?: boolean;
   history: OrderEvent[];
 }
 

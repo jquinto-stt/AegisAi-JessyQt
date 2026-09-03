@@ -756,6 +756,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const target = programados.find(p => p.id === orderId);
     if (!target) return;
 
+    // Prevent duplicate injection into live orders
+    if (orders.some(o => o.id === orderId)) return;
+
     const newStatus: OrderStatus = directToKitchen ? "EN_PREPARACION" : "CONFIRMADO";
     const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -764,12 +767,13 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       status: newStatus,
       urgency: "A_TIEMPO",
       elapsedMinutes: 0,
+      isInLiveQueue: true,
       turnNumber: target.turnNumber || Math.floor(Math.random() * 30) + 1,
       history: [
         ...target.history,
         {
           timestamp: nowStr,
-          fromStatus: "NUEVO",
+          fromStatus: target.status,
           toStatus: newStatus,
           user: "Planificador / Inyección Manual",
           note: `Comanda programada activada en vivo (${directToKitchen ? "Enviada a Cocina" : "Confirmada en Cola"}).`,
@@ -777,7 +781,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ],
     };
 
-    setProgramados(prev => prev.filter(p => p.id !== orderId));
+    setProgramados(prev =>
+      prev.map(p => (p.id === orderId ? { ...p, isInLiveQueue: true, status: newStatus } : p))
+    );
     setOrders(prev => [activatedOrder, ...prev]);
     if (isSoundEnabled) playNewOrderSound();
   };
