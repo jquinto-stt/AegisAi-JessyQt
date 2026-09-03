@@ -971,11 +971,11 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       })
     );
 
-    // Si la conversación está en modo IA, la IA responde automáticamente en 700ms
+    // La IA responde automáticamente en 600ms
     setTimeout(() => {
       setConversations(currentConvs => {
         const conv = currentConvs.find(c => c.id === conversationId);
-        if (!conv || conv.status !== "IA_ATENDIENDO") return currentConvs;
+        if (!conv) return currentConvs;
 
         const lower = trimmed.toLowerCase();
         const isOrderRequest =
@@ -992,13 +992,15 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("nequi");
 
         if (isReceiptRequest) {
-          flagForHandoff(conversationId, "VERIFICAR_PAGO_TRANSFERENCIA");
           const replyTime = nowTime();
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
                   ...c,
+                  status: "REQUIERE_INTERVENCION" as const,
+                  requiresHandoffReason: "VERIFICAR_PAGO_TRANSFERENCIA" as const,
                   lastMessageAt: replyTime,
+                  unreadForOperator: true,
                   messages: [
                     ...c.messages,
                     {
@@ -1054,7 +1056,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             ],
           };
 
-          setOrders(prevOrders => [newOrder, ...prevOrders]);
+          setOrders(prevOrders => [newOrder, ...prevOrders.filter(o => o.id !== newOrderId)]);
           if (isSoundEnabled) playNewOrderSound();
 
           const replyTime = nowTime();
@@ -1063,6 +1065,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
               ? {
                   ...c,
                   orderId: newOrderId,
+                  status: "IA_ATENDIENDO" as const,
                   lastMessageAt: replyTime,
                   messages: [
                     ...c.messages,
@@ -1091,6 +1094,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           c.id === conversationId
             ? {
                 ...c,
+                status: "IA_ATENDIENDO" as const,
                 lastMessageAt: replyTime,
                 messages: [
                   ...c.messages,
@@ -1105,7 +1109,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             : c
         );
       });
-    }, 750);
+    }, 600);
   };
 
   const simulateAIReply = (conversationId: string, text: string) => {
