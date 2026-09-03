@@ -14,6 +14,7 @@ import {
   CheckCheck,
   User,
   Plus,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/elements";
 import { CreateOrderFromConversationModal } from "./CreateOrderFromConversationModal";
