@@ -50,6 +50,7 @@ export const PedidosEnVivoView: React.FC<{
     markOrderReady,
     deliverOrder,
     setRejectModalOrder,
+    setCancelModalOrder,
     injectScheduledOrderToLive,
     transitionOrder,
   } = usePedidos();
@@ -125,15 +126,6 @@ export const PedidosEnVivoView: React.FC<{
   const [dragOverCol, setDragOverCol] = useState<OrderStatus | null>(null);
   const [dragToast, setDragToast] = useState<string | null>(null);
 
-  // Flujo operativo lineal del pedido: no se pueden saltar ni retroceder etapas.
-  // Cada estado sólo puede avanzar exactamente al siguiente mediante arrastre.
-  const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
-    NUEVO: "CONFIRMADO",
-    CONFIRMADO: "EN_PREPARACION",
-    EN_PREPARACION: "LISTO",
-    LISTO: "FINALIZADO",
-  };
-
   const colNames: Record<OrderStatus, string> = {
     NUEVO: "Nuevos & Por Confirmar",
     CONFIRMADO: "Confirmados (En Cola)",
@@ -142,6 +134,16 @@ export const PedidosEnVivoView: React.FC<{
     FINALIZADO: "Entregados / Finalizados",
     RECHAZADO: "Rechazados",
     CANCELADO: "Cancelados",
+  };
+
+  const STATUS_RANK: Record<OrderStatus, number> = {
+    NUEVO: 0,
+    CONFIRMADO: 1,
+    EN_PREPARACION: 2,
+    LISTO: 3,
+    FINALIZADO: 4,
+    RECHAZADO: 5,
+    CANCELADO: 5,
   };
 
   const showToast = (msg: string) => {
@@ -153,12 +155,42 @@ export const PedidosEnVivoView: React.FC<{
     const order = orders.find(o => o.id === orderId);
     if (!order || order.status === targetCol) return;
 
-    // Sólo se admite avanzar UNA etapa: bloquea saltos (p.ej. NUEVO→LISTO)
-    // y retrocesos (p.ej. LISTO→NUEVO).
-    const allowedNext = NEXT_STATUS[order.status];
-    if (targetCol !== allowedNext) {
+    // 1. Manejo de Rechazo y Cancelación directa por arrastre
+    if (targetCol === "RECHAZADO") {
+      if (order.status === "NUEVO") {
+        setRejectModalOrder(order);
+      } else {
+        setCancelModalOrder(order);
+      }
+      return;
+    }
+
+    if (targetCol === "CANCELADO") {
+      setCancelModalOrder(order);
+      return;
+    }
+
+    const currentRank = STATUS_RANK[order.status] ?? 0;
+    const targetRank = STATUS_RANK[targetCol] ?? 0;
+
+    // 2. Bloquear retrocesos ilógicos (ej: de FINALIZADO/LISTO a NUEVO)
+    if (targetRank < currentRank) {
       showToast(
-        `No se puede mover a "${colNames[targetCol]}": el pedido debe avanzar por orden desde "${colNames[order.status]}".`
+        `No se puede retroceder: el pedido ya superó la etapa de "${colNames[targetCol]}".`
+      );
+      return;
+    }
+
+    // 3. Fast-Track de Mostrador o Avance Secuencial Flexible
+    const isFastTrackAllowed =
+      order.channel === "presencial" ||
+      targetCol === "FINALIZADO" ||
+      targetCol === "LISTO" ||
+      targetRank === currentRank + 1;
+
+    if (!isFastTrackAllowed) {
+      showToast(
+        `No se puede saltar a "${colNames[targetCol]}": avanza el pedido por orden o envíalo a preparación.`
       );
       return;
     }
@@ -166,8 +198,10 @@ export const PedidosEnVivoView: React.FC<{
     transitionOrder(
       orderId,
       targetCol,
-      "Operador (Arrastrar y Soltar)",
-      `Pedido movido al estado ${targetCol} mediante arrastre en el tablero.`
+      order.channel === "presencial" ? "Caja Mostrador (Pase Rápido)" : "Operador (Tablero)",
+      order.channel === "presencial" && targetCol === "FINALIZADO"
+        ? "Venta directa de mostrador finalizada."
+        : `Pedido trasladado a ${colNames[targetCol]}.`
     );
 
     showToast(`Pedido ${orderId} trasladado a "${colNames[targetCol]}"`);
