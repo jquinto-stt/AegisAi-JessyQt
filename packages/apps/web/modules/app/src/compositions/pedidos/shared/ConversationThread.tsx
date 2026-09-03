@@ -283,7 +283,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
         {/* Business Quick Response Templates */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <span className="text-[10px] font-mono font-bold uppercase text-[#54656F] dark:text-[#8696A0] flex items-center gap-1 mr-1 flex-none">
-            <Zap className="w-3 h-3 text-[#008069] dark:text-[#00A884]" />
+            <MessageSquare className="w-3 h-3 text-[#008069] dark:text-[#00A884]" />
             Plantillas:
           </span>
           {[

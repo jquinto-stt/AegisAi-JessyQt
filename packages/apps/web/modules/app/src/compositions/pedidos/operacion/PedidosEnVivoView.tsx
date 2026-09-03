@@ -14,7 +14,6 @@ import {
   ArrowRight,
   Check,
   Package,
-  Zap,
   ChevronDown,
   Minimize2,
   Calendar,
@@ -801,7 +800,7 @@ export const PedidosEnVivoView: React.FC<{
                         className="py-1 px-2.5 text-[10px] font-semibold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
                         title="Adelantar y pasar a preparación en vivo"
                       >
-                        <Zap className="w-3 h-3 text-[#FF3F1A]" />
+                        <ChefHat className="w-3 h-3 text-[#FF3F1A]" />
                         <span>Pasar a En Vivo</span>
                       </Button>
                     </div>
