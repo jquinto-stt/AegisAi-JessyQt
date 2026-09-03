@@ -34,8 +34,16 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
     confirmOrder,
   } = usePedidos();
   const [draft, setDraft] = useState("");
+  const [customerDraft, setCustomerDraft] = useState("");
   const [verifiedMessages, setVerifiedMessages] = useState<Record<string, "VERIFICADO_OK" | "RECHAZADO">>({});
   const endRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSendCustomerSimulated = (textToSend?: string) => {
+    const text = textToSend || customerDraft;
+    if (!text.trim()) return;
+    simulateCustomerMessage(conversation.id, text);
+    if (!textToSend) setCustomerDraft("");
+  };
 
   const isMine =
     conversation.status === "HUMANO_ATENDIENDO" &&
@@ -378,64 +386,125 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
           </div>
         )}
 
-        {/* Demo Simulator Quick Actions */}
-        <div className="flex items-center gap-2 pt-1 text-[10px] text-[#54656F] dark:text-[#8696A0] flex-wrap">
-          <span className="font-bold uppercase tracking-wider font-mono">Simulador Demo:</span>
-          
-          <button
-            type="button"
-            onClick={() => {
-              const orderSamples = [
-                "¡Hola! Queremos 6 empanadas de carne a cuchillo al horno y 2 cocas porfa.",
-                "Buenas noches, me envías 1 docena mixta (6 carne, 6 pollo) a la Calle 72?",
-                "Hola! Porfa un combo ejecutivo con gaseosa fría para entregar ya.",
-              ];
-              const randomOrder = orderSamples[Math.floor(Math.random() * orderSamples.length)];
-              simulateCustomerMessage(conversation.id, randomOrder, { isOrder: true });
-            }}
-            className="font-bold text-[#FF3F1A] hover:underline cursor-pointer inline-flex items-center gap-1 bg-orange-500/10 px-2 py-0.5 rounded-md"
-            title="Simula un cliente ordenando por WhatsApp -> La IA cotiza y crea el pedido en Pedidos en Vivo automáticamente"
-          >
-            <ShoppingBag className="w-3 h-3 text-[#FF3F1A]" />
-            <span>+ Simular Pedido con IA</span>
-          </button>
+        {/* Demo Simulator Interactive Multi-Turn Panel */}
+        <div className="p-2.5 rounded-2xl bg-[#ECECEC] dark:bg-[#182229] border border-zinc-200 dark:border-zinc-700/80 space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-zinc-500 uppercase">
+            <span className="flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-[#008069] dark:text-[#00A884]" />
+              <span>Simulador de Cliente (Prueba Interactiva Multi-Turno)</span>
+            </span>
+            <span className="text-zinc-400 lowercase font-normal">escribe libremente o usa los pasos:</span>
+          </div>
 
-          <span className="opacity-40">·</span>
+          {/* Free-text customer input */}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={customerDraft}
+              onChange={e => setCustomerDraft(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSendCustomerSimulated();
+                }
+              }}
+              placeholder='Escribe como el cliente (ej: "Agrega salsa chimichurri", "¿Tienen queso?", "Enviar a Calle 72")...'
+              className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#202C33] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 border border-zinc-200 dark:border-zinc-700 focus:outline-none focus:ring-1 focus:ring-[#00A884]"
+            />
+            <button
+              type="button"
+              onClick={() => handleSendCustomerSimulated()}
+              disabled={!customerDraft.trim()}
+              className="px-3 py-1.5 rounded-xl bg-[#008069] hover:bg-[#006e5a] text-white font-bold text-xs shadow-2xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1 flex-none"
+            >
+              <span>Enviar como Cliente</span>
+              <Send className="w-3 h-3" />
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              simulateCustomerMessage(
-                conversation.id,
-                "Listo, ya les transferí $45.000 por Nequi. Aquí les adjunto el comprobante.",
-                { isReceipt: true }
-              );
-            }}
-            className="font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer inline-flex items-center gap-1 bg-purple-500/10 px-2 py-0.5 rounded-md"
-            title="Simula un cliente enviando comprobante Nequi -> La IA solicita verificación bancaria humana"
-          >
-            <CreditCard className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-            <span>+ Comprobante Nequi</span>
-          </button>
+          {/* Progressive Journey Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 text-[11px]">
+            <button
+              type="button"
+              onClick={() =>
+                handleSendCustomerSimulated(
+                  "¡Hola! Quiero pedir 6 empanadas de carne a cuchillo al horno y 2 gaseosas cola porfa."
+                )
+              }
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-orange-50 dark:hover:bg-orange-950/40 text-[#FF3F1A] border border-orange-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Paso 1: El cliente pide empanadas -> La IA genera la comanda y ofrece upsells"
+            >
+              <ShoppingBag className="w-3 h-3" />
+              <span>1. 🥟 Pedir 6 Empanadas</span>
+            </button>
 
-          <span className="opacity-40">·</span>
+            <button
+              type="button"
+              onClick={() =>
+                handleSendCustomerSimulated(
+                  "Sí porfa, agrégale 1 salsa chimichurri especial de la casa a la comanda."
+                )
+              }
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Paso 2: El cliente acepta upsell -> La IA actualiza la comanda y recalcula montos"
+            >
+              <span>2. 🥫 Agregar Chimichurri (+Upsell)</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              const samples = [
-                "¿Tienen chimichurri suave o salsa picante?",
-                "¿Cuánto se demora el delivery a la Calle 72?",
-                "¿Qué métodos de pago reciben?",
-              ];
-              const randomMsg = samples[Math.floor(Math.random() * samples.length)];
-              simulateCustomerMessage(conversation.id, randomMsg);
-            }}
-            className="font-bold text-[#008069] dark:text-[#00A884] hover:underline cursor-pointer inline-flex items-center gap-1"
-          >
-            <User className="w-3 h-3 inline" />
-            <span>+ Consulta Cliente</span>
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleSendCustomerSimulated(
+                  "Es para enviar a Calle 72 # 11-45 (Apto 402). Voy a pagar por Nequi."
+                )
+              }
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-sky-50 dark:hover:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Paso 3: El cliente da dirección y pago -> La IA brinda datos de transferencia"
+            >
+              <span>3. 📍 Dirección & Nequi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                simulateCustomerMessage(
+                  conversation.id,
+                  "Listo! Ya les transferí los $45.500 por Nequi. Aquí les adjunto la captura del comprobante.",
+                  { isReceipt: true }
+                );
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Paso 4: El cliente manda comprobante -> La IA pide verificación humana y genera tarjeta de seguridad"
+            >
+              <CreditCard className="w-3 h-3" />
+              <span>4. 💳 Enviar Comprobante</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                handleSendCustomerSimulated(
+                  "¿Las empanadas de carne tienen cebolla o queso? Tengo intolerancia alimentaria."
+                )
+              }
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 font-medium flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Pregunta sobre alérgenos e ingredientes"
+            >
+              <Shield className="w-3 h-3" />
+              <span>5. 🛡️ Alérgenos</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                handleSendCustomerSimulated("¿Cuánto tiempo demora el delivery a la Calle 72?")
+              }
+              className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#202C33] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700 font-medium flex items-center gap-1 flex-none cursor-pointer shadow-2xs transition-all"
+              title="Pregunta sobre tiempos y horas de entrega"
+            >
+              <span>6. ⏱️ Demora</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

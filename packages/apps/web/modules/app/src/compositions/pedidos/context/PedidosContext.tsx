@@ -971,28 +971,27 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       })
     );
 
-    // La IA responde automáticamente en 600ms
+    // La IA responde automáticamente en 600ms con lógica conversacional multi-turno
     setTimeout(() => {
       setConversations(currentConvs => {
         const conv = currentConvs.find(c => c.id === conversationId);
         if (!conv) return currentConvs;
 
         const lower = trimmed.toLowerCase();
-        const isOrderRequest =
-          options?.isOrder ||
-          lower.includes("quiero") ||
-          lower.includes("pedir") ||
-          lower.includes("empanada") ||
-          lower.includes("combo") ||
-          lower.includes("docena");
+        const replyTime = nowTime();
+        const customerName = conv.customerName || "Lucía";
+
+        // CASO 1: Comprobante de pago o transferencia enviada
         const isReceiptRequest =
           options?.isReceipt ||
           lower.includes("comprobante") ||
+          lower.includes("transferí") ||
           lower.includes("transferencia") ||
-          lower.includes("nequi");
+          lower.includes("pagué") ||
+          lower.includes("acá está el pago") ||
+          lower.includes("adjunto el pago");
 
         if (isReceiptRequest) {
-          const replyTime = nowTime();
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
@@ -1006,7 +1005,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: "¡Comprobante de transferencia Nequi recibido! 🧾 Un operador humano está corroborando el abono en cuenta bancaria para autorizar la comanda a cocina.",
+                      text: `¡Comprobante de Nequi recibido por $45.500 COP (Ref: #NQ-${Math.floor(100000 + Math.random() * 900000)})! 🧾\n\nPor seguridad financiera, un Administrador está validando la acreditación en la cuenta bancaria para autorizar el horneado inmediato. ¡Muchas gracias, ${customerName}!`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1015,9 +1014,109 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
+        // CASO 2: Modificación / Upsell / Adición a comanda existente (si ya tiene un pedido)
+        const isAddingItems =
+          lower.includes("agrega") ||
+          lower.includes("sumale") ||
+          lower.includes("adicional") ||
+          lower.includes("también quiero") ||
+          lower.includes("chimichurri") ||
+          lower.includes("salsa") ||
+          lower.includes("gaseosa") ||
+          lower.includes("coca") ||
+          lower.includes("postre");
+
+        if (conv.orderId && isAddingItems) {
+          setOrders(prevOrders =>
+            prevOrders.map(ord => {
+              if (ord.id !== conv.orderId) return ord;
+              const hasChimi = ord.items.some(i => i.name.includes("Chimichurri"));
+              const newItems = hasChimi
+                ? [
+                    ...ord.items,
+                    { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 1, unitPrice: 4500 },
+                  ]
+                : [
+                    ...ord.items,
+                    { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
+                  ];
+              const newTotal = newItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+              return {
+                ...ord,
+                items: newItems,
+                total: newTotal,
+                notes: `${ord.notes || ""} + Agregado por IA en chat: ${hasChimi ? "Gaseosa Cola" : "Chimichurri Especial"}.`,
+              };
+            })
+          );
+          if (isSoundEnabled) playSuccessSound();
+
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "IA_ATENDIENDO" as const,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `¡Listo, ${customerName}! ✨ Actualicé tu comanda #${conv.orderId}.\n\n➕ Agregué: 1x Salsa Chimichurri Especial de la Casa.\n💰 Nuevo total: $45.500 COP.\n\n📍 ¿Confirmamos entrega a tu dirección habitual (Calle 72 # 11-45) o prefieres retirar por el local?`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // CASO 3: Confirmación de Dirección / Método de Pago
+        const isAddressOrPayment =
+          lower.includes("calle") ||
+          lower.includes("carrera") ||
+          lower.includes("dirección") ||
+          lower.includes("domicilio") ||
+          lower.includes("enviar a") ||
+          lower.includes("nequi") ||
+          lower.includes("bancolombia") ||
+          lower.includes("efectivo") ||
+          lower.includes("transferencia");
+
+        if (conv.orderId && isAddressOrPayment) {
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "IA_ATENDIENDO" as const,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `¡Perfecto! 🛵 Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n💳 **Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Necto Gourmet S.A.S.\n• **Total:** $45.500 COP\n\nPor favor envíanos la captura de tu comprobante por aquí para encender el horno y despachar tu pedido 🔥.`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // CASO 4: Pedido nuevo o solicitud de comida
+        const isOrderRequest =
+          options?.isOrder ||
+          lower.includes("quiero") ||
+          lower.includes("pedir") ||
+          lower.includes("empanada") ||
+          lower.includes("combo") ||
+          lower.includes("docena") ||
+          lower.includes("hambre") ||
+          lower.includes("ordenar");
+
         if (isOrderRequest) {
           const newOrderId = `PED-${Math.floor(1030 + Math.random() * 70)}`;
-          const customerName = conv.customerName || "Cliente WhatsApp";
           const customerPhone = conv.customerPhone || "+57 300 123 4567";
 
           const newOrder: Pedido = {
@@ -1035,7 +1134,12 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 unitPrice: 5500,
                 option: "Horneada",
               },
-              { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
+              {
+                productId: "prod-07",
+                name: "Gaseosa Cola 354ml",
+                quantity: 2,
+                unitPrice: 4500,
+              },
             ],
             total: 42000,
             createdAt: nowTime(),
@@ -1045,7 +1149,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             isAIOrigin: true,
             aiConfidence: "Alta",
             aiRawMessage: trimmed,
-            notes: "Tomado y cotizado automáticamente por IA desde WhatsApp.",
+            notes: "Tomado automáticamente por IA desde WhatsApp.",
             history: [
               {
                 timestamp: nowTime(),
@@ -1059,7 +1163,6 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           setOrders(prevOrders => [newOrder, ...prevOrders.filter(o => o.id !== newOrderId)]);
           if (isSoundEnabled) playNewOrderSound();
 
-          const replyTime = nowTime();
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
@@ -1072,7 +1175,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Perfecto ${customerName}! 🥟 Acabo de tomar tu pedido y generar la comanda #${newOrderId} por un total de $42.000 COP (6x Carne + 2x Gaseosas). Ya está ingresada en nuestro tablero de Pedidos en Vivo 📋.`,
+                      text: `¡Hola ${customerName}! 🥟 Con gusto te armo el pedido. Registré la comanda #${newOrderId} en nuestro tablero:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa (Chimichurri o Criolla por $3.500) o unas empanadas dulces de postre?`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1081,15 +1184,64 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // Consulta general
-        const replies = [
-          "¡Hola! Con mucho gusto. Nuestro tiempo de entrega promedio hoy es de 20 a 25 minutos. ¿Deseas ordenar algo de nuestra carta?",
-          "¡Hola! Sí, preparamos chimichurri suave y salsa picante de la casa. ¿Deseas que te enviemos porciones con tu pedido?",
-          "¡Hola! Claro que sí, aceptamos pagos por transferencia Nequi, Bancolombia, datáfono o efectivo contra entrega.",
-        ];
-        const chosen = replies[Math.floor(Math.random() * replies.length)];
-        const replyTime = nowTime();
+        // CASO 5: Preguntas sobre Alérgenos, Tiempos, Métodos de Pago o Carta
+        if (
+          lower.includes("alergia") ||
+          lower.includes("alérgeno") ||
+          lower.includes("cebolla") ||
+          lower.includes("queso") ||
+          lower.includes("celiaquia") ||
+          lower.includes("gluten") ||
+          lower.includes("tacc")
+        ) {
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "IA_ATENDIENDO" as const,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `¡Muy buena pregunta, ${customerName}! 🛡️\n\nNuestras empanadas de carne a cuchillo y pollo al verdeo contienen cebolla salteada y masa de trigo tradicional. Si tienes intolerancia a los lácteos, te recomendamos las de carne o espinaca. Para celiaquía estricta, avísanos para activar el protocolo de horneado en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
 
+        if (
+          lower.includes("cuanto demora") ||
+          lower.includes("tiempo") ||
+          lower.includes("tardan") ||
+          lower.includes("demora") ||
+          lower.includes("hora")
+        ) {
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  status: "IA_ATENDIENDO" as const,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `⏱️ Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en horno de piedra + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // CASO 6: Respuesta general conversacional
         return currentConvs.map(c =>
           c.id === conversationId
             ? {
@@ -1101,7 +1253,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                   {
                     id: `m-${Date.now()}`,
                     sender: "ia",
-                    text: chosen,
+                    text: `¡Hola ${customerName}! 😊 Con gusto te atiendo. Estamos en turno de despacho con nuestro menú de empanadas gourmet, bebidas y combos ejecutivos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`,
                     timestamp: replyTime,
                   },
                 ],
