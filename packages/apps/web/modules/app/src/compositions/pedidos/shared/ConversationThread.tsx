@@ -399,7 +399,6 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             <span>Atendido en vivo por {conversation.controlledBy}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white/80 dark:bg-[#2A3942]/80 rounded-xl text-xs text-[#54656F] dark:text-[#AEBAC1]">
           <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-200/70 dark:bg-zinc-800/70 text-zinc-600 dark:text-zinc-300 text-xs">
             <div className="flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-zinc-400" />
