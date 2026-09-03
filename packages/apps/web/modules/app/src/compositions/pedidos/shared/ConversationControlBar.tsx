@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { Conversation } from "../types";
 import {
   Hand,
-  Bot,
+  ShoppingBag,
   CheckCircle,
   Phone,
   Video,
@@ -13,8 +13,10 @@ import {
   ShieldCheck,
   CheckCheck,
   User,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/elements";
+import { CreateOrderFromConversationModal } from "./CreateOrderFromConversationModal";
 
 export const ConversationControlBar: React.FC<{ conversation: Conversation }> = ({ conversation }) => {
   const {
@@ -24,8 +26,11 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
     resolveConversation,
     confirmOrder,
     setAiModalOrder,
+    setSelectedOrderId,
     currentOperatorName,
   } = usePedidos();
+
+  const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false);
 
   const order = conversation.orderId
     ? orders.find(o => o.id === conversation.orderId)
@@ -79,13 +84,32 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
 
         {/* WhatsApp Action Icons & Linked Order Chip */}
         <div className="flex items-center gap-2">
-          {order && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-xl bg-white dark:bg-[#111B21] border border-zinc-200 dark:border-zinc-700 text-xs shadow-2xs">
+          {order ? (
+            <button
+              type="button"
+              onClick={() => setSelectedOrderId(order.id)}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#111B21] border border-orange-500/30 hover:border-[#FF3F1A] text-xs shadow-2xs transition-all cursor-pointer group"
+              title="Abrir comanda de esta conversación"
+            >
               <Receipt className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span className="font-mono font-bold text-zinc-900 dark:text-white">#{order.code}</span>
+              <span className="font-mono font-bold text-zinc-900 dark:text-white group-hover:text-[#FF3F1A]">
+                #{order.id}
+              </span>
               <span className="text-zinc-400">·</span>
-              <span className="font-extrabold text-[#008069] dark:text-[#00A884]">${order.total.toLocaleString()}</span>
-            </div>
+              <span className="font-extrabold text-[#008069] dark:text-[#00A884]">
+                ${order.total.toLocaleString("es-CO")}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsCreateOrderModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold text-xs shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              title="Generar comanda a partir de esta conversación de WhatsApp"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Crear Pedido</span>
+            </button>
           )}
 
           <div className="flex items-center gap-0.5 text-[#54656F] dark:text-[#AEBAC1]">
@@ -202,6 +226,13 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
           </div>
         )}
       </div>
+
+      {/* Modal to create order pre-filled from this WhatsApp conversation */}
+      <CreateOrderFromConversationModal
+        conversation={conversation}
+        isOpen={isCreateOrderModalOpen}
+        onClose={() => setIsCreateOrderModalOpen(false)}
+      />
     </div>
   );
 };
