@@ -19,6 +19,8 @@ import {
   Smartphone,
   Shield,
   Activity,
+  ShoppingBag,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -377,16 +379,54 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
         )}
 
         {/* Demo Simulator Quick Actions */}
-        <div className="flex items-center gap-2 pt-1 text-[10px] text-[#54656F] dark:text-[#8696A0]">
-          <span className="font-bold uppercase tracking-wider font-mono">Simulador:</span>
+        <div className="flex items-center gap-2 pt-1 text-[10px] text-[#54656F] dark:text-[#8696A0] flex-wrap">
+          <span className="font-bold uppercase tracking-wider font-mono">Simulador Demo:</span>
+          
+          <button
+            type="button"
+            onClick={() => {
+              const orderSamples = [
+                "¡Hola! Queremos 6 empanadas de carne a cuchillo al horno y 2 cocas porfa.",
+                "Buenas noches, me envías 1 docena mixta (6 carne, 6 pollo) a la Calle 72?",
+                "Hola! Porfa un combo ejecutivo con gaseosa fría para entregar ya.",
+              ];
+              const randomOrder = orderSamples[Math.floor(Math.random() * orderSamples.length)];
+              simulateCustomerMessage(conversation.id, randomOrder, { isOrder: true });
+            }}
+            className="font-bold text-[#FF3F1A] hover:underline cursor-pointer inline-flex items-center gap-1 bg-orange-500/10 px-2 py-0.5 rounded-md"
+            title="Simula un cliente ordenando por WhatsApp -> La IA cotiza y crea el pedido en Pedidos en Vivo automáticamente"
+          >
+            <ShoppingBag className="w-3 h-3 text-[#FF3F1A]" />
+            <span>+ Simular Pedido con IA</span>
+          </button>
+
+          <span className="opacity-40">·</span>
+
+          <button
+            type="button"
+            onClick={() => {
+              simulateCustomerMessage(
+                conversation.id,
+                "Listo, ya les transferí $45.000 por Nequi. Aquí les adjunto el comprobante.",
+                { isReceipt: true }
+              );
+            }}
+            className="font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer inline-flex items-center gap-1 bg-purple-500/10 px-2 py-0.5 rounded-md"
+            title="Simula un cliente enviando comprobante Nequi -> La IA solicita verificación bancaria humana"
+          >
+            <CreditCard className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+            <span>+ Comprobante Nequi</span>
+          </button>
+
+          <span className="opacity-40">·</span>
+
           <button
             type="button"
             onClick={() => {
               const samples = [
-                "¿Me confirman si el repartidor puede llevar cambio de $50.000?",
-                "¿Tienen chimichurri suave o solo picante?",
-                "Por favor manden servilletas extra que estamos en la oficina.",
-                "¿El pedido ya salió del local hacia la Calle 72?",
+                "¿Tienen chimichurri suave o salsa picante?",
+                "¿Cuánto se demora el delivery a la Calle 72?",
+                "¿Qué métodos de pago reciben?",
               ];
               const randomMsg = samples[Math.floor(Math.random() * samples.length)];
               simulateCustomerMessage(conversation.id, randomMsg);
@@ -394,27 +434,8 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             className="font-bold text-[#008069] dark:text-[#00A884] hover:underline cursor-pointer inline-flex items-center gap-1"
           >
             <User className="w-3 h-3 inline" />
-            <span>+ Mensaje Cliente</span>
+            <span>+ Consulta Cliente</span>
           </button>
-          <span className="opacity-40">·</span>
-          {isAI && (
-            <button
-              type="button"
-              onClick={() => {
-                const botSamples = [
-                  "¡Claro que sí! He avisado al cadete para que lleve cambio exacto en efectivo.",
-                  "¡Anotado! Agregamos salsa criolla suave y servilletas extra a tu paquete.",
-                  "Tu pedido #PED-1021 está en fase final de horneado (KDS). En 5 minutos sale con el cadete.",
-                ];
-                const randomBot = botSamples[Math.floor(Math.random() * botSamples.length)];
-                simulateAIReply(conversation.id, randomBot);
-              }}
-              className="font-bold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer inline-flex items-center gap-1"
-            >
-              <MessageSquare className="w-3 h-3 inline" />
-              <span>+ Auto-Respuesta</span>
-            </button>
-          )}
         </div>
       </div>
     </div>

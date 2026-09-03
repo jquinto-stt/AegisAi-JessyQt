@@ -928,26 +928,184 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
-  // --- Simuladores de demo (sólo mockup, no hay WhatsApp/IA reales) ---
-  const simulateCustomerMessage = (conversationId: string, text: string) => {
+  // --- Simuladores de demo con respuesta y toma de pedido autónoma de IA ---
+  const simulateCustomerMessage = (
+    conversationId: string,
+    text: string,
+    options?: { isOrder?: boolean; isReceipt?: boolean }
+  ) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     const timeStr = nowTime();
+
     setConversations(prev =>
       prev.map(conv => {
         if (conv.id !== conversationId) return conv;
         return {
           ...conv,
           lastMessageAt: timeStr,
-          // Si un humano no está atendiendo, marcar como no leído para el operador.
           unreadForOperator: conv.status !== "HUMANO_ATENDIENDO" ? true : conv.unreadForOperator,
           messages: [
             ...conv.messages,
-            { id: `m-${Date.now()}`, sender: "cliente", text: trimmed, timestamp: timeStr },
+            {
+              id: `m-${Date.now()}`,
+              sender: "cliente",
+              text: trimmed,
+              timestamp: timeStr,
+              ...(options?.isReceipt
+                ? {
+                    attachmentType: "comprobante" as const,
+                    attachmentUrl:
+                      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=400&q=80",
+                    attachmentMeta: {
+                      bank: "Nequi",
+                      amount: 45000,
+                      reference: `NQ-${Math.floor(1000000 + Math.random() * 9000000)}`,
+                      status: "PENDIENTE_VERIFICACION" as const,
+                    },
+                  }
+                : {}),
+            },
           ],
         };
       })
     );
+
+    // Si la conversación está en modo IA, la IA responde automáticamente en 700ms
+    setTimeout(() => {
+      setConversations(currentConvs => {
+        const conv = currentConvs.find(c => c.id === conversationId);
+        if (!conv || conv.status !== "IA_ATENDIENDO") return currentConvs;
+
+        const lower = trimmed.toLowerCase();
+        const isOrderRequest =
+          options?.isOrder ||
+          lower.includes("quiero") ||
+          lower.includes("pedir") ||
+          lower.includes("empanada") ||
+          lower.includes("combo") ||
+          lower.includes("docena");
+        const isReceiptRequest =
+          options?.isReceipt ||
+          lower.includes("comprobante") ||
+          lower.includes("transferencia") ||
+          lower.includes("nequi");
+
+        if (isReceiptRequest) {
+          flagForHandoff(conversationId, "VERIFICAR_PAGO_TRANSFERENCIA");
+          const replyTime = nowTime();
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: "¡Comprobante de transferencia Nequi recibido! 🧾 Un operador humano está corroborando el abono en cuenta bancaria para autorizar la comanda a cocina.",
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        if (isOrderRequest) {
+          const newOrderId = `PED-${Math.floor(1030 + Math.random() * 70)}`;
+          const customerName = conv.customerName || "Cliente WhatsApp";
+          const customerPhone = conv.customerPhone || "+57 300 123 4567";
+
+          const newOrder: Pedido = {
+            id: newOrderId,
+            customerName,
+            customerPhone,
+            channel: "whatsapp",
+            type: "inmediato",
+            status: "NUEVO",
+            items: [
+              {
+                productId: "prod-01",
+                name: "Empanada de Carne Cortada a Cuchillo",
+                quantity: 6,
+                unitPrice: 5500,
+                option: "Horneada",
+              },
+              { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
+            ],
+            total: 42000,
+            createdAt: nowTime(),
+            estimatedMinutes: 20,
+            elapsedMinutes: 0,
+            urgency: "A_TIEMPO",
+            isAIOrigin: true,
+            aiConfidence: "Alta",
+            aiRawMessage: trimmed,
+            notes: "Tomado y cotizado automáticamente por IA desde WhatsApp.",
+            history: [
+              {
+                timestamp: nowTime(),
+                toStatus: "NUEVO",
+                user: "Necto IA Bot (WhatsApp)",
+                note: "Pedido interpretado y depositado automáticamente en Pedidos en Vivo.",
+              },
+            ],
+          };
+
+          setOrders(prevOrders => [newOrder, ...prevOrders]);
+          if (isSoundEnabled) playNewOrderSound();
+
+          const replyTime = nowTime();
+          return currentConvs.map(c =>
+            c.id === conversationId
+              ? {
+                  ...c,
+                  orderId: newOrderId,
+                  lastMessageAt: replyTime,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: `m-${Date.now()}`,
+                      sender: "ia",
+                      text: `¡Perfecto ${customerName}! 🥟 Acabo de tomar tu pedido y generar la comanda #${newOrderId} por un total de $42.000 COP (6x Carne + 2x Gaseosas). Ya está ingresada en nuestro tablero de Pedidos en Vivo 📋.`,
+                      timestamp: replyTime,
+                    },
+                  ],
+                }
+              : c
+          );
+        }
+
+        // Consulta general
+        const replies = [
+          "¡Hola! Con mucho gusto. Nuestro tiempo de entrega promedio hoy es de 20 a 25 minutos. ¿Deseas ordenar algo de nuestra carta?",
+          "¡Hola! Sí, preparamos chimichurri suave y salsa picante de la casa. ¿Deseas que te enviemos porciones con tu pedido?",
+          "¡Hola! Claro que sí, aceptamos pagos por transferencia Nequi, Bancolombia, datáfono o efectivo contra entrega.",
+        ];
+        const chosen = replies[Math.floor(Math.random() * replies.length)];
+        const replyTime = nowTime();
+
+        return currentConvs.map(c =>
+          c.id === conversationId
+            ? {
+                ...c,
+                lastMessageAt: replyTime,
+                messages: [
+                  ...c.messages,
+                  {
+                    id: `m-${Date.now()}`,
+                    sender: "ia",
+                    text: chosen,
+                    timestamp: replyTime,
+                  },
+                ],
+              }
+            : c
+        );
+      });
+    }, 750);
   };
 
   const simulateAIReply = (conversationId: string, text: string) => {
