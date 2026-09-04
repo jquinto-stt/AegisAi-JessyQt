@@ -15,6 +15,8 @@ import {
   Bike,
   ShoppingBag,
   Clock,
+  Timer,
+  RotateCcw,
 } from "lucide-react";
 import { Button, SegmentedControl } from "@/elements";
 
@@ -118,17 +120,43 @@ export const OrderDetailDrawer: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-none">
-            <Button
-              variant="outline"
-              intent="order-detail.print"
-              onClick={() => setPrintTicketOrder(order)}
-              className="py-2 px-3 bg-white dark:bg-zinc-800 text-xs border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC]"
-              title="Imprimir ticket de comanda"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Ticket</span>
-            </Button>
+            {(() => {
+              const isTicketReady =
+                order.status === "CONFIRMADO" ||
+                order.status === "EN_PREPARACION" ||
+                order.status === "LISTO" ||
+                order.status === "FINALIZADO";
+
+              return (
+                <Button
+                  variant="outline"
+                  intent="order-detail.print"
+                  onClick={() => isTicketReady && setPrintTicketOrder(order)}
+                  disabled={!isTicketReady}
+                  className={`py-2 px-3 text-xs transition-all flex items-center gap-1.5 ${
+                    isTicketReady
+                      ? "bg-[#190088]/10 hover:bg-[#190088]/20 dark:bg-[#190088]/30 dark:hover:bg-[#190088]/40 border-[#190088]/30 dark:border-[#97D6DF]/40 text-[#190088] dark:text-[#97D6DF] font-bold cursor-pointer shadow-2xs"
+                      : "bg-zinc-100/70 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 opacity-60 cursor-not-allowed"
+                  }`}
+                  title={
+                    isTicketReady
+                      ? `Imprimir ticket térmico (Turno #${order.turnNumber || "00"})`
+                      : order.status === "NUEVO"
+                      ? "El ticket estará disponible una vez confirmada la comanda"
+                      : "Ticket no disponible para pedidos cancelados/rechazados"
+                  }
+                >
+                  <Printer
+                    className={`w-3.5 h-3.5 ${
+                      isTicketReady
+                        ? "text-[#190088] dark:text-[#97D6DF]"
+                        : "text-zinc-400 dark:text-zinc-500"
+                    }`}
+                  />
+                  <span className="hidden sm:inline">Ticket</span>
+                </Button>
+              );
+            })()}
 
             {/* High-visibility Close Button */}
             <button
@@ -167,8 +195,8 @@ export const OrderDetailDrawer: React.FC = () => {
           {/* ========================================================================= */}
           {drawerViewMode === "cocina" ? (
             <div className="space-y-5 animate-fade-in">
-              {/* Turn & Kitchen Station Card */}
-              <div className="p-4 rounded-2xl bg-[#ECECEC]/50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4">
+              {/* Turn & Kitchen Station Card with Smart Bi-directional KDS Timer */}
+              <div className="p-4 rounded-2xl bg-[#ECECEC]/50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                 <div>
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
                     Estación de Cocina & Armado
@@ -178,11 +206,37 @@ export const OrderDetailDrawer: React.FC = () => {
                   </h4>
                 </div>
 
-                <div className="text-right font-mono">
-                  <span className="text-[11px] text-zinc-500 block">Tiempo en Horno</span>
-                  <span className="font-extrabold text-sm text-[#212121] dark:text-white">
-                    {order.elapsedMinutes} / {order.estimatedMinutes} min
-                  </span>
+                <div className="flex flex-col items-end gap-1 font-mono">
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-sans">
+                    <Timer className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                    <span>Tiempo KDS</span>
+                  </div>
+
+                  {/* Smart Bi-directional Stepper */}
+                  <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800/90 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => adjustEstimate(order.id, -5)}
+                      disabled={order.estimatedMinutes <= 5}
+                      title="Reducir 5 minutos (mínimo 5 min)"
+                      className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Minus className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+
+                    <span className="font-extrabold text-xs text-[#212121] dark:text-white px-1.5">
+                      {order.elapsedMinutes} / {order.estimatedMinutes} min
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => adjustEstimate(order.id, 5)}
+                      title="Sumar 5 minutos al tiempo estimado"
+                      className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3 stroke-[2.5]" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -273,37 +327,6 @@ export const OrderDetailDrawer: React.FC = () => {
                       </div>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Quick Time Buffer Addition */}
-              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-3">
-                <div>
-                  <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block">
-                    ¿Se demoró el horneado?
-                  </span>
-                  <span className="text-[11px] text-zinc-400">
-                    Suma minutos para actualizar la alerta del KDS.
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    intent="kitchen.add.5"
-                    onClick={() => adjustEstimate(order.id, 5)}
-                    className="py-1.5 px-3 text-xs font-bold bg-white dark:bg-zinc-800 cursor-pointer"
-                  >
-                    +5 min
-                  </Button>
-                  <Button
-                    variant="outline"
-                    intent="kitchen.add.10"
-                    onClick={() => adjustEstimate(order.id, 10)}
-                    className="py-1.5 px-3 text-xs font-bold bg-white dark:bg-zinc-800 cursor-pointer"
-                  >
-                    +10 min
-                  </Button>
                 </div>
               </div>
             </div>

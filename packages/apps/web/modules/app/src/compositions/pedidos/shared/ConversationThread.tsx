@@ -43,6 +43,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
   } = usePedidos();
   const [draft, setDraft] = useState("");
   const [customerDraft, setCustomerDraft] = useState("");
+  const [simCategory, setSimCategory] = useState<"flujo" | "hitl" | "faq">("flujo");
   const [verifiedMessages, setVerifiedMessages] = useState<
     Record<string, "VERIFICADO_OK" | "RECHAZADO" | "PENDIENTE_VERIFICACION">
   >({});

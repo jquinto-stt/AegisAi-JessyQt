@@ -56,16 +56,50 @@ const PedidosContent: React.FC<{
 }> = ({
   sectionProp = "operacion",
   opTabProp = "en-vivo",
-  geTabProp = "catalogo",
+  targetOrderId,
+  targetModal,
   targetProductId,
   onSectionChange,
   onOpTabChange,
   onGeTabChange,
 }) => {
-  const { orders, isSoundEnabled, toggleSound, incidencias, setIsIncidenciasOpen, conversations } = usePedidos();
+  const {
+    orders,
+    isSoundEnabled,
+    toggleSound,
+    incidencias,
+    setIsIncidenciasOpen,
+    conversations,
+    setSelectedOrderId,
+    setAiModalOrder,
+    setPrintTicketOrder,
+  } = usePedidos();
   const [section, setSection] = useState<PedidosSection>(sectionProp);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp || "catalogo");
+
+  // Handle deep-linking from global notifications or search
+  useEffect(() => {
+    if (targetModal === "incidencias") {
+      setIsIncidenciasOpen(true);
+      return;
+    }
+
+    if (targetOrderId) {
+      const order = orders.find(o => o.id === targetOrderId);
+      if (order) {
+        if (targetModal === "ai") {
+          setAiModalOrder(order);
+        } else if (targetModal === "ticket") {
+          setPrintTicketOrder(order);
+        } else {
+          setSelectedOrderId(targetOrderId);
+        }
+      } else {
+        setSelectedOrderId(targetOrderId);
+      }
+    }
+  }, [targetOrderId, targetModal, orders, setAiModalOrder, setPrintTicketOrder, setSelectedOrderId, setIsIncidenciasOpen]);
 
   // Layout Preferences for top header visibility
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {
@@ -411,6 +445,7 @@ const PedidosContent: React.FC<{
       <AIInterpretationModal />
       <RejectCancelModal />
       <IncidenciasDrawer />
+      <ThermalTicketModal />
       {/* Floating WhatsApp Widget (Exclusively on Live Kanban / Bandeja) */}
       {section === "operacion" && opTab === "en-vivo" && (
         <WhatsAppFloatingWidget

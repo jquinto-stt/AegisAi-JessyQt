@@ -427,7 +427,7 @@ export const PedidosEnVivoView: React.FC<{
               onValueChange={setViewMode}
               options={[
                 { value: "kanban", label: "Tablero", icon: <Kanban className="w-3.5 h-3.5" /> },
-                { value: "grid", label: "Lista", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                { value: "grid", label: "Cuadrícula", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
               ]}
             />
 
@@ -510,9 +510,7 @@ export const PedidosEnVivoView: React.FC<{
           </div>
 
           <div className="flex gap-2.5 sm:gap-3 w-full overflow-x-auto pb-4 pt-1 items-start scrollbar-thin">
-          {orderedVisibleColumns
-            .filter(col => statusFilter === "TODOS" || col.id === statusFilter)
-            .map(col => {
+          {orderedVisibleColumns.map(col => {
             const colOrders = filterOrdersList(orders.filter(o => o.status === col.id));
             const colTotalSum = colOrders.reduce((sum, o) => sum + o.total, 0);
             const Icon = col.icon;
@@ -735,70 +733,69 @@ export const PedidosEnVivoView: React.FC<{
             );
           })}
           </div>
-        </div>
-      ) : (
-        /* HIGH-DENSITY OPERATIONAL LIST / TABLE VIEW */
-        <div className="space-y-3">
-          {/* List Summary Bar */}
-          <div className="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400">
+              /* RESPONSIVE CARDS GRID VIEW */
+        <div className="space-y-4">
+          {/* Grid Summary Bar */}
+          <div className="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
             <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-              Mostrando {filterOrdersList(orders).length} pedidos en vivo
-              {programados.length > 0 ? ` + ${programados.length} programados` : ""}
+              Mostrando {filterOrdersList(orders).length} pedidos en cuadrícula
+              {programados.length > 0 && statusFilter === "TODOS" ? ` (+${programados.length} programados)` : ""}
             </span>
             <span className="text-[11px] text-zinc-400 items-center gap-1 hidden sm:flex">
               <Info className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Haz clic en cualquier fila para ver la comanda completa</span>
+              <span>Haz clic en cualquier tarjeta para abrir la comanda completa</span>
             </span>
           </div>
 
-          {/* Scheduled Orders Section in List Mode */}
-          {programados.length > 0 && statusFilter === "TODOS" && (
-            <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-2xs">
-              <div className="px-4 py-2.5 bg-zinc-50/80 dark:bg-zinc-900/80 border-b border-zinc-200/70 dark:border-zinc-800 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                  <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                    Pedidos Programados & Reservas
-                  </span>
-                  <span className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-100/70 text-[#FF3F1A] dark:bg-orange-950/40">
-                    {programados.length}
-                  </span>
-                </div>
-              </div>
-
-              <div className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                {programados.map(prog => (
+          {filterOrdersList(orders).length === 0 && (statusFilter !== "TODOS" || programados.length === 0) ? (
+            <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-12 text-center text-zinc-400 font-medium shadow-2xs">
+              No se encontraron pedidos con los filtros actuales.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 items-stretch">
+              {/* Programados cards if applicable */}
+              {statusFilter === "TODOS" &&
+                programados.map(prog => (
                   <div
                     key={prog.id}
                     onClick={() => setSelectedOrderId(prog.id)}
-                    className="p-3 sm:px-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group"
+                    className="p-4 rounded-2xl bg-[#EFE6D3]/30 dark:bg-[#EFE6D3]/5 border border-[#EFE6D3] dark:border-[#EFE6D3]/30 space-y-3 transition-all cursor-pointer hover:border-amber-400 dark:hover:border-amber-600 hover:shadow-xs group flex flex-col justify-between"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/60 dark:border-orange-900/40 flex items-center justify-center flex-none">
-                        <Calendar className="w-4 h-4 text-[#FF3F1A]" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
-                            {prog.customerName}
-                          </span>
-                          <span className="font-mono text-[10px] text-zinc-400">
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-xs text-zinc-600 dark:text-zinc-400">
                             {prog.id}
                           </span>
                           <ChannelBadge channel={prog.channel} />
                         </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                          {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                        </p>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-[#EFE6D3] dark:bg-[#EFE6D3]/20 text-[#212121] dark:text-[#ECECEC]">
+                          <Calendar className="w-3 h-3 text-[#FF3F1A]" />
+                          <span>
+                            {prog.scheduledDate === "Hoy"
+                              ? `Hoy ${prog.scheduledTime}`
+                              : `${prog.scheduledDate} ${prog.scheduledTime}`}
+                          </span>
+                        </span>
                       </div>
+
+                      <div>
+                        <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
+                          {prog.customerName}
+                        </h4>
+                        {prog.customerPhone && (
+                          <p className="text-[11px] font-mono text-zinc-400">{prog.customerPhone}</p>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed bg-white/70 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/60 dark:border-zinc-800">
+                        {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                      </p>
                     </div>
 
-                    <div className="flex items-center gap-4 flex-none justify-between sm:justify-end">
-                      <span className="font-mono text-[11px] text-zinc-600 dark:text-zinc-300 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                        Programado: {prog.scheduledDate} {prog.scheduledTime}
-                      </span>
-                      <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
-                        ${prog.total.toLocaleString("es-AR")}
+                    <div className="pt-2.5 border-t border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between">
+                      <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
+                        ${prog.total.toLocaleString("es-CO")}
                       </span>
                       <Button
                         variant="outline"
@@ -807,131 +804,123 @@ export const PedidosEnVivoView: React.FC<{
                           e.stopPropagation();
                           injectScheduledOrderToLive(prog.id, true);
                         }}
-                        className="py-1 px-2.5 text-[10px] font-semibold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
-                        title="Adelantar y pasar a preparación en vivo"
+                        className="py-1 px-2.5 text-xs font-bold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
                       >
-                        <ChefHat className="w-3 h-3 text-[#FF3F1A]" />
-                        <span>Pasar a En Vivo</span>
+                        <ChefHat className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        <span>Pasar a Cocina</span>
                       </Button>
                     </div>
                   </div>
                 ))}
-              </div>
+
+              {/* Live orders cards in Grid */}
+              {filterOrdersList(orders).map(order => {
+                const isDelayed = order.urgency === "RETRASADO";
+                const progressPercent = Math.min(
+                  100,
+                  Math.round((order.elapsedMinutes / Math.max(1, order.estimatedMinutes)) * 100)
+                );
+
+                return (
+                  <div
+                    key={order.id}
+                    onClick={() => setSelectedOrderId(order.id)}
+                    className={`p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 space-y-3 transition-all cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs group flex flex-col justify-between ${
+                      isDelayed
+                        ? "border-[#190088]/40 dark:border-[#97D6DF]/40 bg-[#190088]/5 dark:bg-[#190088]/10"
+                        : ""
+                    }`}
+                  >
+                    <div className="space-y-2.5">
+                      {/* Top Row: ID, Channel, Status */}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
+                            {order.id}
+                          </span>
+                          <ChannelBadge channel={order.channel} />
+                        </div>
+                        <OrderStatusBadge status={order.status} size="sm" />
+                      </div>
+
+                      {/* Customer Info & Turn */}
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
+                            {order.customerName}
+                          </h4>
+                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex-none">
+                            Turno #{order.turnNumber || "00"}
+                          </span>
+                        </div>
+                        {order.customerPhone && (
+                          <p className="text-[11px] font-mono text-zinc-400">{order.customerPhone}</p>
+                        )}
+                      </div>
+
+                      {/* Items summary */}
+                      <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
+                        {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                      </p>
+
+                      {/* Special Notes */}
+                      {order.notes && (
+                        <p className="text-[11px] text-[#190088] dark:text-[#97D6DF] italic font-medium truncate">
+                          Nota: {order.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Footer: SLA Progress & Total */}
+                    <div className="space-y-2 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
+                      {order.status === "EN_PREPARACION" ? (
+                        <div className="space-y-1">
+                          <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                isDelayed ? "bg-[#190088]" : "bg-[#97D6DF]"
+                              }`}
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-mono text-zinc-400">
+                            <span>
+                              {order.elapsedMinutes}m / {order.estimatedMinutes}m KDS
+                            </span>
+                            {isDelayed ? (
+                              <span className="text-[#190088] dark:text-[#97D6DF] font-bold">
+                                Demorado
+                              </span>
+                            ) : (
+                              <span>{order.createdAt}</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                          <span className={isDelayed ? "text-[#190088] dark:text-[#97D6DF] font-bold" : ""}>
+                            {isDelayed
+                              ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora`
+                              : `${order.elapsedMinutes}m activos`}
+                          </span>
+                          <span>{order.createdAt}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
+                          ${order.total.toLocaleString("es-CO")}
+                        </span>
+                        <div className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#190088] group-hover:text-white dark:group-hover:bg-[#97D6DF] dark:group-hover:text-zinc-900 flex items-center justify-center transition-all text-zinc-400 shadow-2xs">
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-
-          {/* Main Orders Table */}
-          <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden shadow-2xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                {/* Desktop Table Header — hidden on mobile */}
-                <thead className="hidden sm:table-header-group">
-                  <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-semibold text-[11px]">
-                    <th className="py-3 px-4">Comanda & Canal</th>
-                    <th className="py-3 px-4">Cliente & Contacto</th>
-                    <th className="py-3 px-4">Productos & Ítems</th>
-                    <th className="py-3 px-4">Estado Actual</th>
-                    <th className="py-3 px-4">Tiempos / SLA</th>
-                    <th className="py-3 px-4 text-right">Total</th>
-                    <th className="py-3 px-4 text-center">Detalle</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
-                  {filterOrdersList(orders).length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-zinc-400 font-medium">
-                        No se encontraron pedidos con los filtros actuales.
-                      </td>
-                    </tr>
-                  ) : (
-                    filterOrdersList(orders).map(order => {
-                      const isDelayed = order.urgency === "RETRASADO";
-                      const progressPercent = Math.min(
-                        100,
-                        Math.round((order.elapsedMinutes / Math.max(1, order.estimatedMinutes)) * 100)
-                      );
-
-                      return (
-                        <tr
-                          key={order.id}
-                          onClick={() => setSelectedOrderId(order.id)}
-                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50 cursor-pointer transition-colors group sm:table-row flex flex-col p-3 sm:p-0 border-b border-zinc-100 dark:border-zinc-800/60 last:border-b-0"
-                        >
-                          {/* ID & Canal */}
-                          <td className="py-2 sm:py-3.5 px-0 sm:px-4 align-middle whitespace-nowrap sm:table-cell flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
-                                {order.id}
-                              </span>
-                              <ChannelBadge channel={order.channel} />
-                            </div>
-                            {/* Mobile-only: show total inline */}
-                            <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 sm:hidden">
-                              ${order.total.toLocaleString("es-CO")}
-                            </span>
-                          </td>
-
-                          {/* Cliente */}
-                          <td className="py-1 sm:py-3.5 px-0 sm:px-4 align-middle sm:table-cell flex items-center justify-between">
-                            <div className="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate max-w-[200px] sm:max-w-[160px]">
-                              {order.customerName}
-                            </div>
-                            <OrderStatusBadge status={order.status} size="sm" />
-                          </td>
-
-                          {/* Productos — hidden on mobile */}
-                          <td className="py-3.5 px-4 align-middle hidden sm:table-cell">
-                            <p className="text-[11px] text-zinc-600 dark:text-zinc-300 line-clamp-1 max-w-[280px]">
-                              {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                            </p>
-                          </td>
-
-                          {/* Estado — desktop only (mobile shows inline with client name) */}
-                          <td className="py-3.5 px-4 align-middle whitespace-nowrap hidden sm:table-cell">
-                            <OrderStatusBadge status={order.status} size="sm" />
-                          </td>
-
-                          {/* Tiempos / SLA — hidden on mobile */}
-                          <td className="py-3.5 px-4 align-middle whitespace-nowrap min-w-[140px] hidden sm:table-cell">
-                            {order.status === "EN_PREPARACION" ? (
-                              <div className="space-y-1 w-28">
-                                <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1 rounded-full overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full ${isDelayed ? "bg-rose-500" : "bg-[#FF3F1A]"}`}
-                                    style={{ width: `${progressPercent}%` }}
-                                  />
-                                </div>
-                                <div className="flex justify-between text-[10px] font-mono text-zinc-400">
-                                  <span>{order.elapsedMinutes}m / {order.estimatedMinutes}m</span>
-                                  {isDelayed && <span className="text-rose-500 font-bold">Demora</span>}
-                                </div>
-                              </div>
-                            ) : (
-                              <span className={`font-mono text-[11px] ${isDelayed ? "text-rose-500 font-bold" : "text-zinc-400"}`}>
-                                {isDelayed ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora` : `${order.elapsedMinutes}m activos`}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Total — hidden on mobile (shown inline in ID row) */}
-                          <td className="py-3.5 px-4 align-middle text-right font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 whitespace-nowrap hidden sm:table-cell">
-                            ${order.total.toLocaleString("es-CO")}
-                          </td>
-
-                          {/* Acción / Abrir — hidden on mobile (whole row is clickable) */}
-                          <td className="py-3.5 px-4 align-middle text-center whitespace-nowrap hidden sm:table-cell">
-                            <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#FF3F1A] group-hover:text-white flex items-center justify-center transition-all mx-auto text-zinc-400">
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       )}
 

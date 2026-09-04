@@ -828,8 +828,8 @@ export default function App() {
       unread: false,
       type: "stock",
       module: "pedidos",
-      pedidosSection: "gestion",
-      pedidosGeTab: "insumos",
+      pedidosSection: "menu",
+      pedidosGeTab: "catalogo",
       targetProductId: "p3",
       targetModal: "product",
     },
@@ -837,12 +837,22 @@ export default function App() {
 
   const handleNavigateFromNotification = (n: NotificationItem) => {
     setActiveModule("pedidos");
-    if (n.pedidosSection) setPedidosSection(n.pedidosSection);
-    if (n.pedidosOpTab) setPedidosOpTab(n.pedidosOpTab);
-    if (n.pedidosGeTab) setPedidosGeTab(n.pedidosGeTab);
-    setTargetOrderId(n.targetOrderId || null);
-    setTargetModal(n.targetModal || null);
-    setTargetProductId(n.targetProductId || null);
+    const sec: PedidosSection =
+      n.pedidosSection === "gestion"
+        ? (n.pedidosGeTab === "insumos" || n.pedidosGeTab === "catalogo" ? "menu" : "configuracion")
+        : (n.pedidosSection || "operacion");
+    const tab = sec === "operacion" ? (n.pedidosOpTab || "en-vivo") : (n.pedidosGeTab || "catalogo");
+
+    handleNavigatePedidos(sec, tab);
+
+    setTargetOrderId(null);
+    setTargetModal(null);
+    setTargetProductId(null);
+    setTimeout(() => {
+      setTargetOrderId(n.targetOrderId || null);
+      setTargetModal(n.targetModal || null);
+      setTargetProductId(n.targetProductId || null);
+    }, 20);
   };
 
   // Breadcrumb Labels Calculation

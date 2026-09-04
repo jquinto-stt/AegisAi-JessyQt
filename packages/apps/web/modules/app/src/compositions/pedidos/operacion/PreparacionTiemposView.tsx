@@ -247,10 +247,10 @@ export const PreparacionTiemposView: React.FC<{
                         e.stopPropagation();
                         setPrintTicketOrder(order);
                       }}
-                      className="p-2.5 bg-white dark:bg-zinc-800 text-xs border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC]"
-                      title="Imprimir comanda KDS"
+                      className="p-2.5 bg-[#190088]/10 hover:bg-[#190088]/20 dark:bg-[#190088]/20 dark:hover:bg-[#190088]/30 border-[#190088]/30 dark:border-[#97D6DF]/30 text-[#190088] dark:text-[#97D6DF] text-xs cursor-pointer shadow-2xs transition-all font-bold"
+                      title={`Imprimir ticket térmico KDS (Turno #${order.turnNumber || "00"})`}
                     >
-                      <Printer className="w-3.5 h-3.5" />
+                      <Printer className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
                     </Button>
 
                     <Button
