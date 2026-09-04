@@ -187,11 +187,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-          {businesses.map((biz, idx) => {
-            const mockRevenue = idx === 0 ? "$ 3.120.000" : "$ 1.730.000";
-            const mockTickets = idx === 0 ? "31 pedidos" : "17 pedidos";
-            const mockInKitchen = idx === 0 ? 4 : 3;
-
+          {businesses.map((biz) => {
             return (
               <div
                 key={biz.id}
@@ -284,22 +280,6 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       <span className="px-2 py-0.5 rounded-md bg-[#190088]/10 dark:bg-[#190088]/30 font-mono font-bold text-[10px] text-[#190088] dark:text-blue-200 border border-[#190088]/20">
                         {biz.currency}
                       </span>
-                    </div>
-                  </div>
-
-                  {/* Branch Live Metrics Row */}
-                  <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-[#F7F4EC]/60 dark:bg-zinc-900 border border-[#190088]/15 dark:border-zinc-800 text-center">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Ventas Hoy</span>
-                      <span className="text-xs sm:text-sm font-extrabold text-[#190088] dark:text-blue-300">{mockRevenue}</span>
-                    </div>
-                    <div className="border-x border-zinc-200 dark:border-zinc-800">
-                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">Volumen</span>
-                      <span className="text-xs sm:text-sm font-extrabold text-zinc-900 dark:text-zinc-100">{mockTickets}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">KDS Cocina</span>
-                      <span className="text-xs sm:text-sm font-extrabold text-[#FF3F1A]">{mockInKitchen} activos</span>
                     </div>
                   </div>
 
