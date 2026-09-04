@@ -202,10 +202,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-white">
-                {productToEdit ? "Editar Parte / Producto" : "Nueva Parte / Producto"}
+                {productToEdit ? "Editar Producto o Servicio" : "Nuevo Producto o Servicio"}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Parámetros tipados + Foto + Ubicación + Atributos Dinámicos
+                Parámetros comerciales + Foto + Bodega + Atributos Dinámicos
               </p>
             </div>
           </div>
@@ -230,7 +230,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="space-y-2">
             <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
               <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              1. Tipo de Parte & Plantilla Paramétrica
+              1. Tipo de Producto & Plantilla
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -345,13 +345,13 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
             <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
               <Box className="w-3.5 h-3.5 text-[#190088]" />
-              3. Datos Principales & Ubicación
+              3. Datos Comerciales & Bodega
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Nombre de la Parte / Ítem *
+                  Nombre del Producto o Servicio *
                 </label>
                 <input
                   type="text"
@@ -381,7 +381,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  IPN (Internal Part Number)
+                  Ref. / Código de Barras
                 </label>
                 <input
                   type="text"
@@ -394,7 +394,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Ubicación Inicial *
+                  Bodega Asignada *
                 </label>
                 <select
                   value={locationId}

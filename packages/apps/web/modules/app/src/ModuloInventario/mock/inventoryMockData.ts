@@ -9,28 +9,28 @@ import {
 } from "../types/inventory.types";
 
 export const STOCK_LOCATIONS_MOCK: StockLocation[] = [
-  { id: "loc-001", name: "Almacén Central / Bodega Principal", code: "ALM-CENTRAL", description: "Recepción general y almacenamiento masivo", itemsCount: 4 },
-  { id: "loc-002", name: "Cámara Fría #1 (Refrigeración 2-8°C)", code: "CAM-FRIA-01", description: "Lácteos, carnes y perecederos frescos", itemsCount: 2 },
-  { id: "loc-003", name: "Estantería Textil B-3", code: "EST-TEXTIL-B3", description: "Prendas de vestir, calzado y accesorios", itemsCount: 2 },
-  { id: "loc-004", name: "Bodega de Hardware & POS", code: "BOD-HARDWARE", description: "Componentes electrónicos y terminales de venta", itemsCount: 1 },
-  { id: "loc-005", name: "Mostrador de Despacho / Ventas", code: "MOST-VENTAS", description: "Stock para entrega inmediata en mostrador", itemsCount: 0 },
+  { id: "loc-001", name: "Sede Principal / Bodega Central", code: "BOD-CENTRAL", description: "Bodega matriz y almacenamiento general de mercancía", itemsCount: 4 },
+  { id: "loc-002", name: "Sucursal Poblado / Tienda 1", code: "SUC-POBLADO", description: "Punto de venta y mostrador comercial", itemsCount: 2 },
+  { id: "loc-003", name: "Sucursal Laureles / Tienda 2", code: "SUC-LAURELES", description: "Sucursal comercial y despacho a clientes", itemsCount: 2 },
+  { id: "loc-004", name: "Bodega Envíos & Delivery", code: "BOD-DELIVERY", description: "Preparación de despachos y comercio digital", itemsCount: 1 },
+  { id: "loc-005", name: "Punto Express / Barra", code: "POS-EXPRESS", description: "Venta directa y servicio express", itemsCount: 0 },
 ];
 
 export const PRODUCT_TYPE_TEMPLATES: ProductTypeTemplate[] = [
   {
     id: "standard",
-    label: "Estándar / General",
-    description: "Para insumos y consumibles generales sin requerimientos de caducidad ni serial.",
+    label: "Producto Simple",
+    description: "Ítem de venta o insumo comercial sin variantes complejas.",
     iconName: "Box",
     fields: [
-      { key: "marca", label: "Marca / Fabricante", type: "text", placeholder: "Ej. Genérico, 3M, Truper" },
+      { key: "marca", label: "Marca Comercial", type: "text", placeholder: "Ej. Genérico, Nestlé, 3M" },
       { key: "pesoKg", label: "Peso Unitario (Kg)", type: "number", placeholder: "0.5" },
     ],
   },
   {
     id: "perishable",
-    label: "Perecedero / Alimentos",
-    description: "Para materias primas y alimentos con control riguroso de fecha de caducidad y lote.",
+    label: "Alimentos & Perecederos",
+    description: "Productos con control de vencimiento, lote y conservación.",
     iconName: "Clock",
     fields: [
       { key: "fechaVencimiento", label: "Fecha de Vencimiento", type: "date", required: true },
@@ -46,36 +46,36 @@ export const PRODUCT_TYPE_TEMPLATES: ProductTypeTemplate[] = [
   },
   {
     id: "apparel",
-    label: "Moda & Calzado (Variantes)",
-    description: "Prendas de vestir, textiles y accesorios con atributos de talla, color y género.",
+    label: "Variantes (Talla & Color)",
+    description: "Prendas de vestir, calzado o artículos con opciones múltiples.",
     iconName: "Shirt",
     fields: [
-      { key: "talla", label: "Talla / Dimensión", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "38", "40", "42", "Única"], required: true },
-      { key: "color", label: "Color / Tono", type: "text", placeholder: "Negro Carbón, Azul Marino, Blanco", required: true },
-      { key: "material", label: "Material / Composición", type: "text", placeholder: "100% Algodón Pima" },
-      { key: "genero", label: "Género", type: "select", options: ["Unisex", "Hombre", "Mujer", "Niños"] },
+      { key: "talla", label: "Talla / Medida", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "38", "40", "42", "Única"], required: true },
+      { key: "color", label: "Color / Variante", type: "text", placeholder: "Negro Carbón, Arena, Blanco", required: true },
+      { key: "material", label: "Material / Tejido", type: "text", placeholder: "100% Algodón Pima" },
+      { key: "genero", label: "Segmento", type: "select", options: ["Unisex", "Hombre", "Mujer", "Niños"] },
     ],
   },
   {
     id: "electronics",
-    label: "Tecnología & Hardware",
-    description: "Dispositivos, hardware y componentes con número de serie, garantía e IPN.",
+    label: "Serial & Garantía",
+    description: "Equipos de tecnología y hardware con número de serie y garantía.",
     iconName: "Cpu",
     fields: [
-      { key: "numeroSerie", label: "N° Serie / IMEI", type: "text", placeholder: "SN-8823901-X" },
+      { key: "numeroSerie", label: "N° Serie / Serial", type: "text", placeholder: "SN-8823901-X" },
       { key: "garantiaMeses", label: "Garantía (Meses)", type: "number", placeholder: "24" },
       { key: "voltaje", label: "Voltaje / Potencia", type: "text", placeholder: "110V / 220V - 65W" },
     ],
   },
   {
     id: "pharma",
-    label: "Salud & Farmacéutico",
-    description: "Medicamentos, insumos médicos y fórmulas con alta exigencia de trazabilidad.",
+    label: "Salud & Cuidado",
+    description: "Medicamentos, fórmulas e insumos de cuidado personal.",
     iconName: "Activity",
     fields: [
       { key: "principioActivo", label: "Principio Activo", type: "text", placeholder: "Ibuprofeno 600mg", required: true },
       { key: "fechaVencimiento", label: "Fecha de Vencimiento", type: "date", required: true },
-      { key: "lote", label: "Lote Farmacéutico", type: "text", placeholder: "FARMA-4401", required: true },
+      { key: "lote", label: "Lote", type: "text", placeholder: "FARMA-4401", required: true },
       { key: "laboratorio", label: "Laboratorio Fabricante", type: "text", placeholder: "Bayer, Genfar, Pfizer" },
     ],
   },
@@ -95,7 +95,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 45.5,
     stockMinimo: 15.0,
     locationId: "loc-002",
-    locationName: "Cámara Fría #1 (Refrigeración 2-8°C)",
+    locationName: "Sucursal Poblado / Tienda 1",
     supplier: "Frigorífico Central del Valle",
     imageUrl: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=600&auto=format&fit=crop&q=80",
     metadata: {
@@ -121,7 +121,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 8.0,
     stockMinimo: 10.0,
     locationId: "loc-002",
-    locationName: "Cámara Fría #1 (Refrigeración 2-8°C)",
+    locationName: "Sucursal Poblado / Tienda 1",
     supplier: "Lácteos del Norte",
     imageUrl: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=600&auto=format&fit=crop&q=80",
     metadata: {
@@ -147,7 +147,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 24,
     stockMinimo: 5,
     locationId: "loc-003",
-    locationName: "Estantería Textil B-3",
+    locationName: "Sucursal Laureles / Tienda 2",
     supplier: "Confecciones Premium SAS",
     imageUrl: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80",
     metadata: {
@@ -173,7 +173,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 0,
     stockMinimo: 5,
     locationId: "loc-003",
-    locationName: "Estantería Textil B-3",
+    locationName: "Sucursal Laureles / Tienda 2",
     supplier: "Confecciones Premium SAS",
     imageUrl: "https://images.unsplash.com/photo-1578768079052-aa76e520028b?w=600&auto=format&fit=crop&q=80",
     metadata: {
@@ -199,7 +199,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 12,
     stockMinimo: 3,
     locationId: "loc-004",
-    locationName: "Bodega de Hardware & POS",
+    locationName: "Bodega Envíos & Delivery",
     supplier: "TecnoPOS Colombia",
     imageUrl: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&auto=format&fit=crop&q=80",
     metadata: {
@@ -224,7 +224,7 @@ export const INITIAL_PRODUCTS_MOCK: InventoryProduct[] = [
     stockActual: 1500,
     stockMinimo: 300,
     locationId: "loc-001",
-    locationName: "Almacén Central / Bodega Principal",
+    locationName: "Sede Principal / Bodega Central",
     supplier: "EcoPack Colombia",
     imageUrl: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80",
     metadata: {

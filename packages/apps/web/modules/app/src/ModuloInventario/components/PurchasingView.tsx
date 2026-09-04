@@ -72,7 +72,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
       <NectoBanner
         icon={<Truck className="w-6 h-6 text-[#FF3F1A]" />}
         title="Compras & Proveedores"
-        description="Gestión de proveedores, órdenes de reabastecimiento e ingreso directo de mercancía al stock."
+        description="Control comercial de compras, cuentas por pagar a proveedores y recepción directa de mercancía en bodega."
       />
 
       {/* View Mode Pills (Órdenes / Proveedores) */}

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { BusinessProvider } from './context/BusinessContext';
 import Login from './pages/Login';
@@ -17,9 +17,11 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/" element={<WorkspacesPage />} />
             <Route path="/workspaces" element={<WorkspacesPage />} />
             <Route path="/analitica" element={<FranchiseAnalyticsPage />} />
-            <Route path="/*" element={<NectoApp />} />
+            <Route path="/app/*" element={<NectoApp />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BusinessProvider>
       </AuthProvider>

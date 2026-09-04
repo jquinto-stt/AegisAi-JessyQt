@@ -40,8 +40,8 @@ export const StockLocationsView: React.FC<StockLocationsViewProps> = ({
       {/* Official Clean Necto Banner */}
       <NectoBanner
         icon={<Building2 className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Almacenes & Ubicaciones Multialmacén"
-        description="Gestión espacial de inventario, capacidades de almacenamiento y transferencias entre depósitos."
+        title="Bodegas & Puntos de Distribución"
+        description="Gestión multisede de existencias comerciales, valoración de stock y transferencias entre bodegas."
       />
 
       {/* Warehouse Selector Filter Pills */}
@@ -56,7 +56,7 @@ export const StockLocationsView: React.FC<StockLocationsViewProps> = ({
           }`}
         >
           <Boxes className="w-3.5 h-3.5" />
-          <span>Todos los Almacenes</span>
+          <span>Todas las Bodegas</span>
           <span className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
             selectedLocId === "all" ? "bg-white/20 text-white" : "bg-zinc-200/80 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400 font-bold"
           }`}>
@@ -113,7 +113,7 @@ export const StockLocationsView: React.FC<StockLocationsViewProps> = ({
                       {loc.name}
                     </h3>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      {loc.description || "Depósito operativo de almacenamiento"}
+                      {loc.description || "Bodega comercial y punto de venta"}
                     </p>
                   </div>
                 </div>

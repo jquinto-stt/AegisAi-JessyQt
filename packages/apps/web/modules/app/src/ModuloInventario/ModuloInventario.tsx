@@ -124,10 +124,10 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
   };
 
   const navTabs: Array<{ id: InventoryTab; label: string; icon: React.ReactNode; count?: number }> = [
-    { id: "catalog", label: "Catálogo de Partes", icon: <Boxes className="w-3.5 h-3.5 flex-none" />, count: products.length },
-    { id: "locations", label: "Almacenes & Ubicaciones", icon: <Building2 className="w-3.5 h-3.5 flex-none" />, count: locations.length },
-    { id: "purchasing", label: "Compras & Proveedores", icon: <Truck className="w-3.5 h-3.5 flex-none" />, count: purchaseOrders.filter(po => po.status === "pending").length },
-    { id: "manufacturing", label: "Producción & BOM", icon: <Hammer className="w-3.5 h-3.5 flex-none" />, count: buildOrders.filter(bo => bo.status === "pending").length },
+    { id: "catalog", label: "Productos & Servicios", icon: <Boxes className="w-3.5 h-3.5 flex-none" />, count: products.length },
+    { id: "locations", label: "Bodegas & Sucursales", icon: <Building2 className="w-3.5 h-3.5 flex-none" />, count: locations.length },
+    { id: "purchasing", label: "Compras & Facturas", icon: <Truck className="w-3.5 h-3.5 flex-none" />, count: purchaseOrders.filter(po => po.status === "pending").length },
+    { id: "manufacturing", label: "Combos & Recetas", icon: <Hammer className="w-3.5 h-3.5 flex-none" />, count: buildOrders.filter(bo => bo.status === "pending").length },
     { id: "kardex", label: "Historial de Movimientos", icon: <Activity className="w-3.5 h-3.5 flex-none" />, count: movements.length },
   ];
 

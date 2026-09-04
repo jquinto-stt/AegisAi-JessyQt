@@ -197,7 +197,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                 key={biz.id}
                 onClick={() => {
                   switchBusiness(biz.id);
-                  navigate("/");
+                  navigate("/app");
                 }}
                 className="relative rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-lg flex flex-col justify-between overflow-hidden group cursor-pointer"
               >

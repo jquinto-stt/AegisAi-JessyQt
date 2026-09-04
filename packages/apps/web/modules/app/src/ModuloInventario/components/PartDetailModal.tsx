@@ -206,9 +206,9 @@ export const PartDetailModal: React.FC<PartDetailModalProps> = ({
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Ubicación</span>
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Bodega</span>
                   <p className="text-xs font-bold text-[#190088] dark:text-[#97D6DF]">
-                    📍 {product.locationName}
+                    🏢 {product.locationName}
                   </p>
                 </div>
                 <div>

@@ -95,10 +95,10 @@ export const StockTransferModal: React.FC<StockTransferModalProps> = ({
             </div>
             <div>
               <h3 className="font-extrabold text-base text-zinc-900 dark:text-white">
-                Traslado de Ubicación
+                Transferencia entre Bodegas
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Transferencia física de stock entre almacenes
+                Traslado de inventario comercial entre sucursales y bodegas
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ export const StockTransferModal: React.FC<StockTransferModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 flex-none" />
               <span>{errorMessage}</span>
             </div>
@@ -132,21 +132,21 @@ export const StockTransferModal: React.FC<StockTransferModalProps> = ({
           <div className="p-3.5 rounded-xl bg-[#190088]/5 dark:bg-[#190088]/10 border border-[#190088]/20 space-y-2">
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-zinc-400" />
-              <span className="font-bold text-zinc-500 dark:text-zinc-400">Origen:</span>
+              <span className="font-bold text-zinc-500 dark:text-zinc-400">Bodega Origen:</span>
               <span className="font-medium text-zinc-800 dark:text-zinc-200">{product.locationName}</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-[#FF3F1A] animate-ping" />
-              <span className="font-bold text-[#FF3F1A]">Destino:</span>
+              <span className="font-bold text-[#FF3F1A]">Bodega Destino:</span>
               <span className="font-bold text-zinc-900 dark:text-white">
-                {targetLocationObj?.name || "Selecciona ubicación..."}
+                {targetLocationObj?.name || "Selecciona bodega..."}
               </span>
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 font-mono uppercase">
-              Ubicación de Destino *
+              Bodega de Destino *
             </label>
             <select
               value={targetLocationId}

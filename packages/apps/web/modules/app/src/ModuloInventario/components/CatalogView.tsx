@@ -24,6 +24,8 @@ import {
   List,
   Sparkles,
   SlidersHorizontal,
+  TrendingUp,
+  Percent,
 } from "lucide-react";
 import {
   InventoryProduct,
@@ -105,14 +107,87 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     }
   };
 
+  const totalSaleValue = products.reduce((acc, p) => acc + (p.salePrice * p.stockActual), 0);
+  const avgMargin = products.length > 0
+    ? Math.round(products.reduce((acc, p) => {
+        const m = p.salePrice > 0 ? ((p.salePrice - p.costPrice) / p.salePrice) * 100 : 0;
+        return acc + m;
+      }, 0) / products.length)
+    : 0;
+
   return (
     <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
-      {/* Official Clean Necto Banner */}
+      {/* Official Clean Necto Commercial Banner */}
       <NectoBanner
-        icon={<Boxes className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Catálogo de Partes & Productos"
-        description="Control de existencias, parámetros dinámicos, costos unitarios y ubicaciones físicas de inventario."
+        icon={<Package className="w-6 h-6 text-[#FF3F1A]" />}
+        title="Productos & Servicios"
+        description="Catálogo digital estilo Alegra: precios comerciales, costos unitarios, márgenes de rentabilidad y stock por bodega."
       />
+
+      {/* Commercial Summary Cards (Alegra Style) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+              Valor en Inventario
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
+            ${totalCostValue.toLocaleString("es-CO")}
+          </p>
+          <span className="text-[10px] text-zinc-400 font-mono">Costo total acumulado</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+              Proyección de Ventas
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
+            ${totalSaleValue.toLocaleString("es-CO")}
+          </p>
+          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">A valor de venta</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+              Margen Promedio
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center">
+              <Percent className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
+            +{avgMargin}%
+          </p>
+          <span className="text-[10px] text-zinc-400 font-mono">Rentabilidad comercial</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+              Por Reabastecer
+            </span>
+            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${lowStockCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"}`}>
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
+            {lowStockCount} {lowStockCount === 1 ? "ítem" : "ítems"}
+          </p>
+          <span className={`text-[10px] font-medium ${lowStockCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : "text-zinc-400"}`}>
+            {lowStockCount > 0 ? "Bajo el umbral mínimo" : "Todo el stock en orden"}
+          </span>
+        </div>
+      </div>
 
       {/* Clean Category Filter Pills & Search Bar */}
       <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -217,6 +292,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredProducts.map((product) => {
             const location = locations.find((l) => l.id === product.locationId);
+            const marginPct = product.salePrice > 0 ? Math.round(((product.salePrice - product.costPrice) / product.salePrice) * 100) : 0;
 
             return (
               <div
@@ -253,11 +329,16 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Price Tag Pill over Image */}
-                  <div className="absolute bottom-2.5 left-2.5 pointer-events-none">
+                  {/* Price Tag & Margin Pills over Image */}
+                  <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
                     <span className="px-2.5 py-1 rounded-xl bg-white/95 dark:bg-[#18181B]/95 text-zinc-950 dark:text-white font-mono font-black text-xs sm:text-sm shadow-md backdrop-blur-md border border-white/20 dark:border-zinc-700/50">
                       ${product.salePrice.toLocaleString("es-CO")}
                     </span>
+                    {marginPct > 0 && (
+                      <span className="px-2 py-0.5 rounded-lg bg-emerald-500/90 text-white font-mono font-bold text-[10px] shadow-sm backdrop-blur-md">
+                        +{marginPct}% margen
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -266,7 +347,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   <div>
                     <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400 mb-1">
                       <span className="font-bold text-zinc-600 dark:text-zinc-300">{product.sku}</span>
-                      {product.ipn && <span>IPN: {product.ipn}</span>}
+                      {product.ipn && <span>Ref: {product.ipn}</span>}
                     </div>
                     <h4
                       onClick={() => onViewProductDetail(product)}
@@ -276,7 +357,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                     </h4>
                     <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#FF3F1A] flex-none" />
-                      <span className="truncate">{location?.name || "Sin ubicación"}</span>
+                      <span className="truncate">{location?.name || "Bodega Central"}</span>
                     </div>
                   </div>
 
@@ -374,7 +455,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-[#FF3F1A]" />
-                          {location?.name || "Sin ubicación"}
+                          {location?.name || "Bodega Central"}
                         </span>
                       </div>
                     </div>

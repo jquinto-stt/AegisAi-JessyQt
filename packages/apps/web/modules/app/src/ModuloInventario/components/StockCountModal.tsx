@@ -101,7 +101,7 @@ export const StockCountModal: React.FC<StockCountModalProps> = ({
             <span className="font-mono text-xs font-bold text-[#190088] dark:text-[#97D6DF]">{product.sku}</span>
             <h4 className="font-bold text-sm text-zinc-900 dark:text-white">{product.name}</h4>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              📍 Ubicación: <span className="font-medium text-zinc-700 dark:text-zinc-300">{product.locationName}</span>
+              🏢 Bodega: <span className="font-medium text-zinc-700 dark:text-zinc-300">{product.locationName}</span>
             </p>
           </div>
 

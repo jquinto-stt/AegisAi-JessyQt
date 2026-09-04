@@ -15,7 +15,8 @@ import {
   Hammer,
   Bookmark,
   Calendar,
-  Clock
+  Clock,
+  Store,
 } from "lucide-react";
 
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
@@ -611,7 +612,7 @@ function Sidebar({
             <div className="flex flex-col gap-1 pl-2.5 my-1 animate-fade-in">
               <NavItem
                 icon={<Layers className="w-4 h-4" />}
-                label="Catálogo de Partes"
+                label="Productos & Servicios"
                 active={activeModule === "inventarios" && inventarioTab === "catalog"}
                 onClick={() => {
                   if (onNavigateModule) onNavigateModule("inventarios");
@@ -622,7 +623,7 @@ function Sidebar({
               />
               <NavItem
                 icon={<Building2 className="w-4 h-4" />}
-                label="Almacenes & Ubicaciones"
+                label="Bodegas & Sucursales"
                 active={activeModule === "inventarios" && inventarioTab === "locations"}
                 onClick={() => {
                   if (onNavigateModule) onNavigateModule("inventarios");
@@ -633,7 +634,7 @@ function Sidebar({
               />
               <NavItem
                 icon={<Truck className="w-4 h-4" />}
-                label="Compras & Proveedores"
+                label="Compras & Facturas"
                 active={activeModule === "inventarios" && inventarioTab === "purchasing"}
                 onClick={() => {
                   if (onNavigateModule) onNavigateModule("inventarios");
@@ -644,7 +645,7 @@ function Sidebar({
               />
               <NavItem
                 icon={<Hammer className="w-4 h-4" />}
-                label="Producción & Ensamble"
+                label="Combos & Recetas"
                 active={activeModule === "inventarios" && inventarioTab === "manufacturing"}
                 onClick={() => {
                   if (onNavigateModule) onNavigateModule("inventarios");
@@ -734,6 +735,11 @@ function Sidebar({
 
         {/* Bottom Action Section */}
         <div className="p-3 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
+          <NavItem
+            icon={<Store className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />}
+            label="Hub de Sucursales"
+            onClick={() => navigate("/")}
+          />
           <NavItem
             icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
             label="Configuración"
@@ -1154,14 +1160,14 @@ export default function App() {
                 pageName={
                   activeModule === "inventarios"
                     ? inventarioTab === "locations"
-                      ? "Almacenes & Ubicaciones"
+                      ? "Bodegas & Sucursales"
                       : inventarioTab === "purchasing"
-                      ? "Compras & Proveedores"
+                      ? "Compras & Facturas"
                       : inventarioTab === "manufacturing"
-                      ? "Producción & Ensamble (BOM)"
+                      ? "Combos & Recetas"
                       : inventarioTab === "kardex"
                       ? "Historial de Movimientos"
-                      : "Catálogo de Partes & Ítems"
+                      : "Productos & Servicios"
                     : currentPageName
                 }
                 onNavigateHome={() => (activeModule === "inventarios" ? handleNavigateModule("inventarios") : handleNavigatePedidos("operacion", "en-vivo"))}

@@ -66,8 +66,8 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
       {/* Official Clean Necto Banner */}
       <NectoBanner
         icon={<Hammer className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Producción & Ensamble (BOM)"
-        description="Listas de materiales (Bill of Materials), cálculo de insumos y armado de productos terminados con deducción automática de stock."
+        title="Combos, Kits & Recetas"
+        description="Armado de combos comerciales, paquetes y recetas con deducción automática de insumos en inventario."
       />
 
       {/* Filter Toolbar */}
