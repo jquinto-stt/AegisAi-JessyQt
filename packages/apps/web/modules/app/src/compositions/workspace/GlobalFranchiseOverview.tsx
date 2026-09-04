@@ -230,19 +230,19 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Big Prominent Settings Gear Button on top-right of banner */}
-                  <div className="absolute top-3.5 right-3.5 z-10">
+                  {/* High-Contrast Settings Gear Button on top-right of banner */}
+                  <div className="absolute top-3.5 right-3.5 z-20">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedBusinessForSettings(biz);
                       }}
-                      title="Configuración de Sede, Branding y Bot"
-                      className="h-9 px-3.5 rounded-2xl bg-[#190088]/90 hover:bg-[#FF3F1A] backdrop-blur-md text-white border border-white/40 hover:border-[#FF3F1A] shadow-xl flex items-center gap-2 font-bold text-xs hover:scale-105 active:scale-95 transition-all group/gear cursor-pointer"
+                      title="Configurar branding, bot y parámetros de la sede"
+                      className="h-9 px-3.5 rounded-full bg-white dark:bg-[#18181B] text-zinc-900 dark:text-zinc-100 hover:bg-[#FF3F1A] hover:text-white dark:hover:bg-[#FF3F1A] dark:hover:text-white border border-zinc-200/90 dark:border-zinc-700 shadow-xl flex items-center gap-2 font-bold text-xs hover:scale-105 active:scale-95 transition-all group/gear cursor-pointer"
                     >
-                      <Settings className="w-4 h-4 group-hover/gear:rotate-90 transition-transform duration-300 text-[#EFE6D3]" />
-                      <span className="font-bold text-white">Configurar Sede</span>
+                      <Settings className="w-4 h-4 text-[#FF3F1A] group-hover/gear:text-white group-hover/gear:rotate-90 transition-all duration-300" />
+                      <span className="font-extrabold tracking-tight">Configurar Sede</span>
                     </button>
                   </div>
                 </div>
@@ -268,9 +268,24 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="px-3.5 py-1.5 rounded-full bg-[#EFE6D3] dark:bg-[#323028] text-[#190088] dark:text-[#EFE6D3] group-hover:bg-[#FF3F1A] group-hover:text-white border border-[#190088]/20 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs">
-                      <span>Entrar al local</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedBusinessForSettings(biz);
+                        }}
+                        title="Configurar branding, bot y parámetros de la sede"
+                        className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] border border-zinc-300 dark:border-zinc-700 hover:border-[#FF3F1A] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer hover:scale-105"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                        <span>Configurar</span>
+                      </button>
+
+                      <div className="px-3.5 py-1.5 rounded-full bg-[#190088] text-white group-hover:bg-[#FF3F1A] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
+                        <span>Entrar</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
                     </div>
                   </div>
 
