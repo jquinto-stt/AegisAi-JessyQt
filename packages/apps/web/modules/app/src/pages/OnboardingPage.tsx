@@ -94,7 +94,7 @@ const ARCHETYPES: ArchetypeConfig[] = [
     tagline: "Agenda automatizada por especialista, turnos inteligentes y recordatorios vía WhatsApp.",
     image: "/onboarding-services.jpg",
     icon: Calendar,
-    defaultModules: ["agendamiento", "turnos", "referidos"],
+    defaultModules: ["pedidos", "agendamiento", "turnos", "referidos"],
     iconKey: "coffee",
     features: ["Agenda de Citas", "Cuadrante de Turnos", "Recordatorio Auto", "Portal Clientes"],
     mockOrder: {
@@ -113,6 +113,7 @@ const MODULE_DEFINITIONS: Array<{
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   tag: string;
+  isComingSoon?: boolean;
 }> = [
   {
     id: "pedidos",
@@ -120,6 +121,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Flujo de venta unificado: WhatsApp, mostrador y mesa con actualización en vivo.",
     icon: ShoppingBag,
     tag: "Core Operativo",
+    isComingSoon: false,
   },
   {
     id: "inventarios",
@@ -127,6 +129,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Descuento automático por receta, control de mermas y alertas de stock crítico.",
     icon: Package,
     tag: "Control de Costos",
+    isComingSoon: false,
   },
   {
     id: "reservas",
@@ -134,6 +137,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Gestión de mesas, salones y asignación inteligente de zonas.",
     icon: Bookmark,
     tag: "Aforo & Mesas",
+    isComingSoon: true,
   },
   {
     id: "agendamiento",
@@ -141,6 +145,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Calendario sincronizado con reservas automáticas desde WhatsApp.",
     icon: Calendar,
     tag: "Planificación",
+    isComingSoon: true,
   },
   {
     id: "turnos",
@@ -148,6 +153,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Cuadrantes de rotación, control de asistencia y asignación por área.",
     icon: Clock,
     tag: "Equipo",
+    isComingSoon: true,
   },
   {
     id: "referidos",
@@ -155,6 +161,7 @@ const MODULE_DEFINITIONS: Array<{
     description: "Cupones dinámicos, tracking de referidos y métricas de recompra.",
     icon: Users,
     tag: "Crecimiento",
+    isComingSoon: true,
   },
 ];
 
@@ -632,13 +639,18 @@ export default function OnboardingPage() {
                   {MODULE_DEFINITIONS.map(mod => {
                     const isSelected = selectedModules.includes(mod.id);
                     const Icon = mod.icon;
+                    const isComingSoon = mod.isComingSoon;
 
                     return (
                       <div
                         key={mod.id}
                         onClick={() => handleToggleModule(mod.id)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
-                          isSelected
+                          isComingSoon
+                            ? isSelected
+                              ? "bg-zinc-100/80 dark:bg-zinc-900/50 border-zinc-300 dark:border-zinc-700 text-zinc-500 shadow-2xs"
+                              : "bg-zinc-50 dark:bg-zinc-950/30 border-zinc-200/80 dark:border-zinc-800/60 opacity-50 hover:opacity-80"
+                            : isSelected
                             ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
                             : "bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800/60 opacity-60 hover:opacity-100 hover:bg-white dark:hover:bg-zinc-900/40"
                         }`}
@@ -646,7 +658,9 @@ export default function OnboardingPage() {
                         <div className="flex items-center justify-between">
                           <div
                             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                              isSelected
+                              isComingSoon
+                                ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500"
+                                : isSelected
                                 ? "bg-[#190088] text-white"
                                 : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500"
                             }`}
@@ -655,13 +669,21 @@ export default function OnboardingPage() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono text-zinc-500 uppercase">
-                              {mod.tag}
-                            </span>
+                            {isComingSoon ? (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-zinc-200/90 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                                Próximamente
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                                {mod.tag}
+                              </span>
+                            )}
                             <div
                               className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
                                 isSelected
-                                  ? "bg-[#FF3F1A] text-white"
+                                  ? isComingSoon
+                                    ? "bg-zinc-400 dark:bg-zinc-600 text-white"
+                                    : "bg-[#FF3F1A] text-white"
                                   : "border border-zinc-300 dark:border-zinc-700"
                               }`}
                             >
@@ -671,7 +693,11 @@ export default function OnboardingPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <h4 className="text-xs font-bold text-zinc-950 dark:text-white">{mod.title}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className={`text-xs font-bold ${isComingSoon ? "text-zinc-600 dark:text-zinc-300" : "text-zinc-950 dark:text-white"}`}>
+                              {mod.title}
+                            </h4>
+                          </div>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
                             {mod.description}
                           </p>

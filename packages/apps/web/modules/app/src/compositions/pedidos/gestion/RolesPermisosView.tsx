@@ -26,6 +26,7 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { Button, Field, Select, SearchInput } from "@/elements";
+import { NectoBanner } from "../shared/NectoBanner";
 
 interface RoleTemplateArchetype {
   id: string;
@@ -467,122 +468,102 @@ export const RolesPermisosView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12 animate-fade-in max-w-7xl mx-auto">
-      {/* Top Header */}
-      <div className="rounded-3xl p-6 bg-white dark:bg-[#121215] border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-2xl bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 flex items-center justify-center shadow-xs">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-zinc-950 dark:text-zinc-50 tracking-tight">
-                  Control de Roles & Permisos Directos
-                </h1>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Edición en Vivo
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
-                Seleccioná un rol y ajustá los permisos directamente con un clic sin abrir modales ni ventanas extra.
-              </p>
-            </div>
-          </div>
+      {/* Top Header Banner */}
+      <NectoBanner
+        icon={<ShieldCheck className="w-6 h-6 text-[#FF3F1A]" />}
+        title="Control de Roles & Permisos Directos"
+        description="Seleccioná un rol y ajustá los permisos directamente en vivo sin intermediarios ni ventanas modales extra."
+      />
 
-          <div className="flex items-center gap-2">
-            {!isCreatingInline ? (
-              <Button
-                variant="primary"
-                intent="roles.create.open"
-                onClick={() => setIsCreatingInline(true)}
-                className="py-2.5 px-4 text-xs font-bold flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nuevo Rol</span>
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                intent="roles.create.cancel"
-                onClick={() => setIsCreatingInline(false)}
-                className="py-2.5 px-3 text-xs"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
+      {/* Simulator & Action Toolbar */}
+      <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3.5 border border-zinc-200/70 dark:border-zinc-800/80 shadow-none flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-mono font-bold uppercase flex-none pr-1">
+            <Eye className="w-3.5 h-3.5 text-[#FF3F1A]" />
+            <span className="hidden md:inline">Simular:</span>
           </div>
+          {roles.map(role => {
+            const isActive = activeRoleId === role.id;
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setActiveRoleId(role.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 flex-none border select-none ${
+                  isActive
+                    ? "bg-[#190088] text-white border-[#190088] shadow-xs font-bold"
+                    : "bg-zinc-50 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300"
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${getColorDot(role.badgeColor)}`} />
+                <span>{role.name}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Inline Create Role Bar */}
-        {isCreatingInline && (
-          <form
-            onSubmit={handleCreateNewRole}
-            className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in"
-          >
-            <div className="flex-1">
-              <input
-                type="text"
-                required
-                value={newRoleName}
-                onChange={e => setNewRoleName(e.target.value)}
-                placeholder="Nombre del nuevo rol (ej. Jefe de Barra, Delivery Lead)..."
-                className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30"
-              />
-            </div>
-            <select
-              value={newRoleColor}
-              onChange={e => setNewRoleColor(e.target.value as any)}
-              className="px-3 py-2 text-xs rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 focus:outline-none"
-            >
-              <option value="rose">Rosa / Dirección</option>
-              <option value="blue">Azul / Logística</option>
-              <option value="amber">Ámbar / Cocina</option>
-              <option value="emerald">Esmeralda / Salón</option>
-              <option value="purple">Púrpura / Stock</option>
-              <option value="zinc">Gris / Auditoría</option>
-            </select>
+        <div className="flex items-center gap-2 flex-none">
+          {!isCreatingInline ? (
             <Button
-              type="submit"
-              variant="primary"
-              intent="roles.create.submit"
-              className="py-2 px-4 text-xs font-bold"
+              variant="accent"
+              intent="roles.create.open"
+              onClick={() => setIsCreatingInline(true)}
+              className="px-3.5 py-1.5 text-xs font-bold flex items-center gap-1.5"
             >
-              Guardar y Configurar
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nuevo Rol</span>
             </Button>
-          </form>
-        )}
-
-        {/* Simulator / Impersonation Bar */}
-        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-50/70 dark:bg-zinc-900/40 p-3 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50">
-          <div className="flex items-center gap-2 text-xs">
-            <Eye className="w-3.5 h-3.5 text-[#FF3F1A]" />
-            <span className="font-bold text-zinc-900 dark:text-zinc-100">
-              Simular Rol en Pantalla:
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-            {roles.map(role => {
-              const isActive = activeRoleId === role.id;
-              return (
-                <button
-                  key={role.id}
-                  type="button"
-                  onClick={() => setActiveRoleId(role.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 flex-none border select-none ${
-                    isActive
-                      ? "bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 border-zinc-950 dark:border-white shadow-xs"
-                      : "bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${getColorDot(role.badgeColor)}`} />
-                  <span>{role.name}</span>
-                </button>
-              );
-            })}
-          </div>
+          ) : (
+            <Button
+              variant="outline"
+              intent="roles.create.cancel"
+              onClick={() => setIsCreatingInline(false)}
+              className="px-3 py-1.5 text-xs"
+            >
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Inline Create Role Form */}
+      {isCreatingInline && (
+        <form
+          onSubmit={handleCreateNewRole}
+          className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center gap-3 animate-fade-in"
+        >
+          <div className="flex-1">
+            <input
+              type="text"
+              required
+              value={newRoleName}
+              onChange={e => setNewRoleName(e.target.value)}
+              placeholder="Nombre del nuevo rol (ej. Jefe de Barra, Delivery Lead)..."
+              className="w-full px-3 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-[#190088]"
+            />
+          </div>
+          <select
+            value={newRoleColor}
+            onChange={e => setNewRoleColor(e.target.value as any)}
+            className="px-3 py-2 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none"
+          >
+            <option value="rose">Rosa / Dirección</option>
+            <option value="blue">Azul / Logística</option>
+            <option value="amber">Ámbar / Cocina</option>
+            <option value="emerald">Esmeralda / Salón</option>
+            <option value="purple">Púrpura / Stock</option>
+            <option value="zinc">Gris / Auditoría</option>
+          </select>
+          <Button
+            type="submit"
+            variant="accent"
+            intent="roles.create.submit"
+            className="py-2 px-4 text-xs font-bold"
+          >
+            Guardar y Configurar
+          </Button>
+        </form>
+      )}
 
       {/* Main Unified 1-View Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -622,16 +603,16 @@ export const RolesPermisosView: React.FC = () => {
                 <div
                   key={role.id}
                   onClick={() => setSelectedRoleId(role.id)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs select-none space-y-2.5 ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs select-none space-y-2.5 ${
                     isSelected
-                      ? "bg-white dark:bg-[#18181B] border-zinc-950 dark:border-white ring-2 ring-zinc-950/10 dark:ring-white/10"
-                      : "bg-white/90 dark:bg-[#18181B]/80 border-zinc-200/80 dark:border-zinc-800/80 hover:border-zinc-400 dark:hover:border-zinc-700"
+                      ? "bg-white dark:bg-[#18181B] border-[#190088] dark:border-[#190088]/80 ring-1 ring-[#190088]/30 shadow-xs"
+                      : "bg-white dark:bg-[#18181B] border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className={`w-3 h-3 rounded-full flex-none ${getColorDot(role.badgeColor)}`} />
-                      <h4 className="font-bold text-xs sm:text-sm text-zinc-950 dark:text-zinc-50 truncate">
+                      <h4 className="font-bold text-xs sm:text-sm text-[#212121] dark:text-[#ECECEC] truncate">
                         {role.name}
                       </h4>
                     </div>
@@ -665,8 +646,8 @@ export const RolesPermisosView: React.FC = () => {
                   {/* High Visibility Permission Counter Badge & Progress Bar */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono font-black text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-[11px] font-mono font-bold">
+                      <span className="font-mono font-black text-[#212121] dark:text-[#ECECEC] flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded-md bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 text-[11px] font-mono font-bold">
                           {activeCount} / 13
                         </span>
                         <span className="text-[11px] text-zinc-500 font-medium">Permisos</span>
@@ -676,7 +657,7 @@ export const RolesPermisosView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${progressColor}`}
                         style={{ width: `${percent}%` }}
@@ -691,7 +672,7 @@ export const RolesPermisosView: React.FC = () => {
 
         {/* Right Column: Direct Live Editing Panel */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="p-6 rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800/80 shadow-xs space-y-6">
+          <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-6">
             {/* Header with Quick Inline Renaming & Metrics */}
             <div className="space-y-4 pb-5 border-b border-zinc-100 dark:border-zinc-800/80">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -701,7 +682,7 @@ export const RolesPermisosView: React.FC = () => {
                     type="text"
                     value={selectedRole.name}
                     onChange={e => updateRole(selectedRole.id, { name: e.target.value })}
-                    className="text-lg font-black text-zinc-950 dark:text-zinc-50 bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-zinc-900 dark:focus:border-white focus:outline-none transition-colors px-1"
+                    className="text-base sm:text-lg font-bold text-[#212121] dark:text-[#ECECEC] bg-transparent border-b border-transparent hover:border-zinc-300 focus:border-[#190088] dark:focus:border-[#97D6DF] focus:outline-none transition-colors px-1"
                     title="Clic para renombrar"
                   />
                   <span
@@ -733,16 +714,16 @@ export const RolesPermisosView: React.FC = () => {
               </div>
 
               {/* Prominent Permission Summary Banner */}
-              <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+              <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="px-3 py-1.5 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 font-mono font-black text-sm flex items-center gap-1.5 shadow-2xs">
+                    <div className="px-3 py-1.5 rounded-xl bg-[#190088] text-white font-mono font-black text-sm flex items-center gap-1.5 shadow-2xs">
                       <span>{activeCountSelected}</span>
-                      <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                      <span className="text-zinc-400 dark:text-zinc-600">13</span>
+                      <span className="text-white/60">/</span>
+                      <span className="text-white/60">13</span>
                     </div>
                     <div>
-                      <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                      <h5 className="font-bold text-xs text-[#212121] dark:text-[#ECECEC]">
                         Permisos Concedidos en este Perfil ({privilegePercent}% de Acceso)
                       </h5>
                       <p className="text-[11px] text-zinc-500">
@@ -814,7 +795,7 @@ export const RolesPermisosView: React.FC = () => {
                       key={tpl.id}
                       type="button"
                       onClick={() => handleApplyTemplateDirect(tpl)}
-                      className="px-2.5 py-1 rounded-xl text-xs font-bold bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500 text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs"
+                      className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-700 dark:text-zinc-300 transition-all flex items-center gap-1.5 flex-none cursor-pointer shadow-2xs"
                     >
                       {tpl.icon}
                       <span>{tpl.name.split("/")[0].trim()}</span>
@@ -829,7 +810,7 @@ export const RolesPermisosView: React.FC = () => {
               {permissionGroups.map((grp, gIdx) => (
                 <div key={gIdx} className="space-y-3">
                   <div className="flex items-center justify-between pb-1 border-b border-zinc-100 dark:border-zinc-800/40">
-                    <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#212121] dark:text-[#ECECEC]">
                       {grp.icon}
                       <span>{grp.group}</span>
                     </div>
@@ -848,12 +829,12 @@ export const RolesPermisosView: React.FC = () => {
                           onClick={() => handleToggleDirect(item.key)}
                           className={`p-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-start justify-between gap-3 select-none ${
                             isGranted
-                              ? "bg-emerald-500/[0.05] dark:bg-emerald-500/[0.09] border-emerald-500/35 text-zinc-950 dark:text-zinc-50 shadow-2xs"
-                              : "bg-zinc-50/40 dark:bg-zinc-900/20 border-zinc-200/60 dark:border-zinc-800/60 text-zinc-500 hover:border-zinc-300 dark:hover:border-zinc-700"
+                              ? "bg-[#190088]/5 dark:bg-[#190088]/15 border-[#190088]/30 text-[#212121] dark:text-[#ECECEC] shadow-2xs"
+                              : "bg-zinc-50/40 dark:bg-zinc-900/20 border-zinc-200/60 dark:border-zinc-800/60 text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700"
                           }`}
                         >
                           <div className="space-y-1 min-w-0">
-                            <h5 className="font-bold text-xs flex items-center gap-1.5">
+                            <h5 className="font-bold text-xs flex items-center gap-1.5 text-[#212121] dark:text-[#ECECEC]">
                               {item.label}
                             </h5>
                             <p className="text-[11px] text-zinc-400 leading-snug">
@@ -864,7 +845,7 @@ export const RolesPermisosView: React.FC = () => {
                           <div
                             className={`w-5 h-5 rounded-md border flex items-center justify-center flex-none transition-all mt-0.5 ${
                               isGranted
-                                ? "bg-emerald-500 border-emerald-500 text-white shadow-2xs scale-105"
+                                ? "bg-[#190088] border-[#190088] text-white shadow-2xs scale-105"
                                 : "border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                             }`}
                           >

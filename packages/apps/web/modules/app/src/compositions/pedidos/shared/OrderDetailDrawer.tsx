@@ -120,6 +120,7 @@ export const OrderDetailDrawer: React.FC = () => {
             </div>
           </div>
 
+          <div className="flex items-center gap-2">
             {(() => {
               const isTicketReady =
                 order.status === "CONFIRMADO" ||

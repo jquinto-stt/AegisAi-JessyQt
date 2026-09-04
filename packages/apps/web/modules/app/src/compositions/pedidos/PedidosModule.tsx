@@ -56,6 +56,7 @@ const PedidosContent: React.FC<{
 }> = ({
   sectionProp = "operacion",
   opTabProp = "en-vivo",
+  geTabProp = "catalogo",
   targetOrderId,
   targetModal,
   targetProductId,

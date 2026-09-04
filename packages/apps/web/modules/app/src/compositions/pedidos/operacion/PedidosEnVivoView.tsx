@@ -733,7 +733,9 @@ export const PedidosEnVivoView: React.FC<{
             );
           })}
           </div>
-              /* RESPONSIVE CARDS GRID VIEW */
+        </div>
+      ) : (
+        /* RESPONSIVE CARDS GRID VIEW */
         <div className="space-y-4">
           {/* Grid Summary Bar */}
           <div className="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400 font-medium">

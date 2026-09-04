@@ -396,14 +396,14 @@ export const CatalogoInteligenteView: React.FC<{
     return (
       <div
         key={product.id}
-        className={`bg-white dark:bg-[#1E1F23] rounded-3xl border shadow-xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-md ${
+        className={`bg-white dark:bg-[#18181B] rounded-2xl border shadow-2xs flex flex-col justify-between overflow-hidden transition-all hover:shadow-md ${
           product.isAvailable
-            ? "border-zinc-200/90 dark:border-zinc-700/80 hover:border-[#FF3F1A]"
-            : "border-zinc-200 dark:border-zinc-800 opacity-75"
+            ? "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700"
+            : "border-zinc-200/60 dark:border-zinc-800/60 opacity-75"
         }`}
       >
         {/* Photo Header */}
-        <div className="relative h-48 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+        <div className="relative h-48 w-full overflow-hidden bg-zinc-100 dark:bg-zinc-900">
           <img
             src={
               product.imageUrl ||
@@ -424,20 +424,20 @@ export const CatalogoInteligenteView: React.FC<{
           )}
 
           {/* Price Tag */}
-          <div className="absolute bottom-3 right-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md text-zinc-950 dark:text-white px-3 py-1 rounded-xl text-xs font-mono font-bold shadow-xs">
+          <div className="absolute bottom-3 right-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md text-[#212121] dark:text-[#ECECEC] px-3 py-1 rounded-xl text-xs font-mono font-bold shadow-xs border border-zinc-200/50 dark:border-zinc-800">
             ${product.price.toLocaleString("es-CO")}
           </div>
 
-          <span className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[10px] font-mono px-2.5 py-0.5 rounded-lg">
+          <span className="absolute bottom-3 left-3 bg-[#190088]/85 dark:bg-[#190088]/90 backdrop-blur-md text-white text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-lg border border-white/20">
             {product.category}
           </span>
         </div>
 
         {/* Card Body */}
-        <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
+        <div className="p-4 sm:p-5 space-y-4 flex-1 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-bold text-sm sm:text-base text-zinc-950 dark:text-zinc-50 line-clamp-1">
+              <h4 className="font-bold text-sm sm:text-base text-[#212121] dark:text-[#ECECEC] line-clamp-1">
                 {product.name}
               </h4>
             </div>
@@ -449,7 +449,7 @@ export const CatalogoInteligenteView: React.FC<{
             {/* Modifiers & Extras Chip */}
             <div className="pt-1">
               {product.modifiers && product.modifiers.length > 0 ? (
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/80 px-2.5 py-1 rounded-xl border border-zinc-200/80 dark:border-zinc-700">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#212121] dark:text-[#ECECEC] bg-zinc-50 dark:bg-zinc-900 px-2.5 py-1 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
                   <Sparkles className="w-3 h-3 text-[#FF3F1A]" />
                   <span>
                     {product.modifiers.length} grupo(s) · {modifierCount} extras/opciones
@@ -468,9 +468,9 @@ export const CatalogoInteligenteView: React.FC<{
             variant="ghost"
             intent="catalog.product.preview.open"
             onClick={() => handleOpenCustomerPreview(product)}
-            className="w-full py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100 dark:bg-orange-950/40 dark:hover:bg-orange-950/70 border border-orange-200/80 dark:border-orange-900/60 text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
+            className="w-full py-2 px-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group"
           >
-            <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            <Eye className="w-3.5 h-3.5 group-hover:scale-110 transition-transform text-[#FF3F1A]" />
             <span>Personalizar (Vista Cliente)</span>
           </Button>
 
@@ -480,7 +480,7 @@ export const CatalogoInteligenteView: React.FC<{
               variant="ghost"
               intent="catalog.product.reviews.open"
               onClick={() => setReviewModalProduct(product)}
-              className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 hover:bg-zinc-100 text-zinc-800 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-700 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 text-[#212121] dark:text-[#ECECEC] border border-zinc-200/70 dark:border-zinc-800 font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
               title="Ver opiniones"
             >
               <Star className="w-3.5 h-3.5 fill-[#FF3F1A] text-[#FF3F1A]" />
@@ -490,15 +490,15 @@ export const CatalogoInteligenteView: React.FC<{
               </span>
             </Button>
 
-            <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/70 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold text-xs flex items-center justify-center gap-1.5">
+            <div className="p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/70 dark:border-zinc-800 text-[#212121] dark:text-[#ECECEC] font-bold text-xs flex items-center justify-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              <span>{product.salesCount || 120} cmds</span>
+              <span className="font-mono">{product.salesCount || 120} cmds</span>
             </div>
           </div>
 
           {/* Live Kitchen Notice */}
           {activeOrdersWithProd > 0 && (
-            <div className="bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 rounded-xl px-3 py-1.5 text-xs text-[#FF3F1A] font-bold flex items-center justify-between">
+            <div className="bg-[#190088]/10 dark:bg-[#190088]/20 border border-[#190088]/20 rounded-xl px-3 py-1.5 text-xs text-[#190088] dark:text-[#97D6DF] font-bold flex items-center justify-between">
               <span>{activeOrdersWithProd} en cocina ahora</span>
               <span className="font-mono">{product.prepTimeMinutes}m</span>
             </div>
@@ -510,7 +510,7 @@ export const CatalogoInteligenteView: React.FC<{
               variant="outline"
               intent="catalog.product.edit.open"
               onClick={() => setEditingProduct({ ...product })}
-              className="py-2 px-3 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
+              className="py-2 px-3 text-xs rounded-xl border-zinc-200 dark:border-zinc-800 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
             >
               <Edit3 className="w-3.5 h-3.5" />
               <span>Editar Extras</span>
@@ -523,13 +523,13 @@ export const CatalogoInteligenteView: React.FC<{
               onClick={() => toggleProductAvailability(product.id)}
               className={`p-0 py-2 px-3 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
                 product.isAvailable
-                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200"
+                  ? "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 hover:bg-[#190088]/15"
                   : "bg-zinc-900 text-white hover:bg-zinc-800"
               }`}
             >
               {product.isAvailable ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
                   <span>Disponible</span>
                 </>
               ) : (
@@ -570,49 +570,49 @@ export const CatalogoInteligenteView: React.FC<{
       {/* Top Intelligence Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Stat 1: Total Platos */}
-        <Card intent="catalog.stat.total" className="dark:bg-[#1E1F23] p-5 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs p-5 space-y-2">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
             Platos en Carta
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+            <p className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC]">
               {products.length}
             </p>
-            <Badge variant="neutral">
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] border border-zinc-200 dark:border-zinc-700">
               {products.filter(p => p.isAvailable).length} activos
-            </Badge>
+            </span>
           </div>
           <p className="text-[11px] text-zinc-400">
             {products.filter(p => !p.isAvailable).length} pausados por falta de insumos
           </p>
-        </Card>
+        </div>
 
         {/* Stat 2: Calificación Global */}
-        <Card intent="catalog.stat.rating" className="dark:bg-[#1E1F23] p-5 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs p-5 space-y-2">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
             Satisfacción de Clientes
           </span>
           <div className="flex items-baseline justify-between">
             <div className="flex items-center gap-1.5">
-              <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+              <p className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC]">
                 4.9
               </p>
               <Star className="w-5 h-5 fill-[#FF3F1A] text-[#FF3F1A]" />
             </div>
-            <span className="text-xs font-bold text-zinc-500">
+            <span className="text-xs font-mono font-bold text-zinc-500">
               {allReviews.length * 15 + 45} reseñas
             </span>
           </div>
           <p className="text-[11px] text-zinc-400">98.2% de calificaciones positivas</p>
-        </Card>
+        </div>
 
         {/* Stat 3: Más Vendido */}
-        <Card intent="catalog.stat.top" className="dark:bg-[#1E1F23] p-5 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs p-5 space-y-2">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
             Plato Estrella #1
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-sm font-bold text-zinc-950 dark:text-zinc-50 truncate max-w-[140px]">
+            <p className="text-sm font-bold text-[#212121] dark:text-[#ECECEC] truncate max-w-[140px]">
               Carne a Cuchillo
             </p>
             <span className="text-xs font-bold text-[#FF3F1A] font-mono">
@@ -620,28 +620,30 @@ export const CatalogoInteligenteView: React.FC<{
             </span>
           </div>
           <p className="text-[11px] text-zinc-400">38% del volumen de ventas</p>
-        </Card>
+        </div>
 
         {/* Stat 4: Categorías */}
-        <Card intent="catalog.stat.categories" className="dark:bg-[#1E1F23] p-5 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs p-5 space-y-2">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">
             Categorías Activas
           </span>
           <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-extrabold font-mono text-zinc-950 dark:text-zinc-50">
+            <p className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC]">
               {allAvailableCategories.length - 1}
             </p>
-            <Badge variant="neutral">Estructurado</Badge>
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20">
+              Estructurado
+            </span>
           </div>
           <p className="text-[11px] text-zinc-400">Agrupado por secciones de menú</p>
-        </Card>
+        </div>
       </div>
 
       {/* SUBTAB 1: Catálogo de Platos */}
       {activeSubTab === "catalogo" && (
         <div className="space-y-6">
           {/* Category Bar & Controls */}
-          <div className="bg-white dark:bg-[#1E1F23] rounded-3xl p-4 sm:p-5 border border-zinc-200/80 dark:border-zinc-800 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3.5 border border-zinc-200/70 dark:border-zinc-800/80 shadow-none flex flex-wrap items-center justify-between gap-3">
             {/* Category Filter Pills + New Category Button */}
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none max-w-full flex-nowrap py-1">
               {allAvailableCategories.map(cat => {
@@ -658,12 +660,12 @@ export const CatalogoInteligenteView: React.FC<{
                     onClick={() => setSelectedCategory(cat)}
                     className={`p-0 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 flex-none ${
                       selectedCategory === cat
-                        ? "bg-white text-[#212121] dark:bg-zinc-800 dark:text-zinc-100 border border-zinc-200/90 dark:border-zinc-700 shadow-2xs"
-                        : "bg-zinc-100/80 dark:bg-zinc-800/60 border border-zinc-200/60 dark:border-zinc-700/60 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                        ? "bg-[#190088] text-white shadow-xs font-bold"
+                        : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
                     }`}
                   >
                     <span>{cat}</span>
-                    <span className="text-[10px] text-zinc-400 font-mono">({count})</span>
+                    <span className={`text-[10px] font-mono ${selectedCategory === cat ? "text-white/80" : "text-zinc-400"}`}>({count})</span>
                   </Button>
                 );
               })}
@@ -758,11 +760,11 @@ export const CatalogoInteligenteView: React.FC<{
                       {/* Category Section Header */}
                       <div className="flex items-center justify-between pb-2 border-b border-zinc-200/80 dark:border-zinc-800">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[#FF3F1A] font-bold">
+                          <div className="w-8 h-8 rounded-xl bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 flex items-center justify-center font-bold">
                             <UtensilsCrossed className="w-4 h-4" />
                           </div>
                           <div>
-                            <h3 className="text-base font-bold text-zinc-950 dark:text-white tracking-tight">
+                            <h3 className="text-sm sm:text-base font-bold text-[#212121] dark:text-[#ECECEC] tracking-tight">
                               {cat}
                             </h3>
                             <p className="text-[11px] text-zinc-400">
@@ -771,7 +773,7 @@ export const CatalogoInteligenteView: React.FC<{
                           </div>
                         </div>
 
-                        <span className="text-xs font-mono font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl">
+                        <span className="text-xs font-mono font-bold text-[#212121] dark:text-[#ECECEC] bg-[#ECECEC] dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2.5 py-1 rounded-xl">
                           {catProducts.length} Platos
                         </span>
                       </div>
@@ -794,9 +796,9 @@ export const CatalogoInteligenteView: React.FC<{
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="p-12 text-center bg-white dark:bg-[#1E1F23] rounded-3xl border border-zinc-200 dark:border-zinc-800 space-y-3">
+                    <div className="p-12 text-center bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 space-y-3 shadow-2xs">
                       <UtensilsCrossed className="w-8 h-8 text-zinc-300 mx-auto" />
-                      <h4 className="text-sm font-bold text-zinc-700 dark:text-zinc-300">
+                      <h4 className="text-sm font-bold text-[#212121] dark:text-[#ECECEC]">
                         No hay platos en la categoría "{selectedCategory}"
                       </h4>
                       <Button
@@ -856,10 +858,9 @@ export const CatalogoInteligenteView: React.FC<{
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredReviews.map(rev => (
-              <Card
+              <div
                 key={rev.id}
-                intent="catalog.review.card"
-                className="p-5 dark:bg-[#1E1F23] space-y-3"
+                className="p-5 bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -924,7 +925,7 @@ export const CatalogoInteligenteView: React.FC<{
                     </Button>
                   </div>
                 )}
-              </Card>
+              </div>
             ))}
           </div>
         </div>

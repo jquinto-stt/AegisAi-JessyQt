@@ -170,96 +170,96 @@ export const InsumosStockView: React.FC = () => {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Insumos */}
-        <div className="bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] rounded-2xl p-4 shadow-xs">
+        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Total Insumos
               </p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1">
+              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
                 {ingredients.length}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-[#FF3F1A] border border-orange-200 dark:border-orange-800 flex items-center justify-center">
-              <Package className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 flex items-center justify-center">
+              <Package className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-xs">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono text-xs">
               {ingredients.filter(i => i.status === "OPTIMO").length} en nivel óptimo
             </span>
           </div>
         </div>
 
         {/* Card 2: Alertas Críticas / Agotados */}
-        <div className="bg-white dark:bg-[#2C2D31] border-2 border-red-200 dark:border-red-900/60 rounded-2xl p-4 shadow-xs">
+        <div className="bg-white dark:bg-[#18181B] border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-2xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+              <p className="text-[11px] font-mono font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
                 Quiebres & Críticos
               </p>
-              <h3 className="text-2xl font-black text-red-600 dark:text-red-400 mt-1">
+              <h3 className="text-3xl font-black font-mono text-red-600 dark:text-red-400 mt-1">
                 {criticalCount}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 border border-red-200 dark:border-red-800 flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 flex items-center justify-center">
+              <ShieldAlert className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-xs">
-            <span className="text-amber-600 dark:text-amber-400 font-bold">
+          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+            <span className="text-amber-600 dark:text-amber-400 font-bold font-mono text-xs">
               +{lowCount} en punto de reorden
             </span>
           </div>
         </div>
 
         {/* Card 3: Valorización Total */}
-        <div className="bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] rounded-2xl p-4 shadow-xs">
+        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Valorización Stock
               </p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1">
+              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
                 ${totalValuation.toLocaleString("es-AR")}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
-              <DollarSign className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-xs">
-            <span className="text-gray-500 font-medium">Costo de reposición activo</span>
+          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+            <span className="text-zinc-500 font-medium">Costo de reposición activo</span>
           </div>
         </div>
 
         {/* Card 4: Movimientos */}
-        <div className="bg-white dark:bg-[#2C2D31] border border-slate-200 dark:border-[#374151] rounded-2xl p-4 shadow-xs">
+        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Movimientos Auditados
               </p>
-              <h3 className="text-2xl font-black text-gray-900 dark:text-white mt-1">
+              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
                 {stockMovements.length}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-slate-200 dark:border-gray-700 flex items-center justify-center">
-              <History className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+              <History className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-gray-800 flex items-center justify-between text-xs">
-            <span className="text-gray-500 font-medium">Último: {stockMovements[0]?.timestamp || "Hoy"}</span>
+          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
+            <span className="text-zinc-500 font-medium">Último: {stockMovements[0]?.timestamp || "Hoy"}</span>
           </div>
         </div>
       </div>
 
-      {/* Sub-Tabs: Listado vs Movimientos */}
-      <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-4 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-800 pb-3">
+      {/* Sub-Tabs: Listado vs Movimientos Container */}
+      <div className="bg-white dark:bg-[#151518] rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 p-3 sm:p-4 shadow-none space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
           <SegmentedControl
             intent="insumos.subtab"
-            tone="panel"
+            tone="contrast"
             className="w-fit"
             value={activeTab}
             onValueChange={setActiveTab}
@@ -275,19 +275,19 @@ export const InsumosStockView: React.FC = () => {
               variant="accent"
               intent="insumos.create.open"
               onClick={handleOpenCreateModal}
-              className="px-3.5 py-1.5 text-xs"
+              className="px-3.5 py-1.5 text-xs font-bold"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Insumo</span>
             </Button>
 
-            <div className="w-[1px] h-6 bg-slate-200 dark:bg-gray-700 mx-1 hidden sm:block" />
+            <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
 
             <Button
               variant="outline"
               intent="insumos.export.excel"
               onClick={() => handleExport("Excel")}
-              className="px-3 py-1.5 bg-white dark:bg-gray-800 text-xs"
+              className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs hover:border-zinc-300"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Excel</span>
@@ -297,7 +297,7 @@ export const InsumosStockView: React.FC = () => {
               variant="outline"
               intent="insumos.export.pdf"
               onClick={() => handleExport("PDF")}
-              className="px-3 py-1.5 bg-white dark:bg-gray-800 text-xs"
+              className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs hover:border-zinc-300"
             >
               <Download className="w-3.5 h-3.5 text-red-600" />
               <span>PDF</span>
@@ -349,10 +349,10 @@ export const InsumosStockView: React.FC = () => {
                   variant="ghost"
                   intent="insumos.category.select"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`p-0 px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`p-0 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-[#FF3F1A] text-white shadow-xs"
-                      : "bg-slate-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-slate-200"
+                      ? "bg-[#190088] text-white shadow-xs font-bold"
+                      : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
                   }`}
                 >
                   {cat}
@@ -361,9 +361,9 @@ export const InsumosStockView: React.FC = () => {
             </div>
 
             {/* Insumos Table */}
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-gray-700">
+                <thead className="bg-zinc-50 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-extrabold uppercase text-[10px] font-mono tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
                     <th className="p-3.5">Insumo</th>
                     <th className="p-3.5">Categoría</th>
@@ -375,7 +375,7 @@ export const InsumosStockView: React.FC = () => {
                     <th className="p-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 font-medium">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium">
                   {filteredIngredients.map(ing => {
                     const isDepleted = ing.currentStock <= 0;
                     const isCritical = ing.status === "CRITICO" || isDepleted;
@@ -384,7 +384,7 @@ export const InsumosStockView: React.FC = () => {
                     return (
                       <tr
                         key={ing.id}
-                        className={`hover:bg-slate-50/80 dark:hover:bg-gray-800/50 transition-colors ${
+                        className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors ${
                           isDepleted ? "bg-red-50/20 dark:bg-red-950/10" : ""
                         }`}
                       >
@@ -393,13 +393,13 @@ export const InsumosStockView: React.FC = () => {
                             <SafeImage
                               src={ing.imageUrl}
                               alt={ing.name}
-                              className="w-9 h-9 rounded-lg object-cover"
+                              className="w-9 h-9 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700"
                             />
                             <div>
-                              <p className="font-extrabold text-gray-900 dark:text-gray-100">
+                              <p className="font-bold text-[#212121] dark:text-[#ECECEC]">
                                 {ing.name}
                               </p>
-                              <p className="text-[10px] font-mono text-gray-400">
+                              <p className="text-[10px] font-mono text-zinc-400">
                                 {ing.code} {ing.lotNumber ? `• ${ing.lotNumber}` : ""}
                               </p>
                             </div>
@@ -407,7 +407,7 @@ export const InsumosStockView: React.FC = () => {
                         </td>
 
                         <td className="p-3.5">
-                          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold">
+                          <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-mono font-bold border border-zinc-200/60 dark:border-zinc-700/60">
                             {ing.category}
                           </span>
                         </td>
@@ -419,49 +419,49 @@ export const InsumosStockView: React.FC = () => {
                                 ? "text-red-600 dark:text-red-400"
                                 : isCritical
                                 ? "text-amber-600 dark:text-amber-400"
-                                : "text-gray-900 dark:text-white"
+                                : "text-[#212121] dark:text-[#ECECEC]"
                             }
                           >
                             {ing.currentStock} {ing.unit}
                           </span>
                         </td>
 
-                        <td className="p-3.5 text-right font-mono text-gray-500">
+                        <td className="p-3.5 text-right font-mono text-zinc-400">
                           {ing.minThreshold} {ing.unit}
                         </td>
 
-                        <td className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-gray-200">
+                        <td className="p-3.5 text-right font-mono font-bold text-[#212121] dark:text-[#ECECEC]">
                           ${ing.costPerUnit.toLocaleString("es-AR")}
                         </td>
 
                         <td className="p-3.5">
                           {ing.expiryDate ? (
-                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 text-[11px]">
-                              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                            <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 text-[11px] font-mono">
+                              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
                               <span>{ing.expiryDate}</span>
                             </div>
                           ) : (
-                            <span className="text-gray-400 text-[11px]">No perecedero</span>
+                            <span className="text-zinc-400 text-[11px]">No perecedero</span>
                           )}
                         </td>
 
                         <td className="p-3.5 text-center">
                           {isDepleted ? (
-                            <Badge variant="danger" intent="insumos.status.depleted">
+                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
                               AGOTADO (0)
-                            </Badge>
+                            </span>
                           ) : isCritical ? (
-                            <Badge variant="danger" intent="insumos.status.critical">
+                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
                               CRÍTICO
-                            </Badge>
+                            </span>
                           ) : isLow ? (
-                            <Badge variant="warning" intent="insumos.status.low">
+                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                               REORDEN
-                            </Badge>
+                            </span>
                           ) : (
-                            <Badge variant="success" intent="insumos.status.ok">
+                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                               ÓPTIMO
-                            </Badge>
+                            </span>
                           )}
                         </td>
 
@@ -469,9 +469,9 @@ export const InsumosStockView: React.FC = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="ghost"
-                              intent="insumos.edit.open"
+                              intent="insumos.edit"
                               onClick={() => handleOpenEditModal(ing)}
-                              className="p-1.5 rounded-lg text-gray-500"
+                              className="p-1.5 rounded-lg text-zinc-500 hover:text-[#FF3F1A] hover:bg-zinc-100 dark:hover:bg-zinc-800"
                               title="Editar Insumo"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -499,9 +499,9 @@ export const InsumosStockView: React.FC = () => {
         {/* Tab 2: Movimientos / Auditoría */}
         {activeTab === "movimientos" && (
           <div className="space-y-4">
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 dark:bg-gray-800/80 text-gray-500 dark:text-gray-400 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200 dark:border-gray-700">
+                <thead className="bg-zinc-50 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-extrabold uppercase text-[10px] font-mono tracking-wider border-b border-zinc-200 dark:border-zinc-800">
                   <tr>
                     <th className="p-3.5">Fecha & Hora</th>
                     <th className="p-3.5">Insumo</th>
@@ -511,25 +511,25 @@ export const InsumosStockView: React.FC = () => {
                     <th className="p-3.5">Registrado Por</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 font-medium">
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium">
                   {stockMovements.map(mov => {
                     const isPositive = mov.quantity > 0;
                     return (
-                      <tr key={mov.id} className="hover:bg-slate-50/80 dark:hover:bg-gray-800/50">
-                        <td className="p-3.5 text-gray-500 font-mono text-[11px]">
+                      <tr key={mov.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors">
+                        <td className="p-3.5 text-zinc-500 font-mono text-[11px]">
                           {mov.timestamp}
                         </td>
-                        <td className="p-3.5 font-bold text-gray-900 dark:text-gray-100">
+                        <td className="p-3.5 font-bold text-[#212121] dark:text-[#ECECEC]">
                           {mov.ingredientName}
                         </td>
                         <td className="p-3.5">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${
+                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
                               mov.type === "INGRESO_PROVEEDOR"
-                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                                 : mov.type === "VENTA_PEDIDO"
-                                ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300"
-                                : "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-300"
+                                ? "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20"
+                                : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
                             }`}
                           >
                             {mov.type.replace("_", " ")}
@@ -544,7 +544,7 @@ export const InsumosStockView: React.FC = () => {
                         >
                           {isPositive ? `+${mov.quantity}` : mov.quantity} {mov.unit}
                         </td>
-                        <td className="p-3.5 text-gray-600 dark:text-gray-300 text-[11px]">
+                        <td className="p-3.5 text-zinc-600 dark:text-zinc-300 text-[11px]">
                           {mov.reason}
                           {mov.orderId && (
                             <span className="ml-1 text-[#FF3F1A] font-mono font-bold">
@@ -552,7 +552,7 @@ export const InsumosStockView: React.FC = () => {
                             </span>
                           )}
                         </td>
-                        <td className="p-3.5 text-gray-500 text-[11px]">
+                        <td className="p-3.5 text-zinc-500 font-mono text-[11px]">
                           {mov.registeredBy}
                         </td>
                       </tr>
@@ -568,13 +568,13 @@ export const InsumosStockView: React.FC = () => {
       {/* Create / Edit Insumo Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-slate-100 dark:border-[#374151] flex items-center justify-between bg-slate-50/70 dark:bg-gray-800/50">
+          <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/70 dark:bg-zinc-900/50">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#FF3F1A] text-white flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-[#190088] text-white flex items-center justify-center">
                   <Package className="w-4 h-4" />
                 </div>
-                <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                <h3 className="text-sm font-bold text-[#212121] dark:text-[#ECECEC]">
                   {editingIngredient ? "Editar Insumo" : "Nuevo Insumo / Materia Prima"}
                 </h3>
               </div>
@@ -582,7 +582,7 @@ export const InsumosStockView: React.FC = () => {
                 variant="ghost"
                 intent="insumos.modal.close"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 p-0 rounded-xl text-gray-400"
+                className="w-8 h-8 p-0 rounded-xl text-zinc-400 hover:text-zinc-600"
               >
                 <X className="w-4 h-4" />
               </Button>
