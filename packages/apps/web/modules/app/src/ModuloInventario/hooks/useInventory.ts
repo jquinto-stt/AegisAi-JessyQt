@@ -6,6 +6,7 @@ import {
   StockLocation,
   Supplier,
   PurchaseOrder,
+  PurchaseOrderStatus,
   BuildOrder,
 } from "../types/inventory.types";
 import { inventoryService } from "../services/inventoryService";
@@ -203,8 +204,35 @@ export function useInventory() {
     }
   };
 
+  const createStockLocation = async (
+    locData: Omit<StockLocation, "id" | "itemsCount"> & { id?: string }
+  ) => {
+    try {
+      setError(null);
+      return await inventoryService.createStockLocation(locData);
+    } catch (err: any) {
+      setError(err?.message || "Error al crear bodega");
+      throw err;
+    }
+  };
+
+  const createSupplier = async (
+    supData: Omit<Supplier, "id"> & { id?: string }
+  ) => {
+    try {
+      setError(null);
+      return await inventoryService.createSupplier(supData);
+    } catch (err: any) {
+      setError(err?.message || "Error al crear proveedor");
+      throw err;
+    }
+  };
+
   const createPurchaseOrder = async (
-    poData: Omit<PurchaseOrder, "id" | "orderNumber" | "status" | "issueDate">
+    poData: Omit<PurchaseOrder, "id" | "orderNumber" | "status" | "issueDate"> & {
+      status?: PurchaseOrderStatus;
+      autoReceive?: boolean;
+    }
   ) => {
     try {
       setError(null);
@@ -271,6 +299,8 @@ export function useInventory() {
     registerStockMovement,
     registerStockCount,
     registerStockTransfer,
+    createStockLocation,
+    createSupplier,
     createPurchaseOrder,
     receivePurchaseOrder,
     createBuildOrder,

@@ -12,7 +12,6 @@ import {
   MessageSquare,
   Boxes,
   Truck,
-  Hammer,
   Bookmark,
   Calendar,
   Clock,
@@ -644,17 +643,6 @@ function Sidebar({
                 isMobile={isMobile}
               />
               <NavItem
-                icon={<Hammer className="w-4 h-4" />}
-                label="Combos & Recetas"
-                active={activeModule === "inventarios" && inventarioTab === "manufacturing"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("manufacturing");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
                 icon={<Activity className="w-4 h-4" />}
                 label="Historial de Movimientos"
                 active={activeModule === "inventarios" && inventarioTab === "kardex"}
@@ -1163,8 +1151,6 @@ export default function App() {
                       ? "Bodegas & Sucursales"
                       : inventarioTab === "purchasing"
                       ? "Compras & Facturas"
-                      : inventarioTab === "manufacturing"
-                      ? "Combos & Recetas"
                       : inventarioTab === "kardex"
                       ? "Historial de Movimientos"
                       : "Productos & Servicios"

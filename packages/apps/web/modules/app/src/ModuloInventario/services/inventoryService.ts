@@ -175,6 +175,24 @@ class InventoryService {
     });
   }
 
+  public async createStockLocation(
+    data: Omit<StockLocation, "id" | "itemsCount"> & { id?: string }
+  ): Promise<StockLocation> {
+    const newLocation: StockLocation = {
+      id: data.id || `loc-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      name: data.name.trim(),
+      code: data.code?.trim() || `BOD-${Math.floor(100 + Math.random() * 900)}`,
+      description: data.description || "",
+      parentLocationId: data.parentLocationId || null,
+      itemsCount: 0,
+    };
+
+    this.locations.push(newLocation);
+    this.persistLocations();
+    this.notify();
+    return newLocation;
+  }
+
   public async getProductById(id: string): Promise<InventoryProduct | null> {
     const product = this.products.find((p) => p.id === id);
     return product ? { ...product } : null;
@@ -505,25 +523,93 @@ class InventoryService {
     return new Promise((resolve) => resolve([...this.suppliers]));
   }
 
+  public async createSupplier(
+    data: Omit<Supplier, "id"> & { id?: string }
+  ): Promise<Supplier> {
+    const newSupplier: Supplier = {
+      id: data.id || `sup-${Date.now()}`,
+      name: data.name.trim(),
+      taxId: data.taxId.trim(),
+      contactPerson: data.contactPerson.trim(),
+      email: data.email.trim(),
+      phone: data.phone.trim(),
+      leadTimeDays: Number(data.leadTimeDays || 3),
+      rating: data.rating || 5,
+    };
+
+    this.suppliers.push(newSupplier);
+    this.persistSuppliers();
+    this.notify();
+    return newSupplier;
+  }
+
   public async getPurchaseOrders(): Promise<PurchaseOrder[]> {
     return new Promise((resolve) => resolve([...this.purchaseOrders]));
   }
 
   public async createPurchaseOrder(
-    poData: Omit<PurchaseOrder, "id" | "orderNumber" | "status" | "issueDate">
+    poData: Omit<PurchaseOrder, "id" | "orderNumber" | "status" | "issueDate"> & {
+      status?: PurchaseOrderStatus;
+      autoReceive?: boolean;
+    }
   ): Promise<PurchaseOrder> {
     const now = new Date().toISOString();
     const orderNumber = `OC-2026-${Math.floor(100 + Math.random() * 900)}`;
+    const shouldAutoReceive = poData.autoReceive || poData.status === "received";
+
     const newPO: PurchaseOrder = {
       ...poData,
       id: `po-${Date.now()}`,
       orderNumber,
-      status: "pending",
+      status: shouldAutoReceive ? "received" : (poData.status || "pending"),
       issueDate: now,
+      receivedDate: shouldAutoReceive ? now : undefined,
     };
 
     this.purchaseOrders.unshift(newPO);
     this.persistPurchaseOrders();
+
+    if (shouldAutoReceive) {
+      // Inmediatamente actualizar stock de productos e insertar en Kardex
+      for (const item of newPO.items) {
+        const pIndex = this.products.findIndex((p) => p.id === item.productId);
+        if (pIndex !== -1) {
+          const product = this.products[pIndex];
+          const prevStock = product.stockActual;
+          const nextStock = prevStock + item.quantity;
+
+          this.products[pIndex] = {
+            ...product,
+            stockActual: Number(nextStock.toFixed(2)),
+            costPrice: item.unitPrice > 0 ? item.unitPrice : product.costPrice,
+            status: this.calculateStatus(nextStock, product.stockMinimo),
+            updatedAt: now,
+          };
+
+          const movement: StockMovement = {
+            id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+            productId: product.id,
+            productSku: product.sku,
+            productName: product.name,
+            type: "ENTRADA",
+            action: "STOCK_ADD",
+            quantity: item.quantity,
+            previousStock: prevStock,
+            newStock: nextStock,
+            toLocation: newPO.targetLocationName,
+            concept: `Ingreso Directo Factura Compra: ${newPO.orderNumber} (${newPO.supplierName})`,
+            referenceDoc: newPO.orderNumber,
+            timestamp: now,
+            author: "Facturación Proveedor",
+            notes: `Ingreso automático por compra a ${newPO.supplierName}. Costo unitario: $${item.unitPrice}`,
+          };
+          this.movements.unshift(movement);
+        }
+      }
+      this.persistProducts();
+      this.persistMovements();
+    }
+
     this.notify();
     return newPO;
   }

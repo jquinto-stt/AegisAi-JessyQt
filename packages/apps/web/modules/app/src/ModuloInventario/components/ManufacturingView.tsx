@@ -11,7 +11,6 @@ import {
   Hammer,
 } from "lucide-react";
 import { BuildOrder, InventoryProduct, StockLocation } from "../types/inventory.types";
-import { NectoBanner } from "@/compositions/pedidos/shared/NectoBanner";
 import { Button } from "@/elements";
 
 interface ManufacturingViewProps {
@@ -61,14 +60,36 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
     }
   };
 
+  const pendingBuilds = buildOrders.filter((bo) => bo.status === "pending").length;
+  const completedBuilds = buildOrders.filter((bo) => bo.status === "completed").length;
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 animate-fade-in max-w-7xl mx-auto">
-      {/* Official Clean Necto Banner */}
-      <NectoBanner
-        icon={<Hammer className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Combos, Kits & Recetas"
-        description="Armado de combos comerciales, paquetes y recetas con deducción automática de insumos en inventario."
-      />
+    <div className="p-4 sm:p-6 space-y-4 animate-fade-in max-w-7xl mx-auto">
+      {/* ── 1. Minimalist Manufacturing Overview Strip (Zero Clutter) ── */}
+      <div className="bg-white dark:bg-[#151518] rounded-2xl p-3 sm:px-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4 sm:gap-6 divide-x divide-zinc-200 dark:divide-zinc-800 text-xs overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Total Kits Compuestos:</span>
+            <span className="font-mono font-black text-sm text-zinc-900 dark:text-white">
+              {buildOrders.length}
+            </span>
+          </div>
+
+          <div className="pl-4 sm:pl-6 flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Pendientes de Armado:</span>
+            <span className="font-mono font-black text-sm text-amber-600 dark:text-amber-400">
+              {pendingBuilds}
+            </span>
+          </div>
+
+          <div className="pl-4 sm:pl-6 flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Armados Completados:</span>
+            <span className="font-mono font-black text-sm text-emerald-600 dark:text-emerald-400">
+              {completedBuilds}
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Filter Toolbar */}
       <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between gap-3 flex-wrap">
@@ -82,7 +103,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
                 : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/60 hover:text-[#190088] dark:hover:text-[#97D6DF] hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
             }`}
           >
-            Todas ({buildOrders.length})
+            Todos ({buildOrders.length})
           </button>
           <button
             type="button"
@@ -114,7 +135,7 @@ export const ManufacturingView: React.FC<ManufacturingViewProps> = ({
         <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 p-12 text-center text-zinc-400 space-y-2">
           <Boxes className="w-12 h-12 mx-auto text-zinc-300 dark:text-zinc-600" />
           <p className="font-bold text-base text-zinc-700 dark:text-zinc-200">
-            No hay órdenes de ensamble con el filtro seleccionado
+            No hay kits ni órdenes de armado con el filtro seleccionado
           </p>
         </div>
       ) : (

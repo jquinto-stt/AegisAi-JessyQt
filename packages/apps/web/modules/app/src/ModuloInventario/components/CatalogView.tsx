@@ -26,6 +26,7 @@ import {
   SlidersHorizontal,
   TrendingUp,
   Percent,
+  Building2,
 } from "lucide-react";
 import {
   InventoryProduct,
@@ -34,7 +35,6 @@ import {
   ProductType,
   StockLocation,
 } from "../types/inventory.types";
-import { NectoBanner } from "@/compositions/pedidos/shared/NectoBanner";
 import { Button, SearchInput, Badge } from "@/elements";
 
 interface CatalogViewProps {
@@ -73,7 +73,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   onViewHistory,
   onResetDefaults,
 }) => {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
   // Metrics summary
   const totalSKUs = products.length;
@@ -116,157 +116,177 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     : 0;
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
-      {/* Official Clean Necto Commercial Banner */}
-      <NectoBanner
-        icon={<Package className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Productos & Servicios"
-        description="Catálogo digital estilo Alegra: precios comerciales, costos unitarios, márgenes de rentabilidad y stock por bodega."
-      />
-
-      {/* Commercial Summary Cards (Alegra Style) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
-              Valor en Inventario
+    <div className="p-4 sm:p-6 space-y-4 animate-fade-in">
+      {/* ── 1. Minimalist Financial & Stock Overview Strip (Zero Clutter) ── */}
+      <div className="bg-white dark:bg-[#151518] rounded-2xl p-3 sm:px-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4 sm:gap-6 divide-x divide-zinc-200 dark:divide-zinc-800 text-xs overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Valor Inventario:</span>
+            <span className="font-mono font-black text-sm text-zinc-900 dark:text-white">
+              ${totalCostValue.toLocaleString("es-CO")}
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
-            </div>
           </div>
-          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
-            ${totalCostValue.toLocaleString("es-CO")}
-          </p>
-          <span className="text-[10px] text-zinc-400 font-mono">Costo total acumulado</span>
+
+          <div className="pl-4 sm:pl-6 flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Venta Proyectada:</span>
+            <span className="font-mono font-black text-sm text-emerald-600 dark:text-emerald-400">
+              ${totalSaleValue.toLocaleString("es-CO")}
+            </span>
+          </div>
+
+          <div className="pl-4 sm:pl-6 flex items-baseline gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Margen Prom:</span>
+            <span className="font-mono font-bold text-xs text-[#FF3F1A]">
+              +{avgMargin}%
+            </span>
+          </div>
+
+          <div className="pl-4 sm:pl-6 flex items-center gap-2 flex-none">
+            <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Alertas:</span>
+            {lowStockCount > 0 ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-mono">
+                <AlertTriangle className="w-3 h-3" />
+                {lowStockCount} por reabastecer
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <CheckCircle2 className="w-3 h-3" /> Todo al día
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
-              Proyección de Ventas
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
-            ${totalSaleValue.toLocaleString("es-CO")}
-          </p>
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">A valor de venta</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
-              Margen Promedio
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center">
-              <Percent className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
-            +{avgMargin}%
-          </p>
-          <span className="text-[10px] text-zinc-400 font-mono">Rentabilidad comercial</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
-              Por Reabastecer
-            </span>
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${lowStockCount > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"}`}>
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-lg sm:text-xl font-black font-mono text-zinc-900 dark:text-white mt-2">
-            {lowStockCount} {lowStockCount === 1 ? "ítem" : "ítems"}
-          </p>
-          <span className={`text-[10px] font-medium ${lowStockCount > 0 ? "text-amber-600 dark:text-amber-400 font-bold" : "text-zinc-400"}`}>
-            {lowStockCount > 0 ? "Bajo el umbral mínimo" : "Todo el stock en orden"}
-          </span>
-        </div>
+        <Button
+          variant="primary"
+          onClick={onNewProduct}
+          className="flex items-center gap-1.5 text-xs font-bold whitespace-nowrap shadow-2xs flex-none"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Nuevo Ítem</span>
+        </Button>
       </div>
 
-      {/* Clean Category Filter Pills & Search Bar */}
-      <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
-          <button
-            type="button"
-            onClick={() => setFilters((p) => ({ ...p, category: "all" }))}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex-none ${
-              filters.category === "all"
-                ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/60 hover:text-[#190088] dark:hover:text-[#97D6DF] hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
-            }`}
-          >
-            Todos ({products.length})
-          </button>
-
-          {categories.map((cat) => {
-            const count = products.filter((p) => p.category === cat).length;
-            const isSelected = filters.category === cat;
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setFilters((p) => ({ ...p, category: cat }))}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex-none ${
-                  isSelected
-                    ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                    : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border border-zinc-200/80 dark:border-zinc-700/60 hover:text-[#190088] dark:hover:text-[#97D6DF] hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
-                }`}
-              >
-                {cat} ({count})
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Right Search and Actions */}
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-          <div className="w-full sm:w-64">
+      {/* ── 2. Clean Unified Filter Toolbar (Live Search + Warehouse + Category + Stock Status + View Toggle) ── */}
+      <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
+          {/* Live Search */}
+          <div className="flex-1 min-w-[200px] sm:min-w-[260px]">
             <SearchInput
+              intent="catalog.search"
               value={filters.searchQuery}
               onChange={(e) => setFilters((p) => ({ ...p, searchQuery: e.target.value }))}
               onClear={() => setFilters((p) => ({ ...p, searchQuery: "" }))}
-              placeholder="Buscar producto o SKU..."
+              placeholder="Buscar ítem o SKU..."
             />
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl">
+          {/* Warehouse Dropdown */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 text-xs text-zinc-700 dark:text-zinc-200 flex-none">
+            <Building2 className="w-3.5 h-3.5 text-zinc-400 flex-none" />
+            <select
+              value={filters.locationId || "all"}
+              onChange={(e) => setFilters((p) => ({ ...p, locationId: e.target.value }))}
+              className="bg-transparent border-none text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer pr-1"
+            >
+              <option value="all">Todas las Bodegas</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id} className="dark:bg-[#18181B]">
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category Dropdown */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 text-xs text-zinc-700 dark:text-zinc-200 flex-none">
+            <Layers className="w-3.5 h-3.5 text-zinc-400 flex-none" />
+            <select
+              value={filters.category || "all"}
+              onChange={(e) => setFilters((p) => ({ ...p, category: e.target.value }))}
+              className="bg-transparent border-none text-xs font-semibold text-zinc-800 dark:text-zinc-200 outline-none cursor-pointer pr-1"
+            >
+              <option value="all">Todas las Categorías</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat} className="dark:bg-[#18181B]">
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 justify-between sm:justify-end flex-wrap sm:flex-nowrap">
+          {/* Segmented Stock Status Filter */}
+          <div className="flex items-center p-0.5 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl text-xs">
             <button
               type="button"
-              onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                viewMode === "grid" ? "bg-[#190088] text-white shadow-2xs font-bold" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              onClick={() => setFilters((p) => ({ ...p, status: "all" }))}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                !filters.status || filters.status === "all"
+                  ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
               }`}
-              title="Vista en Cuadrícula"
             >
-              <LayoutGrid className="w-4 h-4" />
+              Todos
             </button>
+            <button
+              type="button"
+              onClick={() => setFilters((p) => ({ ...p, status: "active" }))}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                filters.status === "active"
+                  ? "bg-emerald-500 text-white font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400"
+              }`}
+            >
+              Con stock
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilters((p) => ({ ...p, status: "low_stock" }))}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                filters.status === "low_stock"
+                  ? "bg-amber-500 text-white font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-amber-600 dark:hover:text-amber-400"
+              }`}
+            >
+              Stock bajo
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilters((p) => ({ ...p, status: "out_of_stock" }))}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                filters.status === "out_of_stock"
+                  ? "bg-[#FF3F1A] text-white font-bold shadow-2xs"
+                  : "text-zinc-500 hover:text-[#FF3F1A]"
+              }`}
+            >
+              Agotados
+            </button>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 p-1 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200/80 dark:border-zinc-700/60 rounded-xl">
             <button
               type="button"
               onClick={() => setViewMode("list")}
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 viewMode === "list" ? "bg-[#190088] text-white shadow-2xs font-bold" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
               }`}
-              title="Vista en Lista"
+              title="Vista Tabla"
             >
-              <List className="w-4 h-4" />
+              <List className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === "grid" ? "bg-[#190088] text-white shadow-2xs font-bold" : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              }`}
+              title="Vista Tarjetas"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          <Button
-            variant="primary"
-            onClick={onNewProduct}
-            className="flex items-center gap-2 text-xs font-bold whitespace-nowrap shadow-2xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Producto</span>
-          </Button>
         </div>
       </div>
 
@@ -413,96 +433,191 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           })}
         </div>
       ) : (
-        /* ── List View (Clean Rows with Product Photo Thumbnail) ── */
-        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 p-3 sm:p-4 shadow-2xs">
-          <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {filteredProducts.map((product) => {
-              const location = locations.find((l) => l.id === product.locationId);
+        /* ── Zero-Clutter High-Density Inventory Table ── */
+        <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/60 text-zinc-500 dark:text-zinc-400 font-mono uppercase text-[10px] tracking-wider select-none">
+                  <th className="py-2.5 px-4 font-bold">Ítem / Referencia</th>
+                  <th className="py-2.5 px-3 font-bold">Bodega</th>
+                  <th className="py-2.5 px-4 font-bold text-right">Precio & Rentabilidad</th>
+                  <th className="py-2.5 px-4 font-bold text-right">Stock & Nivel</th>
+                  <th className="py-2.5 px-4 font-bold text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                {filteredProducts.map((product) => {
+                  const location = locations.find((l) => l.id === product.locationId);
+                  const marginPct =
+                    product.salePrice > 0
+                      ? Math.round(((product.salePrice - product.costPrice) / product.salePrice) * 100)
+                      : 0;
 
-              return (
-                <div
-                  key={product.id}
-                  className="py-3 px-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40 rounded-xl transition-colors"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 flex items-center justify-center flex-none shadow-2xs">
-                      {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <span className="font-mono font-black text-sm text-zinc-400">
-                          {product.name.slice(0, 1).toUpperCase()}
+                  return (
+                    <tr
+                      key={product.id}
+                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors group"
+                    >
+                      {/* 1. Item Name, SKU & Thumbnail */}
+                      <td className="py-2.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 flex items-center justify-center flex-none shadow-2xs">
+                            {product.imageUrl ? (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <span className="font-mono font-black text-xs text-zinc-400">
+                                {product.name.slice(0, 2).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => onViewProductDetail(product)}
+                              className="font-bold text-xs text-zinc-900 dark:text-zinc-100 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors truncate text-left block cursor-pointer"
+                              title="Ver ficha completa"
+                            >
+                              {product.name}
+                            </button>
+                            <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-zinc-400 font-mono">
+                              <span className="font-semibold text-zinc-500 dark:text-zinc-400">
+                                {product.sku}
+                              </span>
+                              <span>•</span>
+                              <span className="text-zinc-500 dark:text-zinc-400">
+                                {product.category}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* 2. Warehouse / Location */}
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-300 font-medium text-[11px]">
+                          <Building2 className="w-3 h-3 text-zinc-400" />
+                          {location?.name || product.locationName || "Bodega Central"}
                         </span>
-                      )}
-                    </div>
-                    <div>
-                      <h4
-                        onClick={() => onViewProductDetail(product)}
-                        className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors cursor-pointer truncate"
-                      >
-                        {product.name}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-400">
-                        <span className="font-mono font-bold text-zinc-600 dark:text-zinc-300">
-                          {product.sku}
-                        </span>
-                        <span>•</span>
-                        <span>{product.category}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#FF3F1A]" />
-                          {location?.name || "Bodega Central"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                      </td>
 
-                  <div className="flex items-center gap-4 self-end sm:self-center flex-wrap sm:flex-nowrap">
-                    <div>
-                      {renderStatusBadge(product.status, product.stockActual, product.stockMinimo, product.unit)}
-                    </div>
+                      {/* 3. Sale Price, Cost & Margin Grouped */}
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                        <div className="font-mono font-bold text-xs text-zinc-900 dark:text-white">
+                          ${product.salePrice.toLocaleString("es-CO")}
+                        </div>
+                        <div className="flex items-center justify-end gap-1.5 mt-0.5 text-[10px] font-mono text-zinc-400">
+                          <span>Costo: ${product.costPrice.toLocaleString("es-CO")}</span>
+                          <span>•</span>
+                          <span
+                            className={`font-bold ${
+                              marginPct >= 30
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-amber-600 dark:text-amber-400"
+                            }`}
+                          >
+                            +{marginPct}%
+                          </span>
+                        </div>
+                      </td>
 
-                    <div className="text-right font-mono text-sm">
-                      <span className="text-[10px] text-zinc-400 block font-mono uppercase">Precio Venta</span>
-                      <strong className="font-black text-zinc-900 dark:text-white">
-                        ${product.salePrice.toLocaleString("es-CO")}
-                      </strong>
-                    </div>
+                      {/* 4. Stock & State Merged */}
+                      <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                        <div className="font-mono font-black text-xs text-zinc-900 dark:text-white">
+                          {product.stockActual} {product.unit}
+                        </div>
+                        <div className="mt-0.5">
+                          {product.status === "out_of_stock" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#FF3F1A] font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A]" />
+                              Agotado
+                            </span>
+                          ) : product.status === "low_stock" ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Bajo stock (Mín: {product.stockMinimo})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-400 font-mono">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Óptimo (Mín: {product.stockMinimo})
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => onOpenMovement(product, "ENTRADA")}
-                        className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-colors cursor-pointer"
-                        title="Entrada de Stock"
-                      >
-                        <ArrowDownLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onOpenMovement(product, "SALIDA")}
-                        className="p-2 rounded-xl bg-[#FF3F1A]/10 hover:bg-[#FF3F1A]/20 text-[#FF3F1A] border border-[#FF3F1A]/20 text-xs font-bold transition-colors cursor-pointer"
-                        title="Salida de Stock"
-                      >
-                        <ArrowUpRight className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onViewProductDetail(product)}
-                        className="p-2 rounded-xl bg-[#190088]/10 hover:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 text-xs font-bold transition-colors cursor-pointer"
-                        title="Ver Ficha"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      {/* 5. Clean Contextual Actions */}
+                      <td className="py-2.5 px-4 whitespace-nowrap text-center">
+                        <div className="inline-flex items-center gap-1 opacity-75 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => onOpenMovement(product, "ENTRADA")}
+                            className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Entrada rápida"
+                          >
+                            <ArrowDownLeft className="w-3 h-3" />
+                            <span>Entrada</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenMovement(product, "SALIDA")}
+                            className="px-2 py-1 rounded-lg bg-[#FF3F1A]/10 hover:bg-[#FF3F1A]/20 text-[#FF3F1A] border border-[#FF3F1A]/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Salida rápida"
+                          >
+                            <ArrowUpRight className="w-3 h-3" />
+                            <span>Salida</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onViewHistory(product)}
+                            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            title="Ver Kardex"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onEditProduct(product)}
+                            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            title="Editar ítem"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteProduct(product.id)}
+                            className="p-1 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                            title="Eliminar ítem"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer Count (Minimalist) */}
+          <div className="py-2 px-4 bg-zinc-50/80 dark:bg-zinc-900/60 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[11px] text-zinc-500 font-mono">
+            <span>
+              <strong>{filteredProducts.length}</strong> de <strong>{products.length}</strong> ítems
+            </span>
+            <div className="flex items-center gap-4">
+              <span>
+                Costo: <strong>${filteredProducts.reduce((acc, p) => acc + p.costPrice * p.stockActual, 0).toLocaleString("es-CO")}</strong>
+              </span>
+              <span>
+                Venta: <strong>${filteredProducts.reduce((acc, p) => acc + p.salePrice * p.stockActual, 0).toLocaleString("es-CO")}</strong>
+              </span>
+            </div>
           </div>
         </div>
       )}

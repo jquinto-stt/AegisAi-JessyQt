@@ -5,15 +5,16 @@ import { CatalogView } from "./components/CatalogView";
 import { KardexView } from "./components/KardexView";
 import { StockLocationsView } from "./components/StockLocationsView";
 import { PurchasingView } from "./components/PurchasingView";
-import { ManufacturingView } from "./components/ManufacturingView";
 import { ProductFormModal } from "./components/ProductFormModal";
 import { StockMovementModal } from "./components/StockMovementModal";
 import { StockCountModal } from "./components/StockCountModal";
 import { StockTransferModal } from "./components/StockTransferModal";
 import { PartDetailModal } from "./components/PartDetailModal";
-import { Boxes, Building2, Truck, Hammer, Activity, ArrowDownLeft } from "lucide-react";
+import { LocationFormModal } from "./components/LocationFormModal";
+import { PurchaseOrderModal } from "./components/PurchaseOrderModal";
+import { Boxes, Building2, Truck, Activity, ArrowDownLeft } from "lucide-react";
 
-export type InventoryTab = "catalog" | "locations" | "kardex" | "purchasing" | "manufacturing";
+export type InventoryTab = "catalog" | "locations" | "kardex" | "purchasing";
 
 export interface ModuloInventarioProps {
   initialTab?: InventoryTab;
@@ -43,7 +44,6 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
     locations,
     suppliers,
     purchaseOrders,
-    buildOrders,
     dynamicColumns,
     categories,
     metrics,
@@ -56,8 +56,10 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
     registerStockMovement,
     registerStockCount,
     registerStockTransfer,
+    createStockLocation,
+    createSupplier,
+    createPurchaseOrder,
     receivePurchaseOrder,
-    executeBuildOrder,
     resetToDefaults,
   } = useInventory();
 
@@ -77,6 +79,9 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<InventoryProduct | null>(null);
+
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isPOModalOpen, setIsPOModalOpen] = useState(false);
 
   const [kardexFilterProduct, setKardexFilterProduct] = useState<string | null>(null);
 
@@ -127,7 +132,6 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
     { id: "catalog", label: "Productos & Servicios", icon: <Boxes className="w-3.5 h-3.5 flex-none" />, count: products.length },
     { id: "locations", label: "Bodegas & Sucursales", icon: <Building2 className="w-3.5 h-3.5 flex-none" />, count: locations.length },
     { id: "purchasing", label: "Compras & Facturas", icon: <Truck className="w-3.5 h-3.5 flex-none" />, count: purchaseOrders.filter(po => po.status === "pending").length },
-    { id: "manufacturing", label: "Combos & Recetas", icon: <Hammer className="w-3.5 h-3.5 flex-none" />, count: buildOrders.filter(bo => bo.status === "pending").length },
     { id: "kardex", label: "Historial de Movimientos", icon: <Activity className="w-3.5 h-3.5 flex-none" />, count: movements.length },
   ];
 
@@ -207,6 +211,12 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           onOpenCount={handleOpenCount}
           onOpenMovement={handleOpenMovement}
           onSelectProduct={handleViewProductDetail}
+          onOpenNewLocation={() => setIsLocationModalOpen(true)}
+          onNewProductForLocation={(locId) => {
+            setEditingProduct(null);
+            setIsProductModalOpen(true);
+          }}
+          onViewProductHistory={handleViewProductHistory}
         />
       )}
 
@@ -217,15 +227,8 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           locations={locations}
           products={products}
           onReceiveOrder={receivePurchaseOrder}
-        />
-      )}
-
-      {activeTab === "manufacturing" && (
-        <ManufacturingView
-          buildOrders={buildOrders}
-          products={products}
-          locations={locations}
-          onExecuteBuild={executeBuildOrder}
+          onOpenNewPurchaseOrder={() => setIsPOModalOpen(true)}
+          onOpenNewSupplier={() => setIsPOModalOpen(true)}
         />
       )}
 
@@ -293,6 +296,25 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           setIsDetailModalOpen(false);
           if (detailProduct) handleOpenEditProduct(detailProduct);
         }}
+      />
+
+      {/* New Location Modal */}
+      <LocationFormModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSave={createStockLocation}
+        existingLocations={locations}
+      />
+
+      {/* New Purchase Order / Invoice Modal */}
+      <PurchaseOrderModal
+        isOpen={isPOModalOpen}
+        onClose={() => setIsPOModalOpen(false)}
+        suppliers={suppliers}
+        locations={locations}
+        products={products}
+        onSubmit={createPurchaseOrder}
+        onCreateSupplier={createSupplier}
       />
     </div>
   );

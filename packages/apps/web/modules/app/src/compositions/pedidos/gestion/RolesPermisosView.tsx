@@ -579,7 +579,8 @@ export const RolesPermisosView: React.FC = () => {
             intent="roles.search"
             placeholder="Buscar rol..."
             value={searchRoleQuery}
-            onValueChange={setSearchRoleQuery}
+            onChange={e => setSearchRoleQuery(e.target.value)}
+            onClear={() => setSearchRoleQuery("")}
             className="w-full text-xs"
           />
 
