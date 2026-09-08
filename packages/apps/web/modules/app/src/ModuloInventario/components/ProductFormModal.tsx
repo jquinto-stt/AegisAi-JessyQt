@@ -1,31 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
+  ArrowLeft,
+  Upload,
+  ScanBarcode,
+  Info,
+  Crown,
+  QrCode,
+  ChevronDown,
   X,
+  MessageCircle,
   Plus,
   Trash2,
-  Sliders,
-  Sparkles,
-  Layers,
-  Box,
-  Clock,
-  Shirt,
-  Cpu,
-  Activity,
-  CheckCircle2,
   AlertCircle,
-  MapPin,
-  Truck,
-  Camera,
-  Image as ImageIcon,
 } from "lucide-react";
 import {
   InventoryProduct,
-  ProductType,
   UnitOfMeasure,
-  DynamicFieldDefinition,
   StockLocation,
 } from "../types/inventory.types";
-import { PRODUCT_TYPE_TEMPLATES } from "../mock/inventoryMockData";
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -35,6 +27,23 @@ interface ProductFormModalProps {
   onSave: (product: Partial<InventoryProduct> & { name: string; sku: string }) => Promise<void>;
 }
 
+export type ProductFormTab = "basic" | "variants" | "measurements";
+
+interface VariantOption {
+  id: string;
+  name: string;
+  values: string[];
+}
+
+interface VariantItem {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  cost: number;
+  stock: number;
+}
+
 export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   isOpen,
   onClose,
@@ -42,27 +51,38 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   productToEdit,
   onSave,
 }) => {
-  // Fixed Core Fields
+  const [activeTab, setActiveTab] = useState<ProductFormTab>("basic");
+
+  // Common Form states
   const [sku, setSku] = useState("");
-  const [ipn, setIpn] = useState("");
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("General");
-  const [costPrice, setCostPrice] = useState<string>("0");
-  const [salePrice, setSalePrice] = useState<string>("0");
-  const [unit, setUnit] = useState<UnitOfMeasure>("UND");
   const [stockActual, setStockActual] = useState<string>("0");
   const [stockMinimo, setStockMinimo] = useState<string>("5");
-  const [locationId, setLocationId] = useState("");
-  const [supplier, setSupplier] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [notes, setNotes] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [salePrice, setSalePrice] = useState<string>("0");
+  const [costPrice, setCostPrice] = useState<string>("0");
 
-  // Dynamic Type & Dynamic Metadata
-  const [productType, setProductType] = useState<ProductType>("standard");
-  const [metadata, setMetadata] = useState<Record<string, any>>({});
-  const [customKey, setCustomKey] = useState("");
-  const [customVal, setCustomVal] = useState("");
+  // Additional info
+  const [category, setCategory] = useState("General");
+  const [showInCatalog, setShowInCatalog] = useState(true);
+  const [description, setDescription] = useState("");
+  const [taxRate, setTaxRate] = useState("none");
+  const [locationId, setLocationId] = useState("");
+
+  // Images state (up to 3)
+  const [images, setImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Variants state (for "Producto con variantes")
+  const [variantsList, setVariantsList] = useState<VariantOption[]>([]);
+  const [newOptionName, setNewOptionName] = useState("");
+  const [newOptionValue, setNewOptionValue] = useState("");
+  const [generatedVariants, setGeneratedVariants] = useState<VariantItem[]>([]);
+  const [isAddingOption, setIsAddingOption] = useState(false);
+
+  // Measurements state (for "Producto con medidas")
+  const [purchaseUnit, setPurchaseUnit] = useState("Unidad (Und)");
+  const [saleUnit, setSaleUnit] = useState("Unidad (Und)");
+  const [conversionFactor, setConversionFactor] = useState("1");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -70,102 +90,162 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   useEffect(() => {
     if (productToEdit) {
       setSku(productToEdit.sku || "");
-      setIpn(productToEdit.ipn || "");
       setName(productToEdit.name || "");
-      setCategory(productToEdit.category || "General");
-      setCostPrice(String(productToEdit.costPrice || 0));
-      setSalePrice(String(productToEdit.salePrice || 0));
-      setUnit(productToEdit.unit || "UND");
       setStockActual(String(productToEdit.stockActual || 0));
       setStockMinimo(String(productToEdit.stockMinimo || 5));
+      setSalePrice(String(productToEdit.salePrice || 0));
+      setCostPrice(String(productToEdit.costPrice || 0));
+      setCategory(productToEdit.category || "General");
+      setDescription(productToEdit.notes || "");
+      setShowInCatalog(true);
       setLocationId(productToEdit.locationId || locations[0]?.id || "loc-001");
-      setSupplier(productToEdit.supplier || "");
-      setBarcode(productToEdit.barcode || "");
-      setNotes(productToEdit.notes || "");
-      setImageUrl(productToEdit.imageUrl || "");
-      setProductType(productToEdit.productType || "standard");
-      setMetadata(productToEdit.metadata ? { ...productToEdit.metadata } : {});
+      setImages(productToEdit.imageUrl ? [productToEdit.imageUrl] : []);
+      if (productToEdit.metadata?.productMode) {
+        setActiveTab(productToEdit.metadata.productMode as ProductFormTab);
+      }
+      if (productToEdit.metadata?.purchaseUnit) {
+        setPurchaseUnit(productToEdit.metadata.purchaseUnit);
+      }
+      if (productToEdit.metadata?.saleUnit) {
+        setSaleUnit(productToEdit.metadata.saleUnit);
+      }
+      if (productToEdit.metadata?.variants) {
+        setVariantsList(productToEdit.metadata.variants);
+      }
     } else {
       setSku(`SKU-${Math.floor(1000 + Math.random() * 9000)}`);
-      setIpn(`IPN-${Math.floor(10000 + Math.random() * 90000)}`);
       setName("");
-      setCategory("General");
-      setCostPrice("0");
-      setSalePrice("0");
-      setUnit("UND");
       setStockActual("0");
       setStockMinimo("5");
+      setSalePrice("0");
+      setCostPrice("0");
+      setCategory("General");
+      setDescription("");
+      setShowInCatalog(true);
+      setTaxRate("none");
       setLocationId(locations[0]?.id || "loc-001");
-      setSupplier("");
-      setBarcode("");
-      setNotes("");
-      setImageUrl("");
-      setProductType("standard");
-      setMetadata({});
+      setImages([]);
+      setPurchaseUnit("Unidad (Und)");
+      setSaleUnit("Unidad (Und)");
+      setVariantsList([]);
+      setGeneratedVariants([]);
+      setActiveTab("basic");
     }
     setErrorMessage(null);
   }, [productToEdit, locations, isOpen]);
 
   if (!isOpen) return null;
 
-  const currentTemplate = PRODUCT_TYPE_TEMPLATES.find((t) => t.id === productType);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  const handleMetadataChange = (key: string, value: any) => {
-    setMetadata((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const handleRemoveMetadataField = (key: string) => {
-    setMetadata((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
+    Array.from(files).slice(0, 3 - images.length).forEach((f) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setImages((prev) => [...prev, event.target!.result as string].slice(0, 3));
+        }
+      };
+      reader.readAsDataURL(f);
     });
   };
 
-  const handleAddCustomMetadata = () => {
-    if (!customKey.trim()) return;
-    handleMetadataChange(customKey.trim(), customVal.trim());
-    setCustomKey("");
-    setCustomVal("");
+  const handleRemoveImage = (idx: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleAddVariantOption = () => {
+    if (!newOptionName.trim()) return;
+    const values = newOptionValue.split(",").map((v) => v.trim()).filter(Boolean);
+    const newOpt: VariantOption = {
+      id: `opt-${Date.now()}`,
+      name: newOptionName.trim(),
+      values: values.length > 0 ? values : ["Opción 1"],
+    };
+    const updated = [...variantsList, newOpt];
+    setVariantsList(updated);
+    setNewOptionName("");
+    setNewOptionValue("");
+    setIsAddingOption(false);
+    generateVariantCombinations(updated);
+  };
+
+  const generateVariantCombinations = (options: VariantOption[]) => {
+    if (options.length === 0) {
+      setGeneratedVariants([]);
+      return;
+    }
+    const allValues = options.map((o) => o.values);
+    const combinations = allValues.reduce<string[][]>(
+      (acc, curr) => acc.flatMap((a) => curr.map((b) => [...a, b])),
+      [[]]
+    );
+
+    const items: VariantItem[] = combinations.map((comb, i) => ({
+      id: `var-${Date.now()}-${i}`,
+      name: `${name || "Producto"} - ${comb.join(" / ")}`,
+      sku: `${sku || "SKU"}-${comb.map((c) => c.slice(0, 3).toUpperCase()).join("-")}`,
+      price: parseFloat(salePrice) || 0,
+      cost: parseFloat(costPrice) || 0,
+      stock: 10,
+    }));
+
+    setGeneratedVariants(items);
+  };
+
+  // Helper unit label extractor
+  const getUnitAbbr = (unitStr: string) => {
+    if (unitStr.includes("(") && unitStr.includes(")")) {
+      return unitStr.split("(")[1].replace(")", "");
+    }
+    return unitStr.slice(0, 3);
+  };
+
+  const getUnitNameOnly = (unitStr: string) => {
+    if (unitStr.includes("(")) {
+      return unitStr.split("(")[0].trim();
+    }
+    return unitStr;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
-
-    if (!sku.trim()) {
-      setErrorMessage("El código SKU es obligatorio.");
-      return;
-    }
     if (!name.trim()) {
-      setErrorMessage("El nombre de la parte/producto es obligatorio.");
+      setErrorMessage("Por favor ingresa el nombre del producto.");
       return;
     }
 
     try {
       setIsSubmitting(true);
+      setErrorMessage(null);
+
       await onSave({
-        id: productToEdit ? productToEdit.id : undefined,
-        sku: sku.trim().toUpperCase(),
-        ipn: ipn.trim().toUpperCase() || undefined,
+        id: productToEdit?.id,
         name: name.trim(),
-        category: category.trim(),
-        productType,
-        costPrice: parseFloat(costPrice) || 0,
+        sku: (sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`).trim().toUpperCase(),
+        category,
         salePrice: parseFloat(salePrice) || 0,
-        unit,
-        stockActual: parseFloat(stockActual) || 0,
-        stockMinimo: parseFloat(stockMinimo) || 0,
-        locationId,
-        supplier: supplier.trim(),
-        barcode: barcode.trim(),
-        notes: notes.trim(),
-        imageUrl: imageUrl.trim() || undefined,
-        metadata,
+        costPrice: parseFloat(costPrice) || 0,
+        stockActual: parseInt(stockActual, 10) || 0,
+        stockMinimo: parseInt(stockMinimo, 10) || 5,
+        unit: (activeTab === "measurements" ? getUnitAbbr(purchaseUnit) : "UND") as UnitOfMeasure,
+        locationId: locationId || locations[0]?.id || "loc-001",
+        notes: description,
+        imageUrl: images[0] || "",
+        metadata: {
+          showInCatalog,
+          taxRate,
+          images,
+          productMode: activeTab,
+          purchaseUnit,
+          saleUnit,
+          conversionFactor,
+          variants: variantsList,
+          generatedVariants,
+        },
       });
+
       onClose();
     } catch (err: any) {
       setErrorMessage(err?.message || "Error al guardar el producto.");
@@ -174,451 +254,723 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
-  const renderTypeIcon = (type: ProductType) => {
-    switch (type) {
-      case "perishable":
-        return <Clock className="w-4 h-4 text-amber-500" />;
-      case "apparel":
-        return <Shirt className="w-4 h-4 text-purple-500" />;
-      case "electronics":
-        return <Cpu className="w-4 h-4 text-cyan-500" />;
-      case "pharma":
-        return <Activity className="w-4 h-4 text-emerald-500" />;
-      default:
-        return <Box className="w-4 h-4 text-zinc-500" />;
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div
-        className="relative w-full max-w-3xl bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[94vh] animate-scale-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center font-bold">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-base sm:text-lg text-zinc-900 dark:text-white">
-                {productToEdit ? "Editar Producto o Servicio" : "Nuevo Producto o Servicio"}
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Parámetros comerciales + Foto + Bodega + Atributos Dinámicos
-              </p>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-50 dark:bg-[#09090b] text-slate-800 dark:text-slate-100 flex flex-col animate-fade-in">
+      {/* ── Top App Bar ── */}
+      <div className="bg-white dark:bg-[#121215] border-b border-slate-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            className="p-1.5 -ml-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Volver"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-base sm:text-lg font-bold text-[#0f172a] dark:text-white">
+            {productToEdit
+              ? "Editar producto"
+              : activeTab === "variants"
+              ? "Producto con variantes"
+              : activeTab === "measurements"
+              ? "Producto con medidas"
+              : "Producto básico"}
+          </h1>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* ── Main Container ── */}
+      <div className="max-w-6xl w-full mx-auto p-4 sm:p-6 flex-1 flex flex-col space-y-5">
+        {/* ── Subtabs Bar (Segmented selector) ── */}
+        <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-xl p-1 grid grid-cols-3 gap-1 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab("basic")}
+            className={`py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center ${
+              activeTab === "basic"
+                ? "bg-[#0f172a] dark:bg-white text-white dark:text-[#0f172a] shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Producto básico
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("variants")}
+            className={`py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center ${
+              activeTab === "variants"
+                ? "bg-[#0f172a] dark:bg-white text-white dark:text-[#0f172a] shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Producto con variantes
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("measurements")}
+            className={`py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer text-center ${
+              activeTab === "measurements"
+                ? "bg-[#0f172a] dark:bg-white text-white dark:text-[#0f172a] shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-800"
+            }`}
+          >
+            Producto con medidas
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1 scrollbar-thin">
-          {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 font-medium">
-              <AlertCircle className="w-4 h-4 flex-none" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {/* 1. Categoría y Template */}
-          <div className="space-y-2">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
-              1. Tipo de Producto & Plantilla
-            </label>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {PRODUCT_TYPE_TEMPLATES.map((tpl) => {
-                const isSelected = productType === tpl.id;
-                return (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => setProductType(tpl.id)}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                      isSelected
-                        ? "border-[#190088] bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] shadow-xs scale-[1.02] font-bold"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-zinc-600 dark:text-zinc-400 bg-zinc-50/50 dark:bg-zinc-900/40"
-                    }`}
-                  >
-                    <div className="mb-1.5">{renderTypeIcon(tpl.id)}</div>
-                    <span className="text-xs font-bold leading-tight">{tpl.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+        {errorMessage && (
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-2xl text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 flex-none" />
+            <span>{errorMessage}</span>
           </div>
+        )}
 
-          {/* 2. Fotografía del Producto (Estilo Alegra / Shopify) */}
-          <div className="space-y-2.5 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
-                <Camera className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                2. Fotografía del Producto
-              </label>
-              {imageUrl && (
-                <button
-                  type="button"
-                  onClick={() => setImageUrl("")}
-                  className="text-[11px] text-rose-500 hover:underline cursor-pointer flex items-center gap-1"
+        {/* ── Form Body: 2 Columns ── */}
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-5 flex-1">
+          {/* ════════ LEFT COLUMN ════════ */}
+          <div className="space-y-5">
+            {/* Card: Datos del producto */}
+            <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5">
+              <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                Datos del producto
+              </h2>
+
+              {/* 1. Image Upload Box (Blue Dash Box) */}
+              <div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-[#EFF6FF] dark:bg-blue-950/20 border-2 border-dashed border-blue-300 dark:border-blue-800/80 rounded-2xl p-6 text-center cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-950/40 transition-all flex flex-col items-center justify-center space-y-1.5"
                 >
-                  <Trash2 className="w-3 h-3" /> Quitar imagen
-                </button>
-              )}
-            </div>
+                  <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                    Carga hasta 3 imágenes
+                  </p>
+                  <p className="text-[11px] text-blue-500/80 dark:text-blue-400/70">
+                    Recomendamos: Tamaño de 500 x 500 px, formato PNG y peso máximo 2MB.
+                  </p>
+                </div>
 
-            <div className="p-3.5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row gap-4 items-center">
-              {/* Image Preview Box */}
-              <div className="w-24 h-24 rounded-xl overflow-hidden bg-zinc-200/80 dark:bg-zinc-800 border border-zinc-300/80 dark:border-zinc-700 flex items-center justify-center flex-none shadow-2xs relative">
-                {imageUrl ? (
-                  <img
-                    src={imageUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={() => setErrorMessage("No se pudo cargar la imagen desde la URL provista.")}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-zinc-400 text-center p-2">
-                    <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
-                    <span className="text-[9px] font-mono leading-tight font-bold">Sin Foto</span>
+                {images.length > 0 && (
+                  <div className="flex items-center gap-2.5 mt-3">
+                    {images.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-16 h-16 rounded-xl border border-slate-200 dark:border-zinc-700 overflow-hidden bg-slate-100 shadow-2xs group"
+                      >
+                        <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveImage(idx);
+                          }}
+                          className="absolute top-1 right-1 p-0.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* URL Input & Quick Presets */}
-              <div className="flex-1 space-y-2 w-full">
-                <div>
-                  <label className="block text-[11px] font-bold text-zinc-600 dark:text-zinc-400 mb-1">
-                    URL de la Imagen (Web o CDN)
+              {/* Código (In Basic & Measurements) */}
+              {activeTab !== "variants" && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Código
                   </label>
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/... o pega enlace directo"
-                    className="w-full text-xs font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088]"
-                  />
+                  <div className="relative">
+                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                      <ScanBarcode className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="text"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      placeholder="Escanea o escribe el código del producto"
+                      className="w-full pl-10 pr-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[10px] text-zinc-400 font-bold uppercase font-mono">Fotos Rápidas:</span>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl("https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80")}
-                    className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    🍔 Hamburguesa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl("https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80")}
-                    className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    👕 Ropa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl("https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&auto=format&fit=crop&q=80")}
-                    className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    📠 POS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageUrl("https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80")}
-                    className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[10px] font-bold text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 transition-colors cursor-pointer"
-                  >
-                    📦 Empaque
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Información Principal */}
-          <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
-              <Box className="w-3.5 h-3.5 text-[#190088]" />
-              3. Datos Comerciales & Bodega
-            </label>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Nombre del Producto o Servicio *
+              {/* Nombre del producto (Always in Left Column) */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Nombre del producto<span className="text-rose-500 ml-0.5">*</span>
                 </label>
                 <input
                   type="text"
-                  required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ej. Smash Burger Doble / Impresora Térmica POS"
-                  className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Código SKU *
-                </label>
-                <input
-                  type="text"
+                  placeholder="Camiseta, perfume, aretes..."
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
                   required
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value.toUpperCase())}
-                  placeholder="SKU-1001"
-                  className="w-full text-xs sm:text-sm font-mono font-bold rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Ref. / Código de Barras
-                </label>
-                <input
-                  type="text"
-                  value={ipn}
-                  onChange={(e) => setIpn(e.target.value.toUpperCase())}
-                  placeholder="IPN-00101"
-                  className="w-full text-xs sm:text-sm font-mono rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Bodega Asignada *
-                </label>
-                <select
-                  value={locationId}
-                  onChange={(e) => setLocationId(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                >
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>
-                      {loc.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Precio Costo ($)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={costPrice}
-                  onChange={(e) => setCostPrice(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-mono font-bold rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Precio Venta ($)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={salePrice}
-                  onChange={(e) => setSalePrice(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-mono font-bold rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  {productToEdit ? "Stock Actual" : "Stock Inicial"} ({unit})
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={stockActual}
-                  onChange={(e) => setStockActual(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-mono font-black rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Stock Mínimo (Alerta)
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0"
-                  value={stockMinimo}
-                  onChange={(e) => setStockMinimo(e.target.value)}
-                  className="w-full text-xs sm:text-sm font-mono rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                  Proveedor Habitual
-                </label>
-                <input
-                  type="text"
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                  placeholder="Ej. Distribuidora Central"
-                  className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3.5 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Parámetros Dinámicos */}
-          <div className="space-y-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-            <label className="text-xs font-extrabold uppercase tracking-wider text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 font-mono">
-              <Sliders className="w-3.5 h-3.5 text-emerald-500" />
-              3. Parámetros de la Plantilla ({currentTemplate?.label})
-            </label>
-
-            {currentTemplate && currentTemplate.fields.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800">
-                {currentTemplate.fields.map((field: DynamicFieldDefinition) => {
-                  const val = metadata[field.key] ?? "";
-                  return (
-                    <div key={field.key}>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-                        {field.label} {field.required && <span className="text-rose-500">*</span>}
-                      </label>
-
-                      {field.type === "select" ? (
-                        <select
-                          value={val}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
-                          className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                        >
-                          <option value="">-- Seleccionar --</option>
-                          {field.options?.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : field.type === "date" ? (
-                        <input
-                          type="date"
-                          value={val}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
-                          className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                        />
-                      ) : field.type === "number" ? (
-                        <input
-                          type="number"
-                          step="any"
-                          value={val}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="w-full text-xs sm:text-sm font-mono font-bold rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          value={val}
-                          onChange={(e) => handleMetadataChange(field.key, e.target.value)}
-                          placeholder={field.placeholder}
-                          className="w-full text-xs sm:text-sm font-medium rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088] focus:ring-1 focus:ring-[#190088]"
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Custom Extra Parameters */}
-            <div className="pt-2">
-              <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1.5">
-                Parámetros Adicionales Libres (Clave - Valor)
-              </label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Parámetro (ej. Grado, Calibre)"
-                  value={customKey}
-                  onChange={(e) => setCustomKey(e.target.value)}
-                  className="flex-1 text-xs rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088]"
-                />
-                <input
-                  type="text"
-                  placeholder="Valor"
-                  value={customVal}
-                  onChange={(e) => setCustomVal(e.target.value)}
-                  className="flex-1 text-xs rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-zinc-900 dark:text-white focus:outline-hidden focus:border-[#190088]"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddCustomMetadata}
-                  className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Agregar
-                </button>
-              </div>
-
-              {Object.keys(metadata).length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {Object.entries(metadata).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      <span className="font-bold text-zinc-500 font-mono">{k}:</span> {String(v)}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMetadataField(k)}
-                        className="text-zinc-400 hover:text-rose-500 cursor-pointer ml-1"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-zinc-200/80 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-xs font-black text-white transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
-            >
-              {isSubmitting ? (
-                "Guardando..."
-              ) : (
+              {/* ── IF MEASUREMENTS MODE: Exact Fields from Screenshot ── */}
+              {activeTab === "measurements" && (
                 <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  {productToEdit ? "Guardar Cambios" : "Crear Parte / Ítem"}
+                  {/* Unidad de compra */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Unidad de compra<span className="text-rose-500 ml-0.5">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={purchaseUnit}
+                        onChange={(e) => setPurchaseUnit(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="Unidad (Und)">Unidad (Und)</option>
+                        <option value="Kilogramo (Kg)">Kilogramo (Kg)</option>
+                        <option value="Gramo (g)">Gramo (g)</option>
+                        <option value="Metro (m)">Metro (m)</option>
+                        <option value="Centímetro (cm)">Centímetro (cm)</option>
+                        <option value="Litro (L)">Litro (L)</option>
+                        <option value="Mililitro (ml)">Mililitro (ml)</option>
+                        <option value="Caja (Cja)">Caja (Cja)</option>
+                        <option value="Paquete (Pqte)">Paquete (Pqte)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Cantidad disponible ({purchaseUnit}) & Cantidad mínima ({purchaseUnit}) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                        Cantidad disponible ({getUnitAbbr(purchaseUnit)})
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockActual}
+                        onChange={(e) => setStockActual(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                        <span>Cantidad mínima ({getUnitAbbr(purchaseUnit)})</span>
+                        <Info className="w-3.5 h-3.5 text-slate-400 flex-none" />
+                        <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500 flex-none" />
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockMinimo}
+                        onChange={(e) => setStockMinimo(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Costo de compra por {purchaseUnit} */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Costo de compra por {getUnitNameOnly(purchaseUnit)}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={costPrice}
+                        onChange={(e) => setCostPrice(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Unidad de venta */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Unidad de venta<span className="text-rose-500 ml-0.5">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={saleUnit}
+                        onChange={(e) => setSaleUnit(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="Unidad (Und)">Unidad (Und)</option>
+                        <option value="Kilogramo (Kg)">Kilogramo (Kg)</option>
+                        <option value="Gramo (g)">Gramo (g)</option>
+                        <option value="Metro (m)">Metro (m)</option>
+                        <option value="Centímetro (cm)">Centímetro (cm)</option>
+                        <option value="Litro (L)">Litro (L)</option>
+                        <option value="Mililitro (ml)">Mililitro (ml)</option>
+                        <option value="Porción (Porc)">Porción (Porc)</option>
+                        <option value="Docena (Doc)">Docena (Doc)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
                 </>
               )}
-            </button>
+
+              {/* ── IF BASIC MODE: Standard Quantity & Pricing ── */}
+              {activeTab === "basic" && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Cantidad disponible
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockActual}
+                        onChange={(e) => setStockActual(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <span>Cantidad mínima</span>
+                        <Info className="w-3.5 h-3.5 text-slate-400" />
+                        <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={stockMinimo}
+                        onChange={(e) => setStockMinimo(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Precio de venta<span className="text-rose-500 ml-0.5">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={salePrice}
+                        onChange={(e) => setSalePrice(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Costo de compra
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 font-mono">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={costPrice}
+                        onChange={(e) => setCostPrice(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* In Variants Mode: Información adicional and Impuestos placed below Datos del producto */}
+            {activeTab === "variants" && (
+              <>
+                <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Información adicional
+                  </h2>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Categoría
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="General">General</option>
+                        <option value="Ropa & Calzado">Ropa & Calzado</option>
+                        <option value="Alimentos & Bebidas">Alimentos & Bebidas</option>
+                        <option value="Electrónica & Tecnología">Electrónica & Tecnología</option>
+                        <option value="Accesorios">Accesorios</option>
+                        <option value="Repuestos">Repuestos</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-slate-300 flex-none">
+                        <QrCode className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-white">
+                          Mostrar producto en catálogo virtual
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Este producto será visible para tus clientes si compartes tu catálogo
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowInCatalog(!showInCatalog)}
+                      className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer flex-none ${
+                        showInCatalog ? "bg-emerald-600" : "bg-slate-300 dark:bg-zinc-700"
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                          showInCatalog ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Descripción
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={3}
+                      placeholder="Añadir una descripción ayudará a tus clientes a elegir más fácil"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Impuestos del producto
+                  </h2>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Impuesto base
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={taxRate}
+                        onChange={(e) => setTaxRate(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="none">Selecciona una opción</option>
+                        <option value="0">Exento (0%)</option>
+                        <option value="19">IVA General (19%)</option>
+                        <option value="5">IVA Reducido (5%)</option>
+                        <option value="8">Impuesto al Consumo (8%)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ════════ RIGHT COLUMN ════════ */}
+          <div className="space-y-5">
+            {activeTab === "variants" ? (
+              /* Variants Card */
+              <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                      Variantes
+                    </h2>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20">
+                      <Crown className="w-3 h-3 text-amber-500 fill-amber-500" />
+                      Funcionalidad premium
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Puedes agregar variantes de talla, tamaño, color, entre otros.
+                </p>
+
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingOption(true)}
+                    className="px-4 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    Agregar variante
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => window.open("https://wa.me/", "_blank")}
+                    className="px-4 py-2.5 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-zinc-700 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Necesito ayuda con variantes</span>
+                  </button>
+                </div>
+
+                {isAddingOption && (
+                  <div className="p-4 bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-700 rounded-2xl space-y-3 animate-fade-in">
+                    <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                      Nueva opción de variante
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">
+                          Nombre de la opción (Ej. Talla, Color)
+                        </label>
+                        <input
+                          type="text"
+                          value={newOptionName}
+                          onChange={(e) => setNewOptionName(e.target.value)}
+                          placeholder="Talla"
+                          className="w-full p-2 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-500 mb-1">
+                          Valores separados por coma (Ej. S, M, L)
+                        </label>
+                        <input
+                          type="text"
+                          value={newOptionValue}
+                          onChange={(e) => setNewOptionValue(e.target.value)}
+                          placeholder="S, M, L, XL"
+                          className="w-full p-2 bg-white dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingOption(false)}
+                        className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddVariantOption}
+                        className="px-3.5 py-1.5 bg-[#0f172a] text-white rounded-xl text-xs font-bold"
+                      >
+                        Guardar opción
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {variantsList.length > 0 && (
+                  <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <div className="flex flex-wrap gap-2">
+                      {variantsList.map((opt) => (
+                        <div
+                          key={opt.id}
+                          className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs flex items-center gap-2"
+                        >
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{opt.name}:</span>
+                          <span className="text-slate-500">{opt.values.join(", ")}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const filtered = variantsList.filter((o) => o.id !== opt.id);
+                              setVariantsList(filtered);
+                              generateVariantCombinations(filtered);
+                            }}
+                            className="text-slate-400 hover:text-rose-500 ml-1"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {generatedVariants.length > 0 && (
+                      <div className="rounded-xl border border-slate-200 dark:border-zinc-800 overflow-hidden text-xs">
+                        <table className="w-full text-left">
+                          <thead className="bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+                            <tr>
+                              <th className="p-2.5">Variante</th>
+                              <th className="p-2.5">SKU</th>
+                              <th className="p-2.5 text-right">Precio</th>
+                              <th className="p-2.5 text-right">Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                            {generatedVariants.map((item) => (
+                              <tr key={item.id}>
+                                <td className="p-2.5 font-medium">{item.name}</td>
+                                <td className="p-2.5 font-mono text-[11px] text-slate-500">{item.sku}</td>
+                                <td className="p-2.5 text-right font-mono">
+                                  ${item.price.toLocaleString("es-CO")}
+                                </td>
+                                <td className="p-2.5 text-right font-mono font-bold">{item.stock}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* In Basic & Measurements Modes: Right Column is Información adicional & Impuestos */
+              <>
+                <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-5">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Información adicional
+                  </h2>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Categoría
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="General">General</option>
+                        <option value="Ropa & Calzado">Ropa & Calzado</option>
+                        <option value="Alimentos & Bebidas">Alimentos & Bebidas</option>
+                        <option value="Electrónica & Tecnología">Electrónica & Tecnología</option>
+                        <option value="Accesorios">Accesorios</option>
+                        <option value="Repuestos">Repuestos</option>
+                        <option value="Velas & Hogar">Velas & Hogar</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-200/80 dark:bg-zinc-800 flex items-center justify-center text-slate-700 dark:text-slate-300 flex-none">
+                        <QrCode className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs text-slate-900 dark:text-white">
+                          Mostrar producto en catálogo virtual
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Este producto será visible para tus clientes si compartes tu catálogo
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowInCatalog(!showInCatalog)}
+                      className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer flex-none ${
+                        showInCatalog ? "bg-emerald-600" : "bg-slate-300 dark:bg-zinc-700"
+                      }`}
+                    >
+                      <div
+                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                          showInCatalog ? "translate-x-5" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Descripción
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={4}
+                      placeholder="Añadir una descripción ayudará a tus clientes a elegir más fácil"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-[#121215] border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-4">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Impuestos del producto
+                  </h2>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Impuesto base
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={taxRate}
+                        onChange={(e) => setTaxRate(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 cursor-pointer"
+                      >
+                        <option value="none">Selecciona una opción</option>
+                        <option value="0">Exento (0%)</option>
+                        <option value="19">IVA General (19%)</option>
+                        <option value="5">IVA Reducido (5%)</option>
+                        <option value="8">Impuesto al Consumo (8%)</option>
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </form>
+      </div>
+
+      {/* ── Fixed Bottom Actions Bar ── */}
+      <div className="bg-white dark:bg-[#121215] border-t border-slate-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-end sticky bottom-0 z-20 shadow-lg">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="px-6 py-2.5 bg-[#0f172a] hover:bg-[#1e293b] dark:bg-white dark:hover:bg-slate-200 text-white dark:text-[#0f172a] text-xs font-bold rounded-xl shadow-md transition-colors cursor-pointer"
+        >
+          {isSubmitting ? "Guardando..." : productToEdit ? "Guardar cambios" : "Crear producto"}
+        </button>
       </div>
     </div>
   );

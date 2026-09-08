@@ -41,6 +41,7 @@ import {
   USE_MOCK as PRODUCTS_USE_MOCK,
 } from "../../../api/products";
 import { toProductItem, toApiProduct } from "../adapters/productAdapter";
+import { inventoryService } from "@/ModuloInventario/services/inventoryService";
 
 interface PedidosContextType {
   orders: Pedido[];
@@ -648,6 +649,19 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const consumeStockForOrder = (order: Pedido) => {
+    // 1. Descuento unificado en el inventario maestro ERP (ModuloInventario / Kardex)
+    void inventoryService.consumeSaleOrder({
+      orderId: order.id,
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        quantity: item.quantity,
+      })),
+      channel: order.channel || "Comanda Digital",
+      author: "Motor de Ventas",
+    });
+
+    // 2. Descuento en recetas / insumos locales de cocina si aplica
     order.items.forEach(orderItem => {
       const product = products.find(p => p.id === orderItem.productId || p.name === orderItem.name);
       if (product && product.recipe && product.recipe.length > 0) {

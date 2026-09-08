@@ -21,12 +21,12 @@ import {
 } from "../mock/inventoryMockData";
 
 const STORAGE_KEYS = {
-  PRODUCTS: "modulo_inventario_products_v2",
-  MOVEMENTS: "modulo_inventario_movements_v2",
-  LOCATIONS: "modulo_inventario_locations_v2",
-  SUPPLIERS: "modulo_inventario_suppliers_v2",
-  PURCHASE_ORDERS: "modulo_inventario_po_v2",
-  BUILD_ORDERS: "modulo_inventario_bo_v2",
+  PRODUCTS: "modulo_inventario_products_v5",
+  MOVEMENTS: "modulo_inventario_movements_v5",
+  LOCATIONS: "modulo_inventario_locations_v5",
+  SUPPLIERS: "modulo_inventario_suppliers_v5",
+  PURCHASE_ORDERS: "modulo_inventario_po_v5",
+  BUILD_ORDERS: "modulo_inventario_bo_v5",
 };
 
 class InventoryService {
@@ -385,6 +385,76 @@ class InventoryService {
     this.persistMovements();
     this.notify();
     return { product: updatedProduct, movement };
+  }
+
+  /**
+   * Descuenta stock automáticamente tras una Venta (Comanda, POS o Canal Digital)
+   */
+  public async consumeSaleOrder(params: {
+    orderId: string;
+    items: Array<{ productId?: string; sku?: string; name: string; quantity: number }>;
+    channel?: string;
+    author?: string;
+  }): Promise<Array<{ product: InventoryProduct; movement: StockMovement }>> {
+    const { orderId, items, channel = "Venta Mostrador / Pedido", author = "Sistema de Ventas" } = params;
+    const results: Array<{ product: InventoryProduct; movement: StockMovement }> = [];
+    const now = new Date().toISOString();
+
+    for (const item of items) {
+      if (item.quantity <= 0) continue;
+
+      // Buscar por ID, SKU o Nombre (match insensible a mayúsculas)
+      const pIndex = this.products.findIndex(
+        (p) =>
+          (item.productId && p.id === item.productId) ||
+          (item.sku && p.sku.toLowerCase() === item.sku.toLowerCase()) ||
+          p.name.toLowerCase() === item.name.toLowerCase()
+      );
+
+      if (pIndex !== -1) {
+        const prod = this.products[pIndex];
+        const prevStock = prod.stockActual;
+        const newStock = Math.max(0, prevStock - item.quantity);
+
+        const updatedProduct: InventoryProduct = {
+          ...prod,
+          stockActual: Number(newStock.toFixed(2)),
+          status: this.calculateStatus(newStock, prod.stockMinimo),
+          updatedAt: now,
+        };
+
+        this.products[pIndex] = updatedProduct;
+
+        const movement: StockMovement = {
+          id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+          productId: prod.id,
+          productSku: prod.sku,
+          productName: prod.name,
+          type: "SALIDA",
+          action: "STOCK_REMOVE",
+          quantity: item.quantity,
+          previousStock: prevStock,
+          newStock,
+          fromLocation: prod.locationName,
+          concept: `Venta Automática Pedido #${orderId} (${channel})`,
+          referenceDoc: orderId,
+          timestamp: now,
+          author,
+          notes: `Salida de stock por comanda de venta procesada.`,
+        };
+
+        this.movements.unshift(movement);
+        results.push({ product: updatedProduct, movement });
+      }
+    }
+
+    if (results.length > 0) {
+      this.persistProducts();
+      this.persistMovements();
+      this.notify();
+    }
+
+    return results;
   }
 
   /**

@@ -200,6 +200,11 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           onViewProductDetail={handleViewProductDetail}
           onViewHistory={handleViewProductHistory}
           onResetDefaults={resetToDefaults}
+          onSaveBatch={async (batch) => {
+            for (const item of batch) {
+              await saveProduct(item);
+            }
+          }}
         />
       )}
 
