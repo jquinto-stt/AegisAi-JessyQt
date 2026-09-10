@@ -218,24 +218,29 @@ export default function OnboardingPage() {
   const handleFinish = () => {
     setIsDeploying(true);
     setTimeout(() => {
-      createBusiness({
-        name: companyName.trim() || "Mi Negocio",
-        slug: (companyName || "mi-negocio")
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, ""),
-        businessType: businessModel,
-        iconKey: activeArchetype.iconKey,
-        currency: currencyForCountry(country),
-        city: city ? `${city}, ${country}` : country,
-        channels: { whatsapp: isMetaConnected, web: true, pos: true },
-        kitchenBufferMin: 20,
-        specialty: activeArchetype.title,
-        activeModules: selectedModules,
-      });
-      navigate("/");
-    }, 1000);
+      try {
+        createBusiness({
+          name: companyName.trim() || "Mi Negocio",
+          slug: (companyName || "mi-negocio")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, ""),
+          businessType: businessModel,
+          iconKey: activeArchetype.iconKey,
+          currency: currencyForCountry(country),
+          city: city ? `${city}, ${country}` : country,
+          channels: { whatsapp: isMetaConnected, web: true, pos: true },
+          kitchenBufferMin: 20,
+          specialty: activeArchetype.title,
+          activeModules: selectedModules,
+        });
+        navigate("/");
+      } catch (err) {
+        console.error("Error creating business space:", err);
+        setIsDeploying(false);
+      }
+    }, 600);
   };
 
   const canProceedStep1 = companyName.trim().length >= 2;

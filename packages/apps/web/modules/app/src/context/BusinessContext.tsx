@@ -145,13 +145,23 @@ export interface RolePermission {
 export interface BusinessSemanticConfig {
   orderSingle: string;
   orderPlural: string;
+  orderNoun: string;
+  orderNounPlural: string;
   stationName: string;
   stationShortName: string;
+  stationNoun: string;
   stationAction: string;
+  preparationVerb: string;
+  readyVerb: string;
+  deliveredVerb: string;
   catalogItem: string;
   tableOrChannel: string;
   itemModifiers: string;
   fulfillmentAgent: string;
+  requiresKitchenDisplay: boolean;
+  requiresTableNumber: boolean;
+  botGreetingTemplate: string;
+  botPersona: string;
 }
 
 export function getBusinessSemantics(businessType?: BusinessType): BusinessSemanticConfig {
@@ -161,38 +171,68 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
       return {
         orderSingle: "Pedido de Venta",
         orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
         stationName: "Picking, Empaque & Despacho",
         stationShortName: "Picking & Despacho",
+        stationNoun: "Estación de Picking & Despacho",
         stationAction: "Preparar para Envío",
+        preparationVerb: "En Picking & Preparación",
+        readyVerb: "Listo para Despacho",
+        deliveredVerb: "Despachados / Entregados",
         catalogItem: "Producto / SKU",
         tableOrChannel: "Canal de Venta",
         itemModifiers: "Variantes (Talla, Color)",
         fulfillmentAgent: "Bodeguero / Despachador",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 🔩 ¿Qué producto o material necesitas hoy para tu obra?",
+        botPersona: "asesor de ventas y despacho servicial y experto en catálogo de productos",
       };
     case "services":
       return {
         orderSingle: "Cita / Servicio",
         orderPlural: "Citas & Turnos",
+        orderNoun: "Cita",
+        orderNounPlural: "Citas",
         stationName: "Cuadrante de Atención",
         stationShortName: "Atención & Turnos",
+        stationNoun: "Cuadrante de Atención & Citas",
         stationAction: "Iniciar Atención",
+        preparationVerb: "En Atención",
+        readyVerb: "Listo para Atención",
+        deliveredVerb: "Atendidos / Finalizados",
         catalogItem: "Servicio / Tratamiento",
         tableOrChannel: "Box / Cabina / Puesto",
         itemModifiers: "Detalles / Duración",
         fulfillmentAgent: "Especialista / Profesional",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 📅 ¿Qué servicio deseas agendar hoy?",
+        botPersona: "recepcionista y gestor de turnos cordial y organizado",
       };
     case "restaurant_virtual":
     default:
       return {
         orderSingle: "Comanda / Pedido",
         orderPlural: "Comandas",
+        orderNoun: "Comanda",
+        orderNounPlural: "Comandas",
         stationName: "Cocina & Despacho (KDS)",
         stationShortName: "KDS Cocina",
+        stationNoun: "KDS Cocina & Estaciones",
         stationAction: "Iniciar Preparación",
+        preparationVerb: "En Cocina / Preparación",
+        readyVerb: "Listo para Servir",
+        deliveredVerb: "Entregados / Servidos",
         catalogItem: "Plato / Menú",
         tableOrChannel: "Mesa / Salón / Canal",
         itemModifiers: "Modificadores / Salsas",
         fulfillmentAgent: "Cocinero / Chef",
+        requiresKitchenDisplay: true,
+        requiresTableNumber: true,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 🍔 ¿Qué delicia te preparamos hoy?",
+        botPersona: "anfitrión gastronómico entusiasta y atento a términos de cocción y salsas",
       };
   }
 }
@@ -684,8 +724,10 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
       activeModules: data.activeModules || ["pedidos", "inventarios"],
       botConfig: data.botConfig || {
-        greeting: sem.botGreetingTemplate.replace("{storeName}", data.name),
-        personality: sem.botPersona,
+        greeting: sem?.botGreetingTemplate
+          ? sem.botGreetingTemplate.replace("{storeName}", data.name)
+          : `¡Hola! Bienvenido a ${data.name}.`,
+        personality: sem?.botPersona || "asistente virtual",
         catalogCategories:
           data.businessType === "retail_store"
             ? ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Químicos", "Medición & Trazado"]
