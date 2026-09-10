@@ -10,6 +10,7 @@ import {
   WhatsAppBotConfig,
   BotPersonality,
   HolidayTheme,
+  getBusinessSemantics,
 } from "../../context/BusinessContext";
 import { playOrderAlert } from "../../utils/audioAlerts";
 import {
@@ -65,6 +66,11 @@ import {
   PartyPopper,
   Tag,
   Flame,
+  CheckCheck,
+  BadgeCheck,
+  MessageSquareText,
+  Cpu,
+  ShieldCheck,
 } from "lucide-react";
 import { Button, Field, Select, Textarea, Badge, Toggle } from "@/elements";
 
@@ -561,6 +567,8 @@ export const BusinessSettingsModal: React.FC<{
   const [bannerPosY, setBannerPosY] = useState(0);
 
   // WhatsApp Bot & Automated Messages States
+  const [botName, setBotName] = useState("Asistente Virtual");
+  const [botTone, setBotTone] = useState<"cálido" | "profesional" | "técnico" | "ágil">("cálido");
   const [isWelcomeEnabled, setIsWelcomeEnabled] = useState(true);
   const [welcomeMessage, setWelcomeMessage] = useState("");
 
@@ -577,7 +585,7 @@ export const BusinessSettingsModal: React.FC<{
   const [botPersonality, setBotPersonality] = useState<BotPersonality>("amigable");
   const [isAiUpsellEnabled, setIsAiUpsellEnabled] = useState(true);
   const [upsellMessage, setUpsellMessage] = useState(
-    "¿Te gustaría acompañar tu pedido con una bebida refrescante o una porción extra por solo $4.500?"
+    "¿Te gustaría agregar algún complemento o accesorio adicional antes de procesar tu orden?"
   );
   const [isAutoConfirmOrders, setIsAutoConfirmOrders] = useState(true);
   const [autoConfirmMaxAmount, setAutoConfirmMaxAmount] = useState(150000);
@@ -595,7 +603,7 @@ export const BusinessSettingsModal: React.FC<{
   const [nequiNumber, setNequiNumber] = useState("310 987 6543");
   const [daviplataNumber, setDaviplataNumber] = useState("310 987 6543");
   const [bancolombiaAccount, setBancolombiaAccount] = useState("104-892134-55");
-  const [accountHolder, setAccountHolder] = useState("Necto Gourmet S.A.S");
+  const [accountHolder, setAccountHolder] = useState("Necto Comercial S.A.S");
   const [accountNit, setAccountNit] = useState("901.458.789-1");
   const [allowCashOnDelivery, setAllowCashOnDelivery] = useState(true);
   const [allowCardTerminal, setAllowCardTerminal] = useState(true);
@@ -652,30 +660,49 @@ export const BusinessSettingsModal: React.FC<{
       setKitchenBufferMin(business.kitchenBufferMin || 20);
       setActiveModules(business.activeModules || ["pedidos", "inventarios"]);
 
-      // Bot Defaults
+      // Bot Defaults & Semantics
+      const sem = getBusinessSemantics(business.businessType);
       const botCfg = business.whatsappBotConfig;
+
+      // Extract botName & tone from botConfig if available
+      const p = business.botConfig?.personality || "";
+      if (p.includes("técnico")) setBotTone("técnico");
+      else if (p.includes("profesional")) setBotTone("profesional");
+      else if (p.includes("ágil")) setBotTone("ágil");
+      else setBotTone("cálido");
+
+      const matchName = p.split(" ")[0];
+      if (matchName && matchName.toLowerCase() !== "asistente" && matchName.length > 1) {
+        setBotName(matchName);
+      } else {
+        setBotName("Asistente Virtual");
+      }
+
       setIsWelcomeEnabled(botCfg?.isWelcomeEnabled ?? true);
       setWelcomeMessage(
-        botCfg?.welcomeMessage ||
-          `¡Hola! Te damos la bienvenida a ${business.name}. ¿En qué podemos ayudarte hoy? Escribe "menú" para ver nuestra carta o envíanos tu pedido directamente.`
+        business.botConfig?.greeting ||
+          botCfg?.welcomeMessage ||
+          (sem?.botGreetingTemplate
+            ? sem.botGreetingTemplate.replace("{storeName}", business.name)
+            : `¡Hola! Te damos la bienvenida a ${business.name}. ¿En qué podemos ayudarte hoy?`)
       );
 
       setIsClosedHoursEnabled(botCfg?.isClosedHoursEnabled ?? true);
       setClosedHoursMessage(
         botCfg?.closedHoursMessage ||
-          `En este momento nuestras cocinas están fuera de servicio. Nuestro horario habitual es de 11:30 AM a 11:00 PM. Déjanos tu mensaje y te responderemos a primera hora.`
+          `En este momento nos encontramos fuera de horario de atención. Nuestro horario habitual es de 8:00 AM a 7:00 PM. Déjanos tu mensaje y te responderemos a primera hora.`
       );
 
       setIsHandoffEnabled(botCfg?.isHandoffEnabled ?? true);
       setHandoffToHumanMessage(
         botCfg?.handoffToHumanMessage ||
-          `He notificado al Administrador de turno. Un operador humano te responderá en este chat a la brevedad.`
+          `He notificado al equipo de atención. Un asesor continuará la conversación contigo a la brevedad.`
       );
 
       setIsOrderConfirmedEnabled(botCfg?.isOrderConfirmedEnabled ?? true);
       setOrderConfirmedMessage(
         botCfg?.orderConfirmedMessage ||
-          `¡Comanda #{numero_pedido} confirmada e ingresada a cocina! Tiempo estimado de preparación y entrega: 25 a 35 minutos. ¡Muchas gracias por tu compra!`
+          `¡Tu pedido #{numero_pedido} ha sido confirmado y está ${sem?.preparationVerb ? sem.preparationVerb.toLowerCase() : "en preparación"}! Te notificaremos cuando esté listo.`
       );
 
       // AI Bot Intelligence
@@ -848,6 +875,11 @@ export const BusinessSettingsModal: React.FC<{
         whatsapp: enableWhatsapp,
         web: enableWeb,
         pos: enablePos,
+      },
+      botConfig: {
+        greeting: welcomeMessage,
+        personality: `${botName} (${botTone})`,
+        catalogCategories: business?.botConfig?.catalogCategories || ["General"],
       },
       whatsappBotConfig: {
         isWelcomeEnabled,
@@ -1500,60 +1532,126 @@ export const BusinessSettingsModal: React.FC<{
                   </p>
                 </div>
 
-                {/* SECCIÓN A: Personalidad & Tono IA del Bot */}
-                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
-                  <div className="flex items-center justify-between">
+                {/* SECCIÓN A: Identidad del Asistente Virtual & Vista Previa en Vivo */}
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-5 shadow-2xs">
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 dark:border-zinc-800">
                     <div>
                       <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-brand-500" />
-                        <span>Personalidad & Tono Conversacional</span>
+                        <Bot className="w-4 h-4 text-emerald-500" />
+                        <span>Identidad del Asistente & Tono de Respuesta</span>
                       </h4>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                        Define el tono con el que la IA atenderá y asesorará a los clientes en WhatsApp.
+                        Define el nombre y la personalidad con la que el bot atenderá a tus compradores en WhatsApp.
                       </p>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold">
+                      Canal Activo
+                    </span>
+                  </div>
+
+                  {/* Nombre y Tono */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                        <Bot className="w-3.5 h-3.5 text-brand-500" />
+                        <span>Nombre del Asistente</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={botName}
+                        onChange={e => setBotName(e.target.value)}
+                        placeholder="Ej. Asesor Virtual, Bot Ventas, Sofía"
+                        className="w-full px-3.5 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-brand-500 shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        <span>Tono de Atención</span>
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: "cálido", label: "Cálido", icon: Sparkles, desc: "Cercano y cordial" },
+                          { id: "profesional", label: "Profesional", icon: ShieldCheck, desc: "Formal y sobrio" },
+                          { id: "técnico", label: "Técnico", icon: Cpu, desc: "Preciso y exacto" },
+                          { id: "ágil", label: "Ágil", icon: Zap, desc: "Rápido y comercial" },
+                        ].map(t => {
+                          const isToneActive = botTone === t.id;
+                          const ToneIcon = t.icon;
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => setBotTone(t.id as any)}
+                              className={`px-2.5 py-1.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                                isToneActive
+                                  ? "bg-[#190088] text-white border-[#190088] shadow-xs"
+                                  : "bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+                              }`}
+                            >
+                              <ToneIcon className={`w-3.5 h-3.5 flex-none ${isToneActive ? "text-white" : "text-zinc-400"}`} />
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[11px] font-bold leading-none truncate">{t.label}</div>
+                                <div className={`text-[9px] truncate mt-0.5 ${isToneActive ? "text-white/80" : "text-zinc-400"}`}>{t.desc}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {BOT_PERSONALITY_OPTIONS.map(opt => {
-                      const isSelected = botPersonality === opt.id;
-                      const Icon = opt.icon;
-                      return (
-                        <div
-                          key={opt.id}
-                          onClick={() => setBotPersonality(opt.id)}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                            isSelected
-                              ? "bg-brand-50/80 dark:bg-brand-950/30 border-brand-500 dark:border-brand-500/80 shadow-xs ring-1 ring-brand-500/30"
-                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-2xs"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-none bg-zinc-100 dark:bg-zinc-800 ${opt.iconColor}`}>
-                                <Icon className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
-                                  {opt.title}
-                                </p>
-                                <span className="text-[10px] font-mono text-brand-600 dark:text-brand-400 font-semibold">
-                                  {opt.tag}
-                                </span>
-                              </div>
-                            </div>
-                            {isSelected && (
-                              <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center flex-none">
-                                <Check className="w-2.5 h-2.5 stroke-[3]" />
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                            {opt.desc}
-                          </p>
+                  {/* Live WhatsApp Chat Simulation Bubble */}
+                  <div className="rounded-2xl bg-[#EFEAE2] dark:bg-[#0B141A] border border-zinc-300/80 dark:border-zinc-800/80 p-4 shadow-inner space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                          <Bot className="w-3.5 h-3.5" />
                         </div>
-                      );
-                    })}
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                              {name || "Mi Tienda"}
+                            </span>
+                            <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600 dark:text-emerald-500" />
+                          </div>
+                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                            En línea · Canal Oficial
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded bg-white/60 dark:bg-zinc-900/60 border border-zinc-300/50 dark:border-zinc-800">
+                        Vista Previa en Vivo
+                      </span>
+                    </div>
+
+                    <div className="max-w-[90%] bg-white dark:bg-[#1F2C34] rounded-2xl rounded-tl-none p-3.5 shadow-xs space-y-2 border border-zinc-200/60 dark:border-zinc-700/60">
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                        <Bot className="w-3 h-3" />
+                        <span>{botName} · Tono {botTone}</span>
+                      </div>
+                      <p className="text-xs text-zinc-800 dark:text-zinc-100 leading-relaxed font-normal">
+                        {welcomeMessage}
+                      </p>
+                      <div className="flex items-center justify-end gap-1 text-[9px] font-mono text-zinc-400 dark:text-zinc-500 pt-0.5">
+                        <span>10:45 AM</span>
+                        <CheckCheck className="w-3.5 h-3.5 text-sky-500" />
+                      </div>
+                    </div>
+
+                    {/* Quick action chips */}
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {(business?.botConfig?.catalogCategories || ["Ver Catálogo", "Consultar Disponibilidad", "Hablar con un asesor"]).map((cat, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium bg-white/90 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300/80 dark:border-zinc-700 shadow-2xs"
+                        >
+                          <Sparkles className="w-2.5 h-2.5 text-emerald-600" />
+                          <span>{cat}</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
