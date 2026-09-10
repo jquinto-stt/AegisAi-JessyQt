@@ -209,19 +209,18 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
 
       {/* 2. Banner de Estado del Contenedor */}
       {activeModules.length === 0 ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900/50 dark:bg-amber-950/20">
+        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 p-6 shadow-xs">
           <div className="flex items-start gap-4">
-            <div className="mt-0.5 rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
-              <Store className="h-5 w-5" />
+            <div className="mt-0.5 rounded-xl bg-brand-500/10 p-3 text-brand-600 dark:text-brand-400 flex-none">
+              <Store className="h-6 w-6" />
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                Esta tienda es un contenedor neutral sin módulos activos
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
+                Tu tienda está lista
               </h3>
-              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300/90 leading-relaxed">
-                Cada tienda creada en Necto es 100% agnóstica. Si no seleccionaste ningún módulo durante el registro,
-                la tienda se crea limpia sin forzar pantallas de inventario ni pedidos. Puedes acoplar los módulos que
-                necesites haciendo clic en <strong>"Activar Módulo"</strong> abajo.
+              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl">
+                Esta tienda es un contenedor limpio e independiente. Agrega las capacidades que necesita tu negocio
+                desde el catálogo de módulos a continuación para habilitar flujos de trabajo operativos.
               </p>
             </div>
           </div>

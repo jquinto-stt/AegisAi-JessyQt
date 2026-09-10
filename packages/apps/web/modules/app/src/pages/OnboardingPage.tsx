@@ -1,13 +1,10 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useBusiness,
   NectoModuleKey,
-  BusinessType,
-  BusinessIconKey,
-  getBusinessSemantics,
 } from "../context/BusinessContext";
-import { NectoLogo, NectoIsotype } from "../compositions/shared/NectoLogo";
+import { NectoLogo } from "../compositions/shared/NectoLogo";
 import { Button, Badge } from "@/elements";
 import {
   Users,
@@ -19,280 +16,123 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
-  Zap,
   ShieldCheck,
-  MessageSquare,
-  Smartphone,
   Building2,
   MapPin,
   Phone,
-  UtensilsCrossed,
   Store,
   Activity,
   Layers,
   CheckCircle2,
-  QrCode,
-  SlidersHorizontal,
-  Shirt,
-  Wrench,
-  Pill,
-  Laptop,
-  Bot,
+  Smartphone,
+  Globe,
+  Bell,
   Sparkles,
-  Cpu,
-  CheckCheck,
-  RotateCcw,
-  BadgeCheck,
-  MessageSquareText,
+  Info,
 } from "lucide-react";
 
-/* ── Business Archetypes ─────────────────────────────────────────────── */
+/* ── Module Definitions (Capacidades Plug & Play) ─────────────────────── */
 
-interface ArchetypeConfig {
-  id: BusinessType;
-  title: string;
-  category: string;
-  tagline: string;
-  image: string;
-  icon: React.ComponentType<{ className?: string }>;
-  defaultModules: NectoModuleKey[];
-  iconKey: BusinessIconKey;
-  features: string[];
-  mockOrder: {
-    id: string;
-    item: string;
-    detail: string;
-    price: string;
-    badge: string;
-  };
-}
-
-const ARCHETYPES: ArchetypeConfig[] = [
-  {
-    id: "fashion_footwear",
-    title: "Calzado & Moda",
-    category: "Footwear & Apparel",
-    tagline: "Variantes por talla y color, control de empaque y envíos express por WhatsApp.",
-    image: "/onboarding-retail.jpg",
-    icon: Shirt,
-    defaultModules: ["pedidos", "inventarios"],
-    iconKey: "shirt",
-    features: ["Tallas & Colores", "Picking de Calzado", "WhatsApp Bot", "Catálogo Visual"],
-    mockOrder: {
-      id: "PED-1025",
-      item: "Zapatos Oxford Cuero Genuino (Talla 41)",
-      detail: "Envío Prioritario · Empaque Premium",
-      price: "$180.000 COP",
-      badge: "En Empaque",
-    },
-  },
-  {
-    id: "hardware_store",
-    title: "Ferretería & Construcción",
-    category: "Tools & Hardware",
-    tagline: "Ventas por unidad o volumen, picking en bodega y cotizaciones técnicas.",
-    image: "/onboarding-retail.jpg",
-    icon: Wrench,
-    defaultModules: ["pedidos", "inventarios"],
-    iconKey: "wrench",
-    features: ["Picking de Bodega", "Venta Mostrador", "Cotizador por Chat", "Medidas & Kilos"],
-    mockOrder: {
-      id: "PED-1022",
-      item: "Taladro Percutor 650W + Caja Tornillos",
-      detail: "Retiro Mostrador · Bodega Central",
-      price: "$312.000 COP",
-      badge: "Listo Entrega",
-    },
-  },
-  {
-    id: "pharmacy_health",
-    title: "Farmacia & Cuidado Personal",
-    category: "Health & Pharmacy",
-    tagline: "Recepción de fórmulas médicas, control de existencias y entregas rápidas.",
-    image: "/onboarding-services.jpg",
-    icon: Pill,
-    defaultModules: ["pedidos", "inventarios"],
-    iconKey: "pill",
-    features: ["Dispensario Express", "Fórmulas por Chat", "WhatsApp 24/7", "Lotes & Vencimiento"],
-    mockOrder: {
-      id: "PED-1018",
-      item: "Ibuprofeno 400mg Caja + Suero Oral",
-      detail: "Domicilio Prioritario · Pago Nequi",
-      price: "$24.500 COP",
-      badge: "En Camino",
-    },
-  },
-  {
-    id: "restaurant_virtual",
-    title: "Gastronomía & Restaurante",
-    category: "Food & Beverage",
-    tagline: "Recepción de órdenes, términos de cocción, delivery WhatsApp y atención en mesa.",
-    image: "/onboarding-restaurant.jpg",
-    icon: UtensilsCrossed,
-    defaultModules: ["pedidos", "inventarios", "reservas"],
-    iconKey: "utensils",
-    features: ["KDS Cocina Opcional", "Modificadores & Salsas", "Delivery WhatsApp", "Mesas"],
-    mockOrder: {
-      id: "ORD-9402",
-      item: "Smash Burger Doble + Papas Rústicas",
-      detail: "Mesa 4 · Sin cebolla · Bebida fría",
-      price: "$34.500 COP",
-      badge: "En Preparación",
-    },
-  },
-  {
-    id: "tech_electronics",
-    title: "Tecnología & Repuestos",
-    category: "Tech & Electronics",
-    tagline: "Garantías por número de serie, accesorios y venta asistida por WhatsApp.",
-    image: "/onboarding-retail.jpg",
-    icon: Laptop,
-    defaultModules: ["pedidos", "inventarios"],
-    iconKey: "laptop",
-    features: ["Seriales & Garantías", "Asesoría Técnica", "WhatsApp Bot", "Almacenes"],
-    mockOrder: {
-      id: "PED-1015",
-      item: "Auriculares Wireless Noise-Cancelling",
-      detail: "Garantía Oficial 1 Año · Envío Gratis",
-      price: "$289.000 COP",
-      badge: "Facturado",
-    },
-  },
-  {
-    id: "services",
-    title: "Servicios & Citas",
-    category: "Professional Services",
-    tagline: "Agenda automatizada por especialista, turnos inteligentes y recordatorios vía WhatsApp.",
-    image: "/onboarding-services.jpg",
-    icon: Calendar,
-    defaultModules: ["pedidos", "agendamiento", "turnos"],
-    iconKey: "coffee",
-    features: ["Agenda de Citas", "Cuadrante de Turnos", "Recordatorio Auto", "Portal Clientes"],
-    mockOrder: {
-      id: "CTA-0391",
-      item: "Mantenimiento & Sesión de Diagnóstico",
-      detail: "Especialista asignado · 15:30 PM",
-      price: "$120.000 COP",
-      badge: "Confirmado",
-    },
-  },
-];
-
-const MODULE_DEFINITIONS: Array<{
+interface ModuleConfig {
   id: NectoModuleKey;
   title: string;
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   tag: string;
-  isComingSoon?: boolean;
-}> = [
+  isRecommended?: boolean;
+}
+
+const MODULE_DEFINITIONS: ModuleConfig[] = [
   {
     id: "pedidos",
     title: "Sistema de Pedidos Omnicanal",
-    description: "Flujo de ventas unificado: WhatsApp Bot, mostrador y web con seguimiento y despacho en vivo.",
+    description: "Recepción y flujo de pedidos por WhatsApp, Web y mostrador con Kanban y alistamiento en vivo.",
     icon: ShoppingBag,
-    tag: "Core Comercial",
-    isComingSoon: false,
+    tag: "Ventas & Operación",
+    isRecommended: true,
   },
   {
     id: "inventarios",
-    title: "Inventario & Stock",
-    description: "Kardex de existencias, control de almacén, compras a proveedores y alertas de reposición.",
+    title: "Inventario & Control de Stock",
+    description: "Control de existencias, kardex de movimientos, compras a proveedores y alertas de reposición.",
     icon: Package,
-    tag: "Control de Stock",
-    isComingSoon: false,
+    tag: "Logística & Stock",
+    isRecommended: true,
+  },
+  {
+    id: "turnos",
+    title: "Turnos & Horarios Operativos",
+    description: "Cuadrantes de rotación de personal, control de horarios y asignación por área de trabajo.",
+    icon: Clock,
+    tag: "Equipo & Turnos",
+    isRecommended: false,
   },
   {
     id: "reservas",
-    title: "Reservas de Espacios",
-    description: "Gestión de mesas, salones y asignación inteligente de zonas.",
+    title: "Reservas de Espacios & Mesas",
+    description: "Gestión de citas presenciales, asignación de boxes, mesas o salones según disponibilidad.",
     icon: Bookmark,
-    tag: "Aforo & Mesas",
-    isComingSoon: true,
+    tag: "Aforo & Espacios",
+    isRecommended: false,
   },
   {
     id: "agendamiento",
     title: "Agendamiento & Citas",
-    description: "Calendario sincronizado con reservas automáticas desde WhatsApp.",
+    description: "Calendario sincronizado con reservas automáticas y confirmación directa con clientes.",
     icon: Calendar,
     tag: "Planificación",
-    isComingSoon: true,
-  },
-  {
-    id: "turnos",
-    title: "Turnos de Personal",
-    description: "Cuadrantes de rotación, control de asistencia y asignación por área.",
-    icon: Clock,
-    tag: "Equipo",
-    isComingSoon: true,
+    isRecommended: false,
   },
   {
     id: "referidos",
-    title: "Programa de Fidelización",
-    description: "Cupones dinámicos, tracking de referidos y métricas de recompra.",
+    title: "Programa de Fidelización & Clientes",
+    description: "Registro de compradores, cupones dinámicos, tracking de recompra y fidelización.",
     icon: Users,
-    tag: "Crecimiento",
-    isComingSoon: true,
+    tag: "Crecimiento & Clientes",
+    isRecommended: false,
   },
 ];
 
 const STEPS = [
-  { num: 1, label: "Identidad & Modelo", desc: "Configuración del negocio" },
-  { num: 2, label: "Arquitectura Modular", desc: "Módulos operativos" },
-  { num: 3, label: "Canal & Asistente", desc: "WhatsApp y bot de pedidos" },
+  { num: 1, label: "Identidad de la Tienda", desc: "Datos básicos del contenedor" },
+  { num: 2, label: "Capacidades Modulares", desc: "¿Qué deseas gestionar?" },
+  { num: 3, label: "Lanzamiento", desc: "Resumen y acceso a la tienda" },
 ];
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { businesses, createBusiness } = useBusiness();
+  const { createBusiness } = useBusiness();
   const [step, setStep] = useState(1);
 
-  // Form State
-  const [businessModel, setBusinessModel] = useState<BusinessType>("restaurant_virtual");
+  // Store Container State (Nivel 1)
   const [companyName, setCompanyName] = useState("");
   const [country, setCountry] = useState("Colombia");
   const [city, setCity] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [specialty, setSpecialty] = useState("");
+
+  // Capabilities State (Nivel 2)
+  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>([
+    "pedidos",
+    "inventarios",
+  ]);
   const [isMetaConnected, setIsMetaConnected] = useState(false);
-  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>(
-    ARCHETYPES[0].defaultModules
-  );
   const [isDeploying, setIsDeploying] = useState(false);
-
-  // Bot & Channel Customization State
-  const [botName, setBotName] = useState("Asistente Virtual");
-  const [botTone, setBotTone] = useState<"cálido" | "profesional" | "técnico" | "ágil">("cálido");
-  const [customGreeting, setCustomGreeting] = useState<string>("");
-
-  // Active Archetype Details & Semantics
-  const activeArchetype = useMemo(() => {
-    return ARCHETYPES.find(a => a.id === businessModel) || ARCHETYPES[0];
-  }, [businessModel]);
-
-  const semantics = useMemo(() => {
-    return getBusinessSemantics(businessModel);
-  }, [businessModel]);
-
-  const defaultGreeting = useMemo(() => {
-    const store = companyName.trim() || "nuestra tienda";
-    return semantics?.botGreetingTemplate
-      ? semantics.botGreetingTemplate.replace("{storeName}", store)
-      : `¡Hola! Bienvenido a ${store}. ¿En qué podemos colaborarte hoy?`;
-  }, [semantics, companyName]);
-
-  const currentGreeting = customGreeting !== "" ? customGreeting : defaultGreeting;
-
-  const handleSelectArchetype = (arch: ArchetypeConfig) => {
-    setBusinessModel(arch.id);
-    setSelectedModules(arch.defaultModules);
-  };
 
   const handleToggleModule = (key: NectoModuleKey) => {
     setSelectedModules(prev =>
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
     );
+  };
+
+  const handleSelectAllRecommended = () => {
+    setSelectedModules(["pedidos", "inventarios"]);
+  };
+
+  const handleClearModules = () => {
+    setSelectedModules([]);
   };
 
   const currencyForCountry = (c: string) => {
@@ -309,25 +149,20 @@ export default function OnboardingPage() {
     setTimeout(() => {
       try {
         createBusiness({
-          name: companyName.trim() || "Mi Negocio",
-          slug: (companyName || "mi-negocio")
+          name: companyName.trim() || "Mi Tienda",
+          slug: (companyName || "mi-tienda")
             .toLowerCase()
             .trim()
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/^-+|-+$/g, ""),
-          businessType: businessModel,
-          iconKey: activeArchetype.iconKey,
+          businessType: "retail_store",
+          iconKey: "store",
           currency: currencyForCountry(country),
           city: city ? `${city}, ${country}` : country,
           channels: { whatsapp: isMetaConnected, web: true, pos: true },
           kitchenBufferMin: 20,
-          specialty: activeArchetype.title,
+          specialty: specialty.trim() || "Comercio & Operaciones",
           activeModules: selectedModules,
-          botConfig: {
-            greeting: currentGreeting,
-            personality: `${botName} (${botTone})`,
-            catalogCategories: activeArchetype.features,
-          },
         });
         navigate("/");
       } catch (err) {
@@ -350,31 +185,40 @@ export default function OnboardingPage() {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>SaaS Core v2.4</span>
+            <span>Arquitectura 3 Capas v3.0</span>
           </div>
 
           <Button
-            variant="outline"
-            intent="onboarding.cancel-exit"
+            variant="ghost"
+            intent="onboarding.header.exit"
             onClick={() => navigate("/workspaces")}
-            className="text-xs font-bold px-3 py-1.5 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white border-zinc-200 dark:border-zinc-800 cursor-pointer"
+            className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white py-1.5 px-3"
           >
-            Cancelar y salir
+            Salir al Panel
           </Button>
         </div>
       </header>
 
-      {/* Main Grid Container */}
-      <div className="flex-1 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 min-h-[calc(100vh-3.5rem)]">
-        {/* Left Column: Interactive Wizard Controls (7 Cols) */}
-        <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-zinc-200 dark:border-zinc-800 space-y-8 bg-white dark:bg-[#09090B]">
+      {/* Main Grid Layout */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 max-w-7xl mx-auto w-full">
+        {/* Left Column: Wizard Form & Configuration Steps */}
+        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between space-y-8">
           <div className="space-y-8">
-            {/* Stepper Header */}
+            {/* Step Navigation Bar */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <span>Paso {step} de 3</span>
+                <span>—</span>
+                <span className="text-[#190088] dark:text-[#97D6DF] font-bold">
+                  {STEPS[step - 1].label}
+                </span>
+              </div>
+
+              {/* Step Progress Indicators */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2">
                 {STEPS.map((s, idx) => {
-                  const isPassed = s.num < step;
                   const isCurrent = s.num === step;
+                  const isPassed = s.num < step;
 
                   return (
                     <React.Fragment key={s.num}>
@@ -420,82 +264,28 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* ─── STEP 1: IDENTIDAD Y MODELO DE NEGOCIO ──────────────────── */}
+            {/* ─── STEP 1: IDENTIDAD DE LA TIENDA (EL CONTENEDOR PURO) ────── */}
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <Store className="w-3.5 h-3.5" />
+                    <span>Nivel 1 · Contenedor Universal</span>
+                  </div>
                   <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
-                    Configura tu espacio de operaciones
+                    Crea tu Tienda
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Selecciona la arquitectura que mejor describe tu modelo de negocio. Necto pre-configurará los flujos y módulos óptimos.
+                    Define la identidad y datos base de tu nuevo espacio. La tienda funciona como un contenedor independiente listo para recibir capacidades.
                   </p>
                 </div>
 
-                {/* Archetype Selector */}
-                <div className="space-y-2.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                    <span>Modelo Operativo</span>
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {ARCHETYPES.map(arch => {
-                      const isSelected = businessModel === arch.id;
-                      const Icon = arch.icon;
-
-                      return (
-                        <div
-                          key={arch.id}
-                          onClick={() => handleSelectArchetype(arch)}
-                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
-                            isSelected
-                              ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
-                              : "bg-white dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/70"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div
-                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                                isSelected
-                                  ? "bg-[#190088] text-white"
-                                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 group-hover:text-[#190088] dark:group-hover:text-white"
-                              }`}
-                            >
-                              <Icon className="w-4 h-4" />
-                            </div>
-
-                            <div
-                              className={`w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-                                isSelected
-                                  ? "bg-[#FF3F1A] text-white"
-                                  : "border border-zinc-300 dark:border-zinc-700"
-                              }`}
-                            >
-                              {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <h3 className="text-xs font-bold text-zinc-950 dark:text-white tracking-tight">
-                              {arch.title}
-                            </h3>
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug line-clamp-2">
-                              {arch.tagline}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 {/* Form Fields */}
-                <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 space-y-4 shadow-2xs">
                   {/* Company Name */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-                      <span>Nombre Comercial del Negocio</span>
+                      <span>Nombre Comercial de la Tienda</span>
                       <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-normal">Requerido</span>
                     </label>
                     <div className="relative flex items-center">
@@ -503,7 +293,7 @@ export default function OnboardingPage() {
                       <input
                         type="text"
                         required
-                        placeholder="Ej. Trattoria di Roma / Urban Bakery"
+                        placeholder="Ej. Zapatería Milano / Ferretería Central / Lumina Tech"
                         value={companyName}
                         onChange={e => setCompanyName(e.target.value)}
                         autoFocus
@@ -516,7 +306,7 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                        País & Moneda
+                        País & Moneda Base
                       </label>
                       <div className="relative flex items-center">
                         <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
@@ -537,13 +327,13 @@ export default function OnboardingPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                        Ciudad / Región
+                        Ciudad / Ubicación
                       </label>
                       <div className="relative flex items-center">
                         <MapPin className="w-4 h-4 absolute left-3.5 text-zinc-400" />
                         <input
                           type="text"
-                          placeholder="Ej. Bogotá, CDMX, Miami"
+                          placeholder="Ej. Bogotá, Medellín, CDMX, Miami"
                           value={city}
                           onChange={e => setCity(e.target.value)}
                           className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 shadow-2xs"
@@ -552,123 +342,163 @@ export default function OnboardingPage() {
                     </div>
                   </div>
 
-                  {/* Phone */}
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-                      Línea de Atención / WhatsApp
-                    </label>
-                    <div className="relative flex items-center">
-                      <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
-                      <input
-                        type="tel"
-                        placeholder="+57 300 123 4567"
-                        value={contactPhone}
-                        onChange={e => setContactPhone(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 shadow-2xs"
-                      />
+                  {/* Phone & Specialty */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+                        Línea de Contacto / Teléfono
+                      </label>
+                      <div className="relative flex items-center">
+                        <Phone className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                        <input
+                          type="tel"
+                          placeholder="+57 300 123 4567"
+                          value={contactPhone}
+                          onChange={e => setContactPhone(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
+                        Especialidad o Rubro (Opcional)
+                      </label>
+                      <div className="relative flex items-center">
+                        <Store className="w-4 h-4 absolute left-3.5 text-zinc-400" />
+                        <input
+                          type="text"
+                          placeholder="Ej. Calzado & Moda, Materiales, Servicios..."
+                          value={specialty}
+                          onChange={e => setSpecialty(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 text-xs bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-white font-medium focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-700 shadow-2xs"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Step 1: Representative Archetype Showcase Card */}
-                <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[190px] flex flex-col justify-end p-6">
-                  {/* Photo Background */}
-                  <img
-                    src={activeArchetype.image}
-                    alt={activeArchetype.title}
-                    className="absolute inset-0 w-full h-full object-cover transition-all duration-700"
-                  />
+                {/* Transversal Store Features Card (Included by Default) */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                      <span>Capacidades Transversales Incluidas en la Tienda</span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                      Nivel 1 Activo
+                    </span>
+                  </div>
 
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                    Tu tienda nace con identidad propia, configuración regional, roles de equipo (Dueño, Administrador, Operador, Consulta), centro de notificaciones e integraciones sin depender de ningún módulo.
+                  </p>
 
-                  {/* Content */}
-                  <div className="relative z-10 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
-                        {activeArchetype.category}
-                      </span>
-                      <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
-                        Configuración Optimizada
-                      </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800 text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                      <span>Identidad & Marca</span>
                     </div>
-                    <p className="text-sm font-bold text-white tracking-tight">
-                      {activeArchetype.title}
-                    </p>
-                    <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
-                      {activeArchetype.tagline}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                      <span>Horarios Globales</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Bell className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                      <span>Alertas Centrales</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                      <span>Integraciones API</span>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ─── STEP 2: ARQUITECTURA MODULAR ──────────────────────────── */}
+            {/* ─── STEP 2: CAPACIDADES MODULARES (PLUG & PLAY) ───────────── */}
             {step === 2 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-blue-200 border border-[#190088]/20 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <Layers className="w-3 h-3 text-[#190088] dark:text-blue-300" />
-                    <span>Configuración Modular</span>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/10 text-[#FF3F1A] text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Nivel 2 · Capacidades Plug & Play</span>
                   </div>
-
                   <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
-                    Personaliza los módulos de tu espacio
+                    ¿Qué deseas gestionar en tu tienda?
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Hemos activado los módulos recomendados para <strong className="text-[#190088] dark:text-[#EFE6D3]">{activeArchetype.title}</strong>. Puedes encender o apagar cualquier módulo según tus requerimientos.
+                    Los módulos son capacidades independientes que se agregan a tu contenedor. Puedes activar los que necesitas hoy o comenzar con la tienda limpia y agregarlos después.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Quick Toggle Action Bar */}
+                <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2 pl-2">
+                    <span className="w-2 h-2 rounded-full bg-[#190088] dark:bg-[#97D6DF]" />
+                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                      {selectedModules.length === 0
+                        ? "Tienda limpia (0 capacidades seleccionadas)"
+                        : `${selectedModules.length} capacidad(es) seleccionada(s)`}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {selectedModules.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={handleClearModules}
+                        className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 px-3 py-1.5 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                      >
+                        Limpiar todos (Empezar en 0)
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSelectAllRecommended}
+                        className="text-xs font-semibold text-[#190088] dark:text-[#97D6DF] hover:underline px-3 py-1.5 rounded-xl hover:bg-[#190088]/10 transition-colors cursor-pointer"
+                      >
+                        Activar recomendados
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modules Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {MODULE_DEFINITIONS.map(mod => {
                     const isSelected = selectedModules.includes(mod.id);
                     const Icon = mod.icon;
-                    const isComingSoon = mod.isComingSoon;
 
                     return (
                       <div
                         key={mod.id}
                         onClick={() => handleToggleModule(mod.id)}
                         className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
-                          isComingSoon
-                            ? isSelected
-                              ? "bg-zinc-100/80 dark:bg-zinc-900/50 border-zinc-300 dark:border-zinc-700 text-zinc-500 shadow-2xs"
-                              : "bg-zinc-50 dark:bg-zinc-950/30 border-zinc-200/80 dark:border-zinc-800/60 opacity-50 hover:opacity-80"
-                            : isSelected
+                          isSelected
                             ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
-                            : "bg-zinc-50 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800/60 opacity-60 hover:opacity-100 hover:bg-white dark:hover:bg-zinc-900/40"
+                            : "bg-white dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/70"
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div
                             className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                              isComingSoon
-                                ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-500"
-                                : isSelected
+                              isSelected
                                 ? "bg-[#190088] text-white"
-                                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-500"
+                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 group-hover:text-[#190088] dark:group-hover:text-white"
                             }`}
                           >
                             <Icon className="w-4 h-4" />
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {isComingSoon ? (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider bg-zinc-200/90 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
-                                Próximamente
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-mono text-zinc-500 uppercase">
-                                {mod.tag}
-                              </span>
-                            )}
+                            <span className="text-[10px] font-mono text-zinc-500 uppercase">
+                              {mod.tag}
+                            </span>
                             <div
                               className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
                                 isSelected
-                                  ? isComingSoon
-                                    ? "bg-zinc-400 dark:bg-zinc-600 text-white"
-                                    : "bg-[#FF3F1A] text-white"
+                                  ? "bg-[#FF3F1A] text-white"
                                   : "border border-zinc-300 dark:border-zinc-700"
                               }`}
                             >
@@ -678,11 +508,9 @@ export default function OnboardingPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className={`text-xs font-bold ${isComingSoon ? "text-zinc-600 dark:text-zinc-300" : "text-zinc-950 dark:text-white"}`}>
-                              {mod.title}
-                            </h4>
-                          </div>
+                          <h4 className="text-xs font-bold text-zinc-950 dark:text-white">
+                            {mod.title}
+                          </h4>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
                             {mod.description}
                           </p>
@@ -692,169 +520,130 @@ export default function OnboardingPage() {
                   })}
                 </div>
 
-                {/* Step 2: Representative Operations Showcase Card */}
-                <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[200px] flex flex-col justify-end p-6">
-                  {/* Photo Background */}
-                  <img
-                    src="/onboarding-operations.jpg"
-                    alt="Necto Operations Hub"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-                  {/* Content */}
-                  <div className="relative z-10 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
-                        OPERACIONES INTEGRADAS
-                      </span>
-                      <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
-                        Cloud Sync
-                      </span>
-                    </div>
-                    <p className="text-sm font-bold text-white tracking-tight">
-                      Sincronización Total en Mostrador, Despacho y WhatsApp
-                    </p>
-                    <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
-                      Cada módulo se conecta directamente al inventario central y registro contable de tu negocio.
-                    </p>
-                  </div>
+                {/* Information Callout */}
+                <div className="p-4 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 flex items-start gap-3">
+                  <Info className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] mt-0.5 flex-none" />
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    <strong>Desacoplamiento total:</strong> Si no seleccionas ningún módulo, tu tienda se abrirá con el hub de módulos disponible para instalar capacidades en caliente con 1 solo clic.
+                  </p>
                 </div>
               </div>
             )}
 
-            {/* ─── STEP 3: CANAL WHATSAPP & ASISTENTE VIRTUAL ────────────── */}
+            {/* ─── STEP 3: LANZAMIENTO Y CANAL WHATSAPP ───────────────────── */}
             {step === 3 && (
               <div className="space-y-6 animate-fade-in">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Meta Business Integration</span>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider font-mono">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Nivel 3 · Configuración & Lanzamiento</span>
                   </div>
-
                   <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
-                    Conecta tu canal oficial de WhatsApp & Asistente
+                    Tu tienda está lista para despegar
                   </h1>
                   <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    {selectedModules.includes("pedidos")
-                      ? "Necto vinculará tu línea con el bot omnicanal de pedidos en tiempo real para recibir compras, notificar estados y sincronizar inventario sin intermediarios."
-                      : "Vincula tu canal oficial de WhatsApp para brindar soporte y atención directa a tus clientes."}
+                    Revisa el resumen de tu espacio de trabajo antes de entrar al centro de mando.
                   </p>
                 </div>
 
-                {/* Main Hero Connection Box */}
-                <div className="p-6 sm:p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-6 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center border border-[#FF3F1A]/20 font-bold flex-none shadow-2xs">
-                        <Smartphone className="w-7 h-7" />
+                {/* Store Passport Summary Card */}
+                <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-5 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-4">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
+                        Espacio de Trabajo
+                      </span>
+                      <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white">
+                        {companyName.trim() || "Mi Tienda"}
+                      </h3>
+                    </div>
+                    <Badge variant="primary" intent="onboarding.passport.badge">
+                      {currencyForCountry(country)}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Ubicación</span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {city ? `${city}, ${country}` : country}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Contacto</span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {contactPhone || "Línea por configurar"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Especialidad</span>
+                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        {specialty || "Comercio & Operaciones"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Active Capabilities Summary */}
+                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
+                      Capacidades a Instalar:
+                    </span>
+                    {selectedModules.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedModules.map(m => {
+                          const def = MODULE_DEFINITIONS.find(d => d.id === m);
+                          return (
+                            <span
+                              key={m}
+                              className="px-2.5 py-1 rounded-lg bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] text-xs font-bold border border-[#190088]/20 flex items-center gap-1.5"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
+                              <span>{def?.title || m}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                        <Store className="w-4 h-4 text-amber-600 flex-none" />
+                        <span>Tienda Limpia: No se instalarán módulos iniciales. Podrás activarlos cuando desees.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Optional WhatsApp Quick Connect if Pedidos is selected */}
+                {selectedModules.includes("pedidos") && (
+                  <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-none">
+                        <Smartphone className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white">
-                          WhatsApp Business Cloud & Pedidos
-                        </h3>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
-                          {isMetaConnected ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <CheckCircle2 className="w-3.5 h-3.5 inline" />
-                              <span>Dispositivo vinculado con éxito. Canal activo para pedidos.</span>
-                            </span>
-                          ) : (
-                            "Vincula tu cuenta para recibir pedidos automáticos y atender clientes en tiempo real."
-                          )}
+                        <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+                          Conexión Opcional con WhatsApp Web
+                        </h4>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                          {isMetaConnected
+                            ? "Canal vinculado con éxito. Podrás calibrar el tono y respuestas en Ajustes."
+                            : "Vincúlalo ahora o déjalo para más adelante desde los ajustes de la tienda."}
                         </p>
                       </div>
                     </div>
 
-                    {isMetaConnected && (
-                      <Badge
-                        variant="success"
-                        intent="onboarding.meta.status"
-                        className="self-start sm:self-center"
-                      >
-                        Conectado
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2 border-t border-zinc-200/80 dark:border-zinc-800">
                     <Button
-                      variant="primary"
-                      intent="onboarding.meta.toggle"
+                      variant={isMetaConnected ? "outline" : "primary"}
+                      intent="onboarding.whatsapp.connect"
                       onClick={() => {
                         window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
                         setIsMetaConnected(true);
                       }}
-                      className="py-3.5 px-6 rounded-2xl text-sm font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white flex items-center justify-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
+                      className="text-xs font-bold py-2 px-4 rounded-xl cursor-pointer flex-none"
                     >
-                      {isMetaConnected ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 text-white" />
-                          <span>Reabrir WhatsApp Web</span>
-                        </>
-                      ) : (
-                        <>
-                          <Smartphone className="w-4 h-4" />
-                          <span>Conectar con WhatsApp Web</span>
-                        </>
-                      )}
+                      {isMetaConnected ? "Reabrir WhatsApp Web" : "Conectar WhatsApp Web"}
                     </Button>
-
-                    {!isMetaConnected && (
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono px-2 py-3 text-center sm:text-left">
-                        Opcional: puedes configurarlo o cambiarlo más adelante desde ajustes.
-                      </span>
-                    )}
                   </div>
-                </div>
-
-                {/* Information Callout: Bot Customization is in Store Settings */}
-                <div className="p-4 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 flex items-start gap-3.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#190088]/10 dark:bg-[#190088]/30 text-[#190088] dark:text-[#EFE6D3] flex items-center justify-center flex-none">
-                    <Bot className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-0.5 text-left">
-                    <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      Identidad & Personalización del Asistente Virtual
-                    </h4>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                      El nombre del bot, su tono de atención y el catálogo de respuestas rápidas se gestionan con total control desde <strong className="text-zinc-800 dark:text-zinc-200">Configuración de la Tienda → WhatsApp & Bot</strong> cuando tu espacio esté activo.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Large WhatsApp Meta Showcase Card at the Bottom of Step 3 */}
-                <div className="relative rounded-3xl overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm min-h-[220px] flex flex-col justify-end p-6">
-                  {/* Photo Background */}
-                  <img
-                    src="/whatsapp-meta-hero.jpg"
-                    alt="Necto WhatsApp Meta Integration"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-
-                  {/* Glassmorphism Dark Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-                  {/* Content Overlay */}
-                  <div className="relative z-10 space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-orange-400 px-2.5 py-0.5 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/40">
-                        NECTO X META
-                      </span>
-                      <span className="text-[10px] font-mono text-white/80 px-2 py-0.5 rounded bg-black/60 backdrop-blur-md border border-white/10">
-                        Official Cloud API
-                      </span>
-                    </div>
-                    <p className="text-sm font-bold text-white tracking-tight">
-                      La forma más potente de conectar con tus clientes.
-                    </p>
-                    <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
-                      Atención automática 24/7, sincronización directa entre canales de venta, despacho e inventario.
-                    </p>
-                  </div>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -909,7 +698,7 @@ export default function OnboardingPage() {
                   </>
                 ) : (
                   <>
-                    <span>Finalizar & Lanzar Espacio</span>
+                    <span>Finalizar & Entrar a mi Tienda</span>
                     <Store className="w-4 h-4" />
                   </>
                 )}
@@ -918,9 +707,9 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Column: Natural Photorealistic Visual Showcase with Subtle Warm Orange Accents */}
+        {/* Right Column: Visual Showcase */}
         <div className="lg:col-span-5 relative bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[520px]">
-          {/* High-Resolution Background Photography in Natural Colors */}
+          {/* High-Resolution Background Photography */}
           <img
             src={
               step === 1
@@ -929,11 +718,11 @@ export default function OnboardingPage() {
                 ? "/onboarding-operations.jpg"
                 : "/onboarding-whatsapp-orders.jpg"
             }
-            alt={activeArchetype.title}
+            alt="Necto Core Architecture"
             className="absolute inset-0 w-full h-full object-cover opacity-90 transition-all duration-700 scale-100"
           />
 
-          {/* Soft, Natural Dark-Warm Gradient Overlay (Preserves photo colors and details) */}
+          {/* Soft Dark Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
           <div className="absolute inset-0 bg-gradient-to-br from-[#FF3F1A]/15 via-transparent to-black/40 pointer-events-none" />
 
@@ -941,7 +730,7 @@ export default function OnboardingPage() {
           <div className="relative z-10 flex items-center justify-between">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-sm">
               <Layers className="w-3.5 h-3.5 text-orange-400" />
-              <span>Plataforma Modular Operativa</span>
+              <span>Arquitectura 3 Capas</span>
             </div>
 
             <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15">
@@ -954,81 +743,60 @@ export default function OnboardingPage() {
             <div className="space-y-3">
               <span className="text-xs font-mono font-bold uppercase tracking-widest text-orange-400 px-3 py-1 rounded-lg bg-orange-500/20 backdrop-blur-md border border-orange-500/40 inline-block shadow-sm">
                 {step === 1
-                  ? activeArchetype.title
+                  ? "Espacio de Trabajo Universal"
                   : step === 2
-                  ? "Arquitectura Modular Plug & Play"
-                  : "Canal Oficial WhatsApp & Asistente"}
+                  ? "Capacidades Plug & Play"
+                  : "Tu Tienda en Vivo"}
               </span>
 
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight drop-shadow-md">
                 {step === 1
-                  ? `La forma más simple y potente de gestionar ${companyName.trim() || "tu negocio"}.`
+                  ? `La tienda es el contenedor. Las capacidades se agregan después.`
                   : step === 2
-                  ? "Módulos que escalan según las necesidades de tu operación."
-                  : "Tus clientes piden por WhatsApp. Tu equipo despacha al instante."}
+                  ? "Enciende únicamente los módulos que requieres hoy."
+                  : "Tu espacio de trabajo está listo para recibir operaciones."}
               </h2>
 
               <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed max-w-md drop-shadow-sm font-medium">
                 {step === 1
-                  ? activeArchetype.tagline
+                  ? "Crea tu espacio con identidad limpia, roles transversales e integraciones. Cero suposiciones de industria."
                   : step === 2
-                  ? "Enciende únicamente los módulos que requieres hoy y conecta nuevas capacidades sin rehacer tu configuración."
-                  : "Atención automatizada 24/7, confirmación de pedidos y reservas en tiempo real sin pagar comisiones a terceros."}
+                  ? "Los módulos son capacidades independientes. Si necesitas pedidos, inventario o turnos, los activas sin rehacer tu configuración."
+                  : "Acceso inmediato al centro de operaciones, catálogo de módulos y administración transversal."}
               </p>
             </div>
 
             {/* Feature Highlights Grid */}
-            <div className="space-y-2.5 pt-2">
-              {(step === 1
-                ? [
-                    "Diseñado específicamente para tu modelo de negocio",
-                    "Comienza a operar en minutos sin configuraciones difíciles",
-                    "Accesible desde cualquier dispositivo (tablet, celular o PC)",
-                  ]
-                : step === 2
-                ? [
-                    "Activa o desactiva módulos cuando lo necesites",
-                    "Alertas automáticas de productos e insumos agotados",
-                    "Métricas claras de operaciones para tomar mejores decisiones",
-                  ]
-                : [
-                    "API oficial sin riesgo de bloqueo de tu número",
-                    "Atención con asistente virtual personalizada a tu tienda",
-                    "Tus clientes no tienen que descargar ninguna app extra",
-                  ]
-              ).map((benefit, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-black/55 backdrop-blur-md border border-white/20 text-xs text-white shadow-md transition-all hover:bg-black/70"
-                >
-                  <div className="w-5 h-5 rounded-full bg-[#FF3F1A] text-white flex items-center justify-center flex-none font-bold shadow-xs">
-                    <Check className="w-3.5 h-3.5 stroke-[3] text-white" />
-                  </div>
-                  <span className="font-semibold text-white leading-tight">{benefit}</span>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="p-3.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 space-y-1">
+                <div className="flex items-center gap-1.5 text-orange-400 text-xs font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>0 Módulos</span>
                 </div>
-              ))}
+                <p className="text-[11px] text-zinc-300 leading-snug">
+                  La tienda funciona por sí sola con sus roles y configuración base.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 space-y-1">
+                <div className="flex items-center gap-1.5 text-orange-400 text-xs font-bold">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Plug & Play</span>
+                </div>
+                <p className="text-[11px] text-zinc-300 leading-snug">
+                  Activa o remueve capacidades en cualquier momento sin fricción.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Bottom Social Proof Card */}
-          <div className="relative z-10 p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 flex items-center gap-3.5 shadow-xl">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-none shadow-md overflow-hidden p-1.5">
-              {companyName ? (
-                <span className="font-black text-sm text-[#FF3F1A]">
-                  {companyName.charAt(0).toUpperCase()}
-                </span>
-              ) : (
-                <NectoIsotype size="sm" />
-              )}
-            </div>
-            <div className="space-y-0.5">
-              <p className="text-xs font-bold text-white">
-                {companyName.trim() || "Tu nuevo espacio en Necto"}
-              </p>
-              <p className="text-[11px] text-zinc-300 font-medium">
-                {country} · {selectedModules.length} módulos listos para usar
-              </p>
-            </div>
+          {/* Bottom Security Note */}
+          <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
+            <span className="flex items-center gap-1.5 font-medium">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Multi-Tenant Seguro</span>
+            </span>
+            <span className="font-mono text-zinc-500">v3.0.0</span>
           </div>
         </div>
       </div>
