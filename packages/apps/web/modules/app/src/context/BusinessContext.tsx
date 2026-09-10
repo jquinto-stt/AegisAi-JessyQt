@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 
 export type BusinessType =
   | "restaurant_virtual"
@@ -142,6 +142,251 @@ export interface RolePermission {
   permissions: RolePermissions;
 }
 
+export interface BusinessSemanticConfig {
+  orderSingle: string;
+  orderPlural: string;
+  stationName: string;
+  stationShortName: string;
+  stationAction: string;
+  catalogItem: string;
+  tableOrChannel: string;
+  itemModifiers: string;
+  fulfillmentAgent: string;
+}
+
+export function getBusinessSemantics(businessType?: BusinessType): BusinessSemanticConfig {
+  switch (businessType) {
+    case "retail_store":
+    case "ecommerce_direct":
+      return {
+        orderSingle: "Pedido de Venta",
+        orderPlural: "Pedidos",
+        stationName: "Picking, Empaque & Despacho",
+        stationShortName: "Picking & Despacho",
+        stationAction: "Preparar para Envío",
+        catalogItem: "Producto / SKU",
+        tableOrChannel: "Canal de Venta",
+        itemModifiers: "Variantes (Talla, Color)",
+        fulfillmentAgent: "Bodeguero / Despachador",
+      };
+    case "services":
+      return {
+        orderSingle: "Cita / Servicio",
+        orderPlural: "Citas & Turnos",
+        stationName: "Cuadrante de Atención",
+        stationShortName: "Atención & Turnos",
+        stationAction: "Iniciar Atención",
+        catalogItem: "Servicio / Tratamiento",
+        tableOrChannel: "Box / Cabina / Puesto",
+        itemModifiers: "Detalles / Duración",
+        fulfillmentAgent: "Especialista / Profesional",
+      };
+    case "restaurant_virtual":
+    default:
+      return {
+        orderSingle: "Comanda / Pedido",
+        orderPlural: "Comandas",
+        stationName: "Cocina & Despacho (KDS)",
+        stationShortName: "KDS Cocina",
+        stationAction: "Iniciar Preparación",
+        catalogItem: "Plato / Menú",
+        tableOrChannel: "Mesa / Salón / Canal",
+        itemModifiers: "Modificadores / Salsas",
+        fulfillmentAgent: "Cocinero / Chef",
+      };
+  }
+}
+
+export function getDefaultRolesForArchetype(businessType?: BusinessType): RolePermission[] {
+  if (businessType === "retail_store" || businessType === "ecommerce_direct") {
+    return [
+      {
+        id: "role-owner",
+        name: "Dueño / Propietario",
+        description: "Acceso total irrestricto a analítica, finanzas, canales, catálogo y configuración.",
+        badgeColor: "rose",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: true,
+          canCreateOrders: true,
+          canViewKDS: true,
+          canDispatchKDS: true,
+          canViewCatalogo: true,
+          canEditCatalogo: true,
+          canViewInsumos: true,
+          canEditInsumos: true,
+          canViewAnalitica: true,
+          canViewHistorial: true,
+          canViewAutomatizaciones: true,
+          canViewTurnos: true,
+          canManageRoles: true,
+        },
+      },
+      {
+        id: "role-admin",
+        name: "Gerente de Tienda",
+        description: "Gestión integral de operaciones de venta, inventario, precios y despacho.",
+        badgeColor: "blue",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: true,
+          canCreateOrders: true,
+          canViewKDS: true,
+          canDispatchKDS: true,
+          canViewCatalogo: true,
+          canEditCatalogo: true,
+          canViewInsumos: true,
+          canEditInsumos: true,
+          canViewAnalitica: true,
+          canViewHistorial: true,
+          canViewAutomatizaciones: true,
+          canViewTurnos: true,
+          canManageRoles: true,
+        },
+      },
+      {
+        id: "role-sales",
+        name: "Asesor de Ventas & WhatsApp",
+        description: "Atención de clientes en chat de WhatsApp, cotizaciones y creación de pedidos.",
+        badgeColor: "emerald",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: true,
+          canCreateOrders: true,
+          canViewKDS: false,
+          canDispatchKDS: false,
+          canViewCatalogo: true,
+          canEditCatalogo: false,
+          canViewInsumos: false,
+          canEditInsumos: false,
+          canViewAnalitica: false,
+          canViewHistorial: true,
+          canViewAutomatizaciones: false,
+          canViewTurnos: false,
+          canManageRoles: false,
+        },
+      },
+      {
+        id: "role-fulfillment",
+        name: "Despachador & Bodeguero",
+        description: "Recepción de órdenes confirmadas, picking de estantería, embalaje y emisión de guías.",
+        badgeColor: "amber",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: false,
+          canCreateOrders: false,
+          canViewKDS: true,
+          canDispatchKDS: true,
+          canViewCatalogo: true,
+          canEditCatalogo: false,
+          canViewInsumos: true,
+          canEditInsumos: false,
+          canViewAnalitica: false,
+          canViewHistorial: false,
+          canViewAutomatizaciones: false,
+          canViewTurnos: false,
+          canManageRoles: false,
+        },
+      },
+      {
+        id: "role-inventory",
+        name: "Jefe de Almacén & Kardex",
+        description: "Entradas y salidas de mercancía, traslados entre bodegas y auditoría de existencias.",
+        badgeColor: "purple",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: false,
+          canCreateOrders: false,
+          canViewKDS: false,
+          canDispatchKDS: false,
+          canViewCatalogo: true,
+          canEditCatalogo: true,
+          canViewInsumos: true,
+          canEditInsumos: true,
+          canViewAnalitica: false,
+          canViewHistorial: false,
+          canViewAutomatizaciones: false,
+          canViewTurnos: false,
+          canManageRoles: false,
+        },
+      },
+    ];
+  }
+
+  if (businessType === "services") {
+    return [
+      {
+        id: "role-owner",
+        name: "Director / Dueño",
+        description: "Acceso total a finanzas, citas, especialistas y configuración global.",
+        badgeColor: "rose",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: true,
+          canCreateOrders: true,
+          canViewKDS: true,
+          canDispatchKDS: true,
+          canViewCatalogo: true,
+          canEditCatalogo: true,
+          canViewInsumos: true,
+          canEditInsumos: true,
+          canViewAnalitica: true,
+          canViewHistorial: true,
+          canViewAutomatizaciones: true,
+          canViewTurnos: true,
+          canManageRoles: true,
+        },
+      },
+      {
+        id: "role-receptionist",
+        name: "Recepción & Citas WhatsApp",
+        description: "Agendamiento de citas, cobro de servicios y recordatorios automáticos.",
+        badgeColor: "blue",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: true,
+          canCreateOrders: true,
+          canViewKDS: false,
+          canDispatchKDS: false,
+          canViewCatalogo: true,
+          canEditCatalogo: false,
+          canViewInsumos: false,
+          canEditInsumos: false,
+          canViewAnalitica: false,
+          canViewHistorial: true,
+          canViewAutomatizaciones: false,
+          canViewTurnos: true,
+          canManageRoles: false,
+        },
+      },
+      {
+        id: "role-specialist",
+        name: "Especialista / Profesional",
+        description: "Visualización de su agenda diaria de citas, check-in y consumos de atención.",
+        badgeColor: "emerald",
+        isSystem: true,
+        permissions: {
+          canViewBandeja: false,
+          canCreateOrders: false,
+          canViewKDS: true,
+          canDispatchKDS: true,
+          canViewCatalogo: false,
+          canEditCatalogo: false,
+          canViewInsumos: true,
+          canEditInsumos: false,
+          canViewAnalitica: false,
+          canViewHistorial: false,
+          canViewAutomatizaciones: false,
+          canViewTurnos: false,
+          canManageRoles: false,
+        },
+      },
+    ];
+  }
+
+  return INITIAL_ROLES;
+}
+
 export const INITIAL_ROLES: RolePermission[] = [
   {
     id: "role-owner",
@@ -255,12 +500,11 @@ export const INITIAL_ROLES: RolePermission[] = [
   },
 ];
 
-
-
 interface BusinessContextType {
   businesses: BusinessInstance[];
   activeBusiness: BusinessInstance;
   activeBusinessId: string;
+  semantics: BusinessSemanticConfig;
   userRole: UserWorkspaceRole;
   roles: RolePermission[];
   activeRoleId: string;
@@ -282,24 +526,21 @@ interface BusinessContextType {
   setUserAvatarUrl: (url: string) => void;
 }
 
-
-
 const DEFAULT_BUSINESS: BusinessInstance = {
-  id: "biz-necto-central",
-  name: "Burger House — Sede Principal",
-  slug: "burger-house-central",
-  businessType: "restaurant_virtual",
-  iconKey: "utensils",
-  logoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+  id: "biz-necto-ferreteria",
+  name: "Ferretería & Suministros La Tuerca",
+  slug: "ferreteria-la-tuerca",
+  businessType: "retail_store",
+  iconKey: "store",
+  logoUrl: "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=150&auto=format&fit=crop&q=80",
   currency: "COP",
-  city: "Bogotá, Colombia",
+  city: "Medellín, Colombia",
   channels: {
     whatsapp: true,
     web: true,
     pos: true,
   },
-  kitchenBufferMin: 20,
-  specialty: "Hamburguesas & Comidas Rápidas",
+  specialty: "Materiales, Tornillería & Herramientas",
   activeModules: ["pedidos", "inventarios", "referidos"],
   setupProgress: {
     whatsappConnected: true,
@@ -311,25 +552,26 @@ const DEFAULT_BUSINESS: BusinessInstance = {
 };
 
 const SECONDARY_BUSINESS: BusinessInstance = {
-  id: "biz-necto-pizza",
-  name: "Pizza Necto — Delivery Express",
-  slug: "pizza-necto-express",
+  id: "biz-necto-central",
+  name: "Burger House — Sede Gourmet",
+  slug: "burger-house-gourmet",
   businessType: "restaurant_virtual",
   iconKey: "flame",
+  logoUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
   currency: "COP",
-  city: "Medellín, Colombia",
+  city: "Bogotá, Colombia",
   channels: {
     whatsapp: true,
     web: true,
-    pos: false,
+    pos: true,
   },
-  kitchenBufferMin: 15,
-  specialty: "Pizzas Artesanales & Calzones",
-  activeModules: ["pedidos", "inventarios"],
+  kitchenBufferMin: 20,
+  specialty: "Hamburguesas Artesanales & Comidas Rápidas",
+  activeModules: ["pedidos", "inventarios", "referidos"],
   setupProgress: {
     whatsappConnected: true,
     menuConfigured: true,
-    kitchenConfigured: false,
+    kitchenConfigured: true,
     teamInvited: false,
   },
   createdAt: new Date(Date.now() - 86400000).toISOString(),
@@ -430,6 +672,11 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const activeBusiness =
     businesses.find(b => b.id === activeBusinessId) || businesses[0] || DEFAULT_BUSINESS;
 
+  const semantics = useMemo(
+    () => getBusinessSemantics(activeBusiness?.businessType),
+    [activeBusiness?.businessType]
+  );
+
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const newBiz: BusinessInstance = {
       ...data,
@@ -446,12 +693,19 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setBusinesses(prev => [newBiz, ...prev]);
     setActiveBusinessId(newBiz.id);
+    const newRoles = getDefaultRolesForArchetype(newBiz.businessType);
+    setRoles(newRoles);
+    setActiveRoleId(newRoles[0]?.id || "role-owner");
     return newBiz;
   };
 
   const switchBusiness = (id: string) => {
-    if (businesses.some(b => b.id === id)) {
+    const target = businesses.find(b => b.id === id);
+    if (target) {
       setActiveBusinessId(id);
+      const targetRoles = getDefaultRolesForArchetype(target.businessType);
+      setRoles(targetRoles);
+      setActiveRoleId(targetRoles[0]?.id || "role-owner");
     }
   };
 
@@ -578,6 +832,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         businesses,
         activeBusiness,
         activeBusinessId,
+        semantics,
         userRole,
         roles,
         activeRoleId,

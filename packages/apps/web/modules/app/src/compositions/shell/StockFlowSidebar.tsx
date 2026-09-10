@@ -187,14 +187,16 @@ export const StockFlowSidebar = observer(({
   onOpenRoleModal,
   activeRoleName = "Dueño",
 }: StockFlowSidebarProps) => {
-  const { activeBusiness } = useBusiness();
+  const { activeBusiness, semantics } = useBusiness();
   const hasPedidos = activeBusiness?.activeModules?.includes("pedidos") ?? true;
+  const isFood = activeBusiness?.businessType === "restaurant_virtual";
+  const catalogMenuTitle = isFood ? "Menú & Insumos" : "Catálogo & Listas";
 
   // Accordion open section state
   const [openMenuName, setOpenMenuName] = useState<string | null>(() => {
     if (activeModule === "pedidos") {
       if (pedidosSection === "operacion") return "Operación";
-      if (pedidosSection === "menu") return "Menú & Insumos";
+      if (pedidosSection === "menu") return catalogMenuTitle;
       if (pedidosSection === "analitica") return "Analítica";
       if (pedidosSection === "configuracion") return "Configuración";
     }
@@ -205,11 +207,11 @@ export const StockFlowSidebar = observer(({
   useEffect(() => {
     if (activeModule === "pedidos") {
       if (pedidosSection === "operacion") setOpenMenuName("Operación");
-      else if (pedidosSection === "menu") setOpenMenuName("Menú & Insumos");
+      else if (pedidosSection === "menu") setOpenMenuName(catalogMenuTitle);
       else if (pedidosSection === "analitica") setOpenMenuName("Analítica");
       else if (pedidosSection === "configuracion") setOpenMenuName("Configuración");
     }
-  }, [activeModule, pedidosSection]);
+  }, [activeModule, pedidosSection, catalogMenuTitle]);
 
   return (
     <BaseAppSidebar logo={<Logo />} logoCollapsed={<LogoCollapsed />}>
@@ -277,7 +279,7 @@ export const StockFlowSidebar = observer(({
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
                   />
                   <MenuSubmenuItem
-                    name="KDS Cocina"
+                    name={semantics?.stationShortName || "Preparación & Despacho"}
                     onClick={() => onNavigatePedidos("operacion", "preparacion")}
                     active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
                   />
@@ -293,21 +295,21 @@ export const StockFlowSidebar = observer(({
                   />
                 </MenuItem>
 
-                {/* 2. MENÚ & INSUMOS */}
+                {/* 2. MENÚ & INSUMOS / CATÁLOGO */}
                 <MenuItem
                   icon={<ListIcon />}
-                  name="Menú & Insumos"
+                  name={catalogMenuTitle}
                   openMenuName={openMenuName}
                   onMenuToggle={setOpenMenuName}
                   active={activeModule === "pedidos" && pedidosSection === "menu"}
                 >
                   <MenuSubmenuItem
-                    name="Catálogo de Platos"
+                    name={isFood ? "Catálogo de Platos" : "Catálogo de Productos"}
                     onClick={() => onNavigatePedidos("menu", "catalogo")}
                     active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "catalogo"}
                   />
                   <MenuSubmenuItem
-                    name="Insumos & Recetas"
+                    name={isFood ? "Insumos & Recetas" : "Insumos & Materiales"}
                     onClick={() => onNavigatePedidos("menu", "insumos")}
                     active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "insumos"}
                   />

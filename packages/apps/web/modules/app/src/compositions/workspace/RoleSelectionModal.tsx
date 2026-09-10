@@ -13,6 +13,7 @@ import {
   X,
   Check,
   Crown,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -32,13 +33,15 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
 
   if (!isOpen || !business) return null;
 
+  const isFood = business.businessType === "restaurant_virtual";
+
   const handleSelectRole = (role: RolePermission) => {
     switchBusiness(business.id);
     setActiveRoleId(role.id);
     onClose();
 
     // Smart routing directly to the role's primary operational workspace
-    if (role.id === "role-cook" || (!role.permissions.canViewBandeja && role.permissions.canViewKDS)) {
+    if (role.id === "role-cook" || role.id === "role-fulfillment" || (!role.permissions.canViewBandeja && role.permissions.canViewKDS)) {
       navigate("/app?section=operacion&tab=preparacion");
     } else if (role.id === "role-inventory" || (!role.permissions.canViewBandeja && role.permissions.canViewInsumos)) {
       navigate("/app?section=menu&tab=insumos");
@@ -50,9 +53,10 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
   const getRoleIcon = (roleId: string) => {
     if (roleId === "role-owner") return <Crown className="w-5 h-5" />;
     if (roleId === "role-admin") return <Shield className="w-5 h-5" />;
+    if (roleId === "role-sales" || roleId === "role-waiter") return <ShoppingBag className="w-5 h-5" />;
+    if (roleId === "role-fulfillment" || roleId === "role-inventory") return <Package className="w-5 h-5" />;
     if (roleId === "role-cook") return <Flame className="w-5 h-5" />;
-    if (roleId === "role-waiter") return <ShoppingBag className="w-5 h-5" />;
-    if (roleId === "role-inventory") return <Package className="w-5 h-5" />;
+    if (roleId === "role-receptionist") return <Calendar className="w-5 h-5" />;
     return <Users className="w-5 h-5" />;
   };
 
@@ -67,7 +71,7 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
         hoverBorder: "hover:border-rose-400 dark:hover:border-rose-600",
         activeBg: "bg-rose-50 dark:bg-rose-950/20",
       };
-    if (roleId === "role-admin")
+    if (roleId === "role-admin" || roleId === "role-receptionist")
       return {
         bg: "bg-gradient-to-br from-sky-500 to-blue-600",
         ring: "ring-sky-500/30",
@@ -77,7 +81,7 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
         hoverBorder: "hover:border-sky-400 dark:hover:border-sky-600",
         activeBg: "bg-sky-50 dark:bg-sky-950/20",
       };
-    if (roleId === "role-cook")
+    if (roleId === "role-cook" || roleId === "role-fulfillment")
       return {
         bg: "bg-gradient-to-br from-amber-400 to-orange-500",
         ring: "ring-amber-500/30",
@@ -87,7 +91,7 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
         hoverBorder: "hover:border-amber-400 dark:hover:border-amber-600",
         activeBg: "bg-amber-50 dark:bg-amber-950/20",
       };
-    if (roleId === "role-waiter")
+    if (roleId === "role-sales" || roleId === "role-waiter" || roleId === "role-specialist")
       return {
         bg: "bg-gradient-to-br from-emerald-400 to-teal-500",
         ring: "ring-emerald-500/30",
@@ -120,11 +124,11 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
 
   const getPermissionsList = (role: RolePermission) => {
     const perms: string[] = [];
-    if (role.permissions.canViewBandeja) perms.push("Órdenes");
-    if (role.permissions.canViewKDS) perms.push("KDS Cocina");
-    if (role.permissions.canViewCatalogo) perms.push("Catálogo");
-    if (role.permissions.canViewInsumos) perms.push("Insumos");
-    if (role.permissions.canViewAnalitica) perms.push("Analítica");
+    if (role.permissions.canViewBandeja) perms.push("Órdenes / Chat");
+    if (role.permissions.canViewKDS) perms.push(isFood ? "KDS Cocina" : "Despacho & Picking");
+    if (role.permissions.canViewCatalogo) perms.push(isFood ? "Platos" : "Catálogo");
+    if (role.permissions.canViewInsumos) perms.push(isFood ? "Recetas" : "Kardex & Stock");
+    if (role.permissions.canViewAnalitica) perms.push("Finanzas");
     if (role.permissions.canManageRoles) perms.push("Roles");
     return perms;
   };
