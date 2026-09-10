@@ -678,10 +678,21 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   );
 
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
+    const sem = getBusinessSemantics(data.businessType);
     const newBiz: BusinessInstance = {
       ...data,
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
       activeModules: data.activeModules || ["pedidos", "inventarios"],
+      botConfig: data.botConfig || {
+        greeting: sem.botGreetingTemplate.replace("{storeName}", data.name),
+        personality: sem.botPersona,
+        catalogCategories:
+          data.businessType === "retail_store"
+            ? ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Químicos", "Medición & Trazado"]
+            : data.businessType === "services"
+            ? ["Consultas Generales", "Sesiones Técnicas", "Mantenimiento Preventivo"]
+            : ["Platos Fuertes", "Acompañamientos", "Bebidas", "Postres"],
+      },
       setupProgress: {
         whatsappConnected: data.channels?.whatsapp || false,
         menuConfigured: false,
