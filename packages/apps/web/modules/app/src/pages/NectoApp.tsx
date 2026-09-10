@@ -27,6 +27,7 @@ import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
 import { ModuloInventario, InventoryTab } from "@/ModuloInventario";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
+import { EmptyModulesHubView } from "@/compositions/workspace/EmptyModulesHubView";
 import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
 import { RoleSelectionModal } from "@/compositions/workspace/RoleSelectionModal";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
@@ -221,15 +222,19 @@ export function TailAdminBreadcrumb({
 export default function App() {
   const [isDarkMode] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios">(() => {
+  const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios" | "modules-hub">(() => {
     const mod = searchParams.get("module");
-    return mod === "inventarios" ? "inventarios" : "pedidos";
+    if (mod === "modules-hub") return "modules-hub";
+    if (mod === "inventarios") return "inventarios";
+    return "pedidos";
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const { activeBusiness, activeRole } = useBusiness();
-  const hasPedidos = activeBusiness?.activeModules?.includes("pedidos") ?? true;
-  const hasInventarios = activeBusiness?.activeModules?.includes("inventarios") ?? true;
+  const activeModules = activeBusiness?.activeModules || [];
+  const hasPedidos = activeModules.includes("pedidos");
+  const hasInventarios = activeModules.includes("inventarios");
+  const hasAnyModule = hasPedidos || hasInventarios;
 
   // Pedidos Navigation State initialized from URL search params
   const [pedidosSection, setPedidosSection] = useState<PedidosSection>(() => {
@@ -250,13 +255,23 @@ export default function App() {
     return t || "catalog";
   });
 
-  // Auto-switch to inventarios if pedidos is deactivated for this business
+  // Intelligent module redirection
   useEffect(() => {
+    if (!hasAnyModule) {
+      if (activeModule !== "modules-hub") {
+        setActiveModule("modules-hub");
+      }
+      return;
+    }
+
     if (!hasPedidos && hasInventarios && activeModule === "pedidos") {
       setActiveModule("inventarios");
       setSearchParams({ module: "inventarios", tab: inventarioTab }, { replace: true });
+    } else if (!hasInventarios && hasPedidos && activeModule === "inventarios") {
+      setActiveModule("pedidos");
+      setSearchParams({ section: pedidosSection, tab: pedidosSection === "operacion" ? pedidosOpTab : pedidosGeTab }, { replace: true });
     }
-  }, [hasPedidos, hasInventarios, activeModule, inventarioTab, setSearchParams]);
+  }, [hasPedidos, hasInventarios, hasAnyModule, activeModule, inventarioTab, pedidosSection, pedidosOpTab, pedidosGeTab, setSearchParams]);
 
   const handleNavigatePedidos = (section: PedidosSection, tab: any) => {
     setActiveModule("pedidos");
@@ -281,9 +296,11 @@ export default function App() {
     setSearchParams({ module: "inventarios", tab }, { replace: true });
   };
 
-  const handleNavigateModule = (mod: "pedidos" | "inventarios") => {
+  const handleNavigateModule = (mod: "pedidos" | "inventarios" | "modules-hub") => {
     setActiveModule(mod);
-    if (mod === "inventarios") {
+    if (mod === "modules-hub") {
+      setSearchParams({ module: "modules-hub" }, { replace: true });
+    } else if (mod === "inventarios") {
       setSearchParams({ module: "inventarios", tab: inventarioTab }, { replace: true });
     } else {
       setSearchParams({ section: pedidosSection, tab: pedidosSection === "operacion" ? pedidosOpTab : pedidosGeTab }, { replace: true });
@@ -293,6 +310,10 @@ export default function App() {
   // Synchronize when URL parameters change (e.g. from CommandPalette, direct links, or Hub)
   useEffect(() => {
     const mod = searchParams.get("module");
+    if (mod === "modules-hub") {
+      setActiveModule("modules-hub");
+      return;
+    }
     if (mod === "inventarios") {
       setActiveModule("inventarios");
       const t = searchParams.get("tab") as InventoryTab | null;
@@ -438,8 +459,12 @@ export default function App() {
       ? pedidosOpPageNames[pedidosOpTab]
       : pedidosGePageNames[pedidosGeTab];
 
+  const isModulesHub = !hasAnyModule || activeModule === "modules-hub";
+
   const pageTitle =
-    activeModule === "inventarios"
+    isModulesHub
+      ? "Módulos de Tienda & Plugins"
+      : activeModule === "inventarios"
       ? (inventarioTab === "valuation"
           ? "Valor de Inventario"
           : inventarioTab === "locations"
@@ -455,7 +480,13 @@ export default function App() {
 
   const breadcrumbItems: BreadcrumbItem[] = [
     { label: activeBusiness?.name || "Necto", href: "/app" },
-    { label: activeModule === "inventarios" ? "Inventario" : currentRoleName },
+    {
+      label: isModulesHub
+        ? "Espacio & Plugins"
+        : activeModule === "inventarios"
+        ? "Inventario"
+        : currentRoleName,
+    },
     { label: pageTitle },
   ];
 
@@ -500,12 +531,23 @@ export default function App() {
             />
           }
         >
-          {activeModule === "inventarios" || !hasPedidos ? (
+          {isModulesHub ? (
+            <EmptyModulesHubView
+              business={activeBusiness}
+              onNavigateToModule={(mod) => {
+                if (mod === "pedidos") {
+                  handleNavigatePedidos("operacion", "en-vivo");
+                } else if (mod === "inventarios") {
+                  handleNavigateInventario("products");
+                }
+              }}
+            />
+          ) : activeModule === "inventarios" && hasInventarios ? (
             <ModuloInventario
               activeTab={inventarioTab}
               onNavigateTab={handleNavigateInventario}
             />
-          ) : (
+          ) : hasPedidos ? (
             <PedidosModule
               sectionProp={pedidosSection}
               opTabProp={pedidosOpTab}
@@ -523,6 +565,17 @@ export default function App() {
                     ? "configuracion"
                     : "menu";
                 handleNavigatePedidos(targetSec, t);
+              }}
+            />
+          ) : (
+            <EmptyModulesHubView
+              business={activeBusiness}
+              onNavigateToModule={(mod) => {
+                if (mod === "pedidos") {
+                  handleNavigatePedidos("operacion", "en-vivo");
+                } else if (mod === "inventarios") {
+                  handleNavigateInventario("products");
+                }
               }}
             />
           )}

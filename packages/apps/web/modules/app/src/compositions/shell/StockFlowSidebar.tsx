@@ -164,13 +164,13 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal }: SidebarFoot
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface StockFlowSidebarProps {
-  activeModule: "pedidos" | "inventarios";
+  activeModule: "pedidos" | "inventarios" | "modules-hub";
   pedidosSection: PedidosSection;
   pedidosOpTab: OperacionTab;
   pedidosGeTab: GestionTab;
   inventarioTab: InventoryTab;
   onNavigatePedidos: (section: PedidosSection, tab?: any) => void;
-  onNavigateModule: (module: "pedidos" | "inventarios") => void;
+  onNavigateModule: (module: "pedidos" | "inventarios" | "modules-hub") => void;
   onNavigateInventario: (tab: InventoryTab) => void;
   onOpenRoleModal: () => void;
   activeRoleName?: string;
@@ -183,12 +183,15 @@ export const StockFlowSidebar = observer(({
   pedidosGeTab,
   inventarioTab,
   onNavigatePedidos,
+  onNavigateModule,
   onNavigateInventario,
   onOpenRoleModal,
   activeRoleName = "Dueño",
 }: StockFlowSidebarProps) => {
   const { activeBusiness, semantics } = useBusiness();
-  const hasPedidos = activeBusiness?.activeModules?.includes("pedidos") ?? true;
+  const activeModules = activeBusiness?.activeModules || [];
+  const hasPedidos = activeModules.includes("pedidos");
+  const hasInventarios = activeModules.includes("inventarios");
   const isFood = activeBusiness?.businessType === "restaurant_virtual";
   const catalogMenuTitle = isFood ? "Menú & Insumos" : "Catálogo & Listas";
 
@@ -217,10 +220,11 @@ export const StockFlowSidebar = observer(({
     <BaseAppSidebar logo={<Logo />} logoCollapsed={<LogoCollapsed />}>
       <nav className="flex flex-col flex-1">
         <div className="flex flex-col gap-6">
-          {/* SECCIÓN INVENTARIO */}
-          <div>
-            <MenuSectionHeader title="Inventario" />
-            <ul className="flex flex-col gap-1">
+          {/* SECCIÓN INVENTARIO (SÓLO SI EL MÓDULO ESTÁ ACTIVO) */}
+          {hasInventarios && (
+            <div>
+              <MenuSectionHeader title="Inventario" />
+              <ul className="flex flex-col gap-1">
               <MenuItem
                 icon={<BoxIcon />}
                 name="Productos & Servicios"
@@ -259,6 +263,7 @@ export const StockFlowSidebar = observer(({
               />
             </ul>
           </div>
+          )}
 
           {/* SECCIÓN PEDIDOS & OPERACIONES (TODAS LAS PANTALLAS CON SUBMENÚS) */}
           {hasPedidos && (
@@ -367,6 +372,19 @@ export const StockFlowSidebar = observer(({
               </ul>
             </div>
           )}
+
+          {/* SECCIÓN MÓDULOS & APPS (SIEMPRE DISPONIBLE PARA GESTIÓN DE PLUGINS) */}
+          <div>
+            <MenuSectionHeader title="Tienda & Módulos" />
+            <ul className="flex flex-col gap-1">
+              <MenuItem
+                icon={<PlugInIcon />}
+                name="Módulos de Tienda"
+                active={activeModule === "modules-hub"}
+                onClick={() => onNavigateModule("modules-hub")}
+              />
+            </ul>
+          </div>
         </div>
 
         <SidebarFooter

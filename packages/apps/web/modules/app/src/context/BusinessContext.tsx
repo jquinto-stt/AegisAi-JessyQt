@@ -556,6 +556,7 @@ interface BusinessContextType {
   canAccess: (permission: keyof RolePermissions) => boolean;
   isCommandPaletteOpen: boolean;
   setIsCommandPaletteOpen: (open: boolean) => void;
+  toggleModule: (businessId: string, moduleKey: NectoModuleKey) => void;
   createBusiness: (data: Omit<BusinessInstance, "id" | "createdAt">) => BusinessInstance;
   switchBusiness: (id: string) => void;
   updateBusiness: (id: string, updates: Partial<BusinessInstance>) => void;
@@ -628,7 +629,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed.map((b: any) => ({
             ...b,
-            activeModules: b.activeModules || ["pedidos", "inventarios", "referidos"],
+            activeModules: Array.isArray(b.activeModules) ? b.activeModules : ["pedidos", "inventarios", "referidos"],
             setupProgress: b.setupProgress || {
               whatsappConnected: true,
               menuConfigured: true,
@@ -717,12 +718,25 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     [activeBusiness?.businessType]
   );
 
+  const toggleModule = (businessId: string, moduleKey: NectoModuleKey) => {
+    setBusinesses(prev =>
+      prev.map(b => {
+        if (b.id !== businessId) return b;
+        const current = b.activeModules || [];
+        const updated = current.includes(moduleKey)
+          ? current.filter(m => m !== moduleKey)
+          : [...current, moduleKey];
+        return { ...b, activeModules: updated };
+      })
+    );
+  };
+
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const sem = getBusinessSemantics(data.businessType);
     const newBiz: BusinessInstance = {
       ...data,
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
-      activeModules: data.activeModules || ["pedidos", "inventarios"],
+      activeModules: Array.isArray(data.activeModules) ? data.activeModules : [],
       botConfig: data.botConfig || {
         greeting: sem?.botGreetingTemplate
           ? sem.botGreetingTemplate.replace("{storeName}", data.name)
@@ -897,6 +911,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         canAccess,
         isCommandPaletteOpen,
         setIsCommandPaletteOpen,
+        toggleModule,
         createBusiness,
         switchBusiness,
         updateBusiness,
