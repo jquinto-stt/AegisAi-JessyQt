@@ -17,6 +17,7 @@ import {
   StockLocation,
   AdjustmentReason,
 } from "../types/inventory.types";
+import { Modal, Button } from "@/elements";
 
 export type OperationMode = "ENTRADA" | "SALIDA" | "AJUSTE" | "TRASLADO" | "CONTEO";
 
@@ -243,31 +244,25 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div
-        className="relative w-full max-w-lg bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up text-zinc-900 dark:text-zinc-100"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ── 1. Clean Modal Header ── */}
-        <div className="p-4 sm:p-5 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-black text-zinc-900 dark:text-white">
-              Registrar Movimiento de Inventario
-            </h2>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Actualización física y trazabilidad contable inmediata en Kardex.
-            </p>
-          </div>
+  if (!isOpen) return null;
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-lg p-6 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xl"
+    >
+      {/* ── 1. Clean Modal Header ── */}
+      <div className="pb-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+            Registrar Movimiento de Inventario
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            Actualización física y trazabilidad contable inmediata en Kardex.
+          </p>
         </div>
+      </div>
 
         {/* ── 2. Mode Selector (Segmented Control) ── */}
         <div className="p-4 sm:px-5 pb-2">
@@ -604,7 +599,6 @@ export const StockMovementModal: React.FC<StockMovementModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };

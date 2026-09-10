@@ -367,9 +367,9 @@ const InteractiveImageViewport: React.FC<{
             className={`pointer-events-none transition-all duration-300 shadow-[0_0_0_9999px_rgba(0,0,0,0.58)] ring-2 ring-white/70 ${
               aspectRatio === "square"
                 ? previewShape === "circle"
-                  ? "w-48 h-48 sm:w-56 sm:h-56 rounded-full ring-4 ring-[#190088] shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
-                  : "w-48 h-48 sm:w-56 sm:h-56 rounded-2xl"
-                : "w-[90%] sm:w-[85%] h-36 sm:h-44 rounded-2xl ring-2 ring-[#FF3F1A]/80"
+                  ? "w-48 h-48 sm:w-56 sm:h-56 rounded-full ring-4 ring-brand-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"
+                  : "w-48 h-48 sm:w-56 sm:h-56 rounded-2xl ring-2 ring-white/90"
+                : "w-[90%] sm:w-[85%] h-36 sm:h-44 rounded-2xl ring-2 ring-brand-500/90"
             }`}
           >
             {/* Crosshair guidelines */}
@@ -382,12 +382,12 @@ const InteractiveImageViewport: React.FC<{
 
         {/* Top Badges */}
         <div className="absolute top-3 inset-x-3 flex items-center justify-between pointer-events-none z-10">
-          <span className="font-mono text-[10px] text-white bg-slate-900/80 border border-white/10 px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm">
+          <span className="font-mono text-[10px] text-zinc-200 bg-zinc-950/80 border border-white/10 px-2.5 py-1 rounded-full backdrop-blur-md shadow-sm">
             Zoom {Math.round(scale * 100)}% · Giro {rotate}°
           </span>
 
           {aspectRatio === "square" && (
-            <div className="flex items-center gap-1 bg-slate-900/80 border border-white/10 p-0.5 rounded-full backdrop-blur-md pointer-events-auto">
+            <div className="flex items-center gap-1 bg-zinc-950/80 border border-white/10 p-0.5 rounded-full backdrop-blur-md pointer-events-auto">
               <button
                 type="button"
                 onClick={(e) => {
@@ -395,7 +395,7 @@ const InteractiveImageViewport: React.FC<{
                   setPreviewShape("circle");
                 }}
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                  previewShape === "circle" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
+                  previewShape === "circle" ? "bg-brand-500 text-white shadow-xs" : "text-zinc-400 hover:text-white"
                 }`}
               >
                 Círculo
@@ -407,7 +407,7 @@ const InteractiveImageViewport: React.FC<{
                   setPreviewShape("square");
                 }}
                 className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                  previewShape === "square" ? "bg-[#190088] text-white shadow-xs" : "text-zinc-400 hover:text-white"
+                  previewShape === "square" ? "bg-brand-500 text-white shadow-xs" : "text-zinc-400 hover:text-white"
                 }`}
               >
                 Cuadrado
@@ -418,18 +418,18 @@ const InteractiveImageViewport: React.FC<{
 
         {/* Bottom Drag Helper */}
         <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none z-10">
-          <span className="px-2.5 py-0.5 rounded-lg bg-slate-900/70 backdrop-blur-md text-slate-300 font-mono text-[9px]">
+          <span className="px-2.5 py-0.5 rounded-lg bg-zinc-950/70 backdrop-blur-md text-zinc-300 font-mono text-[9px]">
             {isDragging ? "Ajustando encuadre..." : "Arrastra libremente para centrar dentro del marco"}
           </span>
         </div>
       </div>
 
       {/* Luxury Minimalist Controls Deck */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-zinc-50 dark:bg-[#121316] border border-zinc-200/80 dark:border-zinc-800 space-y-4 shadow-sm">
+      <div className="p-4 sm:p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
         {/* Zoom row */}
         <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
           <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-            <ZoomIn className="w-4 h-4 text-[#190088] dark:text-blue-400" />
+            <ZoomIn className="w-4 h-4 text-brand-500" />
             <span>Escala</span>
           </span>
           <div className="flex items-center gap-3">
@@ -447,7 +447,7 @@ const InteractiveImageViewport: React.FC<{
               step={0.05}
               value={scale}
               onChange={e => onUpdate({ rotate, scale: parseFloat(e.target.value), posX, posY })}
-              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#190088]"
+              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
             />
             <button
               type="button"
@@ -462,7 +462,7 @@ const InteractiveImageViewport: React.FC<{
         {/* Rotate row */}
         <div className="grid grid-cols-1 sm:grid-cols-[100px_1fr] items-center gap-3">
           <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-            <RotateCw className="w-4 h-4 text-[#FF3F1A]" />
+            <RotateCw className="w-4 h-4 text-brand-500" />
             <span>Rotación</span>
           </span>
           <div className="flex items-center gap-3">
@@ -480,7 +480,7 @@ const InteractiveImageViewport: React.FC<{
               step={1}
               value={rotate > 180 ? rotate - 360 : rotate}
               onChange={e => onUpdate({ rotate: parseInt(e.target.value, 10), scale, posX, posY })}
-              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-[#FF3F1A]"
+              className="flex-1 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-brand-500"
             />
             <button
               type="button"
@@ -500,7 +500,7 @@ const InteractiveImageViewport: React.FC<{
               onClick={() => onUpdate({ rotate, scale: 1, posX: 0, posY: 0 })}
               className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 transition-all cursor-pointer shadow-2xs flex items-center gap-1.5"
             >
-              <Move className="w-3.5 h-3.5 text-[#190088] dark:text-blue-400" />
+              <Move className="w-3.5 h-3.5 text-brand-500" />
               <span>Centrar Imagen</span>
             </button>
           </div>
@@ -968,26 +968,28 @@ export const BusinessSettingsModal: React.FC<{
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-[#18181B] w-full max-w-4xl max-h-[92vh] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden animate-scale-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-zinc-950/65 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-zinc-950 w-full max-w-5xl h-[90vh] max-h-[860px] rounded-3xl shadow-2xl border border-zinc-200/80 dark:border-zinc-800/80 flex flex-col overflow-hidden animate-scale-up">
         {/* Top Header */}
-        <div className="px-6 py-4.5 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between bg-gradient-to-r from-[#190088]/5 via-[#EFE6D3]/20 to-transparent dark:from-[#190088]/20 dark:via-zinc-900/50 dark:to-zinc-900/50 flex-none">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#190088] text-white flex items-center justify-center shadow-md">
+        <div className="px-6 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between bg-zinc-50/70 dark:bg-zinc-900/40 flex-none">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 flex items-center justify-center shadow-xs">
               <Store className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
-                <span>{business?.id ? "Configuración de Sede" : "Crear Nueva Franquicia / Sucursal"}</span>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                  {business?.id ? "Configuración de Sede" : "Crear Nueva Franquicia / Sucursal"}
+                </h2>
                 {business?.name && (
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#190088]/10 dark:bg-[#190088]/30 text-[#190088] dark:text-blue-200 border border-[#190088]/20">
+                  <span className="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
                     {business.name}
                   </span>
                 )}
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                 {business?.id
-                  ? "Ajusta la marca, imágenes, respuestas automáticas de WhatsApp y parámetros operativos."
+                  ? "Gestiona identidad, marca, WhatsApp IA, pasarelas de pago y ajustes operativos."
                   : "Registra una nueva marca o punto de venta para operar en tiempo real."}
               </p>
             </div>
@@ -997,7 +999,7 @@ export const BusinessSettingsModal: React.FC<{
             variant="ghost"
             intent="business.settings.close"
             onClick={onClose}
-            className="p-0 w-9 h-9 rounded-2xl text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center"
+            className="p-0 w-9 h-9 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -1006,7 +1008,7 @@ export const BusinessSettingsModal: React.FC<{
         {/* Modal Body Container with Sidebar and Main Panel */}
         <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           {/* Left Vertical Sub-Navigation */}
-          <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-zinc-200/80 dark:border-zinc-800/80 p-3 sm:p-4 bg-zinc-50/40 dark:bg-zinc-900/40 flex-none overflow-y-auto space-y-1">
+          <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-zinc-200/80 dark:border-zinc-800/80 p-3 bg-zinc-50/40 dark:bg-zinc-900/30 flex-none overflow-y-auto space-y-1.5">
             {[
               {
                 id: "general",
@@ -1066,23 +1068,23 @@ export const BusinessSettingsModal: React.FC<{
                   variant="ghost"
                   intent="business.settings.tab"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full p-2.5 rounded-2xl text-left transition-all cursor-pointer flex items-start gap-2.5 group ${
+                  className={`w-full p-2.5 rounded-xl text-left transition-all cursor-pointer flex items-start gap-3 group ${
                     isActive
-                      ? "bg-[#190088]/10 dark:bg-[#190088]/25 text-[#190088] dark:text-blue-200 shadow-xs border border-[#190088]/30 dark:border-[#190088]/50 font-bold"
-                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40 hover:text-[#190088] dark:hover:text-blue-300 border border-transparent"
+                      ? "bg-brand-50/80 dark:bg-brand-950/30 text-brand-700 dark:text-brand-300 shadow-xs border border-brand-200/90 dark:border-brand-900/50 font-semibold"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent"
                   }`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center flex-none mt-0.5 transition-colors ${
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center flex-none mt-0.5 transition-colors ${
                       isActive
-                        ? "bg-[#190088] text-white shadow-2xs"
-                        : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-500 group-hover:text-[#190088] dark:group-hover:text-blue-300"
+                        ? "bg-brand-500 text-white shadow-2xs"
+                        : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-800 dark:group-hover:text-zinc-200"
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-bold leading-tight truncate ${isActive ? "text-[#190088] dark:text-blue-200" : ""}`}>{tab.label}</p>
+                    <p className={`text-xs font-semibold leading-tight truncate ${isActive ? "text-brand-700 dark:text-brand-300" : ""}`}>{tab.label}</p>
                     <p className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate mt-0.5 font-normal">
                       {tab.desc}
                     </p>
@@ -1093,22 +1095,28 @@ export const BusinessSettingsModal: React.FC<{
           </div>
 
           {/* Right Main Content Area */}
-          <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-6">
+          <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6">
             {/* TAB 1: GENERAL & IDENTITY */}
             {activeTab === "general" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                     Identidad Comercial & Ubicación
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Información visible en comprobantes de comanda, tickets y catálogo digital.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Información visible en comprobantes de comanda, tickets impresos y el catálogo web para clientes.
                   </p>
                 </div>
 
-                <div className="space-y-4">
+                {/* Card 1: Datos de Identidad & URL */}
+                <div className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-200">
+                    <Store className="w-4 h-4 text-brand-500" />
+                    <span>Identificación de la Sede</span>
+                  </div>
+
                   <Field
-                    label="Nombre de la Sede o Restaurante"
+                    label="Nombre Comercial"
                     labelStyle="bold"
                     intent="business.name"
                     type="text"
@@ -1118,47 +1126,74 @@ export const BusinessSettingsModal: React.FC<{
                     placeholder="Ej: Necto Gourmet — Sede Principal"
                   />
 
-                  {/* Modelo de Operación */}
+                  {/* Slug / Identificador de Tienda */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      Modelo de Operación
+                      Enlace Web de la Tienda (Slug)
                     </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { id: "restaurant_virtual", label: "Gastronomía", desc: "Cocina, KDS & Mesas", icon: UtensilsCrossed },
-                        { id: "retail_store", label: "Comercio & Retail", desc: "Stock & Mostrador", icon: Store },
-                        { id: "services", label: "Servicios & Citas", desc: "Agenda & Horas", icon: Calendar },
-                      ].map(archetype => {
-                        const isSelected = businessType === archetype.id;
-                        const Icon = archetype.icon;
-                        return (
-                          <Button
-                            key={archetype.id}
-                            variant="ghost"
-                            intent="business.archetype.select"
-                            onClick={() => setBusinessType(archetype.id as BusinessType)}
-                            className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                              isSelected
-                                ? "bg-[#190088] text-white border-[#190088] shadow-sm font-bold"
-                                : "bg-zinc-50 dark:bg-zinc-900/90 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-[#190088]/40"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between w-full">
-                              <Icon className={`w-4 h-4 ${isSelected ? "text-[#EFE6D3]" : "text-[#FF3F1A]"}`} />
-                              {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                            </div>
-                            <span className="text-xs font-bold mt-1 leading-tight">{archetype.label}</span>
-                            <span className={`text-[10px] leading-tight ${isSelected ? "text-blue-100" : "text-zinc-400"}`}>
-                              {archetype.desc}
-                            </span>
-                          </Button>
-                        );
-                      })}
+                    <div className="flex items-center px-3.5 py-2.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500 transition-colors shadow-2xs">
+                      <span className="text-zinc-400 select-none font-mono text-[11px]">necto.app/</span>
+                      <input
+                        type="text"
+                        value={slug}
+                        onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+                        placeholder="mi-restaurante"
+                        className="flex-1 bg-transparent font-mono font-bold text-zinc-950 dark:text-white focus:outline-none ml-1 lowercase"
+                      />
                     </div>
                   </div>
+                </div>
 
-                  {/* País & Ciudad con selector dinámico */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Card 2: Modelo de Operación */}
+                <div className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-200">
+                    <Layers className="w-4 h-4 text-brand-500" />
+                    <span>Modelo de Operación Principal</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { id: "restaurant_virtual", label: "Gastronomía", desc: "Cocina, KDS & Mesas", icon: UtensilsCrossed },
+                      { id: "retail_store", label: "Comercio & Retail", desc: "Stock & Mostrador", icon: Store },
+                      { id: "services", label: "Servicios & Citas", desc: "Agenda & Horas", icon: Calendar },
+                    ].map(archetype => {
+                      const isSelected = businessType === archetype.id;
+                      const Icon = archetype.icon;
+                      return (
+                        <button
+                          type="button"
+                          key={archetype.id}
+                          onClick={() => setBusinessType(archetype.id as BusinessType)}
+                          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2 ${
+                            isSelected
+                              ? "bg-brand-500 text-white border-brand-500 shadow-sm font-semibold"
+                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-brand-500/40 shadow-2xs"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-brand-500"}`} />
+                            {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold block leading-tight">{archetype.label}</span>
+                            <span className={`text-[10px] leading-tight block mt-0.5 ${isSelected ? "text-white/80" : "text-zinc-400"}`}>
+                              {archetype.desc}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Card 3: Región y Moneda */}
+                <div className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-200">
+                    <Globe className="w-4 h-4 text-brand-500" />
+                    <span>Ubicación & Parámetros Financieros</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select
                       label="País de Operación"
                       labelStyle="bold"
@@ -1196,8 +1231,7 @@ export const BusinessSettingsModal: React.FC<{
                     />
                   </div>
 
-                  {/* Moneda & Alertas */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <Select
                       label="Moneda Oficial"
                       labelStyle="bold"
@@ -1212,6 +1246,7 @@ export const BusinessSettingsModal: React.FC<{
                       ]}
                     />
 
+                    {/* Alarma Sonora de Pedido */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
@@ -1220,9 +1255,9 @@ export const BusinessSettingsModal: React.FC<{
                         <button
                           type="button"
                           onClick={() => playOrderAlert(soundAlert)}
-                          className="text-[11px] font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
+                          className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1 cursor-pointer"
                         >
-                          <Play className="w-3 h-3 fill-[#FF3F1A]" />
+                          <Play className="w-3 h-3 fill-current" />
                           <span>Probar sonido</span>
                         </button>
                       </div>
@@ -1245,36 +1280,26 @@ export const BusinessSettingsModal: React.FC<{
                       />
                     </div>
                   </div>
+                </div>
 
-                  {/* Slug / Identificador de Tienda */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      Identificador URL de la Sede (Slug)
-                    </label>
-                    <div className="flex items-center px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus-within:border-[#190088] transition-colors">
-                      <span className="text-zinc-400 select-none font-mono text-[11px]">necto.app/</span>
-                      <input
-                        type="text"
-                        value={slug}
-                        onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
-                        placeholder="mi-restaurante"
-                        className="flex-1 bg-transparent font-mono font-bold text-zinc-950 dark:text-white focus:outline-none ml-1 lowercase"
-                      />
-                    </div>
+                {/* Card 4: Contacto */}
+                <div className="p-5 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-200">
+                    <Phone className="w-4 h-4 text-brand-500" />
+                    <span>Canales de Contacto Directo</span>
                   </div>
 
-                  {/* Contacto */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                        Correo de Contacto
+                        Correo Electrónico
                       </label>
                       <input
                         type="email"
                         value={contactEmail}
                         onChange={e => setContactEmail(e.target.value.toLowerCase().trim())}
                         placeholder="contacto@restaurante.com"
-                        className="w-full px-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#190088] lowercase"
+                        className="w-full px-3.5 py-2.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-2xs lowercase transition-colors"
                       />
                     </div>
 
@@ -1283,13 +1308,13 @@ export const BusinessSettingsModal: React.FC<{
                         Teléfono Oficial
                       </label>
                       <div className="relative">
-                        <Phone className="w-4 h-4 absolute left-3.5 top-3.5 text-zinc-400" />
+                        <Phone className="w-4 h-4 absolute left-3.5 top-3 text-zinc-400" />
                         <input
                           type="text"
                           value={contactPhone}
                           onChange={e => setContactPhone(e.target.value.replace(/[^0-9+\s()-]/g, ""))}
                           placeholder="+57 300 123 4567"
-                          className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-900 dark:text-zinc-100 font-semibold focus:outline-none focus:border-[#190088]"
+                          className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-zinc-900 dark:text-zinc-100 font-medium focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-2xs transition-colors"
                         />
                       </div>
                     </div>
@@ -1300,36 +1325,35 @@ export const BusinessSettingsModal: React.FC<{
 
             {/* TAB 2: BRANDING */}
             {activeTab === "branding" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
                     <span>Personalización de Logo & Portada</span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-blue-200 border border-[#190088]/20">
-                      Controles de Ángulo & Encuadre
+                    <span className="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
+                      Controles de Encuadre en Vivo
                     </span>
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Modifica la rotación, el zoom y la posición de tus fotos para que se acomoden exactamente como querés.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Modifica la rotación, el zoom y la posición de tus fotos para que calcen perfecto en tickets, comandas y la tienda digital.
                   </p>
                 </div>
 
                 {/* 1. Logotipo con Canvas Studio Táctil */}
-                <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 space-y-5 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-5 shadow-2xs">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h4 className="text-sm font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Store className="w-4 h-4 text-[#FF3F1A]" />
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Store className="w-4 h-4 text-brand-500" />
                         <span>Logotipo / Isotipo de la Marca</span>
                       </h4>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                         Visible en la barra lateral, comandas, recibos y avatar principal de tu negocio.
                       </p>
                     </div>
 
                     {logoUrl && (
-                      <Button
-                        variant="ghost"
-                        intent="business.logo.remove"
+                      <button
+                        type="button"
                         onClick={() => {
                           setLogoUrl("");
                           setLogoRotate(0);
@@ -1337,19 +1361,19 @@ export const BusinessSettingsModal: React.FC<{
                           setLogoPosX(0);
                           setLogoPosY(0);
                         }}
-                        className="p-0 text-xs text-red-500 hover:text-red-700 hover:bg-transparent cursor-pointer"
+                        className="text-xs text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer font-medium"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Quitar</span>
-                      </Button>
+                      </button>
                     )}
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
+                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{logoUrl ? "Reemplazar con Archivo" : "Subir Logotipo"}</span>
+                        <span>{logoUrl ? "Reemplazar Archivo" : "Subir Logotipo"}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1378,32 +1402,31 @@ export const BusinessSettingsModal: React.FC<{
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-44 rounded-3xl bg-zinc-50 dark:bg-[#0E0F12] border-2 border-dashed border-zinc-300 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400">
-                        <Camera className="w-8 h-8 mb-1.5" />
-                        <span className="text-xs font-bold">Sin Logotipo Cargado</span>
-                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una imagen para encuadrarla y rotarla en vivo</span>
+                      <div className="w-full h-44 rounded-2xl bg-white dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400">
+                        <Camera className="w-7 h-7 mb-1.5 text-zinc-300 dark:text-zinc-600" />
+                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Sin Logotipo Cargado</span>
+                        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Subí una imagen cuadrada o PNG para encuadrarla y rotarla en vivo</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* 2. Banner de Portada con Canvas Studio Táctil */}
-                <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 space-y-5 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-5 shadow-2xs">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h4 className="text-sm font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-[#FF3F1A]" />
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Palette className="w-4 h-4 text-brand-500" />
                         <span>Banner de Portada Panorámico</span>
                       </h4>
-                      <p className="text-xs text-zinc-500 mt-0.5">
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                         Fondo panorámico que viste la cabecera de pedidos en vivo, menú digital y tarjetas de sucursal.
                       </p>
                     </div>
 
                     {bannerUrl && (
-                      <Button
-                        variant="ghost"
-                        intent="business.banner.remove"
+                      <button
+                        type="button"
                         onClick={() => {
                           setBannerUrl("");
                           setBannerRotate(0);
@@ -1411,16 +1434,16 @@ export const BusinessSettingsModal: React.FC<{
                           setBannerPosX(0);
                           setBannerPosY(0);
                         }}
-                        className="p-0 text-xs text-red-500 hover:text-red-700 hover:bg-transparent cursor-pointer"
+                        className="text-xs text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer font-medium"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Quitar Portada</span>
-                      </Button>
+                      </button>
                     )}
                   </div>
 
                   <div className="space-y-4">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#14006e] transition-all cursor-pointer shadow-xs">
+                    <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs active:scale-95">
                       <Upload className="w-3.5 h-3.5" />
                       <span>{bannerUrl ? "Reemplazar Foto de Portada" : "Subir Foto de Portada"}</span>
                       <input
@@ -1450,10 +1473,10 @@ export const BusinessSettingsModal: React.FC<{
                         />
                       </div>
                     ) : (
-                      <div className="w-full h-44 rounded-3xl bg-zinc-50 dark:bg-[#0E0F12] border-2 border-dashed border-zinc-300 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400 text-center p-4">
-                        <Camera className="w-8 h-8 mb-1.5" />
-                        <span className="text-xs font-bold">Sin Imagen de Portada</span>
-                        <span className="text-[11px] text-zinc-500 mt-0.5">Subí una foto panorámica para encuadrarla y rotarla en vivo</span>
+                      <div className="w-full h-44 rounded-2xl bg-white dark:bg-zinc-900/50 border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400 text-center p-4">
+                        <Camera className="w-7 h-7 mb-1.5 text-zinc-300 dark:text-zinc-600" />
+                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">Sin Imagen de Portada</span>
+                        <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">Subí una foto panorámica para encuadrarla y rotarla en vivo</span>
                       </div>
                     )}
                   </div>
@@ -1463,27 +1486,30 @@ export const BusinessSettingsModal: React.FC<{
 
             {/* TAB 3: BOT DE WHATSAPP IA (Configuración Total, Flujos, IA y Festividades) */}
             {activeTab === "whatsapp_bot" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
-                    <Bot className="w-5 h-5 text-[#00A884]" />
-                    <span>Configuración Total del Bot de WhatsApp & IA</span>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-emerald-500" />
+                    <span>Configuración del Asistente de WhatsApp IA</span>
+                    <span className="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      WhatsApp Business
+                    </span>
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Personaliza el tono del bot, los flujos conversacionales, las reglas inteligentes y las campañas festivas de temporada.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Personaliza el estilo de respuesta, flujos conversacionales, reglas de venta inteligente y campañas estacionales.
                   </p>
                 </div>
 
                 {/* SECCIÓN A: Personalidad & Tono IA del Bot */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-[#FF3F1A]" />
-                        <span>Personalidad & Estilo de Comunicación IA</span>
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-brand-500" />
+                        <span>Personalidad & Tono Conversacional</span>
                       </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Define cómo se expresa el bot al interactuar con tus comensales en WhatsApp.
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Define el tono con el que la IA atenderá y asesorará a los clientes en WhatsApp.
                       </p>
                     </div>
                   </div>
@@ -1496,14 +1522,14 @@ export const BusinessSettingsModal: React.FC<{
                         <div
                           key={opt.id}
                           onClick={() => setBotPersonality(opt.id)}
-                          className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                          className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                             isSelected
-                              ? "bg-[#190088]/5 dark:bg-[#190088]/25 border-[#190088] dark:border-[#190088]/70 shadow-xs ring-1 ring-[#190088]/30"
-                              : "bg-zinc-50/60 dark:bg-zinc-900/50 border-zinc-200/70 dark:border-zinc-800 hover:border-zinc-300"
+                              ? "bg-brand-50/80 dark:bg-brand-950/30 border-brand-500 dark:border-brand-500/80 shadow-xs ring-1 ring-brand-500/30"
+                              : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 shadow-2xs"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-3">
                               <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-none bg-zinc-100 dark:bg-zinc-800 ${opt.iconColor}`}>
                                 <Icon className="w-4 h-4" />
                               </div>
@@ -1511,18 +1537,18 @@ export const BusinessSettingsModal: React.FC<{
                                 <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 leading-tight">
                                   {opt.title}
                                 </p>
-                                <span className="text-[9px] font-mono text-[#190088] dark:text-blue-300 font-bold">
+                                <span className="text-[10px] font-mono text-brand-600 dark:text-brand-400 font-semibold">
                                   {opt.tag}
                                 </span>
                               </div>
                             </div>
                             {isSelected && (
-                              <span className="w-4 h-4 rounded-full bg-[#190088] text-white flex items-center justify-center flex-none">
+                              <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center flex-none">
                                 <Check className="w-2.5 h-2.5 stroke-[3]" />
                               </span>
                             )}
                           </div>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                             {opt.desc}
                           </p>
                         </div>
@@ -1532,18 +1558,18 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* SECCIÓN B: Perfiles de Festividades & Mensajes de Temporada */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Gift className="w-4 h-4 text-purple-600" />
-                        <span>Campaña por Festividad & Fechas Especiales</span>
-                        <Badge variant="accent" intent="business.bot.holiday" className="text-[9px] py-0 px-1.5 font-bold uppercase">
-                          Temporadas
-                        </Badge>
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-purple-500" />
+                        <span>Campañas de Festividades & Fechas Especiales</span>
+                        <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                          Temporada
+                        </span>
                       </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Activa saludos y promociones temáticas para fechas como Halloween, Navidad, Año Nuevo y Black Friday.
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Activa saludos temáticos y promociones estacionales (Halloween, Navidad, Amor y Amistad).
                       </p>
                     </div>
 
@@ -1555,11 +1581,11 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   {isHolidayMessageEnabled && (
-                    <div className="space-y-4 pt-2 border-t border-zinc-100 dark:border-zinc-800/80 animate-fade-in">
+                    <div className="space-y-4 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 animate-fade-in">
                       {/* Selector de Festividad */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          Selecciona la Festividad Activa:
+                          Festividad Activa:
                         </label>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {(Object.keys(HOLIDAY_PRESETS) as HolidayTheme[]).map(themeKey => {
@@ -1578,8 +1604,8 @@ export const BusinessSettingsModal: React.FC<{
                                 }}
                                 className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
                                   isSelected
-                                    ? "bg-[#190088] text-white border-[#190088] shadow-2xs font-bold"
-                                    : "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100"
+                                    ? "bg-brand-500 text-white border-brand-500 shadow-xs font-semibold"
+                                    : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 shadow-2xs"
                                 }`}
                               >
                                 <Icon className={`w-4 h-4 flex-none ${isSelected ? "text-white" : item.iconColor}`} />
@@ -1593,8 +1619,8 @@ export const BusinessSettingsModal: React.FC<{
                       {/* Editor del Mensaje Festivo */}
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                            <span>Mensaje Festivo que enviará el Bot:</span>
+                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <span>Mensaje Festivo del Bot:</span>
                             <span className="font-mono text-[10px] text-zinc-400">({"{negocio}"} se reemplaza auto)</span>
                           </label>
                           {activeHolidayTheme !== "none" && (
@@ -1605,10 +1631,10 @@ export const BusinessSettingsModal: React.FC<{
                                   HOLIDAY_PRESETS[activeHolidayTheme].defaultMsg.replace("{negocio}", name || "nuestro restaurante")
                                 )
                               }
-                              className="text-[10px] font-bold text-[#190088] dark:text-blue-400 hover:underline flex items-center gap-1"
+                              className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1 cursor-pointer"
                             >
                               <RefreshCw className="w-3 h-3" />
-                              <span>Cargar plantilla oficial</span>
+                              <span>Cargar plantilla</span>
                             </button>
                           )}
                         </div>
@@ -1625,30 +1651,30 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* SECCIÓN C: Automatizaciones & Reglas IA */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <Zap className="w-4 h-4 text-amber-500" />
-                      <span>Automatizaciones IA & Reglas Operativas</span>
+                      <span>Automatizaciones & Reglas de Cocina</span>
                     </h4>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      Reglas inteligentes en segundo plano inspiradas en el módulo de Automatizaciones & IA.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Flujos automatizados para agilizar la entrada de comandas y maximizar el ticket promedio.
                     </p>
                   </div>
 
                   <div className="space-y-3 pt-1">
                     {/* Regla 1: Upselling IA */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-3">
-                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                            <span>Sugerencias Inteligentes de Venta Cruzada (Upselling)</span>
-                            <span className="text-[9px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.2 rounded-full font-bold">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <span>Sugerencias de Venta Cruzada (Upselling IA)</span>
+                            <span className="text-[10px] font-mono bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full font-semibold border border-purple-500/20">
                               IA Activa
                             </span>
                           </p>
-                          <p className="text-[11px] text-zinc-500 mt-0.5">
-                            El bot sugiere bebidas, adiciones o postres antes de que el cliente cierre su comanda.
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                            El bot sugiere bebidas, guarniciones o postres antes de finalizar la comanda.
                           </p>
                         </div>
                         <Toggle
@@ -1670,17 +1696,17 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* Regla 2: Auto-confirmación de pedidos */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-3">
-                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                            <span>Confirmación Automática de Pedidos con Stock 100%</span>
-                            <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.2 rounded-full font-bold">
-                              Auto-KDS
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                            <span>Auto-confirmación a Cocina con Stock 100%</span>
+                            <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-500/20">
+                              KDS Directo
                             </span>
                           </p>
-                          <p className="text-[11px] text-zinc-500 mt-0.5">
-                            Ingresa automáticamente a cocina los pedidos que cumplan con stock sin requerir clic manual del cajero.
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                            Envía de inmediato a cocina las comandas con ingredientes disponibles sin esperar confirmación manual del cajero.
                           </p>
                         </div>
                         <Toggle
@@ -1691,31 +1717,33 @@ export const BusinessSettingsModal: React.FC<{
                       </div>
 
                       {isAutoConfirmOrders && (
-                        <div className="flex items-center gap-3 pt-1">
-                          <label className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 flex-none">
+                        <div className="flex items-center gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                          <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 flex-none">
                             Monto Máximo para Auto-Aprobar:
                           </label>
-                          <input
-                            type="number"
-                            value={autoConfirmMaxAmount}
-                            onChange={e => setAutoConfirmMaxAmount(Number(e.target.value))}
-                            className="w-36 px-3 py-1.5 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl font-mono font-bold text-zinc-900 dark:text-zinc-100"
-                            placeholder="150000"
-                          />
-                          <span className="text-[10px] text-zinc-400 font-mono">{currency}</span>
+                          <div className="flex items-center px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl focus-within:border-brand-500">
+                            <input
+                              type="number"
+                              value={autoConfirmMaxAmount}
+                              onChange={e => setAutoConfirmMaxAmount(Number(e.target.value))}
+                              className="w-28 bg-transparent font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                              placeholder="150000"
+                            />
+                            <span className="text-[11px] text-zinc-400 font-mono font-bold ml-1">{currency}</span>
+                          </div>
                         </div>
                       )}
                     </div>
 
                     {/* Regla 3: Alerta temprana de demora */}
-                    <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3">
+                    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 space-y-3 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-3">
-                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
-                            <span>Alerta Temprana de Demora en Cocina (+{delayAlertMinutes} min)</span>
+                          <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                            Alerta Preventiva de Demora en Cocina (+{delayAlertMinutes} min)
                           </p>
-                          <p className="text-[11px] text-zinc-500 mt-0.5">
-                            Avisa proactivamente al cliente si la preparación toma más tiempo del estimado para evitar quejas.
+                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                            Notifica con empatía al cliente si la preparación toma más tiempo del previsto para reducir cancelaciones.
                           </p>
                         </div>
                         <Toggle
@@ -1729,23 +1757,23 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* SECCIÓN D: Flujos y Mensajes Básicos */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-[#190088] dark:text-blue-400" />
-                      <span>Flujos Conversacionales Estándar</span>
+                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-brand-500" />
+                      <span>Mensajes Conversacionales Estándar</span>
                     </h4>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      Respuestas base para inicio, cierre de cocina y derivación a personal humano.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Textos automáticos para bienvenida, comanda recibida, local cerrado y derivación a operador humano.
                     </p>
                   </div>
 
-                  <div className="space-y-4 pt-1">
+                  <div className="space-y-3 pt-1">
                     {/* 1. Saludo / Bienvenida */}
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                    <div className="space-y-2.5 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          1. Saludo Inicial / Bienvenida
+                          1. Saludo Inicial & Bienvenida
                         </span>
                         <Toggle
                           intent="bot.welcome.toggle"
@@ -1765,10 +1793,10 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* 2. Confirmación de Pedido */}
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                    <div className="space-y-2.5 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          2. Confirmación de Pedido Ingresado a Cocina
+                          2. Confirmación de Comanda en Cocina
                         </span>
                         <Toggle
                           intent="bot.confirmed.toggle"
@@ -1788,7 +1816,7 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* 3. Fuera de Horario */}
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                    <div className="space-y-2.5 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -1812,7 +1840,7 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* 4. Derivación a Humano */}
-                    <div className="space-y-2 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80">
+                    <div className="space-y-2.5 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                           4. Derivación a Operador Humano en Vivo
@@ -1840,27 +1868,30 @@ export const BusinessSettingsModal: React.FC<{
 
             {/* TAB 4: CUENTAS & MÉTODOS DE PAGO (Nequi, Bancolombia, QR, Efectivo y Datáfono) */}
             {activeTab === "payments" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3] flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-purple-600" />
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-purple-500" />
                     <span>Cuentas Bancarias & Métodos de Pago</span>
+                    <span className="text-[11px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                      Cobranza
+                    </span>
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Configura las cuentas oficiales de transferencia (Nequi, Bancolombia, Daviplata), pagos contra entrega y plantilla de cobro.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Configura las cuentas oficiales de transferencia (Nequi, Bancolombia, Daviplata), pagos contra entrega y plantilla de cobro automático.
                   </p>
                 </div>
 
                 {/* 1. Transferencias Móviles & Digitales */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <Smartphone className="w-4 h-4 text-purple-600" />
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-purple-500" />
                         <span>Transferencias Digitales (Nequi, Daviplata, Bancolombia)</span>
                       </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Cuentas que se enviarán a los clientes para transferencias y llaves QR.
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Cuentas que el bot enviará a los clientes para transferencias y llaves QR.
                       </p>
                     </div>
 
@@ -1872,8 +1903,8 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   {isPaymentInfoEnabled && (
-                    <div className="space-y-4 pt-1 animate-fade-in">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-4 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80 animate-fade-in">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Field
                           label="Número Nequi"
                           labelStyle="bold"
@@ -1894,65 +1925,59 @@ export const BusinessSettingsModal: React.FC<{
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="sm:col-span-1">
-                          <Field
-                            label="Cuenta Bancolombia"
-                            labelStyle="bold"
-                            intent="bot.bancolombia"
-                            type="text"
-                            value={bancolombiaAccount}
-                            onChange={e => setBancolombiaAccount(e.target.value.replace(/[^0-9-\s]/g, ""))}
-                            placeholder="104-892134-55"
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <Field
-                            label="Titular de la Cuenta"
-                            labelStyle="bold"
-                            intent="bot.holder"
-                            type="text"
-                            value={accountHolder}
-                            onChange={e => setAccountHolder(e.target.value)}
-                            placeholder="Necto Gourmet S.A.S"
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <Field
-                            label="NIT / Cédula"
-                            labelStyle="bold"
-                            intent="bot.nit"
-                            type="text"
-                            value={accountNit}
-                            onChange={e => setAccountNit(e.target.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""))}
-                            placeholder="901.458.789-1"
-                          />
-                        </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Field
+                          label="Cuenta Bancolombia"
+                          labelStyle="bold"
+                          intent="bot.bancolombia"
+                          type="text"
+                          value={bancolombiaAccount}
+                          onChange={e => setBancolombiaAccount(e.target.value.replace(/[^0-9-\s]/g, ""))}
+                          placeholder="104-892134-55"
+                        />
+                        <Field
+                          label="Titular de la Cuenta"
+                          labelStyle="bold"
+                          intent="bot.holder"
+                          type="text"
+                          value={accountHolder}
+                          onChange={e => setAccountHolder(e.target.value)}
+                          placeholder="Necto Gourmet S.A.S"
+                        />
+                        <Field
+                          label="NIT / Documento"
+                          labelStyle="bold"
+                          intent="bot.nit"
+                          type="text"
+                          value={accountNit}
+                          onChange={e => setAccountNit(e.target.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""))}
+                          placeholder="901.458.789-1"
+                        />
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* 2. Métodos de Pago en Sitio / Contra Entrega */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                      <Banknote className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <Banknote className="w-4 h-4 text-emerald-500" />
                       <span>Métodos de Pago Físicos & Contra Entrega</span>
                     </h4>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      Opciones disponibles para comensales que reciben pedidos a domicilio o en mostrador.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Opciones disponibles para comensales que reciben pedidos a domicilio o pagan en mostrador.
                     </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
+                    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3 shadow-2xs">
                       <div>
                         <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                           <Coins className="w-3.5 h-3.5 text-amber-500" />
                           <span>Efectivo Contra Entrega</span>
                         </p>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                           El cliente paga al recibir el pedido.
                         </p>
                       </div>
@@ -1963,13 +1988,13 @@ export const BusinessSettingsModal: React.FC<{
                       />
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3">
+                    <div className="p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-3 shadow-2xs">
                       <div>
                         <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                           <CreditCard className="w-3.5 h-3.5 text-blue-500" />
                           <span>Datáfono Móvil en Domicilio</span>
                         </p>
-                        <p className="text-[10px] text-zinc-400 mt-0.5">
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                           El domiciliario lleva datáfono para tarjeta.
                         </p>
                       </div>
@@ -1983,15 +2008,15 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* 3. Plantilla de Instrucciones de Pago */}
-                <div className="p-5 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800 space-y-4 shadow-xs">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-950 dark:text-white flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4 text-[#00A884]" />
-                        <span>Mensaje de Cobro Automático para WhatsApp</span>
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-emerald-500" />
+                        <span>Mensaje de Cobro Automático en WhatsApp</span>
                       </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Plantilla con variables dinámicas que el bot envía al seleccionar pago por transferencia.
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Plantilla con etiquetas dinámicas que la IA enviará al seleccionar pago por transferencia.
                       </p>
                     </div>
 
@@ -2002,9 +2027,9 @@ export const BusinessSettingsModal: React.FC<{
                           `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido en cocina.`
                         )
                       }
-                      className="text-[10px] font-bold text-[#190088] dark:text-blue-400 hover:underline flex items-center gap-1"
+                      className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1 cursor-pointer"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
+                      <RefreshCw className="w-3 h-3" />
                       <span>Restablecer formato</span>
                     </button>
                   </div>
@@ -2018,30 +2043,32 @@ export const BusinessSettingsModal: React.FC<{
                   />
 
                   {/* Vista Previa Interactiva */}
-                  <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 space-y-1.5">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      <span>Vista Previa del Mensaje en WhatsApp:</span>
+                  <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 space-y-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Vista Previa del Mensaje al Cliente:</span>
                     </span>
-                    <p className="text-xs font-mono text-zinc-800 dark:text-zinc-200 whitespace-pre-line leading-relaxed bg-white dark:bg-zinc-900 p-3 rounded-xl border border-emerald-100 dark:border-emerald-950/60">
+                    <div className="text-xs font-mono text-zinc-800 dark:text-zinc-200 whitespace-pre-line leading-relaxed bg-white dark:bg-zinc-900 p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-950/60 shadow-2xs">
                       {paymentInfoMessage
                         .replace("{nequi}", nequiNumber)
                         .replace("{bancolombia}", bancolombiaAccount)
                         .replace("{titular}", accountHolder)
                         .replace("{nit}", accountNit)}
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* TAB 5: MÓDULOS OPERATIVOS */}
             {activeTab === "modules" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                     Módulos Operativos de la Sede
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Activa o desactiva las capacidades del sistema según el modelo de tu restaurante.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Activa o desactiva las capacidades del sistema según el modelo y ritmo de tu restaurante.
                   </p>
                 </div>
 
@@ -2054,18 +2081,18 @@ export const BusinessSettingsModal: React.FC<{
                       <div
                         key={mod.id}
                         onClick={() => handleToggleModule(mod.id)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                        className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                           isChecked
-                            ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 shadow-xs"
-                            : "bg-zinc-50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 opacity-60"
+                            ? "bg-brand-50/80 dark:bg-brand-950/30 border-brand-500/80 dark:border-brand-500/60 shadow-xs ring-1 ring-brand-500/20"
+                            : "bg-zinc-50/70 dark:bg-zinc-900/40 border-zinc-200/80 dark:border-zinc-800/80 opacity-75 hover:opacity-100"
                         }`}
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
                           <div
                             className={`w-10 h-10 rounded-xl flex items-center justify-center flex-none ${
                               isChecked
-                                ? "bg-[#190088] text-white shadow-2xs"
-                                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-400"
+                                ? "bg-brand-500 text-white shadow-2xs"
+                                : "bg-zinc-200/70 dark:bg-zinc-800 text-zinc-400"
                             }`}
                           >
                             <Icon className="w-5 h-5" />
@@ -2075,11 +2102,11 @@ export const BusinessSettingsModal: React.FC<{
                               <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
                                 {mod.title}
                               </h4>
-                              <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-200/60 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-medium">
                                 {mod.badge}
                               </span>
                             </div>
-                            <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-snug">
                               {mod.description}
                             </p>
                           </div>
@@ -2097,15 +2124,15 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
-            {/* TAB 5: CANALES DE VENTA */}
+            {/* TAB 6: CANALES DE VENTA */}
             {activeTab === "channels" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                     Canales de Venta & Captura de Pedidos
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Habilita por dónde pueden ingresar comandas a tu cocina.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Habilita las vías de acceso por donde pueden ingresar comandas y compras a tu negocio.
                   </p>
                 </div>
 
@@ -2114,7 +2141,7 @@ export const BusinessSettingsModal: React.FC<{
                     {
                       id: "whatsapp",
                       title: "WhatsApp con Asistente IA",
-                      desc: "Toma de pedidos conversacional automatizada.",
+                      desc: "Toma de pedidos conversacional automatizada con IA en tiempo real.",
                       checked: enableWhatsapp,
                       setter: setEnableWhatsapp,
                       icon: MessageSquare,
@@ -2122,7 +2149,7 @@ export const BusinessSettingsModal: React.FC<{
                     {
                       id: "web",
                       title: "Menú Digital & Tienda Web",
-                      desc: "Catálogo interactivo online con carrito de compras.",
+                      desc: "Catálogo interactivo online responsive con carrito y checkout directo.",
                       checked: enableWeb,
                       setter: setEnableWeb,
                       icon: Globe,
@@ -2130,7 +2157,7 @@ export const BusinessSettingsModal: React.FC<{
                     {
                       id: "pos",
                       title: "Punto de Venta POS & Salón",
-                      desc: "Comandas presenciales y cobro en mostrador.",
+                      desc: "Comandas presenciales, control de mesas y cobro rápido en mostrador.",
                       checked: enablePos,
                       setter: setEnablePos,
                       icon: Store,
@@ -2140,17 +2167,17 @@ export const BusinessSettingsModal: React.FC<{
                     return (
                       <div
                         key={ch.id}
-                        className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4"
+                        className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-4 shadow-2xs"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[#FF3F1A]">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 flex items-center justify-center flex-none">
                             <Icon className="w-5 h-5" />
                           </div>
                           <div>
                             <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
                               {ch.title}
                             </h4>
-                            <p className="text-[11px] text-zinc-500 mt-0.5">{ch.desc}</p>
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">{ch.desc}</p>
                           </div>
                         </div>
 
@@ -2166,26 +2193,26 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
-            {/* TAB 6: PAUSA & VACACIONES */}
+            {/* TAB 7: PAUSA & VACACIONES */}
             {activeTab === "schedule" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                     Pausa Temporal & Modo Vacaciones
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Suspende la recepción de nuevos pedidos y responde con un mensaje cordial.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Suspende de inmediato la recepción de nuevos pedidos y responde con un mensaje cordial y automático.
                   </p>
                 </div>
 
-                <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 space-y-4">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 space-y-4 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
+                      <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                         Activar Cierre Temporal del Negocio
                       </h4>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Pausa el canal de WhatsApp y el catálogo digital.
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                        Pausa el canal de WhatsApp y avisa en el catálogo digital web.
                       </p>
                     </div>
 
@@ -2197,10 +2224,10 @@ export const BusinessSettingsModal: React.FC<{
                   </div>
 
                   {isPaused && (
-                    <div className="space-y-4 pt-3 border-t border-zinc-200 dark:border-zinc-800">
-                      <div className="space-y-1.5">
+                    <div className="space-y-4 pt-3 border-t border-zinc-200/80 dark:border-zinc-800/80 animate-fade-in">
+                      <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          Motivo del Cierre
+                          Motivo del Cierre:
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {[
@@ -2209,10 +2236,9 @@ export const BusinessSettingsModal: React.FC<{
                             "Evento Privado",
                             "Feriado / Asueto",
                           ].map(opt => (
-                            <Button
+                            <button
+                              type="button"
                               key={opt}
-                              variant="ghost"
-                              intent="business.pause.reason"
                               onClick={() => {
                                 setPauseReason(opt);
                                 setPauseMessage(
@@ -2221,19 +2247,19 @@ export const BusinessSettingsModal: React.FC<{
                               }}
                               className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${
                                 pauseReason === opt
-                                  ? "bg-[#190088] text-white border-[#190088] font-bold shadow-2xs"
-                                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-[#190088]/40"
+                                  ? "bg-brand-500 text-white border-brand-500 font-semibold shadow-xs"
+                                  : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:border-brand-500/40 shadow-2xs"
                               }`}
                             >
                               {opt}
-                            </Button>
+                            </button>
                           ))}
                         </div>
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                          Mensaje de Respuesta Automática
+                          Mensaje de Respuesta Automática:
                         </label>
                         <Textarea
                           intent="business.pause.message"
@@ -2249,26 +2275,27 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
-            {/* TAB 7: OPERACIONES & PELIGRO */}
+            {/* TAB 8: OPERACIONES & PELIGRO */}
             {activeTab === "advanced" && (
-              <div className="space-y-6 animate-fade-in max-w-2xl">
+              <div className="space-y-6 animate-fade-in max-w-3xl">
                 <div>
-                  <h3 className="text-base font-bold text-[#190088] dark:text-[#EFE6D3]">
-                    Parámetros Operativos & Peligro
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                    Parámetros Operativos & Zona de Peligro
                   </h3>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    Tiempos de alerta en cocina y eliminación permanente de la sucursal.
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                    Tiempos de alerta para KDS y eliminación permanente del espacio de trabajo.
                   </p>
                 </div>
 
                 {/* Kitchen Buffer */}
-                <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4">
+                <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-4 shadow-2xs">
                   <div>
-                    <h4 className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                      Tiempo Buffer Estándar en Cocina / KDS
+                    <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-brand-500" />
+                      <span>Tiempo Buffer Estándar en Cocina / KDS</span>
                     </h4>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">
-                      Margen estimado por comanda antes de marcar alerta por retraso operativo.
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Margen estimado por comanda antes de disparar alerta sonora o visual de retraso operativo.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-none">
@@ -2278,52 +2305,52 @@ export const BusinessSettingsModal: React.FC<{
                       max={90}
                       value={kitchenBufferMin}
                       onChange={e => setKitchenBufferMin(Number(e.target.value))}
-                      className="w-20 px-3 py-2 bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 rounded-xl text-center text-xs font-mono font-bold text-zinc-950 dark:text-white focus:outline-none focus:border-[#FF3F1A]"
+                      className="w-20 px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-center text-xs font-mono font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-brand-500 shadow-2xs"
                     />
-                    <span className="text-xs font-mono text-zinc-400">min</span>
+                    <span className="text-xs font-mono text-zinc-400 font-semibold">min</span>
                   </div>
                 </div>
 
                 {/* Danger Zone */}
-                <div className="pt-6 border-t border-red-200/80 dark:border-red-950/60 space-y-3">
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <div className="pt-6 border-t border-rose-200/80 dark:border-rose-950/60 space-y-3">
+                  <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400">
                     <ShieldAlert className="w-4 h-4" />
-                    <h4 className="text-xs font-bold text-red-700 dark:text-red-300">
+                    <h4 className="text-xs font-bold uppercase tracking-wider">
                       Zona de Eliminación Permanente
                     </h4>
                   </div>
 
                   {!confirmDelete ? (
-                    <div className="p-5 rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 flex items-center justify-between gap-4">
+                    <div className="p-5 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-xs font-bold text-red-900 dark:text-red-200">
+                        <p className="text-xs font-bold text-rose-950 dark:text-rose-200">
                           Eliminar este espacio de trabajo
                         </p>
-                        <p className="text-[11px] text-red-700/80 dark:text-red-400/80 mt-0.5">
-                          Se borrarán de forma irreversible los catálogos, pedidos y configuraciones asociadas.
+                        <p className="text-[11px] text-rose-700/80 dark:text-rose-400/80 mt-0.5">
+                          Se borrarán de forma irreversible los catálogos, pedidos y configuraciones asociadas a esta sede.
                         </p>
                       </div>
                       <Button
                         variant="accent"
                         intent="business.delete.request"
                         onClick={() => setConfirmDelete(true)}
-                        className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-xs flex-none cursor-pointer"
+                        className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs flex-none cursor-pointer font-semibold shadow-xs"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Eliminar Negocio</span>
                       </Button>
                     </div>
                   ) : (
-                    <div className="p-5 bg-red-100/70 dark:bg-red-950/60 rounded-2xl border border-red-300 dark:border-red-800 space-y-3">
-                      <p className="text-xs font-bold text-red-950 dark:text-red-100">
-                        ¿Confirmas eliminar definitivamente "{business.name}"? Esta acción no se puede deshacer.
+                    <div className="p-5 bg-rose-100/70 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 space-y-3 animate-fade-in">
+                      <p className="text-xs font-bold text-rose-950 dark:text-rose-100">
+                        ¿Confirmas eliminar definitivamente "{business?.name}"? Esta acción no se puede deshacer.
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="accent"
                           intent="business.delete.confirm"
                           onClick={handleDelete}
-                          className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-xs cursor-pointer"
+                          className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs cursor-pointer font-semibold shadow-xs"
                         >
                           Sí, eliminar negocio
                         </Button>
@@ -2331,7 +2358,7 @@ export const BusinessSettingsModal: React.FC<{
                           variant="outline"
                           intent="business.delete.cancel"
                           onClick={() => setConfirmDelete(false)}
-                          className="py-2.5 px-4 bg-white dark:bg-zinc-800 text-xs cursor-pointer"
+                          className="py-2.5 px-4 rounded-xl bg-white dark:bg-zinc-800 text-xs cursor-pointer font-semibold border-zinc-300 dark:border-zinc-700"
                         >
                           Cancelar
                         </Button>
@@ -2345,12 +2372,12 @@ export const BusinessSettingsModal: React.FC<{
         </div>
 
         {/* Modal Bottom Actions */}
-        <div className="px-6 sm:px-8 py-4 bg-zinc-50/80 dark:bg-zinc-900/90 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between flex-none">
+        <div className="px-6 sm:px-8 py-4 bg-zinc-50/90 dark:bg-zinc-900/90 border-t border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between flex-none">
           <Button
             variant="ghost"
             intent="business.discard"
             onClick={onClose}
-            className="py-2.5 px-5 text-xs cursor-pointer"
+            className="py-2.5 px-5 text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
           >
             Descartar
           </Button>
@@ -2358,9 +2385,9 @@ export const BusinessSettingsModal: React.FC<{
             variant="accent"
             intent="business.save"
             onClick={handleSave}
-            className="py-2.5 px-6 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer shadow-md"
+            className="py-2.5 px-6 rounded-xl text-xs bg-brand-500 hover:bg-brand-600 text-white font-semibold cursor-pointer shadow-xs hover:shadow-sm transition-all active:scale-98 flex items-center gap-2"
           >
-            <Check className="w-4 h-4 stroke-[3]" />
+            <Check className="w-4 h-4 stroke-[2.5]" />
             <span>Guardar Configuración</span>
           </Button>
         </div>

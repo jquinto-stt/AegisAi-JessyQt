@@ -39,6 +39,8 @@ import {
   Volume2,
   VolumeX,
   MessagesSquare,
+  TrendingUp,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -167,6 +169,10 @@ const PedidosContent: React.FC<{
       const nextGe = (geTab === "catalogo" || geTab === "insumos") ? geTab : "catalogo";
       setGeTab(nextGe);
       if (onGeTabChange) onGeTabChange(nextGe);
+    } else if (s === "analitica") {
+      const nextGe = (geTab === "resumen" || geTab === "historial" || geTab === "analitica") ? geTab : "resumen";
+      setGeTab(nextGe);
+      if (onGeTabChange) onGeTabChange(nextGe);
     } else if (s === "configuracion") {
       const nextGe = (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos") ? geTab : "roles";
       setGeTab(nextGe);
@@ -195,209 +201,241 @@ const PedidosContent: React.FC<{
 
   return (
     <div className="flex flex-col h-full space-y-3.5 p-2.5 sm:p-4 w-full">
-      {/* Top Module Sub-header: Operación ↔ Menú ↔ Configuración Pill Switcher & Sub-tabs */}
+      {/* Top Module Sub-header: Operación ↔ Menú ↔ Analítica ↔ Configuración Pill Switcher & Sub-tabs */}
       {shouldShowTopHeader && (
-        <div className="bg-white dark:bg-[#121316] rounded-3xl p-3.5 sm:p-4 border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs flex flex-col gap-3 flex-none animate-fade-in">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-3.5 sm:p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs flex flex-col gap-3 flex-none animate-fade-in">
 
         {/* Row 1: Section Switcher (Left) + Actions (Right) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/80 pb-3">
-          {/* Section Pill Switcher (3 Pilares) */}
-          <div className="flex bg-zinc-100 dark:bg-zinc-800/80 p-1 rounded-2xl border border-zinc-200/80 dark:border-zinc-700/60 w-full sm:w-auto overflow-x-auto no-scrollbar">
-            <Button
-              variant="ghost"
-              intent="pedidos.section.switch"
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
+          {/* Section Pill Switcher */}
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+            <button
+              type="button"
               onClick={() => handleSectionSwitch("operacion")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "operacion"
-                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <Activity className={`w-3.5 h-3.5 ${section === "operacion" ? "text-white" : "text-[#FF3F1A]"}`} />
+              <Activity className="size-3.5" />
               <span>Operación</span>
               {newOrdersCount + pendingConversationsCount > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${section === "operacion" ? "bg-white text-[#190088]" : "bg-[#FF3F1A] text-white"}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${section === "operacion" ? "bg-white text-brand-500" : "bg-brand-500 text-white"}`}>
                   {newOrdersCount + pendingConversationsCount}
                 </span>
               )}
-            </Button>
+            </button>
 
-            <Button
-              variant="ghost"
-              intent="pedidos.section.switch"
+            <button
+              type="button"
               onClick={() => handleSectionSwitch("menu")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
                 section === "menu"
-                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="size-3.5" />
               <span>Menú & Stock</span>
-            </Button>
+            </button>
 
-            <Button
-              variant="ghost"
-              intent="pedidos.section.switch"
-              onClick={() => handleSectionSwitch("configuracion")}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                section === "configuracion"
-                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+            <button
+              type="button"
+              onClick={() => handleSectionSwitch("analitica")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
+                section === "analitica"
+                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
-              <Users className="w-3.5 h-3.5" />
+              <BarChart2 className="size-3.5" />
+              <span>Analítica & Reportes</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSectionSwitch("configuracion")}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
+                section === "configuracion"
+                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              <Users className="size-3.5" />
               <span>Configuración</span>
-            </Button>
+            </button>
           </div>
 
           {/* Right Actions: Sound & Incidencias (Only visible in Operación) */}
           {section === "operacion" && (
-            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end animate-fade-in">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end animate-fade-in">
               {/* Audio Alerts Toggle */}
-              <Button
-                variant="ghost"
-                intent="pedidos.sound.toggle"
+              <button
+                type="button"
                 onClick={toggleSound}
-                className={`p-2 rounded-xl border transition-all cursor-pointer shadow-xs flex items-center justify-center flex-none ${
+                className={`p-2 rounded-xl border transition-colors cursor-pointer flex items-center justify-center flex-none ${
                   isSoundEnabled
-                    ? "bg-[#FF3F1A] text-white border-[#FF3F1A]"
-                    : "bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-zinc-600"
+                    ? "bg-brand-500 text-white border-brand-500"
+                    : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
                 }`}
                 title={isSoundEnabled ? "Alertas sonoras activadas" : "Alertas sonoras silenciadas"}
               >
-                {isSoundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </Button>
+                {isSoundEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+              </button>
 
-              <Button
-                variant="outline"
-                intent="pedidos.incidencias.open"
+              <button
+                type="button"
                 onClick={() => setIsIncidenciasOpen(true)}
-                className={`py-2 px-3.5 text-xs flex-none ${
+                className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none ${
                   activeIncCount > 0
-                    ? "border-[#FF3F1A] bg-orange-50 dark:bg-orange-950/40 text-[#FF3F1A]"
-                    : "bg-white dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-zinc-100 hover:border-[#190088] hover:text-[#190088]"
+                    ? "border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 text-error-600 dark:text-error-400 font-semibold"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-brand-500"
                 }`}
               >
-                <ShieldAlert className={`w-4 h-4 ${activeIncCount > 0 ? "text-[#FF3F1A]" : "text-zinc-400"}`} />
+                <ShieldAlert className={`size-4 ${activeIncCount > 0 ? "text-error-500" : "text-gray-400"}`} />
                 <span>Incidencias</span>
                 {activeIncCount > 0 && (
-                  <span className="bg-[#FF3F1A] text-white px-1.5 py-0.2 rounded-full text-[10px] font-bold">
+                  <span className="bg-error-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold">
                     {activeIncCount}
                   </span>
                 )}
-              </Button>
+              </button>
             </div>
           )}
         </div>
 
         {/* Row 2: Sub-tabs Navigation */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none scroll-smooth max-w-full flex-nowrap sm:flex-wrap py-0.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full flex-nowrap sm:flex-wrap py-0.5">
           {section === "operacion" && (
             <>
               {[
                 {
                   id: "en-vivo" as OperacionTab,
                   label: "Órdenes",
-                  icon: <ShoppingBag className="w-3.5 h-3.5 flex-none" />,
+                  icon: <ShoppingBag className="size-3.5 flex-none" />,
                   count: orders.length,
                   highlightBadge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
                 },
                 {
                   id: "preparacion" as OperacionTab,
                   label: "Pantalla KDS Cocina",
-                  icon: <ChefHat className="w-3.5 h-3.5 flex-none" />,
+                  icon: <ChefHat className="size-3.5 flex-none" />,
                   count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
+                },
+                {
+                  id: "programados" as OperacionTab,
+                  label: "Pedidos Programados",
+                  icon: <Calendar className="size-3.5 flex-none" />,
                 },
                 {
                   id: "conversaciones" as OperacionTab,
                   label: "Conversaciones WhatsApp",
-                  icon: <MessagesSquare className="w-3.5 h-3.5 flex-none" />,
+                  icon: <MessagesSquare className="size-3.5 flex-none" />,
                   count: conversations.length,
                   highlightBadge: pendingConversationsCount > 0 ? `${pendingConversationsCount} atención` : undefined,
                 },
               ].map(tab => (
-                <Button
+                <button
                   key={tab.id}
-                  variant="ghost"
-                  intent="pedidos.subtab.switch"
+                  type="button"
                   onClick={() => handleOpTabSwitch(tab.id)}
-                  className={`px-3.5 py-1.5 min-h-[44px] sm:min-h-0 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
                     opTab === tab.id
-                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
                   {tab.count !== undefined && (
                     <span
-                      className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
+                      className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
                         opTab === tab.id
                           ? "bg-white/20 text-white"
-                          : "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                       }`}
                     >
                       {tab.count}
                     </span>
                   )}
                   {tab.highlightBadge && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold animate-pulse ${opTab === tab.id ? "bg-white text-[#190088]" : "bg-[#FF3F1A] text-white"}`}>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${opTab === tab.id ? "bg-white text-brand-500" : "bg-brand-500 text-white"}`}>
                       {tab.highlightBadge}
                     </span>
                   )}
-                </Button>
+                </button>
               ))}
             </>
           )}
-
 
           {(section === "menu" || (section === "gestion" && (geTab === "catalogo" || geTab === "insumos"))) && (
             <>
               {[
-                { id: "catalogo" as GestionTab, label: "Catálogo de Platos", icon: <Layers className="w-3.5 h-3.5 flex-none" /> },
-                { id: "insumos" as GestionTab, label: "Insumos & Stock (Escandallos)", icon: <Package className="w-3.5 h-3.5 flex-none" /> },
+                { id: "catalogo" as GestionTab, label: "Catálogo de Platos", icon: <Layers className="size-3.5 flex-none" /> },
+                { id: "insumos" as GestionTab, label: "Insumos & Stock (Escandallos)", icon: <Package className="size-3.5 flex-none" /> },
               ].map(tab => (
-                <Button
+                <button
                   key={tab.id}
-                  variant="ghost"
-                  intent="pedidos.subtab.switch"
+                  type="button"
                   onClick={() => handleGeTabSwitch(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
-                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
-                </Button>
+                </button>
               ))}
             </>
           )}
 
-
-          {(section === "configuracion" || (section === "gestion" && (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
+          {(section === "analitica" || (section === "gestion" && (geTab === "resumen" || geTab === "historial" || geTab === "analitica"))) && (
             <>
               {[
-                { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="w-3.5 h-3.5 flex-none" /> },
-                { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="w-3.5 h-3.5 flex-none" /> },
-                { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="w-3.5 h-3.5 flex-none" /> },
+                { id: "resumen" as GestionTab, label: "Resumen Dashboard", icon: <TrendingUp className="size-3.5 flex-none" /> },
+                { id: "historial" as GestionTab, label: "Historial de Pedidos", icon: <History className="size-3.5 flex-none" /> },
+                { id: "analitica" as GestionTab, label: "Métricas de Rendimiento", icon: <BarChart2 className="size-3.5 flex-none" /> },
               ].map(tab => (
-                <Button
+                <button
                   key={tab.id}
-                  variant="ghost"
-                  intent="pedidos.subtab.switch"
+                  type="button"
                   onClick={() => handleGeTabSwitch(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
                     geTab === tab.id
-                      ? "bg-[#190088] text-white border border-[#190088] shadow-2xs"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-blue-300 hover:bg-blue-50/70 dark:hover:bg-[#190088]/20"
+                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
                 >
                   {tab.icon}
                   <span>{tab.label}</span>
-                </Button>
+                </button>
+              ))}
+            </>
+          )}
+
+          {(section === "configuracion" || (section === "gestion" && (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
+            <>
+              {[
+                { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="size-3.5 flex-none" /> },
+                { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="size-3.5 flex-none" /> },
+                { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="size-3.5 flex-none" /> },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleGeTabSwitch(tab.id)}
+                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
+                    geTab === tab.id
+                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
               ))}
             </>
           )}
@@ -420,7 +458,7 @@ const PedidosContent: React.FC<{
           </>
         )}
 
-        {(section === "menu" || section === "gestion") && (
+        {section === "menu" && (
           <>
             {(geTab === "catalogo" || geTab !== "insumos") && (
               <CatalogoInteligenteView targetProductId={targetProductId} />
@@ -429,11 +467,34 @@ const PedidosContent: React.FC<{
           </>
         )}
 
+        {section === "analitica" && (
+          <>
+            {(geTab === "resumen" || (geTab !== "historial" && geTab !== "analitica")) && (
+              <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />
+            )}
+            {geTab === "historial" && <HistorialView />}
+            {geTab === "analitica" && <AnaliticaView />}
+          </>
+        )}
+
         {section === "configuracion" && (
           <>
             {(geTab === "roles" || (geTab !== "automatizaciones" && geTab !== "turnos")) && (
               <RolesPermisosView />
             )}
+            {geTab === "automatizaciones" && <AutomatizacionesView />}
+            {geTab === "turnos" && <TurnosCapacidadView />}
+          </>
+        )}
+
+        {section === "gestion" && (
+          <>
+            {geTab === "catalogo" && <CatalogoInteligenteView targetProductId={targetProductId} />}
+            {geTab === "insumos" && <InsumosStockView />}
+            {geTab === "resumen" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}
+            {geTab === "historial" && <HistorialView />}
+            {geTab === "analitica" && <AnaliticaView />}
+            {geTab === "roles" && <RolesPermisosView />}
             {geTab === "automatizaciones" && <AutomatizacionesView />}
             {geTab === "turnos" && <TurnosCapacidadView />}
           </>

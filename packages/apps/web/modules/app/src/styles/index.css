@@ -1,3 +1,8 @@
 @import './fonts.css';
 @import './tailwind.css';
+@import '../css/theme.css';
+@import '../css/base.css';
+@import '../css/shell.css';
+@import '../css/scrollbar.css';
 @import './theme.css';
+

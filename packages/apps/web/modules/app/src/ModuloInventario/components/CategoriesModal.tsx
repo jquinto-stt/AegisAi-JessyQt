@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { X, Layers, Plus, Tag, Check, Trash2 } from "lucide-react";
-import { Button } from "@/elements";
+import { Layers, Tag, Check } from "lucide-react";
+import { Button, Modal } from "@/elements";
 
 interface CategoriesModalProps {
   isOpen: boolean;
@@ -17,87 +17,77 @@ export const CategoriesModal: React.FC<CategoriesModalProps> = ({
   selectedCategory,
   onSelectCategory,
 }) => {
-  const [newCatName, setNewCatName] = useState("");
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white dark:bg-[#18181B] w-full max-w-md rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-600">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
-                Categorías de Productos
-              </h3>
-              <p className="text-xs text-zinc-500">Organiza tu inventario por grupos</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-md p-6 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xl"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="w-8 h-8 rounded-xl bg-secondary-600/10 dark:bg-secondary-600/20 flex items-center justify-center text-secondary-600 dark:text-secondary-400">
+          <Layers className="w-4 h-4" />
         </div>
-
-        {/* Content */}
-        <div className="p-6 space-y-4">
-          <div className="space-y-1.5 max-h-60 overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => {
-                onSelectCategory("all");
-                onClose();
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                selectedCategory === "all" || !selectedCategory
-                  ? "bg-[#190088] text-white"
-                  : "bg-zinc-50 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5" />
-                <span>Todas las Categorías</span>
-              </div>
-              {(selectedCategory === "all" || !selectedCategory) && <Check className="w-4 h-4" />}
-            </button>
-
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => {
-                  onSelectCategory(cat);
-                  onClose();
-                }}
-                className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                  selectedCategory === cat
-                    ? "bg-[#190088] text-white"
-                    : "bg-zinc-50 dark:bg-zinc-900/60 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Tag className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>{cat}</span>
-                </div>
-                {selectedCategory === cat && <Check className="w-4 h-4" />}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-3.5 bg-zinc-50/50 dark:bg-zinc-900/50 border-t border-zinc-200 dark:border-zinc-800">
-          <Button variant="primary" onClick={onClose} className="text-xs font-bold">
-            Cerrar
-          </Button>
+        <div>
+          <h3 className="font-bold text-gray-900 dark:text-white text-base">
+            Categorías de Productos
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Organiza tu inventario por grupos</p>
         </div>
       </div>
-    </div>
+
+      {/* Content */}
+      <div className="py-4 space-y-1.5 max-h-60 overflow-y-auto">
+        <button
+          type="button"
+          onClick={() => {
+            onSelectCategory("all");
+            onClose();
+          }}
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            selectedCategory === "all" || !selectedCategory
+              ? "bg-secondary-600 text-white shadow-theme-xs"
+              : "bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Tag className="w-3.5 h-3.5" />
+            <span>Todas las Categorías</span>
+          </div>
+          {(selectedCategory === "all" || !selectedCategory) && <Check className="w-4 h-4" />}
+        </button>
+
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => {
+              onSelectCategory(cat);
+              onClose();
+            }}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              selectedCategory === cat
+                ? "bg-secondary-600 text-white shadow-theme-xs"
+                : "bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Tag className="w-3.5 h-3.5 text-gray-400" />
+              <span>{cat}</span>
+            </div>
+            {selectedCategory === cat && <Check className="w-4 h-4" />}
+          </button>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-end pt-4 border-t border-gray-100 dark:border-gray-800">
+        <Button variant="primary" size="sm" onClick={onClose}>
+          Cerrar
+        </Button>
+      </div>
+    </Modal>
   );
 };

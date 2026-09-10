@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, ExternalLink, HelpCircle, AlertCircle, Plus, Check } from "lucide-react";
 import { Product, StockLocation, UnitOfMeasure } from "../types/inventory.types";
+import { Modal, Button } from "@/elements";
 
 export type ItemType = "producto" | "combo";
 
@@ -73,69 +74,58 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
   }, [categories]);
 
   useEffect(() => {
-    if (isOpen) {
-      setItemType("producto");
-      setName("");
-      setLocationId(locations[0]?.id || "loc-001");
-      setUnitOfMeasure("UND");
-      setCategory("General");
-      setIsAddingCategory(false);
-      setNewCategoryName("");
-      setInitialQuantity("0");
-      setCostPrice("0");
-      setBasePrice("0");
-      setTaxRate(0);
-      setTotalPrice("0");
-      setErrorMessage(null);
+    if (locations && locations.length > 0 && !locations.some((l) => l.id === locationId)) {
+      setLocationId(locations[0].id);
     }
-  }, [isOpen, locations]);
+  }, [locations, locationId]);
 
-  if (!isOpen) return null;
-
-  // Formula Calculations
+  // Recalculate totalPrice when basePrice or taxRate changes
   const handleBasePriceChange = (val: string) => {
     setBasePrice(val);
-    const base = parseFloat(val) || 0;
-    const total = base * (1 + taxRate / 100);
-    setTotalPrice(total.toFixed(2));
+    const num = parseFloat(val) || 0;
+    const computedTotal = num * (1 + taxRate / 100);
+    setTotalPrice(computedTotal > 0 ? computedTotal.toFixed(2) : "0");
   };
 
   const handleTaxRateChange = (rate: number) => {
     setTaxRate(rate);
-    const base = parseFloat(basePrice) || 0;
-    const total = base * (1 + rate / 100);
-    setTotalPrice(total.toFixed(2));
+    const num = parseFloat(basePrice) || 0;
+    const computedTotal = num * (1 + rate / 100);
+    setTotalPrice(computedTotal > 0 ? computedTotal.toFixed(2) : "0");
   };
 
   const handleTotalPriceChange = (val: string) => {
     setTotalPrice(val);
-    const total = parseFloat(val) || 0;
-    const base = total / (1 + taxRate / 100);
-    setBasePrice(base.toFixed(2));
+    const num = parseFloat(val) || 0;
+    const computedBase = num / (1 + taxRate / 100);
+    setBasePrice(computedBase > 0 ? computedBase.toFixed(2) : "0");
   };
 
   const buildDraft = (): Partial<Product> => {
-    const finalSalePrice = parseFloat(totalPrice) || parseFloat(basePrice) || 0;
-    const finalCostPrice = parseFloat(costPrice) || 0;
-    const computedStock = itemType === "producto" ? parseInt(initialQuantity, 10) || 0 : 0;
+    const parsedCost = parseFloat(costPrice) || 0;
+    const parsedPrice = parseFloat(totalPrice) || 0;
+    const parsedQuantity = parseFloat(initialQuantity) || 0;
 
     return {
       name: name.trim(),
-      sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-      category: category || (itemType === "combo" ? "Combos" : "General"),
-      salePrice: finalSalePrice,
-      costPrice: finalCostPrice,
-      stockActual: computedStock,
-      stockMinimo: 5,
-      unit: unitOfMeasure,
-      locationId: locationId || locations[0]?.id || "loc-001",
-      metadata: {
-        itemType,
-        isInventariable: itemType === "producto",
-        allowNegativeSale: false,
-        basePrice: parseFloat(basePrice) || 0,
-        taxRate,
-        totalPrice: finalSalePrice,
+      type: itemType,
+      unitOfMeasure,
+      category,
+      costPrice: parsedCost,
+      salePrice: parsedPrice,
+      active: true,
+      sku: `SKU-${Date.now().toString().slice(-6)}`,
+      stock: [
+        {
+          locationId,
+          quantity: parsedQuantity,
+          reorderPoint: 10,
+        },
+      ],
+      tags: [itemType],
+      tax: {
+        rate: taxRate,
+        included: true,
       },
     };
   };
@@ -163,49 +153,52 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div
-        className="relative w-full max-w-lg bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-lg p-6 sm:p-8"
+      showCloseButton={false}
+    >
+      <div className="space-y-5">
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+        <div className="border-b border-gray-100 dark:border-gray-800 pb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
               Creación Rápida de Producto
             </h3>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Ingresa los datos esenciales de tu producto para el catálogo.
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="quickproduct.modal.close"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-8 h-8 p-0 text-gray-400"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Error Notification */}
         {errorMessage && (
-          <div className="mx-6 mt-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl flex items-center gap-2 text-rose-700 dark:text-rose-400 text-xs font-semibold">
+          <div className="p-3 bg-error-50 dark:bg-error-950/40 border border-error-200 dark:border-error-800/60 rounded-xl flex items-center gap-2 text-error-700 dark:text-error-400 text-xs font-semibold">
             <AlertCircle className="w-4 h-4 flex-none" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Tipo de ítem (Segmented Control) */}
           <div className="space-y-1.5">
-            <label className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+            <label className="flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
               <span>Tipo de ítem</span>
-              <span className="text-[#FF3F1A]">*</span>
-              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-brand-500">*</span>
+              <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
             </label>
 
-            <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-zinc-900 p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-center font-bold text-xs">
+            <div className="grid grid-cols-2 gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 text-center font-bold text-xs">
               {(["producto", "combo"] as ItemType[]).map((t) => (
                 <button
                   key={t}
@@ -216,8 +209,8 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                   }}
                   className={`py-2 rounded-lg capitalize transition-all cursor-pointer ${
                     itemType === t
-                      ? "bg-white dark:bg-[#18181B] text-[#FF3F1A] shadow-xs border border-slate-200/80 dark:border-zinc-700 font-black"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-white dark:bg-gray-900 text-brand-500 shadow-theme-xs border border-gray-200/80 dark:border-gray-700 font-bold"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   {t}
@@ -228,15 +221,15 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
 
           {/* Nombre * */}
           <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700 dark:text-slate-300">
-              Nombre <span className="text-[#FF3F1A]">*</span>
+            <label className="block font-bold text-gray-700 dark:text-gray-300">
+              Nombre <span className="text-brand-500">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ej. Café Molido 500g, Camiseta Polo..."
-              className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden focus:border-brand-500"
               required
             />
           </div>
@@ -244,9 +237,9 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
           {/* Fila: Categoría con inline creation */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+              <label className="flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
                 <span>Categoría</span>
-                <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
               </label>
               {!isAddingCategory ? (
                 <button
@@ -255,7 +248,7 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                     setIsAddingCategory(true);
                     setNewCategoryName("");
                   }}
-                  className="text-[11px] font-bold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                  className="text-[11px] font-bold text-brand-500 hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                 >
                   <Plus className="w-3 h-3" />
                   <span>+ Nueva categoría</span>
@@ -267,7 +260,7 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                     setIsAddingCategory(false);
                     setNewCategoryName("");
                   }}
-                  className="text-[11px] font-medium text-slate-400 hover:text-slate-600 flex items-center gap-0.5 cursor-pointer"
+                  className="text-[11px] font-medium text-gray-400 hover:text-gray-600 flex items-center gap-0.5 cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                   <span>Cancelar</span>
@@ -276,7 +269,7 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
             </div>
 
             {isAddingCategory ? (
-              <div className="flex items-center gap-1.5 animate-fade-in">
+              <div className="flex items-center gap-1.5">
                 <input
                   type="text"
                   value={newCategoryName}
@@ -292,17 +285,18 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                       setNewCategoryName("");
                     }
                   }}
-                  className="flex-1 px-3.5 py-2 bg-white dark:bg-zinc-900 border-2 border-[#FF3F1A]/50 focus:border-[#FF3F1A] rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/20"
+                  className="flex-1 px-3.5 py-2 bg-white dark:bg-gray-900 border-2 border-brand-500/50 focus:border-brand-500 rounded-xl text-xs font-semibold text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden"
                 />
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  intent="quickproduct.category.save"
                   onClick={handleCreateCategory}
                   disabled={!newCategoryName.trim()}
-                  className="px-3.5 py-2 bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                  className="px-3.5 py-2 text-xs"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Guardar</span>
-                </button>
+                </Button>
               </div>
             ) : (
               <select
@@ -315,14 +309,14 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                     setCategory(e.target.value);
                   }
                 }}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
               >
                 {availableCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
                   </option>
                 ))}
-                <option value="__NEW__" className="text-[#FF3F1A] font-bold">
+                <option value="__NEW__" className="text-brand-500 font-bold">
                   + Crear nueva categoría...
                 </option>
               </select>
@@ -332,13 +326,13 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
           {/* Fila: Bodega & Unidad de medida */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700 dark:text-slate-300">
-                Bodega <span className="text-[#FF3F1A]">*</span>
+              <label className="block font-bold text-gray-700 dark:text-gray-300">
+                Bodega <span className="text-brand-500">*</span>
               </label>
               <select
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
               >
                 {locations.map((loc) => (
                   <option key={loc.id} value={loc.id}>
@@ -349,15 +343,15 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
             </div>
 
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+              <label className="flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
                 <span>Unidad de medida</span>
-                <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[#FF3F1A]">*</span>
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-brand-500">*</span>
               </label>
               <select
                 value={unitOfMeasure}
                 onChange={(e) => setUnitOfMeasure(e.target.value as UnitOfMeasure)}
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
               >
                 <option value="UND">Unidad (Und)</option>
                 <option value="KG">Kilogramo (Kg)</option>
@@ -373,28 +367,28 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
           {itemType === "producto" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+                <label className="flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
                   <span>Cantidad inicial</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[#FF3F1A]">*</span>
+                  <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-brand-500">*</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={initialQuantity}
                   onChange={(e) => setInitialQuantity(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
+                <label className="flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
                   <span>Costo por unidad</span>
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[#FF3F1A]">*</span>
+                  <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                  <span className="text-brand-500">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-gray-400">
                     $
                   </span>
                   <input
@@ -404,7 +398,7 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                     value={costPrice}
                     onChange={(e) => setCostPrice(e.target.value)}
                     placeholder="0.000"
-                    className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+                    className="w-full pl-8 pr-3.5 py-2.5 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -412,14 +406,14 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
           )}
 
           {/* Fila con Ecuación Visual de Precio: Precio Base + Impuesto = Precio Total */}
-          <div className="p-3.5 bg-slate-50/80 dark:bg-zinc-900/60 border border-slate-200/90 dark:border-zinc-800 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-2.5 pt-3">
+          <div className="p-3.5 bg-gray-50/80 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-2.5 pt-3">
             {/* 1. Precio Base */}
             <div className="flex-1 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
                 Precio base *
               </span>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-slate-400 text-[11px]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-gray-400 text-[11px]">
                   $
                 </span>
                 <input
@@ -428,26 +422,26 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                   step="any"
                   value={basePrice}
                   onChange={(e) => handleBasePriceChange(e.target.value)}
-                  placeholder="0.000 - Total 0.000"
-                  className="w-full pl-7 pr-2.5 py-2 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+                  placeholder="0.000"
+                  className="w-full pl-7 pr-2.5 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-mono font-bold text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                 />
               </div>
             </div>
 
             {/* Signo + */}
-            <div className="flex items-center justify-center font-bold text-slate-400 text-base sm:pt-4">
+            <div className="flex items-center justify-center font-bold text-gray-400 text-base sm:pt-4">
               +
             </div>
 
             {/* 2. Impuesto */}
             <div className="flex-1 space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400">
+              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
                 Impuesto
               </span>
               <select
                 value={taxRate}
                 onChange={(e) => handleTaxRateChange(Number(e.target.value))}
-                className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-xl text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] cursor-pointer"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500 cursor-pointer"
               >
                 <option value={0}>Ninguno (0%)</option>
                 <option value={19}>IVA (19%)</option>
@@ -457,17 +451,17 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
             </div>
 
             {/* Signo = */}
-            <div className="flex items-center justify-center font-bold text-slate-400 text-base sm:pt-4">
+            <div className="flex items-center justify-center font-bold text-gray-400 text-base sm:pt-4">
               =
             </div>
 
             {/* 3. Precio Total */}
             <div className="flex-1 space-y-1">
-              <span className="text-[11px] font-bold text-[#FF3F1A] dark:text-orange-400">
+              <span className="text-[11px] font-bold text-brand-500 dark:text-brand-400">
                 Precio Total *
               </span>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[#FF3F1A]">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-brand-500">
                   $
                 </span>
                 <input
@@ -476,19 +470,19 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
                   step="any"
                   value={totalPrice}
                   onChange={(e) => handleTotalPriceChange(e.target.value)}
-                  className="w-full pl-7 pr-2.5 py-2 bg-white dark:bg-zinc-900 border-2 border-[#FF3F1A]/40 dark:border-[#FF3F1A]/50 rounded-xl text-xs font-mono font-extrabold text-[#FF3F1A] focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+                  className="w-full pl-7 pr-2.5 py-2 bg-white dark:bg-gray-900 border-2 border-brand-500/40 dark:border-brand-500/50 rounded-xl text-xs font-mono font-extrabold text-brand-500 focus:outline-hidden focus:border-brand-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Modal Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-zinc-800/80">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
             {/* Ir al formulario avanzado */}
             <button
               type="button"
               onClick={handleAdvanced}
-              className="text-xs font-bold text-[#FF3F1A] hover:text-[#E03513] flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="text-xs font-bold text-brand-500 hover:text-brand-600 flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Ir al formulario avanzado</span>
@@ -496,25 +490,26 @@ export const QuickProductModal: React.FC<QuickProductModalProps> = ({
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5">
-              <button
-                type="button"
+              <Button
+                variant="outline"
+                intent="quickproduct.cancel"
                 onClick={onClose}
-                className="py-2 px-4 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
               >
                 Cancelar
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
+                intent="quickproduct.submit"
                 disabled={isSubmitting}
-                className="py-2 px-5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
               >
                 {isSubmitting ? "Creando..." : "Crear producto"}
-              </button>
+              </Button>
             </div>
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };

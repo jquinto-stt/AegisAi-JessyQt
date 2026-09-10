@@ -5,18 +5,16 @@ import {
   Plus,
   Trash2,
   AlertCircle,
-  Building2,
   CheckCircle2,
   Clock,
-  MapPin,
 } from "lucide-react";
 import {
   Supplier,
   StockLocation,
   InventoryProduct,
   PurchaseOrderItem,
-  PurchaseOrderStatus,
 } from "../types/inventory.types";
+import { Modal, Button } from "@/elements";
 
 interface PurchaseOrderModalProps {
   isOpen: boolean;
@@ -73,9 +71,9 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [newSupName, setNewSupName] = useState("");
   const [newSupTaxId, setNewSupTaxId] = useState("");
-  const [newSupContact, setNewSupContact] = useState("");
-  const [newSupEmail, setNewSupEmail] = useState("");
-  const [newSupPhone, setNewSupPhone] = useState("");
+  const [newSupContact] = useState("");
+  const [newSupEmail] = useState("");
+  const [newSupPhone] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -125,8 +123,6 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
       }
     }
   }, [isOpen, suppliers, locations, products, initialProduct, initialSuggestedQty]);
-
-  if (!isOpen) return null;
 
   const handleAddItem = () => {
     const defaultProduct = products[0];
@@ -248,39 +244,42 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
-      <div
-        className="relative w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col my-8 animate-scale-up max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8"
+      showCloseButton={false}
+    >
+      <div className="space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex-none">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 flex items-center justify-center">
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-secondary-600/10 text-secondary-600 dark:text-secondary-400 border border-secondary-600/20 flex items-center justify-center font-bold">
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-zinc-900 dark:text-white">
+              <h3 className="font-bold text-base text-gray-900 dark:text-white">
                 Nueva Factura / Orden de Compra
               </h3>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Ingreso de mercadería a bodegas con costo de adquisición
               </p>
             </div>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            intent="purchaseorder.modal.close"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="w-8 h-8 p-0 text-gray-400"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Content Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
           {errorMessage && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-error-50 dark:bg-error-950/40 border border-error-200 dark:border-error-800/60 text-error-700 dark:text-error-400 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 flex-none" />
               <span>{errorMessage}</span>
             </div>
@@ -290,14 +289,14 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">
                   Proveedor *
                 </label>
                 {onCreateSupplier && (
                   <button
                     type="button"
                     onClick={() => setShowAddSupplier(!showAddSupplier)}
-                    className="text-[11px] font-bold text-[#190088] dark:text-[#97D6DF] hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-secondary-600 dark:text-secondary-400 hover:underline cursor-pointer"
                   >
                     {showAddSupplier ? "Cancelar" : "+ Nuevo Proveedor"}
                   </button>
@@ -308,7 +307,7 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                 <select
                   value={supplierId}
                   onChange={(e) => setSupplierId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white"
+                  className="w-full px-3 py-2.5 rounded-xl text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-hidden focus:border-brand-500 text-gray-900 dark:text-white"
                   required
                 >
                   {suppliers.map((s) => (
@@ -318,40 +317,42 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                   ))}
                 </select>
               ) : (
-                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 space-y-2 text-xs">
+                <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 space-y-2 text-xs">
                   <input
                     type="text"
                     placeholder="Nombre o Razón Social"
                     value={newSupName}
                     onChange={(e) => setNewSupName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                   />
                   <input
                     type="text"
                     placeholder="NIT / RUT"
                     value={newSupTaxId}
                     onChange={(e) => setNewSupTaxId(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white font-mono"
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs text-gray-900 dark:text-white font-mono focus:outline-hidden focus:border-brand-500"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    intent="purchaseorder.supplier.save"
                     onClick={handleQuickCreateSupplier}
-                    className="w-full py-1.5 bg-[#190088] text-white font-bold rounded-lg text-xs"
+                    className="w-full py-1.5 text-xs"
                   >
                     Guardar y Seleccionar
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                 Bodega de Recepción / Destino *
               </label>
               <select
                 value={targetLocationId}
                 onChange={(e) => setTargetLocationId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white"
+                className="w-full px-3 py-2.5 rounded-xl text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-hidden focus:border-brand-500 text-gray-900 dark:text-white"
                 required
               >
                 {locations.map((l) => (
@@ -364,13 +365,13 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
           </div>
 
           {/* Mode switch: Auto-receive vs Pending */}
-          <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/40 flex items-center justify-between gap-3">
+          <div className="p-3.5 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/40 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <div
                 className={`w-8 h-8 rounded-lg flex items-center justify-center flex-none ${
                   autoReceive
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                    ? "bg-success-50 text-success-600 dark:bg-success-950/40 dark:text-success-400 border border-success-200 dark:border-success-800"
+                    : "bg-warning-50 text-warning-600 dark:bg-warning-950/40 dark:text-warning-400 border border-warning-200 dark:border-warning-800"
                 }`}
               >
                 {autoReceive ? (
@@ -380,12 +381,12 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                 )}
               </div>
               <div>
-                <p className="text-xs font-bold text-zinc-900 dark:text-white">
+                <p className="text-xs font-bold text-gray-900 dark:text-white">
                   {autoReceive
                     ? "Ingresar inmediatamente a stock"
                     : "Registrar como orden pendiente"}
                 </p>
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
                   {autoReceive
                     ? "Suma el stock al instante en la bodega seleccionada y registra entrada en Kardex."
                     : "Quedará en espera de llegada para que el bodeguero la reciba luego."}
@@ -400,33 +401,35 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                 onChange={(e) => setAutoReceive(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-hidden rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600 peer-checked:bg-emerald-600"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-hidden rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-success-600"></div>
             </label>
           </div>
 
           {/* Line Items Table */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold uppercase font-mono tracking-wider text-zinc-400">
+              <span className="text-xs font-bold uppercase font-mono tracking-wider text-gray-400">
                 Productos a Comprar ({items.length})
               </span>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                intent="purchaseorder.item.add"
                 onClick={handleAddItem}
-                className="px-3 py-1.5 rounded-xl bg-[#190088]/10 hover:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="px-3 py-1.5 text-xs font-bold flex items-center gap-1.5"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Agregar Renglón</span>
-              </button>
+              </Button>
             </div>
 
             {items.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-400 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
+              <div className="p-8 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl">
                 No has agregado productos. Haz clic en "Agregar Renglón".
               </div>
             ) : (
-              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden divide-y divide-zinc-200 dark:divide-zinc-800">
-                <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-900 text-[10px] font-mono uppercase font-bold text-zinc-400">
+              <div className="rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden divide-y divide-gray-200 dark:divide-gray-800">
+                <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800/80 text-[10px] font-mono uppercase font-bold text-gray-400">
                   <div className="col-span-5">Producto / SKU</div>
                   <div className="col-span-2 text-right">Cantidad</div>
                   <div className="col-span-2 text-right">Costo Unit.</div>
@@ -439,13 +442,13 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="grid grid-cols-12 gap-2 px-3 py-2.5 items-center bg-white dark:bg-[#18181B] text-xs"
+                      className="grid grid-cols-12 gap-2 px-3 py-2.5 items-center bg-white dark:bg-gray-900 text-xs"
                     >
                       <div className="col-span-5">
                         <select
                           value={item.productId}
                           onChange={(e) => handleItemProductChange(idx, e.target.value)}
-                          className="w-full px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white truncate"
+                          className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-900 dark:text-white truncate focus:outline-hidden focus:border-brand-500"
                         >
                           {products.map((p) => (
                             <option key={p.id} value={p.id}>
@@ -463,7 +466,7 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                           onChange={(e) =>
                             handleItemQuantityChange(idx, parseFloat(e.target.value) || 0)
                           }
-                          className="w-full px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-right font-mono font-bold text-zinc-900 dark:text-white"
+                          className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-right font-mono font-bold text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                         />
                       </div>
 
@@ -476,11 +479,11 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                           onChange={(e) =>
                             handleItemPriceChange(idx, parseFloat(e.target.value) || 0)
                           }
-                          className="w-full px-2 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-right font-mono text-zinc-900 dark:text-white"
+                          className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-right font-mono text-gray-900 dark:text-white focus:outline-hidden focus:border-brand-500"
                         />
                       </div>
 
-                      <div className="col-span-2 text-right font-mono font-black text-zinc-900 dark:text-white text-xs truncate">
+                      <div className="col-span-2 text-right font-mono font-bold text-gray-900 dark:text-white text-xs truncate">
                         ${subtotal.toLocaleString("es-CO")}
                       </div>
 
@@ -488,7 +491,7 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-zinc-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          className="p-1 text-gray-400 hover:text-error-500 transition-colors cursor-pointer"
                           title="Eliminar fila"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -503,7 +506,7 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
               Notas / Referencia de Factura de Proveedor
             </label>
             <input
@@ -511,54 +514,56 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ej: Factura Electrónica FE-9842, entregado por transportadora Servientrega"
-              className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 focus:outline-hidden focus:border-brand-500 text-gray-900 dark:text-white"
             />
           </div>
 
           {/* Total Summary Footer Box */}
-          <div className="p-4 rounded-xl bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-gray-100 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <div>
-              <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">
+              <span className="text-[10px] font-mono uppercase text-gray-500 dark:text-gray-400 font-bold block">
                 Unidades a ingresar:
               </span>
-              <strong className="text-sm font-mono font-black text-zinc-900 dark:text-white">
+              <strong className="text-sm font-mono font-bold text-gray-900 dark:text-white">
                 {totalUnits.toLocaleString("es-CO")} ítems
               </strong>
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold block">
+              <span className="text-[10px] font-mono uppercase text-gray-500 dark:text-gray-400 font-bold block">
                 Total Factura de Compra:
               </span>
-              <strong className="text-xl font-mono font-black text-emerald-600 dark:text-emerald-400">
+              <strong className="text-xl font-mono font-bold text-success-600 dark:text-success-400">
                 ${totalAmount.toLocaleString("es-CO")}
               </strong>
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
-            <button
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <Button
               type="button"
+              variant="outline"
+              intent="purchaseorder.cancel"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              intent="purchaseorder.submit"
               disabled={isSubmitting || items.length === 0}
-              className="px-5 py-2 rounded-xl bg-[#190088] hover:bg-[#150073] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
             >
               {isSubmitting
                 ? "Procesando..."
                 : autoReceive
                 ? "Guardar e Ingresar a Stock"
                 : "Guardar Orden de Compra"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 };

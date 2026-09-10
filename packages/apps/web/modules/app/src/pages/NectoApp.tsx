@@ -18,6 +18,8 @@ import {
   Store,
   Tag,
   Coins,
+  TrendingUp,
+  History,
 } from "lucide-react";
 
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
@@ -33,7 +35,13 @@ import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
 import { NectoLogo, NectoSidebarLogo } from "@/compositions/shared/NectoLogo";
 import { useBusiness } from "@/context/BusinessContext";
 import { useAuth } from "@/auth/AuthContext";
-import { Button, Badge } from "@/elements";
+import { Button, Badge, Breadcrumb } from "@/elements";
+import type { BreadcrumbItem } from "@/elements/ui/breadcrumb";
+import { BaseAppShell } from "@/shell";
+import { AppFooter } from "@/shell/footer";
+import { BasePageLayout, BasePageHeader } from "@/layouts/base-page";
+import { StockFlowSidebar } from "@/compositions/shell/StockFlowSidebar";
+import { StockFlowHeader } from "@/compositions/shell/StockFlowHeader";
 
 
 export type InventariosRole = "operador" | "analista";
@@ -89,14 +97,14 @@ function NotificationBellDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border border-slate-200 bg-white text-gray-700 transition-all hover:bg-slate-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+        className="relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition-all hover:bg-gray-100 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:hover:text-white shadow-theme-xs hover:scale-105 active:scale-95 cursor-pointer"
         title="Notificaciones de Necto IA"
       >
-        <Bell className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-gray-700 dark:text-gray-200 stroke-[2.2]" />
+        <Bell className="w-5 h-5 text-gray-700 dark:text-gray-200" />
         {unreadCount > 0 && (
           <span className="absolute top-0.5 right-0.5 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF3F1A] border-2 border-white dark:border-gray-900"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-brand-500 border-2 border-white dark:border-gray-900"></span>
           </span>
         )}
       </button>
@@ -104,19 +112,19 @@ function NotificationBellDropdown({
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-3 w-[calc(100vw-32px)] max-w-sm sm:w-96 bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden space-y-2 animate-scale-up">
-            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+          <div className="absolute right-0 mt-3 w-[calc(100vw-32px)] max-w-sm sm:w-96 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-theme-lg z-50 overflow-hidden space-y-2 animate-scale-up">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/70 dark:bg-gray-800/40">
               <div className="flex items-center gap-2">
-                <h4 className="font-extrabold text-sm text-gray-900 dark:text-gray-100">Notificaciones</h4>
+                <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Notificaciones</h4>
                 {unreadCount > 0 && (
-                  <Badge variant="accent" intent="shell.notifications.unread" className="normal-case">
+                  <Badge variant="light" color="error" size="sm">
                     {unreadCount} nuevas
                   </Badge>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <Button variant="ghost" intent="shell.notifications.markAllRead" onClick={markAllRead} className="p-0 text-[11px] font-bold text-orange-600 hover:underline cursor-pointer">
+                  <Button variant="ghost" intent="shell.notifications.markAllRead" onClick={markAllRead} className="p-0 text-xs font-semibold text-brand-500 hover:underline cursor-pointer">
                     Marcar leídas
                   </Button>
                 )}
@@ -124,27 +132,27 @@ function NotificationBellDropdown({
                   variant="ghost"
                   intent="shell.notifications.close"
                   onClick={() => setOpen(false)}
-                  className="w-7 h-7 p-0 rounded-lg text-gray-400"
+                  className="w-7 h-7 p-0 rounded-lg text-gray-400 hover:text-gray-600"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            <div className="divide-y divide-gray-100 dark:divide-gray-700/60 max-h-80 overflow-y-auto">
+            <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-80 overflow-y-auto">
               {notifications.map(n => (
                 <div
                   key={n.id}
                   onClick={() => handleClick(n)}
-                  className={`p-3.5 flex gap-3 hover:bg-slate-100 dark:hover:bg-gray-800/80 transition-colors cursor-pointer ${n.unread ? "bg-orange-50/30 dark:bg-orange-950/20" : ""}`}
+                  className={`p-3.5 flex gap-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer ${n.unread ? "bg-brand-50/40 dark:bg-brand-500/[0.08]" : ""}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center flex-none text-orange-500 border border-slate-200 dark:border-[#374151]">
-                    {n.type === "order" ? <ShoppingBag className="w-4 h-4 text-[#FF3F1A]" /> : n.type === "stock" ? <Package className="w-4 h-4 text-[#FF3F1A]" /> : <ShieldAlert className="w-4 h-4 text-amber-500" />}
+                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-none text-brand-500 border border-gray-200 dark:border-gray-700">
+                    {n.type === "order" ? <ShoppingBag className="w-4 h-4 text-brand-500" /> : n.type === "stock" ? <Package className="w-4 h-4 text-brand-500" /> : <ShieldAlert className="w-4 h-4 text-warning-500" />}
                   </div>
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <div className="flex items-center justify-between">
-                      <p className="font-extrabold text-xs text-gray-900 dark:text-gray-100 truncate">{n.title}</p>
-                      {n.unread && <span className="w-2 h-2 rounded-full bg-[#FF3F1A] flex-none" />}
+                      <p className="font-semibold text-xs text-gray-900 dark:text-gray-100 truncate">{n.title}</p>
+                      {n.unread && <span className="w-2 h-2 rounded-full bg-brand-500 flex-none" />}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{n.desc}</p>
                     <p className="text-[10px] font-mono text-gray-400">{n.time}</p>
@@ -153,8 +161,8 @@ function NotificationBellDropdown({
               ))}
             </div>
 
-            <div className="p-3 border-t border-gray-100 dark:border-[#374151] text-center bg-slate-50/50 dark:bg-gray-800/30">
-              <Button variant="ghost" intent="shell.notifications.viewAll" onClick={() => setOpen(false)} className="p-0 text-xs font-extrabold text-[#190088] dark:text-blue-400 hover:underline cursor-pointer">
+            <div className="p-3 border-t border-gray-100 dark:border-gray-800 text-center bg-gray-50/50 dark:bg-gray-800/30">
+              <Button variant="ghost" intent="shell.notifications.viewAll" onClick={() => setOpen(false)} className="p-0 text-xs font-semibold text-brand-500 dark:text-brand-400 hover:underline cursor-pointer">
                 Ver todas las notificaciones
               </Button>
             </div>
@@ -182,760 +190,29 @@ export function TailAdminBreadcrumb({
   onNavigateSection?: () => void;
   onOpenRoleModal?: () => void;
 }) {
-  const navigate = useNavigate();
-
   return (
-    <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
-      <Button
-        variant="ghost"
-        intent="shell.breadcrumb.home"
-        onClick={() => navigate("/workspaces")}
-        className="p-0 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] transition-colors items-center gap-1.5 cursor-pointer hidden sm:flex font-mono"
-        title="Ir al Hub de Negocios y Franquicia"
-      >
-        <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
-        <span>Hub</span>
-      </Button>
-
-
-      <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
-
-      <Button
-        variant="ghost"
-        intent="shell.breadcrumb.module"
-        onClick={() => navigate("/workspaces")}
-        className="p-0 text-gray-700 dark:text-gray-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] font-bold hidden md:inline truncate max-w-[150px] transition-colors cursor-pointer"
-        title="Cambiar de sucursal en el Hub"
-      >
-        {moduleName}
-      </Button>
-
-      <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden md:inline" />
-
-      <Button
-        variant="ghost"
-        intent="shell.breadcrumb.section"
-        onClick={onNavigateSection || onNavigateHome}
-        className="p-0 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium hidden sm:inline transition-colors cursor-pointer"
-      >
-        {roleName}
-      </Button>
-
-      <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-none hidden sm:inline" />
-
-      <span className="text-[#FF3F1A] dark:text-orange-400 font-black truncate max-w-[130px] sm:max-w-none">
-        {pageName}
-      </span>
-
+    <div className="flex items-center gap-2">
+      <Breadcrumb
+        separator="chevron"
+        items={[
+          { label: "Hub", href: "/workspaces", icon: <Building2 className="w-4 h-4 text-brand-500" /> },
+          { label: moduleName, href: "/workspaces" },
+          { label: roleName },
+          { label: pageName },
+        ]}
+      />
       {onOpenRoleModal && (
-        <Badge 
+        <Badge
+          variant="light"
+          color="warning"
+          size="sm"
           onClick={onOpenRoleModal}
-          className="ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className="ml-2 cursor-pointer hover:opacity-80 transition-opacity hidden sm:inline-flex"
         >
           {roleName}
         </Badge>
       )}
-    </nav>
-  );
-}
-
-
-/* ── Logo: se usa el componente compartido @/compositions/shared/NectoLogo ── */
-
-/* ── Unified Sidebar Component ──────────────────────────────────────────── */
-
-function Sidebar({
-  activeModule = "pedidos",
-  pedidosSection,
-  pedidosOpTab,
-  pedidosGeTab,
-  inventarioTab = "catalog",
-  onNavigatePedidos,
-  onNavigateModule,
-  onNavigateInventario,
-  isMobileOpen = false,
-  onCloseMobile,
-  onOpenRoleModal,
-}: {
-  activeModule?: "pedidos" | "inventarios";
-  pedidosSection: PedidosSection;
-  pedidosOpTab: OperacionTab;
-  pedidosGeTab: GestionTab;
-  inventarioTab?: InventoryTab;
-  onNavigatePedidos: (section: PedidosSection, tab: any) => void;
-  onNavigateModule?: (module: "pedidos" | "inventarios") => void;
-  onNavigateInventario?: (tab: InventoryTab) => void;
-  isMobileOpen?: boolean;
-  onCloseMobile?: () => void;
-  onOpenRoleModal?: () => void;
-}) {
-  const navigate = useNavigate();
-  const { canAccess, activeBusiness, activeRole } = useBusiness();
-  const { signOut } = useAuth();
-  const [isCollapsed, setIsCollapsed] = useState(() => {
-    try {
-      const saved = localStorage.getItem("necto_sidebar_collapsed");
-      if (saved !== null) return JSON.parse(saved);
-    } catch (e) {}
-    return true; // Por defecto colapsada (no desplegada)
-  });
-
-  const handleSetCollapsed = (next: boolean) => {
-    setIsCollapsed(next);
-    try {
-      localStorage.setItem("necto_sidebar_collapsed", JSON.stringify(next));
-    } catch (e) {}
-  };
-
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({
-    pedidos: true,
-    operacion: true,
-    menu: false,
-    configuracion: false,
-    inventario: true,
-  });
-
-  const toggle = (section: string) => {
-    setExpanded(prev => ({ ...prev, [section]: !prev[section] }));
-  };
-
-  const hasPedidos = activeBusiness?.activeModules?.includes("pedidos") ?? true;
-  const hasInventarios = activeBusiness?.activeModules?.includes("inventarios") ?? true;
-  const hasReservas = activeBusiness?.activeModules?.includes("reservas") ?? false;
-  const hasAgendamiento = activeBusiness?.activeModules?.includes("agendamiento") ?? false;
-  const hasTurnos = activeBusiness?.activeModules?.includes("turnos") ?? false;
-  const hasReferidos = activeBusiness?.activeModules?.includes("referidos") ?? false;
-
-  function ComingSoonNavItem({
-    icon,
-    label,
-    isMobile = false,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    isMobile?: boolean;
-  }) {
-    if (isCollapsed && !isMobile) {
-      return (
-        <div
-          title={`${label} (Próximamente)`}
-          className="flex items-center justify-center w-10 h-10 mx-auto rounded-xl text-zinc-400 dark:text-zinc-500 cursor-not-allowed opacity-60 hover:opacity-100 transition-opacity group relative"
-        >
-          <span className="flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5">
-            {icon}
-          </span>
-        </div>
-      );
-    }
-
-    return (
-      <div
-        title={`${label} — Próximamente disponible`}
-        className="justify-between w-full flex items-center px-3.5 py-2.5 rounded-xl text-xs font-medium text-zinc-400 dark:text-zinc-500 cursor-not-allowed select-none opacity-70 hover:opacity-100 transition-opacity"
-      >
-        <div className="flex items-center gap-3 truncate">
-          <span className="flex-none text-zinc-400 dark:text-zinc-500 [&>svg]:w-4 [&>svg]:h-4">{icon}</span>
-          <span className="truncate">{label}</span>
-        </div>
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200/80 dark:border-zinc-700/80">
-          Próx.
-        </span>
-      </div>
-    );
-  }
-
-  function NavItem({
-    icon,
-    label,
-    active,
-    onClick,
-    indent = false,
-    isMobile = false,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    active?: boolean;
-    onClick?: () => void;
-    indent?: boolean;
-    isMobile?: boolean;
-  }) {
-    if (isCollapsed && !isMobile) {
-      return (
-        <button
-          type="button"
-          onClick={onClick}
-          title={label}
-          className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all cursor-pointer group ${
-            active
-              ? "bg-[#FF3F1A] text-white shadow-sm"
-              : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-          }`}
-        >
-          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-[#FF3F1A]"}`}>
-            {icon}
-          </span>
-        </button>
-      );
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`justify-start w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer group ${
-          indent ? "pl-9 text-xs" : ""
-        } ${
-          active
-            ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
-            : "text-zinc-800 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-        }`}
-      >
-        <span className={`flex-none transition-colors ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-zinc-600 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
-        <span className="truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
-      </button>
-    );
-  }
-
-  function SectionHeader({
-    icon,
-    label,
-    section,
-    active,
-    onHeaderClick,
-    isMobile = false,
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    section: string;
-    active: boolean;
-    onHeaderClick?: () => void;
-    isMobile?: boolean;
-  }) {
-    if (isCollapsed && !isMobile) {
-      return (
-        <button
-          type="button"
-          onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-          title={label}
-          className={`flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all cursor-pointer group ${
-            active
-              ? "bg-[#FF3F1A] text-white shadow-sm"
-              : "text-zinc-700 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-          }`}
-        >
-          <span className={`flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 transition-transform group-hover:scale-110 ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-[#FF3F1A]"}`}>
-            {icon}
-          </span>
-        </button>
-      );
-    }
-
-    return (
-      <button
-        type="button"
-        onClick={() => { toggle(section); if (onHeaderClick) onHeaderClick(); }}
-        className={`justify-start w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer group ${
-          active
-            ? "bg-[#FF3F1A] text-white shadow-sm font-bold"
-            : "text-zinc-800 dark:text-zinc-200 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-        }`}
-      >
-        <span className={`flex-none transition-colors ${active ? "text-white [&>svg]:!text-white [&>svg]:!stroke-white" : "text-zinc-600 dark:text-zinc-400 group-hover:text-[#FF3F1A]"}`}>{icon}</span>
-        <span className="flex-1 text-left truncate group-hover:text-[#FF3F1A] transition-colors">{label}</span>
-        {expanded[section] ? (
-          <ChevronDown className={`w-4 h-4 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
-        ) : (
-          <ChevronRight className={`w-4 h-4 flex-none transition-colors ${active ? "text-white" : "text-zinc-400 group-hover:text-[#FF3F1A]"}`} />
-        )}
-      </button>
-    );
-  }
-
-  const renderNavLinks = (isMobile = false) => (
-    <div className="flex flex-col gap-3">
-      {/* ── 1. MÓDULO PEDIDOS ────────────────────────────────────────────── */}
-      {hasPedidos && (
-        <div className="flex flex-col gap-1">
-          <SectionHeader
-          icon={<ShoppingBag className="w-4 h-4" />}
-          label="Pedidos"
-          section="pedidos"
-          active={activeModule === "pedidos"}
-          onHeaderClick={() => {
-            if (onNavigateModule) onNavigateModule("pedidos");
-            onNavigatePedidos("operacion", "en-vivo");
-          }}
-          isMobile={isMobile}
-        />
-
-        {(!isCollapsed || isMobile) && expanded.pedidos && (
-          <div className="flex flex-col gap-1 pl-2.5 my-1 animate-fade-in">
-            {/* Subcategoría 1.1: Operación */}
-            {(canAccess("canViewBandeja") || canAccess("canViewKDS")) && (
-              <div className="flex flex-col gap-1">
-                <SectionHeader
-                  icon={<Activity className="w-4 h-4" />}
-                  label="Operación"
-                  section="operacion"
-                  active={activeModule === "pedidos" && pedidosSection === "operacion"}
-                  onHeaderClick={() => onNavigatePedidos("operacion", pedidosOpTab || "en-vivo")}
-                  isMobile={isMobile}
-                />
-                {expanded.operacion && (
-                  <div className="flex flex-col gap-1 pl-1 animate-fade-in">
-                    {canAccess("canViewBandeja") && (
-                      <NavItem
-                        icon={<ShoppingBag className="w-4 h-4" />}
-                        label="Órdenes"
-                        active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
-                        onClick={() => onNavigatePedidos("operacion", "en-vivo")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                    {canAccess("canViewKDS") && (
-                      <NavItem
-                        icon={<ChefHat className="w-4 h-4" />}
-                        label="KDS Cocina"
-                        active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
-                        onClick={() => onNavigatePedidos("operacion", "preparacion")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                    {canAccess("canViewBandeja") && (
-                      <NavItem
-                        icon={<MessageSquare className="w-4 h-4" />}
-                        label="Atención al Cliente"
-                        active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "conversaciones"}
-                        onClick={() => onNavigatePedidos("operacion", "conversaciones")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Subcategoría 1.2: Menú & Abastecimiento */}
-            {(canAccess("canViewCatalogo") || canAccess("canViewInsumos")) && (
-              <div className="flex flex-col gap-1">
-                <SectionHeader
-                  icon={<Layers className="w-4 h-4" />}
-                  label="Menú & Stock"
-                  section="menu"
-                  active={activeModule === "pedidos" && pedidosSection === "menu"}
-                  onHeaderClick={() => onNavigatePedidos("menu", pedidosGeTab === "insumos" ? "insumos" : "catalogo")}
-                  isMobile={isMobile}
-                />
-                {expanded.menu && (
-                  <div className="flex flex-col gap-1 pl-1 animate-fade-in">
-                    {canAccess("canViewCatalogo") && (
-                      <NavItem
-                        icon={<Layers className="w-4 h-4" />}
-                        label="Catálogo de Platos"
-                        active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "catalogo"}
-                        onClick={() => onNavigatePedidos("menu", "catalogo")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                    {canAccess("canViewInsumos") && (
-                      <NavItem
-                        icon={<Package className="w-4 h-4" />}
-                        label="Insumos & Stock"
-                        active={activeModule === "pedidos" && (pedidosSection === "menu" || pedidosSection === "gestion") && pedidosGeTab === "insumos"}
-                        onClick={() => onNavigatePedidos("menu", "insumos")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Subcategoría 1.3: Configuración & Equipo */}
-            {(canAccess("canViewAutomatizaciones") || canAccess("canViewTurnos") || canAccess("canManageRoles")) && (
-              <div className="flex flex-col gap-1">
-                <SectionHeader
-                  icon={<Users className="w-4 h-4" />}
-                  label="Configuración"
-                  section="configuracion"
-                  active={activeModule === "pedidos" && pedidosSection === "configuracion"}
-                  onHeaderClick={() => onNavigatePedidos("configuracion", pedidosGeTab === "turnos" ? "turnos" : pedidosGeTab === "automatizaciones" ? "automatizaciones" : "roles")}
-                  isMobile={isMobile}
-                />
-                {expanded.configuracion && (
-                  <div className="flex flex-col gap-1 pl-1 animate-fade-in">
-                    {canAccess("canManageRoles") && (
-                      <NavItem
-                        icon={<Shield className="w-4 h-4" />}
-                        label="Roles & Permisos"
-                        active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "roles"}
-                        onClick={() => onNavigatePedidos("configuracion", "roles")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                    {canAccess("canViewAutomatizaciones") && (
-                      <NavItem
-                        icon={<SlidersHorizontal className="w-4 h-4" />}
-                        label="Automatizaciones"
-                        active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "automatizaciones"}
-                        onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                    {canAccess("canViewTurnos") && (
-                      <NavItem
-                        icon={<Users className="w-4 h-4" />}
-                        label="Turnos y Capacidad"
-                        active={activeModule === "pedidos" && (pedidosSection === "configuracion" || pedidosSection === "gestion") && pedidosGeTab === "turnos"}
-                        onClick={() => onNavigatePedidos("configuracion", "turnos")}
-                        indent
-                        isMobile={isMobile}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-        </div>
-      )}
-
-      {/* ── 2. MÓDULO INVENTARIO ─────────────────────────────────────────── */}
-      {hasInventarios && (
-        <div className="flex flex-col gap-1">
-          <SectionHeader
-            icon={<Boxes className="w-4 h-4" />}
-            label="Inventario"
-            section="inventario"
-            active={activeModule === "inventarios"}
-            onHeaderClick={() => {
-              if (onNavigateModule) onNavigateModule("inventarios");
-              if (onNavigateInventario) onNavigateInventario(inventarioTab || "catalog");
-            }}
-            isMobile={isMobile}
-          />
-
-          {(!isCollapsed || isMobile) && expanded.inventario && (
-            <div className="flex flex-col gap-1 pl-2.5 my-1 animate-fade-in">
-              <NavItem
-                icon={<Layers className="w-4 h-4" />}
-                label="Productos & Servicios"
-                active={activeModule === "inventarios" && inventarioTab === "catalog"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("catalog");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
-                icon={<Coins className="w-4 h-4" />}
-                label="Valor de Inventario"
-                active={activeModule === "inventarios" && inventarioTab === "valuation"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("valuation");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
-                icon={<Tag className="w-4 h-4" />}
-                label="Listas de Precios"
-                active={activeModule === "inventarios" && inventarioTab === "pricelists"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("pricelists");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
-                icon={<Building2 className="w-4 h-4" />}
-                label="Bodegas & Sucursales"
-                active={activeModule === "inventarios" && inventarioTab === "locations"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("locations");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
-                icon={<Truck className="w-4 h-4" />}
-                label="Compras & Facturas"
-                active={activeModule === "inventarios" && inventarioTab === "purchasing"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("purchasing");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-              <NavItem
-                icon={<Activity className="w-4 h-4" />}
-                label="Historial de Movimientos"
-                active={activeModule === "inventarios" && inventarioTab === "kardex"}
-                onClick={() => {
-                  if (onNavigateModule) onNavigateModule("inventarios");
-                  if (onNavigateInventario) onNavigateInventario("kardex");
-                }}
-                indent
-                isMobile={isMobile}
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── 3. MÓDULOS EN ROADMAP / PRÓXIMAMENTE ─────────────────────────── */}
-      {(hasReservas || hasAgendamiento || hasTurnos || hasReferidos) && (
-        <div className="flex flex-col gap-1 pt-2.5 mt-2 border-t border-zinc-100 dark:border-zinc-800/60">
-          {(!isCollapsed || isMobile) && (
-            <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-bold flex items-center justify-between">
-              <span>Roadmap</span>
-              <span className="px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800/80 text-[9px] text-zinc-400 font-medium">Próximamente</span>
-            </div>
-          )}
-          {hasReservas && (
-            <ComingSoonNavItem
-              icon={<Bookmark className="w-4 h-4" />}
-              label="Reservas de Espacios"
-              isMobile={isMobile}
-            />
-          )}
-          {hasAgendamiento && (
-            <ComingSoonNavItem
-              icon={<Calendar className="w-4 h-4" />}
-              label="Agendamiento & Citas"
-              isMobile={isMobile}
-            />
-          )}
-          {hasTurnos && (
-            <ComingSoonNavItem
-              icon={<Clock className="w-4 h-4" />}
-              label="Turnos de Personal"
-              isMobile={isMobile}
-            />
-          )}
-          {hasReferidos && (
-            <ComingSoonNavItem
-              icon={<Gift className="w-4 h-4" />}
-              label="Fidelización"
-              isMobile={isMobile}
-            />
-          )}
-        </div>
-      )}
     </div>
-  );
-
-  return (
-    <>
-      {/* 1. Desktop Sidebar (hidden on mobile, visible on lg and up) */}
-      <div
-        className={`${
-          isCollapsed ? "w-16" : "w-72"
-        } hidden lg:flex sticky top-3 self-start h-[calc(100vh-24px)] transition-all duration-300 flex-none bg-white dark:bg-[#2C2D31] dark:border dark:border-[#374151] rounded-2xl shadow-sm overflow-hidden flex-col`}
-      >
-        {/* Top Header with Animated Logo & Collapse Toggle */}
-        <div className="p-3.5 px-4 pt-4.5">
-          <NectoSidebarLogo
-            isCollapsed={isCollapsed}
-            onToggle={() => handleSetCollapsed(!isCollapsed)}
-          />
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1.5 scrollbar-thin">
-          {renderNavLinks(false)}
-        </nav>
-
-        {/* Bottom Action Section */}
-        <div className="p-3 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
-          <NavItem
-            icon={<Shield className="w-4 h-4 text-[#FF3F1A]" />}
-            label={`Rol: ${activeRole?.name || "Dueño"}`}
-            onClick={onOpenRoleModal}
-          />
-          <NavItem
-            icon={<Store className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />}
-            label="Hub de Sucursales"
-            onClick={() => navigate("/")}
-          />
-          <NavItem
-            icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
-            label="Configuración"
-            onClick={() => navigate("/workspaces")}
-          />
-          <NavItem icon={<HelpCircle className="w-4 h-4 text-zinc-500" />} label="Ayuda" onClick={() => {}} />
-          <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { signOut(); navigate("/login"); }} />
-        </div>
-      </div>
-
-      {/* 2. Mobile Slide-over Drawer (visible on < lg when isMobileOpen is true) */}
-      {isMobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-fade-in"
-            onClick={onCloseMobile}
-          />
-
-          {/* Drawer Sheet */}
-          <div className="relative w-72 max-w-[85vw] bg-white dark:bg-[#2C2D31] h-full shadow-2xl flex flex-col z-10 animate-slide-right border-r border-slate-200 dark:border-gray-700">
-            {/* Drawer Header */}
-            <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-              <NectoLogo size="xs" inline />
-              <Button
-                variant="ghost"
-                intent="shell.sidebar.closeMobile"
-                onClick={onCloseMobile}
-                className="p-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Mobile Nav Links */}
-            <nav className="flex-1 overflow-y-auto p-3 flex flex-col gap-1">
-              {renderNavLinks(true)}
-            </nav>
-
-            {/* Drawer Footer */}
-            <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1 bg-slate-50/50 dark:bg-gray-800/40">
-              <NavItem
-                icon={<Shield className="w-4 h-4 text-[#FF3F1A]" />}
-                label={`Rol: ${activeRole?.name || "Dueño"}`}
-                onClick={() => {
-                  onCloseMobile?.();
-                  onOpenRoleModal?.();
-                }}
-                isMobile={true}
-              />
-              <NavItem
-                icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
-                label="Configuración"
-                onClick={() => {
-                  onCloseMobile?.();
-                  navigate("/workspaces");
-                }}
-                isMobile={true}
-              />
-              <NavItem icon={<HelpCircle className="w-4 h-4" />} label="Ayuda" onClick={() => {}} isMobile={true} />
-              <NavItem icon={<LogOut className="w-4 h-4 text-red-500" />} label="Cerrar sesión" onClick={() => { onCloseMobile?.(); signOut(); navigate("/login"); }} isMobile={true} />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
-/* ── Footer ─────────────────────────────────────────────────────────────── */
-
-function Footer() {
-  return (
-    <footer className="w-full overflow-hidden text-white font-sans mt-auto flex-none">
-      <div className="bg-[#FF3F1A] dark:bg-[#212121] px-6 md:px-12 py-8 transition-colors">
-        <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-8 md:gap-12">
-          
-          <div className="flex flex-col items-start gap-5 flex-none">
-            <div className="relative w-[235px] h-[97px]">
-              <div className="absolute inset-[59.42%_31.4%_0.06%_23.53%]">
-                <svg className="block w-full h-full" fill="none" viewBox="0 0 105.906 39.3108" preserveAspectRatio="none">
-                  <g id="Group">
-                    <path d={svgPaths.p3c6b27c0} fill="#FFFFFF" />
-                    <path d={svgPaths.p14f5d000} fill="#FFFFFF" />
-                    <path d={svgPaths.p19d15a00} fill="#FFFFFF" />
-                    <path d={svgPaths.p13839f00} fill="#FFFFFF" />
-                    <path d={svgPaths.p2f3333f0} fill="#FFFFFF" />
-                    <path d={svgPaths.p2ad78300} fill="#FFFFFF" />
-                    <path d={svgPaths.p4b91f00} fill="#FFFFFF" />
-                    <path d={svgPaths.p250f9580} fill="#FFFFFF" />
-                    <path d={svgPaths.p80b6880} fill="#FFFFFF" />
-                    <path d={svgPaths.p1224d800} fill="#FFFFFF" />
-                    <path d={svgPaths.p1ea5d900} fill="#FFFFFF" />
-                    <path d={svgPaths.p31032480} fill="#FFFFFF" />
-                  </g>
-                </svg>
-              </div>
-
-              <div className="absolute inset-[-0.06%_0_48.14%_0]">
-                <svg className="block w-full h-full" fill="none" viewBox="0 0 235 50.3601" preserveAspectRatio="none">
-                  <g id="Group">
-                    <path d={svgPaths.p31604a80} fill="#FFFFFF" />
-                    <path d={svgPaths.p1b22ab80} className="necto-logo-e fill-[#190088]" fill="#190088" />
-                    <path d={svgPaths.p1aedf600} fill="#FFFFFF" />
-                    <path d={svgPaths.p204e9500} fill="#FFFFFF" />
-                    <path d={svgPaths.p14a87f30} fill="#FFFFFF" />
-                    <path d={svgPaths.pd6f1500} fill="#FFFFFF" />
-                  </g>
-                </svg>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pl-1">
-              <div className="w-[30px] h-[30px] cursor-pointer hover:scale-105 transition-transform">
-                <svg className="block w-full h-full" fill="none" viewBox="0 0 30.5497 29.36">
-                  <path d={svgPaths.p1836e480} fill="#FFFFFF" />
-                  <path d={svgPaths.p13ab9f40} fill="#FFFFFF" />
-                  <path d={svgPaths.p20e40300} fill="#FFFFFF" />
-                </svg>
-              </div>
-              <div className="w-[30px] h-[30px] cursor-pointer hover:scale-105 transition-transform">
-                <svg className="block w-full h-full" fill="none" viewBox="0 0 32 29">
-                  <path d={svgPaths.p46a0e80} fill="#FFFFFF" />
-                </svg>
-              </div>
-              <div className="w-[30px] h-[30px] cursor-pointer hover:scale-105 transition-transform">
-                <svg className="block w-full h-full" fill="none" viewBox="0 0 30.4995 29.3051">
-                  <path d={svgPaths.p37f6d480} fill="#FFFFFF" />
-                  <path d={svgPaths.p14ad3130} fill="#FFFFFF" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10 md:gap-14 flex-1 max-w-4xl w-full">
-            {[
-              { title: "Nosotros", items: ["Plataforma Necto", "Tecnología IA", "Restaurantes & SST"] },
-              { title: "Servicios", items: ["Gestión de Pedidos", "KDS Cocina", "Catálogo de Productos"] },
-              { title: "Contacto", items: ["Soporte Técnico", "Mesa de Ayuda", "Comunidad"] },
-            ].map(col => (
-              <div key={col.title} className="flex items-start gap-3.5">
-                <div className="w-[3px] h-10 bg-white/80 dark:bg-[#374151] rounded-full flex-none mt-1" />
-                <div className="flex flex-col gap-1.5">
-                  <h4 className="font-bold text-white text-lg sm:text-xl leading-tight mb-1">{col.title}</h4>
-                  {col.items.map((item, idx) => (
-                    <span key={idx} className="font-medium text-white/90 dark:text-gray-300 hover:text-white text-sm leading-snug cursor-pointer hover:underline">
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </div>
-
-      <div className="bg-[#FF3F1A] dark:bg-[#212121] relative transition-colors">
-        <div className="bg-[#190088] dark:bg-[#FF3F1A] rounded-t-[32px] text-center py-3.5 px-6 transition-colors shadow-inner">
-          <p className="text-white text-[13px] font-bold tracking-wide">
-            2025@Todos los derechos reservados
-          </p>
-        </div>
-      </div>
-    </footer>
   );
 }
 
@@ -988,12 +265,14 @@ export default function App() {
       setPedidosOpTab(tab || "en-vivo");
     } else if (section === "menu") {
       setPedidosGeTab(tab || "catalogo");
+    } else if (section === "analitica") {
+      setPedidosGeTab(tab || "resumen");
     } else if (section === "configuracion") {
       setPedidosGeTab(tab || "roles");
     } else {
       setPedidosGeTab(tab);
     }
-    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : "roles") }, { replace: true });
+    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : section === "analitica" ? "resumen" : "roles") }, { replace: true });
   };
 
   const handleNavigateInventario = (tab: InventoryTab) => {
@@ -1159,144 +438,104 @@ export default function App() {
       ? pedidosOpPageNames[pedidosOpTab]
       : pedidosGePageNames[pedidosGeTab];
 
+  const pageTitle =
+    activeModule === "inventarios"
+      ? (inventarioTab === "valuation"
+          ? "Valor de Inventario"
+          : inventarioTab === "locations"
+          ? "Bodegas & Sucursales"
+          : inventarioTab === "purchasing"
+          ? "Compras & Facturas"
+          : inventarioTab === "kardex"
+          ? "Historial de Movimientos"
+          : inventarioTab === "pricelists"
+          ? "Listas de Precios"
+          : "Productos & Servicios")
+      : currentPageName;
+
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: activeBusiness?.name || "Necto", href: "/app" },
+    { label: activeModule === "inventarios" ? "Inventario" : currentRoleName },
+    { label: pageTitle },
+  ];
+
   return (
-    <div
-      className="min-h-screen flex flex-col transition-colors bg-[#ECECEC] dark:bg-[#212121] text-[#212121] dark:text-[#ECECEC]"
-      style={{ fontFamily: "DM Sans, sans-serif" }}
-    >
-      <div className="flex flex-1 gap-2 sm:gap-3 p-1.5 sm:p-3 items-start min-h-screen">
-        {/* Sidebar */}
-        <Sidebar
-          activeModule={activeModule}
-          pedidosSection={pedidosSection}
-          pedidosOpTab={pedidosOpTab}
-          pedidosGeTab={pedidosGeTab}
-          inventarioTab={inventarioTab}
-          onNavigatePedidos={handleNavigatePedidos}
-          onNavigateModule={handleNavigateModule}
-          onNavigateInventario={handleNavigateInventario}
-          isMobileOpen={isMobileMenuOpen}
-          onCloseMobile={() => setIsMobileMenuOpen(false)}
-          onOpenRoleModal={() => setIsRoleModalOpen(true)}
-        />
-
-        {/* Right Column: Fixed Top Navbar + Independently Scrolling Content Screen */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-3 lg:h-[calc(100vh-24px)] lg:sticky lg:top-3 lg:self-start">
-          {/* Top Bar Floating Card (Permanently Fixed at Top) */}
-          <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:rounded-2xl rounded-xl shadow-xs transition-colors bg-white dark:bg-[#151518] border border-zinc-200/80 dark:border-zinc-800/80 flex-none sticky top-1.5 sm:top-3 lg:static z-20">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Mobile Menu Toggle Button */}
-              <Button
-                variant="ghost"
-                intent="shell.sidebar.openMobile"
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="p-0 lg:hidden flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 shadow-xs hover:scale-105 active:scale-95 cursor-pointer flex-none"
-                title="Abrir menú de navegación"
-              >
-                <Menu className="w-5 h-5" />
-              </Button>
-
-              <TailAdminBreadcrumb
-                moduleName={activeBusiness?.name || "Necto"}
-                roleName={activeModule === "inventarios" ? "Inventario" : currentRoleName}
-                pageName={
-                  activeModule === "inventarios"
-                    ? inventarioTab === "valuation"
-                      ? "Valor de Inventario"
-                      : inventarioTab === "locations"
-                      ? "Bodegas & Sucursales"
-                      : inventarioTab === "purchasing"
-                      ? "Compras & Facturas"
-                      : inventarioTab === "kardex"
-                      ? "Historial de Movimientos"
-                      : inventarioTab === "pricelists"
-                      ? "Listas de Precios"
-                      : "Productos & Servicios"
-                    : currentPageName
-                }
-                onNavigateHome={() => (activeModule === "inventarios" ? handleNavigateModule("inventarios") : handleNavigatePedidos("operacion", "en-vivo"))}
-                onNavigateSection={() =>
-                  activeModule === "inventarios"
-                    ? handleNavigateInventario(inventarioTab)
-                    : handleNavigatePedidos(
-                        pedidosSection,
-                        pedidosSection === "operacion"
-                          ? "en-vivo"
-                          : pedidosSection === "menu"
-                          ? "catalogo"
-                          : "roles"
-                      )
-                }
-                onOpenRoleModal={() => setIsRoleModalOpen(true)}
-              />
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <div className="hidden sm:block"><GlobalSearchButton /></div>
-
-              {/* Direct Role Switcher Pill in Top Bar */}
-              <button
-                type="button"
-                onClick={() => setIsRoleModalOpen(true)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-50/90 dark:bg-zinc-800/90 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all cursor-pointer shadow-2xs group"
-                title={`Rol activo: ${activeRole?.name || "Dueño"}. Clic para cambiar de perfil.`}
-              >
-                <Shield className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A] dark:group-hover:text-[#FF3F1A] truncate max-w-[130px]">
-                  {activeRole?.name || "Dueño"}
-                </span>
-                <ChevronDown className="w-3 h-3 text-zinc-400 group-hover:text-[#FF3F1A] transition-transform" />
-              </button>
-
+    <>
+      <BaseAppShell
+        sidebar={
+          <StockFlowSidebar
+            activeModule={activeModule}
+            pedidosSection={pedidosSection}
+            pedidosOpTab={pedidosOpTab}
+            pedidosGeTab={pedidosGeTab}
+            inventarioTab={inventarioTab}
+            onNavigatePedidos={handleNavigatePedidos}
+            onNavigateModule={handleNavigateModule}
+            onNavigateInventario={handleNavigateInventario}
+            onOpenRoleModal={() => setIsRoleModalOpen(true)}
+            activeRoleName={activeRole?.name || "Dueño"}
+          />
+        }
+        header={
+          <StockFlowHeader
+            breadcrumbItems={breadcrumbItems}
+            activeRoleName={activeRole?.name || "Dueño"}
+            onOpenRoleModal={() => setIsRoleModalOpen(true)}
+            notificationsDropdown={
               <NotificationBellDropdown
                 notifications={notifications}
                 setNotifications={setNotifications}
                 onNavigate={handleNavigateFromNotification}
               />
+            }
+          />
+        }
+        footer={<AppFooter />}
+      >
+        <BasePageLayout
+          header={
+            <BasePageHeader
+              title={pageTitle}
+              breadcrumbItems={breadcrumbItems}
+            />
+          }
+        >
+          {activeModule === "inventarios" || !hasPedidos ? (
+            <ModuloInventario
+              activeTab={inventarioTab}
+              onNavigateTab={handleNavigateInventario}
+            />
+          ) : (
+            <PedidosModule
+              sectionProp={pedidosSection}
+              opTabProp={pedidosOpTab}
+              geTabProp={pedidosGeTab}
+              targetOrderId={targetOrderId}
+              targetModal={targetModal}
+              targetProductId={targetProductId}
+              onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
+              onOpTabChange={t => handleNavigatePedidos("operacion", t)}
+              onGeTabChange={t => {
+                const targetSec: PedidosSection =
+                  (t === "resumen" || t === "historial" || t === "analitica")
+                    ? "analitica"
+                    : (t === "roles" || t === "automatizaciones" || t === "turnos")
+                    ? "configuracion"
+                    : "menu";
+                handleNavigatePedidos(targetSec, t);
+              }}
+            />
+          )}
+        </BasePageLayout>
+      </BaseAppShell>
 
-              <ThemeToggle />
-
-              <UserProfileDropdown />
-            </div>
-          </header>
-
-          {/* Main Content Screen Floating Card (Independently Scrolling) */}
-          <main className="flex-1 min-w-0 min-h-0 sm:rounded-2xl rounded-xl shadow-xs overflow-hidden flex flex-col transition-colors bg-white dark:bg-[#121316] border border-zinc-200/80 dark:border-zinc-800/80 text-[#212121] dark:text-[#ECECEC]">
-            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin">
-              {activeModule === "inventarios" || !hasPedidos ? (
-                <ModuloInventario
-                  activeTab={inventarioTab}
-                  onNavigateTab={handleNavigateInventario}
-                />
-              ) : (
-                <PedidosModule
-                  sectionProp={pedidosSection}
-                  opTabProp={pedidosOpTab}
-                  geTabProp={pedidosGeTab}
-                  targetOrderId={targetOrderId}
-                  targetModal={targetModal}
-                  targetProductId={targetProductId}
-                  onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
-                  onOpTabChange={t => handleNavigatePedidos("operacion", t)}
-                  onGeTabChange={t => handleNavigatePedidos(pedidosSection === "operacion" ? "menu" : pedidosSection, t)}
-                />
-              )}
-            </div>
-          </main>
-        </div>
-      </div>
-
-      {/* Footer — hidden on mobile to maximize content area */}
-      <div className="hidden lg:block">
-        <Footer />
-      </div>
       <CommandPalette />
       <RoleSelectionModal
         business={activeBusiness}
         isOpen={isRoleModalOpen}
         onClose={() => setIsRoleModalOpen(false)}
       />
-    </div>
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Search, X } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableCell, Badge, Button } from "@/elements";
 import { StockMovement, MovementType, InventoryProduct } from "../types/inventory.types";
 
 interface KardexViewProps {
@@ -72,19 +73,19 @@ export const KardexView: React.FC<KardexViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 text-zinc-900 dark:text-zinc-100">
+    <div className="flex flex-col flex-1 min-h-0 text-gray-800 dark:text-white">
       {/* ── Minimalist Filter Toolbar ── */}
-      <div className="px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-zinc-800/80">
+      <div className="px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
           {/* Search */}
           <div className="relative flex-1 min-w-[220px] sm:max-w-sm">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por concepto, SKU o documento..."
-              className="w-full pl-9 pr-3 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 focus:border-brand-500 dark:focus:border-brand-500 rounded-lg text-xs text-gray-800 dark:text-white placeholder:text-gray-400 focus:outline-none transition-colors"
             />
           </div>
 
@@ -93,14 +94,12 @@ export const KardexView: React.FC<KardexViewProps> = ({
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
             aria-label="Filtrar por Tipo"
-            className="px-2.5 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none cursor-pointer"
+            className="px-2.5 py-1.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-lg text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:border-brand-500 cursor-pointer"
           >
             <option value="all">Todos los tipos</option>
             <option value="ENTRADA">Entradas (+)</option>
             <option value="SALIDA">Salidas (-)</option>
-            <option value="AJUSTE">Ajustes</option>
-            <option value="TRASLADO">Traslados</option>
-            <option value="CONTEO">Conteos</option>
+            <option value="AJUSTE">Ajustes / Conteos</option>
           </select>
 
           {/* Product Filter */}
@@ -108,133 +107,129 @@ export const KardexView: React.FC<KardexViewProps> = ({
             value={productFilter}
             onChange={(e) => setProductFilter(e.target.value)}
             aria-label="Filtrar por Producto"
-            className="px-2.5 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none cursor-pointer max-w-[220px] truncate"
+            className="px-2.5 py-1.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-lg text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:border-brand-500 cursor-pointer max-w-xs truncate"
           >
             <option value="all">Todos los productos</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name}
+                {p.name} ({p.sku})
               </option>
             ))}
           </select>
 
           {selectedProductFilter && onClearProductFilter && (
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="outline"
               onClick={onClearProductFilter}
-              className="px-2 py-1 rounded-lg text-xs font-medium text-[#FF3F1A] hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors cursor-pointer flex items-center gap-1 flex-none"
+              startIcon={<X className="w-3.5 h-3.5" />}
             >
-              <X className="w-3.5 h-3.5" />
-              <span>Quitar filtro</span>
-            </button>
+              Quitar filtro
+            </Button>
           )}
         </div>
 
         {/* Counter */}
-        <div className="text-xs text-zinc-400 font-mono self-end md:self-auto flex-none">
+        <div className="text-xs text-gray-400 font-mono self-end md:self-auto flex-none">
           {filteredMovements.length} {filteredMovements.length === 1 ? "movimiento" : "movimientos"}
         </div>
       </div>
 
-      {/* ── Ledger Table ── */}
+      {/* ── Ledger Table using Pure Elements ── */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead className="sticky top-0 bg-zinc-50 dark:bg-[#151518] z-10 border-b border-zinc-200 dark:border-zinc-800">
-            <tr className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 select-none">
-              <th className="py-2.5 px-4 sm:px-6 font-semibold">Fecha</th>
-              <th className="py-2.5 px-4 font-semibold">Producto</th>
-              <th className="py-2.5 px-4 font-semibold">Tipo</th>
-              <th className="py-2.5 px-4 font-semibold">Concepto</th>
-              <th className="py-2.5 px-4 font-semibold text-right">Cantidad</th>
-              <th className="py-2.5 px-4 font-semibold text-right">Saldo</th>
-              <th className="py-2.5 px-4 sm:px-6 font-semibold text-right">Responsable</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-sans">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableCell header>Fecha</TableCell>
+              <TableCell header>Producto</TableCell>
+              <TableCell header>Tipo</TableCell>
+              <TableCell header>Concepto</TableCell>
+              <TableCell header className="text-right">Cantidad</TableCell>
+              <TableCell header className="text-right">Saldo</TableCell>
+              <TableCell header className="text-right">Responsable</TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {filteredMovements.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-16 text-center text-zinc-400">
-                  <p className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">
+              <TableRow>
+                <TableCell colSpan={7} className="py-16 text-center text-gray-400">
+                  <p className="font-semibold text-gray-700 dark:text-gray-300 text-xs">
                     No hay movimientos para los filtros seleccionados
                   </p>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               filteredMovements.map((m) => {
                 const isPositive = m.type === "ENTRADA" || (m.type === "AJUSTE" && m.toLocation);
                 return (
-                  <tr
+                  <TableRow
                     key={m.id}
-                    className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30 transition-colors"
+                    className="hover:bg-gray-50/70 dark:hover:bg-white/[0.03] transition-colors"
                   >
                     {/* Fecha */}
-                    <td className="py-3 px-4 sm:px-6 font-mono text-[11px] text-zinc-400 whitespace-nowrap">
+                    <TableCell className="font-mono text-[11px] text-gray-400 whitespace-nowrap">
                       {formatDate(m.timestamp)}
-                    </td>
+                    </TableCell>
 
                     {/* Producto */}
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100 truncate max-w-xs">
+                    <TableCell>
+                      <div className="font-medium text-gray-900 dark:text-white truncate max-w-xs">
                         {m.productName}
                       </div>
-                      <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                      <div className="text-[11px] text-gray-400 font-mono mt-0.5">
                         {m.productSku}
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Tipo */}
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span
-                        className={`font-medium ${
-                          isPositive
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : m.type === "SALIDA"
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-zinc-600 dark:text-zinc-400"
-                        }`}
+                    <TableCell className="whitespace-nowrap">
+                      <Badge
+                        variant="light"
+                        color={isPositive ? "success" : m.type === "SALIDA" ? "error" : "light"}
+                        size="sm"
                       >
                         {getTypeName(m.type, m.action)}
-                      </span>
-                    </td>
+                      </Badge>
+                    </TableCell>
 
                     {/* Concepto / Ref */}
-                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-300">
+                    <TableCell className="text-gray-600 dark:text-gray-300">
                       <div>{m.concept}</div>
                       {m.referenceDoc && (
-                        <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                        <div className="text-[10px] text-gray-400 font-mono mt-0.5">
                           Ref: {m.referenceDoc}
                         </div>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Variación */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap font-mono">
+                    <TableCell className="text-right whitespace-nowrap font-mono">
                       <span
                         className={`font-semibold ${
                           isPositive
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-rose-600 dark:text-rose-400"
+                            ? "text-success-600 dark:text-success-400"
+                            : "text-error-600 dark:text-error-400"
                         }`}
                       >
                         {isPositive ? `+${m.quantity}` : `-${m.quantity}`}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Saldo Resultante */}
-                    <td className="py-3 px-4 text-right whitespace-nowrap font-mono font-medium text-zinc-800 dark:text-zinc-200">
+                    <TableCell className="text-right whitespace-nowrap font-mono font-medium text-gray-800 dark:text-gray-200">
                       {m.newStock ?? (m as any).finalBalance}
-                    </td>
+                    </TableCell>
 
                     {/* Responsable */}
-                    <td className="py-3 px-4 sm:px-6 text-right whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+                    <TableCell className="text-right whitespace-nowrap text-gray-500 dark:text-gray-400">
                       {m.author}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

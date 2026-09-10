@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Button } from "@/elements";
 import { useInventory } from "./hooks/useInventory";
 import { InventoryProduct } from "./types/inventory.types";
 import { CatalogView } from "./components/CatalogView";
@@ -146,7 +147,7 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
   return (
     <div className="w-full min-h-full flex flex-col">
       {/* Top Operations Bar — Clean, integrated, no visual clutter */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between gap-4 flex-none bg-white dark:bg-[#121316]">
+      <div className="border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 flex items-center justify-between gap-4 flex-none bg-white dark:bg-gray-900">
         <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
           {navTabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -155,15 +156,15 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`relative px-3 py-3 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                className={`relative px-3.5 py-3 text-xs transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   isActive
-                    ? "text-zinc-900 dark:text-white font-bold"
-                    : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    ? "text-gray-900 dark:text-white font-bold"
+                    : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 font-medium"
                 }`}
               >
                 <span>{tab.label}</span>
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF3F1A] rounded-full" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-500 rounded-full" />
                 )}
               </button>
             );
@@ -172,14 +173,13 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
 
         {/* Global Quick Movement */}
         <div className="flex items-center gap-2 flex-none py-2">
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={() => handleOpenMovement(null, "ENTRADA")}
-            className="px-3.5 py-1.5 rounded-lg bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+            startIcon={<ArrowDownLeft className="w-3.5 h-3.5" />}
           >
-            <ArrowDownLeft className="w-3.5 h-3.5" />
-            <span>Movimiento</span>
-          </button>
+            Movimiento
+          </Button>
         </div>
       </div>
 

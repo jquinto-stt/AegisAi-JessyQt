@@ -12,11 +12,22 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   TrendingUp,
-  X,
-  HelpCircle,
   Search,
+  HelpCircle,
 } from "lucide-react";
 import { PriceList, InventoryProduct } from "../types/inventory.types";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  Badge,
+  Button,
+  Modal,
+  Input,
+  Label,
+} from "../../elements";
 
 interface PriceListsViewProps {
   priceLists: PriceList[];
@@ -147,68 +158,68 @@ export const PriceListsView: React.FC<PriceListsViewProps> = ({
     .slice(0, 8);
 
   return (
-    <div className="p-4 sm:p-6 space-y-6 animate-fade-in text-slate-800 dark:text-slate-100">
+    <div className="space-y-6 animate-fade-in text-gray-800 dark:text-gray-100">
       {/* ── 1. Top Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center">
-              <Tag className="w-4 h-4" />
+            <div className="size-8 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center">
+              <Tag className="size-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#0f172a] dark:text-white">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
               Listas de Precios
             </h1>
           </div>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Administra diferentes listas de tarifas para ventas por mayor, convenios, canales digitales o clientes VIP.
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="primary"
+          startIcon={<Plus className="size-4" />}
           onClick={handleOpenCreate}
-          className="px-4 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" />
-          <span>Nueva lista de precios</span>
-        </button>
+          Nueva lista de precios
+        </Button>
       </div>
 
       {/* ── 2. Metric Summary Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs">
+          <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
             Total Listas
           </span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white font-mono">
               {priceLists.length}
             </span>
-            <span className="text-xs text-emerald-600 font-semibold">
+            <span className="text-xs text-success-600 dark:text-success-400 font-medium">
               {priceLists.filter((p) => p.status === "active").length} activas
             </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs">
+          <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
             Lista Predeterminada
           </span>
           <div className="flex items-center gap-2 mt-1">
-            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-            <span className="text-base font-black text-slate-900 dark:text-white truncate">
+            <Star className="size-4 text-warning-500 fill-warning-500" />
+            <span className="text-base font-semibold text-gray-900 dark:text-white truncate">
               {defaultList?.name || "Lista General"}
             </span>
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-zinc-800/80 shadow-2xs">
-          <span className="text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs">
+          <span className="text-xs uppercase font-semibold text-gray-500 tracking-wider">
             Regla Comercial Base
           </span>
           <div className="flex items-center gap-2 mt-1">
-            <Percent className="w-4 h-4 text-[#FF3F1A]" />
-            <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+            <Percent className="size-4 text-brand-500" />
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
               Descuentos dinámicos sobre precio de venta base
             </span>
           </div>
@@ -216,180 +227,176 @@ export const PriceListsView: React.FC<PriceListsViewProps> = ({
       </div>
 
       {/* ── 3. List of Price Lists Table ── */}
-      <div className="bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between">
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xs overflow-hidden">
+        <div className="p-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-slate-500" />
-            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+            <Layers className="size-4 text-gray-400" />
+            <span className="text-xs uppercase font-semibold text-gray-700 dark:text-gray-300 tracking-wider">
               Listas Configuradas
             </span>
           </div>
-          <span className="text-[11px] text-slate-400 font-mono">
+          <span className="text-xs text-gray-400 font-mono">
             {priceLists.length} tarifas registradas
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-zinc-800/80 text-[11px] font-bold text-slate-500 dark:text-zinc-400 uppercase bg-slate-50/50 dark:bg-zinc-900/50">
-                <th className="py-3 px-4">Nombre / Código</th>
-                <th className="py-3 px-4">Tipo & Ajuste</th>
-                <th className="py-3 px-4">Descripción</th>
-                <th className="py-3 px-4">Estado</th>
-                <th className="py-3 px-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/60 font-medium">
-              {priceLists.map((list) => {
-                const isSelectedForPreview = selectedPreviewListId === list.id;
-                const percentage = list.percentage ?? 0;
-                const isDiscount = percentage < 0;
-                const isMarkup = percentage > 0;
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableCell isHeader>Nombre / Código</TableCell>
+              <TableCell isHeader>Tipo & Ajuste</TableCell>
+              <TableCell isHeader>Descripción</TableCell>
+              <TableCell isHeader>Estado</TableCell>
+              <TableCell isHeader className="text-right">Acciones</TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {priceLists.map((list) => {
+              const isSelectedForPreview = selectedPreviewListId === list.id;
+              const percentage = list.percentage ?? 0;
+              const isDiscount = percentage < 0;
+              const isMarkup = percentage > 0;
 
-                return (
-                  <tr
-                    key={list.id}
-                    onClick={() => setSelectedPreviewListId(list.id)}
-                    className={`hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer ${
-                      isSelectedForPreview
-                        ? "bg-orange-50/40 dark:bg-[#FF3F1A]/5 border-l-4 border-l-[#FF3F1A]"
-                        : ""
-                    }`}
-                  >
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 dark:text-white">
-                              {list.name}
-                            </span>
-                            {list.isDefault && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                <Star className="w-2.5 h-2.5 fill-current" />
-                                Predeterminada
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] font-mono text-slate-400">
-                            {list.code}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {list.type === "percentage" ? (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-mono font-bold bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200">
-                          {isDiscount ? (
-                            <ArrowDownRight className="w-3.5 h-3.5 text-rose-500" />
-                          ) : isMarkup ? (
-                            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                          ) : (
-                            <Percent className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                          <span
-                            className={
-                              isDiscount
-                                ? "text-rose-600 dark:text-rose-400"
-                                : isMarkup
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-slate-600 dark:text-zinc-400"
-                            }
-                          >
-                            {percentage > 0 ? `+${percentage}%` : `${percentage}%`}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
-                          Precios manuales
+              return (
+                <TableRow
+                  key={list.id}
+                  onClick={() => setSelectedPreviewListId(list.id)}
+                  className={`hover:bg-gray-50 dark:hover:bg-white/[0.02] cursor-pointer ${
+                    isSelectedForPreview
+                      ? "bg-brand-50/30 dark:bg-brand-500/5 border-l-4 border-l-brand-500"
+                      : ""
+                  }`}
+                >
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {list.name}
                         </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-slate-500 dark:text-zinc-400 max-w-xs truncate">
-                      {list.description || "Sin descripción"}
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {list.status === "active" ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          <CheckCircle2 className="w-2.5 h-2.5" />
-                          Activa
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-500">
-                          Inactiva
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div
-                        className="flex items-center justify-end gap-1.5"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {!list.isDefault && (
-                          <button
-                            type="button"
-                            onClick={() => onSetDefaultPriceList(list.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
-                            title="Establecer como predeterminada"
-                          >
-                            <Star className="w-3.5 h-3.5" />
-                          </button>
+                        {list.isDefault && (
+                          <Badge variant="light" color="warning" size="sm">
+                            <Star className="size-2.5 fill-current mr-1 inline" />
+                            Predeterminada
+                          </Badge>
                         )}
+                      </div>
+                      <span className="text-xs font-mono text-gray-400">
+                        {list.code}
+                      </span>
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    {list.type === "percentage" ? (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                        {isDiscount ? (
+                          <ArrowDownRight className="size-3.5 text-error-500" />
+                        ) : isMarkup ? (
+                          <ArrowUpRight className="size-3.5 text-success-500" />
+                        ) : (
+                          <Percent className="size-3.5 text-gray-400" />
+                        )}
+                        <span
+                          className={
+                            isDiscount
+                              ? "text-error-600 dark:text-error-400 font-semibold"
+                              : isMarkup
+                              ? "text-success-600 dark:text-success-400 font-semibold"
+                              : "text-gray-600 dark:text-gray-400"
+                          }
+                        >
+                          {percentage > 0 ? `+${percentage}%` : `${percentage}%`}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-medium text-brand-500">
+                        Precios manuales
+                      </span>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-gray-500 dark:text-gray-400 max-w-xs truncate text-xs">
+                    {list.description || "Sin descripción"}
+                  </TableCell>
+
+                  <TableCell>
+                    {list.status === "active" ? (
+                      <Badge variant="light" color="success" size="sm">
+                        <CheckCircle2 className="size-3 mr-1 inline" />
+                        Activa
+                      </Badge>
+                    ) : (
+                      <Badge variant="light" color="light" size="sm">
+                        Inactiva
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <div
+                      className="flex items-center justify-end gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {!list.isDefault && (
                         <button
                           type="button"
-                          onClick={() => handleOpenEdit(list)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                          title="Editar lista"
+                          onClick={() => onSetDefaultPriceList(list.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-warning-500 hover:bg-warning-50 dark:hover:bg-warning-500/10 transition-colors cursor-pointer"
+                          title="Establecer como predeterminada"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
+                          <Star className="size-3.5" />
                         </button>
-                        {!list.isDefault && (
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(list)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                            title="Eliminar lista"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(list)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                        title="Editar lista"
+                      >
+                        <Edit3 className="size-3.5" />
+                      </button>
+                      {!list.isDefault && (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(list)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors cursor-pointer"
+                          title="Eliminar lista"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
 
       {/* ── 4. Interactive Simulation / Live Price Preview ── */}
-      <div className="bg-white dark:bg-[#18181B] border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-zinc-800/80">
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-5 shadow-theme-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
           <div>
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#FF3F1A]" />
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <TrendingUp className="size-4 text-brand-500" />
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">
                 Simulador de Precios en Vivo: {activePreviewList?.name}
               </h2>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Visualiza en tiempo real el precio de venta final que verán los clientes bajo esta lista.
             </p>
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar producto a simular..."
               value={previewSearch}
               onChange={(e) => setPreviewSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-800 dark:text-white focus:outline-hidden focus:border-brand-500 transition-colors"
             />
           </div>
         </div>
@@ -402,34 +409,34 @@ export const PriceListsView: React.FC<PriceListsViewProps> = ({
             return (
               <div
                 key={prod.id}
-                className="p-3.5 rounded-xl border border-slate-200/70 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/30 flex flex-col justify-between"
+                className="p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex flex-col justify-between"
               >
                 <div>
-                  <div className="text-[10px] font-mono text-slate-400">{prod.sku}</div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 mt-0.5">
+                  <div className="text-xs font-mono text-gray-400">{prod.sku}</div>
+                  <div className="text-xs font-semibold text-gray-900 dark:text-white line-clamp-1 mt-0.5">
                     {prod.name}
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                  <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     {prod.category}
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-200/50 dark:border-zinc-800/60 flex items-baseline justify-between">
+                <div className="mt-3 pt-2.5 border-t border-gray-200 dark:border-gray-800 flex items-baseline justify-between">
                   <div>
-                    <span className="text-[10px] text-slate-400">Base: </span>
-                    <span className="text-xs font-mono font-semibold line-through text-slate-400">
+                    <span className="text-[11px] text-gray-400">Base: </span>
+                    <span className="text-xs font-mono line-through text-gray-400">
                       ${prod.salePrice.toLocaleString()}
                     </span>
                   </div>
 
                   <div className="text-right">
-                    <div className="text-sm font-mono font-black text-[#FF3F1A]">
+                    <div className="text-sm font-mono font-bold text-brand-500">
                       ${priceInfo.finalPrice.toLocaleString()}
                     </div>
                     {isDifferent && (
                       <span
-                        className={`text-[9px] font-bold ${
-                          priceInfo.differencePercent < 0 ? "text-rose-500" : "text-emerald-500"
+                        className={`text-[10px] font-semibold ${
+                          priceInfo.differencePercent < 0 ? "text-error-500" : "text-success-500"
                         }`}
                       >
                         {priceInfo.differencePercent > 0 ? `+` : ""}
@@ -445,166 +452,148 @@ export const PriceListsView: React.FC<PriceListsViewProps> = ({
       </div>
 
       {/* ── 5. Modal Create / Edit Price List ── */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#18181B] w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col animate-scale-up">
-            {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-[#FF3F1A]" />
-                <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                  {editingList ? "Editar lista de precios" : "Nueva lista de precios"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        className="max-w-md p-6"
+      >
+        <div className="flex items-center gap-2 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="size-7 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center">
+            <Tag className="size-4" />
+          </div>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+            {editingList ? "Editar lista de precios" : "Nueva lista de precios"}
+          </h3>
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-4 mt-4">
+          {formError && (
+            <div className="p-3 rounded-xl bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/20 text-error-600 dark:text-error-400 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="formName">Nombre de la lista *</Label>
+            <Input
+              id="formName"
+              type="text"
+              placeholder="Ej: Mayorista (-15%), Club VIP..."
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="formCode">Código identificador</Label>
+            <Input
+              id="formCode"
+              type="text"
+              placeholder="Ej: MAYORISTA, VIP, ECOMMERCE"
+              value={formCode}
+              onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+              className="font-mono uppercase"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Tipo de cálculo</Label>
+              <select
+                value={formType}
+                onChange={(e) => setFormType(e.target.value as any)}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-800 dark:text-white focus:outline-hidden focus:border-brand-500"
               >
-                <X className="w-4 h-4" />
-              </button>
+                <option value="percentage">Porcentaje general</option>
+                <option value="custom">Manual por producto</option>
+              </select>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4">
-              {formError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{formError}</span>
-                </div>
-              )}
-
-              {/* Name */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                  Nombre de la lista *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: Mayorista (-15%), Club VIP..."
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
-                  required
-                />
-              </div>
-
-              {/* Code */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                  Código identificador
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: MAYORISTA, VIP, ECOMMERCE"
-                  value={formCode}
-                  onChange={(e) => setFormCode(e.target.value.toUpperCase())}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
-                />
-              </div>
-
-              {/* Type and Percentage */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                    Tipo de cálculo
-                  </label>
-                  <select
-                    value={formType}
-                    onChange={(e) => setFormType(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A]"
-                  >
-                    <option value="percentage">Porcentaje general</option>
-                    <option value="custom">Manual por producto</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 flex items-center gap-1">
-                    <span>Ajuste (%)</span>
-                    <HelpCircle className="w-3 h-3 text-slate-400" title="Negativo para descuento (-15), positivo para margen (+20)" />
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Ej: -15 o +10"
-                    disabled={formType === "custom"}
-                    value={formPercentage}
-                    onChange={(e) => setFormPercentage(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300">
-                  Descripción / Regla de aplicación
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Detalles sobre quién aplica o condiciones mínimas..."
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700/80 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#FF3F1A]/30 focus:border-[#FF3F1A] resize-none"
-                />
-              </div>
-
-              {/* Options */}
-              <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2.5">
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formIsDefault}
-                    onChange={(e) => setFormIsDefault(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#FF3F1A] focus:ring-[#FF3F1A] border-slate-300 dark:border-zinc-700 accent-[#FF3F1A]"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Establecer como lista predeterminada
-                    </span>
-                    <p className="text-[10px] text-slate-400">
-                      Será la lista aplicada en nuevas ventas y consultas estándar.
-                    </p>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formStatus === "active"}
-                    onChange={(e) => setFormStatus(e.target.checked ? "active" : "inactive")}
-                    className="w-4 h-4 rounded text-[#FF3F1A] focus:ring-[#FF3F1A] border-slate-300 dark:border-zinc-700 accent-[#FF3F1A]"
-                  />
-                  <div className="text-xs">
-                    <span className="font-bold text-slate-800 dark:text-zinc-200">
-                      Lista activa
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              {/* Modal Footer */}
-              <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="py-2 px-4 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="py-2 px-5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold transition-all shadow-sm disabled:opacity-50"
-                >
-                  {isSubmitting ? "Guardando..." : editingList ? "Guardar cambios" : "Crear lista"}
-                </button>
-              </div>
-            </form>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1">
+                <span>Ajuste (%)</span>
+                <HelpCircle className="size-3 text-gray-400" title="Negativo para descuento (-15), positivo para margen (+20)" />
+              </Label>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="Ej: -15 o +10"
+                disabled={formType === "custom"}
+                value={formPercentage}
+                onChange={(e) => setFormPercentage(e.target.value)}
+                className="font-mono font-bold"
+              />
+            </div>
           </div>
-        </div>
-      )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="formDescription">Descripción / Regla de aplicación</Label>
+            <textarea
+              id="formDescription"
+              rows={2}
+              placeholder="Detalles sobre quién aplica o condiciones mínimas..."
+              value={formDescription}
+              onChange={(e) => setFormDescription(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-xs text-gray-800 dark:text-white focus:outline-hidden focus:border-brand-500 resize-none"
+            />
+          </div>
+
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2.5">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formIsDefault}
+                onChange={(e) => setFormIsDefault(e.target.checked)}
+                className="size-4 rounded text-brand-500 focus:ring-brand-500 border-gray-300 dark:border-gray-700 accent-brand-500"
+              />
+              <div className="text-xs">
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                  Establecer como lista predeterminada
+                </span>
+                <p className="text-[11px] text-gray-400">
+                  Será la lista aplicada en nuevas ventas y consultas estándar.
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formStatus === "active"}
+                onChange={(e) => setFormStatus(e.target.checked ? "active" : "inactive")}
+                className="size-4 rounded text-brand-500 focus:ring-brand-500 border-gray-300 dark:border-gray-700 accent-brand-500"
+              />
+              <div className="text-xs">
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                  Lista activa
+                </span>
+              </div>
+            </label>
+          </div>
+
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Guardando..." : editingList ? "Guardar cambios" : "Crear lista"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
+

@@ -8,12 +8,8 @@ import { BusinessSettingsModal } from "./BusinessSettingsModal";
 import {
   Building2,
   TrendingUp,
-  ShoppingBag,
-  Flame,
   ArrowRight,
-  Zap,
   DollarSign,
-  Sparkles,
   BarChart2,
   History,
   Store,
@@ -22,7 +18,8 @@ import {
   Banknote,
   PackageCheck,
 } from "lucide-react";
-import { Button } from "@/elements";
+import { Button, Card, Badge } from "@/elements";
+import { MetricCard } from "../metric-card";
 
 export const GlobalFranchiseOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -48,154 +45,121 @@ export const GlobalFranchiseOverview: React.FC = () => {
   // Mock aggregated data across all active branches
   const totalRevenue = "$ 4.850.000";
   const totalOrdersToday = 48;
-  const activeOrdersInKitchen = 7;
   const avgTicket = "$ 101.000";
 
   return (
     <div className="w-full space-y-6 sm:space-y-8 antialiased">
-      {/* Executive Header Banner */}
-      <div className="bg-gradient-to-r from-[#190088] via-[#14006e] to-[#190088] text-white p-6 sm:p-8 rounded-3xl border border-[#190088]/80 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-[#FF3F1A]/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-2xl">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+      {/* Enterprise Header — Same clean layout as Repo-prueba-master DashboardPage */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white/90">
               Visión Franquicia & Grupo
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-300">
-              Consolidación financiera y operativa de todas tus sucursales activas en tiempo real.
-            </p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success-500" />
+              </span>
+              En vivo
+            </span>
           </div>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Consolidación financiera, operativa y gestión centralizada de todas las sucursales.
+          </p>
+        </div>
 
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <Button
-              variant="primary"
-              intent="franchise.create.open"
-              onClick={() => navigate("/onboarding")}
-              className="py-3 px-5 rounded-2xl text-xs font-bold flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Crear Nueva Sucursal / Tienda</span>
-            </Button>
-          </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            startIcon={<BarChart2 className="size-4" />}
+            onClick={() => navigate("/analitica")}
+          >
+            Auditoría Global 360°
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            startIcon={<Plus className="size-4" />}
+            onClick={() => navigate("/onboarding")}
+          >
+            Nueva Sucursal / Tienda
+          </Button>
         </div>
       </div>
 
-      {/* Aggregate KPI Metrics Grid (1:1 Figma Design System) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {/* Metric 1: Conversiones Totales / Ventas Totales */}
-        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
-              Ventas Totales Hoy
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-none">
-              <DollarSign className="w-3.5 h-3.5" />
-            </div>
-          </div>
+      {/* Aggregate KPI Metrics Grid — Pure Elements MetricCard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <MetricCard
+          layout="vertical"
+          icon={<DollarSign className="size-5" />}
+          iconBgClass="bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400"
+          title="Ventas Totales Hoy"
+          value={totalRevenue}
+          change="12%"
+          trend="up"
+          comparisonText="vs ayer"
+        />
 
-          <div className="flex items-baseline gap-2">
-            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
-              {totalRevenue}
-            </h4>
-            <span className="text-xs font-bold text-emerald-500">
-              ↑12%
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Consolidado de todas las sedes</p>
-        </div>
+        <MetricCard
+          layout="vertical"
+          icon={<PackageCheck className="size-5" />}
+          iconBgClass="bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400"
+          title="Pedidos Despachados"
+          value={String(totalOrdersToday)}
+          change="0.5%"
+          trend="up"
+          comparisonText="hoy"
+        />
 
-        {/* Metric 2: Tasa de Conversión / Pedidos Despachados */}
-        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
-              Pedidos Despachados
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-none">
-              <PackageCheck className="w-3.5 h-3.5" />
-            </div>
-          </div>
+        <MetricCard
+          layout="vertical"
+          icon={<Banknote className="size-5" />}
+          iconBgClass="bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400"
+          title="Ticket Promedio"
+          value={avgTicket}
+          change="18%"
+          trend="up"
+          comparisonText="por cliente"
+        />
 
-          <div className="flex items-baseline gap-2">
-            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
-              {totalOrdersToday}
-            </h4>
-            <span className="text-xs font-bold text-emerald-500">
-              ↑0.5%
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Completados y entregados hoy</p>
-        </div>
-
-        {/* Metric 3: ROI / Ticket Promedio */}
-        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
-              Ticket Promedio
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-[#EFE6D3] dark:bg-[#37332A] text-amber-800 dark:text-[#EFE6D3] flex items-center justify-center flex-none">
-              <Banknote className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          <div className="flex items-baseline gap-2">
-            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
-              {avgTicket}
-            </h4>
-            <span className="text-xs font-bold text-emerald-500">
-              ↑18%
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Gasto promedio por cliente</p>
-        </div>
-
-        {/* Metric 4: Tasa de Crecimiento */}
-        <div className="rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400 leading-snug">
-              Tasa de Crecimiento
-            </span>
-            <div className="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-none font-bold text-xs">
-              <TrendingUp className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          <div className="flex items-baseline gap-2">
-            <h4 className="text-2xl sm:text-3xl font-black text-[#190088] dark:text-white tracking-tight">
-              +15%
-            </h4>
-            <span className="text-xs font-bold text-emerald-500">
-              ↑2%
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-snug">Comparado con el mes anterior</p>
-        </div>
+        <MetricCard
+          layout="vertical"
+          icon={<TrendingUp className="size-5" />}
+          iconBgClass="bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400"
+          title="Tasa de Crecimiento"
+          value="+15%"
+          change="2%"
+          trend="up"
+          comparisonText="vs mes ant."
+        />
       </div>
 
       {/* Branch Breakdown Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Building2 className="w-5 h-5 text-[#FF3F1A]" />
-            <h2 className="text-lg font-bold text-zinc-950 dark:text-zinc-100 leading-tight">
+            <Building2 className="size-5 text-brand-500" />
+            <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
               Sucursales y Marcas del Grupo
             </h2>
           </div>
-          <span className="text-xs text-zinc-400 hidden sm:inline">
-            Haz clic en una tarjeta para seleccionar perfil y entrar al panel operativo
+          <span className="text-xs text-gray-400 hidden sm:inline">
+            Selecciona una sede para entrar al panel de operaciones o gestionar su configuración
           </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
           {businesses.map((biz) => {
             return (
-              <div
+              <Card
                 key={biz.id}
                 onClick={() => setRoleSelectBiz(biz)}
-                className="relative rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-lg flex flex-col justify-between overflow-hidden group cursor-pointer"
+                className="relative rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xs hover:shadow-theme-md hover:border-brand-500/50 transition-all flex flex-col justify-between overflow-hidden group cursor-pointer p-0"
               >
-                {/* Top Banner Cover Photo - 100% Nítido y Vívido */}
-                <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-zinc-900 flex-none select-none">
+                {/* Top Banner Cover Photo */}
+                <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-gray-900 flex-none select-none">
                   {biz.bannerUrl ? (
                     <img
                       src={biz.bannerUrl}
@@ -208,27 +172,26 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-[#190088] via-[#FF3F1A] to-[#190088] opacity-80 flex items-center justify-center">
-                      <Store className="w-8 h-8 text-white/40" />
+                    <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 flex items-center justify-center">
+                      <Store className="size-8 text-white/30" />
                     </div>
                   )}
-                  {/* Subtle bottom shadow */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
-                  {/* Status Badge floating on top-left of banner */}
+                  {/* Status Badge */}
                   <div className="absolute top-3.5 left-3.5 z-10">
-                    <span className="px-3 py-1 rounded-full bg-[#190088]/80 backdrop-blur-md text-emerald-300 text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-1.5 border border-emerald-400/40 shadow-md">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-success-400 text-xs font-semibold flex items-center gap-1.5 border border-success-500/30">
+                      <span className="size-1.5 rounded-full bg-success-500 animate-pulse" />
                       Operando
                     </span>
                   </div>
                 </div>
 
                 {/* Card Body */}
-                <div className="p-6 pt-3 space-y-5 flex-1 flex flex-col justify-between">
+                <div className="p-5 pt-3 space-y-4 flex-1 flex flex-col justify-between">
                   {/* Floating Logo / Avatar Row */}
-                  <div className="flex items-center justify-between -mt-10 mb-1 z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-800 border-2 border-white dark:border-zinc-700 flex items-center justify-center flex-none shadow-lg overflow-hidden ring-4 ring-[#190088]/10 dark:ring-white/10">
+                  <div className="flex items-center justify-between -mt-9 mb-1 z-10">
+                    <div className="size-14 rounded-xl bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-700 flex items-center justify-center flex-none shadow-theme-sm overflow-hidden">
                       {biz.logoUrl ? (
                         <img
                           src={biz.logoUrl}
@@ -241,76 +204,82 @@ export const GlobalFranchiseOverview: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <BusinessIcon iconKey={biz.iconKey} className="w-8 h-8 text-[#FF3F1A]" />
+                        <BusinessIcon iconKey={biz.iconKey} className="size-7 text-brand-500" />
                       )}
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        variant="outline"
+                        size="xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedBusinessForSettings(biz);
                         }}
                         title="Configurar branding, bot y parámetros de la sede"
-                        className="px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] border border-zinc-300 dark:border-zinc-700 hover:border-[#FF3F1A] text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer hover:scale-105"
+                        startIcon={<Settings className="size-3.5 text-gray-500" />}
                       >
-                        <Settings className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>Configurar sede</span>
-                      </button>
+                        Configurar sede
+                      </Button>
 
-                      <div className="px-3.5 py-1.5 rounded-full bg-[#190088] text-white group-hover:bg-[#FF3F1A] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm">
-                        <span>Entrar</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                      </div>
+                      <Button
+                        variant="primary"
+                        size="xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          switchBusiness(biz.id);
+                          navigate("/app?section=operacion&tab=en-vivo");
+                        }}
+                        endIcon={<ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />}
+                      >
+                        Entrar
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Title & Metadata (100% in card body with crystal-clear contrast) */}
+                  {/* Title & Metadata */}
                   <div className="space-y-1">
-                    <h4 className="text-lg sm:text-xl font-black text-[#190088] dark:text-[#EFE6D3] leading-snug group-hover:text-[#FF3F1A] transition-colors truncate">
+                    <h4 className="text-lg font-bold text-gray-800 dark:text-white/90 group-hover:text-brand-500 transition-colors truncate">
                       {biz.name}
                     </h4>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
                       <span>{biz.city}</span>
                       <span>•</span>
-                      <span className="px-2 py-0.5 rounded-md bg-[#190088]/10 dark:bg-[#190088]/30 font-mono font-bold text-[10px] text-[#190088] dark:text-blue-200 border border-[#190088]/20">
+                      <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono font-semibold text-[10px] text-gray-700 dark:text-gray-300">
                         {biz.currency}
                       </span>
                     </div>
                   </div>
 
-                  {/* 2 Analítica & Reportes Quick Actions */}
-                  <div className="space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                    <span className="text-[10px] font-mono uppercase text-zinc-400 font-bold tracking-wider block">
+                  {/* 2 Quick Actions */}
+                  <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                    <span className="text-[11px] font-mono uppercase text-gray-400 font-semibold tracking-wider block">
                       Analítica Corporativa & Auditoría
                     </span>
                     <div className="grid grid-cols-2 gap-2.5">
                       <Button
-                        variant="ghost"
-                        intent="franchise.analitica.resumen"
-                        onClick={e => handleNavigateToAnalitica(e, biz.id, "resumen")}
-                        className="p-2.5 rounded-2xl bg-zinc-100/80 hover:bg-[#EFE6D3] dark:bg-zinc-800/80 dark:hover:bg-[#37332A] text-zinc-800 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group/btn"
+                        variant="outline"
+                        size="sm"
+                        startIcon={<BarChart2 className="size-3.5 text-brand-500" />}
+                        onClick={(e) => handleNavigateToAnalitica(e, biz.id, "resumen")}
                         title="Ver Dashboard Ejecutivo 360°"
                       >
-                        <BarChart2 className="w-4 h-4 text-[#FF3F1A]" />
-                        <span className="text-xs font-bold">Dashboard 360°</span>
+                        Dashboard 360°
                       </Button>
 
                       <Button
-                        variant="ghost"
-                        intent="franchise.analitica.historial"
-                        onClick={e => handleNavigateToAnalitica(e, biz.id, "historial")}
-                        className="p-2.5 rounded-2xl bg-zinc-100/80 hover:bg-[#EFE6D3] dark:bg-zinc-800/80 dark:hover:bg-[#37332A] text-zinc-800 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs group/btn"
+                        variant="outline"
+                        size="sm"
+                        startIcon={<History className="size-3.5 text-brand-500" />}
+                        onClick={(e) => handleNavigateToAnalitica(e, biz.id, "historial")}
                         title="Ver Historial de Ventas y Arqueos"
                       >
-                        <History className="w-4 h-4 text-[#FF3F1A]" />
-                        <span className="text-xs font-bold">Historial de Ventas</span>
+                        Historial de Ventas
                       </Button>
                     </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

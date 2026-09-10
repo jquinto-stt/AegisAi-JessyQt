@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { X, Building2, AlertCircle } from "lucide-react";
+import { Building2, AlertCircle } from "lucide-react";
 import { StockLocation } from "../types/inventory.types";
+import { Modal, Button, Field, Textarea } from "@/elements";
 
 interface LocationFormModalProps {
   isOpen: boolean;
@@ -60,104 +61,87 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-      <div
-        className="relative w-full max-w-md bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col animate-scale-up"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 flex items-center justify-center">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-black text-sm text-zinc-900 dark:text-white">
-                Nueva Bodega o Sucursal
-              </h3>
-              <p className="text-xs text-zinc-500">
-                Punto de almacenamiento y despacho físico
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      className="max-w-md p-6 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xl"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2.5 pb-4 border-b border-gray-100 dark:border-gray-800">
+        <div className="w-9 h-9 rounded-xl bg-secondary-600/10 dark:bg-secondary-600/20 text-secondary-600 dark:text-secondary-400 border border-secondary-600/20 flex items-center justify-center">
+          <Building2 className="w-5 h-5" />
         </div>
-
-        {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {errorMessage && (
-            <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold">
-              <AlertCircle className="w-4 h-4 flex-none" />
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Nombre de la Bodega / Sucursal *
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Bodega Central, Sucursal Norte, Depósito Industrial"
-              required
-              className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Código Identificador *
-            </label>
-            <input
-              type="text"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Ej: BOD-003, SUC-NORTE"
-              required
-              className="w-full px-3.5 py-2 rounded-xl text-xs font-mono font-bold bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1">
-              Descripción o Dirección Física
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ej: Carrera 43A #1-50, Medellín. Módulo A de almacenamiento principal."
-              rows={3}
-              className="w-full px-3.5 py-2 rounded-xl text-xs bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-[#190088] text-zinc-900 dark:text-white resize-none"
-            />
-          </div>
-
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-[#190088] hover:bg-[#150073] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? "Creando..." : "Crear Bodega"}
-            </button>
-          </div>
-        </form>
+        <div>
+          <h3 className="font-bold text-base text-gray-900 dark:text-white">
+            Nueva Bodega o Sucursal
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Punto de almacenamiento y despacho físico
+          </p>
+        </div>
       </div>
-    </div>
+
+      {/* Form Content */}
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        {errorMessage && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 text-xs font-semibold">
+            <AlertCircle className="w-4 h-4 flex-none" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <Field
+          label="Nombre de la Bodega / Sucursal"
+          labelStyle="bold"
+          intent="location.form.name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ej: Bodega Central, Sucursal Norte, Depósito Industrial"
+          required
+        />
+
+        <Field
+          label="Código Identificador"
+          labelStyle="bold"
+          mono
+          intent="location.form.code"
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="Ej: BOD-003, SUC-NORTE"
+          required
+        />
+
+        <Textarea
+          label="Descripción o Dirección Física"
+          intent="location.form.desc"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Ej: Carrera 43A #1-50, Medellín. Módulo A de almacenamiento principal."
+          rows={3}
+        />
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            size="sm"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Creando..." : "Crear Bodega"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

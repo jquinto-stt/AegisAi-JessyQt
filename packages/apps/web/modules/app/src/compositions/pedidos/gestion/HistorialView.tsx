@@ -6,16 +6,17 @@ import {
   Calendar,
   Download,
   Eye,
-  History,
-  Receipt,
   Search,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  DollarSign,
-  Filter,
 } from "lucide-react";
-import { Button, Select, SearchInput } from "@/elements";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  Button,
+  Select,
+} from "@/elements";
 
 export const HistorialView: React.FC = () => {
   const { allOrders, setSelectedOrderId } = usePedidos();
@@ -81,64 +82,65 @@ export const HistorialView: React.FC = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Quick Cash Register Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs space-y-1">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Total Facturado del Día
           </span>
-          <p className="text-2xl font-black text-zinc-950 dark:text-white font-mono">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white font-mono">
             ${totalSales.toLocaleString("es-CO")} COP
           </p>
-          <span className="text-[11px] text-zinc-400">En {activeOrders.length} transacciones cobradas</span>
+          <span className="text-xs text-gray-400">En {activeOrders.length} transacciones cobradas</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs space-y-1">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Órdenes Completadas
           </span>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+          <p className="text-2xl font-bold text-success-600 dark:text-success-400 font-mono">
             {completedCount}
           </p>
-          <span className="text-[11px] text-zinc-400">Despachadas con éxito al cliente</span>
+          <span className="text-xs text-gray-400">Despachadas con éxito al cliente</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs space-y-1">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             Ticket Promedio Consolidado
           </span>
-          <p className="text-2xl font-black text-[#FF3F1A] font-mono">
+          <p className="text-2xl font-bold text-brand-500 font-mono">
             ${avgTicket.toLocaleString("es-CO")} COP
           </p>
-          <span className="text-[11px] text-zinc-400">Promedio por comanda efectiva</span>
+          <span className="text-xs text-gray-400">Promedio por comanda efectiva</span>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="p-4 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
-        <SearchInput
-          intent="historial.search"
-          className="flex-1 min-w-[220px] max-w-sm"
-          placeholder="Buscar por ID de comanda o cliente..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          onClear={() => setSearch("")}
-        />
+      <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <Search className="size-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Buscar por ID de comanda o cliente..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white focus:outline-hidden focus:border-brand-500 transition-colors"
+          />
+        </div>
 
         <div className="flex items-center gap-2 flex-wrap text-xs">
           {/* Date Picker */}
-          <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200">
-            <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-200">
+            <Calendar className="size-3.5 text-gray-400" />
             <input
               type="date"
               value={closingDate}
               onChange={e => setClosingDate(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold text-zinc-700 dark:text-zinc-200 focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs font-medium text-gray-700 dark:text-gray-200 focus:outline-hidden cursor-pointer"
             />
           </div>
 
           <Select
-            intent="historial.filter.status"
             value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value as any)}
+            onChange={val => setStatusFilter(val as any)}
             options={[
               { value: "TODOS", label: "Todos los Estados" },
               { value: "NUEVO", label: "Nuevos" },
@@ -151,9 +153,8 @@ export const HistorialView: React.FC = () => {
           />
 
           <Select
-            intent="historial.filter.channel"
             value={channelFilter}
-            onChange={e => setChannelFilter(e.target.value as any)}
+            onChange={val => setChannelFilter(val as any)}
             options={[
               { value: "TODOS", label: "Todos los Canales" },
               { value: "whatsapp", label: "WhatsApp IA" },
@@ -164,82 +165,80 @@ export const HistorialView: React.FC = () => {
           />
 
           <Button
-            variant="ghost"
-            intent="historial.export"
+            size="sm"
+            variant="primary"
+            startIcon={<Download className="size-3.5" />}
             onClick={handleExportCSV}
-            className="px-3 py-2 rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950 text-xs font-bold hover:bg-[#FF3F1A] dark:hover:bg-[#FF3F1A] dark:hover:text-white transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Exportar CSV</span>
+            Exportar CSV
           </Button>
         </div>
       </div>
 
       {/* Orders Table */}
-      <div className="rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-200/80 dark:border-zinc-800/80 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="p-4 pl-6">ID Comanda</th>
-                <th className="p-4">Cliente</th>
-                <th className="p-4">Canal</th>
-                <th className="p-4">Items / Pedido</th>
-                <th className="p-4">Estado</th>
-                <th className="p-4">Total</th>
-                <th className="p-4 pr-6 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-zinc-400">
-                    No se encontraron pedidos con los filtros seleccionados
-                  </td>
-                </tr>
-              ) : (
-                filtered.map(order => (
-                  <tr
-                    key={order.id}
-                    className="hover:bg-zinc-50 dark:hover:bg-[#18181B] transition-colors"
-                  >
-                    <td className="p-4 pl-6 font-bold text-zinc-950 dark:text-white">
-                      #{order.id.slice(-6)}
-                    </td>
-                    <td className="p-4">
-                      <p className="font-bold text-zinc-900 dark:text-zinc-100">{order.customerName}</p>
-                      <p className="text-[11px] text-zinc-400">{order.customerPhone || "Sin teléfono"}</p>
-                    </td>
-                    <td className="p-4">
-                      <ChannelBadge channel={order.channel} />
-                    </td>
-                    <td className="p-4 text-zinc-600 dark:text-zinc-300 max-w-xs truncate">
-                      {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
-                    </td>
-                    <td className="p-4">
-                      <OrderStatusBadge status={order.status} />
-                    </td>
-                    <td className="p-4 font-bold text-zinc-950 dark:text-white">
-                      ${order.total.toLocaleString()}
-                    </td>
-                    <td className="p-4 pr-6 text-right">
-                      <Button
-                        variant="ghost"
-                        intent="historial.view.detail"
-                        onClick={() => setSelectedOrderId(order.id)}
-                        className="px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] text-zinc-700 dark:text-zinc-200 hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A] text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Ver</span>
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableCell isHeader>ID Comanda</TableCell>
+              <TableCell isHeader>Cliente</TableCell>
+              <TableCell isHeader>Canal</TableCell>
+              <TableCell isHeader>Items / Pedido</TableCell>
+              <TableCell isHeader>Estado</TableCell>
+              <TableCell isHeader>Total</TableCell>
+              <TableCell isHeader className="text-right">Acción</TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="p-8 text-center text-gray-400">
+                  No se encontraron pedidos con los filtros seleccionados
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map(order => (
+                <TableRow
+                  key={order.id}
+                  className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  <TableCell className="font-mono font-semibold text-gray-900 dark:text-white">
+                    #{order.id.slice(-6)}
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{order.customerName}</p>
+                    <p className="text-xs text-gray-400">{order.customerPhone || "Sin teléfono"}</p>
+                  </TableCell>
+                  <TableCell>
+                    <ChannelBadge channel={order.channel} />
+                  </TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300 max-w-xs truncate text-xs">
+                    {order.items.map(i => `${i.quantity}x ${i.name}`).join(", ")}
+                  </TableCell>
+                  <TableCell>
+                    <OrderStatusBadge status={order.status} />
+                  </TableCell>
+                  <TableCell className="font-mono font-bold text-gray-900 dark:text-white">
+                    ${order.total.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      startIcon={<Eye className="size-3.5" />}
+                      onClick={() => setSelectedOrderId(order.id)}
+                      className="ml-auto"
+                    >
+                      Ver
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
 };
+

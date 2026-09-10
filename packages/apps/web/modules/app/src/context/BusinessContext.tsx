@@ -481,7 +481,22 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const saved = localStorage.getItem("necto_custom_roles");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((role: RolePermission) => {
+            const systemRole = INITIAL_ROLES.find(r => r.id === role.id);
+            if (systemRole) {
+              return {
+                ...systemRole,
+                ...role,
+                permissions: {
+                  ...systemRole.permissions,
+                  ...(role.permissions || {}),
+                },
+              };
+            }
+            return role;
+          });
+        }
       }
     } catch (e) {}
     return INITIAL_ROLES;
@@ -538,6 +553,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const canAccess = (permission: keyof RolePermissions): boolean => {
     if (!activeRole || !activeRole.permissions) return true;
+    if (activeRole.id === "role-owner") return true;
     return !!activeRole.permissions[permission];
   };
 

@@ -17,7 +17,21 @@ import {
 } from "lucide-react";
 import { SafeImage } from "../shared/SafeImage";
 import { NectoBanner } from "../shared/NectoBanner";
-import { Button, Field, Select, Badge, SegmentedControl, SearchInput } from "@/elements";
+import {
+  Button,
+  Field,
+  Select,
+  Badge,
+  SegmentedControl,
+  SearchInput,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  Card,
+  Modal,
+} from "@/elements";
 
 export const InsumosStockView: React.FC = () => {
   const {
@@ -114,7 +128,7 @@ export const InsumosStockView: React.FC = () => {
 
   const handleSaveIngredient = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim()) return;
+    if (!formName.trim() || !formCode.trim()) return;
 
     let calculatedStatus: StockIngredientItem["status"] = "OPTIMO";
     if (formStock <= 0) calculatedStatus = "AGOTADO";
@@ -131,8 +145,8 @@ export const InsumosStockView: React.FC = () => {
         minThreshold: Number(formMinThreshold),
         costPerUnit: Number(formCost),
         status: calculatedStatus,
-        expiryDate: formExpiry,
-        lotNumber: formLot,
+        expiryDate: formExpiry || undefined,
+        lotNumber: formLot || undefined,
         imageUrl: formImageUrl || editingIngredient.imageUrl,
       });
     } else {
@@ -153,52 +167,48 @@ export const InsumosStockView: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleExport = (format: string) => {
-    setExportSuccess(`Reporte de Stock (${format}) generado exitosamente`);
-    setTimeout(() => setExportSuccess(null), 3000);
+  const handleExport = (type: "Excel" | "PDF") => {
+    setExportSuccess(`Reporte de Stock (${type}) generado correctamente`);
+    setTimeout(() => setExportSuccess(null), 3500);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Official Clean Necto Banner (Sin botones ni opciones dentro) */}
       <NectoBanner
-        icon={<Package className="w-6 h-6 text-[#FF3F1A]" />}
+        icon={<Package className="w-6 h-6 text-brand-500" />}
         title="Inventario de Insumos & Materias Primas"
         description="Control de stock real, fechas de vencimiento FIFO y costo unitario vinculado automáticamente a pedidos y cocina."
       />
 
-      {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Insumos */}
-        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
+        <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-theme-xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Total Insumos
               </p>
-              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
+              <h3 className="text-2xl sm:text-3xl font-bold font-mono text-gray-900 dark:text-white mt-1">
                 {ingredients.length}
               </h3>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-secondary-600/10 text-secondary-600 dark:text-secondary-400 border border-secondary-600/20 flex items-center justify-center">
               <Package className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold font-mono text-xs">
+          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
               {ingredients.filter(i => i.status === "OPTIMO").length} en nivel óptimo
             </span>
           </div>
-        </div>
+        </Card>
 
-        {/* Card 2: Alertas Críticas / Agotados */}
-        <div className="bg-white dark:bg-[#18181B] border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-2xs space-y-2">
+        <Card className="bg-white dark:bg-gray-900 border border-red-200 dark:border-red-900/50 rounded-2xl p-5 shadow-theme-xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-mono font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wider">
                 Quiebres & Críticos
               </p>
-              <h3 className="text-3xl font-black font-mono text-red-600 dark:text-red-400 mt-1">
+              <h3 className="text-2xl sm:text-3xl font-bold font-mono text-red-600 dark:text-red-400 mt-1">
                 {criticalCount}
               </h3>
             </div>
@@ -206,57 +216,54 @@ export const InsumosStockView: React.FC = () => {
               <ShieldAlert className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-            <span className="text-amber-600 dark:text-amber-400 font-bold font-mono text-xs">
+          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+            <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs">
               +{lowCount} en punto de reorden
             </span>
           </div>
-        </div>
+        </Card>
 
-        {/* Card 3: Valorización Total */}
-        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
+        <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-theme-xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Valorización Stock
               </p>
-              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
+              <h3 className="text-2xl sm:text-3xl font-bold font-mono text-gray-900 dark:text-white mt-1">
                 ${totalValuation.toLocaleString("es-AR")}
               </h3>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-            <span className="text-zinc-500 font-medium">Costo de reposición activo</span>
+          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+            <span className="text-gray-500 font-medium">Costo de reposición activo</span>
           </div>
-        </div>
+        </Card>
 
-        {/* Card 4: Movimientos */}
-        <div className="bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 shadow-2xs space-y-2">
+        <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-theme-xs space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Movimientos Auditados
               </p>
-              <h3 className="text-3xl font-black font-mono text-[#212121] dark:text-[#ECECEC] mt-1">
+              <h3 className="text-2xl sm:text-3xl font-bold font-mono text-gray-900 dark:text-white mt-1">
                 {stockMovements.length}
               </h3>
             </div>
-            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 flex items-center justify-center">
               <History className="w-4 h-4" />
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs">
-            <span className="text-zinc-500 font-medium">Último: {stockMovements[0]?.timestamp || "Hoy"}</span>
+          <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+            <span className="text-gray-500 font-medium">Último: {stockMovements[0]?.timestamp || "Hoy"}</span>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Sub-Tabs: Listado vs Movimientos Container */}
-      <div className="bg-white dark:bg-[#151518] rounded-2xl border border-zinc-200/70 dark:border-zinc-800/80 p-3 sm:p-4 shadow-none space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+      <Card className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 sm:p-5 shadow-theme-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
           <SegmentedControl
             intent="insumos.subtab"
             tone="contrast"
@@ -269,25 +276,24 @@ export const InsumosStockView: React.FC = () => {
             ]}
           />
 
-          {/* Actions: Create & Export */}
           <div className="flex items-center gap-2 flex-wrap">
             <Button
-              variant="accent"
+              variant="primary"
+              size="sm"
               intent="insumos.create.open"
               onClick={handleOpenCreateModal}
-              className="px-3.5 py-1.5 text-xs font-bold"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nuevo Insumo</span>
             </Button>
 
-            <div className="w-[1px] h-6 bg-zinc-200 dark:bg-zinc-800 mx-1 hidden sm:block" />
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1 hidden sm:block" />
 
             <Button
               variant="outline"
+              size="sm"
               intent="insumos.export.excel"
               onClick={() => handleExport("Excel")}
-              className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs hover:border-zinc-300"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Excel</span>
@@ -295,9 +301,9 @@ export const InsumosStockView: React.FC = () => {
 
             <Button
               variant="outline"
+              size="sm"
               intent="insumos.export.pdf"
               onClick={() => handleExport("PDF")}
-              className="px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border-zinc-200/80 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs hover:border-zinc-300"
             >
               <Download className="w-3.5 h-3.5 text-red-600" />
               <span>PDF</span>
@@ -312,10 +318,8 @@ export const InsumosStockView: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 1: Listado de Insumos */}
         {activeTab === "listado" && (
           <div className="space-y-4">
-            {/* Filters Bar */}
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
               <SearchInput
                 intent="insumos.search"
@@ -325,8 +329,6 @@ export const InsumosStockView: React.FC = () => {
                 onChange={e => setSearchQuery(e.target.value)}
                 onClear={() => setSearchQuery("")}
               />
-
-              {/* Status Filter */}
               <Select
                 intent="insumos.filter.status"
                 value={selectedStatus}
@@ -341,143 +343,134 @@ export const InsumosStockView: React.FC = () => {
               />
             </div>
 
-            {/* Category Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {categories.map(cat => (
-                <Button
+                <button
                   key={cat}
-                  variant="ghost"
-                  intent="insumos.category.select"
+                  type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`p-0 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-[#190088] text-white shadow-xs font-bold"
-                      : "bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300"
+                      ? "bg-secondary-600 text-white shadow-theme-xs font-bold"
+                      : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300"
                   }`}
                 >
                   {cat}
-                </Button>
+                </button>
               ))}
             </div>
 
-            {/* Insumos Table */}
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-extrabold uppercase text-[10px] font-mono tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-                  <tr>
-                    <th className="p-3.5">Insumo</th>
-                    <th className="p-3.5">Categoría</th>
-                    <th className="p-3.5 text-right">Stock Actual</th>
-                    <th className="p-3.5 text-right">Punto Reorden</th>
-                    <th className="p-3.5 text-right">Costo Unitario</th>
-                    <th className="p-3.5">Vencimiento FIFO</th>
-                    <th className="p-3.5 text-center">Estado</th>
-                    <th className="p-3.5 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium">
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+              <Table>
+                <TableHeader className="bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-800">
+                  <TableRow>
+                    <TableCell isHeader className="p-3.5">Insumo</TableCell>
+                    <TableCell isHeader className="p-3.5">Categoría</TableCell>
+                    <TableCell isHeader className="p-3.5 text-right">Stock Actual</TableCell>
+                    <TableCell isHeader className="p-3.5 text-right">Punto Reorden</TableCell>
+                    <TableCell isHeader className="p-3.5 text-right">Costo Unitario</TableCell>
+                    <TableCell isHeader className="p-3.5">Vencimiento FIFO</TableCell>
+                    <TableCell isHeader className="p-3.5 text-center">Estado</TableCell>
+                    <TableCell isHeader className="p-3.5 text-right">Acciones</TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
                   {filteredIngredients.map(ing => {
                     const isDepleted = ing.currentStock <= 0;
                     const isCritical = ing.status === "CRITICO" || isDepleted;
                     const isLow = ing.status === "BAJO";
 
                     return (
-                      <tr
+                      <TableRow
                         key={ing.id}
-                        className={`hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors ${
+                        className={`hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors ${
                           isDepleted ? "bg-red-50/20 dark:bg-red-950/10" : ""
                         }`}
                       >
-                        <td className="p-3.5">
+                        <TableCell className="p-3.5">
                           <div className="flex items-center gap-3">
                             <SafeImage
                               src={ing.imageUrl}
                               alt={ing.name}
-                              className="w-9 h-9 rounded-lg object-cover border border-zinc-200 dark:border-zinc-700"
+                              className="w-9 h-9 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
                             />
                             <div>
-                              <p className="font-bold text-[#212121] dark:text-[#ECECEC]">
+                              <p className="font-semibold text-gray-900 dark:text-white">
                                 {ing.name}
                               </p>
-                              <p className="text-[10px] font-mono text-zinc-400">
+                              <p className="text-[10px] font-mono text-gray-400">
                                 {ing.code} {ing.lotNumber ? `• ${ing.lotNumber}` : ""}
                               </p>
                             </div>
                           </div>
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5">
-                          <span className="px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-mono font-bold border border-zinc-200/60 dark:border-zinc-700/60">
+                        <TableCell className="p-3.5">
+                          <span className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-mono font-medium border border-gray-200/60 dark:border-gray-700/60">
                             {ing.category}
                           </span>
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5 text-right font-mono font-black text-sm">
+                        <TableCell className="p-3.5 text-right font-mono font-bold text-sm">
                           <span
                             className={
                               isDepleted
                                 ? "text-red-600 dark:text-red-400"
                                 : isCritical
                                 ? "text-amber-600 dark:text-amber-400"
-                                : "text-[#212121] dark:text-[#ECECEC]"
+                                : "text-gray-900 dark:text-white"
                             }
                           >
                             {ing.currentStock} {ing.unit}
                           </span>
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5 text-right font-mono text-zinc-400">
+                        <TableCell className="p-3.5 text-right font-mono text-gray-400">
                           {ing.minThreshold} {ing.unit}
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5 text-right font-mono font-bold text-[#212121] dark:text-[#ECECEC]">
+                        <TableCell className="p-3.5 text-right font-mono font-bold text-gray-900 dark:text-white">
                           ${ing.costPerUnit.toLocaleString("es-AR")}
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5">
+                        <TableCell className="p-3.5">
                           {ing.expiryDate ? (
-                            <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 text-[11px] font-mono">
-                              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 text-[11px] font-mono">
+                              <Calendar className="w-3.5 h-3.5 text-gray-400" />
                               <span>{ing.expiryDate}</span>
                             </div>
                           ) : (
-                            <span className="text-zinc-400 text-[11px]">No perecedero</span>
+                            <span className="text-gray-400 text-[11px]">No perecedero</span>
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5 text-center">
+                        <TableCell className="p-3.5 text-center">
                           {isDepleted ? (
-                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-                              AGOTADO (0)
-                            </span>
+                            <Badge variant="light" color="error" size="sm">Agotado</Badge>
                           ) : isCritical ? (
-                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-                              CRÍTICO
-                            </span>
+                            <Badge variant="light" color="error" size="sm">Crítico</Badge>
                           ) : isLow ? (
-                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                              REORDEN
-                            </span>
+                            <Badge variant="light" color="warning" size="sm">Reorden</Badge>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              ÓPTIMO
-                            </span>
+                            <Badge variant="light" color="success" size="sm">Óptimo</Badge>
                           )}
-                        </td>
+                        </TableCell>
 
-                        <td className="p-3.5 text-right">
+                        <TableCell className="p-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <Button
                               variant="ghost"
+                              size="sm"
                               intent="insumos.edit"
                               onClick={() => handleOpenEditModal(ing)}
-                              className="p-1.5 rounded-lg text-zinc-500 hover:text-[#FF3F1A] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                              className="p-1.5 rounded-lg text-gray-500 hover:text-gray-800 dark:hover:text-white"
                               title="Editar Insumo"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </Button>
                             <Button
                               variant="ghost"
+                              size="sm"
                               intent="insumos.delete"
                               onClick={() => deleteIngredient(ing.id)}
                               className="p-1.5 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
@@ -486,248 +479,235 @@ export const InsumosStockView: React.FC = () => {
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
 
-        {/* Tab 2: Movimientos / Auditoría */}
         {activeTab === "movimientos" && (
           <div className="space-y-4">
-            <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 dark:bg-zinc-900/90 text-zinc-500 dark:text-zinc-400 font-extrabold uppercase text-[10px] font-mono tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-                  <tr>
-                    <th className="p-3.5">Fecha & Hora</th>
-                    <th className="p-3.5">Insumo</th>
-                    <th className="p-3.5">Tipo de Movimiento</th>
-                    <th className="p-3.5 text-right">Cantidad</th>
-                    <th className="p-3.5">Detalle / Motivo</th>
-                    <th className="p-3.5">Registrado Por</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800 font-medium">
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800">
+              <Table>
+                <TableHeader className="bg-gray-50 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-800">
+                  <TableRow>
+                    <TableCell isHeader className="p-3.5">Fecha & Hora</TableCell>
+                    <TableCell isHeader className="p-3.5">Insumo</TableCell>
+                    <TableCell isHeader className="p-3.5">Tipo de Movimiento</TableCell>
+                    <TableCell isHeader className="p-3.5 text-right">Cantidad</TableCell>
+                    <TableCell isHeader className="p-3.5">Detalle / Motivo</TableCell>
+                    <TableCell isHeader className="p-3.5">Registrado Por</TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
                   {stockMovements.map(mov => {
                     const isPositive = mov.quantity > 0;
                     return (
-                      <tr key={mov.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors">
-                        <td className="p-3.5 text-zinc-500 font-mono text-[11px]">
+                      <TableRow key={mov.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-colors">
+                        <TableCell className="p-3.5 text-gray-500 font-mono text-[11px]">
                           {mov.timestamp}
-                        </td>
-                        <td className="p-3.5 font-bold text-[#212121] dark:text-[#ECECEC]">
+                        </TableCell>
+                        <TableCell className="p-3.5 font-bold text-gray-900 dark:text-white">
                           {mov.ingredientName}
-                        </td>
-                        <td className="p-3.5">
-                          <span
-                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+                        </TableCell>
+                        <TableCell className="p-3.5">
+                          <Badge
+                            variant="light"
+                            color={
                               mov.type === "INGRESO_PROVEEDOR"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                ? "success"
                                 : mov.type === "VENTA_PEDIDO"
-                                ? "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20"
-                                : "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-                            }`}
+                                ? "brand"
+                                : "error"
+                            }
+                            size="sm"
                           >
                             {mov.type.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td
-                          className={`p-3.5 text-right font-mono font-black ${
+                          </Badge>
+                        </TableCell>
+                        <TableCell
+                          className={`p-3.5 text-right font-mono font-bold ${
                             isPositive
                               ? "text-emerald-600 dark:text-emerald-400"
                               : "text-red-600 dark:text-red-400"
                           }`}
                         >
                           {isPositive ? `+${mov.quantity}` : mov.quantity} {mov.unit}
-                        </td>
-                        <td className="p-3.5 text-zinc-600 dark:text-zinc-300 text-[11px]">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-gray-600 dark:text-gray-300 text-[11px]">
                           {mov.reason}
                           {mov.orderId && (
-                            <span className="ml-1 text-[#FF3F1A] font-mono font-bold">
+                            <span className="ml-1 text-brand-500 font-mono font-bold">
                               #{mov.orderId}
                             </span>
                           )}
-                        </td>
-                        <td className="p-3.5 text-zinc-500 font-mono text-[11px]">
+                        </TableCell>
+                        <TableCell className="p-3.5 text-gray-500 font-mono text-[11px]">
                           {mov.registeredBy}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
-      {/* Create / Edit Insumo Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/70 dark:bg-zinc-900/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#190088] text-white flex items-center justify-center">
-                  <Package className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-bold text-[#212121] dark:text-[#ECECEC]">
-                  {editingIngredient ? "Editar Insumo" : "Nuevo Insumo / Materia Prima"}
-                </h3>
-              </div>
-              <Button
-                variant="ghost"
-                intent="insumos.modal.close"
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 p-0 rounded-xl text-zinc-400 hover:text-zinc-600"
-              >
-                <X className="w-4 h-4" />
-              </Button>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        className="max-w-lg p-6 rounded-3xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xl"
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-secondary-600 text-white flex items-center justify-center">
+              <Package className="w-4 h-4" />
             </div>
-
-            <form onSubmit={handleSaveIngredient} className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label="Código SKU"
-                  labelStyle="bold"
-                  mono
-                  intent="insumos.form.code"
-                  type="text"
-                  value={formCode}
-                  onChange={e => setFormCode(e.target.value)}
-                  required
-                />
-
-                <Select
-                  label="Categoría"
-                  intent="insumos.form.category"
-                  value={formCategory}
-                  onChange={e => setFormCategory(e.target.value as any)}
-                  options={categories.filter(c => c !== "Todos").map(c => ({ value: c, label: c }))}
-                />
-              </div>
-
-              <Field
-                label="Nombre del Insumo / Materia Prima"
-                labelStyle="bold"
-                intent="insumos.form.name"
-                type="text"
-                placeholder="Ej: Carne Vacuna Especial (Nalga/Bola de Lomo)"
-                value={formName}
-                onChange={e => setFormName(e.target.value)}
-                required
-              />
-
-              <div className="grid grid-cols-3 gap-3">
-                <Select
-                  label="Unidad"
-                  intent="insumos.form.unit"
-                  value={formUnit}
-                  onChange={e => setFormUnit(e.target.value as any)}
-                  options={[
-                    { value: "kg", label: "kg (Kilogramos)" },
-                    { value: "gr", label: "gr (Gramos)" },
-                    { value: "lt", label: "lt (Litros)" },
-                    { value: "ml", label: "ml (Mililitros)" },
-                    { value: "unid", label: "unid (Unidades)" },
-                    { value: "paquete", label: "paquete" },
-                  ]}
-                />
-
-                <Field
-                  label="Stock Actual"
-                  labelStyle="bold"
-                  mono
-                  intent="insumos.form.stock"
-                  type="number"
-                  step="0.01"
-                  value={formStock}
-                  onChange={e => setFormStock(parseFloat(e.target.value) || 0)}
-                  required
-                />
-
-                <Field
-                  label="Punto Reorden"
-                  labelStyle="bold"
-                  mono
-                  intent="insumos.form.threshold"
-                  type="number"
-                  step="0.01"
-                  value={formMinThreshold}
-                  onChange={e => setFormMinThreshold(parseFloat(e.target.value) || 0)}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label="Costo Unitario ($)"
-                  labelStyle="bold"
-                  mono
-                  intent="insumos.form.cost"
-                  type="number"
-                  value={formCost}
-                  onChange={e => setFormCost(parseFloat(e.target.value) || 0)}
-                />
-
-                <Field
-                  label="Lote Proveedor"
-                  labelStyle="bold"
-                  mono
-                  intent="insumos.form.lot"
-                  type="text"
-                  placeholder="LOT-2026-X"
-                  value={formLot}
-                  onChange={e => setFormLot(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Field
-                  label="Fecha Vencimiento (FIFO)"
-                  labelStyle="bold"
-                  intent="insumos.form.expiry"
-                  type="date"
-                  value={formExpiry}
-                  onChange={e => setFormExpiry(e.target.value)}
-                />
-
-                <Field
-                  label="URL Imagen (Opcional)"
-                  labelStyle="bold"
-                  intent="insumos.form.image"
-                  type="text"
-                  placeholder="https://images.unsplash..."
-                  value={formImageUrl}
-                  onChange={e => setFormImageUrl(e.target.value)}
-                />
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-[#374151] flex items-center justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  intent="insumos.modal.cancel"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  variant="accent"
-                  intent="insumos.modal.submit"
-                  className="px-5 py-2 text-xs"
-                >
-                  {editingIngredient ? "Guardar Cambios" : "Crear Insumo"}
-                </Button>
-              </div>
-            </form>
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              {editingIngredient ? "Editar Insumo" : "Nuevo Insumo / Materia Prima"}
+            </h3>
           </div>
         </div>
-      )}
+
+        <form onSubmit={handleSaveIngredient} className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Código SKU"
+              labelStyle="bold"
+              mono
+              intent="insumos.form.code"
+              type="text"
+              value={formCode}
+              onChange={e => setFormCode(e.target.value)}
+              required
+            />
+            <Select
+              label="Categoría"
+              intent="insumos.form.category"
+              value={formCategory}
+              onChange={e => setFormCategory(e.target.value as any)}
+              options={categories.filter(c => c !== "Todos").map(c => ({ value: c, label: c }))}
+            />
+          </div>
+
+          <Field
+            label="Nombre del Insumo / Materia Prima"
+            labelStyle="bold"
+            intent="insumos.form.name"
+            type="text"
+            placeholder="Ej: Carne Vacuna Especial (Nalga/Bola de Lomo)"
+            value={formName}
+            onChange={e => setFormName(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-3 gap-3">
+            <Select
+              label="Unidad"
+              intent="insumos.form.unit"
+              value={formUnit}
+              onChange={e => setFormUnit(e.target.value as any)}
+              options={[
+                { value: "kg", label: "kg (Kilogramos)" },
+                { value: "gr", label: "gr (Gramos)" },
+                { value: "lt", label: "lt (Litros)" },
+                { value: "ml", label: "ml (Mililitros)" },
+                { value: "unid", label: "unid (Unidades)" },
+                { value: "paquete", label: "paquete" },
+              ]}
+            />
+            <Field
+              label="Stock Actual"
+              labelStyle="bold"
+              mono
+              intent="insumos.form.stock"
+              type="number"
+              step="0.01"
+              value={formStock}
+              onChange={e => setFormStock(parseFloat(e.target.value) || 0)}
+              required
+            />
+            <Field
+              label="Punto Reorden"
+              labelStyle="bold"
+              mono
+              intent="insumos.form.threshold"
+              type="number"
+              step="0.01"
+              value={formMinThreshold}
+              onChange={e => setFormMinThreshold(parseFloat(e.target.value) || 0)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Costo Unitario ($)"
+              labelStyle="bold"
+              mono
+              intent="insumos.form.cost"
+              type="number"
+              value={formCost}
+              onChange={e => setFormCost(parseFloat(e.target.value) || 0)}
+            />
+            <Field
+              label="Lote Proveedor"
+              labelStyle="bold"
+              mono
+              intent="insumos.form.lot"
+              type="text"
+              placeholder="LOT-2026-X"
+              value={formLot}
+              onChange={e => setFormLot(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Fecha Vencimiento (FIFO)"
+              labelStyle="bold"
+              intent="insumos.form.expiry"
+              type="date"
+              value={formExpiry}
+              onChange={e => setFormExpiry(e.target.value)}
+            />
+            <Field
+              label="URL Imagen (Opcional)"
+              labelStyle="bold"
+              intent="insumos.form.image"
+              type="text"
+              placeholder="https://images.unsplash..."
+              value={formImageUrl}
+              onChange={e => setFormImageUrl(e.target.value)}
+            />
+          </div>
+
+          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-end gap-2.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              intent="insumos.modal.cancel"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              intent="insumos.modal.submit"
+            >
+              {editingIngredient ? "Guardar Cambios" : "Crear Insumo"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

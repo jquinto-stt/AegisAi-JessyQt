@@ -1,8 +1,6 @@
 import React, { useState } from "react";
-import {
-  Plus,
-  Search,
-} from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableCell, Button } from "@/elements";
 import { StockLocation, InventoryProduct } from "../types/inventory.types";
 
 interface StockLocationsViewProps {
@@ -40,16 +38,16 @@ export const StockLocationsView: React.FC<StockLocationsViewProps> = ({
   });
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 text-zinc-900 dark:text-zinc-100">
+    <div className="flex flex-col flex-1 min-h-0 text-gray-800 dark:text-white">
       {/* ── Toolbar ── */}
-      <div className="px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-zinc-200/80 dark:border-zinc-800/80">
+      <div className="px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2 flex-1 flex-wrap sm:flex-nowrap">
           {/* Warehouse Selector */}
           <select
             value={selectedLocId}
             onChange={(e) => setSelectedLocId(e.target.value)}
             aria-label="Seleccionar Bodega"
-            className="px-2.5 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg text-xs font-medium text-zinc-700 dark:text-zinc-300 focus:outline-none cursor-pointer"
+            className="px-2.5 py-1.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:border-brand-500 cursor-pointer"
           >
             <option value="all">Todas las bodegas ({locations.length})</option>
             {locations.map((loc) => (
@@ -61,101 +59,100 @@ export const StockLocationsView: React.FC<StockLocationsViewProps> = ({
 
           {/* Search */}
           <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar en bodega..."
-              className="w-full pl-9 pr-3 py-1.5 bg-zinc-100/80 dark:bg-zinc-800/60 border border-transparent focus:border-zinc-300 dark:focus:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 focus:outline-none transition-colors"
+              className="w-full pl-9 pr-3 py-1.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 focus:border-brand-500 dark:focus:border-brand-500 rounded-lg text-xs text-gray-800 dark:text-white placeholder:text-gray-400 focus:outline-none transition-colors"
             />
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-3 self-end md:self-auto flex-none">
-          <span className="text-xs text-zinc-400 font-mono">
+          <span className="text-xs text-gray-400 font-mono">
             {warehouseProducts.length} {warehouseProducts.length === 1 ? "ítem" : "ítems"}
           </span>
 
           {onOpenNewLocation && (
-            <button
-              type="button"
+            <Button
+              size="sm"
               onClick={onOpenNewLocation}
-              className="px-3.5 py-1.5 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+              startIcon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>Nueva Bodega</span>
-            </button>
+              Nueva Bodega
+            </Button>
           )}
         </div>
       </div>
 
-      {/* ── Table ── */}
+      {/* ── Table using Pure Elements ── */}
       <div className="flex-1 overflow-auto">
-        <table className="w-full text-left text-xs border-collapse">
-          <thead className="sticky top-0 bg-zinc-50 dark:bg-[#151518] z-10 border-b border-zinc-200 dark:border-zinc-800">
-            <tr className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 select-none">
-              <th className="py-2.5 px-4 sm:px-6 font-semibold">Producto</th>
-              <th className="py-2.5 px-4 font-semibold">Categoría</th>
-              <th className="py-2.5 px-4 font-semibold">Bodega</th>
-              <th className="py-2.5 px-4 font-semibold text-right">Stock</th>
-              <th className="py-2.5 px-4 font-semibold text-right">Costo Unit.</th>
-              <th className="py-2.5 px-4 sm:px-6 font-semibold text-right">Valor Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-sans">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableCell header>Producto</TableCell>
+              <TableCell header>Categoría</TableCell>
+              <TableCell header>Bodega</TableCell>
+              <TableCell header className="text-right">Stock</TableCell>
+              <TableCell header className="text-right">Costo Unit.</TableCell>
+              <TableCell header className="text-right">Valor Total</TableCell>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {warehouseProducts.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-16 text-center text-zinc-400">
-                  <p className="font-semibold text-zinc-700 dark:text-zinc-300 text-xs">
+              <TableRow>
+                <TableCell colSpan={6} className="py-16 text-center text-gray-400">
+                  <p className="font-semibold text-gray-700 dark:text-gray-300 text-xs">
                     No hay productos en esta bodega
                   </p>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               warehouseProducts.map((prod) => {
                 const totalValue = prod.costPrice * prod.stockActual;
                 return (
-                  <tr
+                  <TableRow
                     key={prod.id}
                     onClick={() => onSelectProduct(prod)}
-                    className="hover:bg-zinc-50/70 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer group"
+                    className="hover:bg-gray-50/70 dark:hover:bg-white/[0.03] transition-colors cursor-pointer group"
                   >
-                    <td className="py-3 px-4 sm:px-6">
-                      <div className="font-medium text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors truncate max-w-xs">
+                    <TableCell>
+                      <div className="font-medium text-gray-900 dark:text-white group-hover:text-brand-500 transition-colors truncate max-w-xs">
                         {prod.name}
                       </div>
-                      <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
+                      <div className="text-[11px] text-gray-400 font-mono mt-0.5">
                         {prod.sku}
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                    <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {prod.category}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                    <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                       {prod.locationName || "Bodega Central"}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 px-4 text-right whitespace-nowrap font-mono font-semibold text-zinc-800 dark:text-zinc-200">
+                    <TableCell className="text-right whitespace-nowrap font-mono font-semibold text-gray-800 dark:text-gray-200">
                       {prod.stockActual} {prod.unit}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 px-4 text-right whitespace-nowrap font-mono text-zinc-500 dark:text-zinc-400">
+                    <TableCell className="text-right whitespace-nowrap font-mono text-gray-500 dark:text-gray-400">
                       ${prod.costPrice.toLocaleString("es-CO")}
-                    </td>
+                    </TableCell>
 
-                    <td className="py-3 px-4 sm:px-6 text-right whitespace-nowrap font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                    <TableCell className="text-right whitespace-nowrap font-mono font-medium text-gray-900 dark:text-white">
                       ${totalValue.toLocaleString("es-CO")}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

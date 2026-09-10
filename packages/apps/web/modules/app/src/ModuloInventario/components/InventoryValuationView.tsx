@@ -14,6 +14,15 @@ import {
   History,
 } from "lucide-react";
 import { InventoryProduct, StockLocation } from "../types/inventory.types";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  Badge,
+  Button,
+} from "../../elements";
 
 interface InventoryValuationViewProps {
   products: InventoryProduct[];
@@ -287,108 +296,104 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 animate-fade-in max-w-7xl mx-auto">
+    <div className="space-y-5 animate-fade-in">
       {/* ── 1. Header & Quick Export Strip ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200 dark:border-gray-800">
         <div>
-          <h2 className="text-lg font-black text-zinc-900 dark:text-white flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-[#FF3F1A]" />
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <DollarSign className="size-5 text-brand-500" />
             <span>Valor de Inventario & Auditoría Financiera</span>
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Valorización contable en costo promedio ponderado, proyección de venta y rentabilidad del activo circulante.
           </p>
         </div>
 
-        <button
-          type="button"
+        <Button
+          size="sm"
+          variant="outline"
+          startIcon={<Download className="size-3.5" />}
           onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-bold shadow-2xs transition-colors cursor-pointer self-start sm:self-auto"
           title="Exportar archivo CSV con el balance de inventario para contabilidad"
         >
-          <Download className="w-3.5 h-3.5" />
-          <span>Exportar Balance CSV</span>
-        </button>
+          Exportar Balance CSV
+        </Button>
       </div>
 
       {/* ── 2. Primary Accounting KPI Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Total Cost Value (Capital Invertido) */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#FF3F1A]/5 rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1.5">
-            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs relative overflow-hidden">
+          <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1.5">
+            <span className="text-xs uppercase font-semibold tracking-wider">
               Capital en Costo
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center">
-              <Boxes className="w-4 h-4" />
+            <div className="size-7 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center">
+              <Boxes className="size-4" />
             </div>
           </div>
-          <div className="text-2xl font-mono font-black text-zinc-900 dark:text-white">
+          <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
             ${globalKPIs.totalCost.toLocaleString("es-CO")}
           </div>
-          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1 font-medium">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1 font-medium">
             <span>En {globalKPIs.totalUnits.toLocaleString("es-CO")} unidades físicas</span>
           </div>
         </div>
 
         {/* Total Sale Value (Proyección Venta) */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1.5">
-            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs relative overflow-hidden">
+          <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1.5">
+            <span className="text-xs uppercase font-semibold tracking-wider">
               Valor en Venta (PVP)
             </span>
-            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+            <div className="size-7 rounded-lg bg-success-50 dark:bg-success-500/10 text-success-600 flex items-center justify-center">
+              <DollarSign className="size-4" />
             </div>
           </div>
-          <div className="text-2xl font-mono font-black text-zinc-900 dark:text-white">
+          <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
             ${globalKPIs.totalSale.toLocaleString("es-CO")}
           </div>
-          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1 font-medium">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1 font-medium">
             <span>Precio estándar de mostrador</span>
           </div>
         </div>
 
         {/* Projected Margin */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1.5">
-            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs relative overflow-hidden">
+          <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1.5">
+            <span className="text-xs uppercase font-semibold tracking-wider">
               Utilidad Bruta Proyectada
             </span>
-            <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
+            <div className="size-7 rounded-lg bg-warning-50 dark:bg-warning-500/10 text-warning-600 flex items-center justify-center">
+              <TrendingUp className="size-4" />
             </div>
           </div>
-          <div className="text-2xl font-mono font-black text-zinc-900 dark:text-white">
+          <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
             ${globalKPIs.totalMarginAmount.toLocaleString("es-CO")}
           </div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-bold font-mono">
-            <Percent className="w-3 h-3" />
+          <div className="text-xs text-success-600 dark:text-success-400 mt-1 flex items-center gap-1 font-semibold font-mono">
+            <Percent className="size-3" />
             <span>Margen Bruto: {globalKPIs.grossMarginPercent.toFixed(1)}%</span>
           </div>
         </div>
 
         {/* Active SKUs / Diversification */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 mb-1.5">
-            <span className="text-[11px] font-mono uppercase font-bold tracking-wider">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs relative overflow-hidden">
+          <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 mb-1.5">
+            <span className="text-xs uppercase font-semibold tracking-wider">
               Referencias con Stock
             </span>
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
-              <Layers className="w-4 h-4" />
+            <div className="size-7 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-500 flex items-center justify-center">
+              <Layers className="size-4" />
             </div>
           </div>
-          <div className="text-2xl font-mono font-black text-zinc-900 dark:text-white">
+          <div className="text-2xl font-mono font-bold text-gray-900 dark:text-white">
             {globalKPIs.activeSkusWithStock}{" "}
-            <span className="text-sm font-normal text-zinc-400 font-sans">
+            <span className="text-sm font-normal text-gray-400 font-sans">
               / {globalKPIs.totalSkus} SKUs
             </span>
           </div>
-          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1 font-medium">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1 font-medium">
             <span>
               {((globalKPIs.activeSkusWithStock / (globalKPIs.totalSkus || 1)) * 100).toFixed(0)}% del catálogo con disponibilidad
             </span>
@@ -399,13 +404,13 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
       {/* ── 3. Distribution Strips (Bodegas & Categorías) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Bodega Distribution */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-mono uppercase font-bold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+            <span className="uppercase font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 tracking-wider">
+              <Building2 className="size-3.5 text-brand-500" />
               <span>Capital por Bodega / Sucursal</span>
             </span>
-            <span className="text-[11px] font-mono text-zinc-400">
+            <span className="text-xs font-mono text-gray-400">
               {warehouseBreakdown.length} ubicaciones
             </span>
           </div>
@@ -414,22 +419,22 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
             {warehouseBreakdown.map((wh) => (
               <div key={wh.id} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[200px]">
+                  <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[200px]">
                     {wh.name}
                   </span>
                   <div className="flex items-center gap-2 font-mono">
-                    <span className="font-bold text-zinc-900 dark:text-white">
+                    <span className="font-semibold text-gray-900 dark:text-white">
                       ${wh.costValue.toLocaleString("es-CO")}
                     </span>
-                    <span className="text-[11px] text-zinc-400">
+                    <span className="text-xs text-gray-400">
                       ({wh.percent.toFixed(1)}%)
                     </span>
                   </div>
                 </div>
                 {/* Progress bar */}
-                <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                   <div
-                    className="h-full bg-[#FF3F1A] rounded-full transition-all duration-500"
+                    className="h-full bg-brand-500 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(3, wh.percent))}%` }}
                   />
                 </div>
@@ -439,13 +444,13 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
         </div>
 
         {/* Category Distribution */}
-        <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs space-y-3">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-mono uppercase font-bold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-              <BarChart3 className="w-3.5 h-3.5 text-[#FF3F1A]" />
+            <span className="uppercase font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 tracking-wider">
+              <BarChart3 className="size-3.5 text-brand-500" />
               <span>Capital por Categoría</span>
             </span>
-            <span className="text-[11px] font-mono text-zinc-400">
+            <span className="text-xs font-mono text-gray-400">
               {categoryBreakdown.length} familias
             </span>
           </div>
@@ -454,21 +459,21 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
             {categoryBreakdown.slice(0, 4).map((cat) => (
               <div key={cat.name} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-[200px]">
+                  <span className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-[200px]">
                     {cat.name}
                   </span>
                   <div className="flex items-center gap-2 font-mono">
-                    <span className="font-bold text-zinc-900 dark:text-white">
+                    <span className="font-semibold text-gray-900 dark:text-white">
                       ${cat.costValue.toLocaleString("es-CO")}
                     </span>
-                    <span className="text-[11px] text-zinc-400">
+                    <span className="text-xs text-gray-400">
                       ({cat.percent.toFixed(1)}%)
                     </span>
                   </div>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                   <div
-                    className="h-full bg-zinc-700 dark:bg-zinc-300 rounded-full transition-all duration-500"
+                    className="h-full bg-gray-600 dark:bg-gray-400 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(3, cat.percent))}%` }}
                   />
                 </div>
@@ -479,16 +484,16 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
       </div>
 
       {/* ── 4. Filters & Controls Strip ── */}
-      <div className="bg-white dark:bg-[#151518] rounded-2xl p-3 sm:px-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between gap-3 flex-wrap">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-3 border border-gray-200 dark:border-gray-800 shadow-theme-xs flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 flex-1 min-w-[220px]">
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por SKU, producto o categoría..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-zinc-100 dark:bg-zinc-800/70 border border-transparent focus:border-[#FF3F1A] focus:outline-none text-zinc-900 dark:text-white placeholder:text-zinc-400 font-sans"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-white focus:outline-hidden focus:border-brand-500 transition-colors"
             />
           </div>
 
@@ -497,7 +502,7 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
             value={selectedLocationId}
             onChange={(e) => setSelectedLocationId(e.target.value)}
             aria-label="Filtrar por Bodega"
-            className="px-2.5 py-1.5 text-xs rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-[#FF3F1A] focus:outline-none text-zinc-800 dark:text-zinc-200 cursor-pointer font-medium"
+            className="px-2.5 py-1.5 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:border-brand-500 cursor-pointer"
           >
             <option value="all">Todas las Bodegas</option>
             {locations.map((l) => (
@@ -512,7 +517,7 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             aria-label="Filtrar por Categoría"
-            className="px-2.5 py-1.5 text-xs rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-[#FF3F1A] focus:outline-none text-zinc-800 dark:text-zinc-200 cursor-pointer font-medium hidden sm:inline"
+            className="px-2.5 py-1.5 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:border-brand-500 cursor-pointer hidden sm:inline"
           >
             <option value="all">Todas las Categorías</option>
             {categories.map((c) => (
@@ -527,7 +532,7 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
             value={stockFilter}
             onChange={(e) => setStockFilter(e.target.value as any)}
             aria-label="Filtrar por Disponibilidad de Stock"
-            className="px-2.5 py-1.5 text-xs rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-transparent focus:border-[#FF3F1A] focus:outline-none text-zinc-800 dark:text-zinc-200 cursor-pointer font-medium"
+            className="px-2.5 py-1.5 text-xs rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 focus:outline-hidden focus:border-brand-500 cursor-pointer"
           >
             <option value="all">Todo el Stock</option>
             <option value="in_stock">Solo con Stock (&gt; 0)</option>
@@ -536,225 +541,231 @@ export const InventoryValuationView: React.FC<InventoryValuationViewProps> = ({
         </div>
 
         {/* Count Indicator */}
-        <div className="text-[11px] font-mono text-zinc-400 flex items-center gap-2 ml-auto">
+        <div className="text-xs font-mono text-gray-400 flex items-center gap-2 ml-auto">
           <span>{filteredProducts.length} ítems filtrados</span>
         </div>
       </div>
 
       {/* ── 5. Detailed Valuation Table ── */}
-      <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/75 dark:bg-zinc-900/50 text-[10px] font-mono uppercase font-bold text-zinc-400 select-none">
-                <th
-                  className="py-2.5 px-4 cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-200"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>Producto & SKU</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-3">Bodega</th>
-                <th
-                  className="py-2.5 px-3 text-center cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-200"
-                  onClick={() => handleSort("stock")}
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    <span>Stock Físico</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-3 text-right">Costo Promedio</th>
-                <th
-                  className="py-2.5 px-3 text-right cursor-pointer hover:text-[#FF3F1A]"
-                  onClick={() => handleSort("costValue")}
-                >
-                  <div className="flex items-center justify-end gap-1 text-[#FF3F1A]">
-                    <span>Total Costo ($)</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-3 text-right">PVP Unitario</th>
-                <th
-                  className="py-2.5 px-3 text-right cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-200"
-                  onClick={() => handleSort("saleValue")}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    <span>Total PVP ($)</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th
-                  className="py-2.5 px-3 text-center cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-200"
-                  onClick={() => handleSort("margin")}
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    <span>Margen Bruto</span>
-                    <ArrowUpDown className="w-3 h-3" />
-                  </div>
-                </th>
-                <th className="py-2.5 px-4 text-right">Part. Activo</th>
-                <th className="py-2.5 px-3 text-center">Kardex</th>
-              </tr>
-            </thead>
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xs overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableCell
+                isHeader
+                className="cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center gap-1">
+                  <span>Producto & SKU</span>
+                  <ArrowUpDown className="size-3" />
+                </div>
+              </TableCell>
+              <TableCell isHeader>Bodega</TableCell>
+              <TableCell
+                isHeader
+                className="text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                onClick={() => handleSort("stock")}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <span>Stock Físico</span>
+                  <ArrowUpDown className="size-3" />
+                </div>
+              </TableCell>
+              <TableCell isHeader className="text-right">Costo Promedio</TableCell>
+              <TableCell
+                isHeader
+                className="text-right cursor-pointer hover:text-brand-500 text-brand-500"
+                onClick={() => handleSort("costValue")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Total Costo ($)</span>
+                  <ArrowUpDown className="size-3" />
+                </div>
+              </TableCell>
+              <TableCell isHeader className="text-right">PVP Unitario</TableCell>
+              <TableCell
+                isHeader
+                className="text-right cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                onClick={() => handleSort("saleValue")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Total PVP ($)</span>
+                  <ArrowUpDown className="size-3" />
+                </div>
+              </TableCell>
+              <TableCell
+                isHeader
+                className="text-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                onClick={() => handleSort("margin")}
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <span>Margen Bruto</span>
+                  <ArrowUpDown className="size-3" />
+                </div>
+              </TableCell>
+              <TableCell isHeader className="text-right">Part. Activo</TableCell>
+              <TableCell isHeader className="text-center">Kardex</TableCell>
+            </TableRow>
+          </TableHeader>
 
-            <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-sans">
-              {filteredProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-zinc-400">
-                    <AlertCircle className="w-6 h-6 mx-auto mb-2 opacity-40 text-amber-500" />
-                    <p className="font-semibold text-zinc-700 dark:text-zinc-300">
-                      No se encontraron referencias con los filtros seleccionados
-                    </p>
-                    <p className="text-[11px] text-zinc-400 mt-1">
-                      Probá cambiando la bodega o el término de búsqueda.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                filteredProducts.map((p) => {
-                  return (
-                    <tr
-                      key={p.id}
-                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors group"
-                    >
-                      {/* Producto & SKU */}
-                      <td className="py-3 px-4">
-                        <div>
-                          <span
-                            onClick={() => onOpenProductDetail && onOpenProductDetail(p)}
-                            className="font-bold text-zinc-900 dark:text-white hover:text-[#FF3F1A] transition-colors cursor-pointer block truncate max-w-[240px]"
-                          >
-                            {p.name}
+          <TableBody>
+            {filteredProducts.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} className="py-12 text-center text-gray-400">
+                  <AlertCircle className="size-6 mx-auto mb-2 text-warning-500 opacity-60" />
+                  <p className="font-semibold text-gray-700 dark:text-gray-300">
+                    No se encontraron referencias con los filtros seleccionados
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Probá cambiando la bodega o el término de búsqueda.
+                  </p>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredProducts.map((p) => {
+                return (
+                  <TableRow
+                    key={p.id}
+                    className="hover:bg-gray-50 dark:hover:bg-white/[0.02] group"
+                  >
+                    {/* Producto & SKU */}
+                    <TableCell>
+                      <div>
+                        <span
+                          onClick={() => onOpenProductDetail && onOpenProductDetail(p)}
+                          className="font-semibold text-gray-900 dark:text-white hover:text-brand-500 transition-colors cursor-pointer block truncate max-w-[240px]"
+                        >
+                          {p.name}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="font-mono text-xs text-gray-400">
+                            {p.sku}
                           </span>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="font-mono text-[11px] text-zinc-400">
-                              {p.sku}
-                            </span>
-                            <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
-                              {p.category || "General"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Bodega */}
-                      <td className="py-3 px-3 text-zinc-600 dark:text-zinc-300 text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <Building2 className="w-3 h-3 text-zinc-400 flex-none" />
-                          <span className="truncate max-w-[130px]">
-                            {p.locationName || "Sede Principal"}
+                          <span className="text-gray-300 dark:text-gray-700">•</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500">
+                            {p.category || "General"}
                           </span>
                         </div>
-                      </td>
+                      </div>
+                    </TableCell>
 
-                      {/* Stock Físico */}
-                      <td className="py-3 px-3 text-center font-mono">
-                        <span
-                          className={`font-black text-xs ${
-                            p.stock <= 0
-                              ? "text-rose-600 dark:text-rose-400"
-                              : p.stock <= p.stockMinimo
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-zinc-900 dark:text-white"
-                          }`}
-                        >
-                          {p.stock} {p.unit}
+                    {/* Bodega */}
+                    <TableCell className="text-gray-600 dark:text-gray-300 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="size-3 text-gray-400 flex-none" />
+                        <span className="truncate max-w-[130px]">
+                          {p.locationName || "Sede Principal"}
                         </span>
-                      </td>
+                      </div>
+                    </TableCell>
 
-                      {/* Costo Unitario */}
-                      <td className="py-3 px-3 text-right font-mono text-zinc-600 dark:text-zinc-300">
-                        ${p.costPrice.toLocaleString("es-CO")}
-                      </td>
+                    {/* Stock Físico */}
+                    <TableCell className="text-center font-mono">
+                      <Badge
+                        variant="light"
+                        color={
+                          p.stock <= 0
+                            ? "error"
+                            : p.stock <= p.stockMinimo
+                            ? "warning"
+                            : "light"
+                        }
+                        size="sm"
+                      >
+                        {p.stock} {p.unit}
+                      </Badge>
+                    </TableCell>
 
-                      {/* Total Costo ($) - Key Accounting Value */}
-                      <td className="py-3 px-3 text-right font-mono font-black text-sm text-[#FF3F1A]">
-                        ${p.totalCostValue.toLocaleString("es-CO")}
-                      </td>
+                    {/* Costo Unitario */}
+                    <TableCell className="text-right font-mono text-gray-600 dark:text-gray-400 text-xs">
+                      ${p.costPrice.toLocaleString("es-CO")}
+                    </TableCell>
 
-                      {/* PVP Unitario */}
-                      <td className="py-3 px-3 text-right font-mono text-zinc-600 dark:text-zinc-300">
-                        ${p.salePrice.toLocaleString("es-CO")}
-                      </td>
+                    {/* Total Costo ($) */}
+                    <TableCell className="text-right font-mono font-bold text-sm text-brand-500">
+                      ${p.totalCostValue.toLocaleString("es-CO")}
+                    </TableCell>
 
-                      {/* Total PVP ($) */}
-                      <td className="py-3 px-3 text-right font-mono font-bold text-zinc-900 dark:text-white">
-                        ${p.totalSaleValue.toLocaleString("es-CO")}
-                      </td>
+                    {/* PVP Unitario */}
+                    <TableCell className="text-right font-mono text-gray-600 dark:text-gray-400 text-xs">
+                      ${p.salePrice.toLocaleString("es-CO")}
+                    </TableCell>
 
-                      {/* Margen Bruto */}
-                      <td className="py-3 px-3 text-center font-mono">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-bold ${
-                            p.marginPercent >= 40
-                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : p.marginPercent >= 20
-                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                              : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                          }`}
+                    {/* Total PVP ($) */}
+                    <TableCell className="text-right font-mono font-semibold text-gray-900 dark:text-white">
+                      ${p.totalSaleValue.toLocaleString("es-CO")}
+                    </TableCell>
+
+                    {/* Margen Bruto */}
+                    <TableCell className="text-center font-mono">
+                      <Badge
+                        variant="light"
+                        color={
+                          p.marginPercent >= 40
+                            ? "success"
+                            : p.marginPercent >= 20
+                            ? "warning"
+                            : "error"
+                        }
+                        size="sm"
+                      >
+                        {p.marginPercent.toFixed(1)}%
+                      </Badge>
+                    </TableCell>
+
+                    {/* % Participación en Inventario */}
+                    <TableCell className="text-right font-mono font-medium text-xs text-gray-500">
+                      {p.sharePercent.toFixed(2)}%
+                    </TableCell>
+
+                    {/* Kardex Drill-Down */}
+                    <TableCell className="text-center">
+                      {onNavigateToKardex && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToKardex(p.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-500/10 transition-colors cursor-pointer"
+                          title={`Ver movimientos de ${p.name} en Kardex`}
                         >
-                          {p.marginPercent.toFixed(1)}%
-                        </span>
-                      </td>
-
-                      {/* % Participación en Inventario */}
-                      <td className="py-3 px-4 text-right font-mono font-bold text-xs text-zinc-500">
-                        {p.sharePercent.toFixed(2)}%
-                      </td>
-
-                      {/* Kardex Drill-Down */}
-                      <td className="py-3 px-3 text-center">
-                        {onNavigateToKardex && (
-                          <button
-                            type="button"
-                            onClick={() => onNavigateToKardex(p.id)}
-                            className="p-1.5 rounded-lg text-zinc-400 hover:text-[#FF3F1A] hover:bg-[#FF3F1A]/10 transition-colors cursor-pointer"
-                            title={`Ver movimientos de ${p.name} en Kardex`}
-                          >
-                            <History className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-
-            {/* Subtotals Footer Strip */}
-            {filteredProducts.length > 0 && (
-              <tfoot className="border-t-2 border-zinc-300 dark:border-zinc-700 bg-zinc-50/90 dark:bg-zinc-900/80 font-mono font-bold text-xs">
-                <tr>
-                  <td className="py-3 px-4 uppercase text-[11px] text-zinc-500">
-                    Total Balance Filtrado:
-                  </td>
-                  <td className="py-3 px-3 text-zinc-400">—</td>
-                  <td className="py-3 px-3 text-center text-zinc-900 dark:text-white">
-                    {filteredSubtotals.units.toLocaleString("es-CO")} u.
-                  </td>
-                  <td className="py-3 px-3 text-zinc-400 text-right">—</td>
-                  <td className="py-3 px-3 text-right text-base text-[#FF3F1A] font-black">
-                    ${filteredSubtotals.costVal.toLocaleString("es-CO")}
-                  </td>
-                  <td className="py-3 px-3 text-zinc-400 text-right">—</td>
-                  <td className="py-3 px-3 text-right text-sm text-zinc-900 dark:text-white font-black">
-                    ${filteredSubtotals.saleVal.toLocaleString("es-CO")}
-                  </td>
-                  <td className="py-3 px-3 text-center text-emerald-600 dark:text-emerald-400 font-black">
-                    {filteredSubtotals.marginPct.toFixed(1)}%
-                  </td>
-                  <td className="py-3 px-4 text-right text-zinc-400">100%</td>
-                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
-                </tr>
-              </tfoot>
+                          <History className="size-3.5" />
+                        </button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
-          </table>
-        </div>
+          </TableBody>
+        </Table>
+
+        {/* Subtotals Footer Strip */}
+        {filteredProducts.length > 0 && (
+          <div className="border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40 p-3 px-4 font-mono text-xs flex items-center justify-between flex-wrap gap-3">
+            <span className="uppercase text-xs font-semibold text-gray-500">
+              Total Balance Filtrado: {filteredSubtotals.units.toLocaleString("es-CO")} unidades
+            </span>
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-gray-400 text-xs">Total Costo: </span>
+                <span className="text-base text-brand-500 font-bold">
+                  ${filteredSubtotals.costVal.toLocaleString("es-CO")}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-400 text-xs">Total PVP: </span>
+                <span className="text-sm text-gray-900 dark:text-white font-bold">
+                  ${filteredSubtotals.saleVal.toLocaleString("es-CO")}
+                </span>
+              </div>
+              <Badge variant="light" color="success" size="sm">
+                Margen Promedio: {filteredSubtotals.marginPct.toFixed(1)}%
+              </Badge>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+

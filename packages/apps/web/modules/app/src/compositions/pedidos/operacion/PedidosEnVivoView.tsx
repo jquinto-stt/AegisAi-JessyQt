@@ -535,19 +535,19 @@ export const PedidosEnVivoView: React.FC<{
                   setDragOverCol(null);
                   setDraggedOrderId(null);
                 }}
-                className={`flex-1 min-w-[210px] sm:min-w-[230px] lg:min-w-0 max-w-full bg-[#ECECEC]/40 dark:bg-[#151518]/70 rounded-2xl border border-zinc-200/90 dark:border-zinc-800/90 p-2.5 sm:p-3 flex flex-col justify-between space-y-3 transition-all shadow-2xs ${
+                className={`flex-1 min-w-[210px] sm:min-w-[230px] lg:min-w-0 max-w-full bg-gray-100/70 dark:bg-gray-900/60 rounded-2xl border border-gray-200 dark:border-gray-800 p-2.5 sm:p-3 flex flex-col justify-between space-y-3 transition-all shadow-theme-xs ${
                   dragOverCol === col.id
-                    ? "ring-2 ring-[#FF3F1A]/40 border-[#FF3F1A] bg-[#FF3F1A]/5 dark:bg-[#FF3F1A]/10 shadow-md"
-                    : "hover:border-zinc-300 dark:hover:border-zinc-700/80"
+                    ? "ring-2 ring-brand-500/40 border-brand-500 bg-brand-50/50 dark:bg-brand-950/20 shadow-theme-md"
+                    : "hover:border-gray-300 dark:hover:border-gray-700"
                 }`}
               >
                 {/* Minimalist Column Header Card */}
-                <div className="bg-white dark:bg-[#18181B] rounded-xl border border-zinc-200/80 dark:border-zinc-800 p-2.5 sm:p-3 shadow-2xs flex items-center justify-between gap-2 flex-none">
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-2.5 sm:p-3 shadow-theme-xs flex items-center justify-between gap-2 flex-none">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${col.iconBg} ${col.iconColor} flex-none`}>
                       <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <h4 className="font-bold text-xs sm:text-[13px] text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+                    <h4 className="font-bold text-xs sm:text-[13px] text-gray-900 dark:text-gray-100 tracking-tight truncate">
                       {col.title}
                     </h4>
                   </div>
@@ -565,39 +565,39 @@ export const PedidosEnVivoView: React.FC<{
                         <div
                           key={prog.id}
                           onClick={() => setSelectedOrderId(prog.id)}
-                          className="p-3 rounded-xl bg-white dark:bg-[#18181B] border border-zinc-200/80 dark:border-zinc-800 space-y-2 text-xs transition-all cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs group select-none"
+                          className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-2 text-xs transition-all cursor-pointer hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-theme-xs group select-none"
                           title="Haz clic para ver el detalle de este pedido programado"
                         >
                           <div className="flex items-center justify-between gap-1.5">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-mono font-bold text-[10px] text-zinc-500 dark:text-zinc-400">
+                              <span className="font-mono font-bold text-[10px] text-gray-500 dark:text-gray-400">
                                 {prog.id}
                               </span>
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#EFE6D3]/60 dark:bg-[#EFE6D3]/15 text-[#212121] dark:text-[#ECECEC] border border-[#EFE6D3] dark:border-[#EFE6D3]/30">
-                                <Calendar className="w-2.5 h-2.5 text-[#FF3F1A]" />
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
+                                <Calendar className="w-2.5 h-2.5 text-brand-500" />
                                 <span>{prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}</span>
                               </span>
                             </div>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#FF3F1A] transition-colors flex-none" />
+                            <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 group-hover:text-brand-500 transition-colors flex-none" />
                           </div>
 
                           <div className="min-w-0">
-                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#FF3F1A] transition-colors">
+                            <h5 className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate group-hover:text-brand-500 transition-colors">
                               {prog.customerName}
                             </h5>
                           </div>
 
                           {layoutPrefs.showItemsSummary !== false && (
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-1">
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
                               {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
                             </p>
                           )}
 
-                          <div className="flex items-center justify-between pt-1.5 border-t border-zinc-100 dark:border-zinc-800/60 text-[11px]">
-                            <span className="font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                          <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-gray-800 text-[11px]">
+                            <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
                               ${prog.total.toLocaleString("es-CO")}
                             </span>
-                            <span className="text-[10px] font-mono text-zinc-400">
+                            <span className="text-[10px] font-mono text-gray-400">
                               Programado
                             </span>
                           </div>
@@ -607,7 +607,7 @@ export const PedidosEnVivoView: React.FC<{
                   )}
 
                   {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
-                    <div className="p-6 text-center text-zinc-400 dark:text-zinc-500 text-xs font-medium rounded-xl bg-white/50 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800/60">
+                    <div className="p-6 text-center text-gray-400 dark:text-gray-500 text-xs font-medium rounded-xl bg-white/50 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-800/60">
                       <p>Sin pedidos en esta etapa</p>
                     </div>
                   ) : (
@@ -633,16 +633,16 @@ export const PedidosEnVivoView: React.FC<{
                             setDragOverCol(null);
                           }}
                           onClick={() => setSelectedOrderId(order.id)}
-                          className={`bg-white dark:bg-[#18181B] rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 transition-all cursor-grab active:cursor-grabbing hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs space-y-2 group select-none ${
-                            isDragging ? "opacity-30 scale-95 border-dashed border-[#FF3F1A]" : ""
+                          className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 transition-all cursor-grab active:cursor-grabbing hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-theme-xs space-y-2 group select-none ${
+                            isDragging ? "opacity-30 scale-95 border-dashed border-brand-500" : ""
                           }`}
                           title="Haz clic para abrir comanda o arrastra para mover de etapa"
                         >
                           {/* Top Row: Jira-style ID + Channel Badge + Total */}
                           <div className="flex items-center justify-between gap-1.5">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <GripVertical className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-500 flex-none transition-colors" />
-                              <span className="font-mono font-bold text-[11px] text-zinc-500 dark:text-zinc-400">
+                              <GripVertical className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 group-hover:text-gray-500 flex-none transition-colors" />
+                              <span className="font-mono font-bold text-[11px] text-gray-500 dark:text-gray-400">
                                 {order.id}
                               </span>
                               {layoutPrefs.showChannelBadge !== false && (
@@ -664,19 +664,19 @@ export const PedidosEnVivoView: React.FC<{
 
                             {layoutPrefs.showOrderTotal !== false && (
                               <div className="flex items-center gap-1 flex-none">
-                                <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
+                                <span className="font-mono font-bold text-xs text-gray-900 dark:text-gray-100">
                                   ${order.total.toLocaleString("es-CO")}
                                 </span>
-                                <ArrowUpRight className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors" />
+                                <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 group-hover:text-secondary-600 dark:group-hover:text-secondary-400 transition-colors" />
                               </div>
                             )}
                           </div>
 
                           {/* Customer Name & Items count */}
                           <div className="min-w-0 pl-5">
-                            <h5 className="font-bold text-xs text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1.5 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
+                            <h5 className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate flex items-center gap-1.5 group-hover:text-secondary-600 dark:group-hover:text-secondary-400 transition-colors">
                               {isDelayed && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] flex-none" title="Demorado" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-secondary-600 dark:bg-secondary-400 flex-none" title="Demorado" />
                               )}
                               <span>{order.customerName}</span>
                               {layoutPrefs.showCustomerPhone && order.customerPhone && (

@@ -656,36 +656,35 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-black/60 backdrop-blur-xs font-sans"
       style={{ animation: "fadeIn 150ms ease-out" }}
     >
       <div
-        className="relative w-full max-w-6xl bg-[#F8FAFC] dark:bg-[#111215] rounded-3xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-6xl bg-gray-50 dark:bg-gray-950 rounded-3xl shadow-theme-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col max-h-[92vh]"
         style={{ animation: "slideUp 200ms ease-out" }}
       >
         {/* ── Modal Header ── */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-[#18181B] flex-none">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900 flex-none">
           <div className="space-y-0.5">
-            <h1 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              <Boxes className="w-5 h-5 text-[#FF3F1A]" />
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+              <Boxes className="size-5 text-brand-500" />
               <span>{productToEdit ? "Editar producto de venta" : "Nuevo producto de venta"}</span>
             </h1>
-            <p className="text-xs text-slate-500 dark:text-zinc-400">
-              Crea tus productos inventariables o combos para registrar en tus ventas.{" "}
-              <a href="#info" className="text-[#FF3F1A] font-semibold hover:underline">
-                Ver más
-              </a>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Crea tus productos inventariables o combos para registrar en tus ventas.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800 flex items-center justify-center transition-colors cursor-pointer"
+            className="size-9 rounded-xl text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="size-5" />
           </button>
         </div>
 
@@ -1789,12 +1788,12 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 )}
 
                 {/* 4. Botones de Acción */}
-                <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-zinc-800">
+                <div className="space-y-2.5 pt-4 border-t border-gray-100 dark:border-gray-800">
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       type="button"
                       onClick={onClose}
-                      className="py-2.5 px-4 rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-zinc-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer shadow-2xs text-center"
+                      className="py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer shadow-theme-xs text-center"
                     >
                       Cancelar
                     </button>
@@ -1803,7 +1802,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => handleSaveInternal(false)}
-                      className="py-2.5 px-4 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50 text-center flex items-center justify-center gap-1.5"
+                      className="py-2.5 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold transition-all cursor-pointer shadow-theme-xs disabled:opacity-50 text-center flex items-center justify-center gap-1.5"
                     >
                       {isSubmitting ? "Guardando..." : "Guardar"}
                     </button>
@@ -1813,9 +1812,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     type="button"
                     disabled={isSubmitting}
                     onClick={() => handleSaveInternal(true)}
-                    className="w-full py-2.5 px-4 rounded-xl border-2 border-slate-300 dark:border-zinc-700 bg-white dark:bg-[#18181B] text-slate-800 dark:text-zinc-100 hover:border-[#FF3F1A] hover:text-[#FF3F1A] text-xs font-bold transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 hover:border-brand-500 hover:text-brand-500 text-xs font-semibold transition-all cursor-pointer shadow-theme-xs flex items-center justify-center gap-1.5"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                    <Sparkles className="size-3.5 text-brand-500" />
                     <span>Guardar y crear otro</span>
                   </button>
                 </div>
