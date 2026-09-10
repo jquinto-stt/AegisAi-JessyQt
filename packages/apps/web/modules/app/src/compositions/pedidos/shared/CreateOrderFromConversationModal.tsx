@@ -408,7 +408,7 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
                 />
               </div>
               <div className="flex justify-between text-sm font-extrabold text-zinc-950 dark:text-white pt-1 border-t border-zinc-200 dark:border-zinc-700">
-                <span>Total Comanda:</span>
+                <span>Total Pedido:</span>
                 <span className="text-[#FF3F1A] font-mono">${total.toLocaleString("es-CO")} COP</span>
               </div>
             </div>

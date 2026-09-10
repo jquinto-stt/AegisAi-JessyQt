@@ -1290,62 +1290,54 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           });
         }
 
-        const isFood = activeBusiness?.businessType === "food_restaurant" || activeBusiness?.businessType === "food_store";
-        const botGreeting = activeBusiness?.botConfig?.greeting || `¡Hola ${customerName}! Bienvenido a ${activeBusiness?.name || "nuestra tienda"}.`;
+        const storeName = activeBusiness?.name || "nuestra tienda";
+        const botGreeting = activeBusiness?.botConfig?.greeting || `¡Hola ${customerName}! Bienvenido a ${storeName}.`;
 
-        // CASO 4: Pedido nuevo o solicitud de cotización/orden (Construye el borrador en el chat)
+        // CASO 4: Pedido nuevo o solicitud de cotización/orden (Construye el borrador en el chat consumiendo el catálogo del Tenant)
         const isOrderRequest =
           options?.isOrder ||
           lower.includes("quiero") ||
           lower.includes("pedir") ||
           lower.includes("comprar") ||
+          lower.includes("precio") ||
+          lower.includes("cotizar") ||
+          lower.includes("ordenar") ||
+          lower.includes("catalogo") ||
+          lower.includes("disponible") ||
           lower.includes("taladro") ||
           lower.includes("tornillo") ||
-          lower.includes("herramienta") ||
-          lower.includes("pintura") ||
-          lower.includes("empanada") ||
-          lower.includes("combo") ||
-          lower.includes("docena") ||
-          lower.includes("ordenar");
+          lower.includes("zapato") ||
+          lower.includes("empanada");
 
         if (isOrderRequest) {
-          const initialItems = isFood
-            ? [
-                {
-                  productId: "prod-01",
-                  name: "Empanada de Carne Cortada a Cuchillo",
-                  quantity: 6,
-                  unitPrice: 5500,
-                  option: "Horneada",
-                },
-                {
-                  productId: "prod-07",
-                  name: "Gaseosa Cola 354ml",
-                  quantity: 2,
-                  unitPrice: 4500,
-                },
-              ]
-            : [
-                {
-                  productId: products[0]?.id || "prod-hw-01",
-                  name: products[0]?.name || "Taladro Percutor DeWalt 650W VVR",
-                  quantity: 1,
-                  unitPrice: products[0]?.price || 280000,
-                  option: "Garantía Fábrica 1 Año",
-                },
-                {
-                  productId: products[2]?.id || "prod-hw-03",
-                  name: products[2]?.name || "Caja Tornillos Drywall 6x1-5/8 (1000u)",
-                  quantity: 1,
-                  unitPrice: products[2]?.price || 32000,
-                },
-              ];
+          // El OMS toma los productos directamente del catálogo activo de la tienda (Tenant)
+          const primaryItem = products[0] || { id: "p-01", name: "Producto de Catálogo", price: 50000 };
+          const secondaryItem = products[1] || { id: "p-02", name: "Accesorio / Complemento", price: 25000 };
+
+          const initialItems = [
+            {
+              productId: primaryItem.id,
+              name: primaryItem.name,
+              quantity: 1,
+              unitPrice: primaryItem.price,
+            },
+            ...(products[1]
+              ? [
+                  {
+                    productId: secondaryItem.id,
+                    name: secondaryItem.name,
+                    quantity: 1,
+                    unitPrice: secondaryItem.price,
+                  },
+                ]
+              : []),
+          ];
 
           const subtotal = initialItems.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0);
 
-          const orderReplyText = isFood
-            ? `¡Hola ${customerName}! Te armé el borrador de tu pedido:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa o confirmamos la dirección de entrega?`
-            : `¡Hola ${customerName}! Te armé la cotización y borrador de tu orden en ${activeBusiness?.name || "Ferretería La Tuerca"}:\n\n${initialItems.map(i => `• ${i.quantity}× ${i.name} ($${i.unitPrice.toLocaleString("es-CO")})`).join("\n")}\n• Subtotal: $${subtotal.toLocaleString("es-CO")} COP\n\n¿Deseas agregar algún accesorio para obra (brocas, guantes) o confirmamos los datos para despacho express?`;
+          const orderReplyText = `¡Hola ${customerName}! Con gusto, te armé el borrador de tu pedido para ${storeName}:\n\n${initialItems
+            .map(i => `• ${i.quantity}× ${i.name} ($${i.unitPrice.toLocaleString("es-CO")})`)
+            .join("\n")}\n\n• **Subtotal:** $${subtotal.toLocaleString("es-CO")} COP\n\n¿Deseas agregar algún producto adicional o confirmamos tus datos para entrega?`;
 
           return currentConvs.map(c =>
             c.id === conversationId

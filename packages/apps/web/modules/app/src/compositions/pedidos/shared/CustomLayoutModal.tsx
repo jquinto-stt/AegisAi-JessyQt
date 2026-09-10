@@ -72,8 +72,8 @@ export const DEFAULT_LAYOUT_PREFS: LayoutPreferences = {
   columns: [
     { id: "NUEVO", title: "Nuevos & Por Confirmar", visible: true },
     { id: "CONFIRMADO", title: "Confirmados (En Cola)", visible: true },
-    { id: "EN_PREPARACION", title: "En Cocina / Preparación", visible: true },
-    { id: "LISTO", title: "Listos para Entrega", visible: true },
+    { id: "EN_PREPARACION", title: "En Alistamiento / Preparación", visible: true },
+    { id: "LISTO", title: "Listos para Entrega / Envío", visible: true },
     { id: "FINALIZADO", title: "Entregados Hoy", visible: true },
   ],
 };
@@ -84,27 +84,27 @@ const COLUMN_META: Record<
 > = {
   NUEVO: {
     icon: <Sparkles className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
-    description: "Comandas entrantes por WhatsApp, Web o Mostrador",
+    description: "Órdenes entrantes por WhatsApp, Web o Mostrador",
   },
   CONFIRMADO: {
     icon: <CheckCircle className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
-    description: "Pedidos con pago validado listos para entrar al fogón",
+    description: "Pedidos con pago validado listos para alistamiento",
   },
   EN_PREPARACION: {
     icon: <ChefHat className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
-    description: "Comandas cocinándose con cronómetro SLA en vivo",
+    description: "Pedidos en proceso de empaque o preparación activa",
   },
   LISTO: {
     icon: <CheckCircle2 className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
-    description: "Platos listos para empaque, despacho o retiro del comensal",
+    description: "Artículos listos para empaque final, despacho o retiro del cliente",
   },
   FINALIZADO: {
     icon: <PackageCheck className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
-    description: "Historial de comandas despachadas y facturadas",
+    description: "Historial de pedidos entregados y facturados",
   },
   RECHAZADO: {
     icon: <X className="w-4 h-4 text-zinc-500" />,
-    description: "Pedidos cancelados o descartados por el operador",
+    description: "Pedidos descartados o rechazados por el operador",
   },
   CANCELADO: {
     icon: <X className="w-4 h-4 text-zinc-500" />,

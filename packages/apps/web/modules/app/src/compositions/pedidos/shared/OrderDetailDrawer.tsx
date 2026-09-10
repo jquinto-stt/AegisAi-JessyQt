@@ -701,7 +701,7 @@ export const OrderDetailDrawer: React.FC = () => {
               onClick={() => sendToKitchen(order.id)}
               className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
             >
-              <span>Pasar a Cocina (KDS)</span>
+              <span>{semantics?.requiresKitchenDisplay ? "Pasar a Cocina (KDS)" : "Pasar a Alistamiento / Empaque"}</span>
             </Button>
           )}
 

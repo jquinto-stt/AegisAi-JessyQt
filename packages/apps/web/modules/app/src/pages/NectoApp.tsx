@@ -230,7 +230,8 @@ export default function App() {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-  const { activeBusiness, activeRole } = useBusiness();
+  const { activeBusiness, activeRole, semantics } = useBusiness();
+  const isFood = activeBusiness?.businessType === "restaurant_virtual";
   const activeModules = activeBusiness?.activeModules || [];
   const hasPedidos = activeModules.includes("pedidos");
   const hasInventarios = activeModules.includes("inventarios");
@@ -379,8 +380,8 @@ export default function App() {
     },
     {
       id: "2",
-      title: "Alerta de Comanda Retrasada",
-      desc: "PED-1020 superó los 40 min estimados en KDS Cocina",
+      title: "Alerta de Pedido Retrasado",
+      desc: "PED-1020 superó el tiempo estimado de entrega",
       time: "Hace 15 min",
       unread: true,
       type: "alert",
@@ -393,7 +394,7 @@ export default function App() {
     {
       id: "3",
       title: "Alerta de Stock Crítico",
-      desc: "Humita Cremosa desactivada por quiebre de stock",
+      desc: "Stock en nivel mínimo para producto de alta rotación",
       time: "Hace 40 min",
       unread: false,
       type: "stock",
@@ -427,29 +428,28 @@ export default function App() {
 
   // Breadcrumb Labels Calculation
   const pedidosOpPageNames: Record<OperacionTab, string> = {
-    "en-vivo": "Pedidos Activos",
-    "preparacion": "KDS Cocina y Tiempos",
+    "en-vivo": "Pedidos en Vivo",
+    "preparacion": semantics?.stationNoun || "Alistamiento & Despacho",
     "programados": "Pedidos Programados",
-    "conversaciones": "Conversaciones WhatsApp",
+    "conversaciones": "Atención WhatsApp & Clientes",
   };
 
   const pedidosGePageNames: Record<GestionTab, string> = {
-    resumen: "Dashboard Pedidos",
+    resumen: "Dashboard de Pedidos",
     historial: "Historial de Pedidos",
-    catalogo: "Catálogo de Productos",
-    insumos: "Insumos & Stock",
-    roles: "Roles & Permisos del Equipo",
-    automatizaciones: "Automatizaciones & Recurrencias",
-    turnos: "Turnos y Capacidad",
-    analitica: "Analítica de Rendimiento",
+    catalogo: isFood ? "Catálogo de Platos" : "Catálogo de Productos",
+    insumos: isFood ? "Insumos & Recetas" : "Insumos & Materiales",
+    roles: "Roles & Permisos",
+    automatizaciones: "Automatizaciones & Flujos",
+    turnos: "Turnos y Horarios",
+    analitica: "Analítica Comercial",
   };
 
   const sectionRoleNames: Record<PedidosSection, string> = {
-    operacion: "Operación",
-    menu: "Menú & Abastecimiento",
-
+    operacion: "Operación de Pedidos",
+    menu: isFood ? "Menú & Insumos" : "Catálogo de Productos",
     analitica: "Analítica & Reportes",
-    configuracion: "Configuración & Equipo",
+    configuracion: "Configuración & Canales",
     gestion: "Gestión",
   };
 

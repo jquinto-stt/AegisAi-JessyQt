@@ -17,9 +17,11 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Button } from "@/elements";
+import { useBusiness } from "@/context/BusinessContext";
 import { CreateOrderFromConversationModal } from "./CreateOrderFromConversationModal";
 
 export const ConversationControlBar: React.FC<{ conversation: Conversation }> = ({ conversation }) => {
+  const { semantics } = useBusiness();
   const {
     orders,
     takeControl,
@@ -255,9 +257,9 @@ export const ConversationControlBar: React.FC<{ conversation: Conversation }> = 
                 type="button"
                 onClick={() => sendToKitchen(order.id)}
                 className="px-2.5 py-1 rounded-lg bg-[#190088] hover:bg-[#14006e] text-white font-bold text-xs shadow-2xs transition-all cursor-pointer"
-                title="Enviar comanda a cocina KDS"
+                title={semantics?.requiresKitchenDisplay ? "Enviar comanda a cocina KDS" : "Iniciar alistamiento del pedido"}
               >
-                Pasar a Cocina (KDS)
+                {semantics?.requiresKitchenDisplay ? "Pasar a Cocina (KDS)" : "Pasar a Alistamiento"}
               </button>
             )}
 

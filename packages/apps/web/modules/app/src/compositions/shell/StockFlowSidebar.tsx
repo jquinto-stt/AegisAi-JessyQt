@@ -303,7 +303,7 @@ export const StockFlowSidebar = observer(({
                 {/* 2. MENÚ & INSUMOS / CATÁLOGO */}
                 <MenuItem
                   icon={<ListIcon />}
-                  name={catalogMenuTitle}
+                  name={isFood ? "Menú & Insumos" : "Catálogo de Productos"}
                   openMenuName={openMenuName}
                   onMenuToggle={setOpenMenuName}
                   active={activeModule === "pedidos" && pedidosSection === "menu"}
@@ -313,11 +313,13 @@ export const StockFlowSidebar = observer(({
                     onClick={() => onNavigatePedidos("menu", "catalogo")}
                     active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "catalogo"}
                   />
-                  <MenuSubmenuItem
-                    name={isFood ? "Insumos & Recetas" : "Insumos & Materiales"}
-                    onClick={() => onNavigatePedidos("menu", "insumos")}
-                    active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "insumos"}
-                  />
+                  {isFood && (
+                    <MenuSubmenuItem
+                      name="Insumos & Recetas"
+                      onClick={() => onNavigatePedidos("menu", "insumos")}
+                      active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "insumos"}
+                    />
+                  )}
                 </MenuItem>
 
                 {/* 3. ANALÍTICA */}

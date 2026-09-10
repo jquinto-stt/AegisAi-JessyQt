@@ -117,18 +117,18 @@ const MODULE_DEFINITIONS: Array<{
 }> = [
   {
     id: "pedidos",
-    title: "Pedidos & Comandas",
-    description: "Flujo de venta unificado: WhatsApp, mostrador y mesa con actualización en vivo.",
+    title: "Sistema de Pedidos Omnicanal",
+    description: "Flujo de ventas unificado: WhatsApp Bot, mostrador y web con seguimiento y despacho en vivo.",
     icon: ShoppingBag,
-    tag: "Core Operativo",
+    tag: "Core Comercial",
     isComingSoon: false,
   },
   {
     id: "inventarios",
-    title: "Inventario & Insumos",
-    description: "Descuento automático por receta, control de mermas y alertas de stock crítico.",
+    title: "Inventario & Stock",
+    description: "Kardex de existencias, control de almacén, compras a proveedores y alertas de reposición.",
     icon: Package,
-    tag: "Control de Costos",
+    tag: "Control de Stock",
     isComingSoon: false,
   },
   {
@@ -616,7 +616,7 @@ export default function OnboardingPage() {
                       La forma más potente de conectar con tus clientes.
                     </p>
                     <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
-                      Atención automática 24/7, sincronización directa con KDS de cocina e inventario sin intermediarios.
+                      Atención automática 24/7, sincronización directa entre canales de venta, despacho e inventario.
                     </p>
                   </div>
                 </div>
@@ -735,7 +735,7 @@ export default function OnboardingPage() {
                       </span>
                     </div>
                     <p className="text-sm font-bold text-white tracking-tight">
-                      Sincronización Total en Mostrador, Cocina y WhatsApp
+                      Sincronización Total en Mostrador, Despacho y WhatsApp
                     </p>
                     <p className="text-xs text-zinc-300 max-w-lg leading-relaxed">
                       Cada módulo se conecta directamente al inventario central y registro contable de tu negocio.
