@@ -10,8 +10,148 @@ import {
   StockMovement,
   Conversation,
 } from "./types";
+import { BusinessType, Business } from "@/context/BusinessContext";
 
-export const INITIAL_PRODUCTS: ProductItem[] = [
+export const RETAIL_PRODUCTS: ProductItem[] = [
+  {
+    id: "prod-hw-01",
+    code: "FER-001",
+    name: "Taladro Percutor DeWalt 650W VVR",
+    category: "Herramientas Eléctricas",
+    price: 280000,
+    imageUrl: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 24,
+    prepTimeMinutes: 15,
+    description: "Motor potente de 650W con velocidad variable y reversa. Mandril de 1/2 pulgada.",
+    demandTag: "Alta demanda",
+    activeOrdersCount: 2,
+    salesCount: 310,
+    popularityRank: 1,
+    rating: 4.9,
+    reviewsCount: 89,
+    modifiers: [
+      {
+        id: "mod-garantia",
+        title: "Garantía Extendida",
+        minSelect: 0,
+        maxSelect: 1,
+        options: [
+          { id: "opt-g1", name: "Garantía Fábrica 1 Año (Incluida)", priceDelta: 0, isDefault: true },
+          { id: "opt-g2", name: "Garantía Total 2 Años (+ Protección caídas)", priceDelta: 35000 },
+        ],
+      },
+      {
+        id: "mod-accesorios",
+        title: "Accesorios para Obra",
+        minSelect: 0,
+        maxSelect: 2,
+        options: [
+          { id: "opt-acc-1", name: "Kit 5 Brocas Concreto Bosch", priceDelta: 24000 },
+          { id: "opt-acc-2", name: "Guantes de Vaqueta Reforzados", priceDelta: 12000 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "prod-hw-02",
+    code: "FER-002",
+    name: "Juego de Destornilladores Stanley 6 Piezas",
+    category: "Herramientas Manuales",
+    price: 45000,
+    imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 40,
+    prepTimeMinutes: 10,
+    description: "Puntas magnéticas tratadas térmicamente para máxima durabilidad en taller y hogar.",
+    demandTag: "Más vendido",
+    activeOrdersCount: 1,
+    salesCount: 520,
+    popularityRank: 2,
+    rating: 4.8,
+    reviewsCount: 124,
+  },
+  {
+    id: "prod-hw-03",
+    code: "FER-003",
+    name: "Caja Tornillos Drywall 6x1-5/8 (1000u)",
+    category: "Fijaciones & Tornillería",
+    price: 32000,
+    imageUrl: "https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 120,
+    prepTimeMinutes: 5,
+    description: "Tornillos fosfatados negros para placas de yeso o estructura metálica liviana.",
+    demandTag: "Stock abundante",
+    activeOrdersCount: 3,
+    salesCount: 1450,
+    popularityRank: 3,
+    rating: 4.9,
+    reviewsCount: 88,
+  },
+  {
+    id: "prod-hw-04",
+    code: "FER-004",
+    name: "Esmalte Sintético Anticorrosivo 1 Galón Blanco",
+    category: "Pinturas & Químicos",
+    price: 85000,
+    imageUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 18,
+    prepTimeMinutes: 15,
+    description: "Pintura base solvente para protección de metales en intemperie y estructuras.",
+    demandTag: "Lote nuevo",
+    activeOrdersCount: 1,
+    salesCount: 180,
+    popularityRank: 4,
+    rating: 4.7,
+    reviewsCount: 42,
+  },
+  {
+    id: "prod-hw-05",
+    code: "FER-005",
+    name: "Cinta Métrica 5m / 16ft Uso Pesado",
+    category: "Medición & Trazado",
+    price: 18500,
+    imageUrl: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 65,
+    prepTimeMinutes: 5,
+    description: "Cinta de acero graduada en milímetros y pulgadas con carcasa antichoque.",
+    demandTag: "Básico",
+    activeOrdersCount: 1,
+    salesCount: 890,
+    popularityRank: 5,
+    rating: 4.8,
+    reviewsCount: 67,
+  },
+  {
+    id: "prod-hw-06",
+    code: "FER-006",
+    name: "Disco de Corte Diamantado 4.5\"",
+    category: "Abrasivos & Corte",
+    price: 22000,
+    imageUrl: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 50,
+    prepTimeMinutes: 5,
+    description: "Corte rápido y limpio en concreto, ladrillo, baldosa y mampostería.",
+    demandTag: "Consumible",
+    activeOrdersCount: 2,
+    salesCount: 640,
+    popularityRank: 6,
+    rating: 4.8,
+    reviewsCount: 53,
+  },
+];
+
+export const FOOD_PRODUCTS: ProductItem[] = [
   {
     id: "prod-01",
     code: "EMP-01",
@@ -365,7 +505,129 @@ export const INITIAL_PRODUCTS: ProductItem[] = [
   },
 ];
 
-export const INITIAL_ORDERS: Pedido[] = [
+export const RETAIL_ORDERS: Pedido[] = [
+  {
+    id: "PED-1025",
+    customerName: "Ing. Roberto Méndez",
+    customerPhone: "+57 300 552-8890",
+    channel: "presencial",
+    type: "inmediato",
+    status: "NUEVO",
+    items: [
+      { productId: "prod-hw-05", name: "Cinta Métrica 5m / 16ft Uso Pesado", quantity: 1, unitPrice: 18500 },
+    ],
+    total: 18500,
+    createdAt: "18:31",
+    estimatedMinutes: 10,
+    elapsedMinutes: 1,
+    urgency: "A_TIEMPO",
+    notes: "Retiro directo en mostrador bodega.",
+    history: [
+      { timestamp: "18:31", toStatus: "NUEVO", user: "Caja Mostrador (Lucas)" },
+    ],
+  },
+  {
+    id: "PED-1022",
+    customerName: "Ignacio Ferreyra",
+    customerPhone: "+57 320 334-9988",
+    customerAddress: "Calle 100 # 19-61, Edificio Sigma",
+    channel: "web",
+    type: "inmediato",
+    status: "CONFIRMADO",
+    items: [
+      { productId: "prod-hw-02", name: "Juego de Destornilladores Stanley 6 Piezas", quantity: 1, unitPrice: 45000 },
+      { productId: "prod-hw-05", name: "Cinta Métrica 5m / 16ft", quantity: 1, unitPrice: 18500 },
+    ],
+    total: 63500,
+    createdAt: "18:20",
+    estimatedMinutes: 30,
+    elapsedMinutes: 12,
+    urgency: "A_TIEMPO",
+    turnNumber: 14,
+    history: [
+      { timestamp: "18:20", toStatus: "NUEVO", user: "Portal Web StockFlow" },
+      { timestamp: "18:21", fromStatus: "NUEVO", toStatus: "CONFIRMADO", user: "Sistema", ruleName: "Regla Conf. Automática #1" },
+    ],
+  },
+  {
+    id: "PED-1020",
+    customerName: "Tech Solutions S.A.S. (Obra Torre Norte)",
+    customerPhone: "+57 301 555-4321",
+    customerAddress: "Av. El Dorado # 68C-61",
+    channel: "whatsapp",
+    type: "inmediato",
+    status: "EN_PREPARACION",
+    items: [
+      { productId: "prod-hw-04", name: "Esmalte Sintético Anticorrosivo 1 Galón Blanco", quantity: 3, unitPrice: 85000 },
+      { productId: "prod-hw-03", name: "Caja Tornillos Drywall 6x1-5/8 (1000u)", quantity: 5, unitPrice: 32000 },
+    ],
+    total: 415000,
+    createdAt: "18:15",
+    estimatedMinutes: 25,
+    elapsedMinutes: 22,
+    urgency: "PROXIMO",
+    turnNumber: 12,
+    notes: "Factura Electrónica requerida. Despacho en furgón.",
+    history: [
+      { timestamp: "18:15", toStatus: "NUEVO", user: "WhatsApp Bot" },
+      { timestamp: "18:16", fromStatus: "NUEVO", toStatus: "CONFIRMADO", user: "Operador" },
+      { timestamp: "18:18", fromStatus: "CONFIRMADO", toStatus: "EN_PREPARACION", user: "Bodega Picking" },
+    ],
+  },
+  {
+    id: "PED-1024",
+    customerName: "Mariana Silva",
+    customerPhone: "+57 312 948-1102",
+    customerAddress: "Carrera 7 # 116-50, Apto 402",
+    channel: "whatsapp",
+    type: "inmediato",
+    status: "EN_PREPARACION",
+    items: [
+      { productId: "prod-hw-01", name: "Taladro Percutor DeWalt 650W", quantity: 1, unitPrice: 280000, option: "Kit 5 Brocas Bosch" },
+      { productId: "prod-hw-06", name: "Disco de Corte Diamantado 4.5\"", quantity: 2, unitPrice: 22000 },
+    ],
+    total: 324000,
+    createdAt: "18:00",
+    estimatedMinutes: 20,
+    elapsedMinutes: 26,
+    urgency: "RETRASADO",
+    turnNumber: 9,
+    notes: "Empacar en caja sellada con precinto de seguridad.",
+    history: [
+      { timestamp: "18:00", toStatus: "NUEVO", user: "WhatsApp Bot" },
+      { timestamp: "18:02", fromStatus: "NUEVO", toStatus: "CONFIRMADO", user: "Operador" },
+      { timestamp: "18:05", fromStatus: "CONFIRMADO", toStatus: "EN_PREPARACION", user: "Bodega Central" },
+    ],
+  },
+  {
+    id: "PED-1021",
+    customerName: "Carlos Méndez",
+    customerPhone: "+57 310 987-6543",
+    customerAddress: "Carrera 15 # 85-30, Piso 3",
+    channel: "whatsapp",
+    type: "inmediato",
+    status: "LISTO",
+    items: [
+      { productId: "prod-hw-01", name: "Taladro Percutor DeWalt 650W", quantity: 1, unitPrice: 280000 },
+      { productId: "prod-hw-03", name: "Caja Tornillos Drywall 6x1-5/8 (1000u)", quantity: 1, unitPrice: 32000 },
+    ],
+    total: 312000,
+    createdAt: "17:45",
+    estimatedMinutes: 20,
+    elapsedMinutes: 21,
+    urgency: "A_TIEMPO",
+    turnNumber: 8,
+    notes: "Comprobante Nequi verificado. Listo para entrega en mensajería.",
+    history: [
+      { timestamp: "17:45", toStatus: "NUEVO", user: "WhatsApp Bot" },
+      { timestamp: "17:48", fromStatus: "NUEVO", toStatus: "CONFIRMADO", user: "Admin Pagos" },
+      { timestamp: "17:50", fromStatus: "CONFIRMADO", toStatus: "EN_PREPARACION", user: "Bodega Picking" },
+      { timestamp: "18:06", fromStatus: "EN_PREPARACION", toStatus: "LISTO", user: "Encargado Despacho" },
+    ],
+  },
+];
+
+export const FOOD_ORDERS: Pedido[] = [
   {
     id: "PED-1024",
     customerName: "Mariana Silva",
@@ -1078,7 +1340,159 @@ export const INITIAL_MOVEMENTS: StockMovement[] = [
 // Cada caso cubre un estado / motivo distinto para que el demo muestre el ciclo
 // completo: IA atendiendo → requiere intervención → humano → resuelto → IA.
 // ============================================================================
-export const INITIAL_CONVERSATIONS: Conversation[] = [
+export const RETAIL_CONVERSATIONS: Conversation[] = [
+  // 1) Comprobante de Pago Nequi por ferretería
+  {
+    id: "CONV-01",
+    customerName: "Carlos Méndez",
+    customerPhone: "+57 310 987-6543",
+    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "VERIFICAR_PAGO_TRANSFERENCIA",
+    aiConfidence: "Alta",
+    orderId: "PED-1021",
+    lastMessageAt: "20:16",
+    unreadForOperator: true,
+    messages: [
+      {
+        id: "m1",
+        sender: "cliente",
+        text: "¡Hola! Buenas tardes. Necesito un taladro percutor de 650W y una caja de tornillos drywall de 1 pulgada para enviar a Carrera 15 # 85-30 en Bogotá.",
+        timestamp: "20:10",
+      },
+      {
+        id: "m2",
+        sender: "ia",
+        text: "¡Hola mi niño! Bienvenido a Ferretería La Tuerca 🔩 Con gusto te ayudo. Te confirmo la disponibilidad:\n• 1× Taladro Percutor 650W Profesional ($280.000)\n• 1× Caja Tornillos Drywall 6x1-5/8 (1000u) ($32.000)\n\nSubtotal: $312.000 COP (Envío asegurado incluido).\n¿Deseas pagar por Nequi o Bancolombia?",
+        timestamp: "20:11",
+      },
+      {
+        id: "m3",
+        sender: "cliente",
+        text: "Por Nequi por favor. Pásame el número para transferir ya mismo.",
+        timestamp: "20:13",
+      },
+      {
+        id: "m4",
+        sender: "ia",
+        text: "¡Excelente! Pre-orden generada #PED-1021.\n\n**Datos de Pago Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Ferretería La Tuerca S.A.S.\n• **Total:** $312.000 COP\n\nPor favor envía la captura del comprobante aquí.",
+        timestamp: "20:14",
+      },
+      {
+        id: "m5",
+        sender: "cliente",
+        text: "Listo! Ya les transferí los $312.000 desde mi Nequi. Acá les adjunto la captura de pantalla con el número de aprobación.",
+        timestamp: "20:16",
+        attachmentUrl: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80",
+        attachmentType: "comprobante",
+        attachmentMeta: {
+          bank: "Nequi",
+          amount: 312000,
+          reference: "NQ-8941208B",
+          status: "PENDIENTE_VERIFICACION",
+        },
+      },
+      {
+        id: "m6",
+        sender: "ia",
+        text: "He recibido tu comprobante de Nequi por $312.000 (Ref: #NQ-8941208B).\n\n*Por seguridad bancaria, un Administrador está validando la acreditación en cuenta bancaria para autorizar el embalaje y despacho inmediato en bodega.*",
+        timestamp: "20:16",
+      },
+    ],
+    handoffHistory: [
+      { timestamp: "20:16", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Comprobante Nequi adjunto: requiere validación de fondos en app bancaria por parte de un humano." },
+    ],
+  },
+  {
+    id: "CONV-02",
+    customerName: "Tech Solutions (Federico)",
+    customerPhone: "+57 301 555-4321",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "AMBIGUO",
+    aiConfidence: "Media",
+    orderId: "PED-1020",
+    lastMessageAt: "18:24",
+    unreadForOperator: true,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Buenas tardes, necesitamos 3 galones de esmalte blanco anticorrosivo y 5 cajas de tornillos drywall para obra mañana a primera hora. ¿Emiten Factura Electrónica a Tech Solutions S.A.S NIT 901.234.567-8?", timestamp: "18:20" },
+      { id: "m2", sender: "ia", text: "¡Hola Federico! Sí, emitimos Factura Electrónica DIAN y coordinamos despachos de materiales pesados. El total por los 3 galones y 5 cajas de tornillos es de $415.000 COP con flete bonificado.", timestamp: "18:21" },
+      { id: "m3", sender: "cliente", text: "Perfecto. Si me confirman la factura con el NIT les transfiero ya mismo por Bancolombia.", timestamp: "18:24" },
+    ],
+    handoffHistory: [
+      { timestamp: "18:24", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Pedido corporativo de obra: requiere validar NIT y emisión de Factura Electrónica." },
+    ],
+  },
+  {
+    id: "CONV-03",
+    customerName: "Lucía Paredes",
+    customerPhone: "+57 318 889-0011",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "REQUIERE_INTERVENCION",
+    controlledBy: null,
+    requiresHandoffReason: "CLIENTE_PIDE_HUMANO",
+    aiConfidence: "Media",
+    lastMessageAt: "19:08",
+    unreadForOperator: true,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola! Hice un pedido por la web hace 10 minutos (#PED-1022) pero me equivoqué de dirección de entrega. Puse Calle 100 # 19-61 y es Carrera 19 # 100-21 Oficina 402.", timestamp: "19:05" },
+      { id: "m2", sender: "ia", text: "¡Hola Lucía! He ubicado tu pedido #PED-1022 en bodega. Para modificar los datos de entrega de una orden en preparación, transfiero de inmediato tu solicitud al operador.", timestamp: "19:06" },
+      { id: "m3", sender: "cliente", text: "Por favor que no despachen al transportador a la dirección vieja, gracias!", timestamp: "19:08" },
+    ],
+    handoffHistory: [
+      { timestamp: "19:06", toStatus: "REQUIERE_INTERVENCION", user: "Asistente IA", note: "Cambio de dirección en despacho activo." },
+    ],
+  },
+  {
+    id: "CONV-05",
+    customerName: "Mariana Silva",
+    customerPhone: "+57 312 948-1102",
+    avatarUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "IA_ATENDIENDO",
+    controlledBy: null,
+    aiConfidence: "Alta",
+    orderId: "PED-1024",
+    lastMessageAt: "18:28",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola! Tienen disponible un taladro percutor de 650W y discos de corte diamantado?", timestamp: "18:26" },
+      { id: "m2", sender: "ia", text: "¡Hola Mariana! Sí, contamos con stock inmediato:\n• 1× Taladro Percutor DeWalt 650W — $280.000\n• 2× Disco de Corte Diamantado 4.5\" — $44.000\n\nTotal: $324.000 COP\nDirección registrada: Carrera 7 # 116-50, Apto 402\n¿Deseas confirmar la orden para empaque y despacho inmediato?", timestamp: "18:27" },
+      { id: "m3", sender: "cliente", text: "Sí, confirmo! Empáquenlo bien por favor.", timestamp: "18:28" },
+      { id: "m4", sender: "ia", text: "¡Perfecto! Hemos generado tu orden #PED-1024 y ya está en cola de bodega para picking y embalaje. Tiempo estimado: 25 min.", timestamp: "18:28" },
+    ],
+    handoffHistory: [],
+  },
+  {
+    id: "CONV-06",
+    customerName: "Ignacio Ferreyra",
+    customerPhone: "+57 320 334-9988",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+    channel: "whatsapp",
+    status: "RESUELTO",
+    controlledBy: null,
+    aiConfidence: "Alta",
+    orderId: "PED-1022",
+    lastMessageAt: "17:40",
+    unreadForOperator: false,
+    messages: [
+      { id: "m1", sender: "cliente", text: "Hola, ¿el juego de destornilladores Stanley tiene garantía de por vida?", timestamp: "17:30" },
+      { id: "m2", sender: "ia", text: "¡Hola Ignacio! Sí, la línea profesional Stanley cuenta con garantía directa de fábrica contra defectos de manufactura.", timestamp: "17:31" },
+      { id: "m3", sender: "cliente", text: "Excelente, ya lo compro por la web para retirar en punto físico.", timestamp: "17:35" },
+      { id: "m4", sender: "ia", text: "¡Te esperamos! Tu orden quedará lista para retiro en mostrador.", timestamp: "17:36" },
+    ],
+    handoffHistory: [
+      { timestamp: "17:40", toStatus: "RESUELTO", user: "Asistente IA", note: "Consulta técnica completada." },
+    ],
+  },
+];
+
+export const FOOD_CONVERSATIONS: Conversation[] = [
   // 1) Conversación detallada con Comprobante de Pago Nequi / Transferencia (Requiere validación humana)
   {
     id: "CONV-01",
@@ -1257,3 +1671,35 @@ export const INITIAL_CONVERSATIONS: Conversation[] = [
     ],
   },
 ];
+
+// ============================================================================
+// Factory Helpers per Business Archetype
+// Permite que el sistema adapte catálogo, órdenes en vivo e hilos de WhatsApp
+// dinámicamente según el negocio activo seleccionado (Ferretería, Restaurante, etc.)
+// ============================================================================
+export function getMockProductsForBusiness(businessType?: BusinessType, _businessName?: string): ProductItem[] {
+  if (businessType === "food_restaurant" || businessType === "food_store") {
+    return FOOD_PRODUCTS;
+  }
+  return RETAIL_PRODUCTS;
+}
+
+export function getMockOrdersForBusiness(businessType?: BusinessType, _businessName?: string): Pedido[] {
+  if (businessType === "food_restaurant" || businessType === "food_store") {
+    return FOOD_ORDERS;
+  }
+  return RETAIL_ORDERS;
+}
+
+export function getMockConversationsForBusiness(business?: Business | null): Conversation[] {
+  const type = business?.businessType || "retail_store";
+  if (type === "food_restaurant" || type === "food_store") {
+    return FOOD_CONVERSATIONS;
+  }
+  return RETAIL_CONVERSATIONS;
+}
+
+export const INITIAL_PRODUCTS: ProductItem[] = RETAIL_PRODUCTS;
+export const INITIAL_ORDERS: Pedido[] = RETAIL_ORDERS;
+export const INITIAL_CONVERSATIONS: Conversation[] = RETAIL_CONVERSATIONS;
+

@@ -31,7 +31,11 @@ import {
   INITIAL_INGREDIENTS,
   INITIAL_MOVEMENTS,
   INITIAL_CONVERSATIONS,
+  getMockProductsForBusiness,
+  getMockOrdersForBusiness,
+  getMockConversationsForBusiness,
 } from "../mockData";
+import { useBusiness } from "@/context/BusinessContext";
 import { playNewOrderSound, playSuccessSound, playUrgentAlertSound } from "../utils/soundEffects";
 import { useAuth } from "../../../auth/AuthContext";
 import {
@@ -143,12 +147,17 @@ const PedidosContext = createContext<PedidosContextType | null>(null);
 
 export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { getIdToken, user } = useAuth();
-  const [orders, setOrders] = useState<Pedido[]>(INITIAL_ORDERS);
+  const { activeBusiness, semantics } = useBusiness();
+  const [orders, setOrders] = useState<Pedido[]>(() =>
+    activeBusiness ? getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name) : INITIAL_ORDERS
+  );
   const [historialOrders, setHistorialOrders] = useState<Pedido[]>(INITIAL_HISTORIAL_ORDERS);
   const [programados, setProgramados] = useState<Pedido[]>(INITIAL_PROGRAMADOS);
 
   const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<ProductItem[]>(() =>
+    activeBusiness ? getMockProductsForBusiness(activeBusiness.businessType, activeBusiness.name) : INITIAL_PRODUCTS
+  );
   const [ingredients, setIngredients] = useState<StockIngredientItem[]>(INITIAL_INGREDIENTS);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(INITIAL_MOVEMENTS);
   const [automations, setAutomations] = useState<AutomationRule[]>(INITIAL_AUTOMATIONS);
@@ -157,8 +166,23 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [storePace, setStorePaceState] = useState<StorePaceMode>("habitual");
   const [incidencias, setIncidencias] = useState<Incidencia[]>(INITIAL_INCIDENCIAS);
   const [kpis, setKpis] = useState<ResumenKPIs>(INITIAL_KPIS);
-  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
+  const [conversations, setConversations] = useState<Conversation[]>(() =>
+    activeBusiness ? getMockConversationsForBusiness(activeBusiness) : INITIAL_CONVERSATIONS
+  );
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+
+  // Sincronización reactiva del catálogo, órdenes y conversaciones al cambiar de empresa
+  useEffect(() => {
+    if (!activeBusiness) return;
+    const newProducts = getMockProductsForBusiness(activeBusiness.businessType, activeBusiness.name);
+    const newOrders = getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name);
+    const newConversations = getMockConversationsForBusiness(activeBusiness);
+
+    setProducts(newProducts);
+    setOrders(newOrders);
+    setConversations(newConversations);
+    setSelectedConversationId(newConversations[0]?.id ?? null);
+  }, [activeBusiness?.id]);
 
   // Nombre legible del operador actual. En el mockup, si no hay sesión Cognito
   // con nombre usable, se cae a un rol genérico consistente con las acciones de pedido.
@@ -1258,7 +1282,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 {
                   id: `m-${Date.now()}`,
                   sender: "ia",
-                  text: `¡Perfecto! Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n**Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** Necto Gourmet S.A.S.\n• **Total:** $${currentDraft.total.toLocaleString("es-CO")} COP\n\nPor favor envíanos la captura de tu comprobante por aquí para validar el pago y enviar tu pedido a cocina.`,
+                  text: `¡Perfecto! Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n**Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** ${activeBusiness?.name || "StockFlow"} S.A.S.\n• **Total:** $${currentDraft.total.toLocaleString("es-CO")} COP\n\nPor favor envíanos la captura de tu comprobante por aquí para validar el pago y enviar tu ${semantics?.orderNoun?.toLowerCase() || "orden"} a ${semantics?.stationNoun?.toLowerCase() || "despacho"}.`,
                   timestamp: replyTime,
                 },
               ],
@@ -1266,34 +1290,62 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           });
         }
 
-        // CASO 4: Pedido nuevo o solicitud de comida (Construye el borrador en el chat)
+        const isFood = activeBusiness?.businessType === "food_restaurant" || activeBusiness?.businessType === "food_store";
+        const botGreeting = activeBusiness?.botConfig?.greeting || `¡Hola ${customerName}! Bienvenido a ${activeBusiness?.name || "nuestra tienda"}.`;
+
+        // CASO 4: Pedido nuevo o solicitud de cotización/orden (Construye el borrador en el chat)
         const isOrderRequest =
           options?.isOrder ||
           lower.includes("quiero") ||
           lower.includes("pedir") ||
+          lower.includes("comprar") ||
+          lower.includes("taladro") ||
+          lower.includes("tornillo") ||
+          lower.includes("herramienta") ||
+          lower.includes("pintura") ||
           lower.includes("empanada") ||
           lower.includes("combo") ||
           lower.includes("docena") ||
-          lower.includes("hambre") ||
           lower.includes("ordenar");
 
         if (isOrderRequest) {
-          const initialItems = [
-            {
-              productId: "prod-01",
-              name: "Empanada de Carne Cortada a Cuchillo",
-              quantity: 6,
-              unitPrice: 5500,
-              option: "Horneada",
-            },
-            {
-              productId: "prod-07",
-              name: "Gaseosa Cola 354ml",
-              quantity: 2,
-              unitPrice: 4500,
-            },
-          ];
-          const subtotal = 42000;
+          const initialItems = isFood
+            ? [
+                {
+                  productId: "prod-01",
+                  name: "Empanada de Carne Cortada a Cuchillo",
+                  quantity: 6,
+                  unitPrice: 5500,
+                  option: "Horneada",
+                },
+                {
+                  productId: "prod-07",
+                  name: "Gaseosa Cola 354ml",
+                  quantity: 2,
+                  unitPrice: 4500,
+                },
+              ]
+            : [
+                {
+                  productId: products[0]?.id || "prod-hw-01",
+                  name: products[0]?.name || "Taladro Percutor DeWalt 650W VVR",
+                  quantity: 1,
+                  unitPrice: products[0]?.price || 280000,
+                  option: "Garantía Fábrica 1 Año",
+                },
+                {
+                  productId: products[2]?.id || "prod-hw-03",
+                  name: products[2]?.name || "Caja Tornillos Drywall 6x1-5/8 (1000u)",
+                  quantity: 1,
+                  unitPrice: products[2]?.price || 32000,
+                },
+              ];
+
+          const subtotal = initialItems.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0);
+
+          const orderReplyText = isFood
+            ? `¡Hola ${customerName}! Te armé el borrador de tu pedido:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa o confirmamos la dirección de entrega?`
+            : `¡Hola ${customerName}! Te armé la cotización y borrador de tu orden en ${activeBusiness?.name || "Ferretería La Tuerca"}:\n\n${initialItems.map(i => `• ${i.quantity}× ${i.name} ($${i.unitPrice.toLocaleString("es-CO")})`).join("\n")}\n• Subtotal: $${subtotal.toLocaleString("es-CO")} COP\n\n¿Deseas agregar algún accesorio para obra (brocas, guantes) o confirmamos los datos para despacho express?`;
 
           return currentConvs.map(c =>
             c.id === conversationId
@@ -1312,7 +1364,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Hola ${customerName}! Te armé el borrador de tu pedido:\n\n• 6x Empanada de Carne a Cuchillo (Horneadas)\n• 2x Gaseosa Cola 354ml frías\n• Subtotal: $42.000 COP\n\n¿Te gustaría agregar alguna salsa especial de la casa (Chimichurri o Criolla por $3.500) o confirmamos la dirección de entrega?`,
+                      text: orderReplyText,
                       timestamp: replyTime,
                     },
                   ],
@@ -1355,7 +1407,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // 5b. Reclamos, pedidos demorados o incidencias de calidad
+        // 5b. Reclamos, pedidos demorados o incidencias
         if (
           lower.includes("reclamo") ||
           lower.includes("queja") ||
@@ -1366,7 +1418,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("llegó frío") ||
           lower.includes("llegó mal") ||
           lower.includes("incompleto") ||
-          lower.includes("pedido equivocado")
+          lower.includes("pedido equivocado") ||
+          lower.includes("pieza equivocada")
         ) {
           if (isSoundEnabled) playUrgentAlertSound();
           return currentConvs.map(c =>
@@ -1399,7 +1452,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("50 personas") ||
           lower.includes("evento") ||
           lower.includes("factura electrónica") ||
-          lower.includes("rut")
+          lower.includes("rut") ||
+          lower.includes("obra") ||
+          lower.includes("mayorista")
         ) {
           if (isSoundEnabled) playUrgentAlertSound();
           return currentConvs.map(c =>
@@ -1415,7 +1470,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `Para solicitudes especiales o corporativas (${lower.includes("factura") ? "Facturación Electrónica" : "Personalización de Comanda"}), he derivado tu consulta al Administrador para cotizar y validar directamente con cocina.`,
+                      text: `Para solicitudes especiales o corporativas (${lower.includes("factura") ? "Facturación Electrónica DIAN" : "Cotización Especial de Volumen"}), he derivado tu consulta al Administrador para cotizar y validar directamente con ${semantics?.stationNoun?.toLowerCase() || "operaciones"}.`,
                       timestamp: replyTime,
                     },
                   ],
@@ -1424,16 +1479,24 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // CASO 6: Preguntas sobre Alérgenos, Tiempos o Carta
+        // CASO 6: Preguntas sobre Alérgenos, Tiempos, Garantías o Catálogo
         if (
           lower.includes("alergia") ||
           lower.includes("alérgeno") ||
+          lower.includes("garantia") ||
+          lower.includes("garantía") ||
+          lower.includes("ficha") ||
+          lower.includes("calidad") ||
+          lower.includes("especificación") ||
           lower.includes("cebolla") ||
           lower.includes("queso") ||
           lower.includes("celiaquia") ||
-          lower.includes("gluten") ||
-          lower.includes("tacc")
+          lower.includes("gluten")
         ) {
+          const specReply = isFood
+            ? `¡Muy buena pregunta, ${customerName}!\n\nNuestras opciones contienen ingredientes frescos. Si tienes intolerancia a los lácteos o celiaquía estricta, avísanos para activar el protocolo de preparación en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`
+            : `¡Muy buena pregunta, ${customerName}!\n\nEn ${activeBusiness?.name || "nuestra tienda"}, todos los productos y materiales cuentan con **garantía oficial de fabricante**, ficha técnica y certificación de calidad. Si requieres ficha técnica en PDF o especificación para obra civil, nuestro equipo te la suministra de inmediato. ¿Deseas consultar sobre algún material en particular?`;
+
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
@@ -1445,7 +1508,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `¡Muy buena pregunta, ${customerName}!\n\nNuestras empanadas de carne a cuchillo y pollo al verdeo contienen cebolla salteada y masa de trigo tradicional. Si tienes intolerancia a los lácteos, te recomendamos las de carne o espinaca. Para celiaquía estricta, avísanos para activar el protocolo de horneado en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`,
+                      text: specReply,
                       timestamp: replyTime,
                     },
                   ],
@@ -1461,6 +1524,10 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           lower.includes("demora") ||
           lower.includes("hora")
         ) {
+          const timeReply = isFood
+            ? `Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en cocción + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`
+            : `Nuestro tiempo promedio de entrega es de **30 a 45 minutos** (preparación y embalaje en bodega + despacho express urbano con guía de seguimiento). Si confirmas tu orden antes de las 5:00 PM, sale en la ruta de hoy. ¿Te gustaría ordenar?`;
+
           return currentConvs.map(c =>
             c.id === conversationId
               ? {
@@ -1472,7 +1539,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     {
                       id: `m-${Date.now()}`,
                       sender: "ia",
-                      text: `Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en horno de piedra + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`,
+                      text: timeReply,
                       timestamp: replyTime,
                     },
                   ],
@@ -1481,7 +1548,12 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           );
         }
 
-        // CASO 6: Respuesta general conversacional
+        // CASO 7: Respuesta general conversacional adaptada al tipo de negocio
+        const categories = activeBusiness?.botConfig?.catalogCategories || ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Adhesivos"];
+        const generalReply = isFood
+          ? `¡Hola ${customerName}! Con gusto te atiendo. Estamos en turno con nuestro menú gastronómico, bebidas y combos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`
+          : `${botGreeting}\n\nTenemos catálogo activo con stock disponible en:\n${categories.map(cat => `• ${cat}`).join("\n")}\n\n¿Deseas cotizar algún producto o consultar stock en bodega?`;
+
         return currentConvs.map(c =>
           c.id === conversationId
             ? {
@@ -1493,7 +1565,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
                   {
                     id: `m-${Date.now()}`,
                     sender: "ia",
-                    text: `¡Hola ${customerName}! Con gusto te atiendo. Estamos en turno de despacho con nuestro menú de empanadas gourmet, bebidas y combos ejecutivos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`,
+                    text: generalReply,
                     timestamp: replyTime,
                   },
                 ],
@@ -1566,7 +1638,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           {
             id: `m-init-2`,
             sender: "ia",
-            text: `¡Hola ${relatedOrder.customerName}! Registrado con gusto:\n${relatedOrder.items.map(i => `• ${i.quantity}× ${i.name} ${i.option ? `(${i.option})` : ""}`).join("\n")}\n\nTotal: $${relatedOrder.total.toLocaleString("es-CO")} COP\n${relatedOrder.customerAddress ? `Dirección: ${relatedOrder.customerAddress}\n` : ""}Tu comanda #${relatedOrder.id} está registrada en el sistema.`,
+            text: `¡Hola ${relatedOrder.customerName}! Registrado con gusto:\n${relatedOrder.items.map(i => `• ${i.quantity}× ${i.name} ${i.option ? `(${i.option})` : ""}`).join("\n")}\n\nTotal: $${relatedOrder.total.toLocaleString("es-CO")} COP\n${relatedOrder.customerAddress ? `Dirección: ${relatedOrder.customerAddress}\n` : ""}Tu ${semantics?.orderNoun?.toLowerCase() || "orden"} #${relatedOrder.id} está registrada en el sistema.`,
             timestamp: relatedOrder.createdAt || "18:29",
           },
         ],

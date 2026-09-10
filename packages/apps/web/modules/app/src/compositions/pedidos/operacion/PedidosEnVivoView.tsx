@@ -55,7 +55,7 @@ export const PedidosEnVivoView: React.FC<{
     transitionOrder,
     openWhatsAppConversation,
   } = usePedidos();
-  const { activeBusiness } = useBusiness();
+  const { activeBusiness, semantics } = useBusiness();
 
   // Layout Preferences with localStorage persistence
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {
@@ -234,23 +234,23 @@ export const PedidosEnVivoView: React.FC<{
       badgeStyle: "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20",
     },
     EN_PREPARACION: {
-      title: "En Cocina / Preparación",
-      description: "En línea de cocción KDS",
-      icon: ChefHat,
+      title: semantics.requiresKitchenDisplay ? "En Cocina / Preparación" : "En Picking & Preparación",
+      description: semantics.requiresKitchenDisplay ? "En línea de cocción KDS" : "Preparación en bodega / empaque",
+      icon: semantics.requiresKitchenDisplay ? ChefHat : Package,
       iconBg: "bg-[#FF3F1A]/10 dark:bg-[#FF3F1A]/20",
       iconColor: "text-[#FF3F1A]",
       badgeStyle: "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/20",
     },
     LISTO: {
-      title: "Listos para Entrega",
-      description: "En mostrador o pase",
+      title: semantics.readyVerb || "Listos para Entrega",
+      description: semantics.requiresKitchenDisplay ? "En mostrador o pase" : "Listo para retiro o despacho",
       icon: Package,
       iconBg: "bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15",
       iconColor: "text-[#190088] dark:text-[#97D6DF]",
       badgeStyle: "bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border-[#97D6DF]/40",
     },
     FINALIZADO: {
-      title: "Entregados Hoy",
+      title: semantics.deliveredVerb || "Entregados Hoy",
       description: "Completados con éxito",
       icon: CheckCheck,
       iconBg: "bg-[#ECECEC] dark:bg-zinc-800",
@@ -636,7 +636,7 @@ export const PedidosEnVivoView: React.FC<{
                           className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 transition-all cursor-grab active:cursor-grabbing hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-theme-xs space-y-2 group select-none ${
                             isDragging ? "opacity-30 scale-95 border-dashed border-brand-500" : ""
                           }`}
-                          title="Haz clic para abrir comanda o arrastra para mover de etapa"
+                          title={`Haz clic para abrir ${semantics.orderNoun.toLowerCase()} o arrastra para mover de etapa`}
                         >
                           {/* Top Row: Jira-style ID + Channel Badge + Total */}
                           <div className="flex items-center justify-between gap-1.5">
@@ -745,7 +745,7 @@ export const PedidosEnVivoView: React.FC<{
             </span>
             <span className="text-[11px] text-zinc-400 items-center gap-1 hidden sm:flex">
               <Info className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Haz clic en cualquier tarjeta para abrir la comanda completa</span>
+              <span>Haz clic en cualquier tarjeta para abrir el {semantics.orderNoun.toLowerCase()} completo</span>
             </span>
           </div>
 
@@ -808,8 +808,12 @@ export const PedidosEnVivoView: React.FC<{
                         }}
                         className="py-1 px-2.5 text-xs font-bold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
                       >
-                        <ChefHat className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        <span>Pasar a Cocina</span>
+                        {semantics.requiresKitchenDisplay ? (
+                          <ChefHat className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        ) : (
+                          <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        )}
+                        <span>{semantics.requiresKitchenDisplay ? "Pasar a Cocina" : `Pasar a ${semantics.stationShortName}`}</span>
                       </Button>
                     </div>
                   </div>
@@ -988,10 +992,10 @@ export const PedidosEnVivoView: React.FC<{
               </div>
 
               <Textarea
-                label="Observaciones / Alergias"
+                label={semantics.requiresKitchenDisplay ? "Observaciones / Alergias" : "Observaciones / Especificaciones de Despacho"}
                 intent="pedidos.manual.notes"
                 rows={2}
-                placeholder="Ej. Sin cebolla, empaque térmico..."
+                placeholder={semantics.requiresKitchenDisplay ? "Ej. Sin cebolla, empaque térmico..." : "Ej. Empaque sellado, orden de compra, color/medida..."}
                 value={manualNotes}
                 onChange={e => setManualNotes(e.target.value)}
               />

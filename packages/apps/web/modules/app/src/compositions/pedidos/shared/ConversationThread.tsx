@@ -22,6 +22,7 @@ import {
   ShoppingBag,
   CreditCard,
   ChefHat,
+  Package,
   Bike,
   Sparkles,
   Plus,
@@ -30,6 +31,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Button } from "@/elements";
+import { useBusiness } from "@/context/BusinessContext";
 
 export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ conversation }) => {
   const {
@@ -41,6 +43,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
     confirmOrder,
     confirmDraftOrder,
   } = usePedidos();
+  const { semantics } = useBusiness();
   const [draft, setDraft] = useState("");
   const [customerDraft, setCustomerDraft] = useState("");
   const [simCategory, setSimCategory] = useState<"flujo" | "hitl" | "faq">("flujo");
@@ -331,10 +334,26 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
             Plantillas:
           </span>
           {[
-            { icon: <ChefHat className="w-3.5 h-3.5" />, label: "En Preparación", text: "¡Hola! Tu comanda ya ingresó a cocina y nuestro equipo la está preparando con el mayor cuidado." },
-            { icon: <CreditCard className="w-3.5 h-3.5" />, label: "Solicitar Comprobante", text: "Hola, por favor compártenos el comprobante bancario para validar la acreditación de tu pago." },
-            { icon: <Bike className="w-3.5 h-3.5" />, label: "En Camino", text: "¡Tu pedido va en camino con nuestro repartidor! Te avisaremos apenas esté en tu puerta." },
-            { icon: <Sparkles className="w-3.5 h-3.5" />, label: "Agradecimiento", text: "¡Muchas gracias por elegirnos! Esperamos que disfrutes tu pedido. Cualquier duda quedamos a tu orden." },
+            {
+              icon: semantics.requiresKitchenDisplay ? <ChefHat className="w-3.5 h-3.5" /> : <Package className="w-3.5 h-3.5" />,
+              label: semantics.preparationVerb,
+              text: `¡Hola! Tu ${semantics.orderNoun.toLowerCase()} ya ingresó a ${semantics.stationNoun.toLowerCase()} y nuestro equipo lo está procesando con el mayor cuidado.`,
+            },
+            {
+              icon: <CreditCard className="w-3.5 h-3.5" />,
+              label: "Solicitar Comprobante",
+              text: "Hola, por favor compártenos el comprobante bancario para validar la acreditación de tu pago y autorizar el despacho.",
+            },
+            {
+              icon: <Bike className="w-3.5 h-3.5" />,
+              label: "En Camino",
+              text: `¡Tu ${semantics.orderNoun.toLowerCase()} va en camino con nuestro servicio de entrega! Te avisaremos apenas esté en tu dirección.`,
+            },
+            {
+              icon: <Sparkles className="w-3.5 h-3.5" />,
+              label: "Agradecimiento",
+              text: "¡Muchas gracias por elegirnos! Esperamos que disfrutes tu compra. Cualquier consulta quedamos a tu entera disposición.",
+            },
           ].map(tpl => (
             <button
               key={tpl.label}

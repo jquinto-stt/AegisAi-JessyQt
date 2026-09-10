@@ -4,19 +4,22 @@ import { Pedido, UrgencyLevel, OperacionTab } from "../types";
 import { Button, Badge } from "@/elements";
 import {
   ChefHat,
+  Package,
   CheckCircle2,
   Minus,
   Plus,
   Check,
   Printer,
 } from "lucide-react";
+import { useBusiness } from "@/context/BusinessContext";
 
 export const PreparacionTiemposView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
 }> = () => {
   const { orders, markOrderReady, adjustEstimate, shiftInfo, setSelectedOrderId, setPrintTicketOrder } = usePedidos();
+  const { semantics } = useBusiness();
 
-  const [stationFilter, setStationFilter] = useState<"TODAS" | "Horno" | "Armado" | "Empaque">("TODAS");
+  const [stationFilter, setStationFilter] = useState<string>("TODAS");
   const [checkedItems, setCheckedItems] = useState<Record<string, Set<number>>>({});
   const [readyToast, setReadyToast] = useState<string | null>(null);
 
@@ -71,7 +74,7 @@ export const PreparacionTiemposView: React.FC<{
               {title}
             </h3>
             <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] border border-zinc-200 dark:border-zinc-700">
-              {list.length} {list.length === 1 ? "comanda" : "comandas"}
+              {list.length} {list.length === 1 ? semantics.orderNoun.toLowerCase() : semantics.orderNounPlural.toLowerCase()}
             </span>
           </div>
           <span className="text-xs text-zinc-400 font-medium">{subdesc}</span>
@@ -79,7 +82,7 @@ export const PreparacionTiemposView: React.FC<{
 
         {list.length === 0 ? (
           <div className="p-8 text-center text-xs text-zinc-400 font-medium rounded-2xl bg-[#ECECEC]/30 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/60">
-            Sin comandas en esta categoría de tiempo.
+            Sin {semantics.orderNounPlural.toLowerCase()} en esta categoría de tiempo.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -283,12 +286,16 @@ export const PreparacionTiemposView: React.FC<{
         <div className="space-y-3">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-2xl bg-[#190088] text-white flex items-center justify-center shadow-xs">
-              <ChefHat className="w-5 h-5" />
+              {semantics.requiresKitchenDisplay ? (
+                <ChefHat className="w-5 h-5" />
+              ) : (
+                <Package className="w-5 h-5" />
+              )}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-[#212121] dark:text-[#ECECEC] tracking-tight">
-                  KDS Cocina & Estaciones
+                  {semantics.stationNoun}
                 </h2>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/40 flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#190088] dark:bg-[#97D6DF] animate-pulse" />
@@ -296,14 +303,17 @@ export const PreparacionTiemposView: React.FC<{
                 </span>
               </div>
               <p className="text-xs text-zinc-400 font-medium">
-                Comandas en preparación activa sincronizadas con las Órdenes
+                {semantics.orderNounPlural} en preparación activa sincronizadas con las Órdenes
               </p>
             </div>
           </div>
 
           {/* Station Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            {(["TODAS", "Horno", "Armado", "Empaque"] as const).map(st => (
+            {(semantics.requiresKitchenDisplay
+              ? (["TODAS", "Horno", "Armado", "Empaque"] as const)
+              : (["TODAS", "Bodega", "Picking", "Control Calidad", "Empaque"] as const)
+            ).map(st => (
               <Button
                 key={st}
                 variant="ghost"
@@ -323,10 +333,10 @@ export const PreparacionTiemposView: React.FC<{
 
         {/* Right: Real-time Kitchen Operations Metrics */}
         <div className="flex items-center gap-2.5 flex-wrap md:flex-nowrap justify-start md:justify-end">
-          {/* KPI: En Fogón */}
+          {/* KPI: En Preparación */}
           <div className="px-4 py-2.5 rounded-2xl bg-[#ECECEC]/40 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-left min-w-[110px]">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 block">
-              En Fogón
+              {semantics.requiresKitchenDisplay ? "En Fogón" : "En Picking"}
             </span>
             <div className="flex items-baseline gap-1.5">
               <span className="font-mono font-bold text-lg text-[#212121] dark:text-[#ECECEC]">

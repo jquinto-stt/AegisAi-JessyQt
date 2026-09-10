@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
   ChefHat,
+  Package,
   MapPin,
   Phone,
   User,
@@ -18,6 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/elements";
+import { useBusiness } from "@/context/BusinessContext";
 
 interface CreateOrderFromConversationModalProps {
   conversation: Conversation;
@@ -37,6 +39,7 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
     sendOperatorMessage,
     setSelectedOrderId,
   } = usePedidos();
+  const { semantics } = useBusiness();
 
   const [customerName, setCustomerName] = useState(conversation.customerName);
   const [customerPhone, setCustomerPhone] = useState(conversation.customerPhone);
@@ -441,8 +444,12 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
               disabled={selectedItems.length === 0}
               className="flex-1 sm:flex-none py-2.5 px-5 rounded-xl text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white shadow-md flex items-center justify-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
-              <ChefHat className="w-4 h-4" />
-              <span>Crear & Enviar a Cocina</span>
+              {semantics?.requiresKitchenDisplay ? (
+                <ChefHat className="w-4 h-4" />
+              ) : (
+                <Package className="w-4 h-4" />
+              )}
+              <span>{semantics?.requiresKitchenDisplay ? "Crear & Enviar a Cocina" : `Crear & Enviar a ${semantics?.stationShortName || "Picking"}`}</span>
             </Button>
           </div>
         </div>
