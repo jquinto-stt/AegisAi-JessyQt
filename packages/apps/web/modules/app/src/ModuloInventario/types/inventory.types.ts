@@ -1,6 +1,6 @@
 export type ProductType = "standard" | "perishable" | "apparel" | "electronics" | "pharma" | "raw_material";
 
-export type UnitOfMeasure = "UND" | "KG" | "GR" | "LT" | "ML" | "METRO" | "CAJA" | "PAR" | "PAQUETE" | "ROLLO";
+export type UnitOfMeasure = "UND" | "KG" | "GR" | "LT" | "ML" | "METRO" | "CAJA" | "PAR" | "PAQUETE" | "ROLLO" | "SERVICIO";
 
 export type ProductStatus = "active" | "inactive" | "low_stock" | "out_of_stock";
 
@@ -55,14 +55,27 @@ export interface InventoryProduct {
   updatedAt: string;
 }
 
-export type MovementType = "ENTRADA" | "SALIDA" | "CONTEO" | "TRASLADO";
+export type Product = InventoryProduct;
+
+export type MovementType = "ENTRADA" | "SALIDA" | "CONTEO" | "TRASLADO" | "AJUSTE";
 
 export type StockTrackingAction =
   | "STOCK_ADD"
   | "STOCK_REMOVE"
   | "STOCK_COUNT"
   | "STOCK_TRANSFER"
-  | "STOCK_CREATE";
+  | "STOCK_CREATE"
+  | "STOCK_ADJUSTMENT";
+
+export type AdjustmentReason =
+  | "MERMA"
+  | "ROTURA"
+  | "VENCIMIENTO"
+  | "SOBRANTE"
+  | "FALTANTE"
+  | "CONSUMO_INTERNO"
+  | "AUDITORIA"
+  | "OTRO";
 
 export interface StockMovement {
   id: string;
@@ -82,6 +95,9 @@ export interface StockMovement {
   author: string;
   notes?: string;
   batchCode?: string;
+  adjustmentReason?: AdjustmentReason;
+  unitCost?: number;
+  totalCostImpact?: number;
 }
 
 export interface InventoryFilterOptions {
@@ -90,6 +106,26 @@ export interface InventoryFilterOptions {
   status?: ProductStatus | "all";
   category?: string | "all";
   locationId?: string | "all";
+  priceListId?: string | "all";
+}
+
+// ── Price Lists (Listas de Precios) ──
+export type PriceListType = "percentage" | "custom";
+
+export interface PriceList {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  type: PriceListType;
+  // Percentage adjustment over base salePrice (e.g. -15 for 15% discount, +10 for 10% markup)
+  percentage?: number;
+  // Custom price overrides per product ID
+  customPrices?: Record<string, number>;
+  isDefault: boolean;
+  status: "active" | "inactive";
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ── Purchasing & Suppliers ──

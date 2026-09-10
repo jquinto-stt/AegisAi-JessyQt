@@ -8,6 +8,8 @@ import {
   PurchaseOrder,
   PurchaseOrderStatus,
   BuildOrder,
+  PriceList,
+  AdjustmentReason,
 } from "../types/inventory.types";
 import { inventoryService } from "../services/inventoryService";
 
@@ -18,6 +20,8 @@ export function useInventory() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [buildOrders, setBuildOrders] = useState<BuildOrder[]>([]);
+  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
+  const [selectedPriceListId, setSelectedPriceListId] = useState<string>("pl-general");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,13 +37,14 @@ export function useInventory() {
     try {
       setLoading(true);
       setError(null);
-      const [prods, movs, locs, sups, pos, bos] = await Promise.all([
+      const [prods, movs, locs, sups, pos, bos, pls] = await Promise.all([
         inventoryService.getProducts(),
         inventoryService.getMovements(),
         inventoryService.getStockLocations(),
         inventoryService.getSuppliers(),
         inventoryService.getPurchaseOrders(),
         inventoryService.getBuildOrders(),
+        inventoryService.getPriceLists(),
       ]);
       setProducts(prods);
       setMovements(movs);
@@ -47,6 +52,7 @@ export function useInventory() {
       setSuppliers(sups);
       setPurchaseOrders(pos);
       setBuildOrders(bos);
+      setPriceLists(pls);
     } catch (err: any) {
       setError(err?.message || "Error al cargar datos del inventario");
     } finally {
@@ -279,6 +285,62 @@ export function useInventory() {
     inventoryService.resetToDefaults();
   };
 
+  const savePriceList = async (listData: Partial<PriceList> & { name: string }) => {
+    try {
+      setError(null);
+      return await inventoryService.savePriceList(listData);
+    } catch (err: any) {
+      setError(err?.message || "Error al guardar lista de precios");
+      throw err;
+    }
+  };
+
+  const deletePriceList = async (id: string) => {
+    try {
+      setError(null);
+      return await inventoryService.deletePriceList(id);
+    } catch (err: any) {
+      setError(err?.message || "Error al eliminar lista de precios");
+      throw err;
+    }
+  };
+
+  const setDefaultPriceList = async (id: string) => {
+    try {
+      setError(null);
+      return await inventoryService.setDefaultPriceList(id);
+    } catch (err: any) {
+      setError(err?.message || "Error al definir lista predeterminada");
+      throw err;
+    }
+  };
+
+  const calculateProductPrice = useCallback(
+    (product: InventoryProduct, listId?: string) => {
+      return inventoryService.calculateProductPrice(product, listId || selectedPriceListId);
+    },
+    [selectedPriceListId]
+  );
+
+  const registerStockAdjustment = async (params: {
+    productId: string;
+    adjustmentType: "DISMINUCION" | "AUMENTO";
+    quantity: number;
+    reason: AdjustmentReason;
+    concept?: string;
+    referenceDoc?: string;
+    author?: string;
+    notes?: string;
+  }) => {
+    try {
+      setError(null);
+      return await inventoryService.registerStockAdjustment(params);
+    } catch (err: any) {
+      setError(err?.message || "Error al registrar ajuste de inventario");
+      throw err;
+    }
+  };
+
   return {
     products,
     filteredProducts,
@@ -287,6 +349,9 @@ export function useInventory() {
     suppliers,
     purchaseOrders,
     buildOrders,
+    priceLists,
+    selectedPriceListId,
+    setSelectedPriceListId,
     dynamicColumns,
     categories,
     metrics,
@@ -297,6 +362,7 @@ export function useInventory() {
     saveProduct,
     deleteProduct,
     registerStockMovement,
+    registerStockAdjustment,
     registerStockCount,
     registerStockTransfer,
     createStockLocation,
@@ -305,6 +371,10 @@ export function useInventory() {
     receivePurchaseOrder,
     createBuildOrder,
     executeBuildOrder,
+    savePriceList,
+    deletePriceList,
+    setDefaultPriceList,
+    calculateProductPrice,
     resetToDefaults,
     refresh: fetchData,
   };

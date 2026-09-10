@@ -39,11 +39,11 @@ export const RoleSelectionModal: React.FC<RoleSelectionModalProps> = ({
 
     // Smart routing directly to the role's primary operational workspace
     if (role.id === "role-cook" || (!role.permissions.canViewBandeja && role.permissions.canViewKDS)) {
-      navigate("/?section=operacion&tab=preparacion");
+      navigate("/app?section=operacion&tab=preparacion");
     } else if (role.id === "role-inventory" || (!role.permissions.canViewBandeja && role.permissions.canViewInsumos)) {
-      navigate("/?section=menu&tab=insumos");
+      navigate("/app?section=menu&tab=insumos");
     } else {
-      navigate("/?section=operacion&tab=en-vivo");
+      navigate("/app?section=operacion&tab=en-vivo");
     }
   };
 

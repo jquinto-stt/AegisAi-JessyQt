@@ -182,7 +182,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
             </h2>
           </div>
           <span className="text-xs text-zinc-400 hidden sm:inline">
-            Haz clic en una tarjeta para entrar directamente al panel operativo
+            Haz clic en una tarjeta para seleccionar perfil y entrar al panel operativo
           </span>
         </div>
 
@@ -191,10 +191,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
             return (
               <div
                 key={biz.id}
-                onClick={() => {
-                  switchBusiness(biz.id);
-                  navigate("/app");
-                }}
+                onClick={() => setRoleSelectBiz(biz)}
                 className="relative rounded-3xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all shadow-2xs hover:shadow-lg flex flex-col justify-between overflow-hidden group cursor-pointer"
               >
                 {/* Top Banner Cover Photo - 100% Nítido y Vívido */}

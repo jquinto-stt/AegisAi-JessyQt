@@ -9,6 +9,8 @@ import {
   Supplier,
   PurchaseOrder,
   BuildOrder,
+  PriceList,
+  AdjustmentReason,
 } from "../types/inventory.types";
 import {
   INITIAL_PRODUCTS_MOCK,
@@ -18,6 +20,7 @@ import {
   SUPPLIERS_MOCK,
   PURCHASE_ORDERS_MOCK,
   BUILD_ORDERS_MOCK,
+  PRICE_LISTS_MOCK,
 } from "../mock/inventoryMockData";
 
 const STORAGE_KEYS = {
@@ -27,6 +30,7 @@ const STORAGE_KEYS = {
   SUPPLIERS: "modulo_inventario_suppliers_v5",
   PURCHASE_ORDERS: "modulo_inventario_po_v5",
   BUILD_ORDERS: "modulo_inventario_bo_v5",
+  PRICE_LISTS: "modulo_inventario_pricelists_v5",
 };
 
 class InventoryService {
@@ -36,6 +40,7 @@ class InventoryService {
   private suppliers: Supplier[] = [];
   private purchaseOrders: PurchaseOrder[] = [];
   private buildOrders: BuildOrder[] = [];
+  private priceLists: PriceList[] = [];
   private listeners: Array<() => void> = [];
 
   constructor() {
@@ -50,6 +55,7 @@ class InventoryService {
       const savedSuppliers = localStorage.getItem(STORAGE_KEYS.SUPPLIERS);
       const savedPOs = localStorage.getItem(STORAGE_KEYS.PURCHASE_ORDERS);
       const savedBOs = localStorage.getItem(STORAGE_KEYS.BUILD_ORDERS);
+      const savedPriceLists = localStorage.getItem(STORAGE_KEYS.PRICE_LISTS);
 
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts);
@@ -88,7 +94,17 @@ class InventoryService {
       }
 
       if (savedPOs) {
-        this.purchaseOrders = JSON.parse(savedPOs);
+        const parsed = JSON.parse(savedPOs);
+        this.purchaseOrders = (Array.isArray(parsed) ? parsed : []).map((po: any) => ({
+          ...po,
+          totalAmount: Number(po.totalAmount ?? po.total ?? po.items?.reduce((s: number, it: any) => s + ((it.quantity || 0) * (it.unitPrice || 0)), 0) ?? 0),
+          items: (po.items || []).map((it: any) => ({
+            ...it,
+            unit: it.unit || "UND",
+            quantity: Number(it.quantity || 0),
+            unitPrice: Number(it.unitPrice || 0),
+          })),
+        }));
       } else {
         this.purchaseOrders = [...PURCHASE_ORDERS_MOCK];
         this.persistPurchaseOrders();
@@ -100,6 +116,13 @@ class InventoryService {
         this.buildOrders = [...BUILD_ORDERS_MOCK];
         this.persistBuildOrders();
       }
+
+      if (savedPriceLists) {
+        this.priceLists = JSON.parse(savedPriceLists);
+      } else {
+        this.priceLists = [...PRICE_LISTS_MOCK];
+        this.persistPriceLists();
+      }
     } catch (e) {
       console.warn("Failed to load inventory from localStorage, using memory default", e);
       this.products = [...INITIAL_PRODUCTS_MOCK];
@@ -108,7 +131,14 @@ class InventoryService {
       this.suppliers = [...SUPPLIERS_MOCK];
       this.purchaseOrders = [...PURCHASE_ORDERS_MOCK];
       this.buildOrders = [...BUILD_ORDERS_MOCK];
+      this.priceLists = [...PRICE_LISTS_MOCK];
     }
+  }
+
+  private persistPriceLists() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.PRICE_LISTS, JSON.stringify(this.priceLists));
+    } catch (e) {}
   }
 
   private persistProducts() {
@@ -388,6 +418,95 @@ class InventoryService {
   }
 
   /**
+   * Registra un Ajuste Formal de Inventario con motivo contable (Mermas, roturas, vencimientos, sobrantes)
+   */
+  public async registerStockAdjustment(params: {
+    productId: string;
+    adjustmentType: "DISMINUCION" | "AUMENTO";
+    quantity: number;
+    reason: AdjustmentReason;
+    concept?: string;
+    referenceDoc?: string;
+    author?: string;
+    notes?: string;
+  }): Promise<{ product: InventoryProduct; movement: StockMovement }> {
+    const { productId, adjustmentType, quantity, reason, concept, referenceDoc, author = "Auditoría de Inventario", notes } = params;
+
+    const productIndex = this.products.findIndex((p) => p.id === productId);
+    if (productIndex === -1) throw new Error(`Producto con ID ${productId} no encontrado.`);
+    if (quantity <= 0) throw new Error("La cantidad a ajustar debe ser mayor a 0.");
+
+    const currentProduct = this.products[productIndex];
+    const previousStock = currentProduct.stockActual;
+    let newStock = previousStock;
+
+    if (adjustmentType === "AUMENTO") {
+      newStock = previousStock + Number(quantity);
+    } else {
+      if (previousStock < quantity) {
+        throw new Error(
+          `Stock insuficiente para registrar disminución. Stock actual: ${previousStock} ${currentProduct.unit}, ajuste solicitado: ${quantity} ${currentProduct.unit}`
+        );
+      }
+      newStock = previousStock - Number(quantity);
+    }
+
+    const now = new Date().toISOString();
+    const updatedProduct: InventoryProduct = {
+      ...currentProduct,
+      stockActual: Number(newStock.toFixed(2)),
+      status: this.calculateStatus(newStock, currentProduct.stockMinimo),
+      updatedAt: now,
+    };
+
+    this.products[productIndex] = updatedProduct;
+    this.persistProducts();
+
+    const unitCost = currentProduct.costPrice || 0;
+    const totalCostImpact = Math.round(Number(quantity) * unitCost);
+
+    const reasonLabels: Record<AdjustmentReason, string> = {
+      MERMA: "Ajuste por Merma",
+      ROTURA: "Ajuste por Daño / Rotura",
+      VENCIMIENTO: "Ajuste por Producto Vencido",
+      SOBRANTE: "Ajuste por Sobrante de Auditoría",
+      FALTANTE: "Ajuste por Faltante no justificado",
+      CONSUMO_INTERNO: "Ajuste por Consumo Interno / Muestras",
+      AUDITORIA: "Ajuste por Reconciliación Física",
+      OTRO: "Ajuste de Inventario Especial",
+    };
+
+    const finalConcept = concept || reasonLabels[reason] || "Ajuste de Inventario";
+
+    const movement: StockMovement = {
+      id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      productId: updatedProduct.id,
+      productSku: updatedProduct.sku,
+      productName: updatedProduct.name,
+      type: "AJUSTE",
+      action: "STOCK_ADJUSTMENT",
+      quantity: Number(quantity),
+      previousStock: Number(previousStock.toFixed(2)),
+      newStock: Number(newStock.toFixed(2)),
+      toLocation: adjustmentType === "AUMENTO" ? updatedProduct.locationName : undefined,
+      fromLocation: adjustmentType === "DISMINUCION" ? updatedProduct.locationName : undefined,
+      concept: finalConcept,
+      referenceDoc,
+      timestamp: now,
+      author,
+      notes,
+      adjustmentReason: reason,
+      unitCost,
+      totalCostImpact,
+    };
+
+    this.movements.unshift(movement);
+    this.persistMovements();
+    this.notify();
+    return { product: updatedProduct, movement };
+  }
+
+  /**
    * Descuenta stock automáticamente tras una Venta (Comanda, POS o Canal Digital)
    */
   public async consumeSaleOrder(params: {
@@ -648,10 +767,22 @@ class InventoryService {
           const prevStock = product.stockActual;
           const nextStock = prevStock + item.quantity;
 
+          // Cálculo Contable de Costo Promedio Ponderado (PPP / NIC 2)
+          let calculatedCost = product.costPrice;
+          if (item.unitPrice > 0) {
+            if (prevStock <= 0) {
+              calculatedCost = item.unitPrice;
+            } else {
+              const prevCapital = prevStock * product.costPrice;
+              const incomingCapital = item.quantity * item.unitPrice;
+              calculatedCost = Math.round((prevCapital + incomingCapital) / nextStock);
+            }
+          }
+
           this.products[pIndex] = {
             ...product,
             stockActual: Number(nextStock.toFixed(2)),
-            costPrice: item.unitPrice > 0 ? item.unitPrice : product.costPrice,
+            costPrice: calculatedCost,
             status: this.calculateStatus(nextStock, product.stockMinimo),
             updatedAt: now,
           };
@@ -671,7 +802,9 @@ class InventoryService {
             referenceDoc: newPO.orderNumber,
             timestamp: now,
             author: "Facturación Proveedor",
-            notes: `Ingreso automático por compra a ${newPO.supplierName}. Costo unitario: $${item.unitPrice}`,
+            unitCost: calculatedCost,
+            totalCostImpact: item.quantity * item.unitPrice,
+            notes: `Ingreso automático por compra a ${newPO.supplierName}. Costo unitario compra: $${item.unitPrice}. Nuevo Costo Promedio Ponderado (PPP): $${calculatedCost}`,
           };
           this.movements.unshift(movement);
         }
@@ -701,10 +834,22 @@ class InventoryService {
         const prevStock = product.stockActual;
         const nextStock = prevStock + item.quantity;
 
+        // Cálculo Contable de Costo Promedio Ponderado (PPP / NIC 2)
+        let calculatedCost = product.costPrice;
+        if (item.unitPrice > 0) {
+          if (prevStock <= 0) {
+            calculatedCost = item.unitPrice;
+          } else {
+            const prevCapital = prevStock * product.costPrice;
+            const incomingCapital = item.quantity * item.unitPrice;
+            calculatedCost = Math.round((prevCapital + incomingCapital) / nextStock);
+          }
+        }
+
         this.products[pIndex] = {
           ...product,
           stockActual: Number(nextStock.toFixed(2)),
-          costPrice: item.unitPrice > 0 ? item.unitPrice : product.costPrice,
+          costPrice: calculatedCost,
           status: this.calculateStatus(nextStock, product.stockMinimo),
           updatedAt: now,
         };
@@ -724,7 +869,9 @@ class InventoryService {
           referenceDoc: po.orderNumber,
           timestamp: now,
           author: "Recepción Almacén",
-          notes: `Ingreso por compra a proveedor ${po.supplierName}. Costo unitario: $${item.unitPrice}`,
+          unitCost: calculatedCost,
+          totalCostImpact: item.quantity * item.unitPrice,
+          notes: `Ingreso por compra a proveedor ${po.supplierName}. Costo factura: $${item.unitPrice}. Nuevo Costo Promedio Ponderado (PPP): $${calculatedCost}`,
         };
         this.movements.unshift(movement);
       }
@@ -873,6 +1020,137 @@ class InventoryService {
     return updatedBO;
   }
 
+  public async getPriceLists(): Promise<PriceList[]> {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve([...this.priceLists]), 40);
+    });
+  }
+
+  public async savePriceList(
+    listData: Partial<PriceList> & { name: string }
+  ): Promise<PriceList> {
+    const now = new Date().toISOString();
+    if (listData.id) {
+      const idx = this.priceLists.findIndex((p) => p.id === listData.id);
+      if (idx >= 0) {
+        const updated: PriceList = {
+          ...this.priceLists[idx],
+          ...listData,
+          updatedAt: now,
+        };
+        if (updated.isDefault) {
+          this.priceLists = this.priceLists.map((p) =>
+            p.id === updated.id ? p : { ...p, isDefault: false }
+          );
+        }
+        this.priceLists[idx] = updated;
+        this.persistPriceLists();
+        this.notify();
+        return updated;
+      }
+    }
+
+    const newList: PriceList = {
+      id: listData.id || `pl-${Date.now()}`,
+      name: listData.name,
+      code: listData.code || listData.name.toUpperCase().replace(/\s+/g, "-").slice(0, 15),
+      description: listData.description || "",
+      type: listData.type || "percentage",
+      percentage: listData.percentage ?? 0,
+      customPrices: listData.customPrices || {},
+      isDefault: listData.isDefault ?? false,
+      status: listData.status || "active",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (newList.isDefault) {
+      this.priceLists = this.priceLists.map((p) => ({ ...p, isDefault: false }));
+    }
+
+    this.priceLists.push(newList);
+    this.persistPriceLists();
+    this.notify();
+    return newList;
+  }
+
+  public async deletePriceList(id: string): Promise<boolean> {
+    const target = this.priceLists.find((p) => p.id === id);
+    if (target?.isDefault) {
+      throw new Error("No se puede eliminar la lista de precios predeterminada.");
+    }
+    this.priceLists = this.priceLists.filter((p) => p.id !== id);
+    this.persistPriceLists();
+    this.notify();
+    return true;
+  }
+
+  public async setDefaultPriceList(id: string): Promise<void> {
+    this.priceLists = this.priceLists.map((p) => ({
+      ...p,
+      isDefault: p.id === id,
+    }));
+    this.persistPriceLists();
+    this.notify();
+  }
+
+  public calculateProductPrice(product: InventoryProduct, priceListId?: string): {
+    finalPrice: number;
+    basePrice: number;
+    differencePercent: number;
+    appliedList?: PriceList;
+  } {
+    const basePrice = product.salePrice;
+    if (!priceListId || priceListId === "all" || priceListId === "pl-general") {
+      const general = this.priceLists.find((p) => p.id === "pl-general" || p.isDefault);
+      return {
+        finalPrice: basePrice,
+        basePrice,
+        differencePercent: 0,
+        appliedList: general,
+      };
+    }
+
+    const list = this.priceLists.find((p) => p.id === priceListId);
+    if (!list || list.status === "inactive") {
+      return {
+        finalPrice: basePrice,
+        basePrice,
+        differencePercent: 0,
+        appliedList: list,
+      };
+    }
+
+    if (list.type === "percentage") {
+      const percent = list.percentage ?? 0;
+      const finalPrice = Math.round(basePrice * (1 + percent / 100));
+      return {
+        finalPrice: Math.max(0, finalPrice),
+        basePrice,
+        differencePercent: percent,
+        appliedList: list,
+      };
+    }
+
+    if (list.type === "custom" && list.customPrices && list.customPrices[product.id] !== undefined) {
+      const custom = list.customPrices[product.id];
+      const diff = basePrice > 0 ? Math.round(((custom - basePrice) / basePrice) * 100) : 0;
+      return {
+        finalPrice: custom,
+        basePrice,
+        differencePercent: diff,
+        appliedList: list,
+      };
+    }
+
+    return {
+      finalPrice: basePrice,
+      basePrice,
+      differencePercent: 0,
+      appliedList: list,
+    };
+  }
+
   public resetToDefaults() {
     this.products = [...INITIAL_PRODUCTS_MOCK];
     this.movements = [...INITIAL_MOVEMENTS_MOCK];
@@ -880,12 +1158,14 @@ class InventoryService {
     this.suppliers = [...SUPPLIERS_MOCK];
     this.purchaseOrders = [...PURCHASE_ORDERS_MOCK];
     this.buildOrders = [...BUILD_ORDERS_MOCK];
+    this.priceLists = [...PRICE_LISTS_MOCK];
     this.persistProducts();
     this.persistMovements();
     this.persistLocations();
     this.persistSuppliers();
     this.persistPurchaseOrders();
     this.persistBuildOrders();
+    this.persistPriceLists();
     this.notify();
   }
 }

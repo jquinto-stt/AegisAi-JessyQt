@@ -6,6 +6,7 @@ import {
   Supplier,
   PurchaseOrder,
   BuildOrder,
+  PriceList,
 } from "../types/inventory.types";
 
 export const STOCK_LOCATIONS_MOCK: StockLocation[] = [
@@ -534,13 +535,62 @@ export const PURCHASE_ORDERS_MOCK: PurchaseOrder[] = [
     issueDate: "2026-08-01T10:00:00Z",
     receivedDate: "2026-08-03T15:00:00Z",
     items: [
-      { productId: "prod-001", productName: "Bear Cheer", sku: "VEL-BEAR-01", quantity: 50, unitPrice: 28000, total: 1400000 },
-      { productId: "prod-002", productName: "Birthday Wish", sku: "VEL-WISH-02", quantity: 50, unitPrice: 28000, total: 1400000 },
+      { productId: "prod-001", productName: "Bear Cheer", sku: "VEL-BEAR-01", quantity: 50, unitPrice: 28000, unit: "UND" },
+      { productId: "prod-002", productName: "Birthday Wish", sku: "VEL-WISH-02", quantity: 50, unitPrice: 28000, unit: "UND" },
     ],
-    subtotal: 2800000,
-    tax: 0,
-    total: 2800000,
+    totalAmount: 2800000,
   },
 ];
 
 export const BUILD_ORDERS_MOCK: BuildOrder[] = [];
+
+export const PRICE_LISTS_MOCK: PriceList[] = [
+  {
+    id: "pl-general",
+    name: "Lista General",
+    code: "GENERAL",
+    description: "Precio de venta estándar al público / mostrador",
+    type: "percentage",
+    percentage: 0,
+    isDefault: true,
+    status: "active",
+    createdAt: "2026-08-01T10:00:00Z",
+    updatedAt: "2026-08-01T10:00:00Z",
+  },
+  {
+    id: "pl-mayorista",
+    name: "Mayorista (-15%)",
+    code: "MAYORISTA",
+    description: "Tarifa para compras por volumen o clientes mayoristas",
+    type: "percentage",
+    percentage: -15,
+    isDefault: false,
+    status: "active",
+    createdAt: "2026-08-02T10:00:00Z",
+    updatedAt: "2026-08-02T10:00:00Z",
+  },
+  {
+    id: "pl-distribuidor",
+    name: "Distribuidor (-25%)",
+    code: "DISTRIBUIDOR",
+    description: "Descuento especial para aliados y distribuidores oficiales",
+    type: "percentage",
+    percentage: -25,
+    isDefault: false,
+    status: "active",
+    createdAt: "2026-08-03T10:00:00Z",
+    updatedAt: "2026-08-03T10:00:00Z",
+  },
+  {
+    id: "pl-vip",
+    name: "Club VIP (-10%)",
+    code: "VIP",
+    description: "Beneficio de fidelización para clientes suscritos",
+    type: "percentage",
+    percentage: -10,
+    isDefault: false,
+    status: "active",
+    createdAt: "2026-08-04T10:00:00Z",
+    updatedAt: "2026-08-04T10:00:00Z",
+  },
+];

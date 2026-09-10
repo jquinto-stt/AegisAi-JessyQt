@@ -114,22 +114,28 @@ Este documento especifica todos los casos de uso implementados y soportados en e
   2. Se invoca `inventoryService.receivePurchaseOrder(poId)`.
   3. Para cada ítem de la orden:
      * Suma la cantidad recibida al `stockActual` del producto.
-     * Actualiza el `costPrice` si el precio pactado en la compra varió respecto al anterior.
+     * Recalcula automáticamente el `costPrice` del producto aplicando Costeo Promedio Ponderado (PPP / NIC 2).
      * Inserta un movimiento `StockMovement` de tipo `ENTRADA` (`STOCK_ADD`) con concepto `Recepción Orden de Compra: {orderNumber} ({supplierName})`.
   4. La orden de compra pasa a estado `received` con fecha `receivedDate = now`.
-* **Resultado Esperado**: Mercancía disponible para la venta, costo promedio actualizado y orden de compra cerrada.
+* **Resultado Esperado**: Mercancía disponible para la venta, costo promedio ponderado (PPP) recalculado y orden de compra cerrada.
 
 ---
 
-### CU-INV-10: Fabricar Producto por Ensamble / Receta (BOM)
-* **Actor Principal**: Jefe de Producción.
-* **Objetivo**: Transformar materias primas en productos terminados según una lista de materiales (BOM).
-* **Precondiciones**: Existencia de orden de ensamble (`BuildOrder`) con BOM definido.
+### CU-INV-15: Gestión de Listas de Precios y Tarifas Comerciales
+* **Actor Principal**: Administrador / Gerente Comercial.
+* **Objetivo**: Configurar listas de precios diferenciales (Mayorista, VIP, Distribuidores) calculadas sobre el precio base o costo.
 * **Flujo Principal**:
-  1. En `ManufacturingView`, el usuario selecciona una orden de ensamble en estado `pending` y pulsa *"Ejecutar Producción"*.
-  2. Se ejecuta `inventoryService.executeBuildOrder(boId)`.
-  3. **Paso de Validación**: El sistema verifica que haya suficiente stock de todos los componentes (`comp.quantityRequired * bo.quantityToBuild`). Si algún insumo es insuficiente, cancela la operación con un error explícito.
-  4. **Paso de Deducción**: Deduce las materias primas del catálogo y genera movimientos de `SALIDA` con concepto `Consumo Ensamble BOM: {buildNumber}`.
-  5. **Paso de Alta**: Incrementa el `stockActual` del producto terminado y genera un movimiento de `ENTRADA` con concepto `Producción Terminada BOM: {buildNumber}`.
-  6. La orden pasa a `status = "completed"` con timestamp `completedAt = now`.
-* **Resultado Esperado**: Materias primas consumidas, lote de producto terminado disponible y orden de fabricación liquidada.
+  1. En `PriceListsView`, el usuario crea o edita una lista de precios definiendo el tipo de regla (`PERCENTAGE_MARKUP`, `FIXED_MARKUP`, `DISCOUNT_PERCENT`, etc.).
+  2. En el catálogo (`CatalogView`), el usuario puede alternar la tarifa activa en el selector de listas de precios para proyectar los precios en tiempo real.
+* **Resultado Esperado**: Precios comerciales proyectados dinámicamente según la tarifa seleccionada sin alterar el precio maestro.
+
+---
+
+### CU-INV-16: Asistente de Reorden y Sugeridos de Compra
+* **Actor Principal**: Encargado de Compras.
+* **Objetivo**: Detectar automáticamente artículos con existencias críticas y prellenar órdenes de compra en un clic.
+* **Flujo Principal**:
+  1. En `PurchasingView`, el usuario accede a la pestaña *"Sugeridos de Reorden"*.
+  2. El sistema lista todos los productos cuyo `stockActual <= stockMinimo`, mostrando el déficit y la cantidad sugerida para alcanzar el stock de seguridad.
+  3. Al pulsar *"Crear Orden"*, el sistema abre `PurchaseOrderModal` con el producto, proveedor preferente y cantidad sugerida ya configurados.
+* **Resultado Esperado**: Reducción drástica del tiempo de reaprovisionamiento y prevención de quiebres de inventario.

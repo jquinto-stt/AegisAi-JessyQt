@@ -9,24 +9,25 @@ Este documento presenta la arquitectura técnica, estructural y de integración 
 ```mermaid
 graph TB
     subgraph UI_Layer["Capa de Presentación (React / TypeScript)"]
-        MOD[ModuloInventario.tsx - Componente Principal]
+        MOD[ModuloInventario.tsx - Orquestador Principal]
         
         subgraph Vistas_Principales["Vistas Principales (Tabs)"]
-            V_CAT[CatalogView - Productos & Servicios]
+            V_CAT[CatalogView - Productos & Catálogo]
+            V_VAL[InventoryValuationView - Valor de Inventario PPP]
+            V_PRI[PriceListsView - Listas de Precios & Tarifas]
             V_LOC[StockLocationsView - Bodegas & Sedes]
-            V_PUR[PurchasingView - Compras & Facturas]
+            V_PUR[PurchasingView - Compras & Reabastecimiento]
             V_KDX[KardexView - Historial de Movimientos]
-            V_MAN[ManufacturingView - Ensamble BOM]
         end
 
         subgraph Modales_Operativos["Modales Operativos"]
-            M_PROD[ProductFormModal]
-            M_MOV[StockMovementModal]
-            M_CNT[StockCountModal]
-            M_TRF[StockTransferModal]
-            M_PO[PurchaseOrderModal]
+            M_PROD[ProductFormModal / QuickProductModal]
+            M_MOV[StockMovementModal - UNIFICADO Entrada/Salida/Ajuste/Traslado/Conteo]
+            M_PO[PurchaseOrderModal - Asistente de Reorden]
             M_XLS[ImportExcelModal]
-            M_DET[PartDetailModal]
+            M_DET[PartDetailModal - Ficha Técnica]
+            M_LOC[LocationFormModal]
+            M_CAT[CategoriesModal]
         end
     end
 
@@ -77,8 +78,8 @@ graph TB
 * **Ubicación**: `packages/apps/web/modules/app/src/ModuloInventario/`
 * **Patrón de Estado**: Se utiliza un patrón **Observer/Pub-Sub** desacoplado:
   1. `inventoryService` mantiene un arreglo privado de escuchadores (`listeners: Array<() => void>`).
-  2. Cada vez que se ejecuta una mutación (`saveProduct`, `registerMovement`, `consumeSaleOrder`, `executeBuildOrder`), se invoca `this.notify()`.
-  3. El hook reactivo `useInventory()` se suscribe al servicio en su ciclo de vida (`inventoryService.subscribe(...)`), disparando un refresco automático de todos los componentes suscritos sin necesidad de prop-drilling.
+  2. Cada vez que se ejecuta una mutación (`saveProduct`, `registerMovement`, `registerStockAdjustment`, `registerStockTransfer`, `registerStockCount`, `receivePurchaseOrder`, `consumeSaleOrder`), se invoca `this.notify()`.
+  3. El hook reactivo `useInventory()` se suscribe al servicio en su ciclo de vida (`inventoryService.subscribe(...)`), disparando un refresco automático de todos los componentes suscritos sin necesidad de prop-drilling ni re-renders innecesarios.
 
 ---
 
@@ -86,8 +87,10 @@ graph TB
 
 El archivo `inventoryService.ts` actúa como el motor central del ERP en el cliente:
 * **Persistencia Doble (Local-First)**: Mantiene los datos en memoria para máxima velocidad de renderizado (<50ms) y los sincroniza automáticamente en `localStorage` bajo claves versionadas (`modulo_inventario_products_v5`, `modulo_inventario_movements_v5`, etc.).
-* **Generación de Semillas**: Si el almacenamiento local está vacío, carga automáticamente el catálogo enriquecido de demostración desde `inventoryMockData.ts`.
-* **Cálculo de Columnas Dinámicas (`extractDynamicColumns`)**: Analiza todos los metadatos JSONB (`metadata`) de los productos y extrae dinámicamente las columnas correspondientes para mostrarlas en la tabla del catálogo.
+* **Costeo Promedio Ponderado (PPP / NIC 2)**: Al recibir mercancía mediante una orden de compra (`receivePurchaseOrder`), recalcula el costo unitario según la fórmula internacional:
+  $$\text{PPP} = \frac{(\text{Stock Previo} \times \text{Costo Previo}) + (\text{Cantidad Recibida} \times \text{Precio Facturado})}{\text{Stock Previo} + \text{Cantidad Recibida}}$$
+* **Listas de Precios y Márgenes**: Motor de cálculo dinámico para aplicar tarifas porcentuales de recargo o descuento sobre el precio base o costo.
+* **Modal Unificado (`StockMovementModal.tsx`)**: Arquitectura consolidada que centraliza en una sola vista con pestañas segmentadas los 5 tipos de operaciones de almacén: Entrada rápida, Salida rápida, Ajuste contable por merma, Traslado entre bodegas y Conteo físico.
 
 ---
 
@@ -97,13 +100,7 @@ El archivo `inventoryService.ts` actúa como el motor central del ERP en el clie
 * **Controladores Lambda**: `packages/cloud/core/infra/handlers/inventarios.ts`
 
 ### 1. Base de Datos: DynamoDB Single-Table (`Inventarios@Table`)
-* **Partición Principal**:
-  * `pk`: `OWNER#{ownerId}` (Aislamiento por empresa/inquilino).
-  * `sk`: `ITEM#{itemId}` o `TEMPLATE#{templateId}`.
-* **Handlers Implementados**:
-  * `list`: `QueryCommand` sobre `pk = :pk AND begins_with(sk, 'ITEM#')`.
-  * `create`: `PutCommand` con código autogenerado `INV-XXXX`, evidencias (`evidenceCount`, `evidenceType`), estado y condición.
-  * `updateStatus`: `UpdateCommand` atómico que modifica `#status`, `#cond` y `lastUpdated`.
-
-### 2. Seguridad y Gateway
-* Protegido por **AWS Cognito JWT Authorizer**, asegurando que solo usuarios autenticados con claim de `ownerId` puedan consultar o modificar registros.
+* **Claves de Acceso**:
+  * Clave de Partición: `PK` (ej. `TENANT#tenant-001`)
+  * Clave de Ordenación: `SK` (ej. `ITEM#prod-001`, `MOVEMENT#mov-001`)
+* **Esquema de Entidad**: JSONB flexible para almacenar metadatos dinámicos por tipo de producto.

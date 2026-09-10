@@ -12,11 +12,14 @@ Este documento especifica todas las reglas de negocio, validaciones y restriccio
 | **RN-INV-02** | Asiento Obligatorio de Balance Inicial | `inventoryService.ts` (`saveProduct`) | Automática |
 | **RN-INV-03** | Cálculo Determinista del Semáforo de Stock | `inventoryService.ts` (`calculateStatus`) | Automática |
 | **RN-INV-04** | Inmutabilidad de Asientos del Kardex | `inventoryService.ts` (`movements`) | Obligatoria |
-| **RN-INV-05** | Validación Previa y Atómica de Insumos BOM | `inventoryService.ts` (`executeBuildOrder`) | Obligatoria |
-| **RN-INV-06** | Asignación de Bodega por Defecto | `inventoryService.ts` (`saveProduct`) | Automática |
-| **RN-INV-07** | Actualización de Costo en Recepción de Compra | `inventoryService.ts` (`receivePurchaseOrder`) | Automática |
-| **RN-INV-08** | Resolución Tolerante de Ítems en Ventas | `inventoryService.ts` (`consumeSaleOrder`) | Automática |
-| **RN-INV-09** | Trazabilidad Obligatoria de Auditor (Autor) | `inventoryService.ts` (`StockMovement`) | Obligatoria |
+| **RN-INV-05** | Asignación de Bodega por Defecto | `inventoryService.ts` (`saveProduct`) | Automática |
+| **RN-INV-06** | Costeo Promedio Ponderado (PPP / NIC 2) en Recepción | `inventoryService.ts` (`receivePurchaseOrder`) | Automática |
+| **RN-INV-07** | Proyección y Cálculo Atómico en Traslados | `inventoryService.ts` (`registerStockTransfer`) | Obligatoria |
+| **RN-INV-08** | Ajuste Contable por Merma o Descuadre con Costo | `inventoryService.ts` (`registerStockAdjustment`) | Automática |
+| **RN-INV-09** | Conciliación Ciega en Conteo Físico | `inventoryService.ts` (`registerStockCount`) | Automática |
+| **RN-INV-10** | Tarifas Comerciales Dinámicas por Lista de Precios | `inventoryService.ts` (`calculateProductPrice`) | Automática |
+| **RN-INV-11** | Asistente de Reabastecimiento bajo Stock Mínimo | `inventoryService.ts` (`getSuggestedReorders`) | Automática |
+| **RN-INV-12** | Resolución Tolerante de Ítems en Ventas | `inventoryService.ts` (`consumeSaleOrder`) | Automática |
 
 ---
 
@@ -40,14 +43,13 @@ Este documento especifica todas las reglas de negocio, validaciones y restriccio
 ---
 
 ### RN-INV-02: Asiento Obligatorio de Balance Inicial
-* **Definición**: Si un producto nuevo es creado con una cantidad en existencia mayor a cero (`stockActual > 0`), el sistema está obligado a generar inmediatamente un movimiento formal en el Kardex:
+* **Definición**: Si un producto nuevo es creado con una cantidad en existencia mayor a cero (`stockActual > 0`), el sistema genera inmediatamente un movimiento formal en el Kardex:
   * `type`: `"ENTRADA"`
   * `action`: `"STOCK_CREATE"`
   * `concept`: `"Inventario Inicial (Creación de Producto)"`
   * `previousStock`: `0`
   * `newStock`: `stock`
   * `author`: `"Sistema"`
-* **Propósito**: Garantizar que ningún saldo de existencias aparezca en el sistema sin una justificación de origen trazable.
 
 ---
 
@@ -60,40 +62,23 @@ Este documento especifica todas las reglas de negocio, validaciones y restriccio
 ---
 
 ### RN-INV-04: Inmutabilidad de Asientos del Kardex
-* **Definición**: Los registros del Kardex (`StockMovement`) son estrictamente inmutables. No existen métodos para editar o borrar un movimiento ya asentado.
-* **Tratamiento de Correcciones**: Cualquier error operativo debe subsanarse mediante un movimiento de compensación (ej. ajuste por conteo físico `STOCK_COUNT` o entrada de devolución).
+* **Definición**: Los registros del Kardex (`StockMovement`) son estrictamente inmutables. No existen métodos para editar o borrar un movimiento ya asentado. Cualquier corrección debe realizarse mediante un movimiento de compensación o conteo físico.
 
 ---
 
-### RN-INV-05: Validación Previa y Atómica en Ensamble BOM
-* **Definición**: Antes de iniciar la fabricación de un producto compuesto, el sistema debe comprobar que **todos** los insumos del BOM tengan saldo suficiente para cubrir `quantityRequired * quantityToBuild`.
-* **Código Fuente**:
-  ```typescript
-  for (const comp of bo.bom) {
-    const prod = this.products.find((p) => p.id === comp.componentProductId);
-    const totalNeeded = comp.quantityRequired * bo.quantityToBuild;
-    if (!prod || prod.stockActual < totalNeeded) {
-      throw new Error(`Stock insuficiente para el insumo ${comp.componentName}...`);
-    }
-  }
-  ```
-* **Consecuencia**: Si tan solo uno de los insumos es insuficiente, la orden no se ejecuta y ningún componente es descontado (garantía de atomicidad).
+### RN-INV-06: Costeo Promedio Ponderado (PPP / NIC 2) en Recepción
+* **Definición**: Al recepcionar una orden de compra (`receivePurchaseOrder`), el costo unitario del producto se recalcula automáticamente ponderando las unidades en existencia previa con las nuevas unidades adquiridas:
+  $$\text{PPP} = \frac{(\text{Stock Previo} \times \text{Costo Previo}) + (\text{Cantidad Recibida} \times \text{Precio Facturado})}{\text{Stock Previo} + \text{Cantidad Recibida}}$$
+* **Propósito**: Cumplimiento contable con la norma internacional NIC 2 de valorización de inventarios.
 
 ---
 
-### RN-INV-06: Asignación de Bodega por Defecto
-* **Definición**: Si durante el alta de un producto o importación desde Excel no se especifica una ubicación física, el sistema le asigna automáticamente el almacén principal `"loc-001"` (*"Almacén Central"*).
+### RN-INV-10: Tarifas Comerciales Dinámicas por Lista de Precios
+* **Definición**: Cada lista de precios aplica una regla determinista (`FIXED_MARKUP`, `PERCENTAGE_MARKUP`, `DISCOUNT_PERCENT`, `MANUAL`) calculando el precio final de venta y el margen correspondiente sin alterar el precio de venta base del catálogo.
 
 ---
 
-### RN-INV-07: Actualización de Costo de Adquisición
-* **Definición**: Al recepcionar una orden de compra (`receivePurchaseOrder`), si el precio unitario facturado por el proveedor (`item.unitPrice`) es mayor a cero, se actualiza automáticamente el campo `costPrice` del producto en el catálogo maestro, manteniendo la valorización al día.
-
----
-
-### RN-INV-08: Resolución Tolerante de Productos en Ventas
-* **Definición**: Al procesar ventas provenientes de canales externos o del módulo Pedidos (`consumeSaleOrder`), el sistema busca el producto en tres niveles de tolerancia:
-  1. Coincidencia por `productId`.
-  2. Coincidencia insensible a mayúsculas por `sku`.
-  3. Coincidencia insensible a mayúsculas por `name`.
-* **Propósito**: Prevenir fallas de descuento cuando una comanda de WhatsApp fue creada usando el nombre del producto en lugar de su código SKU interno.
+### RN-INV-11: Asistente de Reabastecimiento bajo Stock Mínimo
+* **Definición**: Los productos cuyo stock actual sea menor o igual al stock mínimo (`stockActual <= stockMinimo`) son clasificados como críticos. La cantidad sugerida de compra se proyecta automáticamente para restaurar el nivel óptimo:
+  $$\text{Cantidad Sugerida} = \max(1, (\text{Stock Mínimo} \times 2) - \text{Stock Actual})$$
+* **Propósito**: Permitir al comprador emitir órdenes de compra prellenadas con un solo clic.

@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { useBusiness } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
 import { AccountSettingsModal } from "./AccountSettingsModal";
+import { RoleSelectionModal } from "./RoleSelectionModal";
 import {
   User,
   ChevronDown,
@@ -14,6 +15,7 @@ import {
   Check,
   ArrowRight,
   ShieldCheck,
+  Shield,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
@@ -28,12 +30,14 @@ export const UserProfileDropdown: React.FC = () => {
     businesses,
     activeBusiness,
     switchBusiness,
+    activeRole,
     userAvatarUrl,
   } = useBusiness();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const username = user?.getUsername?.() || "admin@necto.app";
@@ -91,8 +95,11 @@ export const UserProfileDropdown: React.FC = () => {
                   <h4 className="text-xs font-extrabold text-[#212121] dark:text-[#ECECEC] truncate">
                     {displayName}
                   </h4>
-                  <span className="text-[9px] py-0.5 px-1.5 font-bold uppercase rounded-md bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-[#97D6DF] border border-[#190088]/20">
-                    Admin
+                  <span
+                    className="text-[9px] py-0.5 px-1.5 font-bold uppercase rounded-md bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-[#97D6DF] border border-[#190088]/20 truncate max-w-[130px]"
+                    title={`Rol activo: ${activeRole?.name || "Dueño"}`}
+                  >
+                    {activeRole?.name || "Dueño"}
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
@@ -229,6 +236,21 @@ export const UserProfileDropdown: React.FC = () => {
                 <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
               </button>
 
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRoleModalOpen(true);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-[#212121] dark:text-[#ECECEC] hover:bg-[#ECECEC]/60 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Shield className="w-4 h-4 text-[#FF3F1A]" />
+                  <span>Cambiar Perfil / Rol ({activeRole?.name || "Dueño"})</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+              </button>
+
               {!isOnHub && (
                 <button
                   type="button"
@@ -266,6 +288,13 @@ export const UserProfileDropdown: React.FC = () => {
       <AccountSettingsModal
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
+      />
+
+      {/* Role Selection Modal */}
+      <RoleSelectionModal
+        business={activeBusiness}
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
       />
     </>
   );

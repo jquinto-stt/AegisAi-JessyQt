@@ -1,34 +1,27 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   X,
   Package,
-  Layers,
-  MapPin,
-  Tag,
-  Hash,
+  Building2,
   ArrowDownLeft,
   ArrowUpRight,
-  Calculator,
+  Scale,
   ArrowRightLeft,
-  Calendar,
-  Clock,
-  Sliders,
+  Edit3,
   History,
-  Barcode,
-  Truck,
+  TrendingUp,
+  Percent,
 } from "lucide-react";
 import { InventoryProduct, StockMovement } from "../types/inventory.types";
-import { DynamicMetadataBadge } from "./DynamicMetadataBadge";
 
 interface PartDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: InventoryProduct | null;
   movements: StockMovement[];
-  onOpenMovement: (type: "ENTRADA" | "SALIDA") => void;
-  onOpenCount: () => void;
-  onOpenTransfer: () => void;
+  onOpenMovement: (initialMode?: "ENTRADA" | "SALIDA" | "AJUSTE" | "TRASLADO" | "CONTEO") => void;
   onEdit: () => void;
+  onViewHistory?: (productId: string) => void;
 }
 
 export const PartDetailModal: React.FC<PartDetailModalProps> = ({
@@ -37,26 +30,33 @@ export const PartDetailModal: React.FC<PartDetailModalProps> = ({
   product,
   movements,
   onOpenMovement,
-  onOpenCount,
-  onOpenTransfer,
   onEdit,
+  onViewHistory,
 }) => {
-  const [activeTab, setActiveTab] = useState<"general" | "parameters" | "tracking">("general");
-
   if (!isOpen || !product) return null;
 
-  const partMovements = movements.filter((m) => m.productId === product.id);
+  const partMovements = movements
+    .filter((m) => m.productId === product.id)
+    .slice(0, 6);
+
+  const cost = product.costPrice || 0;
+  const price = product.salePrice || 0;
+  const marginAmount = price - cost;
+  const marginPercent = price > 0 ? (marginAmount / price) * 100 : 0;
+
+  const isOutOfStock = product.stockActual <= 0;
+  const isLowStock = !isOutOfStock && product.stockActual <= product.stockMinimo;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
       <div
-        className="relative w-full max-w-3xl bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[92vh] animate-scale-up"
+        className="relative w-full max-w-2xl bg-white dark:bg-[#18181B] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up text-zinc-900 dark:text-zinc-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header with IPN & Status */}
-        <div className="p-6 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/80 flex items-center justify-center flex-none shadow-xs">
+        {/* ── 1. Clean Header ── */}
+        <div className="p-5 border-b border-zinc-200/80 dark:border-zinc-800 flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center flex-none">
               {product.imageUrl ? (
                 <img
                   src={product.imageUrl}
@@ -64,24 +64,18 @@ export const PartDetailModal: React.FC<PartDetailModalProps> = ({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center font-bold">
-                  <Package className="w-8 h-8" />
-                </div>
+                <Package className="w-5 h-5 text-zinc-400" />
               )}
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-xs font-black text-[#190088] bg-[#190088]/10 dark:text-[#97D6DF] dark:bg-[#190088]/20 px-2.5 py-0.5 rounded-lg border border-[#190088]/20">
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs font-bold text-[#FF3F1A] bg-[#FF3F1A]/10 px-2 py-0.5 rounded-md">
                   {product.sku}
                 </span>
-                {product.ipn && (
-                  <span className="font-mono text-[11px] font-bold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
-                    {product.ipn}
-                  </span>
-                )}
-                <span className="text-xs font-bold text-zinc-500">· {product.category}</span>
+                <span className="text-xs text-zinc-500">• {product.category || "General"}</span>
               </div>
-              <h2 className="text-lg sm:text-xl font-black text-zinc-900 dark:text-white mt-1">
+              <h2 className="text-base sm:text-lg font-black text-zinc-900 dark:text-white mt-0.5 truncate">
                 {product.name}
               </h2>
             </div>
@@ -90,227 +84,191 @@ export const PartDetailModal: React.FC<PartDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer flex-none"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Quick Stock Action Toolbar */}
-        <div className="px-6 py-3 bg-zinc-50/80 dark:bg-zinc-900/80 border-b border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider font-mono">
-              Stock:
-            </span>
-            <span className="text-sm font-black font-mono text-zinc-900 dark:text-white">
-              {product.stockActual} {product.unit}
-            </span>
-            <span className="text-xs text-zinc-400 font-mono">
-              (Mínimo: {product.stockMinimo})
-            </span>
+        {/* ── 2. Body Scrollable ── */}
+        <div className="p-5 space-y-5 overflow-y-auto flex-1 text-xs">
+          {/* Hero Stock Strip */}
+          <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="text-[11px] font-mono font-bold uppercase text-zinc-400 block tracking-wider">
+                Disponibilidad Física en Almacén
+              </span>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span
+                  className={`text-3xl font-mono font-black ${
+                    isOutOfStock
+                      ? "text-rose-600 dark:text-rose-400"
+                      : isLowStock
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-zinc-900 dark:text-white"
+                  }`}
+                >
+                  {product.stockActual} {product.unit}
+                </span>
+
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                    isOutOfStock
+                      ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                      : isLowStock
+                      ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                      : "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                  }`}
+                >
+                  {isOutOfStock ? "Agotado" : isLowStock ? "Bajo Mínimo" : "En Stock"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-zinc-500 mt-1">
+                <Building2 className="w-3.5 h-3.5 text-zinc-400" />
+                <span>{product.locationName || "Bodega Central"}</span>
+                <span className="text-zinc-400">• Mínimo de seguridad: {product.stockMinimo} {product.unit}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenMovement("ENTRADA");
+                }}
+                className="px-3.5 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white font-bold text-xs shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <span>Registrar Movimiento</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onEdit();
+                }}
+                className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Editar</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => onOpenMovement("ENTRADA")}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-            >
-              <ArrowDownLeft className="w-3.5 h-3.5" />
-              <span>Entrada (+)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenMovement("SALIDA")}
-              className="px-2.5 py-1.5 rounded-xl bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20 hover:bg-[#FF3F1A]/20 text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-            >
-              <ArrowUpRight className="w-3.5 h-3.5" />
-              <span>Salida (-)</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenCount}
-              className="px-2.5 py-1.5 rounded-xl bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 hover:bg-[#190088]/20 text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-            >
-              <Calculator className="w-3.5 h-3.5" />
-              <span>Conteo</span>
-            </button>
-            <button
-              type="button"
-              onClick={onOpenTransfer}
-              className="px-2.5 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
-            >
-              <ArrowRightLeft className="w-3.5 h-3.5" />
-              <span>Traslado</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tab Selector */}
-        <div className="flex items-center gap-3 px-6 border-b border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-[#18181B]">
-          <button
-            type="button"
-            onClick={() => setActiveTab("general")}
-            className={`py-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "general"
-                ? "border-[#190088] text-[#190088] dark:text-[#97D6DF]"
-                : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Ficha General</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("parameters")}
-            className={`py-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "parameters"
-                ? "border-[#190088] text-[#190088] dark:text-[#97D6DF]"
-                : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Parámetros Dinámicos ({Object.keys(product.metadata || {}).length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("tracking")}
-            className={`py-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === "tracking"
-                ? "border-[#190088] text-[#190088] dark:text-[#97D6DF]"
-                : "border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Historial del Ítem ({partMovements.length})</span>
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1 scrollbar-thin">
-          {activeTab === "general" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Precio Costo</span>
-                  <p className="text-sm font-black font-mono text-zinc-800 dark:text-zinc-200">
-                    ${product.costPrice.toLocaleString("es-CO")}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Precio Venta</span>
-                  <p className="text-sm font-black font-mono text-zinc-800 dark:text-zinc-200">
-                    ${product.salePrice.toLocaleString("es-CO")}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Bodega</span>
-                  <p className="text-xs font-bold text-[#190088] dark:text-[#97D6DF]">
-                    🏢 {product.locationName}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 font-mono">Proveedor</span>
-                  <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                    {product.supplier || "No especificado"}
-                  </p>
-                </div>
+          {/* Key Financial & Business Data Grid */}
+          <div>
+            <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2">
+              Datos Comerciales & Valoración
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 font-mono">
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">Costo Unitario (PPP)</span>
+                <span className="text-base font-black text-zinc-900 dark:text-white mt-0.5 block">
+                  ${cost.toLocaleString("es-CO")}
+                </span>
               </div>
 
-              {product.notes && (
-                <div className="p-3.5 rounded-xl bg-zinc-50/80 dark:bg-zinc-900/60 border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-300">
-                  <span className="font-bold block text-zinc-400 text-[10px] uppercase mb-1 font-mono">Notas:</span>
-                  {product.notes}
-                </div>
+              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 font-mono">
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">Precio de Venta (PVP)</span>
+                <span className="text-base font-black text-zinc-900 dark:text-white mt-0.5 block">
+                  ${price.toLocaleString("es-CO")}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 font-mono">
+                <span className="text-[10px] text-zinc-400 uppercase font-bold block">Margen Unitario</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                  {marginPercent.toFixed(1)}%
+                </span>
+              </div>
+
+              <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800">
+                <span className="text-[10px] text-zinc-400 uppercase font-mono font-bold block">Proveedor</span>
+                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 mt-0.5 block truncate">
+                  {product.supplier || "No asignado"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Kardex Activity */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                Historial Reciente en Kardex
+              </h3>
+              {onViewHistory && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onViewHistory(product.id);
+                  }}
+                  className="text-[11px] font-semibold text-[#FF3F1A] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <History className="w-3 h-3" />
+                  <span>Ver Kardex completo</span>
+                </button>
               )}
             </div>
-          )}
 
-          {activeTab === "parameters" && (
-            <div className="space-y-3">
-              <p className="text-xs text-zinc-500">
-                Parámetros y metadatos dinámicos JSONB asociados al ítem:
-              </p>
-
-              {Object.keys(product.metadata || {}).length === 0 ? (
-                <div className="p-8 text-center text-zinc-400 text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-                  Sin parámetros personalizados registrados.
-                </div>
-              ) : (
-                <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800">
-                  {Object.entries(product.metadata).map(([k, v]) => (
-                    <div key={k} className="p-3 flex items-center justify-between text-xs">
-                      <span className="font-bold text-zinc-700 dark:text-zinc-300 capitalize">{k}</span>
-                      <DynamicMetadataBadge fieldKey={k} value={v} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === "tracking" && (
-            <div className="space-y-3">
+            <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800 overflow-hidden">
               {partMovements.length === 0 ? (
-                <div className="p-8 text-center text-zinc-400 text-xs border border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl">
-                  Sin historial de movimientos registrado para este ítem.
+                <div className="p-6 text-center text-zinc-400">
+                  <p className="font-semibold text-xs">Sin movimientos registrados para esta referencia</p>
                 </div>
               ) : (
-                <div className="border border-zinc-200/80 dark:border-zinc-800 rounded-xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
-                  {partMovements.map((m) => (
-                    <div key={m.id} className="p-3 flex items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
+                <table className="w-full text-left text-xs border-collapse font-sans">
+                  <thead>
+                    <tr className="border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/75 dark:bg-zinc-900/50 text-[10px] font-mono uppercase font-bold text-zinc-400">
+                      <th className="py-2 px-3">Tipo</th>
+                      <th className="py-2 px-3">Concepto / Motivo</th>
+                      <th className="py-2 px-3 text-center">Cantidad</th>
+                      <th className="py-2 px-3 text-right">Saldo</th>
+                      <th className="py-2 px-3 text-right">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60 font-mono">
+                    {partMovements.map((m) => (
+                      <tr key={m.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
+                        <td className="py-2 px-3">
                           <span
-                            className={`font-mono text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-bold ${
                               m.type === "ENTRADA"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                ? "bg-emerald-500/10 text-emerald-600"
                                 : m.type === "SALIDA"
-                                ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/20"
-                                : m.type === "CONTEO"
-                                ? "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20"
-                                : "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                                ? "bg-rose-500/10 text-rose-600"
+                                : m.type === "AJUSTE"
+                                ? "bg-amber-500/10 text-amber-600"
+                                : "bg-indigo-500/10 text-indigo-600"
                             }`}
                           >
                             {m.type}
                           </span>
-                          <span className="font-semibold text-zinc-800 dark:text-zinc-200">{m.concept}</span>
-                        </div>
-                        <span className="text-[11px] text-zinc-400 font-mono">
-                          {new Date(m.timestamp).toLocaleDateString("es-CO")} · {m.author}
-                        </span>
-                      </div>
-
-                      <div className="text-right font-mono font-bold">
-                        <span className="text-zinc-400">{m.previousStock}</span> ➔{" "}
-                        <span className="text-zinc-900 dark:text-white font-black">{m.newStock} {product.unit}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                        </td>
+                        <td className="py-2 px-3 text-zinc-700 dark:text-zinc-300 font-sans text-xs truncate max-w-[180px]">
+                          {m.concept || "Movimiento"}
+                        </td>
+                        <td className="py-2 px-3 text-center font-bold">
+                          <span className={m.type === "ENTRADA" ? "text-emerald-600" : "text-rose-600"}>
+                            {m.type === "ENTRADA" ? "+" : "-"}{m.quantity}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-right font-black text-zinc-900 dark:text-white">
+                          {m.newStock ?? (m as any).finalBalance}
+                        </td>
+                        <td className="py-2 px-3 text-right text-zinc-400 text-[11px]">
+                          {new Date(m.timestamp).toLocaleDateString("es-CO", { day: "2-digit", month: "short" })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-          >
-            Editar Producto
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-[#190088] text-white text-xs font-bold hover:bg-[#150073] transition-all shadow-2xs cursor-pointer"
-          >
-            Cerrar
-          </button>
+          </div>
         </div>
       </div>
     </div>

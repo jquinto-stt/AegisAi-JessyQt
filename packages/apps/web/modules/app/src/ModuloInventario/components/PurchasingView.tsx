@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Truck,
   Building2,
@@ -16,6 +16,9 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
+  AlertTriangle,
+  ShoppingCart,
+  TrendingDown,
 } from "lucide-react";
 import {
   PurchaseOrder,
@@ -30,7 +33,7 @@ interface PurchasingViewProps {
   locations: StockLocation[];
   products: InventoryProduct[];
   onReceiveOrder: (orderId: string) => Promise<any>;
-  onOpenNewPurchaseOrder?: () => void;
+  onOpenNewPurchaseOrder?: (initialProduct?: InventoryProduct | null, initialSuggestedQty?: number) => void;
   onOpenNewSupplier?: () => void;
 }
 
@@ -43,11 +46,48 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
   onOpenNewPurchaseOrder,
   onOpenNewSupplier,
 }) => {
-  const [activeTab, setActiveTab] = useState<"orders" | "suppliers">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "reorder" | "suppliers">("orders");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "received">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [receivingId, setReceivingId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+
+  // ── Sugeridos de Reabastecimiento (Punto de Reorden / Stock de Seguridad) ──
+  const reorderItems = useMemo(() => {
+    return products
+      .filter(
+        (p) =>
+          p.productType !== "service" &&
+          (p.stockActual !== undefined ? p.stockActual : 0) <= (p.stockMinimo !== undefined ? p.stockMinimo : 0)
+      )
+      .map((p) => {
+        const stockActual = Math.max(0, p.stockActual || 0);
+        const stockMinimo = p.stockMinimo || 0;
+        const deficit = Math.max(1, stockMinimo - stockActual);
+        // Cantidad sugerida: cubrir déficit y alcanzar 2x stock mínimo
+        const suggestedQty = Math.max(deficit, (stockMinimo * 2) - stockActual || 10);
+        const estimatedCost = suggestedQty * (p.costPrice || 0);
+        const isOutOfStock = stockActual <= 0;
+        return {
+          ...p,
+          stockActual,
+          stockMinimo,
+          deficit,
+          suggestedQty,
+          estimatedCost,
+          isOutOfStock,
+        };
+      })
+      .sort((a, b) => {
+        if (a.isOutOfStock && !b.isOutOfStock) return -1;
+        if (!a.isOutOfStock && b.isOutOfStock) return 1;
+        return a.stockActual - b.stockActual;
+      });
+  }, [products]);
+
+  const totalEstimatedReorderInvestment = useMemo(() => {
+    return reorderItems.reduce((acc, it) => acc + it.estimatedCost, 0);
+  }, [reorderItems]);
 
   const filteredOrders = purchaseOrders.filter((po) => {
     if (statusFilter !== "all" && po.status !== statusFilter) return false;
@@ -88,7 +128,10 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
 
   const pendingOrders = purchaseOrders.filter((po) => po.status === "pending").length;
   const receivedOrders = purchaseOrders.filter((po) => po.status === "received").length;
-  const totalPurchasesValue = purchaseOrders.reduce((acc, po) => acc + po.totalAmount, 0);
+  const totalPurchasesValue = purchaseOrders.reduce(
+    (acc, po) => acc + Number(po.totalAmount ?? (po as any).total ?? 0),
+    0
+  );
 
   return (
     <div className="p-4 sm:p-6 space-y-4 animate-fade-in max-w-7xl mx-auto">
@@ -98,7 +141,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
           <div className="flex items-baseline gap-2 flex-none">
             <span className="text-[11px] font-mono uppercase text-zinc-400 font-bold">Total Facturado:</span>
             <span className="font-mono font-black text-sm text-zinc-900 dark:text-white">
-              ${totalPurchasesValue.toLocaleString("es-CO")}
+              ${(totalPurchasesValue || 0).toLocaleString("es-CO")}
             </span>
           </div>
 
@@ -130,7 +173,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
             <button
               type="button"
               onClick={onOpenNewPurchaseOrder}
-              className="px-3.5 py-1.5 rounded-xl bg-[#190088] hover:bg-[#150073] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+              className="px-3.5 py-1.5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nueva Factura de Compra</span>
@@ -143,7 +186,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
               onClick={onOpenNewSupplier}
               className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
             >
-              <Building2 className="w-3.5 h-3.5 text-[#190088]" />
+              <Building2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
               <span>Nuevo Proveedor</span>
             </button>
           )}
@@ -152,7 +195,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
 
       {/* ── 2. View Mode Pills & Search / Filters Toolbar ── */}
       <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Main Tabs (Órdenes vs Proveedores) */}
+        {/* Main Tabs (Órdenes vs Sugeridos vs Proveedores) */}
         <div className="flex items-center gap-1.5 p-1 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl w-fit flex-none">
           <button
             type="button"
@@ -160,7 +203,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "orders"
                 ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088]"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-[#FF3F1A]"
             }`}
           >
             <Boxes className="w-3.5 h-3.5" />
@@ -168,7 +211,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
             <span
               className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold ${
                 activeTab === "orders"
-                  ? "bg-[#190088] text-white"
+                  ? "bg-[#FF3F1A] text-white"
                   : "bg-zinc-200/80 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
               }`}
             >
@@ -178,11 +221,29 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
 
           <button
             type="button"
+            onClick={() => setActiveTab("reorder")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              activeTab === "reorder"
+                ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-[#FF3F1A]"
+            }`}
+          >
+            <AlertTriangle className={`w-3.5 h-3.5 ${reorderItems.length > 0 ? "text-amber-500" : ""}`} />
+            <span>Sugeridos de Reorden</span>
+            {reorderItems.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                {reorderItems.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("suppliers")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               activeTab === "suppliers"
                 ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-2xs"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088]"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-[#FF3F1A]"
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
@@ -190,7 +251,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
             <span
               className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-bold ${
                 activeTab === "suppliers"
-                  ? "bg-[#190088] text-white"
+                  ? "bg-[#FF3F1A] text-white"
                   : "bg-zinc-200/80 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400"
               }`}
             >
@@ -210,7 +271,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
                 placeholder="Buscar factura, proveedor..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-[#190088] text-zinc-900 dark:text-white"
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 focus:outline-hidden focus:ring-1 focus:ring-[#FF3F1A] text-zinc-900 dark:text-white"
               />
             </div>
 
@@ -340,7 +401,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
 
                           {/* Total */}
                           <td className="py-3 px-3 text-right font-mono font-black text-sm text-zinc-900 dark:text-white">
-                            ${po.totalAmount.toLocaleString("es-CO")}
+                            ${Number(po.totalAmount ?? (po as any).total ?? (po.items?.reduce((s, it) => s + ((it.quantity || 0) * (it.unitPrice || 0)), 0)) ?? 0).toLocaleString("es-CO")}
                           </td>
 
                           {/* Estado */}
@@ -402,10 +463,10 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
                                       </div>
                                       <div className="flex items-center gap-4 font-mono">
                                         <span className="text-zinc-500">
-                                          {it.quantity} {it.unit} × ${it.unitPrice.toLocaleString("es-CO")}
+                                          {it.quantity} {it.unit || "UND"} × ${(it.unitPrice || 0).toLocaleString("es-CO")}
                                         </span>
                                         <span className="font-bold text-zinc-900 dark:text-white">
-                                          ${(it.quantity * it.unitPrice).toLocaleString("es-CO")}
+                                          ${((it.quantity || 0) * (it.unitPrice || 0)).toLocaleString("es-CO")}
                                         </span>
                                       </div>
                                     </div>
@@ -425,7 +486,142 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
         </div>
       )}
 
-      {/* ── 4. Tab 2: High Density Suppliers Directory Table ── */}
+      {/* ── 4. Tab 2: Sugeridos de Reabastecimiento (Punto de Reorden) ── */}
+      {activeTab === "reorder" && (
+        <div className="space-y-4">
+          {/* Executive Summary Banner */}
+          <div className="bg-white dark:bg-[#151518] rounded-2xl p-4 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {reorderItems.length} referencias bajo stock mínimo
+                </span>
+                <span className="text-xs text-zinc-400">• Sugerencia ROP</span>
+              </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                Referencias que alcanzaron su punto de pedido de seguridad para evitar quiebres de inventario.
+              </p>
+            </div>
+
+            <div className="flex items-baseline gap-2 bg-zinc-50 dark:bg-zinc-900 px-3.5 py-2 rounded-xl border border-zinc-200/60 dark:border-zinc-800">
+              <span className="text-[11px] font-mono text-zinc-400 uppercase font-bold">Inversión Estimada:</span>
+              <span className="text-base font-mono font-black text-[#FF3F1A]">
+                ${totalEstimatedReorderInvestment.toLocaleString("es-CO")}
+              </span>
+            </div>
+          </div>
+
+          {/* Reorder Table */}
+          <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/75 dark:bg-zinc-900/50 text-[10px] font-mono uppercase font-bold text-zinc-400">
+                    <th className="py-2.5 px-4">Producto & SKU</th>
+                    <th className="py-2.5 px-3">Bodega</th>
+                    <th className="py-2.5 px-3 text-center">Stock Actual</th>
+                    <th className="py-2.5 px-3 text-center">Stock Mínimo</th>
+                    <th className="py-2.5 px-3 text-center">Sugerido Pedir</th>
+                    <th className="py-2.5 px-3 text-right">Costo Estimado</th>
+                    <th className="py-2.5 px-3">Proveedor Habitual</th>
+                    <th className="py-2.5 px-4 text-right">Acción Rápida</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                  {reorderItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-12 text-center text-zinc-400">
+                        <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-500 opacity-80" />
+                        <p className="font-bold text-zinc-800 dark:text-zinc-200">
+                          ¡Inventario en niveles óptimos!
+                        </p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          Ningún producto se encuentra por debajo de su stock mínimo de seguridad.
+                        </p>
+                      </td>
+                    </tr>
+                  ) : (
+                    reorderItems.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div>
+                            <span className="font-bold text-zinc-900 dark:text-white block">
+                              {item.name}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="font-mono text-[11px] text-zinc-400">{item.sku}</span>
+                              <span className="text-zinc-300 dark:text-zinc-700">•</span>
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500">
+                                {item.category || "General"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3 text-zinc-600 dark:text-zinc-300">
+                          <span className="truncate max-w-[130px] block">
+                            {item.locationName || "Sede Principal"}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3 text-center font-mono">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                              item.isOutOfStock
+                                ? "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                                : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                            }`}
+                          >
+                            {item.stockActual} {item.unit}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3 text-center font-mono text-zinc-500 font-bold">
+                          {item.stockMinimo} {item.unit}
+                        </td>
+
+                        <td className="py-3 px-3 text-center font-mono">
+                          <span className="font-black text-sm text-[#FF3F1A]">
+                            +{item.suggestedQty} {item.unit}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3 text-right font-mono font-bold text-zinc-900 dark:text-white">
+                          ${item.estimatedCost.toLocaleString("es-CO")}
+                        </td>
+
+                        <td className="py-3 px-3 text-zinc-600 dark:text-zinc-300 text-xs">
+                          {item.supplier || "Sin proveedor asignado"}
+                        </td>
+
+                        <td className="py-3 px-4 text-right">
+                          {onOpenNewPurchaseOrder && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenNewPurchaseOrder(item, item.suggestedQty)}
+                              className="px-3 py-1.5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white font-bold text-xs shadow-2xs flex items-center gap-1.5 ml-auto transition-colors cursor-pointer"
+                              title="Crear orden de compra prellenada para este ítem"
+                            >
+                              <ShoppingCart className="w-3.5 h-3.5" />
+                              <span>Pedir a Proveedor</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. Tab 3: High Density Suppliers Directory Table ── */}
       {activeTab === "suppliers" && (
         <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs overflow-hidden">
           <div className="overflow-x-auto">
@@ -449,7 +645,7 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center flex-none">
+                        <div className="w-8 h-8 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center flex-none">
                           <Building2 className="w-4 h-4" />
                         </div>
                         <span className="font-bold text-zinc-900 dark:text-white">
@@ -482,8 +678,8 @@ export const PurchasingView: React.FC<PurchasingViewProps> = ({
                       {onOpenNewPurchaseOrder && (
                         <button
                           type="button"
-                          onClick={onOpenNewPurchaseOrder}
-                          className="px-3 py-1.5 rounded-xl bg-[#190088]/10 hover:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] font-bold text-xs transition-colors cursor-pointer"
+                          onClick={() => onOpenNewPurchaseOrder(null)}
+                          className="px-3 py-1.5 rounded-xl bg-[#FF3F1A]/10 hover:bg-[#FF3F1A]/20 text-[#FF3F1A] font-bold text-xs transition-colors cursor-pointer"
                         >
                           + Facturar Compra
                         </button>

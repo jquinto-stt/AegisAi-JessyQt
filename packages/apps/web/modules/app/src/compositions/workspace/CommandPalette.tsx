@@ -78,7 +78,7 @@ export const CommandPalette: React.FC = () => {
       action: () => {
         switchBusiness(b.id);
         setIsCommandPaletteOpen(false);
-        navigate("/?section=operacion&tab=en-vivo");
+        navigate("/app?section=operacion&tab=en-vivo");
       },
       active: b.id === activeBusinessId,
       badge: b.businessType === "retail_store" ? "Retail" : "Gastro",
@@ -117,7 +117,7 @@ export const CommandPalette: React.FC = () => {
       icon: <ShoppingBag className="w-4 h-4 text-orange-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=operacion&tab=en-vivo");
+        navigate("/app?section=operacion&tab=en-vivo");
       },
     },
     {
@@ -128,7 +128,7 @@ export const CommandPalette: React.FC = () => {
       icon: <Flame className="w-4 h-4 text-rose-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=operacion&tab=preparacion");
+        navigate("/app?section=operacion&tab=preparacion");
       },
     },
     {
@@ -139,7 +139,7 @@ export const CommandPalette: React.FC = () => {
       icon: <Layers className="w-4 h-4 text-amber-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=menu&tab=catalogo");
+        navigate("/app?section=menu&tab=catalogo");
       },
     },
     {
@@ -150,7 +150,7 @@ export const CommandPalette: React.FC = () => {
       icon: <Building2 className="w-4 h-4 text-emerald-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=menu&tab=insumos");
+        navigate("/app?section=menu&tab=insumos");
       },
     },
     {
@@ -161,7 +161,7 @@ export const CommandPalette: React.FC = () => {
       icon: <BarChart3 className="w-4 h-4 text-violet-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=analitica&tab=resumen");
+        navigate("/app?section=analitica&tab=resumen");
       },
     },
     {
@@ -172,7 +172,7 @@ export const CommandPalette: React.FC = () => {
       icon: <ShoppingBag className="w-4 h-4 text-indigo-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=analitica&tab=historial");
+        navigate("/app?section=analitica&tab=historial");
       },
     },
     {
@@ -183,7 +183,7 @@ export const CommandPalette: React.FC = () => {
       icon: <SlidersHorizontal className="w-4 h-4 text-orange-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=configuracion&tab=automatizaciones");
+        navigate("/app?section=configuracion&tab=automatizaciones");
       },
     },
     {
@@ -194,7 +194,7 @@ export const CommandPalette: React.FC = () => {
       icon: <Users className="w-4 h-4 text-sky-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
-        navigate("/?section=configuracion&tab=turnos");
+        navigate("/app?section=configuracion&tab=turnos");
       },
     },
   ];

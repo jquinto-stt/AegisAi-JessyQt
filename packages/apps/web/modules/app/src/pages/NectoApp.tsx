@@ -16,6 +16,8 @@ import {
   Calendar,
   Clock,
   Store,
+  Tag,
+  Coins,
 } from "lucide-react";
 
 import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
@@ -24,6 +26,7 @@ import { ModuloInventario, InventoryTab } from "@/ModuloInventario";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
+import { RoleSelectionModal } from "@/compositions/workspace/RoleSelectionModal";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
@@ -170,12 +173,14 @@ export function TailAdminBreadcrumb({
   pageName = "Pedidos Activos",
   onNavigateHome,
   onNavigateSection,
+  onOpenRoleModal,
 }: {
   moduleName?: string;
   roleName?: string;
   pageName?: string;
   onNavigateHome?: () => void;
   onNavigateSection?: () => void;
+  onOpenRoleModal?: () => void;
 }) {
   const navigate = useNavigate();
 
@@ -221,6 +226,15 @@ export function TailAdminBreadcrumb({
       <span className="text-[#FF3F1A] dark:text-orange-400 font-black truncate max-w-[130px] sm:max-w-none">
         {pageName}
       </span>
+
+      {onOpenRoleModal && (
+        <Badge 
+          onClick={onOpenRoleModal}
+          className="ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+        >
+          {roleName}
+        </Badge>
+      )}
     </nav>
   );
 }
@@ -240,7 +254,8 @@ function Sidebar({
   onNavigateModule,
   onNavigateInventario,
   isMobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  onOpenRoleModal,
 }: {
   activeModule?: "pedidos" | "inventarios";
   pedidosSection: PedidosSection;
@@ -252,9 +267,10 @@ function Sidebar({
   onNavigateInventario?: (tab: InventoryTab) => void;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
+  onOpenRoleModal?: () => void;
 }) {
   const navigate = useNavigate();
-  const { canAccess, activeBusiness } = useBusiness();
+  const { canAccess, activeBusiness, activeRole } = useBusiness();
   const { signOut } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
@@ -338,8 +354,8 @@ function Sidebar({
   }: {
     icon: React.ReactNode;
     label: string;
-    active: boolean;
-    onClick: () => void;
+    active?: boolean;
+    onClick?: () => void;
     indent?: boolean;
     isMobile?: boolean;
   }) {
@@ -621,6 +637,28 @@ function Sidebar({
                 isMobile={isMobile}
               />
               <NavItem
+                icon={<Coins className="w-4 h-4" />}
+                label="Valor de Inventario"
+                active={activeModule === "inventarios" && inventarioTab === "valuation"}
+                onClick={() => {
+                  if (onNavigateModule) onNavigateModule("inventarios");
+                  if (onNavigateInventario) onNavigateInventario("valuation");
+                }}
+                indent
+                isMobile={isMobile}
+              />
+              <NavItem
+                icon={<Tag className="w-4 h-4" />}
+                label="Listas de Precios"
+                active={activeModule === "inventarios" && inventarioTab === "pricelists"}
+                onClick={() => {
+                  if (onNavigateModule) onNavigateModule("inventarios");
+                  if (onNavigateInventario) onNavigateInventario("pricelists");
+                }}
+                indent
+                isMobile={isMobile}
+              />
+              <NavItem
                 icon={<Building2 className="w-4 h-4" />}
                 label="Bodegas & Sucursales"
                 active={activeModule === "inventarios" && inventarioTab === "locations"}
@@ -724,6 +762,11 @@ function Sidebar({
         {/* Bottom Action Section */}
         <div className="p-3 flex flex-col gap-1 border-t border-slate-100 dark:border-gray-800">
           <NavItem
+            icon={<Shield className="w-4 h-4 text-[#FF3F1A]" />}
+            label={`Rol: ${activeRole?.name || "Dueño"}`}
+            onClick={onOpenRoleModal}
+          />
+          <NavItem
             icon={<Store className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />}
             label="Hub de Sucursales"
             onClick={() => navigate("/")}
@@ -769,6 +812,15 @@ function Sidebar({
 
             {/* Drawer Footer */}
             <div className="p-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-1 bg-slate-50/50 dark:bg-gray-800/40">
+              <NavItem
+                icon={<Shield className="w-4 h-4 text-[#FF3F1A]" />}
+                label={`Rol: ${activeRole?.name || "Dueño"}`}
+                onClick={() => {
+                  onCloseMobile?.();
+                  onOpenRoleModal?.();
+                }}
+                isMobile={true}
+              />
               <NavItem
                 icon={<Settings className="w-4 h-4 text-[#FF3F1A]" />}
                 label="Configuración"
@@ -897,6 +949,7 @@ export default function App() {
     return mod === "inventarios" ? "inventarios" : "pedidos";
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const { activeBusiness, activeRole } = useBusiness();
   const hasPedidos = activeBusiness?.activeModules?.includes("pedidos") ?? true;
   const hasInventarios = activeBusiness?.activeModules?.includes("inventarios") ?? true;
@@ -1124,6 +1177,7 @@ export default function App() {
           onNavigateInventario={handleNavigateInventario}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={() => setIsMobileMenuOpen(false)}
+          onOpenRoleModal={() => setIsRoleModalOpen(true)}
         />
 
         {/* Right Column: Fixed Top Navbar + Independently Scrolling Content Screen */}
@@ -1147,12 +1201,16 @@ export default function App() {
                 roleName={activeModule === "inventarios" ? "Inventario" : currentRoleName}
                 pageName={
                   activeModule === "inventarios"
-                    ? inventarioTab === "locations"
+                    ? inventarioTab === "valuation"
+                      ? "Valor de Inventario"
+                      : inventarioTab === "locations"
                       ? "Bodegas & Sucursales"
                       : inventarioTab === "purchasing"
                       ? "Compras & Facturas"
                       : inventarioTab === "kardex"
                       ? "Historial de Movimientos"
+                      : inventarioTab === "pricelists"
+                      ? "Listas de Precios"
                       : "Productos & Servicios"
                     : currentPageName
                 }
@@ -1169,11 +1227,26 @@ export default function App() {
                           : "roles"
                       )
                 }
+                onOpenRoleModal={() => setIsRoleModalOpen(true)}
               />
             </div>
 
             <div className="flex items-center gap-2 sm:gap-2.5">
               <div className="hidden sm:block"><GlobalSearchButton /></div>
+
+              {/* Direct Role Switcher Pill in Top Bar */}
+              <button
+                type="button"
+                onClick={() => setIsRoleModalOpen(true)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-zinc-200/90 dark:border-zinc-700/80 bg-zinc-50/90 dark:bg-zinc-800/90 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:border-[#FF3F1A] dark:hover:border-[#FF3F1A] transition-all cursor-pointer shadow-2xs group"
+                title={`Rol activo: ${activeRole?.name || "Dueño"}. Clic para cambiar de perfil.`}
+              >
+                <Shield className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                <span className="text-xs font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-[#FF3F1A] dark:group-hover:text-[#FF3F1A] truncate max-w-[130px]">
+                  {activeRole?.name || "Dueño"}
+                </span>
+                <ChevronDown className="w-3 h-3 text-zinc-400 group-hover:text-[#FF3F1A] transition-transform" />
+              </button>
 
               <NotificationBellDropdown
                 notifications={notifications}
@@ -1218,6 +1291,11 @@ export default function App() {
         <Footer />
       </div>
       <CommandPalette />
+      <RoleSelectionModal
+        business={activeBusiness}
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+      />
     </div>
   );
 }

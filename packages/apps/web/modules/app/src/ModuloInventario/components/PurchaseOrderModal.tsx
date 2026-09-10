@@ -42,6 +42,8 @@ interface PurchaseOrderModalProps {
     phone: string;
     leadTimeDays: number;
   }) => Promise<Supplier>;
+  initialProduct?: InventoryProduct | null;
+  initialSuggestedQty?: number;
 }
 
 export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
@@ -52,6 +54,8 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
   products,
   onSubmit,
   onCreateSupplier,
+  initialProduct,
+  initialSuggestedQty,
 }) => {
   const [supplierId, setSupplierId] = useState("");
   const [targetLocationId, setTargetLocationId] = useState("");
@@ -78,15 +82,37 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSupplierId(suppliers[0]?.id || "");
-      setTargetLocationId(locations[0]?.id || "");
+      let defaultSupId = suppliers[0]?.id || "";
+      let defaultLocId = locations[0]?.id || "";
+
+      if (initialProduct) {
+        if (initialProduct.supplier) {
+          const matchingSup = suppliers.find(
+            (s) => s.name.toLowerCase() === (initialProduct.supplier || "").toLowerCase()
+          );
+          if (matchingSup) defaultSupId = matchingSup.id;
+        }
+        if (initialProduct.locationId) {
+          defaultLocId = initialProduct.locationId;
+        }
+      }
+
+      setSupplierId(defaultSupId);
+      setTargetLocationId(defaultLocId);
       setAutoReceive(true);
-      setNotes("");
+      setNotes(initialProduct ? `Orden generada por sugerencia de reabastecimiento para ${initialProduct.sku}` : "");
       setErrorMessage(null);
       setShowAddSupplier(false);
 
-      // Pre-cargar 1 ítem inicial si hay productos
-      if (products.length > 0) {
+      if (initialProduct) {
+        setItems([
+          {
+            productId: initialProduct.id,
+            quantity: initialSuggestedQty || Math.max(1, (initialProduct.stockMinimo * 2) - initialProduct.stockActual),
+            unitPrice: initialProduct.costPrice || 10000,
+          },
+        ]);
+      } else if (products.length > 0) {
         setItems([
           {
             productId: products[0].id,
@@ -98,7 +124,7 @@ export const PurchaseOrderModal: React.FC<PurchaseOrderModalProps> = ({
         setItems([]);
       }
     }
-  }, [isOpen, suppliers, locations, products]);
+  }, [isOpen, suppliers, locations, products, initialProduct, initialSuggestedQty]);
 
   if (!isOpen) return null;
 

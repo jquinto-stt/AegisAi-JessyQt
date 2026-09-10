@@ -6,15 +6,16 @@ import { KardexView } from "./components/KardexView";
 import { StockLocationsView } from "./components/StockLocationsView";
 import { PurchasingView } from "./components/PurchasingView";
 import { ProductFormModal } from "./components/ProductFormModal";
-import { StockMovementModal } from "./components/StockMovementModal";
-import { StockCountModal } from "./components/StockCountModal";
-import { StockTransferModal } from "./components/StockTransferModal";
+import { QuickProductModal } from "./components/QuickProductModal";
+import { StockMovementModal, OperationMode } from "./components/StockMovementModal";
 import { PartDetailModal } from "./components/PartDetailModal";
 import { LocationFormModal } from "./components/LocationFormModal";
 import { PurchaseOrderModal } from "./components/PurchaseOrderModal";
-import { Boxes, Building2, Truck, Activity, ArrowDownLeft } from "lucide-react";
+import { PriceListsView } from "./components/PriceListsView";
+import { InventoryValuationView } from "./components/InventoryValuationView";
+import { Boxes, Building2, Truck, Activity, ArrowDownLeft, Tag, Scale, Coins } from "lucide-react";
 
-export type InventoryTab = "catalog" | "locations" | "kardex" | "purchasing";
+export type InventoryTab = "catalog" | "valuation" | "locations" | "kardex" | "purchasing" | "pricelists";
 
 export interface ModuloInventarioProps {
   initialTab?: InventoryTab;
@@ -54,68 +55,73 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
     saveProduct,
     deleteProduct,
     registerStockMovement,
+    registerStockAdjustment,
     registerStockCount,
     registerStockTransfer,
     createStockLocation,
     createSupplier,
     createPurchaseOrder,
     receivePurchaseOrder,
+    priceLists,
+    selectedPriceListId,
+    setSelectedPriceListId,
+    savePriceList,
+    deletePriceList,
+    setDefaultPriceList,
+    calculateProductPrice,
     resetToDefaults,
   } = useInventory();
 
   // Modals state
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isQuickProductModalOpen, setIsQuickProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<InventoryProduct | null>(null);
+  const [quickDraftProduct, setQuickDraftProduct] = useState<Partial<InventoryProduct> | null>(null);
 
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
   const [movementProduct, setMovementProduct] = useState<InventoryProduct | null>(null);
-  const [movementType, setMovementType] = useState<"ENTRADA" | "SALIDA">("ENTRADA");
-
-  const [isCountModalOpen, setIsCountModalOpen] = useState(false);
-  const [countProduct, setCountProduct] = useState<InventoryProduct | null>(null);
-
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
-  const [transferProduct, setTransferProduct] = useState<InventoryProduct | null>(null);
+  const [movementMode, setMovementMode] = useState<OperationMode>("ENTRADA");
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailProduct, setDetailProduct] = useState<InventoryProduct | null>(null);
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isPOModalOpen, setIsPOModalOpen] = useState(false);
+  const [poInitialProduct, setPoInitialProduct] = useState<InventoryProduct | null>(null);
+  const [poInitialQty, setPoInitialQty] = useState<number | undefined>(undefined);
 
   const [kardexFilterProduct, setKardexFilterProduct] = useState<string | null>(null);
 
   // Handlers
   const handleOpenNewProduct = () => {
     setEditingProduct(null);
+    setQuickDraftProduct(null);
+    setIsQuickProductModalOpen(true);
+  };
+
+  const handleOpenAdvancedNewProduct = () => {
+    setEditingProduct(null);
+    setQuickDraftProduct(null);
+    setIsProductModalOpen(true);
+  };
+
+  const handleTransitionToAdvanced = (draft: Partial<InventoryProduct>) => {
+    setQuickDraftProduct(draft);
+    setEditingProduct(null);
+    setIsQuickProductModalOpen(false);
     setIsProductModalOpen(true);
   };
 
   const handleOpenEditProduct = (prod: InventoryProduct) => {
+    setQuickDraftProduct(null);
     setEditingProduct(prod);
     setIsProductModalOpen(true);
   };
 
-  const handleOpenMovement = (prod: InventoryProduct, type: "ENTRADA" | "SALIDA") => {
-    setMovementProduct(prod);
-    setMovementType(type);
+  const handleOpenMovement = (prod?: InventoryProduct | null, mode: OperationMode = "ENTRADA") => {
+    setMovementProduct(prod || (products.length > 0 ? products[0] : null));
+    setMovementMode(mode);
     setIsMovementModalOpen(true);
-  };
-
-  const handleOpenGenericMovement = () => {
-    setMovementProduct(products.length > 0 ? products[0] : null);
-    setMovementType("ENTRADA");
-    setIsMovementModalOpen(true);
-  };
-
-  const handleOpenCount = (prod: InventoryProduct) => {
-    setCountProduct(prod);
-    setIsCountModalOpen(true);
-  };
-
-  const handleOpenTransfer = (prod: InventoryProduct) => {
-    setTransferProduct(prod);
-    setIsTransferModalOpen(true);
   };
 
   const handleViewProductDetail = (prod: InventoryProduct) => {
@@ -128,55 +134,51 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
     handleTabChange("kardex");
   };
 
-  const navTabs: Array<{ id: InventoryTab; label: string; icon: React.ReactNode; count?: number }> = [
-    { id: "catalog", label: "Productos & Servicios", icon: <Boxes className="w-3.5 h-3.5 flex-none" />, count: products.length },
-    { id: "locations", label: "Bodegas & Sucursales", icon: <Building2 className="w-3.5 h-3.5 flex-none" />, count: locations.length },
-    { id: "purchasing", label: "Compras & Facturas", icon: <Truck className="w-3.5 h-3.5 flex-none" />, count: purchaseOrders.filter(po => po.status === "pending").length },
-    { id: "kardex", label: "Historial de Movimientos", icon: <Activity className="w-3.5 h-3.5 flex-none" />, count: movements.length },
+  const navTabs: Array<{ id: InventoryTab; label: string }> = [
+    { id: "catalog", label: "Productos" },
+    { id: "valuation", label: "Valor de Inventario" },
+    { id: "pricelists", label: "Listas de Precios" },
+    { id: "locations", label: "Bodegas" },
+    { id: "purchasing", label: "Compras" },
+    { id: "kardex", label: "Kardex" },
   ];
 
   return (
     <div className="w-full min-h-full flex flex-col">
-      {/* Top Operations Subtabs Bar (Matching Pedidos Operaciones) */}
-      <div className="bg-white dark:bg-[#151518] rounded-2xl p-2.5 sm:p-3 mx-4 sm:mx-6 mt-4 sm:mt-6 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap animate-fade-in">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scrollbar-none scroll-smooth max-w-full flex-nowrap sm:flex-wrap py-0.5">
-          {navTabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabChange(tab.id)}
-              className={`px-3.5 py-1.5 min-h-[40px] sm:min-h-0 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer flex-none text-xs whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-[#190088] text-white border border-[#190088] shadow-2xs font-bold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-[#190088] dark:hover:text-[#97D6DF] hover:bg-blue-50/70 dark:hover:bg-[#190088]/20 border border-transparent"
-              }`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-              {tab.count !== undefined && (
-                <span
-                  className={`font-mono text-[10px] px-1.5 py-0.2 rounded-md ${
-                    activeTab === tab.id
-                      ? "bg-white/20 text-white"
-                      : "bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* Top Operations Bar — Clean, integrated, no visual clutter */}
+      <div className="border-b border-zinc-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between gap-4 flex-none bg-white dark:bg-[#121316]">
+        <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+          {navTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                className={`relative px-3 py-3 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                  isActive
+                    ? "text-zinc-900 dark:text-white font-bold"
+                    : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
+              >
+                <span>{tab.label}</span>
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF3F1A] rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-        {/* Quick action: Registrar Movimiento */}
-        <div className="flex items-center gap-2 flex-none ml-auto">
+        {/* Global Quick Movement */}
+        <div className="flex items-center gap-2 flex-none py-2">
           <button
             type="button"
-            onClick={handleOpenGenericMovement}
-            className="px-3.5 py-1.5 rounded-xl bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
+            onClick={() => handleOpenMovement(null, "ENTRADA")}
+            className="px-3.5 py-1.5 rounded-lg bg-[#FF3F1A] hover:bg-[#E03513] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
           >
             <ArrowDownLeft className="w-3.5 h-3.5" />
-            <span>Movimiento Rápido</span>
+            <span>Movimiento</span>
           </button>
         </div>
       </div>
@@ -192,14 +194,19 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           filters={filters}
           setFilters={setFilters}
           onNewProduct={handleOpenNewProduct}
+          onNewProductAdvanced={handleOpenAdvancedNewProduct}
           onEditProduct={handleOpenEditProduct}
           onDeleteProduct={deleteProduct}
-          onOpenMovement={handleOpenMovement}
-          onOpenCount={handleOpenCount}
-          onOpenTransfer={handleOpenTransfer}
+          onOpenMovement={(prod, mode) => handleOpenMovement(prod, mode || "ENTRADA")}
+          onOpenCount={(prod) => handleOpenMovement(prod, "CONTEO")}
+          onOpenTransfer={(prod) => handleOpenMovement(prod, "TRASLADO")}
           onViewProductDetail={handleViewProductDetail}
           onViewHistory={handleViewProductHistory}
           onResetDefaults={resetToDefaults}
+          priceLists={priceLists}
+          selectedPriceListId={selectedPriceListId}
+          onSelectPriceList={setSelectedPriceListId}
+          calculateProductPrice={calculateProductPrice}
           onSaveBatch={async (batch) => {
             for (const item of batch) {
               await saveProduct(item);
@@ -208,16 +215,37 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
         />
       )}
 
+      {activeTab === "valuation" && (
+        <InventoryValuationView
+          products={products}
+          locations={locations}
+          categories={categories}
+          onNavigateToKardex={handleViewProductHistory}
+          onOpenProductDetail={handleViewProductDetail}
+        />
+      )}
+
+      {activeTab === "pricelists" && (
+        <PriceListsView
+          priceLists={priceLists}
+          products={products}
+          onSavePriceList={savePriceList}
+          onDeletePriceList={deletePriceList}
+          onSetDefaultPriceList={setDefaultPriceList}
+          calculateProductPrice={calculateProductPrice}
+        />
+      )}
+
       {activeTab === "locations" && (
         <StockLocationsView
           locations={locations}
           products={products}
-          onOpenTransfer={handleOpenTransfer}
-          onOpenCount={handleOpenCount}
-          onOpenMovement={handleOpenMovement}
+          onOpenTransfer={(prod) => handleOpenMovement(prod, "TRASLADO")}
+          onOpenCount={(prod) => handleOpenMovement(prod, "CONTEO")}
+          onOpenMovement={(prod, type) => handleOpenMovement(prod, type)}
           onSelectProduct={handleViewProductDetail}
           onOpenNewLocation={() => setIsLocationModalOpen(true)}
-          onNewProductForLocation={(locId) => {
+          onNewProductForLocation={(_locId) => {
             setEditingProduct(null);
             setIsProductModalOpen(true);
           }}
@@ -232,8 +260,16 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           locations={locations}
           products={products}
           onReceiveOrder={receivePurchaseOrder}
-          onOpenNewPurchaseOrder={() => setIsPOModalOpen(true)}
-          onOpenNewSupplier={() => setIsPOModalOpen(true)}
+          onOpenNewPurchaseOrder={(initProd, initQty) => {
+            setPoInitialProduct(initProd || null);
+            setPoInitialQty(initQty);
+            setIsPOModalOpen(true);
+          }}
+          onOpenNewSupplier={() => {
+            setPoInitialProduct(null);
+            setPoInitialQty(undefined);
+            setIsPOModalOpen(true);
+          }}
         />
       )}
 
@@ -243,16 +279,31 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
           products={products}
           selectedProductFilter={kardexFilterProduct}
           onClearProductFilter={() => setKardexFilterProduct(null)}
-          onOpenNewMovement={handleOpenGenericMovement}
+          onOpenNewMovement={() => handleOpenMovement(null, "ENTRADA")}
+          onOpenNewAdjustment={() => handleOpenMovement(null, "AJUSTE")}
         />
       )}
 
       {/* Operation Modals */}
+      <QuickProductModal
+        isOpen={isQuickProductModalOpen}
+        onClose={() => setIsQuickProductModalOpen(false)}
+        locations={locations}
+        categories={categories}
+        onSave={saveProduct}
+        onGoToAdvanced={handleTransitionToAdvanced}
+      />
+
       <ProductFormModal
         isOpen={isProductModalOpen}
-        onClose={() => setIsProductModalOpen(false)}
+        onClose={() => {
+          setIsProductModalOpen(false);
+          setQuickDraftProduct(null);
+        }}
         locations={locations}
+        products={products}
         productToEdit={editingProduct}
+        initialData={quickDraftProduct}
         onSave={saveProduct}
       />
 
@@ -260,24 +311,13 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
         isOpen={isMovementModalOpen}
         onClose={() => setIsMovementModalOpen(false)}
         products={products}
-        selectedProduct={movementProduct}
-        initialType={movementType}
-        onSubmit={registerStockMovement}
-      />
-
-      <StockCountModal
-        isOpen={isCountModalOpen}
-        onClose={() => setIsCountModalOpen(false)}
-        product={countProduct}
-        onSubmit={registerStockCount}
-      />
-
-      <StockTransferModal
-        isOpen={isTransferModalOpen}
-        onClose={() => setIsTransferModalOpen(false)}
-        product={transferProduct}
         locations={locations}
-        onSubmit={registerStockTransfer}
+        selectedProduct={movementProduct}
+        initialMode={movementMode}
+        onMovement={registerStockMovement}
+        onAdjustment={registerStockAdjustment}
+        onTransfer={registerStockTransfer}
+        onCount={registerStockCount}
       />
 
       <PartDetailModal
@@ -285,21 +325,18 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
         onClose={() => setIsDetailModalOpen(false)}
         product={detailProduct}
         movements={movements}
-        onOpenMovement={(type) => {
+        onOpenMovement={(mode) => {
           setIsDetailModalOpen(false);
-          if (detailProduct) handleOpenMovement(detailProduct, type);
-        }}
-        onOpenCount={() => {
-          setIsDetailModalOpen(false);
-          if (detailProduct) handleOpenCount(detailProduct);
-        }}
-        onOpenTransfer={() => {
-          setIsDetailModalOpen(false);
-          if (detailProduct) handleOpenTransfer(detailProduct);
+          if (detailProduct) handleOpenMovement(detailProduct, mode);
         }}
         onEdit={() => {
           setIsDetailModalOpen(false);
           if (detailProduct) handleOpenEditProduct(detailProduct);
+        }}
+        onViewHistory={(prodId) => {
+          setIsDetailModalOpen(false);
+          setKardexFilterProduct(prodId);
+          handleTabChange("kardex");
         }}
       />
 
@@ -314,12 +351,18 @@ export const ModuloInventario: React.FC<ModuloInventarioProps> = ({
       {/* New Purchase Order / Invoice Modal */}
       <PurchaseOrderModal
         isOpen={isPOModalOpen}
-        onClose={() => setIsPOModalOpen(false)}
+        onClose={() => {
+          setIsPOModalOpen(false);
+          setPoInitialProduct(null);
+          setPoInitialQty(undefined);
+        }}
         suppliers={suppliers}
         locations={locations}
         products={products}
         onSubmit={createPurchaseOrder}
         onCreateSupplier={createSupplier}
+        initialProduct={poInitialProduct}
+        initialSuggestedQty={poInitialQty}
       />
     </div>
   );

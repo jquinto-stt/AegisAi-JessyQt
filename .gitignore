@@ -7,3 +7,4 @@ dist
 .env.*
 !.env.example
 .webiai-docs/
+Repo-prueba-master/
