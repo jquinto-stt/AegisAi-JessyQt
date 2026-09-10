@@ -7,6 +7,7 @@ import {
   MapPin,
   CheckCircle2,
   ChefHat,
+  Package,
   ShoppingBag,
   ArrowLeft,
   CalendarDays,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 import { Button, SegmentedControl } from "@/elements";
+import { useBusiness } from "@/context/BusinessContext";
 
 export const ProgramadosView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
@@ -24,6 +26,7 @@ export const ProgramadosView: React.FC<{
     injectScheduledOrderToLive,
     setSelectedOrderId,
   } = usePedidos();
+  const { semantics } = useBusiness();
 
   const [viewMode, setViewMode] = useState<"columns" | "timeline">("columns");
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -39,7 +42,9 @@ export const ProgramadosView: React.FC<{
 
   const handleInjectNow = (orderId: string, customerName: string) => {
     injectScheduledOrderToLive(orderId, true);
-    setSuccessToast(`¡Pedido de ${customerName} inyectado a Cocina KDS!`);
+    setSuccessToast(
+      `¡${semantics?.orderNoun || "Pedido"} de ${customerName} inyectado a ${semantics?.stationShortName || "Preparación"}!`
+    );
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
@@ -208,7 +213,7 @@ export const ProgramadosView: React.FC<{
                         </span>
                         {item.isInLiveQueue && (
                           <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/40">
-                            En Cocina
+                            {semantics?.requiresKitchenDisplay ? "En Cocina" : `En ${semantics?.stationShortName || "Preparación"}`}
                           </span>
                         )}
                       </div>
@@ -273,8 +278,16 @@ export const ProgramadosView: React.FC<{
                           onClick={() => handleInjectNow(item.id, item.customerName)}
                           className="flex-1 py-2.5 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <ChefHat className="w-4 h-4 text-white" />
-                          <span>Inyectar a Cocina</span>
+                          {semantics?.requiresKitchenDisplay ? (
+                            <ChefHat className="w-4 h-4 text-white" />
+                          ) : (
+                            <Package className="w-4 h-4 text-white" />
+                          )}
+                          <span>
+                            {semantics?.requiresKitchenDisplay
+                              ? "Inyectar a Cocina"
+                              : `Inyectar a ${semantics?.stationShortName || "Preparación"}`}
+                          </span>
                         </Button>
                       )}
                     </div>
@@ -458,8 +471,16 @@ export const ProgramadosView: React.FC<{
                         onClick={() => handleInjectNow(item.id, item.customerName)}
                         className="py-2 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center gap-1.5 cursor-pointer"
                       >
-                        <ChefHat className="w-3.5 h-3.5 text-white" />
-                        <span>Inyectar a Cocina</span>
+                        {semantics?.requiresKitchenDisplay ? (
+                          <ChefHat className="w-3.5 h-3.5 text-white" />
+                        ) : (
+                          <Package className="w-3.5 h-3.5 text-white" />
+                        )}
+                        <span>
+                          {semantics?.requiresKitchenDisplay
+                            ? "Inyectar a Cocina"
+                            : `Inyectar a ${semantics?.stationShortName || "Preparación"}`}
+                        </span>
                       </Button>
                     )}
                   </div>

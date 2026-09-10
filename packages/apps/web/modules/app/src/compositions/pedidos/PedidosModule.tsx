@@ -19,6 +19,7 @@ import { RejectCancelModal } from "./shared/RejectCancelModal";
 import { IncidenciasDrawer } from "./shared/IncidenciasDrawer";
 import { ThermalTicketModal } from "./shared/ThermalTicketModal";
 import { WhatsAppFloatingWidget } from "./shared/WhatsAppFloatingWidget";
+import { useBusiness } from "@/context/BusinessContext";
 
 import {
   DEFAULT_LAYOUT_PREFS,
@@ -77,6 +78,9 @@ const PedidosContent: React.FC<{
     setAiModalOrder,
     setPrintTicketOrder,
   } = usePedidos();
+  const { semantics } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
+
   const [section, setSection] = useState<PedidosSection>(sectionProp);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp || "catalogo");
@@ -319,8 +323,8 @@ const PedidosContent: React.FC<{
                 },
                 {
                   id: "preparacion" as OperacionTab,
-                  label: "Pantalla KDS Cocina",
-                  icon: <ChefHat className="size-3.5 flex-none" />,
+                  label: isFood ? "Pantalla KDS Cocina" : (semantics?.stationShortName || "Preparación & Despacho"),
+                  icon: isFood ? <ChefHat className="size-3.5 flex-none" /> : <Package className="size-3.5 flex-none" />,
                   count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
                 },
                 {
@@ -372,8 +376,20 @@ const PedidosContent: React.FC<{
           {(section === "menu" || (section === "gestion" && (geTab === "catalogo" || geTab === "insumos"))) && (
             <>
               {[
-                { id: "catalogo" as GestionTab, label: "Catálogo de Platos", icon: <Layers className="size-3.5 flex-none" /> },
-                { id: "insumos" as GestionTab, label: "Insumos & Stock (Escandallos)", icon: <Package className="size-3.5 flex-none" /> },
+                {
+                  id: "catalogo" as GestionTab,
+                  label: isFood ? "Catálogo de Platos" : "Catálogo de Productos",
+                  icon: <Layers className="size-3.5 flex-none" />,
+                },
+                ...(isFood
+                  ? [
+                      {
+                        id: "insumos" as GestionTab,
+                        label: "Insumos & Stock (Escandallos)",
+                        icon: <Package className="size-3.5 flex-none" />,
+                      },
+                    ]
+                  : []),
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -421,7 +437,11 @@ const PedidosContent: React.FC<{
               {[
                 { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="size-3.5 flex-none" /> },
                 { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="size-3.5 flex-none" /> },
-                { id: "turnos" as GestionTab, label: "Turnos y Capacidad de Cocina", icon: <Users className="size-3.5 flex-none" /> },
+                {
+                  id: "turnos" as GestionTab,
+                  label: isFood ? "Turnos y Capacidad de Cocina" : "Turnos y Capacidad Operativa",
+                  icon: <Users className="size-3.5 flex-none" />,
+                },
               ].map(tab => (
                 <button
                   key={tab.id}

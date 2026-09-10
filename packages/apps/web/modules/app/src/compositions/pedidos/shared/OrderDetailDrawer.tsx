@@ -42,12 +42,10 @@ export const OrderDetailDrawer: React.FC = () => {
     sendWhatsAppStatusAlert,
   } = usePedidos();
 
-  const { activeRoleId } = useBusiness();
+  const { activeRoleId, semantics } = useBusiness();
   const isCookRole = activeRoleId === "role-cook";
 
-  const [drawerViewMode, setDrawerViewMode] = useState<"cocina" | "general">(
-    isCookRole ? "cocina" : "general"
-  );
+  const [drawerViewMode, setDrawerViewMode] = useState<"operacion" | "general">("operacion");
   const [kitchenChecked, setKitchenChecked] = useState<Record<number, boolean>>({});
   const [sentAlertToast, setSentAlertToast] = useState<string | null>(null);
 
@@ -181,9 +179,14 @@ export const OrderDetailDrawer: React.FC = () => {
             intent="drawer.mode"
             tone="accent"
             value={drawerViewMode}
-            onValueChange={v => setDrawerViewMode(v as "cocina" | "general")}
+            onValueChange={v => setDrawerViewMode(v as "operacion" | "general")}
             options={[
-              { value: "cocina", label: "Ficha de Cocina (KDS)" },
+              {
+                value: "operacion",
+                label: semantics?.requiresKitchenDisplay
+                  ? "Ficha de Cocina (KDS)"
+                  : `Ficha de ${semantics?.stationShortName || "Alistamiento"}`,
+              },
               { value: "general", label: "General & Caja" },
             ]}
           />
@@ -192,25 +195,25 @@ export const OrderDetailDrawer: React.FC = () => {
         {/* Drawer Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 scrollbar-thin">
           {/* ========================================================================= */}
-          {/* MODE 1: FICHA TÉCNICA DE COCINA (KDS STAFF)                              */}
+          {/* MODE 1: FICHA TÉCNICA OPERATIVA                                           */}
           {/* ========================================================================= */}
-          {drawerViewMode === "cocina" ? (
+          {drawerViewMode === "operacion" ? (
             <div className="space-y-5 animate-fade-in">
-              {/* Turn & Kitchen Station Card with Smart Bi-directional KDS Timer */}
+              {/* Turn & Station Card with Smart Bi-directional Timer */}
               <div className="p-4 rounded-2xl bg-[#ECECEC]/50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                 <div>
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-                    Estación de Cocina & Armado
+                    {semantics?.stationNoun || "Estación de Alistamiento & Despacho"}
                   </span>
                   <h4 className="font-extrabold text-sm text-[#212121] dark:text-white mt-0.5">
-                    Comanda Turno #{order.turnNumber || "00"}
+                    {semantics?.orderNoun || "Pedido"} Turno #{order.turnNumber || "00"}
                   </h4>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 font-mono">
                   <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-sans">
                     <Timer className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                    <span>Tiempo KDS</span>
+                    <span>{semantics?.requiresKitchenDisplay ? "Tiempo KDS" : "Tiempo de Alistamiento"}</span>
                   </div>
 
                   {/* Smart Bi-directional Stepper */}
@@ -255,11 +258,13 @@ export const OrderDetailDrawer: React.FC = () => {
                 </div>
               )}
 
-              {/* Interactive Kitchen Preparation Checklist */}
+              {/* Interactive Preparation Checklist */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-mono font-bold text-xs uppercase tracking-wider text-zinc-400">
-                    Checklist de Elaboración & Empaque
+                    {semantics?.requiresKitchenDisplay
+                      ? "Checklist de Elaboración & Empaque"
+                      : "Checklist de Picking & Alistamiento"}
                   </h4>
                   <span className="text-[11px] text-[#190088] dark:text-[#97D6DF] font-mono font-bold">
                     {Object.values(kitchenChecked).filter(Boolean).length} / {order.items.length} listos
@@ -357,7 +362,7 @@ export const OrderDetailDrawer: React.FC = () => {
 
                   <p className="text-xs text-[#212121] dark:text-zinc-300 leading-relaxed bg-white dark:bg-zinc-950 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
                     {activeIncident?.description ||
-                      `El pedido superó los ${order.estimatedMinutes} min pactados debido a sobredemanda de preparación en cocina central.`}
+                      `El pedido superó los ${order.estimatedMinutes} min pactados debido a sobredemanda de alistamiento en ${semantics?.stationShortName || "bodega"}.`}
                   </p>
 
                   <div className="flex flex-wrap gap-2 pt-1">
@@ -367,7 +372,7 @@ export const OrderDetailDrawer: React.FC = () => {
                       onClick={() => adjustEstimate(order.id, 10)}
                       className="py-2 px-3 bg-white dark:bg-zinc-800 text-xs text-[#212121] dark:text-[#ECECEC] border-zinc-200 dark:border-zinc-700 font-bold cursor-pointer"
                     >
-                      <span>+10m a Cocina</span>
+                      <span>{semantics?.requiresKitchenDisplay ? "+10m a Cocina" : "+10m a Despacho"}</span>
                     </Button>
 
                     <Button
@@ -422,7 +427,7 @@ export const OrderDetailDrawer: React.FC = () => {
                     </p>
                   ) : (
                     <p className="text-xs text-zinc-500 italic">
-                      Comanda gestionada por WhatsApp. Podés enviar avisos directos con 1 clic:
+                      {semantics?.orderNoun || "Pedido"} gestionado por WhatsApp. Podés enviar avisos directos con 1 clic:
                     </p>
                   )}
 
@@ -701,7 +706,7 @@ export const OrderDetailDrawer: React.FC = () => {
               onClick={() => sendToKitchen(order.id)}
               className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
             >
-              <span>{semantics?.requiresKitchenDisplay ? "Pasar a Cocina (KDS)" : "Pasar a Alistamiento / Empaque"}</span>
+              <span>{semantics?.requiresKitchenDisplay ? "Pasar a Cocina (KDS)" : `Pasar a ${semantics?.stationShortName || "Alistamiento"}`}</span>
             </Button>
           )}
 

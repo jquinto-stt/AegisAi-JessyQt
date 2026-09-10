@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { Printer, X, Check, Copy, QrCode } from "lucide-react";
+import { useBusiness } from "@/context/BusinessContext";
+import { Printer, X, Check, Copy } from "lucide-react";
 import { Button } from "@/elements";
 
 export const ThermalTicketModal: React.FC = () => {
   const { printTicketOrder, setPrintTicketOrder } = usePedidos();
+  const { activeBusiness, semantics } = useBusiness();
   const [paperWidth, setPaperWidth] = useState<"80mm" | "58mm">("80mm");
   const [copied, setCopied] = useState(false);
 
@@ -68,7 +70,7 @@ export const ThermalTicketModal: React.FC = () => {
                 Impresión de Ticket Térmico
               </h3>
               <p className="text-[11px] text-gray-400">
-                Formateado para impresora POS y cocina
+                Formateado para impresora POS y despacho
               </p>
             </div>
           </div>
@@ -126,10 +128,16 @@ export const ThermalTicketModal: React.FC = () => {
               fontFamily: "'Courier New', Courier, monospace",
             }}
           >
-            {/* Restaurant Brand Header */}
+            {/* Brand Header */}
             <div className="text-center space-y-1 pb-3 border-b-2 border-dashed border-black">
-              <h2 className="text-base font-black tracking-wider uppercase">NECTO COCINA</h2>
-              <p className="text-[11px]">SISTEMA CENTRAL DE PEDIDOS</p>
+              <h2 className="text-base font-black tracking-wider uppercase">
+                {activeBusiness?.name || "NECTO OMS"}
+              </h2>
+              <p className="text-[11px] font-bold">
+                {semantics?.requiresKitchenDisplay
+                  ? "COMANDO DE COCINA / KDS"
+                  : `COMPROBANTE DE ${semantics?.stationShortName?.toUpperCase() || "DESPACHO"}`}
+              </p>
               <p className="text-[10px] text-gray-600">Canal: {order.channel.toUpperCase()} · {order.createdAt} hs</p>
             </div>
 

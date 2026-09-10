@@ -130,9 +130,9 @@ export const PedidosEnVivoView: React.FC<{
   const colNames: Record<OrderStatus, string> = {
     NUEVO: "Nuevos & Por Confirmar",
     CONFIRMADO: "Confirmados (En Cola)",
-    EN_PREPARACION: "En Cocina / Horno",
-    LISTO: "Listos para Entrega",
-    FINALIZADO: "Entregados / Finalizados",
+    EN_PREPARACION: semantics?.preparationVerb || "En Alistamiento / Preparación",
+    LISTO: semantics?.readyVerb || "Listos para Entrega",
+    FINALIZADO: semantics?.deliveredVerb || "Entregados / Finalizados",
     RECHAZADO: "Rechazados",
     CANCELADO: "Cancelados",
   };
@@ -365,7 +365,9 @@ export const PedidosEnVivoView: React.FC<{
                 <option value="TODOS">Todos los Estados ({statusCounts.TODOS})</option>
                 <option value="NUEVO">Nuevos ({statusCounts.NUEVO})</option>
                 <option value="CONFIRMADO">En Cola ({statusCounts.CONFIRMADO})</option>
-                <option value="EN_PREPARACION">En Cocina ({statusCounts.EN_PREPARACION})</option>
+                <option value="EN_PREPARACION">
+                  {semantics?.preparationVerb || "En Preparación"} ({statusCounts.EN_PREPARACION})
+                </option>
                 <option value="LISTO">Listos ({statusCounts.LISTO})</option>
                 <option value="FINALIZADO">Entregados ({statusCounts.FINALIZADO})</option>
               </select>

@@ -50,7 +50,7 @@ export const AutomatizacionesView: React.FC = () => {
       orderId: "PED-1022",
       channel: "web",
       status: "Ejecutado",
-      detail: "Pedido Web pagado, 2 combos mixtos enviados automáticamente a KDS cocina.",
+      detail: "Pedido Web pagado, artículos verificados y enviados automáticamente a preparación y alistamiento.",
     },
     {
       id: "LOG-106",

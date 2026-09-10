@@ -13,6 +13,7 @@ import {
   BarChart3,
   Users,
   Layers,
+  Package,
   X,
 } from "lucide-react";
 import { Button } from "@/elements";
@@ -25,7 +26,9 @@ export const CommandPalette: React.FC = () => {
     switchBusiness,
     isCommandPaletteOpen,
     setIsCommandPaletteOpen,
+    semantics,
   } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
 
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -123,9 +126,11 @@ export const CommandPalette: React.FC = () => {
     {
       id: "mod-kds",
       category: "Acceso Rápido a Módulos",
-      title: "Pantalla KDS Cocina & Tiempos",
-      subtitle: "Estación táctil de preparación para cocineros y horneros",
-      icon: <Flame className="w-4 h-4 text-rose-500" />,
+      title: isFood ? "Pantalla KDS Cocina & Tiempos" : `Pantalla de ${semantics?.stationShortName || "Despacho"} & Tiempos`,
+      subtitle: isFood
+        ? "Estación táctil de preparación para cocineros y horneros"
+        : "Estación táctil de alistamiento, empaque y despacho",
+      icon: isFood ? <Flame className="w-4 h-4 text-rose-500" /> : <Package className="w-4 h-4 text-rose-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=operacion&tab=preparacion");
@@ -134,8 +139,10 @@ export const CommandPalette: React.FC = () => {
     {
       id: "mod-catalogo",
       category: "Acceso Rápido a Módulos",
-      title: "Catálogo de Platos & Modificadores",
-      subtitle: "Gestión de cartas, fotos, secciones y opciones extras",
+      title: isFood ? "Catálogo de Platos & Modificadores" : "Catálogo de Productos & Variantes",
+      subtitle: isFood
+        ? "Gestión de cartas, fotos, secciones y opciones extras"
+        : "Gestión de productos, variantes, precios y catálogo",
       icon: <Layers className="w-4 h-4 text-amber-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);
@@ -189,8 +196,10 @@ export const CommandPalette: React.FC = () => {
     {
       id: "mod-turnos",
       category: "Acceso Rápido a Módulos",
-      title: "Turnos y Capacidad de Cocina",
-      subtitle: "Dotación de personal y buffer de tiempos de entrega",
+      title: isFood ? "Turnos y Capacidad de Cocina" : "Turnos y Capacidad Operativa",
+      subtitle: isFood
+        ? "Dotación de personal y buffer de tiempos de entrega"
+        : "Dotación de personal y capacidad de despacho",
       icon: <Users className="w-4 h-4 text-sky-500" />,
       action: () => {
         setIsCommandPaletteOpen(false);

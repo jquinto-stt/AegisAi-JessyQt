@@ -738,7 +738,7 @@ export const BusinessSettingsModal: React.FC<{
       setAllowCardTerminal(botCfg?.allowCardTerminal ?? true);
       setPaymentInfoMessage(
         botCfg?.paymentInfoMessage ||
-          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido en cocina.`
+          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido para alistamiento y despacho.`
       );
 
       setIsPaused(business.pauseConfig?.isPaused || false);
@@ -785,11 +785,11 @@ export const BusinessSettingsModal: React.FC<{
       setBancolombiaAccount("104-892134-55");
       setAccountHolder("Necto Gourmet S.A.S");
       setIsClosedHoursEnabled(true);
-      setClosedHoursMessage("En este momento nuestras cocinas están fuera de servicio.");
+      setClosedHoursMessage("En este momento nuestro canal de pedidos está fuera de servicio.");
       setIsHandoffEnabled(true);
       setHandoffToHumanMessage("Un operador humano te responderá en este chat a la brevedad.");
       setIsOrderConfirmedEnabled(true);
-      setOrderConfirmedMessage("¡Comanda confirmada e ingresada a cocina!");
+      setOrderConfirmedMessage("¡Pedido confirmado e ingresado a preparación!");
       setIsPaused(false);
       setConfirmDelete(false);
     }
@@ -957,15 +957,15 @@ export const BusinessSettingsModal: React.FC<{
   }> = [
     {
       id: "pedidos",
-      title: "Gestión de Pedidos & KDS",
-      description: "Toma de comandas, pantalla KDS de cocina, estados en vivo y tickets.",
+      title: "Gestión de Pedidos & Despacho",
+      description: "Flujo de pedidos multicanal, Kanban operativo en vivo, alistamiento y tickets térmicos.",
       badge: "Core Operativo",
       icon: ShoppingBag,
     },
     {
       id: "inventarios",
-      title: "Control de Stock & Insumos",
-      description: "Recetas técnicas, descuento automático por venta, auditorías y alertas de merma.",
+      title: "Control de Stock & Inventarios",
+      description: "Gestión de existencias por variantes/tallas/modelos, alertas de stock mínimo y auditorías.",
       badge: "Logística",
       icon: Package,
     },
@@ -1753,10 +1753,10 @@ export const BusinessSettingsModal: React.FC<{
                   <div>
                     <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <Zap className="w-4 h-4 text-amber-500" />
-                      <span>Automatizaciones & Reglas de Cocina</span>
+                      <span>Automatizaciones & Reglas Operativas</span>
                     </h4>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      Flujos automatizados para agilizar la entrada de comandas y maximizar el ticket promedio.
+                      Flujos automatizados para agilizar el ingreso de pedidos y maximizar la conversión.
                     </p>
                   </div>
 
@@ -1772,7 +1772,7 @@ export const BusinessSettingsModal: React.FC<{
                             </span>
                           </p>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            El bot sugiere bebidas, guarniciones o postres antes de finalizar la comanda.
+                            El bot sugiere artículos complementarios o accesorios antes de finalizar la compra.
                           </p>
                         </div>
                         <Toggle
@@ -1798,13 +1798,13 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-3">
                           <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                            <span>Auto-confirmación a Cocina con Stock 100%</span>
+                            <span>Auto-confirmación a Alistamiento con Stock 100%</span>
                             <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold border border-emerald-500/20">
-                              KDS Directo
+                              Alistamiento Directo
                             </span>
                           </p>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            Envía de inmediato a cocina las comandas con ingredientes disponibles sin esperar confirmación manual del cajero.
+                            Envía de inmediato a alistamiento y empaque los pedidos con stock disponible sin esperar confirmación manual del cajero.
                           </p>
                         </div>
                         <Toggle
@@ -1838,10 +1838,10 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-3">
                           <p className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                            Alerta Preventiva de Demora en Cocina (+{delayAlertMinutes} min)
+                            Alerta Preventiva de Demora en Alistamiento (+{delayAlertMinutes} min)
                           </p>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
-                            Notifica con empatía al cliente si la preparación toma más tiempo del previsto para reducir cancelaciones.
+                            Notifica con empatía al cliente si el alistamiento toma más tiempo del previsto para reducir cancelaciones.
                           </p>
                         </div>
                         <Toggle
@@ -1894,7 +1894,7 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="space-y-2.5 p-4 rounded-xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 shadow-2xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100">
-                          2. Confirmación de Comanda en Cocina
+                          2. Confirmación de Pedido en Alistamiento
                         </span>
                         <Toggle
                           intent="bot.confirmed.toggle"
@@ -1918,7 +1918,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 text-amber-500" />
-                          <span>3. Mensaje Fuera de Horario / Cocina Cerrada</span>
+                          <span>3. Mensaje Fuera de Horario Comercial</span>
                         </span>
                         <Toggle
                           intent="bot.closed.toggle"
@@ -2122,7 +2122,7 @@ export const BusinessSettingsModal: React.FC<{
                       type="button"
                       onClick={() =>
                         setPaymentInfoMessage(
-                          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido en cocina.`
+                          `*Cuentas Oficiales de Pago:*\n• Nequi / Daviplata: {nequi}\n• Bancolombia Ahorros: {bancolombia}\n• Titular: {titular}\n• NIT/C.C: {nit}\n\nEnvía la captura de tu comprobante por este chat para validar y activar tu pedido para alistamiento y despacho.`
                         )
                       }
                       className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1 cursor-pointer"
@@ -2330,7 +2330,7 @@ export const BusinessSettingsModal: React.FC<{
                         <div className="flex flex-wrap gap-2">
                           {[
                             "Vacaciones Colectivas",
-                            "Mantenimiento en Cocina",
+                            "Mantenimiento / Inventario",
                             "Evento Privado",
                             "Feriado / Asueto",
                           ].map(opt => (
@@ -2381,19 +2381,19 @@ export const BusinessSettingsModal: React.FC<{
                     Parámetros Operativos & Zona de Peligro
                   </h3>
                   <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                    Tiempos de alerta para KDS y eliminación permanente del espacio de trabajo.
+                    Tiempos de alerta para alistamiento operativo y eliminación permanente del espacio de trabajo.
                   </p>
                 </div>
 
-                {/* Kitchen Buffer */}
+                {/* Operations Buffer */}
                 <div className="p-6 rounded-2xl bg-zinc-50/70 dark:bg-zinc-900/40 border border-zinc-200/80 dark:border-zinc-800/80 flex items-center justify-between gap-4 shadow-2xs">
                   <div>
                     <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-brand-500" />
-                      <span>Tiempo Buffer Estándar en Cocina / KDS</span>
+                      <span>Tiempo Buffer Estándar de Alistamiento / Despacho</span>
                     </h4>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                      Margen estimado por comanda antes de disparar alerta sonora o visual de retraso operativo.
+                      Margen estimado por pedido antes de disparar alerta sonora o visual de retraso operativo.
                     </p>
                   </div>
                   <div className="flex items-center gap-2 flex-none">

@@ -208,7 +208,9 @@ export const RolesPermisosView: React.FC = () => {
     createRole,
     updateRole,
     deleteRole,
+    semantics,
   } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
 
   const [selectedRoleId, setSelectedRoleId] = useState<string>(activeRoleId || (roles[0]?.id ?? ""));
   const [searchRoleQuery, setSearchRoleQuery] = useState("");
@@ -379,13 +381,17 @@ export const RolesPermisosView: React.FC = () => {
         },
         {
           key: "canViewKDS" as keyof RolePermissions,
-          label: "Pantalla KDS Cocina & Cronómetros",
-          desc: "Visualización en tiempo real de turnos y colas de cocción.",
+          label: isFood ? "Pantalla KDS Cocina & Cronómetros" : `Pantalla de ${semantics?.stationShortName || "Despacho"} & Tiempos`,
+          desc: isFood
+            ? "Visualización en tiempo real de turnos y colas de cocción."
+            : "Visualización en tiempo real de turnos y colas de alistamiento.",
         },
         {
           key: "canDispatchKDS" as keyof RolePermissions,
-          label: "Despacho & Salida de Cocina",
-          desc: "Marcar platos como preparados y enviarlos a la zona de entrega.",
+          label: isFood ? "Despacho & Salida de Cocina" : "Despacho & Salida de Bodega",
+          desc: isFood
+            ? "Marcar platos como preparados y enviarlos a la zona de entrega."
+            : "Marcar pedidos como empacados y enviarlos a la zona de entrega.",
         },
       ],
     },

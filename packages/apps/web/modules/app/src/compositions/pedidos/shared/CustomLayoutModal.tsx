@@ -91,7 +91,7 @@ const COLUMN_META: Record<
     description: "Pedidos con pago validado listos para alistamiento",
   },
   EN_PREPARACION: {
-    icon: <ChefHat className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
+    icon: <PackageCheck className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />,
     description: "Pedidos en proceso de empaque o preparación activa",
   },
   LISTO: {
@@ -530,18 +530,18 @@ export const CustomLayoutModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-bold text-xs">
                           <Maximize2 className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                          <span>Modo Enfoque Cocina</span>
+                          <span>Modo Enfoque Operativo</span>
                         </div>
                         {draftPrefs.activePreset === "focus" && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A]" />
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-                        Oculta despachados y menú superior para horas pico.
+                        Oculta pedidos finalizados y barras superiores para horas pico.
                       </p>
                     </button>
 
-                    {/* KDS Mode */}
+                    {/* KDS / Dispatch Screen Mode */}
                     <button
                       type="button"
                       onClick={() => applyPreset("kds")}
@@ -554,14 +554,14 @@ export const CustomLayoutModal: React.FC<{
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 font-bold text-xs">
                           <Tv className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                          <span>Modo KDS Pantalla</span>
+                          <span>Modo Pantalla de Despacho</span>
                         </div>
                         {draftPrefs.activePreset === "kds" && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A]" />
                         )}
                       </div>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-                        Solo columnas operativas para monitor de cocina sin barras.
+                        Solo columnas operativas para monitor de alistamiento y empaque.
                       </p>
                     </button>
 

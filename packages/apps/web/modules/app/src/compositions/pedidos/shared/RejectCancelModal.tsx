@@ -3,6 +3,8 @@ import { usePedidos } from "../context/PedidosContext";
 import { X, AlertTriangle, XCircle } from "lucide-react";
 import { Button, Field } from "@/elements";
 
+import { useBusiness } from "@/context/BusinessContext";
+
 export const RejectCancelModal: React.FC = () => {
   const {
     rejectModalOrder,
@@ -12,6 +14,8 @@ export const RejectCancelModal: React.FC = () => {
     rejectOrder,
     cancelOrder,
   } = usePedidos();
+  const { semantics } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
 
   const isReject = Boolean(rejectModalOrder);
   const targetOrder = rejectModalOrder || cancelModalOrder;
@@ -22,21 +26,38 @@ export const RejectCancelModal: React.FC = () => {
   if (!targetOrder) return null;
 
   const reasons = isReject
-    ? [
-        "Insumos de receta no disponibles",
-        "Capacidad de cocina desbordada",
-        "Fuera de horario de reparto",
-        "Dirección fuera del radio de cobertura",
-        "Otro motivo",
-      ]
-    : [
-        "Solicitud explícita del cliente",
-        "Retraso excesivo en cocina",
-        "Error en el pedido",
-        "Falta de insumos críticos",
-        "Corrección operativa",
-        "Otro motivo",
-      ];
+    ? isFood
+      ? [
+          "Insumos de receta no disponibles",
+          "Capacidad de cocina desbordada",
+          "Fuera de horario de reparto",
+          "Dirección fuera del radio de cobertura",
+          "Otro motivo",
+        ]
+      : [
+          `Stock o variantes no disponibles (${semantics?.itemModifiers || "referencia/talla"})`,
+          "Capacidad operativa de bodega o despacho desbordada",
+          "Fuera de horario de atención o despacho",
+          "Dirección fuera de cobertura de envío",
+          "Otro motivo",
+        ]
+    : isFood
+      ? [
+          "Solicitud explícita del cliente",
+          "Retraso excesivo en cocina",
+          "Error en el pedido",
+          "Falta de insumos críticos",
+          "Corrección operativa",
+          "Otro motivo",
+        ]
+      : [
+          "Solicitud explícita del cliente",
+          "Retraso en alistamiento o bodega",
+          "Error en el pedido o referencia",
+          "Sin stock disponible en inventario",
+          "Corrección operativa",
+          "Otro motivo",
+        ];
 
   const handleClose = () => {
     setRejectModalOrder(null);
