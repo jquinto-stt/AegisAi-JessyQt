@@ -4,7 +4,11 @@ export type BusinessType =
   | "restaurant_virtual"
   | "retail_store"
   | "services"
-  | "ecommerce_direct";
+  | "ecommerce_direct"
+  | "fashion_footwear"
+  | "hardware_store"
+  | "pharmacy_health"
+  | "tech_electronics";
 
 export type NectoModuleKey =
   | "referidos"
@@ -20,7 +24,19 @@ export interface BusinessChannelConfig {
   pos: boolean;
 }
 
-export type BusinessIconKey = "utensils" | "flame" | "coffee" | "store" | "chef" | "layers";
+export type BusinessIconKey =
+  | "utensils"
+  | "flame"
+  | "coffee"
+  | "store"
+  | "chef"
+  | "layers"
+  | "shirt"
+  | "wrench"
+  | "pill"
+  | "laptop"
+  | "scissors"
+  | "shopping-bag";
 
 export interface BusinessScheduledPause {
   isPaused: boolean;
@@ -112,6 +128,11 @@ export interface BusinessInstance {
   pauseConfig?: BusinessScheduledPause;
   setupProgress?: BusinessSetupProgress;
   whatsappBotConfig?: WhatsAppBotConfig;
+  botConfig?: {
+    greeting: string;
+    personality: string;
+    catalogCategories: string[];
+  };
   createdAt: string;
 }
 
@@ -166,6 +187,94 @@ export interface BusinessSemanticConfig {
 
 export function getBusinessSemantics(businessType?: BusinessType): BusinessSemanticConfig {
   switch (businessType) {
+    case "fashion_footwear":
+      return {
+        orderSingle: "Pedido de Calzado / Moda",
+        orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
+        stationName: "Mesa de Empaque & Despacho",
+        stationShortName: "Empaque & Envíos",
+        stationNoun: "Estación de Empaque & Despacho",
+        stationAction: "Preparar Calzado para Envío",
+        preparationVerb: "En Empaque & Alistamiento",
+        readyVerb: "Listo para Envío",
+        deliveredVerb: "Entregados / Despachados",
+        catalogItem: "Calzado / Prenda",
+        tableOrChannel: "Canal de Venta",
+        itemModifiers: "Talla, Color & Material",
+        fulfillmentAgent: "Asesor de Empaque",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué estilo o talla de calzado estás buscando hoy?",
+        botPersona: "asesor de calzado y moda atento a tallas, estilos y disponibilidad",
+      };
+    case "hardware_store":
+      return {
+        orderSingle: "Pedido Ferretero",
+        orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
+        stationName: "Bodega de Picking & Despacho",
+        stationShortName: "Bodega & Despacho",
+        stationNoun: "Estación de Picking & Despacho",
+        stationAction: "Alistar Materiales",
+        preparationVerb: "En Picking de Bodega",
+        readyVerb: "Listo para Entrega",
+        deliveredVerb: "Despachados / Facturados",
+        catalogItem: "Herramienta / Material",
+        tableOrChannel: "Canal de Venta",
+        itemModifiers: "Medida, Calibre & Marca",
+        fulfillmentAgent: "Bodeguero / Despachador",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué herramienta o material necesitas para tu obra?",
+        botPersona: "asesor técnico ferretero conocedor de especificaciones, medidas y herramientas",
+      };
+    case "pharmacy_health":
+      return {
+        orderSingle: "Orden Médica / Pedido",
+        orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
+        stationName: "Dispensario & Despacho Express",
+        stationShortName: "Dispensario & Envío",
+        stationNoun: "Estación de Dispensario",
+        stationAction: "Dispensar Medicamentos",
+        preparationVerb: "En Dispensación & Empaque",
+        readyVerb: "Listo para Domicilio",
+        deliveredVerb: "Entregados a Paciente",
+        catalogItem: "Medicamento / Producto",
+        tableOrChannel: "Canal de Atención",
+        itemModifiers: "Presentación & Laboratorio",
+        fulfillmentAgent: "Regente de Farmacia",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿En qué medicamento o producto de cuidado personal podemos ayudarte hoy?",
+        botPersona: "asistente farmacéutico atento, confiable y rápido en despacho de fórmulas",
+      };
+    case "tech_electronics":
+      return {
+        orderSingle: "Orden Tecnológica",
+        orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
+        stationName: "Control de Calidad & Despacho",
+        stationShortName: "Alistamiento Técnico",
+        stationNoun: "Estación de Alistamiento Técnico",
+        stationAction: "Verificar & Empacar",
+        preparationVerb: "En Control & Empaque",
+        readyVerb: "Listo para Envío",
+        deliveredVerb: "Despachados / Garantizados",
+        catalogItem: "Dispositivo / Componente",
+        tableOrChannel: "Canal de Venta",
+        itemModifiers: "Capacidad, Color & Garantía",
+        fulfillmentAgent: "Técnico de Despacho",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué dispositivo, repuesto o accesorio estás buscando?",
+        botPersona: "asesor tecnológico enfocado en compatibilidad, garantías y especificaciones",
+      };
     case "retail_store":
     case "ecommerce_direct":
       return {
@@ -186,7 +295,7 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
         fulfillmentAgent: "Bodeguero / Despachador",
         requiresKitchenDisplay: false,
         requiresTableNumber: false,
-        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 🔩 ¿Qué producto o material necesitas hoy para tu obra?",
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué producto necesitas hoy?",
         botPersona: "asesor de ventas y despacho servicial y experto en catálogo de productos",
       };
     case "services":
@@ -208,7 +317,7 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
         fulfillmentAgent: "Especialista / Profesional",
         requiresKitchenDisplay: false,
         requiresTableNumber: false,
-        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 📅 ¿Qué servicio deseas agendar hoy?",
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué servicio deseas agendar hoy?",
         botPersona: "recepcionista y gestor de turnos cordial y organizado",
       };
     case "restaurant_virtual":
@@ -231,7 +340,7 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
         fulfillmentAgent: "Cocinero / Chef",
         requiresKitchenDisplay: true,
         requiresTableNumber: true,
-        botGreetingTemplate: "¡Hola! Bienvenido a {storeName} 🍔 ¿Qué delicia te preparamos hoy?",
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué menú te preparamos hoy?",
         botPersona: "anfitrión gastronómico entusiasta y atento a términos de cocción y salsas",
       };
   }
