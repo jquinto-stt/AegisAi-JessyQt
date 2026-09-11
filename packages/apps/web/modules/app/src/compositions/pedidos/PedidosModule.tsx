@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { PedidosProvider, usePedidos } from "./context/PedidosContext";
 import { PedidosSection, OperacionTab, GestionTab } from "./types";
 import { PedidosEnVivoView } from "./operacion/PedidosEnVivoView";
-import { PreparacionTiemposView } from "./operacion/PreparacionTiemposView";
-import { ProgramadosView } from "./operacion/ProgramadosView";
 import { ConversacionesView } from "./operacion/ConversacionesView";
 import { ResumenDashboardView } from "./gestion/ResumenDashboardView";
 import { HistorialView } from "./gestion/HistorialView";
@@ -326,18 +324,6 @@ const PedidosContent: React.FC<{
                   highlightBadge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
                 },
                 {
-                  id: "preparacion" as OperacionTab,
-                  label: isFood ? "Pantalla KDS Cocina" : "Alistamiento & Despacho",
-                  icon: isFood ? <ChefHat className="size-3.5 flex-none" /> : <Truck className="size-3.5 flex-none" />,
-                  count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
-                },
-                {
-                  id: "programados" as OperacionTab,
-                  label: "Entregas Programadas",
-                  icon: <Calendar className="size-3.5 flex-none" />,
-                  count: programados.length,
-                },
-                {
                   id: "conversaciones" as OperacionTab,
                   label: "Conversaciones WhatsApp",
                   icon: <MessagesSquare className="size-3.5 flex-none" />,
@@ -475,11 +461,9 @@ const PedidosContent: React.FC<{
       <div className="flex-1 min-h-0">
         {section === "operacion" && (
           <>
-            {(opTab === "en-vivo" || (opTab !== "preparacion" && opTab !== "programados" && opTab !== "conversaciones")) && (
+            {opTab !== "conversaciones" && (
               <PedidosEnVivoView onNavigateOpTab={handleOpTabSwitch} />
             )}
-            {opTab === "preparacion" && <PreparacionTiemposView onNavigateOpTab={handleOpTabSwitch} />}
-            {opTab === "programados" && <ProgramadosView onNavigateOpTab={handleOpTabSwitch} />}
             {opTab === "conversaciones" && <ConversacionesView />}
           </>
         )}

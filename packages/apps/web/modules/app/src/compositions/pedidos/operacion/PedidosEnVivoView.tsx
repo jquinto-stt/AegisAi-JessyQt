@@ -234,9 +234,9 @@ export const PedidosEnVivoView: React.FC<{
       badgeStyle: "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/20",
     },
     EN_PREPARACION: {
-      title: semantics.requiresKitchenDisplay ? "En Cocina / Preparación" : "En Picking & Preparación",
-      description: semantics.requiresKitchenDisplay ? "En línea de cocción KDS" : "Preparación en bodega / empaque",
-      icon: semantics.requiresKitchenDisplay ? ChefHat : Package,
+      title: "En Alistamiento & Preparación",
+      description: "Alistando productos del pedido",
+      icon: Package,
       iconBg: "bg-[#FF3F1A]/10 dark:bg-[#FF3F1A]/20",
       iconColor: "text-[#FF3F1A]",
       badgeStyle: "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/20",
@@ -810,12 +810,8 @@ export const PedidosEnVivoView: React.FC<{
                         }}
                         className="py-1 px-2.5 text-xs font-bold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
                       >
-                        {semantics.requiresKitchenDisplay ? (
-                          <ChefHat className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        ) : (
-                          <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        )}
-                        <span>{semantics.requiresKitchenDisplay ? "Pasar a Cocina" : `Pasar a ${semantics.stationShortName}`}</span>
+                        <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        <span>Pasar a Alistamiento</span>
                       </Button>
                     </div>
                   </div>
