@@ -17,7 +17,10 @@ import {
   Clock,
   Timer,
   RotateCcw,
+  Package,
+  CheckCircle2,
 } from "lucide-react";
+import { inventoryService } from "@/ModuloInventario/services/inventoryService";
 import { Button, SegmentedControl } from "@/elements";
 
 export const OrderDetailDrawer: React.FC = () => {
@@ -601,51 +604,73 @@ export const OrderDetailDrawer: React.FC = () => {
 
               {/* Products Breakdown — Clean list */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <h4 className="font-mono font-bold text-xs uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
                     Productos
                   </h4>
-                  <span className="text-[11px] font-mono font-bold text-zinc-400">
-                    {order.items.reduce((acc, it) => acc + it.quantity, 0)} {order.items.reduce((acc, it) => acc + it.quantity, 0) === 1 ? "ítem" : "ítems"}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {order.status === "CONFIRMADO" && (
+                      <span className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Package className="w-3 h-3 text-amber-600" />
+                        <span>Reserva Preventiva en Inventario</span>
+                      </span>
+                    )}
+                    {["EN_PREPARACION", "LISTO", "FINALIZADO"].includes(order.status) && (
+                      <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Salida Asentada en Kardex</span>
+                      </span>
+                    )}
+                    <span className="text-[11px] font-mono font-bold text-zinc-400">
+                      {order.items.reduce((acc, it) => acc + it.quantity, 0)} {order.items.reduce((acc, it) => acc + it.quantity, 0) === 1 ? "ítem" : "ítems"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="border border-zinc-200/90 dark:border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-[#18181B] shadow-2xs">
-                  {order.items.map((it, idx) => (
-                    <div key={idx} className="p-3.5 flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1 flex items-center gap-2.5">
-                        <span className="font-mono font-bold text-xs bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 w-8 h-8 rounded-xl flex items-center justify-center flex-none shadow-2xs">
-                          {it.quantity}×
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-bold text-sm text-[#212121] dark:text-zinc-50 truncate">
-                            {it.name}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            {it.option && (
-                              <span className="text-[10px] font-mono font-bold text-[#190088] dark:text-[#97D6DF] bg-[#97D6DF]/15 border border-[#97D6DF]/25 px-1.5 py-px rounded-md">
-                                {it.option}
-                              </span>
-                            )}
-                            {it.notes && (
-                              <span className="text-[10px] text-[#212121]/60 dark:text-[#ECECEC]/60 italic truncate max-w-[180px]">
-                                "{it.notes}"
-                              </span>
-                            )}
+                  {order.items.map((it, idx) => {
+                    const invStock = inventoryService.getProductStock(it.productId, it.name);
+                    return (
+                      <div key={idx} className="p-3.5 flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1 flex items-center gap-2.5">
+                          <span className="font-mono font-bold text-xs bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 w-8 h-8 rounded-xl flex items-center justify-center flex-none shadow-2xs">
+                            {it.quantity}×
+                          </span>
+                          <div className="min-w-0">
+                            <p className="font-bold text-sm text-[#212121] dark:text-zinc-50 truncate">
+                              {it.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              {it.option && (
+                                <span className="text-[10px] font-mono font-bold text-[#190088] dark:text-[#97D6DF] bg-[#97D6DF]/15 border border-[#97D6DF]/25 px-1.5 py-px rounded-md">
+                                  {it.option}
+                                </span>
+                              )}
+                              {invStock && (
+                                <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
+                                  Stock Bodega: {invStock.availableStock} disp.
+                                </span>
+                              )}
+                              {it.notes && (
+                                <span className="text-[10px] text-[#212121]/60 dark:text-[#ECECEC]/60 italic truncate max-w-[180px]">
+                                  "{it.notes}"
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="text-right flex-none font-mono">
-                        <p className="font-bold text-sm text-[#190088] dark:text-[#97D6DF]">
-                          ${(it.unitPrice * it.quantity).toLocaleString("es-CO")}
-                        </p>
-                        <p className="text-[10px] text-zinc-400">
-                          ${it.unitPrice.toLocaleString("es-CO")} c/u
-                        </p>
+                        <div className="text-right flex-none font-mono">
+                          <p className="font-bold text-sm text-[#190088] dark:text-[#97D6DF]">
+                            ${(it.unitPrice * it.quantity).toLocaleString("es-CO")}
+                          </p>
+                          <p className="text-[10px] text-zinc-400">
+                            ${it.unitPrice.toLocaleString("es-CO")} c/u
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Total footer */}
                   <div className="p-4 bg-[#190088]/5 dark:bg-[#190088]/10 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">

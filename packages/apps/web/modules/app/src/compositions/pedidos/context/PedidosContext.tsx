@@ -420,6 +420,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const rejectOrder = (orderId: string, reason: string) => {
+    // Liberar reserva preventiva en Inventario
+    void inventoryService.releaseStock(orderId);
+
     setOrders(prev =>
       prev.map(order => {
         if (order.id !== orderId) return order;
@@ -445,6 +448,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const cancelOrder = (orderId: string, reason: string) => {
+    // Liberar reserva preventiva en Inventario
+    void inventoryService.releaseStock(orderId);
+
     setOrders(prev =>
       prev.map(order => {
         if (order.id !== orderId) return order;
