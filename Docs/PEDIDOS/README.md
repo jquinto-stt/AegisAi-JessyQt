@@ -1,110 +1,139 @@
-# Necto OMS — Arquitectura de Módulos Universales & Tenant Context
+# Necto OMS — Arquitectura de Módulos, Ownership & Canales Habilitadores
 
-> **Principio Fundamental:**  
-> *"La tienda es el contenedor. Los módulos son capacidades que se agregan al contenedor. La tienda debe funcionar y tener sentido incluso con cero módulos instalados. El módulo de Pedidos conserva un núcleo OMS universal, consume la identidad y los canales de la tienda, y aporta su propia configuración operativa y comercial."*
+> **La Regla de Oro de la Arquitectura:**  
+> *"No diseñes los módulos como aplicaciones aisladas ni dupliques capacidades entre ellos. Cada módulo debe tener un dominio funcional claramente delimitado. Cuando un módulo necesite información o una capacidad perteneciente a otro módulo, debe consumirla mediante una integración entre módulos, no replicarla. Las integraciones externas, como WhatsApp Business, deben tratarse como canales o servicios conectables a la tienda y no como una dependencia obligatoria de Pedidos. Al instalar un módulo, mostrar un onboarding contextual para configurar sus dependencias y canales recomendados, permitiendo continuar sin configurarlos."*
 
 ---
 
-## 1. El Modelo Conceptual en 3 Capas
+## 1. El Modelo Conceptual: Tienda, Integraciones & Módulos
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│               CAPA 1: TIENDA / TENANT (CONTENEDOR PURO)                │
-│                                                                        │
-│ • Identidad: Nombre, Moneda, País, Ciudad, Teléfono, Logo, Idioma      │
-│ • Configuración Base: Horarios, Días laborales, Formatos, Notificaciones│
-│ • Equipo & Permisos: Dueño, Administrador, Operador, Auditor          │
-│ • Canales & Conexiones: WhatsApp Oficial (Línea / QR), Webhooks, API   │
-│                                                                        │
-│ (0 Módulos instalados = Tienda 100% válida y operativa en su base)    │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                  ┌─────────────────┴─────────────────┐
-                  │ Habilita Capacidades Plug & Play  │
-                  ▼                                   ▼
-┌───────────────────────────────────┐   ┌────────────────────────────────┐
-│      CAPA 2: MÓDULO PEDIDOS       │   │    CAPA 2: OTROS MÓDULOS       │
-│           (OMS UNIVERSAL)         │   │ (Inventarios, Turnos, Citas)   │
-├───────────────────────────────────┤   ├────────────────────────────────┤
-│ • Pipeline de Pedidos (Kanban)    │   │ • Inventarios (Stock & Kardex) │
-│ • Estados universales de orden    │   │ • Turnos & Control de Caja     │
-│ • Estación de Alistamiento        │   │ • Reservas & Citas             │
-│ • Historial & Métricas de Venta   │   │                                │
-└─────────────────┬─────────────────┘   └────────────────┬───────────────┘
-                  │                                      │
-                  ▼                                      ▼
-┌───────────────────────────────────┐   ┌────────────────────────────────┐
-│  CAPA 3: CONFIGURACIÓN INTERNA    │   │  CAPA 3: CONFIGURACIÓN INTERNA │
-│        DEL MÓDULO PEDIDOS         │   │       DE CADA CAPACIDAD        │
-├───────────────────────────────────┤   ├────────────────────────────────┤
-│ • Asistente Virtual WhatsApp:     │   │ • Reglas de reposición stock   │
-│   - Nombre y Tono (Cálido/Técnico)│   │ • Políticas de conteo físico   │
-│   - Saludo & Flujo de Compra      │   │ • Tolerancias de arqueo        │
-│ • Reglas de Alistamiento & Buffer │   │                                │
-│ • Motivos comerciales de rechazo  │   │                                │
-└───────────────────────────────────┘   └────────────────┘
+                       TIENDA / TENANT
+                              │
+       ┌──────────────────────┼──────────────────────┐
+       │                      │                      │
+CONFIGURACIÓN BASE      INTEGRACIONES & CANALES    MÓDULOS DE NEGOCIO
+• Identidad             • WhatsApp Business         • Pedidos (OMS)
+• Horarios y días       • Tienda Web                • Inventarios (Kardex)
+• Roles (Dueño, Admin)  • API Pública / Webhooks    • Clientes & CRM
+• Estado de la tienda   • Notificaciones Email      • Turnos & Caja
 ```
 
 ---
 
-## 2. Definición Estricta de las 3 Capas
+## 2. Matriz de Ownership: Dominios sin Duplicidad
 
-### Capa 1: Tienda / Tenant (Contenedor Universal Puro)
-Es el límite de aislamiento multi-inquilino. Es agnóstica a cualquier industria comercial.
+Para evitar que dos módulos compitan por la misma responsabilidad, se define una tabla estricta de propiedad funcional:
 
-- **Identidad:** Nombre comercial, logo, descripción, dirección física, teléfono de contacto, correo, redes sociales, sitio web, país, ciudad, zona horaria, moneda e idioma.
-- **Configuración general:** Estado de la tienda (activa / pausada), horarios de atención, días laborales, configuración regional, formatos numéricos y notificaciones centrales.
-- **Usuarios y roles transversales:**
-  - *Propietario / Dueño:* Acceso total a facturación, suscripción y administración de tienda.
-  - *Administrador:* Control de configuración, asignación de permisos y gestión de módulos.
-  - *Operador:* Ejecución operativa en los módulos autorizados.
-  - *Auditor / Consulta:* Visualización y reportes sin permisos de edición ni despacho.
-- **Integraciones genéricas:**
-  - Conexión del canal oficial de WhatsApp (vinculación a nivel de número/chip, sesión QR o Meta Cloud API).
-  - Webhooks globales salientes y API Keys de la tienda.
+| Capacidad Funcional | Módulo Dueño | ¿Cómo lo usan otros módulos? |
+| :--- | :--- | :--- |
+| **Crear y recibir pedidos** | **Pedidos** | Canal de entrada genera la orden en Pedidos. |
+| **Estados del pedido & Alistamiento** | **Pedidos** | Notifica a Clientes y dispara eventos a Inventario. |
+| **Canales de entrada de órdenes** | **Pedidos** | Configura qué canales activos en Tienda alimentan el Kanban. |
+| **Precios aplicados al pedido** | **Pedidos** | Toma el precio del catálogo y aplica recargos/descuentos. |
+| **Productos e ítems para venta** | **Catálogo** | Pedidos e Inventario consultan la ficha del producto. |
+| **Existencias, Entradas y Salidas** | **Inventarios** | Pedidos consulta disponibilidad en tiempo real. |
+| **Reserva y Descuento de Stock** | **Inventarios** | Pedidos solicita: *"Reservar 3 unidades"* al confirmar venta. |
+| **Bodegas y Ubicaciones físicas** | **Inventarios** | Pedidos muestra la ubicación de picking sugerida. |
+| **Ficha de Clientes & Fidelidad** | **Clientes** | Pedidos asocia la orden al historial del cliente. |
+| **Conexión oficial de WhatsApp** | **Integraciones / Tienda** | Canal compartido: Pedidos, Soporte, Notificaciones. |
 
-> **Regla de Aislamiento:** La tienda base **NUNCA** contiene catálogo de productos, órdenes, stock, mesas, comandas ni carritos. Esas funcionalidades pertenecen exclusivamente a los módulos.
-
----
-
-### Capa 2: Módulos Plug & Play (Capacidades)
-Son micro-aplicaciones desacopladas que se acoplan y desacoplan dinámicamente.
-
-- **Independencia absoluta:** Una tienda puede operar con 0 módulos (muestra el catálogo de módulos disponibles), con solo Inventario (control de stock puro sin ventas), con solo Pedidos (recepción de compras sin kardex complejo), o con múltiples capacidades combinadas.
-- **Comunicación inter-módulos:** No existen llamadas directas fuertemente acopladas. La interoperabilidad se realiza mediante **Eventos de Dominio** (Event-Driven Architecture) a través de un bus central.
-
----
-
-### Capa 3: Configuración Interna de Módulos
-Parámetros que solo existen y son accesibles cuando el módulo correspondiente está instalado.
-
-- **En el Módulo de Pedidos (OMS):**
-  - **Identidad del Asistente Comercial de WhatsApp:** Nombre del bot, tono de respuesta (Cálido, Profesional, Técnico, Ágil), plantilla de saludo comercial y flujo de captura de datos del cliente.
-  - **Reglas operativas de alistamiento:** Tiempos de buffer, visualización de estación (empaque / despacho / alistamiento), alertas por pedidos demorados.
-  - **Catálogo de rechazo y cancelación:** Motivos comerciales reales (sin existencias, fuera de zona de entrega, cambio solicitado por cliente).
+### Ejemplo Práctico: Compra de 3 Unidades
+1. **Pedidos** recibe la solicitud: *3 Coca-Colas ($5.000 c/u)*.
+2. **Pedidos** consulta a **Inventarios**: *¿Stock disponible de Coca-Cola?* -> Inventarios responde: *20 unidades*.
+3. Al pasar el pedido a `CONFIRMADO`:
+   - Pedidos emite: *"Reservar 3 unidades de Coca-Cola"*.
+   - Inventarios descuenta de disponible: *Nuevo disponible = 17 unidades*.
+4. **No hay choque:** Pedidos no administra stock; consume la capacidad de Inventarios.
 
 ---
 
-## 3. Matriz de Comportamiento Dinámico
+## 3. WhatsApp es un Canal Habilitador, no Pedidos
 
-| Tienda | Capa 1: Tienda | Capa 2: Módulos Activos | Capa 3: Configuración de Pedidos |
-| :--- | :--- | :--- | :--- |
-| **Ferretería El Albañil** | Nombre, Bogotá, COP, WhatsApp conectado. | `pedidos` + `inventarios` | Bot técnico ("Asesor Ferretero"), alistamiento en bodega, catálogo de herramientas. |
-| **Zapatería Elegance** | Nombre, Medellín, COP, WhatsApp conectado. | `pedidos` | Bot cercano ("Asesora Camila"), alistamiento por tallas/colores, catálogo de calzado. |
-| **Farmacia San Lucas** | Nombre, Cali, COP, WhatsApp desconectado. | `inventarios` | No aplica configuración de pedidos. Solo opera kardex y compras a droguerías. |
-| **Distribuidora Nova** | Nombre, Barranquilla, USD, WhatsApp conectado. | *0 módulos (Limpia)* | Tienda activa con roles y canal conectado, lista para habilitar módulos en caliente. |
+WhatsApp **no es un módulo** ni es una dependencia obligatoria de Pedidos:
+- Un comercio puede operar Pedidos recibiendo órdenes exclusivamente por **Tienda Web**, **POS Mostrador**, **Llamadas telefónicas (Manual)** o **API**.
+- WhatsApp es un **servicio conectable a nivel de Tienda**.
+- Si la tienda conecta WhatsApp, el módulo de Pedidos puede utilizarlo como canal de venta con asistente virtual; pero mañana el módulo de Clientes puede usarlo para soporte posventa y Notificaciones para alertas operativas.
 
 ---
 
-## 4. Índice de la Documentación
+## 4. Onboarding Contextual al Instalar Capacidades
+
+Al agregar un módulo al contenedor, el sistema no bloquea al usuario con prerrequisitos obligatorios. En su lugar, despliega un **onboarding contextual no bloqueante**:
+
+### Al Instalar Pedidos:
+```
+┌─────────────────────────────────────────────────────────────┐
+│             Configura cómo recibirás pedidos                │
+│                                                             │
+│ Selecciona los canales de entrada para tu operación:        │
+│                                                             │
+│ [x] WhatsApp Business (Recomendado para chat)               │
+│ [ ] Tienda Web (Catálogo online de autoservicio)            │
+│ [ ] API (Integración con otros sistemas)                    │
+│ [x] Ingreso Manual (Mostrador y pedidos telefónicos)        │
+│                                                             │
+│   [ Conectar WhatsApp Business ]   [ Continuar sin conectar] │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Al Instalar Inventarios:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 Configura tu inventario                     │
+│                                                             │
+│ ¿Cómo deseas iniciar la carga de existencias?               │
+│                                                             │
+│ • [ Importar desde Excel / CSV ]                            │
+│ • [ Crear productos manualmente desde cero ]                │
+│                                                             │
+│ ¿Gestionarás una sola bodega o múltiples ubicaciones?       │
+│                                                             │
+│   [ Guardar & Comenzar ]         [ Configurar más tarde ]   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 5. Estado de Salud y Configuración de la Tienda (Readiness)
+
+Una tienda no está simplemente "vacía" o "llena"; tiene un **diagnóstico de preparación operativa (Setup Readiness)**:
+
+```
+MI TIENDA: "Ferretería El Albañil"
+
+Configuración Base
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[✓] Datos de la tienda (Bogotá · COP)
+[✓] Horarios y días laborales
+[✓] Equipo (2 operadores asignados)
+
+Capacidades Activas
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[✓] Pedidos (OMS)
+[✓] Inventarios (Stock & Kardex)
+
+Conexiones & Canales
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[✓] Ingreso Manual / Mostrador
+[!] WhatsApp Business: Desconectado
+    (Aviso: Pedidos está activo, pero WhatsApp aún no recibe chats)
+    [ Conectar Canal ]
+```
+
+Esto permite al operador entender claramente qué módulos están instalados y qué canales requieren atención, sin forzar pasos invasivos.
+
+---
+
+## 6. Índice de Documentación Detallada
 
 1. **[01. Modelo Conceptual Tenant + Módulos Plug & Play](./01-modelo-conceptual-tenant-modulos.md):**  
-   Ciclo de vida de una tienda, espacio base con 0 módulos, aislamiento de datos y benchmark canónico de prueba.
-2. **[02. Canal WhatsApp & Asistente Comercial](./02-canal-whatsapp-y-adaptador-contextual.md):**  
-   Desacoplamiento del canal en 2 niveles (Conexión de línea en Tienda vs. Identidad y Tono en Módulo Pedidos).
-3. **[03. Comunicación Inter-Módulos mediante Contratos y Eventos](./03-comunicacion-inter-modulos-eventos-y-catalogo.md):**  
-   Propiedad del catálogo, contratos de eventos de dominio (`order.created`, `order.confirmed`, `stock.reserved`) y arquitectura hexagonal.
-4. **[04. Contratos de Datos, Tipos y Ciclo de Vida OMS](./04-contratos-interfaces-y-ciclo-de-vida-oms.md):**  
-   Definición técnica de interfaces TypeScript, estados universales de la orden y transiciones permitidas.
-5. **[05. Plan de Refactor y Migración](./05-plan-de-refactor-y-migracion.md):**  
-   Hoja de ruta del desacoplamiento, erradicación de términos de cocina y verificación automatizada.
+   Límites de aislamiento, espacios con 0 módulos y analogía del contenedor.
+2. **[02. Canal WhatsApp & Canales Habilitadores](./02-canal-whatsapp-y-adaptador-contextual.md):**  
+   Desacoplamiento técnico de WhatsApp en la Tienda vs. canales de entrada en Pedidos.
+3. **[03. Ownership Inter-Módulos & Eventos de Dominio](./03-comunicacion-inter-modulos-eventos-y-catalogo.md):**  
+   Tabla de responsabilidades, consumo de stock sin duplicación y bus de eventos.
+4. **[04. Contratos de Datos, Tipos & Ciclo de Vida OMS](./04-contratos-interfaces-y-ciclo-de-vida-oms.md):**  
+   Interfaces TypeScript de órdenes, clientes, estados y transiciones.
+5. **[05. Plan de Refactor & Migración](./05-plan-de-refactor-y-migracion.md):**  
+   Fases de implementación, erradicación de cocina y auditoría de UI.

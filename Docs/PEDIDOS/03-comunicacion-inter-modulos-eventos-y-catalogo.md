@@ -1,156 +1,115 @@
-# 03 — Comunicación Inter-Módulos: Eventos & Catálogo
+# 03 — Ownership de Dominios & Comunicación Inter-Módulos
 
-Este documento define cómo interactúan los módulos independientes (**Pedidos**, **Inventario**, etc.) sin acoplar sus bases de código, utilizando el patrón de **Event-Driven Architecture (EDA)** y **Contratos de Dominio (DDD)**.
-
----
-
-## 1. Desacoplamiento del Catálogo Comercial
-
-En una arquitectura limpia:
-- **La Tienda Base no tiene catálogo de productos:** La tienda base es un contenedor puro de identidad y permisos.
-- **Inventario administra existencias físicas:** SKUs, cantidades reales, bodegas, costos unitarios y movimientos de Kardex.
-- **Pedidos gestiona la transacción comercial:** Carrito, precios de venta, recargos de envío, datos de entrega y cobro.
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       TIENDA / TENANT                       │
-│                     (Contenedor Base)                       │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-            ┌──────────────────┴──────────────────┐
-            ▼                                     ▼
-┌──────────────────────────────┐       ┌──────────────────────┐
-│        MÓDULO PEDIDOS        │       │  MÓDULO INVENTARIOS  │
-│        (Capacidad OMS)       │       │   (Capacidad Stock)  │
-├──────────────────────────────┤       ├──────────────────────┤
-│ • Órdenes de venta           │       │ • Kardex de entradas │
-│ • Clientes & Destinatarios   │       │ • Existencias reales │
-│ • Canales (WhatsApp, POS)    │       │ • Costos & Bodegas   │
-└──────────────┬───────────────┘       └──────────┬───────────┘
-               │                                  │
-               └────────► [ EVENT BUS ] ◄─────────┘
-```
+Este documento define las fronteras de responsabilidad entre módulos independientes y el protocolo de consumo de capacidades sin duplicación.
 
 ---
 
-## 2. Flujo de Interoperabilidad mediante Eventos
+## 1. El Principio de Ownership: Consumir sin Duplicar
 
-En lugar de que el código de Pedidos invoque funciones internas de Inventario (por ejemplo `inventoryService.deductStock(...)`), ambos módulos se comunican exclusivamente publicando y escuchando **Eventos de Dominio**:
+> **Regla de Arquitectura:**  
+> *"Un módulo es dueño de una capacidad. Otro módulo puede consumir esa capacidad, pero jamás replicarla o administrarla como propia."*
+
+### Ejemplo del Error de Duplicación vs. La Solución Limpia:
+
+- **Error de Duplicación (Anti-Patrón):**  
+  El módulo de Pedidos crea su propio campo `cantidadDisponible: 15` y su propia pantalla de *"Configurar existencias del producto"*. Cuando Inventario también tiene *"Gestionar stock"*, los datos se desincronizan y el usuario no sabe dónde modificar la realidad física de su negocio.
+
+- **Diseño Correcto (Consumo de Capacidad):**  
+  **Inventarios** es el único dueño de las existencias. **Pedidos** necesita saber si puede vender el producto, por lo que consulta a Inventarios:  
+  *"¿Stock disponible de Coca-Cola?"* -> *"20 unidades"*.  
+  Al confirmar la orden, Pedidos emite: *"Reservar 3 unidades"*.  
+  Inventarios descuenta las 3 unidades. Pedidos no administra stock; **consume** la capacidad provista por Inventarios.
+
+---
+
+## 2. Matriz Estricta de Responsabilidades
+
+| Dominio Funcional | Módulo Propietario | Comportamiento en Otros Módulos |
+| :--- | :--- | :--- |
+| **Creación de pedidos y órdenes** | **Pedidos** | Exclusivo de Pedidos. |
+| **Estados del ciclo de vida** | **Pedidos** | Informa a otros módulos vía eventos (`order.confirmed`). |
+| **Canales de venta (WhatsApp, Web, POS)** | **Pedidos** | Configura qué fuentes inyectan órdenes al Kanban. |
+| **Precios aplicados a la venta** | **Pedidos** | Calcula descuentos, recargos y subtotales de la orden. |
+| **Catálogo de productos maestros** | **Catálogo** | Proveedor de datos para Pedidos e Inventarios. |
+| **Existencias físicas & Movimientos** | **Inventarios** | Exclusivo de Inventarios. Pedidos solo consulta disponibilidad. |
+| **Reserva y deducción de stock** | **Inventarios** | Se ejecuta en respuesta al evento `order.confirmed`. |
+| **Bodegas y pasillos de picking** | **Inventarios** | Pedidos visualiza la bodega sugerida para empaque. |
+| **Ficha y saldo de Clientes** | **Clientes** | Pedidos vincula la orden al ID del cliente. |
+| **Conexión telefónica de WhatsApp** | **Integraciones (Tienda)** | Servicio habilitador compartido para toda la tienda. |
+
+---
+
+## 3. Protocolo de Integración entre Pedidos e Inventarios
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Cliente
-    participant Pedidos as Módulo Pedidos (OMS)
+    actor Comprador
+    participant Pedidos as Módulo Pedidos
     participant Bus as Bus de Eventos
-    participant Inventario as Módulo Inventario (Kardex)
+    participant Inventario as Módulo Inventarios
 
-    Cliente->>Pedidos: Confirma compra por WhatsApp
-    Pedidos->>Pedidos: Cambia estado de orden a CONFIRMADO
-    Pedidos->>Bus: Publica "order.confirmed"
+    Comprador->>Pedidos: Solicita 3 unidades de Producto X
+    Pedidos->>Inventario: Consulta disponibilidad (SKU: "PROD-X")
+    Inventario-->>Pedidos: Retorna disponible: 20 unidades
+    
+    Note over Pedidos: Pedido pasa a estado CONFIRMADO
+    Pedidos->>Bus: Emite "order.confirmed" { orderId, items: [{ sku: "PROD-X", qty: 3 }] }
     
     Bus->>Inventario: Entrega evento "order.confirmed"
-    Inventario->>Inventario: Descuenta unidades del Kardex
+    Inventario->>Inventario: Ejecuta reserva en Kardex (Disponible: 17)
     
-    opt Si las existencias de un producto llegan a cero
-        Inventario->>Bus: Publica "stock.depleted"
-        Bus->>Pedidos: Entrega evento "stock.depleted"
-        Pedidos->>Pedidos: Pausa venta del producto en canales
+    opt Si el stock llega a cero
+        Inventario->>Bus: Emite "stock.depleted" { sku: "PROD-X" }
+        Bus->>Pedidos: Notifica stock agotado
+        Note over Pedidos: Pausa la venta del SKU en canales activos
     end
 ```
 
 ---
 
-## 3. Contratos Formales de Eventos
+## 4. Contratos de Datos de Integración
 
-### Eventos Emitidos por el Módulo de Pedidos:
+### Solicitud de Disponibilidad en Línea:
 
 ```typescript
-export interface OrderCreatedEvent {
-  type: "order.created";
+export interface StockAvailabilityQuery {
   tenantId: string;
-  orderId: string;
-  channel: "whatsapp" | "web" | "pos";
-  customer: {
-    name: string;
-    phone?: string;
-  };
-  items: Array<{
-    productId: string;
-    sku?: string;
-    name: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  total: number;
-  currency: string;
-  timestamp: string;
+  skus: string[];
 }
 
-export interface OrderConfirmedEvent {
-  type: "order.confirmed";
+export interface StockAvailabilityResponse {
   tenantId: string;
-  orderId: string;
-  items: Array<{
-    productId: string;
-    sku?: string;
-    quantity: number;
+  results: Array<{
+    sku: string;
+    isAvailable: boolean;
+    availableQuantity: number;
+    allowBackorders: boolean;
+    warehouseId?: string;
+    pickingLocation?: string;
   }>;
-  fulfillmentType: "pickup" | "delivery";
-  timestamp: string;
-}
-
-export interface OrderCancelledEvent {
-  type: "order.cancelled";
-  tenantId: string;
-  orderId: string;
-  reason: string;
-  items: Array<{
-    productId: string;
-    sku?: string;
-    quantity: number;
-  }>;
-  timestamp: string;
 }
 ```
 
-### Eventos Emitidos por el Módulo de Inventarios:
+### Evento de Confirmación y Reserva:
 
 ```typescript
-export interface StockReservedEvent {
-  type: "stock.reserved";
+export interface OrderConfirmedReservationPayload {
   tenantId: string;
   orderId: string;
-  success: boolean;
+  orderNumber: string;
   reservedItems: Array<{
     sku: string;
     quantity: number;
+    unitPrice: number;
   }>;
-  timestamp: string;
-}
-
-export interface StockDepletedEvent {
-  type: "stock.depleted";
-  tenantId: string;
-  sku: string;
-  productId: string;
-  timestamp: string;
-}
-
-export interface StockReplenishedEvent {
-  type: "stock.replenished";
-  tenantId: string;
-  sku: string;
-  productId: string;
-  newQuantity: number;
   timestamp: string;
 }
 ```
 
 ---
 
-## 4. Beneficios del Diseño Desacoplado
+## 5. Resiliencia y Desacoplamiento
 
-1. **Tolerancia a Fallos:** Si el módulo de Inventarios se desinstala o se encuentra en mantenimiento, el módulo de Pedidos sigue recibiendo órdenes y operando sin provocar excepciones de ejecución.
-2. **Escalabilidad Horizontal:** Los módulos pueden desplegarse en contenedores, microfrontends o lambdas independientes sin compartir base de datos.
-3. **Mantenibilidad:** Modificar la lógica interna de cálculo de existencias en Kardex jamás impacta el pipeline de atención por WhatsApp de Pedidos.
+1. **Operación sin Inventarios:** Si una tienda tiene instalado Pedidos pero **no** tiene instalado Inventarios, Pedidos no falla: asume disponibilidad abierta para todos los productos de su catálogo de venta.
+2. **Operación sin Pedidos:** Si una tienda tiene instalado Inventarios pero **no** tiene instalado Pedidos, Inventarios opera al 100% recibiendo compras de proveedores, ajustes manuales y traslados de bodega.
