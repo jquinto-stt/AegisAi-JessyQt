@@ -1,9 +1,13 @@
 export type PedidosSection =
+  | "ordenes"
+  | "programados"
+  | "preparacion"
+  | "canales"
+  | "configuracion"
   | "operacion"
   | "menu"
   | "analitica"
-  | "configuracion"
-  | "gestion"; // Retro-compatibilidad
+  | "gestion";
 
 export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversaciones";
 export type MenuTab = "catalogo" | "insumos";

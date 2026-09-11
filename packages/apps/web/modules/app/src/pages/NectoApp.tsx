@@ -240,7 +240,8 @@ export default function App() {
   // Pedidos Navigation State initialized from URL search params
   const [pedidosSection, setPedidosSection] = useState<PedidosSection>(() => {
     const s = searchParams.get("section") as PedidosSection | null;
-    return s || "operacion";
+    if (s === "operacion") return "ordenes";
+    return s || "ordenes";
   });
   const [pedidosOpTab, setPedidosOpTab] = useState<OperacionTab>(() => {
     const t = searchParams.get("tab") as OperacionTab | null;
@@ -274,21 +275,17 @@ export default function App() {
     }
   }, [hasPedidos, hasInventarios, hasAnyModule, activeModule, inventarioTab, pedidosSection, pedidosOpTab, pedidosGeTab, setSearchParams]);
 
-  const handleNavigatePedidos = (section: PedidosSection, tab: any) => {
+  const handleNavigatePedidos = (section: PedidosSection, tab?: any) => {
     setActiveModule("pedidos");
-    setPedidosSection(section);
-    if (section === "operacion") {
-      setPedidosOpTab(tab || "en-vivo");
-    } else if (section === "menu") {
-      setPedidosGeTab(tab || "catalogo");
-    } else if (section === "analitica") {
-      setPedidosGeTab(tab || "resumen");
-    } else if (section === "configuracion") {
-      setPedidosGeTab(tab || "canales");
+    const normSection: PedidosSection = section === "operacion" ? "ordenes" : section;
+    setPedidosSection(normSection);
+    if (tab) {
+      if (normSection === "ordenes") setPedidosOpTab(tab);
+      else setPedidosGeTab(tab);
+      setSearchParams({ section: normSection, tab }, { replace: true });
     } else {
-      setPedidosGeTab(tab);
+      setSearchParams({ section: normSection }, { replace: true });
     }
-    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : section === "analitica" ? "resumen" : "canales") }, { replace: true });
   };
 
   const handleNavigateInventario = (tab: InventoryTab) => {
@@ -446,18 +443,30 @@ export default function App() {
   };
 
   const sectionRoleNames: Record<PedidosSection, string> = {
-    operacion: "Operación de Pedidos",
+    ordenes: "Órdenes",
+    programados: "Pedidos Programados",
+    preparacion: "Preparación & Alistamiento",
+    canales: "Canales de Venta",
+    configuracion: "Configuración",
+    operacion: "Órdenes",
     menu: isFood ? "Menú & Insumos" : "Catálogo de Productos",
     analitica: "Analítica & Reportes",
-    configuracion: "Configuración & Canales",
     gestion: "Gestión",
   };
 
-  const currentRoleName = sectionRoleNames[pedidosSection] || "Gestión";
+  const currentRoleName = sectionRoleNames[pedidosSection] || "Pedidos";
   const currentPageName =
-    pedidosSection === "operacion"
-      ? pedidosOpPageNames[pedidosOpTab]
-      : pedidosGePageNames[pedidosGeTab];
+    pedidosSection === "ordenes" || pedidosSection === "operacion"
+      ? (pedidosOpTab === "conversaciones" ? "Atención WhatsApp & Clientes" : "Órdenes Activas")
+      : pedidosSection === "programados"
+      ? "Pedidos Programados"
+      : pedidosSection === "preparacion"
+      ? "Mesa de Preparación & Alistamiento"
+      : pedidosSection === "canales"
+      ? "Canales Conectados & Asistente"
+      : pedidosSection === "configuracion"
+      ? "Configuración del Módulo"
+      : pedidosGePageNames[pedidosGeTab] || "Pedidos";
 
   const isModulesHub = !hasAnyModule || activeModule === "modules-hub";
 

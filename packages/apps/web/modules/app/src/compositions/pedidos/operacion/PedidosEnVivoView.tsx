@@ -54,6 +54,7 @@ export const PedidosEnVivoView: React.FC<{
     injectScheduledOrderToLive,
     transitionOrder,
     openWhatsAppConversation,
+    isPreparacionEnabled,
   } = usePedidos();
   const { activeBusiness, semantics } = useBusiness();
 
@@ -90,7 +91,7 @@ export const PedidosEnVivoView: React.FC<{
     } catch (e) {}
   };
 
-  const [viewMode, setViewMode] = useState<"kanban" | "grid">("kanban");
+  const [viewMode, setViewMode] = useState<"kanban" | "lista">("kanban");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "TODOS">("TODOS");
   const [channelFilter, setChannelFilter] = useState<OrderChannel | "TODOS">("TODOS");
   const [urgencyFilter, setUrgencyFilter] = useState<UrgencyLevel | "TODOS">("TODOS");
@@ -278,6 +279,7 @@ export const PedidosEnVivoView: React.FC<{
   // Active ordered and visible columns
   const orderedVisibleColumns = layoutPrefs.columns
     .filter(c => c.visible && columnDefs[c.id])
+    .filter(c => isPreparacionEnabled || c.id !== "EN_PREPARACION")
     .map(c => ({
       id: c.id,
       title: c.title || columnDefs[c.id].title,
@@ -426,10 +428,10 @@ export const PedidosEnVivoView: React.FC<{
               intent="pedidos.view"
               tone="contrast"
               value={viewMode}
-              onValueChange={setViewMode}
+              onValueChange={v => setViewMode(v as any)}
               options={[
-                { value: "kanban", label: "Tablero", icon: <Kanban className="w-3.5 h-3.5" /> },
-                { value: "grid", label: "Cuadrícula", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+                { value: "kanban", label: "Vista Kanban", icon: <Kanban className="w-3.5 h-3.5" /> },
+                { value: "lista", label: "Vista Lista", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
               ]}
             />
 
@@ -561,54 +563,7 @@ export const PedidosEnVivoView: React.FC<{
 
                 {/* Tickets Container */}
                 <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 max-h-[calc(100vh-340px)]">
-                  {col.id === "NUEVO" && programados.length > 0 && (
-                    <div className="space-y-2">
-                      {programados.map(prog => (
-                        <div
-                          key={prog.id}
-                          onClick={() => setSelectedOrderId(prog.id)}
-                          className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 space-y-2 text-xs transition-all cursor-pointer hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-theme-xs group select-none"
-                          title="Haz clic para ver el detalle de este pedido programado"
-                        >
-                          <div className="flex items-center justify-between gap-1.5">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-mono font-bold text-[10px] text-gray-500 dark:text-gray-400">
-                                {prog.id}
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700">
-                                <Calendar className="w-2.5 h-2.5 text-brand-500" />
-                                <span>{prog.scheduledDate === "Hoy" ? `Hoy ${prog.scheduledTime}` : `${prog.scheduledDate} ${prog.scheduledTime}`}</span>
-                              </span>
-                            </div>
-                            <ArrowUpRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-600 group-hover:text-brand-500 transition-colors flex-none" />
-                          </div>
-
-                          <div className="min-w-0">
-                            <h5 className="font-bold text-xs text-gray-900 dark:text-gray-100 truncate group-hover:text-brand-500 transition-colors">
-                              {prog.customerName}
-                            </h5>
-                          </div>
-
-                          {layoutPrefs.showItemsSummary !== false && (
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1">
-                              {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                            </p>
-                          )}
-
-                          <div className="flex items-center justify-between pt-1.5 border-t border-gray-100 dark:border-gray-800 text-[11px]">
-                            <span className="font-mono font-bold text-gray-900 dark:text-gray-100">
-                              ${prog.total.toLocaleString("es-CO")}
-                            </span>
-                            <span className="text-[10px] font-mono text-gray-400">
-                              Programado
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {colOrders.length === 0 && (col.id !== "NUEVO" || programados.length === 0) ? (
+                  {colOrders.length === 0 ? (
                     <div className="p-6 text-center text-gray-400 dark:text-gray-500 text-xs font-medium rounded-xl bg-white/50 dark:bg-gray-900/40 border border-gray-200/60 dark:border-gray-800/60">
                       <p>Sin pedidos en esta etapa</p>
                     </div>
@@ -737,194 +692,77 @@ export const PedidosEnVivoView: React.FC<{
           </div>
         </div>
       ) : (
-        /* RESPONSIVE CARDS GRID VIEW */
-        <div className="space-y-4">
-          {/* Grid Summary Bar */}
-          <div className="flex items-center justify-between px-1 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-              Mostrando {filterOrdersList(orders).length} pedidos en cuadrícula
-              {programados.length > 0 && statusFilter === "TODOS" ? ` (+${programados.length} programados)` : ""}
-            </span>
-            <span className="text-[11px] text-zinc-400 items-center gap-1 hidden sm:flex">
-              <Info className="w-3.5 h-3.5 text-zinc-400" />
-              <span>Haz clic en cualquier tarjeta para abrir el {semantics.orderNoun.toLowerCase()} completo</span>
+        /* VISTA LISTA: DETAILED ADMINISTRATIVE TABLE VIEW */
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-bold text-gray-800 dark:text-white">
+              Listado Operacional de Órdenes ({filterOrdersList(orders).length})
+            </h4>
+            <span className="text-xs text-gray-400">
+              Haz clic en cualquier fila para abrir el detalle completo
             </span>
           </div>
 
-          {filterOrdersList(orders).length === 0 && (statusFilter !== "TODOS" || programados.length === 0) ? (
-            <div className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-12 text-center text-zinc-400 font-medium shadow-2xs">
-              No se encontraron pedidos con los filtros actuales.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 items-stretch">
-              {/* Programados cards if applicable */}
-              {statusFilter === "TODOS" &&
-                programados.map(prog => (
-                  <div
-                    key={prog.id}
-                    onClick={() => setSelectedOrderId(prog.id)}
-                    className="p-4 rounded-2xl bg-[#EFE6D3]/30 dark:bg-[#EFE6D3]/5 border border-[#EFE6D3] dark:border-[#EFE6D3]/30 space-y-3 transition-all cursor-pointer hover:border-amber-400 dark:hover:border-amber-600 hover:shadow-xs group flex flex-col justify-between"
-                  >
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between gap-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-xs text-zinc-600 dark:text-zinc-400">
-                            {prog.id}
-                          </span>
-                          <ChannelBadge channel={prog.channel} />
-                        </div>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold bg-[#EFE6D3] dark:bg-[#EFE6D3]/20 text-[#212121] dark:text-[#ECECEC]">
-                          <Calendar className="w-3 h-3 text-[#FF3F1A]" />
-                          <span>
-                            {prog.scheduledDate === "Hoy"
-                              ? `Hoy ${prog.scheduledTime}`
-                              : `${prog.scheduledDate} ${prog.scheduledTime}`}
-                          </span>
-                        </span>
-                      </div>
-
-                      <div>
-                        <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 group-hover:text-[#FF3F1A] transition-colors">
-                          {prog.customerName}
-                        </h4>
-                        {prog.customerPhone && (
-                          <p className="text-[11px] font-mono text-zinc-400">{prog.customerPhone}</p>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed bg-white/70 dark:bg-zinc-900/60 p-2 rounded-xl border border-zinc-200/60 dark:border-zinc-800">
-                        {prog.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                      </p>
-                    </div>
-
-                    <div className="pt-2.5 border-t border-zinc-200/60 dark:border-zinc-800 flex items-center justify-between">
-                      <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
-                        ${prog.total.toLocaleString("es-CO")}
-                      </span>
-                      <Button
-                        variant="outline"
-                        intent="pedidos.scheduled.inject"
-                        onClick={e => {
-                          e.stopPropagation();
-                          injectScheduledOrderToLive(prog.id, true);
-                        }}
-                        className="py-1 px-2.5 text-xs font-bold border-zinc-200 dark:border-zinc-700 hover:border-[#FF3F1A] hover:text-[#FF3F1A]"
-                      >
-                        <Package className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        <span>Pasar a Alistamiento</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-
-              {/* Live orders cards in Grid */}
-              {filterOrdersList(orders).map(order => {
-                const isDelayed = order.urgency === "RETRASADO";
-                const progressPercent = Math.min(
-                  100,
-                  Math.round((order.elapsedMinutes / Math.max(1, order.estimatedMinutes)) * 100)
-                );
-
-                return (
-                  <div
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800 text-gray-400 font-semibold uppercase tracking-wider text-[10px]">
+                  <th className="pb-3 pr-4"># Orden</th>
+                  <th className="pb-3 pr-4">Cliente</th>
+                  <th className="pb-3 pr-4">Canal</th>
+                  <th className="pb-3 pr-4">Artículos</th>
+                  <th className="pb-3 pr-4">Total</th>
+                  <th className="pb-3 pr-4">Estado</th>
+                  <th className="pb-3 pr-4">Tiempo</th>
+                  <th className="pb-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-700 dark:text-gray-300">
+                {filterOrdersList(orders).map(order => (
+                  <tr
                     key={order.id}
                     onClick={() => setSelectedOrderId(order.id)}
-                    className={`p-4 rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200/90 dark:border-zinc-800 space-y-3 transition-all cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 hover:shadow-xs group flex flex-col justify-between ${
-                      isDelayed
-                        ? "border-[#190088]/40 dark:border-[#97D6DF]/40 bg-[#190088]/5 dark:bg-[#190088]/10"
-                        : ""
-                    }`}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-800/60 cursor-pointer transition-colors"
                   >
-                    <div className="space-y-2.5">
-                      {/* Top Row: ID, Channel, Status */}
-                      <div className="flex items-center justify-between gap-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100 group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
-                            {order.id}
-                          </span>
-                          <ChannelBadge channel={order.channel} />
-                        </div>
-                        <OrderStatusBadge status={order.status} size="sm" />
-                      </div>
-
-                      {/* Customer Info & Turn */}
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100 truncate group-hover:text-[#190088] dark:group-hover:text-[#97D6DF] transition-colors">
-                            {order.customerName}
-                          </h4>
-                          <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 flex-none">
-                            Turno #{order.turnNumber || "00"}
-                          </span>
-                        </div>
-                        {order.customerPhone && (
-                          <p className="text-[11px] font-mono text-zinc-400">{order.customerPhone}</p>
-                        )}
-                      </div>
-
-                      {/* Items summary */}
-                      <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-2 leading-relaxed bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
-                        {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                      </p>
-
-                      {/* Special Notes */}
-                      {order.notes && (
-                        <p className="text-[11px] text-[#190088] dark:text-[#97D6DF] italic font-medium truncate">
-                          Nota: {order.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Footer: SLA Progress & Total */}
-                    <div className="space-y-2 pt-2.5 border-t border-zinc-100 dark:border-zinc-800/80">
-                      {order.status === "EN_PREPARACION" ? (
-                        <div className="space-y-1">
-                          <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                isDelayed ? "bg-[#190088]" : "bg-[#97D6DF]"
-                              }`}
-                              style={{ width: `${progressPercent}%` }}
-                            />
-                          </div>
-                          <div className="flex justify-between text-[10px] font-mono text-zinc-400">
-                            <span>
-                              {order.elapsedMinutes}m / {order.estimatedMinutes}m KDS
-                            </span>
-                            {isDelayed ? (
-                              <span className="text-[#190088] dark:text-[#97D6DF] font-bold">
-                                Demorado
-                              </span>
-                            ) : (
-                              <span>{order.createdAt}</span>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
-                          <span className={isDelayed ? "text-[#190088] dark:text-[#97D6DF] font-bold" : ""}>
-                            {isDelayed
-                              ? `+${order.elapsedMinutes - order.estimatedMinutes}m demora`
-                              : `${order.elapsedMinutes}m activos`}
-                          </span>
-                          <span>{order.createdAt}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
-                          ${order.total.toLocaleString("es-CO")}
-                        </span>
-                        <div className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-[#190088] group-hover:text-white dark:group-hover:bg-[#97D6DF] dark:group-hover:text-zinc-900 flex items-center justify-center transition-all text-zinc-400 shadow-2xs">
-                          <ArrowUpRight className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    <td className="py-3.5 pr-4 font-mono font-bold text-brand-500">
+                      {order.id}
+                    </td>
+                    <td className="py-3.5 pr-4 font-semibold text-gray-900 dark:text-white">
+                      {order.customerName}
+                    </td>
+                    <td className="py-3.5 pr-4">
+                      <ChannelBadge channel={order.channel} />
+                    </td>
+                    <td className="py-3.5 pr-4 text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      {order.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+                    </td>
+                    <td className="py-3.5 pr-4 font-mono font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      ${order.total.toLocaleString("es-CO")} COP
+                    </td>
+                    <td className="py-3.5 pr-4 whitespace-nowrap">
+                      <OrderStatusBadge status={order.status} size="sm" />
+                    </td>
+                    <td className="py-3.5 pr-4 font-mono text-[11px] text-gray-400 whitespace-nowrap">
+                      {order.elapsedMinutes}m transcurridos
+                    </td>
+                    <td className="py-3.5 text-right whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setSelectedOrderId(order.id);
+                        }}
+                        className="cursor-pointer font-medium"
+                      >
+                        Ver Detalle
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

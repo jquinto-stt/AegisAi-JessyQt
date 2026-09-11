@@ -2,16 +2,15 @@ import React, { useState, useEffect } from "react";
 import { PedidosProvider, usePedidos } from "./context/PedidosContext";
 import { PedidosSection, OperacionTab, GestionTab } from "./types";
 import { PedidosEnVivoView } from "./operacion/PedidosEnVivoView";
+import { ProgramadosView } from "./operacion/ProgramadosView";
+import { PreparacionView } from "./operacion/PreparacionView";
+import { CanalesView } from "./canales/CanalesView";
+import { ConfiguracionView } from "./configuracion/ConfiguracionView";
 import { ConversacionesView } from "./operacion/ConversacionesView";
 import { ResumenDashboardView } from "./gestion/ResumenDashboardView";
 import { HistorialView } from "./gestion/HistorialView";
 import { CatalogoInteligenteView } from "./gestion/CatalogoInteligenteView";
 import { InsumosStockView } from "./gestion/InsumosStockView";
-import { AutomatizacionesView } from "./gestion/AutomatizacionesView";
-import { TurnosCapacidadView } from "./gestion/TurnosCapacidadView";
-import { RolesPermisosView } from "./gestion/RolesPermisosView";
-import { AnaliticaView } from "./gestion/AnaliticaView";
-import { CanalesAsistenteView } from "./gestion/CanalesAsistenteView";
 import { OrderDetailDrawer } from "./shared/OrderDetailDrawer";
 import { AIInterpretationModal } from "./shared/AIInterpretationModal";
 import { RejectCancelModal } from "./shared/RejectCancelModal";
@@ -25,27 +24,15 @@ import {
   LayoutPreferences,
 } from "./shared/CustomLayoutModal";
 import {
-  Activity,
   ShoppingBag,
-  ChefHat,
-  Layers,
   Package,
-  Users,
-  BarChart2,
-  Shield,
   SlidersHorizontal,
   ShieldAlert,
-  History,
   Volume2,
   VolumeX,
-  MessagesSquare,
-  TrendingUp,
   Calendar,
   Smartphone,
-  Truck,
 } from "lucide-react";
-import { Button } from "@/elements";
-
 
 const PedidosContent: React.FC<{
   sectionProp?: PedidosSection;
@@ -58,7 +45,7 @@ const PedidosContent: React.FC<{
   onOpTabChange?: (t: OperacionTab) => void;
   onGeTabChange?: (t: GestionTab) => void;
 }> = ({
-  sectionProp = "operacion",
+  sectionProp = "ordenes",
   opTabProp = "en-vivo",
   geTabProp = "catalogo",
   targetOrderId,
@@ -79,15 +66,19 @@ const PedidosContent: React.FC<{
     setSelectedOrderId,
     setAiModalOrder,
     setPrintTicketOrder,
+    isPreparacionEnabled,
   } = usePedidos();
   const { semantics } = useBusiness();
-  const isFood = semantics?.requiresKitchenDisplay;
 
-  const [section, setSection] = useState<PedidosSection>(sectionProp);
+  // Normalize initial section
+  const initialSection: PedidosSection =
+    sectionProp === "operacion" ? "ordenes" : sectionProp;
+
+  const [section, setSection] = useState<PedidosSection>(initialSection);
   const [opTab, setOpTab] = useState<OperacionTab>(opTabProp);
   const [geTab, setGeTab] = useState<GestionTab>(geTabProp || "catalogo");
 
-  // Handle deep-linking from global notifications or search
+  // Handle deep-linking from notifications or search
   useEffect(() => {
     if (targetModal === "incidencias") {
       setIsIncidenciasOpen(true);
@@ -110,7 +101,7 @@ const PedidosContent: React.FC<{
     }
   }, [targetOrderId, targetModal, orders, setAiModalOrder, setPrintTicketOrder, setSelectedOrderId, setIsIncidenciasOpen]);
 
-  // Layout Preferences for top header visibility
+  // Layout preferences
   const [layoutPrefs, setLayoutPrefs] = useState<LayoutPreferences>(() => {
     try {
       const saved = localStorage.getItem("necto_pedidos_layout_prefs");
@@ -136,8 +127,9 @@ const PedidosContent: React.FC<{
 
     const handleNavigateEvent = (e: any) => {
       if (e.detail?.section) {
-        setSection(e.detail.section);
-        if (onSectionChange) onSectionChange(e.detail.section);
+        const s = e.detail.section === "operacion" ? "ordenes" : e.detail.section;
+        setSection(s);
+        if (onSectionChange) onSectionChange(s);
       }
       if (e.detail?.opTab) {
         setOpTab(e.detail.opTab);
@@ -158,7 +150,8 @@ const PedidosContent: React.FC<{
   }, [onSectionChange, onOpTabChange, onGeTabChange]);
 
   useEffect(() => {
-    setSection(sectionProp);
+    const s = sectionProp === "operacion" ? "ordenes" : sectionProp;
+    setSection(s);
   }, [sectionProp]);
 
   useEffect(() => {
@@ -170,21 +163,9 @@ const PedidosContent: React.FC<{
   }, [geTabProp]);
 
   const handleSectionSwitch = (s: PedidosSection) => {
-    setSection(s);
-    if (s === "menu") {
-      const nextGe = (geTab === "catalogo" || geTab === "insumos") ? geTab : "catalogo";
-      setGeTab(nextGe);
-      if (onGeTabChange) onGeTabChange(nextGe);
-    } else if (s === "analitica") {
-      const nextGe = (geTab === "resumen" || geTab === "historial" || geTab === "analitica") ? geTab : "resumen";
-      setGeTab(nextGe);
-      if (onGeTabChange) onGeTabChange(nextGe);
-    } else if (s === "configuracion") {
-      const nextGe = (geTab === "canales" || geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos") ? geTab : "canales";
-      setGeTab(nextGe);
-      if (onGeTabChange) onGeTabChange(nextGe);
-    }
-    if (onSectionChange) onSectionChange(s);
+    const normalized = s === "operacion" ? "ordenes" : s;
+    setSection(normalized);
+    if (onSectionChange) onSectionChange(normalized);
   };
 
   const handleOpTabSwitch = (t: OperacionTab) => {
@@ -199,83 +180,105 @@ const PedidosContent: React.FC<{
 
   const activeIncCount = incidencias.filter(i => !i.isResolved).length;
   const newOrdersCount = orders.filter(o => o.status === "NUEVO").length;
-  const pendingConversationsCount = conversations.filter(c => c.status === "REQUIERE_INTERVENCION").length;
-  const isKanbanActive = section === "operacion" && opTab === "en-vivo";
+  const pendingOrdersCount = orders.filter(
+    o => o.status === "CONFIRMADO" || o.status === "EN_PREPARACION"
+  ).length;
+
+  const isKanbanActive = (section === "ordenes" || section === "operacion") && opTab === "en-vivo";
   const shouldShowTopHeader = isKanbanActive ? layoutPrefs.showTopHeader : true;
 
-
+  // Active modular sections
+  const modularSections = [
+    {
+      id: "ordenes" as PedidosSection,
+      label: "Órdenes",
+      icon: ShoppingBag,
+      badge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
+    },
+    {
+      id: "programados" as PedidosSection,
+      label: "Programados",
+      icon: Calendar,
+      count: programados.length,
+    },
+    ...(isPreparacionEnabled
+      ? [
+          {
+            id: "preparacion" as PedidosSection,
+            label: "Preparación",
+            icon: Package,
+            count: pendingOrdersCount,
+          },
+        ]
+      : []),
+    {
+      id: "canales" as PedidosSection,
+      label: "Canales",
+      icon: Smartphone,
+    },
+    {
+      id: "configuracion" as PedidosSection,
+      label: "Configuración",
+      icon: SlidersHorizontal,
+    },
+  ];
 
   return (
-    <div className="flex flex-col h-full space-y-3.5 p-2.5 sm:p-4 w-full">
-      {/* Top Module Sub-header: Operación ↔ Menú ↔ Analítica ↔ Configuración Pill Switcher & Sub-tabs */}
+    <div className="flex flex-col h-full space-y-4 p-3 sm:p-5 w-full animate-fade-in">
+      {/* Top Module Sub-header: Órdenes ↔ Programados ↔ Preparación ↔ Canales ↔ Configuración */}
       {shouldShowTopHeader && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-3.5 sm:p-4 border border-gray-200 dark:border-gray-800 shadow-theme-xs flex flex-col gap-3 flex-none animate-fade-in">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-5 border border-gray-200 dark:border-gray-800 shadow-theme-sm flex flex-col gap-3 flex-none">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Modular Section Pill Switcher */}
+            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
+              {modularSections.map(sec => {
+                const Icon = sec.icon;
+                const isSelected =
+                  section === sec.id ||
+                  (sec.id === "ordenes" && section === "operacion");
 
-        {/* Row 1: Section Switcher (Left) + Actions (Right) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
-          {/* Section Pill Switcher */}
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => handleSectionSwitch("operacion")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                section === "operacion"
-                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <Activity className="size-3.5" />
-              <span>Operación</span>
-              {newOrdersCount + pendingConversationsCount > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${section === "operacion" ? "bg-white text-brand-500" : "bg-brand-500 text-white"}`}>
-                  {newOrdersCount + pendingConversationsCount}
-                </span>
-              )}
-            </button>
+                return (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => handleSectionSwitch(sec.id)}
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
+                      isSelected
+                        ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Icon className="size-3.5" />
+                    <span>{sec.label}</span>
+                    {sec.badge && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                          isSelected
+                            ? "bg-white text-brand-500"
+                            : "bg-brand-500 text-white"
+                        }`}
+                      >
+                        {sec.badge}
+                      </span>
+                    )}
+                    {sec.count !== undefined && !sec.badge && sec.count > 0 && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                          isSelected
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {sec.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-            <button
-              type="button"
-              onClick={() => handleSectionSwitch("menu")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                section === "menu"
-                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <Layers className="size-3.5" />
-              <span>{isFood ? "Menú & Carta" : "Catálogo de Venta"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSectionSwitch("analitica")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                section === "analitica"
-                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <BarChart2 className="size-3.5" />
-              <span>Analítica & Reportes</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleSectionSwitch("configuracion")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                section === "configuracion"
-                  ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              }`}
-            >
-              <Users className="size-3.5" />
-              <span>Configuración</span>
-            </button>
-          </div>
-
-          {/* Right Actions: Sound & Incidencias (Only visible in Operación) */}
-          {section === "operacion" && (
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end animate-fade-in">
+            {/* Right Actions: Sound & Incidencias */}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
               {/* Audio Alerts Toggle */}
               <button
                 type="button"
@@ -308,158 +311,14 @@ const PedidosContent: React.FC<{
                 )}
               </button>
             </div>
-          )}
+          </div>
         </div>
-
-        {/* Row 2: Sub-tabs Navigation */}
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full flex-nowrap sm:flex-wrap py-0.5">
-          {section === "operacion" && (
-            <>
-              {[
-                {
-                  id: "en-vivo" as OperacionTab,
-                  label: "Órdenes",
-                  icon: <ShoppingBag className="size-3.5 flex-none" />,
-                  count: orders.length,
-                  highlightBadge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
-                },
-                {
-                  id: "conversaciones" as OperacionTab,
-                  label: "Conversaciones WhatsApp",
-                  icon: <MessagesSquare className="size-3.5 flex-none" />,
-                  count: conversations.length,
-                  highlightBadge: pendingConversationsCount > 0 ? `${pendingConversationsCount} atención` : undefined,
-                },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleOpTabSwitch(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
-                    opTab === tab.id
-                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && (
-                    <span
-                      className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-                        opTab === tab.id
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                  {tab.highlightBadge && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${opTab === tab.id ? "bg-white text-brand-500" : "bg-brand-500 text-white"}`}>
-                      {tab.highlightBadge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </>
-          )}
-
-          {(section === "menu" || (section === "gestion" && (geTab === "catalogo" || geTab === "insumos"))) && (
-            <>
-              {[
-                {
-                  id: "catalogo" as GestionTab,
-                  label: isFood ? "Catálogo de Platos" : "Catálogo de Productos",
-                  icon: <Layers className="size-3.5 flex-none" />,
-                },
-                ...(isFood
-                  ? [
-                      {
-                        id: "insumos" as GestionTab,
-                        label: "Insumos & Stock (Escandallos)",
-                        icon: <Package className="size-3.5 flex-none" />,
-                      },
-                    ]
-                  : []),
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleGeTabSwitch(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
-                    geTab === tab.id
-                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </>
-          )}
-
-          {(section === "analitica" || (section === "gestion" && (geTab === "resumen" || geTab === "historial" || geTab === "analitica"))) && (
-            <>
-              {[
-                { id: "resumen" as GestionTab, label: "Resumen Dashboard", icon: <TrendingUp className="size-3.5 flex-none" /> },
-                { id: "historial" as GestionTab, label: "Historial de Pedidos", icon: <History className="size-3.5 flex-none" /> },
-                { id: "analitica" as GestionTab, label: "Métricas de Rendimiento", icon: <BarChart2 className="size-3.5 flex-none" /> },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleGeTabSwitch(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
-                    geTab === tab.id
-                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </>
-          )}
-
-          {(section === "configuracion" || (section === "gestion" && (geTab === "canales" || geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
-            <>
-              {[
-                { id: "canales" as GestionTab, label: "Canales & Asistente WhatsApp", icon: <Smartphone className="size-3.5 flex-none" /> },
-                { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="size-3.5 flex-none" /> },
-                { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="size-3.5 flex-none" /> },
-                {
-                  id: "turnos" as GestionTab,
-                  label: isFood ? "Turnos y Capacidad de Cocina" : "Turnos y Capacidad Operativa",
-                  icon: <Users className="size-3.5 flex-none" />,
-                },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleGeTabSwitch(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none text-xs whitespace-nowrap ${
-                    geTab === tab.id
-                      ? "bg-brand-500 text-white font-semibold shadow-theme-xs"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
       )}
 
-      {/* Main Tab Render Container */}
-
-
+      {/* Main Section Content */}
       <div className="flex-1 min-h-0">
-        {section === "operacion" && (
+        {/* 1. ÓRDENES (Default Kanban / Lista switcher) */}
+        {(section === "ordenes" || section === "operacion") && (
           <>
             {opTab !== "conversaciones" && (
               <PedidosEnVivoView onNavigateOpTab={handleOpTabSwitch} />
@@ -468,51 +327,25 @@ const PedidosContent: React.FC<{
           </>
         )}
 
-        {section === "menu" && (
-          <>
-            {(geTab === "catalogo" || geTab !== "insumos") && (
-              <CatalogoInteligenteView targetProductId={targetProductId} />
-            )}
-            {geTab === "insumos" && <InsumosStockView />}
-          </>
+        {/* 2. PROGRAMADOS */}
+        {section === "programados" && (
+          <ProgramadosView onNavigateOpTab={handleOpTabSwitch} />
         )}
 
-        {section === "analitica" && (
-          <>
-            {(geTab === "resumen" || (geTab !== "historial" && geTab !== "analitica")) && (
-              <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />
-            )}
-            {geTab === "historial" && <HistorialView />}
-            {geTab === "analitica" && <AnaliticaView />}
-          </>
-        )}
+        {/* 3. PREPARACIÓN (Solo visible y montado cuando está habilitado) */}
+        {section === "preparacion" && <PreparacionView />}
 
-        {section === "configuracion" && (
-          <>
-            {(geTab === "canales" || (geTab !== "roles" && geTab !== "automatizaciones" && geTab !== "turnos")) && (
-              <CanalesAsistenteView />
-            )}
-            {geTab === "roles" && <RolesPermisosView />}
-            {geTab === "automatizaciones" && <AutomatizacionesView />}
-            {geTab === "turnos" && <TurnosCapacidadView />}
-          </>
-        )}
+        {/* 4. CANALES */}
+        {section === "canales" && <CanalesView />}
 
-        {section === "gestion" && (
-          <>
-            {geTab === "canales" && <CanalesAsistenteView />}
-            {geTab === "catalogo" && <CatalogoInteligenteView targetProductId={targetProductId} />}
-            {geTab === "insumos" && <InsumosStockView />}
-            {geTab === "resumen" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}
-            {geTab === "historial" && <HistorialView />}
-            {geTab === "analitica" && <AnaliticaView />}
-            {geTab === "roles" && <RolesPermisosView />}
-            {geTab === "automatizaciones" && <AutomatizacionesView />}
-            {geTab === "turnos" && <TurnosCapacidadView />}
-          </>
-        )}
+        {/* 5. CONFIGURACIÓN */}
+        {section === "configuracion" && <ConfiguracionView />}
+
+        {/* Retro-compatibilidad */}
+        {section === "menu" && <CatalogoInteligenteView targetProductId={targetProductId} />}
+        {section === "analitica" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}
+        {section === "gestion" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}
       </div>
-
 
       {/* Modals & Drawers */}
       <OrderDetailDrawer />
@@ -520,8 +353,9 @@ const PedidosContent: React.FC<{
       <RejectCancelModal />
       <IncidenciasDrawer />
       <ThermalTicketModal />
-      {/* Floating WhatsApp Widget (Exclusively on Live Kanban / Bandeja) */}
-      {section === "operacion" && opTab === "en-vivo" && (
+
+      {/* Floating WhatsApp Widget on Live Orders */}
+      {(section === "ordenes" || section === "operacion") && opTab === "en-vivo" && (
         <WhatsAppFloatingWidget
           onNavigateToFullView={() => handleOpTabSwitch("conversaciones")}
         />

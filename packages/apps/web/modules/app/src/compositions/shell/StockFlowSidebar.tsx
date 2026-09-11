@@ -195,26 +195,29 @@ export const StockFlowSidebar = observer(({
   const isFood = activeBusiness?.businessType === "restaurant_virtual";
   const catalogMenuTitle = isFood ? "Menú & Insumos" : "Catálogo & Listas";
 
-  // Accordion open section state
-  const [openMenuName, setOpenMenuName] = useState<string | null>(() => {
-    if (activeModule === "pedidos") {
-      if (pedidosSection === "operacion") return "Operación";
-      if (pedidosSection === "menu") return catalogMenuTitle;
-      if (pedidosSection === "analitica") return "Analítica";
-      if (pedidosSection === "configuracion") return "Configuración";
-    }
-    return null;
+  // Reactive preparation capability toggle
+  const [isPreparacionEnabled, setIsPreparacionEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("necto_pedidos_preparacion_enabled");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true;
   });
 
-  // Keep accordion synced when external navigation occurs
   useEffect(() => {
-    if (activeModule === "pedidos") {
-      if (pedidosSection === "operacion") setOpenMenuName("Operación");
-      else if (pedidosSection === "menu") setOpenMenuName(catalogMenuTitle);
-      else if (pedidosSection === "analitica") setOpenMenuName("Analítica");
-      else if (pedidosSection === "configuracion") setOpenMenuName("Configuración");
-    }
-  }, [activeModule, pedidosSection, catalogMenuTitle]);
+    const handleToggle = () => {
+      try {
+        const saved = localStorage.getItem("necto_pedidos_preparacion_enabled");
+        if (saved !== null) setIsPreparacionEnabled(JSON.parse(saved));
+      } catch (e) {}
+    };
+    window.addEventListener("necto_preparacion_toggle", handleToggle);
+    window.addEventListener("storage", handleToggle);
+    return () => {
+      window.removeEventListener("necto_preparacion_toggle", handleToggle);
+      window.removeEventListener("storage", handleToggle);
+    };
+  }, []);
 
   return (
     <BaseAppSidebar logo={<Logo />} logoCollapsed={<LogoCollapsed />}>
@@ -265,117 +268,43 @@ export const StockFlowSidebar = observer(({
           </div>
           )}
 
-          {/* SECCIÓN PEDIDOS & OPERACIONES (TODAS LAS PANTALLAS CON SUBMENÚS) */}
+          {/* SECCIÓN PEDIDOS */}
           {hasPedidos && (
             <div>
-              <MenuSectionHeader title="Pedidos & Operaciones" />
+              <MenuSectionHeader title="Pedidos" />
               <ul className="flex flex-col gap-1">
-                {/* 1. OPERACIÓN */}
                 <MenuItem
                   icon={<GridIcon />}
-                  name="Operación"
-                  openMenuName={openMenuName}
-                  onMenuToggle={setOpenMenuName}
-                  active={activeModule === "pedidos" && pedidosSection === "operacion"}
-                >
-                  <MenuSubmenuItem
-                    name="Órdenes en Vivo"
-                    onClick={() => onNavigatePedidos("operacion", "en-vivo")}
-                    active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "en-vivo"}
-                  />
-                  <MenuSubmenuItem
-                    name={semantics?.stationShortName || "Preparación & Despacho"}
-                    onClick={() => onNavigatePedidos("operacion", "preparacion")}
-                    active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "preparacion"}
-                  />
-                  <MenuSubmenuItem
-                    name="Programados"
-                    onClick={() => onNavigatePedidos("operacion", "programados")}
-                    active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "programados"}
-                  />
-                  <MenuSubmenuItem
-                    name="WhatsApp & Chat"
-                    onClick={() => onNavigatePedidos("operacion", "conversaciones")}
-                    active={activeModule === "pedidos" && pedidosSection === "operacion" && pedidosOpTab === "conversaciones"}
-                  />
-                </MenuItem>
-
-                {/* 2. MENÚ & INSUMOS / CATÁLOGO */}
+                  name="Órdenes"
+                  active={activeModule === "pedidos" && (pedidosSection === "ordenes" || pedidosSection === "operacion")}
+                  onClick={() => onNavigatePedidos("ordenes")}
+                />
                 <MenuItem
-                  icon={<ListIcon />}
-                  name={isFood ? "Menú & Insumos" : "Catálogo de Productos"}
-                  openMenuName={openMenuName}
-                  onMenuToggle={setOpenMenuName}
-                  active={activeModule === "pedidos" && pedidosSection === "menu"}
-                >
-                  <MenuSubmenuItem
-                    name={isFood ? "Catálogo de Platos" : "Catálogo de Productos"}
-                    onClick={() => onNavigatePedidos("menu", "catalogo")}
-                    active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "catalogo"}
+                  icon={<CalenderIcon />}
+                  name="Programados"
+                  active={activeModule === "pedidos" && pedidosSection === "programados"}
+                  onClick={() => onNavigatePedidos("programados")}
+                />
+                {isPreparacionEnabled && (
+                  <MenuItem
+                    icon={<BoxIcon />}
+                    name="Preparación"
+                    active={activeModule === "pedidos" && pedidosSection === "preparacion"}
+                    onClick={() => onNavigatePedidos("preparacion")}
                   />
-                  {isFood && (
-                    <MenuSubmenuItem
-                      name="Insumos & Recetas"
-                      onClick={() => onNavigatePedidos("menu", "insumos")}
-                      active={activeModule === "pedidos" && pedidosSection === "menu" && pedidosGeTab === "insumos"}
-                    />
-                  )}
-                </MenuItem>
-
-                {/* 3. ANALÍTICA */}
+                )}
                 <MenuItem
-                  icon={<PieChartIcon />}
-                  name="Analítica"
-                  openMenuName={openMenuName}
-                  onMenuToggle={setOpenMenuName}
-                  active={activeModule === "pedidos" && pedidosSection === "analitica"}
-                >
-                  <MenuSubmenuItem
-                    name="Dashboard Resumen"
-                    onClick={() => onNavigatePedidos("analitica", "resumen")}
-                    active={activeModule === "pedidos" && pedidosSection === "analitica" && pedidosGeTab === "resumen"}
-                  />
-                  <MenuSubmenuItem
-                    name="Historial de Pedidos"
-                    onClick={() => onNavigatePedidos("analitica", "historial")}
-                    active={activeModule === "pedidos" && pedidosSection === "analitica" && pedidosGeTab === "historial"}
-                  />
-                  <MenuSubmenuItem
-                    name="Métricas Rendimiento"
-                    onClick={() => onNavigatePedidos("analitica", "analitica")}
-                    active={activeModule === "pedidos" && pedidosSection === "analitica" && pedidosGeTab === "analitica"}
-                  />
-                </MenuItem>
-
-                {/* 4. CONFIGURACIÓN */}
+                  icon={<ChatIcon />}
+                  name="Canales"
+                  active={activeModule === "pedidos" && pedidosSection === "canales"}
+                  onClick={() => onNavigatePedidos("canales")}
+                />
                 <MenuItem
                   icon={<PlugInIcon />}
                   name="Configuración"
-                  openMenuName={openMenuName}
-                  onMenuToggle={setOpenMenuName}
                   active={activeModule === "pedidos" && pedidosSection === "configuracion"}
-                >
-                  <MenuSubmenuItem
-                    name="Canales & Asistente Virtual"
-                    onClick={() => onNavigatePedidos("configuracion", "canales")}
-                    active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "canales"}
-                  />
-                  <MenuSubmenuItem
-                    name="Roles & Permisos"
-                    onClick={() => onNavigatePedidos("configuracion", "roles")}
-                    active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "roles"}
-                  />
-                  <MenuSubmenuItem
-                    name="Automatizaciones IA"
-                    onClick={() => onNavigatePedidos("configuracion", "automatizaciones")}
-                    active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "automatizaciones"}
-                  />
-                  <MenuSubmenuItem
-                    name="Turnos y Capacidad"
-                    onClick={() => onNavigatePedidos("configuracion", "turnos")}
-                    active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "turnos"}
-                  />
-                </MenuItem>
+                  onClick={() => onNavigatePedidos("configuracion")}
+                />
               </ul>
             </div>
           )}

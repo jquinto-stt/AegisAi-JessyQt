@@ -76,6 +76,8 @@ interface PedidosContextType {
   isSoundEnabled: boolean;
   setIsSoundEnabled: (enabled: boolean) => void;
   toggleSound: () => void;
+  isPreparacionEnabled: boolean;
+  setIsPreparacionEnabled: (enabled: boolean) => void;
 
   // Actions
   transitionOrder: (orderId: string, toStatus: OrderStatus, user?: string, note?: string) => void;
@@ -242,6 +244,38 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [cancelModalOrder, setCancelModalOrder] = useState<Pedido | null>(null);
   const [printTicketOrder, setPrintTicketOrder] = useState<Pedido | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+
+  // Operational preparation capability toggle
+  const [isPreparacionEnabled, setIsPreparacionEnabledState] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("necto_pedidos_preparacion_enabled");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true;
+  });
+
+  const setIsPreparacionEnabled = (enabled: boolean) => {
+    setIsPreparacionEnabledState(enabled);
+    try {
+      localStorage.setItem("necto_pedidos_preparacion_enabled", JSON.stringify(enabled));
+      window.dispatchEvent(new Event("necto_preparacion_toggle"));
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const handleToggle = () => {
+      try {
+        const saved = localStorage.getItem("necto_pedidos_preparacion_enabled");
+        if (saved !== null) setIsPreparacionEnabledState(JSON.parse(saved));
+      } catch (e) {}
+    };
+    window.addEventListener("necto_preparacion_toggle", handleToggle);
+    window.addEventListener("storage", handleToggle);
+    return () => {
+      window.removeEventListener("necto_preparacion_toggle", handleToggle);
+      window.removeEventListener("storage", handleToggle);
+    };
+  }, []);
 
   // Sync with global store pace changes from BusinessSwitcher
   useEffect(() => {
@@ -1737,6 +1771,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isSoundEnabled,
         setIsSoundEnabled,
         toggleSound,
+        isPreparacionEnabled,
+        setIsPreparacionEnabled,
         transitionOrder,
         confirmOrder,
         rejectOrder,
