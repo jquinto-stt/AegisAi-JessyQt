@@ -3,6 +3,7 @@ import { AuthProvider } from './auth/AuthContext';
 import { BusinessProvider } from './context/BusinessContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import OnboardingPage from './pages/OnboardingPage';
 import WorkspacesPage from './pages/WorkspacesPage';
 import FranchiseAnalyticsPage from './pages/FranchiseAnalyticsPage';
@@ -16,6 +17,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/" element={<WorkspacesPage />} />
             <Route path="/workspaces" element={<WorkspacesPage />} />
