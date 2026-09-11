@@ -13,6 +13,7 @@ import { AutomatizacionesView } from "./gestion/AutomatizacionesView";
 import { TurnosCapacidadView } from "./gestion/TurnosCapacidadView";
 import { RolesPermisosView } from "./gestion/RolesPermisosView";
 import { AnaliticaView } from "./gestion/AnaliticaView";
+import { CanalesAsistenteView } from "./gestion/CanalesAsistenteView";
 import { OrderDetailDrawer } from "./shared/OrderDetailDrawer";
 import { AIInterpretationModal } from "./shared/AIInterpretationModal";
 import { RejectCancelModal } from "./shared/RejectCancelModal";
@@ -42,6 +43,7 @@ import {
   MessagesSquare,
   TrendingUp,
   Calendar,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -178,7 +180,7 @@ const PedidosContent: React.FC<{
       setGeTab(nextGe);
       if (onGeTabChange) onGeTabChange(nextGe);
     } else if (s === "configuracion") {
-      const nextGe = (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos") ? geTab : "roles";
+      const nextGe = (geTab === "canales" || geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos") ? geTab : "canales";
       setGeTab(nextGe);
       if (onGeTabChange) onGeTabChange(nextGe);
     }
@@ -432,9 +434,10 @@ const PedidosContent: React.FC<{
             </>
           )}
 
-          {(section === "configuracion" || (section === "gestion" && (geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
+          {(section === "configuracion" || (section === "gestion" && (geTab === "canales" || geTab === "roles" || geTab === "automatizaciones" || geTab === "turnos"))) && (
             <>
               {[
+                { id: "canales" as GestionTab, label: "Canales & Asistente WhatsApp", icon: <Smartphone className="size-3.5 flex-none" /> },
                 { id: "roles" as GestionTab, label: "Roles & Permisos del Equipo", icon: <Shield className="size-3.5 flex-none" /> },
                 { id: "automatizaciones" as GestionTab, label: "Automatizaciones & Reglas WhatsApp", icon: <SlidersHorizontal className="size-3.5 flex-none" /> },
                 {
@@ -499,9 +502,10 @@ const PedidosContent: React.FC<{
 
         {section === "configuracion" && (
           <>
-            {(geTab === "roles" || (geTab !== "automatizaciones" && geTab !== "turnos")) && (
-              <RolesPermisosView />
+            {(geTab === "canales" || (geTab !== "roles" && geTab !== "automatizaciones" && geTab !== "turnos")) && (
+              <CanalesAsistenteView />
             )}
+            {geTab === "roles" && <RolesPermisosView />}
             {geTab === "automatizaciones" && <AutomatizacionesView />}
             {geTab === "turnos" && <TurnosCapacidadView />}
           </>
@@ -509,6 +513,7 @@ const PedidosContent: React.FC<{
 
         {section === "gestion" && (
           <>
+            {geTab === "canales" && <CanalesAsistenteView />}
             {geTab === "catalogo" && <CatalogoInteligenteView targetProductId={targetProductId} />}
             {geTab === "insumos" && <InsumosStockView />}
             {geTab === "resumen" && <ResumenDashboardView onNavigateGestion={handleGeTabSwitch} />}

@@ -356,6 +356,11 @@ export const StockFlowSidebar = observer(({
                   active={activeModule === "pedidos" && pedidosSection === "configuracion"}
                 >
                   <MenuSubmenuItem
+                    name="Canales & Asistente Virtual"
+                    onClick={() => onNavigatePedidos("configuracion", "canales")}
+                    active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "canales"}
+                  />
+                  <MenuSubmenuItem
                     name="Roles & Permisos"
                     onClick={() => onNavigatePedidos("configuracion", "roles")}
                     active={activeModule === "pedidos" && pedidosSection === "configuracion" && pedidosGeTab === "roles"}

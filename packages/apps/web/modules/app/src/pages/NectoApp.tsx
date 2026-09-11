@@ -284,11 +284,11 @@ export default function App() {
     } else if (section === "analitica") {
       setPedidosGeTab(tab || "resumen");
     } else if (section === "configuracion") {
-      setPedidosGeTab(tab || "roles");
+      setPedidosGeTab(tab || "canales");
     } else {
       setPedidosGeTab(tab);
     }
-    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : section === "analitica" ? "resumen" : "roles") }, { replace: true });
+    setSearchParams({ section, tab: tab || (section === "operacion" ? "en-vivo" : section === "menu" ? "catalogo" : section === "analitica" ? "resumen" : "canales") }, { replace: true });
   };
 
   const handleNavigateInventario = (tab: InventoryTab) => {
