@@ -34,6 +34,7 @@ import {
   getMockProductsForBusiness,
   getMockOrdersForBusiness,
   getMockConversationsForBusiness,
+  getMockProgramadosForBusiness,
 } from "../mockData";
 import { useBusiness } from "@/context/BusinessContext";
 import { playNewOrderSound, playSuccessSound, playUrgentAlertSound } from "../utils/soundEffects";
@@ -152,7 +153,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     activeBusiness ? getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name) : INITIAL_ORDERS
   );
   const [historialOrders, setHistorialOrders] = useState<Pedido[]>(INITIAL_HISTORIAL_ORDERS);
-  const [programados, setProgramados] = useState<Pedido[]>(INITIAL_PROGRAMADOS);
+  const [programados, setProgramados] = useState<Pedido[]>(() =>
+    activeBusiness ? getMockProgramadosForBusiness(activeBusiness.businessType) : INITIAL_PROGRAMADOS
+  );
 
   const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
   const [products, setProducts] = useState<ProductItem[]>(() =>
@@ -171,15 +174,17 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
-  // Sincronización reactiva del catálogo, órdenes y conversaciones al cambiar de empresa
+  // Sincronización reactiva del catálogo, órdenes, programados y conversaciones al cambiar de empresa
   useEffect(() => {
     if (!activeBusiness) return;
     const newProducts = getMockProductsForBusiness(activeBusiness.businessType, activeBusiness.name);
     const newOrders = getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name);
+    const newProgramados = getMockProgramadosForBusiness(activeBusiness.businessType);
     const newConversations = getMockConversationsForBusiness(activeBusiness);
 
     setProducts(newProducts);
     setOrders(newOrders);
+    setProgramados(newProgramados);
     setConversations(newConversations);
     setSelectedConversationId(newConversations[0]?.id ?? null);
   }, [activeBusiness?.id]);

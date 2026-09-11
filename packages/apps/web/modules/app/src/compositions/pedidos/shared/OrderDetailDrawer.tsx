@@ -566,7 +566,9 @@ export const OrderDetailDrawer: React.FC = () => {
                     {order.elapsedMinutes}m
                   </div>
                   <div>
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono block">Cocina</span>
+                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono block">
+                      {semantics?.requiresKitchenDisplay ? "Cocina" : (semantics?.stationShortName || "Alistamiento")}
+                    </span>
                     <p className="text-xs font-bold text-[#212121] dark:text-zinc-50">
                       {order.elapsedMinutes} / {order.estimatedMinutes} min
                     </p>
@@ -699,7 +701,11 @@ export const OrderDetailDrawer: React.FC = () => {
               }}
               className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
             >
-              <span>Enviar a Cocina KDS (Pasar a En Vivo)</span>
+              <span>
+                {semantics?.requiresKitchenDisplay
+                  ? "Enviar a Cocina KDS (Pasar a En Vivo)"
+                  : `Pasar a ${semantics?.stationShortName || "Alistamiento"} (En Vivo)`}
+              </span>
             </Button>
           )}
 

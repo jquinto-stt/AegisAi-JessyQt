@@ -146,10 +146,12 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
       // Send confirmation message to chat
       sendOperatorMessage(
         conversation.id,
-        `¡Comanda generada con éxito! Detalle: ${selectedItems
+        `¡Pedido generado con éxito! Detalle: ${selectedItems
           .map(i => `${i.quantity}x ${i.name}`)
           .join(", ")} por un total de $${total.toLocaleString("es-CO")} COP. ${
-          directToKitchen ? "Tu pedido ya está en preparación en cocina." : "Confirmado en cola de despacho."
+          directToKitchen
+            ? (semantics?.requiresKitchenDisplay ? "Tu pedido ya está en preparación en cocina." : "Tu pedido ya está en mesa de alistamiento y empaque.")
+            : "Confirmado en cola de despacho."
         }`
       );
     }, 100);

@@ -44,6 +44,7 @@ import {
   TrendingUp,
   Calendar,
   Smartphone,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/elements";
 
@@ -325,14 +326,15 @@ const PedidosContent: React.FC<{
                 },
                 {
                   id: "preparacion" as OperacionTab,
-                  label: isFood ? "Pantalla KDS Cocina" : (semantics?.stationShortName || "Preparación & Despacho"),
-                  icon: isFood ? <ChefHat className="size-3.5 flex-none" /> : <Package className="size-3.5 flex-none" />,
+                  label: isFood ? "Pantalla KDS Cocina" : "Alistamiento & Despacho",
+                  icon: isFood ? <ChefHat className="size-3.5 flex-none" /> : <Truck className="size-3.5 flex-none" />,
                   count: orders.filter(o => o.status === "EN_PREPARACION" || o.status === "CONFIRMADO").length,
                 },
                 {
                   id: "programados" as OperacionTab,
-                  label: "Pedidos Programados",
+                  label: "Entregas Programadas",
                   icon: <Calendar className="size-3.5 flex-none" />,
+                  count: programados.length,
                 },
                 {
                   id: "conversaciones" as OperacionTab,

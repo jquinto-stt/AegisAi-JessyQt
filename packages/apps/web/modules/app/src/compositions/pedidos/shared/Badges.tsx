@@ -19,10 +19,17 @@ import {
   HelpCircle,
 } from "lucide-react";
 
-export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md" }> = ({
+import { useBusiness } from "@/context/BusinessContext";
+import { Package } from "lucide-react";
+
+export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md"; customLabel?: string }> = ({
   status,
   size = "md",
+  customLabel,
 }) => {
+  const { semantics } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
+
   const configs: Record<
     OrderStatus,
     { label: string; bg: string; text: string; border: string; icon: React.ReactNode }
@@ -42,11 +49,11 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
       icon: <CheckCircle className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     EN_PREPARACION: {
-      label: "En Cocina",
+      label: customLabel || (isFood ? "En Cocina" : (semantics?.preparationVerb || "En Alistamiento")),
       bg: "bg-[#190088]/10 dark:bg-[#190088]/25",
       text: "text-[#190088] dark:text-[#97D6DF]",
       border: "border-[#190088]/20 dark:border-[#190088]/40",
-      icon: <ChefHat className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
+      icon: isFood ? <ChefHat className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" /> : <Package className="w-3 h-3 text-[#190088] dark:text-[#97D6DF]" />,
     },
     LISTO: {
       label: "Listo",

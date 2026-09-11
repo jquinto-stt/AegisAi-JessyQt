@@ -1073,6 +1073,76 @@ export const INITIAL_PROGRAMADOS: Pedido[] = [
   },
 ];
 
+export const RETAIL_PROGRAMADOS: Pedido[] = [
+  {
+    id: "PRG-201",
+    customerName: "Constructora Conconcreto S.A.S.",
+    customerPhone: "+57 301 445-8890",
+    customerAddress: "Calle 100 # 19-61, Obra Torre Alpha",
+    channel: "web",
+    type: "programado",
+    status: "CONFIRMADO",
+    items: [
+      { productId: "prod-hw-01", name: "Taladro Percutor DeWalt 650W", quantity: 2, unitPrice: 280000 },
+      { productId: "prod-hw-03", name: "Caja Tornillos Drywall 6x1-5/8 (1000u)", quantity: 6, unitPrice: 32000 },
+    ],
+    total: 752000,
+    createdAt: "09:30",
+    scheduledDate: "Hoy",
+    scheduledTime: "15:30",
+    estimatedMinutes: 30,
+    elapsedMinutes: 0,
+    urgency: "A_TIEMPO",
+    notes: "Despacho en furgón a zona de cargue de obra. Presentar remisión con firma de ingeniero residente.",
+    history: [{ timestamp: "09:30", toStatus: "CONFIRMADO", user: "Portal B2B StockFlow" }],
+  },
+  {
+    id: "PRG-202",
+    customerName: "Ferretería & Acabados del Norte",
+    customerPhone: "+57 312 889-4455",
+    customerAddress: "Av. Boyacá # 72-10, Bodega 4",
+    channel: "whatsapp",
+    type: "recurrente",
+    recurringFrequency: "Todos los lunes y jueves",
+    status: "CONFIRMADO",
+    items: [
+      { productId: "prod-hw-04", name: "Esmalte Sintético Anticorrosivo 1 Galón Blanco", quantity: 8, unitPrice: 85000 },
+      { productId: "prod-hw-06", name: "Disco de Corte Diamantado 4.5\"", quantity: 15, unitPrice: 22000 },
+    ],
+    total: 1010000,
+    createdAt: "08:15",
+    scheduledDate: "Mañana",
+    scheduledTime: "10:00",
+    estimatedMinutes: 40,
+    elapsedMinutes: 0,
+    urgency: "A_TIEMPO",
+    notes: "Pedido mayorista recurrente. Enviar con factura electrónica impresa y certificado de calidad.",
+    history: [{ timestamp: "08:15", toStatus: "CONFIRMADO", user: "Regla Recurrencia #REC-01" }],
+  },
+  {
+    id: "PRG-203",
+    customerName: "Ing. Mauricio Restrepo",
+    customerPhone: "+57 300 112-9900",
+    customerAddress: "Carrera 7 # 156-20, Apto 901",
+    channel: "whatsapp",
+    type: "programado",
+    status: "CONFIRMADO",
+    items: [
+      { productId: "prod-hw-02", name: "Juego de Destornilladores Stanley 6 Piezas", quantity: 2, unitPrice: 45000 },
+      { productId: "prod-hw-05", name: "Cinta Métrica 5m / 16ft Uso Pesado", quantity: 3, unitPrice: 18500 },
+    ],
+    total: 145500,
+    createdAt: "11:20",
+    scheduledDate: "Mañana",
+    scheduledTime: "16:00",
+    estimatedMinutes: 20,
+    elapsedMinutes: 0,
+    urgency: "A_TIEMPO",
+    notes: "Entrega pactada después de las 4pm. Pago acreditado por Bancolombia.",
+    history: [{ timestamp: "11:20", toStatus: "CONFIRMADO", user: "Asesor Comercial WhatsApp" }],
+  },
+];
+
 export const INITIAL_AUTOMATIONS: AutomationRule[] = [
   {
     id: "AUT-01",
@@ -1678,14 +1748,14 @@ export const FOOD_CONVERSATIONS: Conversation[] = [
 // dinámicamente según el negocio activo seleccionado (Ferretería, Restaurante, etc.)
 // ============================================================================
 export function getMockProductsForBusiness(businessType?: BusinessType, _businessName?: string): ProductItem[] {
-  if (businessType === "food_restaurant" || businessType === "food_store") {
+  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
     return FOOD_PRODUCTS;
   }
   return RETAIL_PRODUCTS;
 }
 
 export function getMockOrdersForBusiness(businessType?: BusinessType, _businessName?: string): Pedido[] {
-  if (businessType === "food_restaurant" || businessType === "food_store") {
+  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
     return FOOD_ORDERS;
   }
   return RETAIL_ORDERS;
@@ -1693,13 +1763,21 @@ export function getMockOrdersForBusiness(businessType?: BusinessType, _businessN
 
 export function getMockConversationsForBusiness(business?: Business | null): Conversation[] {
   const type = business?.businessType || "retail_store";
-  if (type === "food_restaurant" || type === "food_store") {
+  if (type === "restaurant_virtual" || type === "food_restaurant" || type === "food_store") {
     return FOOD_CONVERSATIONS;
   }
   return RETAIL_CONVERSATIONS;
 }
 
+export function getMockProgramadosForBusiness(businessType?: BusinessType): Pedido[] {
+  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
+    return INITIAL_PROGRAMADOS;
+  }
+  return RETAIL_PROGRAMADOS;
+}
+
 export const INITIAL_PRODUCTS: ProductItem[] = RETAIL_PRODUCTS;
 export const INITIAL_ORDERS: Pedido[] = RETAIL_ORDERS;
 export const INITIAL_CONVERSATIONS: Conversation[] = RETAIL_CONVERSATIONS;
+
 

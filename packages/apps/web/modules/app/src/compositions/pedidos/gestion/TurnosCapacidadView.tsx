@@ -10,7 +10,10 @@ import {
   Store,
   Zap,
   Calendar,
+  Layers,
+  ShieldCheck,
 } from "lucide-react";
+import { useBusiness } from "@/context/BusinessContext";
 import { NectoBanner } from "../shared/NectoBanner";
 import { Badge, Button } from "@/elements";
 
@@ -33,13 +36,23 @@ export const TurnosCapacidadView: React.FC = () => {
     ["NUEVO", "CONFIRMADO", "EN_PREPARACION", "LISTO"].includes(o.status)
   ).length;
 
-  // Station coverage check
-  const stations: Array<{ id: "Horno" | "Armado" | "Empaque" | "Caja"; name: string; icon: any }> = [
-    { id: "Horno", name: "Horno & Cocción", icon: Flame },
-    { id: "Armado", name: "Armado & Rellenos", icon: ChefHat },
-    { id: "Empaque", name: "Empaque & Despacho", icon: Package },
-    { id: "Caja", name: "Caja & Mostrador", icon: Store },
-  ];
+  const { semantics } = useBusiness();
+  const isFood = semantics?.requiresKitchenDisplay;
+
+  // Station coverage check dynamic
+  const stations: Array<{ id: "Horno" | "Armado" | "Empaque" | "Caja"; name: string; icon: any }> = isFood
+    ? [
+        { id: "Horno", name: "Horno & Cocción", icon: Flame },
+        { id: "Armado", name: "Armado & Cocina", icon: ChefHat },
+        { id: "Empaque", name: "Empaque & Despacho", icon: Package },
+        { id: "Caja", name: "Caja & Mostrador", icon: Store },
+      ]
+    : [
+        { id: "Horno", name: "Bodega & Picking", icon: Layers },
+        { id: "Armado", name: "Control & Alistamiento", icon: ShieldCheck },
+        { id: "Empaque", name: "Empaque & Envíos", icon: Package },
+        { id: "Caja", name: "Caja & Mostrador", icon: Store },
+      ];
 
   const shiftOptions = [
     { id: "Turno Mañana · 08:00 - 16:00", label: "Mañana", hours: "08:00 - 16:00", max: 8 },
@@ -52,11 +65,15 @@ export const TurnosCapacidadView: React.FC = () => {
       {/* Header Banner */}
       <NectoBanner
         icon={<Users className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Turnos y Capacidad Operativa de Cocina"
-        description="Gestión del personal de cocina, modulación del ritmo operativo de despacho y control de estaciones."
+        title={isFood ? "Turnos y Capacidad Operativa de Cocina" : "Turnos y Capacidad Operativa de Despacho"}
+        description={
+          isFood
+            ? "Gestión del personal de cocina, modulación del ritmo operativo de despacho y control de estaciones."
+            : "Gestión del personal de operaciones y despacho, modulación del ritmo de entrega y control de estaciones de trabajo."
+        }
       />
 
-      {/* Ritmo Operativo de Cocina (Modulador de Tiempos & Sobrecarga) */}
+      {/* Ritmo Operativo (Modulador de Tiempos & Sobrecarga) */}
       <div className="bg-white dark:bg-[#121316] rounded-3xl border border-zinc-200/90 dark:border-zinc-800/90 p-5 sm:p-6 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -65,7 +82,7 @@ export const TurnosCapacidadView: React.FC = () => {
             </div>
             <div>
               <h4 className="font-bold text-sm text-zinc-950 dark:text-white">
-                Ritmo Operativo & Modulador de Cocina
+                {isFood ? "Ritmo Operativo & Modulador de Cocina" : "Ritmo Operativo & Modulador de Despacho"}
               </h4>
               <p className="text-xs text-zinc-500 mt-0.5">
                 Ajusta el colchón de tiempo que el bot de WhatsApp y la tienda web prometen al cliente según la carga real:
@@ -96,7 +113,9 @@ export const TurnosCapacidadView: React.FC = () => {
               </span>
             </div>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-2">
-              Para cocina con baja demanda. Reduce el tiempo estimado de entrega al cliente.
+              {isFood
+                ? "Para cocina con baja demanda. Reduce el tiempo estimado de entrega al cliente."
+                : "Para momentos de baja demanda. Reduce el tiempo de entrega y agiliza el alistamiento."}
             </p>
           </button>
 
@@ -117,7 +136,9 @@ export const TurnosCapacidadView: React.FC = () => {
               </span>
             </div>
             <p className={`text-[11px] mt-2 ${storePace === "habitual" ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-500 dark:text-zinc-400"}`}>
-              Ritmo de operación estándar según las recetas y mise en place configurado.
+              {isFood
+                ? "Ritmo de operación estándar según las recetas y preparación configurada."
+                : "Ritmo de operación estándar de preparación y despacho según catálogo."}
             </p>
           </button>
 
@@ -241,7 +262,7 @@ export const TurnosCapacidadView: React.FC = () => {
 
           <div className="bg-slate-50 dark:bg-gray-800/80 rounded-2xl p-3.5 text-xs space-y-1.5 border border-slate-100 dark:border-gray-700">
             <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
-              <span>Carga actual en cocina:</span>
+              <span>{isFood ? "Carga actual en cocina:" : "Carga en alistamiento:"}</span>
               <strong className="font-mono text-gray-900 dark:text-gray-100">
                 {activeOrders} de {shiftInfo.maxRecommendedOrders} máx.
               </strong>
@@ -249,7 +270,7 @@ export const TurnosCapacidadView: React.FC = () => {
             <div className="flex items-center justify-between text-gray-700 dark:text-gray-300">
               <span>Buffer de tiempo inyectado:</span>
               <strong className="font-mono text-[#FF3F1A] dark:text-orange-400">
-                +{shiftInfo.suggestedPrepBufferMinutes} min por comanda
+                +{shiftInfo.suggestedPrepBufferMinutes} min por orden
               </strong>
             </div>
           </div>

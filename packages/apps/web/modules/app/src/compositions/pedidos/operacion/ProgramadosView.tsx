@@ -1,20 +1,38 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { OperacionTab } from "../types";
+import { Pedido, OperacionTab } from "../types";
 import {
   Calendar,
   Clock,
   MapPin,
   CheckCircle2,
-  ChefHat,
   Package,
   ShoppingBag,
   ArrowLeft,
+  Truck,
+  Phone,
+  Search,
   CalendarDays,
-  Activity,
+  ExternalLink,
+  Boxes,
+  Layers,
 } from "lucide-react";
-import { NectoBanner } from "../shared/NectoBanner";
-import { Button, SegmentedControl } from "@/elements";
+import {
+  Button,
+  Badge,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardBody,
+  CardFooter,
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  SegmentedControl,
+} from "@/elements";
 import { useBusiness } from "@/context/BusinessContext";
 
 export const ProgramadosView: React.FC<{
@@ -28,467 +46,403 @@ export const ProgramadosView: React.FC<{
   } = usePedidos();
   const { semantics } = useBusiness();
 
-  const [viewMode, setViewMode] = useState<"columns" | "timeline">("columns");
+  const [dateFilter, setDateFilter] = useState<string>("TODOS");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [searchQuery, setSearchQuery] = useState("");
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
-  const hoyList = programados.filter(p => p.scheduledDate === "Hoy");
-  const mananaList = programados.filter(p => p.scheduledDate === "Mañana");
-
-  const pendingHoyList = hoyList.filter(p => !p.isInLiveQueue);
-  const activeInLiveCount = hoyList.filter(p => p.isInLiveQueue).length;
-
-  const totalHoyAmount = pendingHoyList.reduce((sum, p) => sum + p.total, 0);
-  const totalMananaAmount = mananaList.reduce((sum, p) => sum + p.total, 0);
-
-  const handleInjectNow = (orderId: string, customerName: string) => {
-    injectScheduledOrderToLive(orderId, true);
-    setSuccessToast(
-      `¡${semantics?.orderNoun || "Pedido"} de ${customerName} inyectado a ${semantics?.stationShortName || "Preparación"}!`
-    );
+  const showToast = (msg: string) => {
+    setSuccessToast(msg);
     setTimeout(() => setSuccessToast(null), 3500);
   };
 
+  const hoyList = programados.filter(p => p.scheduledDate === "Hoy");
+  const mananaList = programados.filter(p => p.scheduledDate === "Mañana");
+  const futuraList = programados.filter(p => p.scheduledDate !== "Hoy" && p.scheduledDate !== "Mañana");
+
+  const totalAmountAll = programados.reduce((sum, p) => sum + p.total, 0);
+
+  const handleInjectToFulfillment = (orderId: string, customerName: string) => {
+    injectScheduledOrderToLive(orderId, true);
+    showToast(`¡Pedido ${orderId} de ${customerName} trasladado a la cola activa de Alistamiento & Despacho!`);
+  };
+
+  // Filter list
+  const filteredList = programados.filter(order => {
+    if (dateFilter === "HOY" && order.scheduledDate !== "Hoy") return false;
+    if (dateFilter === "MANANA" && order.scheduledDate !== "Mañana") return false;
+    if (dateFilter === "FUTUROS" && (order.scheduledDate === "Hoy" || order.scheduledDate === "Mañana")) return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchId = order.id.toLowerCase().includes(q);
+      const matchCust = order.customerName.toLowerCase().includes(q);
+      const matchItem = order.items.some(i => i.name.toLowerCase().includes(q));
+      if (!matchId && !matchCust && !matchItem) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header Banner */}
-      <NectoBanner
-        icon={<Calendar className="w-6 h-6 text-[#FF3F1A]" />}
-        title="Pedidos Programados & Catering Futuro"
-        description="Anticipación operativa para pedidos corporativos, eventos y entregas pactadas a una hora específica."
-      />
+      {/* Toast feedback */}
+      {successToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#190088] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold border border-white/20 animate-slide-up">
+          <CheckCircle2 className="w-4 h-4 text-[#97D6DF]" />
+          <span>{successToast}</span>
+        </div>
+      )}
 
-      {/* Navigation Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#2C2D31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#374151] shadow-xs">
-        <Button
-          variant="outline"
-          intent="programados.back"
-          onClick={() => onNavigateOpTab?.("en-vivo")}
-          className="py-2 px-3.5 bg-slate-50 dark:bg-gray-800 text-xs"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#FF3F1A]" />
-          <span>Volver a Pedidos</span>
-        </Button>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-white via-zinc-50 to-white dark:from-[#18181B] dark:via-[#202024] dark:to-[#18181B] p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center font-bold shadow-inner">
+            <Calendar className="w-6 h-6 stroke-[2.2]" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 tracking-tight">
+                Entregas Programadas & Despachos Futuros
+              </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
+                Agenda Comercial
+              </span>
+            </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Planificación y anticipación operativa para pedidos corporativos, cotizaciones pactadas y entregas en fecha específica.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onNavigateOpTab?.("en-vivo")}
+            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1 text-[#FF3F1A]" />
+            <span>Volver a Órdenes</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* 4 Planning KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Hoy */}
+        <Card className="p-4 border-l-4 border-l-[#FF3F1A] bg-white dark:bg-[#18181B]">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+            <span>Programados Hoy</span>
+            <Clock className="w-4 h-4 text-[#FF3F1A]" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
+              {hoyList.length}
+            </span>
+            <span className="text-[11px] font-bold text-[#FF3F1A] bg-[#FF3F1A]/10 px-2 py-0.5 rounded-full">
+              Prioridad alta
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1">Despachos programados para la jornada de hoy</p>
+        </Card>
+
+        {/* KPI 2: Mañana */}
+        <Card className="p-4 border-l-4 border-l-[#190088] dark:border-l-[#97D6DF] bg-white dark:bg-[#18181B]">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+            <span>Programados Mañana</span>
+            <CalendarDays className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-3xl font-black font-mono text-[#190088] dark:text-[#97D6DF]">
+              {mananaList.length}
+            </span>
+            <span className="text-[11px] font-bold text-[#190088] dark:text-[#97D6DF] bg-[#190088]/10 dark:bg-[#97D6DF]/20 px-2 py-0.5 rounded-full">
+              Próxima salida
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1">Órdenes agendadas para el día de mañana</p>
+        </Card>
+
+        {/* KPI 3: Esta Semana */}
+        <Card className="p-4 border-l-4 border-l-amber-500 bg-white dark:bg-[#18181B]">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+            <span>Próximos Días / Futuros</span>
+            <Layers className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
+              {futuraList.length}
+            </span>
+            <span className="text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
+              En agenda
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1">Entregas pactadas a mediano plazo</p>
+        </Card>
+
+        {/* KPI 4: Monto Consolidado */}
+        <Card className="p-4 border-l-4 border-l-emerald-500 bg-white dark:bg-[#18181B]">
+          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+            <span>Valor Consolidado</span>
+            <Truck className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="mt-2 flex items-baseline justify-between">
+            <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+              ${totalAmountAll.toLocaleString("es-CO")}
+            </span>
+            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              COP
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1">Facturación total de entregas pactadas</p>
+        </Card>
+      </div>
+
+      {/* Toolbar: Search, Date Filter & View Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#18181B] p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Buscar por orden programada, cliente o ítem..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-[#FF3F1A]"
+            />
+          </div>
+
+          {/* Date Range Tabs */}
+          <div className="flex items-center gap-1.5">
+            {[
+              { id: "TODOS", label: `Todos (${programados.length})` },
+              { id: "HOY", label: `Hoy (${hoyList.length})` },
+              { id: "MANANA", label: `Mañana (${mananaList.length})` },
+              { id: "FUTUROS", label: `Próximos Días (${futuraList.length})` },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDateFilter(tab.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  dateFilter === tab.id
+                    ? "bg-[#190088] text-white shadow-2xs"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* View Switcher */}
         <SegmentedControl
           intent="programados.view"
-          tone="accent"
+          tone="contrast"
           value={viewMode}
-          onValueChange={setViewMode}
+          onValueChange={v => setViewMode(v as any)}
           options={[
-            { value: "columns", label: "Vista Columnas" },
-            { value: "timeline", label: "Línea de Tiempo" },
+            { value: "cards", label: "Tarjetas de Entrega" },
+            { value: "table", label: "Planilla de Agenda" },
           ]}
         />
       </div>
 
-      {/* Planning KPIs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Hoy */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Programados para Hoy
-          </span>
-          <div className="flex items-baseline justify-between">
-            <div className="flex items-baseline gap-2">
-              <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-                {pendingHoyList.length}
-              </p>
-              {activeInLiveCount > 0 && (
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold font-mono">
-                  (+{activeInLiveCount} en vivo)
-                </span>
-              )}
-            </div>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full font-mono">
-              ${(totalHoyAmount / 1000).toFixed(0)}k COP
-            </span>
+      {/* Main Content Area */}
+      {filteredList.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center mx-auto">
+            <Calendar className="w-6 h-6 stroke-[1.5]" />
           </div>
-          <p className="text-[11px] text-gray-400">Entregas pendientes de activación</p>
+          <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">
+            No hay despachos programados con los filtros seleccionados
+          </h3>
+          <p className="text-xs text-zinc-400 max-w-md mx-auto">
+            Puedes agendar despachos futuros desde las conversaciones de WhatsApp o creando una orden con fecha pactada.
+          </p>
         </div>
-
-        {/* KPI 2: Mañana */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Programados para Mañana
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {mananaList.length}
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full font-mono">
-              ${(totalMananaAmount / 1000).toFixed(0)}k COP
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Anticipación de materias primas y horneado</p>
-        </div>
-
-        {/* KPI 3: B2B Recurrentes */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Suscripciones B2B
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              {recurrences.length}
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              Automáticas
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Contratos recurrentes corporativos</p>
-        </div>
-
-        {/* KPI 4: Alerta Anticipada */}
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Alerta Automática
-          </span>
-          <div className="flex items-baseline justify-between">
-            <p className="text-3xl font-black font-mono text-gray-900 dark:text-gray-100">
-              30 <span className="text-sm font-normal text-gray-400">min</span>
-            </p>
-            <span className="text-xs font-bold text-gray-900 dark:text-white bg-slate-100 dark:bg-gray-800 px-2.5 py-0.5 rounded-full">
-              Activa
-            </span>
-          </div>
-          <p className="text-[11px] text-gray-400">Despierta pedido antes de la hora de entrega</p>
-        </div>
-      </div>
-
-      {/* Floating Success Toast */}
-      {successToast && (
-        <div className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-2xl p-4 text-xs text-zinc-900 dark:text-zinc-100 font-bold flex items-center justify-between animate-fade-in shadow-xs">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-[#FF3F1A] flex-none" />
-            <span>{successToast}</span>
-          </div>
-          <Button
-            variant="ghost"
-            intent="programados.toast.goto"
-            onClick={() => onNavigateOpTab?.("en-vivo")}
-            className="p-0 underline font-black text-[#FF3F1A] cursor-pointer ml-4"
-          >
-            Ver en Pedidos →
-          </Button>
-        </div>
-      )}
-
-      {/* VIEW 1: COLUMNS VIEW */}
-      {viewMode === "columns" ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Column 1: Hoy */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
-                <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                  Programados para Hoy ({hoyList.length})
-                </h4>
-              </div>
-              <span className="text-xs font-mono font-black text-[#FF3F1A]">
-                ${(totalHoyAmount / 1000).toFixed(0)}k
-              </span>
-            </div>
-
-            <div className="space-y-3.5">
-              {hoyList.length === 0 ? (
-                <div className="p-8 text-center bg-[#ECECEC]/30 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/60 rounded-2xl text-zinc-400 text-xs font-medium">
-                  No hay más pedidos programados para hoy.
-                </div>
-              ) : (
-                hoyList.map(item => (
-                  <div
-                    key={item.id}
-                    className={`bg-white dark:bg-[#18181B] rounded-2xl border p-5 shadow-xs space-y-4 transition-all ${
-                      item.isInLiveQueue
-                        ? "border-[#97D6DF]/40 bg-[#97D6DF]/5"
-                        : "border-zinc-200 dark:border-zinc-800 hover:border-[#FF3F1A]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs text-[#212121] dark:text-[#ECECEC]">
-                          {item.id}
-                        </span>
-                        {item.isInLiveQueue && (
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#97D6DF]/20 text-[#190088] dark:text-[#97D6DF] border border-[#97D6DF]/40">
-                            {semantics?.requiresKitchenDisplay ? "En Cocina" : `En ${semantics?.stationShortName || "Preparación"}`}
-                          </span>
-                        )}
-                      </div>
-                      <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-md bg-[#EFE6D3]/60 dark:bg-[#EFE6D3]/15 text-[#212121] dark:text-[#ECECEC] flex items-center gap-1.5 border border-[#EFE6D3] dark:border-[#EFE6D3]/30">
-                        <Clock className="w-3.5 h-3.5 text-[#FF3F1A]" />
-                        <span>Hoy {item.scheduledTime}</span>
-                      </span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="font-bold text-sm text-[#212121] dark:text-[#ECECEC] truncate">
-                        {item.customerName}
-                      </p>
-                      {item.customerAddress && (
-                        <p className="text-xs text-zinc-500 truncate flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-zinc-400 flex-none" />
-                          <span>{item.customerAddress}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="bg-[#ECECEC]/30 dark:bg-zinc-900/60 rounded-2xl p-3.5 text-xs space-y-1.5 border border-zinc-200/70 dark:border-zinc-800">
-                      {item.items.map((it, idx) => (
-                        <div key={idx} className="flex justify-between font-semibold text-zinc-700 dark:text-zinc-300">
-                          <span>
-                            <strong className="text-[#FF3F1A]">×{it.quantity}</strong> {it.name}
-                          </span>
-                          <span className="font-mono">${(it.unitPrice * it.quantity).toLocaleString("es-CO")}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between font-bold text-[#212121] dark:text-[#ECECEC] pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                        <span>Total Pedido:</span>
-                        <span className="font-mono">${item.total.toLocaleString("es-CO")}</span>
-                      </div>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <Button
-                        variant="outline"
-                        intent="programados.order.ticket"
-                        onClick={() => setSelectedOrderId(item.id)}
-                        className="py-2.5 px-3 text-xs border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC]"
-                      >
-                        Ticket
-                      </Button>
-
-                      {item.isInLiveQueue ? (
-                        <Button
-                          variant="primary"
-                          intent="programados.order.inlive"
-                          onClick={() => onNavigateOpTab?.("en-vivo")}
-                          className="flex-1 py-2.5 px-3 text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <CheckCircle2 className="w-4 h-4 text-[#97D6DF]" />
-                          <span>En Vivo (Ver Pedidos)</span>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="accent"
-                          intent="programados.order.inject"
-                          onClick={() => handleInjectNow(item.id, item.customerName)}
-                          className="flex-1 py-2.5 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          {semantics?.requiresKitchenDisplay ? (
-                            <ChefHat className="w-4 h-4 text-white" />
-                          ) : (
-                            <Package className="w-4 h-4 text-white" />
-                          )}
-                          <span>
-                            {semantics?.requiresKitchenDisplay
-                              ? "Inyectar a Cocina"
-                              : `Inyectar a ${semantics?.stationShortName || "Preparación"}`}
-                          </span>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Column 2: Mañana */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-zinc-200 dark:border-zinc-800">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#190088]" />
-                <h4 className="font-bold text-sm text-[#212121] dark:text-[#ECECEC]">
-                  Programados para Mañana ({mananaList.length})
-                </h4>
-              </div>
-              <span className="text-xs font-mono font-bold text-zinc-500">
-                ${(totalMananaAmount / 1000).toFixed(0)}k
-              </span>
-            </div>
-
-            <div className="space-y-3.5">
-              {mananaList.length === 0 ? (
-                <div className="p-8 text-center bg-[#ECECEC]/30 dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/60 rounded-2xl text-zinc-400 text-xs font-medium">
-                  No hay pedidos agendados para mañana.
-                </div>
-              ) : (
-                mananaList.map(item => (
-                  <div
-                    key={item.id}
-                    className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 shadow-xs space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-xs text-[#212121] dark:text-[#ECECEC]">
-                        {item.id}
-                      </span>
-                      <span className="font-mono font-bold text-xs px-2.5 py-1 rounded-md bg-[#ECECEC] dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] flex items-center gap-1.5 border border-zinc-200 dark:border-zinc-700">
-                        <Clock className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>Mañana {item.scheduledTime}</span>
-                      </span>
-                    </div>
-
-                    <div>
-                      <p className="font-bold text-sm text-[#212121] dark:text-[#ECECEC] truncate">
-                        {item.customerName}
-                      </p>
-                      {item.customerAddress && (
-                        <p className="text-xs text-zinc-500 truncate flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-zinc-400 flex-none" />
-                          <span>{item.customerAddress}</span>
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="bg-[#ECECEC]/30 dark:bg-zinc-900/60 rounded-2xl p-3.5 text-xs space-y-1.5 border border-zinc-200/70 dark:border-zinc-800">
-                      {item.items.map((it, idx) => (
-                        <div key={idx} className="flex justify-between font-semibold text-zinc-700 dark:text-zinc-300">
-                          <span>
-                            <strong className="text-[#FF3F1A]">×{it.quantity}</strong> {it.name}
-                          </span>
-                          <span className="font-mono">${(it.unitPrice * it.quantity).toLocaleString("es-CO")}</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between font-bold text-[#212121] dark:text-[#ECECEC] pt-2 border-t border-zinc-200 dark:border-zinc-800">
-                        <span>Total Pedido:</span>
-                        <span className="font-mono">${item.total.toLocaleString("es-CO")}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Column 3: Suscripciones B2B */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between pb-2 border-b-2 border-slate-200 dark:border-gray-800">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#FF3F1A]" />
-                <h4 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                  Suscripciones B2B ({recurrences.length})
-                </h4>
-              </div>
-              <span className="text-xs font-mono font-bold text-gray-400">Emisión recurrente</span>
-            </div>
-
-            <div className="space-y-3.5">
-              {recurrences.map(rec => (
-                <div
-                  key={rec.id}
-                  className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-5 shadow-xs space-y-3.5"
-                >
+      ) : viewMode === "cards" ? (
+        /* Cards View: Scheduled Delivery Cards */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          {filteredList.map(order => {
+            const isToday = order.scheduledDate === "Hoy";
+            return (
+              <Card
+                key={order.id}
+                className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+              >
+                {/* Header */}
+                <CardHeader className="p-4 pb-3 border-b border-zinc-100 dark:border-zinc-800 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono font-black text-xs text-zinc-900 dark:text-zinc-100">
-                      {rec.id} · {rec.frequency}
-                    </span>
-                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100 border border-slate-200 dark:border-zinc-700">
-                      {rec.isActive ? "Activo" : "Pausado"}
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-extrabold text-xs px-2.5 py-1 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
+                        {order.id}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                        {order.channel.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* Scheduled Badge */}
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
+                        isToday
+                          ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/30"
+                          : "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/30"
+                      }`}
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>{order.scheduledDate || "Fecha pactada"} {order.scheduledTime ? `a las ${order.scheduledTime}` : ""}</span>
                     </span>
                   </div>
 
-                  <div>
-                    <h5 className="font-black text-sm text-gray-900 dark:text-gray-100">
-                      {rec.customerName}
-                    </h5>
-                    <p className="text-xs text-gray-400 font-mono">{rec.phone}</p>
+                  {/* Customer & Destination */}
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate flex items-center justify-between">
+                      <span>{order.customerName}</span>
+                      <span className="font-mono text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
+                        ${order.total.toLocaleString("es-CO")} COP
+                      </span>
+                    </h4>
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                      <MapPin className="w-3.5 h-3.5 flex-none text-zinc-400" />
+                      <span className="truncate">
+                        {order.customerAddress || "Dirección pactada por confirmar"}
+                      </span>
+                    </div>
+                    {order.customerPhone && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                        <Phone className="w-3 h-3 flex-none" />
+                        <span>{order.customerPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+
+                {/* Body: Products & Notes */}
+                <CardBody className="p-4 space-y-3 flex-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    <span>Productos a Entregar</span>
+                    <span className="font-mono text-zinc-600 dark:text-zinc-400">
+                      {order.items.reduce((s, i) => s + i.quantity, 0)} unidades
+                    </span>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-gray-800/60 rounded-2xl p-2.5 text-xs space-y-1">
-                    {rec.items.map((it, idx) => (
-                      <p key={idx} className="text-gray-600 dark:text-gray-400">
-                        {it.quantity}× {it.name}
-                      </p>
+                  <div className="space-y-1.5 bg-zinc-50/70 dark:bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    {order.items.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-zinc-100 dark:border-zinc-800/60 last:border-0">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="font-mono font-bold text-[#190088] dark:text-[#97D6DF]">×{it.quantity}</span>
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200 truncate">{it.name}</span>
+                        </div>
+                        <span className="font-mono text-zinc-500 flex-none ml-2">
+                          ${(it.quantity * it.unitPrice).toLocaleString("es-CO")}
+                        </span>
+                      </div>
                     ))}
                   </div>
 
-                  <div className="text-xs text-gray-500 flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800">
-                    <span>Próximo disparo:</span>
-                    <strong className="text-gray-900 dark:text-gray-100 font-mono">{rec.nextExecution}</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                  {order.notes && (
+                    <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300">
+                      <strong>Instrucción Logística:</strong> {order.notes}
+                    </div>
+                  )}
+
+                  {order.recurringFrequency && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#190088] dark:text-[#97D6DF] bg-[#190088]/5 p-2 rounded-lg border border-[#190088]/15">
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span>Frecuencia Recurrente: {order.recurringFrequency}</span>
+                    </div>
+                  )}
+                </CardBody>
+
+                {/* Footer Actions */}
+                <CardFooter className="p-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedOrderId(order.id)}
+                    className="py-1.5 px-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
+                  >
+                    Ver Detalle
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    onClick={() => handleInjectToFulfillment(order.id, order.customerName)}
+                    className="flex-1 py-1.5 px-3 text-xs font-bold bg-[#190088] hover:bg-[#14006e] text-white shadow-xs"
+                  >
+                    <Boxes className="w-3.5 h-3.5 mr-1 text-[#97D6DF]" />
+                    <span>Pasar a Alistamiento</span>
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       ) : (
-        /* VIEW 2: TIMELINE VIEW */
-        <div className="bg-white dark:bg-[#2C2D31] rounded-2xl border border-slate-200 dark:border-[#374151] p-6 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-            <h4 className="font-black text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-[#FF3F1A]" />
-              <span>Cronograma de Entregas por Horas (Hoy)</span>
-            </h4>
-            <span className="text-xs font-mono text-gray-400">{hoyList.length} entregas agendadas</span>
-          </div>
-
-          <div className="relative border-l-2 border-slate-200 dark:border-gray-800 ml-4 space-y-6 pb-2">
-            {hoyList.map(item => (
-              <div key={item.id} className="relative pl-6 space-y-2">
-                <div className="absolute -left-2.5 top-1.5 w-5 h-5 rounded-full bg-[#FF3F1A] border-4 border-white dark:border-[#2C2D31]" />
-
-                <div className="bg-slate-50 dark:bg-gray-800/80 rounded-2xl p-4 border border-slate-200 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-black text-sm text-[#FF3F1A]">
-                        {item.scheduledTime}
-                      </span>
-                      <span className="font-mono font-bold text-xs text-gray-400">
-                        ({item.id})
-                      </span>
-                    </div>
-                    <p className="font-black text-sm text-gray-900 dark:text-gray-100">
-                      {item.customerName}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono font-black text-sm text-zinc-900 dark:text-zinc-100">
-                      ${item.total.toLocaleString("es-CO")}
+        /* Table View: Scheduled Orders */
+        <Card className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
+          <Table>
+            <TableHeader className="bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 text-xs font-bold uppercase">
+              <TableRow>
+                <TableCell className="py-3 px-4">Orden</TableCell>
+                <TableCell className="py-3 px-4">Fecha & Hora Pactada</TableCell>
+                <TableCell className="py-3 px-4">Cliente</TableCell>
+                <TableCell className="py-3 px-4">Dirección Destino</TableCell>
+                <TableCell className="py-3 px-4">Contenido</TableCell>
+                <TableCell className="py-3 px-4">Total</TableCell>
+                <TableCell className="py-3 px-4 text-right">Acción Logística</TableCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
+              {filteredList.map(order => (
+                <TableRow key={order.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40">
+                  <TableCell className="py-3.5 px-4 font-mono font-bold text-[#FF3F1A]">
+                    {order.id}
+                    <span className="block text-[10px] text-zinc-400 font-normal uppercase">{order.channel}</span>
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4">
+                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block">
+                      {order.scheduledDate || "Pactada"}
                     </span>
-
-                    {item.isInLiveQueue ? (
-                      <Button
-                        variant="outline"
-                        intent="programados.timeline.view"
-                        onClick={() => onNavigateOpTab?.("en-vivo")}
-                        className="py-2 px-3 text-xs text-emerald-600 dark:text-emerald-400 font-bold border-emerald-500/30 flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>En Vivo</span>
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="accent"
-                        intent="programados.timeline.inject"
-                        onClick={() => handleInjectNow(item.id, item.customerName)}
-                        className="py-2 px-3 text-xs bg-[#FF3F1A] hover:bg-[#e03412] text-white font-bold flex items-center gap-1.5 cursor-pointer"
-                      >
-                        {semantics?.requiresKitchenDisplay ? (
-                          <ChefHat className="w-3.5 h-3.5 text-white" />
-                        ) : (
-                          <Package className="w-3.5 h-3.5 text-white" />
-                        )}
-                        <span>
-                          {semantics?.requiresKitchenDisplay
-                            ? "Inyectar a Cocina"
-                            : `Inyectar a ${semantics?.stationShortName || "Preparación"}`}
-                        </span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                    <span className="text-[11px] font-mono text-[#190088] dark:text-[#97D6DF]">
+                      {order.scheduledTime || "Sin hora fija"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4">
+                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{order.customerName}</p>
+                    <p className="text-[11px] text-zinc-400">{order.customerPhone}</p>
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4 max-w-xs truncate text-zinc-600 dark:text-zinc-300">
+                    {order.customerAddress || "Dirección pactada por confirmar"}
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4">
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200">
+                      {order.items.reduce((s, i) => s + i.quantity, 0)} unidades
+                    </span>
+                    <span className="block text-[11px] text-zinc-400 truncate max-w-[200px]">
+                      {order.items.map(i => i.name).join(", ")}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4 font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                    ${order.total.toLocaleString("es-CO")}
+                  </TableCell>
+                  <TableCell className="py-3.5 px-4 text-right">
+                    <Button
+                      variant="primary"
+                      onClick={() => handleInjectToFulfillment(order.id, order.customerName)}
+                      className="py-1 px-3 text-xs font-bold bg-[#190088] hover:bg-[#14006e] text-white"
+                    >
+                      <Boxes className="w-3.5 h-3.5 mr-1 text-[#97D6DF]" />
+                      <span>Alistar Ahora</span>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       )}
     </div>
   );

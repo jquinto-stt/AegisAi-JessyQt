@@ -156,7 +156,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                 ${conversation.draftOrder.total.toLocaleString("es-CO")} COP
               </span>
               <span className="text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full font-bold">
-                Sin ingresar a Cocina
+                {semantics?.requiresKitchenDisplay ? "Sin ingresar a Cocina" : "Pendiente de Alistamiento"}
               </span>
             </div>
           </div>
@@ -258,7 +258,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                         <div className="flex items-start gap-1.5 text-[11px] leading-snug font-medium">
                           <AlertTriangle className="w-4 h-4 text-amber-600 flex-none mt-0.5" />
                           <span>
-                            <strong>Validación humana requerida:</strong> El Bot IA no puede certificar saldos bancarios. Un administrador debe corroborar el dinero en Nequi/Bancolombia antes de enviar a cocina.
+                            <strong>Validación humana requerida:</strong> El Bot IA no puede certificar saldos bancarios. Un administrador debe corroborar el dinero en Nequi/Bancolombia antes de autorizar el pedido.
                           </span>
                         </div>
 
@@ -277,7 +277,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                             className="flex-1 py-1.5 px-3 rounded-md bg-[#00A884] hover:bg-[#008f70] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Validar en App Bancaria & Cocinar</span>
+                            <span>Validar en App Bancaria & Autorizar</span>
                           </button>
 
                           <button
