@@ -243,7 +243,7 @@ const PedidosContent: React.FC<{
               }`}
             >
               <Layers className="size-3.5" />
-              <span>Menú & Stock</span>
+              <span>{isFood ? "Menú & Carta" : "Catálogo de Venta"}</span>
             </button>
 
             <button

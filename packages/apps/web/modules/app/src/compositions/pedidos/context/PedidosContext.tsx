@@ -348,7 +348,21 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           newTurn = Math.floor(Math.random() * 30) + 1;
         }
 
-        // Automatic Stock consumption whenever order reaches preparation, ready, or delivered stage (safely executed once)
+        // 1. Reserva preventiva de existencias en el inventario central al confirmar
+        if (toStatus === "CONFIRMADO") {
+          void inventoryService.reserveStock({
+            orderId: order.id,
+            items: order.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity })),
+            channel: order.channel || "WhatsApp",
+          });
+        }
+
+        // 2. Liberación de reserva en el inventario si la orden es cancelada o rechazada
+        if (["CANCELADO", "RECHAZADO"].includes(toStatus)) {
+          void inventoryService.releaseStock(order.id);
+        }
+
+        // 3. Descuento formal y asentamiento en Kardex al iniciar preparación o entrega
         const isProgressiveProduction = ["EN_PREPARACION", "LISTO", "FINALIZADO"].includes(toStatus);
         const shouldConsumeStock = isProgressiveProduction && !order.isStockConsumed;
 

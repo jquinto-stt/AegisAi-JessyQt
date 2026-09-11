@@ -22,7 +22,9 @@ import {
   Eye,
   UtensilsCrossed,
   LayoutGrid,
+  Package,
 } from "lucide-react";
+import { inventoryService } from "@/ModuloInventario/services/inventoryService";
 import { NectoBanner } from "../shared/NectoBanner";
 
 export const CatalogoInteligenteView: React.FC<{
@@ -445,6 +447,30 @@ export const CatalogoInteligenteView: React.FC<{
             <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">
               {product.description}
             </p>
+
+            {/* Live Inventory Availability from ModuloInventario */}
+            {(() => {
+              const invStock = inventoryService.getProductStock(product.id, product.name);
+              if (!invStock) return null;
+              return (
+                <div className="flex items-center justify-between text-[11px] bg-gray-50 dark:bg-gray-800/60 px-2.5 py-1.5 rounded-xl border border-gray-200/70 dark:border-gray-700">
+                  <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <Package className="w-3.5 h-3.5 text-brand-500" />
+                    <span className="font-medium">Stock Inventario:</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono font-bold">
+                    <span className={invStock.availableStock <= 0 ? "text-error-500" : "text-gray-900 dark:text-white"}>
+                      {invStock.availableStock} disp.
+                    </span>
+                    {invStock.reservedStock > 0 && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">
+                        ({invStock.reservedStock} res.)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Modifiers & Extras Chip */}
             <div className="pt-1">

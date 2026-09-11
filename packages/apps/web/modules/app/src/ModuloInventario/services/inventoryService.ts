@@ -31,7 +31,15 @@ const STORAGE_KEYS = {
   PURCHASE_ORDERS: "modulo_inventario_po_v5",
   BUILD_ORDERS: "modulo_inventario_bo_v5",
   PRICE_LISTS: "modulo_inventario_pricelists_v5",
+  RESERVATIONS: "modulo_inventario_reservations_v5",
 };
+
+export interface ActiveOrderReservation {
+  orderId: string;
+  items: Array<{ productId?: string; name: string; quantity: number }>;
+  channel?: string;
+  createdAt: string;
+}
 
 class InventoryService {
   private products: InventoryProduct[] = [];
@@ -41,6 +49,7 @@ class InventoryService {
   private purchaseOrders: PurchaseOrder[] = [];
   private buildOrders: BuildOrder[] = [];
   private priceLists: PriceList[] = [];
+  private reservations: ActiveOrderReservation[] = [];
   private listeners: Array<() => void> = [];
 
   constructor() {
@@ -123,6 +132,11 @@ class InventoryService {
         this.priceLists = [...PRICE_LISTS_MOCK];
         this.persistPriceLists();
       }
+
+      const savedReservations = localStorage.getItem(STORAGE_KEYS.RESERVATIONS);
+      if (savedReservations) {
+        this.reservations = JSON.parse(savedReservations);
+      }
     } catch (e) {
       console.warn("Failed to load inventory from localStorage, using memory default", e);
       this.products = [...INITIAL_PRODUCTS_MOCK];
@@ -174,6 +188,12 @@ class InventoryService {
   private persistBuildOrders() {
     try {
       localStorage.setItem(STORAGE_KEYS.BUILD_ORDERS, JSON.stringify(this.buildOrders));
+    } catch (e) {}
+  }
+
+  private persistReservations() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(this.reservations));
     } catch (e) {}
   }
 
@@ -516,6 +536,10 @@ class InventoryService {
     author?: string;
   }): Promise<Array<{ product: InventoryProduct; movement: StockMovement }>> {
     const { orderId, items, channel = "Venta Mostrador / Pedido", author = "Sistema de Ventas" } = params;
+
+    // Liberar reservas preventivas asociadas a la orden antes de asentar salida definitiva
+    this.releaseStock(orderId, false);
+
     const results: Array<{ product: InventoryProduct; movement: StockMovement }> = [];
     const now = new Date().toISOString();
 
@@ -1151,6 +1175,127 @@ class InventoryService {
     };
   }
 
+  /* ── Inter-module OMS / Pedidos Integration Methods ──────────────────────── */
+
+  /**
+   * Consulta disponibilidad en tiempo real sin modificar stock.
+   * La disponibilidad real considera: stockActual - reservedStock.
+   */
+  public checkAvailability(items: Array<{ productId?: string; name: string; quantity: number }>): {
+    available: boolean;
+    details: Array<{ name: string; requested: number; availableStock: number; hasStock: boolean }>;
+  } {
+    const details = items.map((item) => {
+      const prod = this.findProductMatch(item.productId, item.name);
+      const stockActual = prod ? prod.stockActual : 0;
+      const reserved = prod ? prod.reservedStock || 0 : 0;
+      const availableStock = Math.max(0, stockActual - reserved);
+      return {
+        name: item.name,
+        requested: item.quantity,
+        availableStock,
+        hasStock: availableStock >= item.quantity,
+      };
+    });
+
+    const available = details.every((d) => d.hasStock);
+    return { available, details };
+  }
+
+  /**
+   * Reserva existencias de forma preventiva cuando un pedido se pasa a CONFIRMADO.
+   * Incrementa reservedStock en el inventario maestro sin descontar stockActual todavía.
+   */
+  public reserveStock(params: {
+    orderId: string;
+    items: Array<{ productId?: string; name: string; quantity: number }>;
+    channel?: string;
+  }): boolean {
+    const { orderId, items, channel } = params;
+
+    // Evitar reservas duplicadas para la misma orden
+    this.releaseStock(orderId, false);
+
+    let changed = false;
+    items.forEach((item) => {
+      const prod = this.findProductMatch(item.productId, item.name);
+      if (prod) {
+        prod.reservedStock = (prod.reservedStock || 0) + item.quantity;
+        changed = true;
+      }
+    });
+
+    this.reservations.push({
+      orderId,
+      items,
+      channel,
+      createdAt: new Date().toISOString(),
+    });
+
+    if (changed) {
+      this.persistProducts();
+      this.persistReservations();
+      this.notify();
+    }
+    return true;
+  }
+
+  /**
+   * Libera existencias reservadas si un pedido se cancela o rechaza.
+   */
+  public releaseStock(orderId: string, shouldNotify: boolean = true): boolean {
+    const index = this.reservations.findIndex((r) => r.orderId === orderId);
+    if (index === -1) return false;
+
+    const reservation = this.reservations[index];
+    let changed = false;
+
+    reservation.items.forEach((item) => {
+      const prod = this.findProductMatch(item.productId, item.name);
+      if (prod && prod.reservedStock) {
+        prod.reservedStock = Math.max(0, prod.reservedStock - item.quantity);
+        changed = true;
+      }
+    });
+
+    this.reservations.splice(index, 1);
+    this.persistReservations();
+
+    if (changed) {
+      this.persistProducts();
+      if (shouldNotify) this.notify();
+    }
+    return true;
+  }
+
+  public findProductMatch(productId?: string, name?: string): InventoryProduct | undefined {
+    if (productId) {
+      const byId = this.products.find((p) => p.id === productId || p.sku === productId);
+      if (byId) return byId;
+    }
+    if (name) {
+      const cleanName = name.toLowerCase().trim();
+      return this.products.find((p) => p.name.toLowerCase().trim() === cleanName);
+    }
+    return undefined;
+  }
+
+  public getProductStock(productId?: string, name?: string): { stockActual: number; reservedStock: number; availableStock: number } | null {
+    const prod = this.findProductMatch(productId, name);
+    if (!prod) return null;
+    const stockActual = prod.stockActual || 0;
+    const reservedStock = prod.reservedStock || 0;
+    return {
+      stockActual,
+      reservedStock,
+      availableStock: Math.max(0, stockActual - reservedStock),
+    };
+  }
+
+  public getReservations(): ActiveOrderReservation[] {
+    return [...this.reservations];
+  }
+
   public resetToDefaults() {
     this.products = [...INITIAL_PRODUCTS_MOCK];
     this.movements = [...INITIAL_MOVEMENTS_MOCK];
@@ -1159,6 +1304,7 @@ class InventoryService {
     this.purchaseOrders = [...PURCHASE_ORDERS_MOCK];
     this.buildOrders = [...BUILD_ORDERS_MOCK];
     this.priceLists = [...PRICE_LISTS_MOCK];
+    this.reservations = [];
     this.persistProducts();
     this.persistMovements();
     this.persistLocations();
@@ -1166,6 +1312,7 @@ class InventoryService {
     this.persistPurchaseOrders();
     this.persistBuildOrders();
     this.persistPriceLists();
+    this.persistReservations();
     this.notify();
   }
 }

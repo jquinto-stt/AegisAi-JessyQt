@@ -42,6 +42,7 @@ export interface InventoryProduct {
   unit: UnitOfMeasure;
   stockActual: number;
   stockMinimo: number;
+  reservedStock?: number;
   locationId: string;
   locationName: string;
   barcode?: string;
