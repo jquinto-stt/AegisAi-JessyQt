@@ -557,7 +557,7 @@ export default function OnboardingPage() {
                         {companyName.trim() || "Mi Tienda"}
                       </h3>
                     </div>
-                    <Badge variant="primary" intent="onboarding.passport.badge">
+                    <Badge variant="light" color="primary" intent="onboarding.passport.badge">
                       {currencyForCountry(country)}
                     </Badge>
                   </div>
