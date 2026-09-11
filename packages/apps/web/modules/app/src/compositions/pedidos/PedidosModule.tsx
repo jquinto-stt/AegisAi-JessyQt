@@ -72,6 +72,7 @@ const PedidosContent: React.FC<{
 }) => {
   const {
     orders,
+    programados,
     isSoundEnabled,
     toggleSound,
     incidencias,
