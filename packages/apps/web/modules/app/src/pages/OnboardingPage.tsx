@@ -914,7 +914,7 @@ export default function OnboardingPage() {
               </Button>
             ) : (
               <Button
-                variant="accent"
+                variant="primary"
                 intent="onboarding.finish"
                 disabled={isDeploying}
                 onClick={handleFinish}
