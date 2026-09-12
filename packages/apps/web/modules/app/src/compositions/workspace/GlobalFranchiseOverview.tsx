@@ -17,6 +17,7 @@ import {
   PackageCheck,
   Banknote,
   Sparkles,
+  ImageIcon,
 } from "lucide-react";
 import { Button, Card } from "@/elements";
 import { MetricCard } from "../metric-card";
@@ -31,6 +32,13 @@ export const GlobalFranchiseOverview: React.FC = () => {
   const { businesses, switchBusiness } = useBusiness();
   const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
+  const [settingsTab, setSettingsTab] = useState<string>("general");
+
+  /** Opens the settings surface straight onto the relevant tab. */
+  const openSettings = (biz: BusinessInstance, tab: string = "general") => {
+    setSettingsTab(tab);
+    setSelectedBusinessForSettings(biz);
+  };
 
   const goToAnalitica = (bizId: string, tab: AnalyticsTab) => {
     switchBusiness(bizId);
@@ -177,6 +185,21 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     <span className="size-1.5 rounded-full bg-success-500" />
                     Operando
                   </span>
+
+                  {/* Direct route to the cover editor — the banner is visible here,
+                      so this is where people look for a way to change it. */}
+                  <button
+                    type="button"
+                    title="Editar portada y logo de esta sede"
+                    onClick={e => {
+                      e.stopPropagation();
+                      openSettings(biz, "branding");
+                    }}
+                    className="absolute right-4 top-4 z-10 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-secondary-600 shadow-theme-xs backdrop-blur-md transition-colors hover:bg-white hover:text-brand-500"
+                  >
+                    <ImageIcon className="size-3" />
+                    {biz.bannerUrl ? "Editar portada" : "Añadir portada"}
+                  </button>
                 </div>
 
                 {/* Body */}
@@ -242,7 +265,7 @@ export const GlobalFranchiseOverview: React.FC = () => {
                         variant="outline"
                         intent="hub.branch.settings"
                         title="Configurar branding, bot y parámetros de la sede"
-                        onClick={() => setSelectedBusinessForSettings(biz)}
+                        onClick={() => openSettings(biz)}
                         startIcon={<Settings className="size-4" />}
                         className="rounded-full px-4 py-2.5 text-[13px] font-bold"
                       >
@@ -301,8 +324,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
       {/* Business Settings Modal (Edit Mode) */}
       {selectedBusinessForSettings && (
         <BusinessSettingsModal
+          key={selectedBusinessForSettings.id}
           business={selectedBusinessForSettings}
           isOpen={Boolean(selectedBusinessForSettings)}
+          initialTab={settingsTab}
           onClose={() => setSelectedBusinessForSettings(null)}
         />
       )}

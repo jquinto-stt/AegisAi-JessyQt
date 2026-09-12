@@ -5,6 +5,7 @@ import {
   BusinessType,
   BotPersonality,
   SoundAlertKey,
+  ImageTransformConfig,
 } from "../../context/BusinessContext";
 import {
   Check,
@@ -41,8 +42,82 @@ import {
   QrCode,
   RefreshCw,
   X,
+  ZoomIn,
+  RotateCcw,
+  Move,
+  ImageIcon,
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
+
+/** Neutral starting point for the logo/banner framing controls. */
+const DEFAULT_TRANSFORM: ImageTransformConfig = { scale: 1, rotate: 0, posX: 0, posY: 0 };
+
+/** Renders an <img> with the framing transform applied, exactly as the storefront does. */
+const transformStyle = (t: ImageTransformConfig): React.CSSProperties => ({
+  transform: `rotate(${t.rotate}deg) scale(${t.scale}) translate(${t.posX}%, ${t.posY}%)`,
+});
+
+/**
+ * Framing controls for the logo and the storefront banner.
+ *
+ * The `logoTransform` / `bannerTransform` fields already existed on the business
+ * model and were already rendered by the hub cards and the storefront banner, but
+ * nothing ever let the user set them — and the settings form dropped them on save.
+ */
+const TransformControls: React.FC<{
+  value: ImageTransformConfig;
+  onChange: (next: ImageTransformConfig) => void;
+}> = ({ value, onChange }) => {
+  const rows: Array<{
+    key: keyof ImageTransformConfig;
+    label: string;
+    icon: React.ReactNode;
+    min: number;
+    max: number;
+    step: number;
+    suffix: string;
+  }> = [
+    { key: "scale", label: "Zoom", icon: <ZoomIn className="h-3.5 w-3.5" />, min: 0.5, max: 3, step: 0.05, suffix: "×" },
+    { key: "rotate", label: "Rotación", icon: <RotateCcw className="h-3.5 w-3.5" />, min: -180, max: 180, step: 1, suffix: "°" },
+    { key: "posX", label: "Horizontal", icon: <Move className="h-3.5 w-3.5" />, min: -100, max: 100, step: 1, suffix: "%" },
+    { key: "posY", label: "Vertical", icon: <Move className="h-3.5 w-3.5" />, min: -100, max: 100, step: 1, suffix: "%" },
+  ];
+
+  return (
+    <div className="space-y-2.5">
+      {rows.map(row => (
+        <div key={row.key} className="flex items-center gap-3">
+          <span className="flex w-28 flex-none items-center gap-1.5 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+            {row.icon}
+            {row.label}
+          </span>
+          <input
+            type="range"
+            min={row.min}
+            max={row.max}
+            step={row.step}
+            value={value[row.key]}
+            onChange={e => onChange({ ...value, [row.key]: Number(e.target.value) })}
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-gray-200 accent-brand-500 dark:bg-gray-700"
+            aria-label={row.label}
+          />
+          <span className="w-14 flex-none text-right text-[11px] font-bold tabular-nums text-gray-400 dark:text-gray-500">
+            {value[row.key]}
+            {row.suffix}
+          </span>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange(DEFAULT_TRANSFORM)}
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+      >
+        <RefreshCw className="h-3 w-3" />
+        Restablecer encuadre
+      </button>
+    </div>
+  );
+};
 
 export type SettingsTabKey =
   | "general"
@@ -330,6 +405,8 @@ export const BusinessSettingsModal: React.FC<{
   // 5. Marca & Identidad Visual
   const [logoUrl, setLogoUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [logoTransform, setLogoTransform] = useState<ImageTransformConfig>(DEFAULT_TRANSFORM);
+  const [bannerTransform, setBannerTransform] = useState<ImageTransformConfig>(DEFAULT_TRANSFORM);
   const [brandColor, setBrandColor] = useState("#FF3F1A");
   const [soundAlert, setSoundAlert] = useState<SoundAlertKey>("bell");
 
@@ -462,6 +539,8 @@ export const BusinessSettingsModal: React.FC<{
       // Marca
       setLogoUrl(business.logoUrl || "");
       setBannerUrl(business.bannerUrl || "");
+      setLogoTransform(business.logoTransform || DEFAULT_TRANSFORM);
+      setBannerTransform(business.bannerTransform || DEFAULT_TRANSFORM);
       setBrandColor(business.brandColor || "#FF3F1A");
       setSoundAlert(business.soundAlert || "bell");
 
@@ -476,6 +555,18 @@ export const BusinessSettingsModal: React.FC<{
   }, [business, isOpen, initialTab]);
 
   if (!isOpen) return null;
+
+  // The stored `city` frequently already carries the country ("Medellín, Colombia"),
+  // which made the preview read "Medellín, Colombia · Colombia".
+  const previewLocation = (() => {
+    const cityPart = city.trim();
+    const countryPart = country.trim();
+    if (!cityPart && !countryPart) return "Ciudad · País";
+    if (cityPart && countryPart && cityPart.toLowerCase().includes(countryPart.toLowerCase())) {
+      return cityPart;
+    }
+    return [cityPart, countryPart].filter(Boolean).join(" · ");
+  })();
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -520,6 +611,8 @@ export const BusinessSettingsModal: React.FC<{
       contactEmail: contactEmail.trim(),
       logoUrl: logoUrl.trim(),
       bannerUrl: bannerUrl.trim(),
+      logoTransform,
+      bannerTransform,
       brandColor,
       soundAlert,
       kitchenBufferMin,
@@ -634,14 +727,14 @@ export const BusinessSettingsModal: React.FC<{
             {sourceCaps.map((cap) => (
               <div
                 key={cap.id}
-                className="p-3.5 rounded-lg border border-purple-200/80 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/20 flex items-start justify-between gap-3 transition-all"
+                className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3 transition-all"
               >
                 <div className="space-y-1 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
                       {cap.label}
                     </p>
-                    <span className="inline-flex items-center text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                    <span className="inline-flex items-center text-[10px] font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-900 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
                       Personalizada
                     </span>
                   </div>
@@ -649,8 +742,8 @@ export const BusinessSettingsModal: React.FC<{
                     <p className="text-xs text-gray-600 dark:text-gray-400">{cap.desc}</p>
                   )}
                   {cap.instruction && (
-                    <div className="mt-1.5 p-2 rounded-md bg-white dark:bg-gray-900/90 border border-purple-100 dark:border-purple-900/50 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                      <span className="font-semibold text-purple-700 dark:text-purple-300">Regla / Prompt IA: </span>
+                    <div className="mt-1.5 p-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Regla / Prompt IA: </span>
                       {cap.instruction}
                     </div>
                   )}
@@ -664,7 +757,7 @@ export const BusinessSettingsModal: React.FC<{
                   <button
                     type="button"
                     onClick={() => handleDeleteCustomCapability(cap.id)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-gray-400 transition-colors hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-950/30 cursor-pointer"
                     title="Eliminar capacidad"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -753,7 +846,7 @@ export const BusinessSettingsModal: React.FC<{
                 type="button"
                 onClick={() => handleAddCustomCapability(sourceId)}
                 disabled={!newCapLabel.trim()}
-                className="px-3.5 py-1.5 text-xs font-medium text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50 rounded-lg transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Guardar Capacidad
@@ -782,7 +875,12 @@ export const BusinessSettingsModal: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gray-50 font-sans animate-in fade-in duration-200 dark:bg-gray-950">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="business-settings-title"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gray-50 font-sans animate-in fade-in duration-200 dark:bg-gray-950"
+    >
       {/* ── Header ── */}
       <header className="z-10 flex h-16 flex-none items-center justify-between border-b border-gray-100 bg-white px-6 dark:border-gray-800 dark:bg-gray-950">
         <div className="flex min-w-0 items-center gap-4">
@@ -797,7 +895,10 @@ export const BusinessSettingsModal: React.FC<{
 
           <div className="h-5 w-px bg-gray-200 dark:bg-gray-800" />
 
-          <h1 className="truncate text-[15px] font-black tracking-tight text-secondary-600 dark:text-white">
+          <h1
+            id="business-settings-title"
+            className="truncate text-[15px] font-black tracking-tight text-secondary-600 dark:text-white"
+          >
             {business?.id ? "Configuración de Sede" : "Nueva Sede"}
           </h1>
           {business?.name && (
@@ -871,14 +972,14 @@ export const BusinessSettingsModal: React.FC<{
         </aside>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950">
           <form onSubmit={handleSave} className="max-w-4xl mx-auto py-8 px-8 space-y-8">
 
             {/* ── TAB 1: GENERAL & UBICACIÓN ── */}
             {activeTab === "general" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                     General & Ubicación
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -887,9 +988,9 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Identidad Comercial */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 space-y-5">
                   <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Identidad Comercial
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -941,9 +1042,9 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Ubicación Física & Horarios */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 space-y-5">
                   <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Ubicación & Horarios
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1012,7 +1113,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* Modalidades de Servicio — Idéntico estándar visual de Canales de Entrada */}
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Modalidades de Servicio
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -1020,10 +1121,10 @@ export const BusinessSettingsModal: React.FC<{
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                  <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <Truck className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -1040,7 +1141,7 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
                           <ShoppingBag className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -1057,7 +1158,7 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <UtensilsCrossed className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -1080,7 +1181,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "channels" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                     Canales de Entrada
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -1088,12 +1189,12 @@ export const BusinessSettingsModal: React.FC<{
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                   {/* WhatsApp Business */}
                   <div className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center flex-none mt-0.5">
                           <Smartphone className="w-5 h-5" />
                         </div>
                         <div className="space-y-1.5 min-w-0">
@@ -1160,7 +1261,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <button
                                   type="button"
                                   onClick={() => setIsConnectWhatsAppModalOpen(true)}
-                                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-theme-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                                 >
                                   <RefreshCw className="w-3.5 h-3.5" />
                                   <span>Reconectar QR</span>
@@ -1168,7 +1269,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <button
                                   type="button"
                                   onClick={handleDisconnectWhatsApp}
-                                  className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                                  className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-error-600 transition-colors hover:bg-error-50 hover:text-error-700 dark:text-error-400 dark:hover:bg-error-950/30"
                                 >
                                   Desvincular
                                 </button>
@@ -1177,7 +1278,7 @@ export const BusinessSettingsModal: React.FC<{
                               <button
                                 type="button"
                                 onClick={() => setIsConnectWhatsAppModalOpen(true)}
-                                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-600"
                               >
                                 <QrCode className="w-4 h-4" />
                                 <span>Conectar WhatsApp</span>
@@ -1187,7 +1288,7 @@ export const BusinessSettingsModal: React.FC<{
                             <button
                               type="button"
                               onClick={() => setActiveTab("whatsapp_bot")}
-                              className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                             >
                               <span>Configurar Asistente IA →</span>
                             </button>
@@ -1227,7 +1328,7 @@ export const BusinessSettingsModal: React.FC<{
                   {/* Tienda Web */}
                   <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                         <Globe className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
@@ -1238,7 +1339,7 @@ export const BusinessSettingsModal: React.FC<{
                           Catálogo digital interactivo con carrito y checkout directo.
                         </p>
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          <Globe className="w-3.5 h-3.5 text-blue-500" />
+                          <Globe className="w-3.5 h-3.5 text-gray-400" />
                           <span>necto.app/{slug || name.toLowerCase().replace(/\s+/g, "-")}</span>
                         </div>
                       </div>
@@ -1254,7 +1355,7 @@ export const BusinessSettingsModal: React.FC<{
                   {/* POS / Mostrador */}
                   <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                         <Store className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
@@ -1282,7 +1383,7 @@ export const BusinessSettingsModal: React.FC<{
               <div className="space-y-6 animate-fade-in">
                 {/* Header */}
                 <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                     Asistente de WhatsApp IA
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -1291,12 +1392,12 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {!enableWhatsapp ? (
-                  <div className="p-8 sm:p-10 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 text-center max-w-lg mx-auto space-y-4 shadow-theme-xs my-8">
+                  <div className="p-8 sm:p-10 rounded-2xl bg-white dark:bg-gray-900 text-center max-w-lg mx-auto space-y-4 my-8">
                     <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 flex items-center justify-center mx-auto">
                       <Bot className="w-6 h-6" />
                     </div>
                     <div className="space-y-1.5">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                         Activa WhatsApp Business para configurar el Asistente IA
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -1326,7 +1427,7 @@ export const BusinessSettingsModal: React.FC<{
                             });
                           }
                         }}
-                        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm shadow-theme-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
+                        className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-600 sm:w-auto"
                       >
                         <Smartphone className="w-4 h-4" />
                         <span>Activar Canal WhatsApp</span>
@@ -1334,7 +1435,7 @@ export const BusinessSettingsModal: React.FC<{
                       <button
                         type="button"
                         onClick={() => setActiveTab("channels")}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm transition-colors cursor-pointer"
+                        className="w-full cursor-pointer rounded-full border border-gray-300 px-4 py-2.5 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
                       >
                         Ver Canales
                       </button>
@@ -1376,9 +1477,9 @@ export const BusinessSettingsModal: React.FC<{
                       {/* ── ÁREA 1: IDENTIDAD & COMPORTAMIENTO ── */}
                       {botSubTab === "identity" && (
                         <div className="space-y-6 animate-fade-in">
-                          <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                          <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 space-y-5">
                             <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                              <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                                 Identidad & Tono de Respuesta
                               </h3>
                               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -1491,11 +1592,11 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="space-y-5 animate-fade-in">
 
                     {/* ── Catálogo de Productos & Precios ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-lg bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center flex-none mt-0.5">
                               <BookOpen className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
@@ -1505,10 +1606,10 @@ export const BusinessSettingsModal: React.FC<{
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                   knowsCatalog
-                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                     : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                 }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsCatalog ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsCatalog ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsCatalog ? "Activo" : "Inactivo"}
                                 </span>
                                 <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
@@ -1544,7 +1645,7 @@ export const BusinessSettingsModal: React.FC<{
                               {catalogDataSource === "file" && (
                                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">Formatos soportados: CSV, XLSX, JSON</span>
-                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-brand-600">
                                     <Upload className="w-3.5 h-3.5" />
                                     <span>Subir Catálogo</span>
                                     <input type="file" accept=".csv,.xlsx,.xls,.json" className="hidden" />
@@ -1603,11 +1704,11 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Información del Negocio & Ubicación ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <Store className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
@@ -1617,10 +1718,10 @@ export const BusinessSettingsModal: React.FC<{
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                   knowsBusinessInfo
-                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                     : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                 }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsBusinessInfo ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsBusinessInfo ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsBusinessInfo ? "Activo" : "Inactivo"}
                                 </span>
                                 <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
@@ -1641,7 +1742,7 @@ export const BusinessSettingsModal: React.FC<{
                               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                 Origen de datos
                               </span>
-                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-md">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border border-success-200 dark:border-success-800 px-2.5 py-1 rounded-md">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Conectado a la configuración de la sede
                               </span>
@@ -1670,11 +1771,11 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Preguntas Frecuentes (FAQ) ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-lg bg-warning-500/10 text-warning-600 dark:text-warning-400 border border-warning-200 dark:border-warning-800/60 flex items-center justify-center flex-none mt-0.5">
                               <HelpCircle className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
@@ -1684,10 +1785,10 @@ export const BusinessSettingsModal: React.FC<{
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                   knowsFaq
-                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                     : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                 }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsFaq ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsFaq ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsFaq ? "Activo" : "Inactivo"}
                                 </span>
                                 <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
@@ -1722,8 +1823,8 @@ export const BusinessSettingsModal: React.FC<{
                               </div>
 
                               {faqDataSource === "none" && (
-                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/50">
-                                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                                <div className="p-3 rounded-2xl bg-warning-50 border border-warning-200 dark:bg-warning-950/30 dark:border-warning-900/50">
+                                  <p className="text-xs text-warning-800 dark:text-warning-300">
                                     Carga un archivo con preguntas y respuestas para que el bot responda con precisión.
                                   </p>
                                 </div>
@@ -1732,7 +1833,7 @@ export const BusinessSettingsModal: React.FC<{
                               {faqDataSource === "file" && (
                                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">PDF, TXT, CSV, Excel</span>
-                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-brand-600">
                                     <Upload className="w-3.5 h-3.5" />
                                     <span>Subir Archivo FAQ</span>
                                     <input type="file" accept=".pdf,.txt,.csv,.xlsx,.xls" className="hidden" />
@@ -1763,11 +1864,11 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Políticas de Cambios y Garantías ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <ShieldCheck className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
@@ -1777,10 +1878,10 @@ export const BusinessSettingsModal: React.FC<{
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                   knowsPolicies
-                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                     : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                 }`}>
-                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsPolicies ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsPolicies ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsPolicies ? "Activo" : "Inactivo"}
                                 </span>
                                 <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
@@ -1815,8 +1916,8 @@ export const BusinessSettingsModal: React.FC<{
                               </div>
 
                               {policiesDataSource === "none" && (
-                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/50">
-                                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                                <div className="p-3 rounded-2xl bg-warning-50 border border-warning-200 dark:bg-warning-950/30 dark:border-warning-900/50">
+                                  <p className="text-xs text-warning-800 dark:text-warning-300">
                                     Carga las políticas para que el bot informe devoluciones o reclamos de acuerdo a tus términos.
                                   </p>
                                 </div>
@@ -1825,7 +1926,7 @@ export const BusinessSettingsModal: React.FC<{
                               {policiesDataSource === "file" && (
                                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">PDF, TXT, DOCX</span>
-                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-3.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-brand-600">
                                     <Upload className="w-3.5 h-3.5" />
                                     <span>Subir Documento</span>
                                     <input type="file" accept=".pdf,.txt,.docx" className="hidden" />
@@ -1856,11 +1957,11 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Consulta de Inventario en Tiempo Real ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <ShoppingBag className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
@@ -1871,7 +1972,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <span
                                   className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                     business?.activeModules?.includes("inventarios")
-                                      ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                      ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                       : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                   }`}
                                 >
@@ -1924,10 +2025,10 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Gestión de Pedidos (OMS) ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start gap-3.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 flex items-center justify-center flex-none mt-0.5">
+                          <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                             <FileText className="w-5 h-5" />
                           </div>
                           <div className="space-y-1.5 min-w-0 flex-1">
@@ -1935,7 +2036,7 @@ export const BusinessSettingsModal: React.FC<{
                               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                                 Gestión de Pedidos (OMS)
                               </h3>
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border border-success-200 dark:border-success-800 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" />
                                 Conectado al OMS
                               </span>
@@ -1979,10 +2080,10 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {/* ── Atención Humana ── */}
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start gap-3.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center flex-none mt-0.5">
+                          <div className="w-10 h-10 rounded-lg bg-error-500/10 text-error-600 dark:text-error-400 border border-error-200 dark:border-error-800/60 flex items-center justify-center flex-none mt-0.5">
                             <UserCheck className="w-5 h-5" />
                           </div>
                           <div className="space-y-1.5 min-w-0 flex-1">
@@ -1992,10 +2093,10 @@ export const BusinessSettingsModal: React.FC<{
                               </h3>
                               <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
                                 intentHumanAgent
-                                  ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                  ? "text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border-success-200 dark:border-success-800"
                                   : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                               }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${intentHumanAgent ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${intentHumanAgent ? "bg-success-500" : "bg-gray-400"}`} />
                                 {intentHumanAgent ? "Activo" : "Inactivo"}
                               </span>
                               <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
@@ -2036,7 +2137,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 4: REGLAS DE CREACIÓN & CONFIRMACIÓN DE PEDIDOS (OMS) ── */}
                 {botSubTab === "orders_oms" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 space-y-3">
                         <div>
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2125,7 +2226,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 5: HANDOFF A HUMANO ── */}
                 {botSubTab === "handoff" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
@@ -2195,7 +2296,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 6: HORARIOS & DISPONIBILIDAD ── */}
                 {botSubTab === "hours" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2241,7 +2342,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 7: EXPERIENCIA DEL CLIENTE ── */}
                 {botSubTab === "experience" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -2314,7 +2415,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "payments" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                     Cuentas & Métodos de Pago
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -2323,9 +2424,9 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Transferencias */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                <div className="p-6 rounded-2xl bg-white dark:bg-gray-900 space-y-5">
                   <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Transferencias Bancarias & Billeteras Digitales
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2378,7 +2479,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* Cobro en Sede */}
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Cobro Presencial en Sede
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2386,10 +2487,10 @@ export const BusinessSettingsModal: React.FC<{
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                  <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -2410,7 +2511,7 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -2435,145 +2536,265 @@ export const BusinessSettingsModal: React.FC<{
 
             {/* ── TAB 5: MARCA & IDENTIDAD VISUAL ── */}
             {activeTab === "branding" && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6 animate-in fade-in duration-200">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                    Marca & Identidad Visual
+                  <h2 className="text-[22px] font-black tracking-tight text-secondary-600 dark:text-white">
+                    Personalización de la sede
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Logo, portada de tienda, colores distintivos y sonidos de alerta para la operación.
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Así verán tus clientes esta sede. Ajusta el logo, la portada y el color de marca.
                   </p>
                 </div>
 
-                {/* Logo & Portada */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-6 shadow-theme-xs">
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
-                      Logo de la Sede
-                    </h3>
-                    <div className="flex items-center gap-6">
-                      <div className="w-20 h-20 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center flex-none">
-                        {logoUrl ? (
-                          <img src={logoUrl} alt="Logo Sede" className="w-full h-full object-cover" />
-                        ) : (
-                          <Store className="w-8 h-8 text-gray-400" />
-                        )}
-                      </div>
+                {/* ── Live preview: mirrors the hub card + storefront banner ── */}
+                <div className="rounded-2xl bg-white p-6 dark:bg-gray-900">
+                  <h3 className="mb-4 text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                    Vista previa
+                  </h3>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <label className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 hover:bg-black text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 transition-colors cursor-pointer flex items-center gap-2 shadow-theme-xs">
-                            <Upload className="w-4 h-4" />
-                            <span>Subir Logo</span>
-                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                          </label>
+                  <div className="overflow-hidden rounded-2xl bg-gray-50 dark:bg-gray-950">
+                    {/* Cover */}
+                    <div className="relative h-32 w-full overflow-hidden">
+                      {bannerUrl ? (
+                        <>
+                          <img
+                            src={bannerUrl}
+                            alt=""
+                            style={transformStyle(bannerTransform)}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                        </>
+                      ) : (
+                        <div className="relative h-full w-full bg-gradient-to-br from-brand-500 to-brand-600" />
+                      )}
+                      <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-900">
+                        <span className="h-1.5 w-1.5 rounded-full bg-success-500" />
+                        Operando
+                      </span>
+                    </div>
 
-                          {logoUrl && (
-                            <button
-                              type="button"
-                              onClick={() => setLogoUrl("")}
-                              className="px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                            >
-                              Quitar
-                            </button>
+                    {/* Identity */}
+                    <div className="px-5 pb-5">
+                      <div className="-mt-8 flex items-end">
+                        <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-2xl border-[3px] border-white bg-white dark:border-gray-900 dark:bg-gray-800">
+                          {logoUrl ? (
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              style={transformStyle(logoTransform)}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Store className="h-7 w-7 text-brand-500" />
                           )}
                         </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Recomendado: Formato cuadrado de al menos 400x400 px (PNG, JPG o WebP).
-                        </p>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Banner de Portada */}
-                  <div className="pt-5 border-t border-gray-100 dark:border-gray-800">
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
-                      Portada / Banner de la Tienda Web
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="w-full h-36 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center">
-                        {bannerUrl ? (
-                          <img src={bannerUrl} alt="Banner Sede" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-sm text-gray-400">Sin portada configurada</span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <label className="px-4 py-2 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer flex items-center gap-2 border border-gray-300 dark:border-gray-700 shadow-theme-xs">
-                          <Upload className="w-4 h-4" />
-                          <span>Cambiar Portada</span>
-                          <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
-                        </label>
-                        {bannerUrl && (
-                          <button
-                            type="button"
-                            onClick={() => setBannerUrl("")}
-                            className="px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                          >
-                            Quitar portada
-                          </button>
-                        )}
-                      </div>
+                      <h4 className="mt-3 truncate text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                        {name.trim() || "Nombre de la sede"}
+                      </h4>
+                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                        {previewLocation}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Color & Sonido */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                {/* ── Logo ── */}
+                <div className="space-y-5 rounded-2xl bg-white p-6 dark:bg-gray-900">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                        Logo de la sede
+                      </h3>
+                      <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                        Cuadrado, mínimo 400 × 400 px (PNG, JPG o WebP).
+                      </p>
+                    </div>
+
+                    <div className="flex flex-none items-center gap-2">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-600">
+                        <Upload className="h-4 w-4" />
+                        <span>{logoUrl ? "Cambiar logo" : "Subir logo"}</span>
+                        <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                      </label>
+
+                      {logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoUrl("");
+                            setLogoTransform(DEFAULT_TRANSFORM);
+                          }}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-5 sm:flex-row">
+                    <div className="flex h-24 w-24 flex-none items-center justify-center overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Logo de la sede"
+                          style={transformStyle(logoTransform)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Store className="h-8 w-8 text-gray-300 dark:text-gray-600" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      {logoUrl ? (
+                        <TransformControls value={logoTransform} onChange={setLogoTransform} />
+                      ) : (
+                        <p className="text-xs leading-relaxed text-gray-400 dark:text-gray-500">
+                          Sube un logo para ajustar su zoom, rotación y encuadre.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Banner ── */}
+                <div className="space-y-5 rounded-2xl bg-white p-6 dark:bg-gray-900">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                        Portada / Banner
+                      </h3>
+                      <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                        Es la imagen que aparece arriba de la tarjeta de tu sede y en la tienda web.
+                        Recomendado 1600 × 600 px.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-none items-center gap-2">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-600">
+                        <Upload className="h-4 w-4" />
+                        <span>{bannerUrl ? "Cambiar portada" : "Subir portada"}</span>
+                        <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                      </label>
+
+                      {bannerUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBannerUrl("");
+                            setBannerTransform(DEFAULT_TRANSFORM);
+                          }}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-brand-400"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="relative h-40 w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
+                      {bannerUrl ? (
+                        <img
+                          src={bannerUrl}
+                          alt="Portada de la sede"
+                          style={transformStyle(bannerTransform)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-gray-400 dark:text-gray-500">
+                          <ImageIcon className="h-7 w-7" />
+                          <span className="text-sm font-medium">Sin portada configurada</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {bannerUrl && (
+                      <TransformControls value={bannerTransform} onChange={setBannerTransform} />
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Colour & alerts ── */}
+                <div className="space-y-5 rounded-2xl bg-white p-6 dark:bg-gray-900">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                      Color Distintivo & Alertas
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                      Color de marca & alertas
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                      Personalización de tono primario y timbre de avisos operativos.
+                    <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+                      Tono primario de la sede y timbre de avisos operativos.
                     </p>
                   </div>
 
-                  <div className="space-y-2.5">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Color de Marca
+                  <div className="space-y-3">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                      Color de marca
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
                       {[
                         { name: "Naranja Necto", hex: "#FF3F1A" },
                         { name: "Azul Cobalto", hex: "#2563EB" },
                         { name: "Esmeralda", hex: "#059669" },
                         { name: "Violeta", hex: "#7C3AED" },
                         { name: "Grafito", hex: "#18181B" },
-                      ].map((c) => (
+                      ].map(c => (
                         <button
                           key={c.hex}
                           type="button"
                           onClick={() => setBrandColor(c.hex)}
-                          className={`w-9 h-9 rounded-lg cursor-pointer transition-transform flex items-center justify-center ${
-                            brandColor === c.hex ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-105" : "hover:scale-105"
+                          title={c.name}
+                          aria-label={c.name}
+                          aria-pressed={brandColor === c.hex}
+                          className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-transform ${
+                            brandColor === c.hex
+                              ? "scale-105 ring-2 ring-brand-500 ring-offset-2 dark:ring-offset-gray-900"
+                              : "hover:scale-105"
                           }`}
                           style={{ backgroundColor: c.hex }}
-                          title={c.name}
                         >
-                          {brandColor === c.hex && <Check className="w-4 h-4 text-white stroke-[3]" />}
+                          {brandColor === c.hex && <Check className="h-4 w-4 stroke-[3] text-white" />}
                         </button>
                       ))}
-                      <span className="text-sm font-mono text-gray-600 dark:text-gray-400 ml-2">
+
+                      {/* Custom colour — full freedom beyond the preset palette */}
+                      <label
+                        className="relative flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200 transition-transform hover:scale-105 dark:bg-gray-800 dark:ring-gray-700"
+                        title="Color personalizado"
+                      >
+                        <ImageIcon className="h-4 w-4 text-gray-400" />
+                        <input
+                          type="color"
+                          value={brandColor}
+                          onChange={e => setBrandColor(e.target.value)}
+                          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                          aria-label="Color personalizado"
+                        />
+                      </label>
+
+                      <span className="ml-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                         {brandColor}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Sonido de Alerta de Nuevos Pedidos
+                  <div className="space-y-2">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300">
+                      Sonido de alerta de nuevos pedidos
                     </label>
                     <select
                       value={soundAlert}
-                      onChange={(e) => setSoundAlert(e.target.value as any)}
-                      className="h-11 w-full sm:w-72 px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                      onChange={e => setSoundAlert(e.target.value as any)}
+                      className="h-11 w-full rounded-xl border border-gray-200 bg-transparent px-3.5 text-sm font-medium text-gray-900 focus:border-brand-500 focus:outline-hidden sm:w-72 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                     >
-                      <option value="bell">Campana Suave (Bell)</option>
-                      <option value="chime">Timbre Dinámico (Chime)</option>
-                      <option value="kitchen_ding">Timbre de Cocina / KDS (Ding)</option>
-                      <option value="pos_beep">Bip de Caja / POS (Beep)</option>
+                      <option value="bell">Campana suave (Bell)</option>
+                      <option value="chime">Timbre dinámico (Chime)</option>
+                      <option value="kitchen_ding">Timbre de cocina / KDS (Ding)</option>
+                      <option value="pos_beep">Bip de caja / POS (Beep)</option>
                       <option value="mute">Silencioso (Mute)</option>
                     </select>
                   </div>
@@ -2585,7 +2806,7 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "operations" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                     Operaciones & Estado de Sede
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -2596,7 +2817,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* Preparación de Pedidos */}
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Flujo Operativo de Órdenes
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2604,10 +2825,10 @@ export const BusinessSettingsModal: React.FC<{
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                  <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <Clock className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -2641,7 +2862,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* Pausa / Vacaciones */}
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                       Pausa Temporal / Modo Vacaciones
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2649,10 +2870,10 @@ export const BusinessSettingsModal: React.FC<{
                     </p>
                   </div>
 
-                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                  <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-warning-800/40 flex items-center justify-center flex-none mt-0.5">
                           <PauseCircle className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
@@ -2693,15 +2914,15 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Zona de Peligro */}
-                <div className="p-6 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 space-y-4">
+                <div className="p-6 rounded-2xl bg-error-50/60 dark:bg-error-950/20 border border-error-200 dark:border-error-900/50 space-y-4">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                    <h3 className="text-base font-semibold text-rose-800 dark:text-rose-300">
+                    <AlertTriangle className="w-5 h-5 text-error-600 dark:text-error-400" />
+                    <h3 className="text-[17px] font-black tracking-tight text-error-700 dark:text-error-300">
                       Zona de Peligro
                     </h3>
                   </div>
 
-                  <p className="text-sm text-rose-700 dark:text-rose-300">
+                  <p className="text-sm text-error-700 dark:text-error-300">
                     Eliminar esta sede borrará sus órdenes locales, configuración y enlaces. Esta acción es irreversible.
                   </p>
 
@@ -2709,27 +2930,27 @@ export const BusinessSettingsModal: React.FC<{
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(true)}
-                      className="px-4 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium cursor-pointer shadow-theme-xs transition-colors"
+                      className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-error-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-error-700"
                     >
                       Eliminar esta Sede
                     </button>
                   ) : (
-                    <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-rose-200 dark:border-rose-900/60 space-y-3">
-                      <p className="text-sm font-medium text-rose-900 dark:text-rose-200">
+                    <div className="p-4 rounded-2xl bg-white dark:bg-gray-900 border border-error-200 dark:border-error-900/60 space-y-3">
+                      <p className="text-sm font-medium text-error-900 dark:text-error-200">
                         ¿Confirmas que deseas eliminar permanentemente la sede "{name}"?
                       </p>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={handleDelete}
-                          className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium cursor-pointer shadow-theme-xs transition-colors"
+                          className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-error-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-error-700"
                         >
                           Sí, eliminar definitivamente
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
-                          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium cursor-pointer transition-colors"
+                          className="cursor-pointer rounded-full bg-gray-100 px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                         >
                           Cancelar
                         </button>
@@ -2750,7 +2971,7 @@ export const BusinessSettingsModal: React.FC<{
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-scale-up">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center">
                   <QrCode className="w-5 h-5" />
                 </div>
                 <div>
@@ -2832,8 +3053,8 @@ export const BusinessSettingsModal: React.FC<{
                     <rect x="56" y="78" width="8" height="12" fill="#111827" />
                     <rect x="70" y="80" width="22" height="6" fill="#111827" />
                   </svg>
-                  <span className="text-[10px] text-gray-500 mt-2 font-mono flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 text-emerald-600 animate-spin" />
+                  <span className="mt-2 flex items-center gap-1 text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                    <RefreshCw className="w-3 h-3 animate-spin text-brand-500" />
                     Expira en {qrCountdown}s
                   </span>
                 </div>
@@ -2847,7 +3068,7 @@ export const BusinessSettingsModal: React.FC<{
                     <li>Toca <strong>Menú (⋮)</strong> o <strong>Ajustes</strong> y entra a <strong>Dispositivos vinculados</strong>.</li>
                     <li>Toca en <strong>Vincular un dispositivo</strong> y apunta tu cámara al código QR.</li>
                   </ol>
-                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300">
+                  <div className="p-2.5 rounded-lg bg-success-50 border border-success-200 text-[11px] text-success-700 dark:bg-success-950/30 dark:text-success-300">
                     Al escanearlo, tus pedidos y el Asistente IA quedarán conectados automáticamente a esta sede.
                   </div>
                 </div>
@@ -2879,7 +3100,7 @@ export const BusinessSettingsModal: React.FC<{
                 type="button"
                 onClick={handleConfirmWhatsAppConnection}
                 disabled={isConnectingSim}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2.5 text-xs font-bold text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 rounded-xl shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
               >
                 {isConnectingSim ? (
                   <>
