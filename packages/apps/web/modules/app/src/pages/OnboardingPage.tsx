@@ -567,10 +567,19 @@ export default function OnboardingPage() {
                           title={om.title}
                           onClick={() => setSelectedOfferModel(om.id)}
                           className={cn(
-                      className={inputClass}
-                      autoFocus
-                    />
+                            "flex cursor-pointer flex-col items-start gap-3 rounded-2xl p-3.5 text-left transition-all",
+                            isActive
+                              ? "bg-brand-500 text-white shadow-lg shadow-brand-500/25"
+                              : "bg-gray-50 text-gray-900 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-400")} />
+                          <span className="text-[13px] font-bold leading-tight">{om.short}</span>
+                        </button>
+                      );
+                    })}
                   </div>
+                </div>
 
                   {/* Location */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
