@@ -1,14 +1,25 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 
 export type BusinessType =
+  // Gastronomía
   | "restaurant_virtual"
+  | "cafe_bakery"
+  | "fast_food"
+  | "bar_brewery"
+  // Retail & Comercio
   | "retail_store"
-  | "services"
-  | "ecommerce_direct"
   | "fashion_footwear"
   | "hardware_store"
+  | "tech_electronics"
+  | "ecommerce_direct"
+  // Servicios & Citas
+  | "services"
+  | "technical_service"
+  | "consulting_appointments"
+  // Salud & Bienestar
   | "pharmacy_health"
-  | "tech_electronics";
+  | "nutrition_supplements"
+  | "clinic_optics";
 
 export type OfferModel =
   | "physical_products"
@@ -28,19 +39,52 @@ export interface ArchetypeDefinition {
 }
 
 export const BUSINESS_ARCHETYPES: ArchetypeDefinition[] = [
+  // ─── 1. Gastronomía & F&B ──────────────────────────────────────────
   {
     id: "restaurant_virtual",
-    label: "Gastronomía & Restauración",
+    label: "Restaurante a la Mesa",
     category: "gastronomy",
-    description: "Restaurantes, cafeterías, panaderías, bares, comidas rápidas y dark kitchens.",
+    description: "Restaurantes con servicio a la mesa, menú por tiempos, platos fuertes y bebidas.",
     defaultOfferModel: "prepared_products",
     recommendedModules: ["pedidos", "inventarios"],
-    defaultCategories: ["Platos Fuertes", "Acompañamientos", "Bebidas", "Postres"],
+    defaultCategories: ["Entradas & Tapas", "Platos Fuertes", "Bebidas & Vinos", "Postres de la Casa"],
     iconKey: "utensils",
   },
   {
+    id: "cafe_bakery",
+    label: "Cafetería & Pastelería",
+    category: "gastronomy",
+    description: "Cafeterías de especialidad, panaderías artesanales, repostería y desayunos.",
+    defaultOfferModel: "prepared_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Café de Especialidad", "Panadería Artesanal", "Pastelería & Tortas", "Bebidas Frías"],
+    iconKey: "coffee",
+  },
+  {
+    id: "fast_food",
+    label: "Comidas Rápidas & Delivery",
+    category: "gastronomy",
+    description: "Hamburguesas, pizzas, dark kitchens y locales con foco en despacho ágil.",
+    defaultOfferModel: "prepared_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Combos & Promociones", "Platos Principales", "Acompañamientos", "Bebidas & Gaseosas"],
+    iconKey: "flame",
+  },
+  {
+    id: "bar_brewery",
+    label: "Bar & Cervecería",
+    category: "gastronomy",
+    description: "Bares, cervecerías artesanales, gastropubs y coctelería nocturna.",
+    defaultOfferModel: "prepared_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Cervezas Artesanales", "Coctelería de Autor", "Licores & Botellas", "Snacks & Picadas"],
+    iconKey: "utensils",
+  },
+
+  // ─── 2. Retail & Comercio ──────────────────────────────────────────
+  {
     id: "retail_store",
-    label: "Retail & Minimarket",
+    label: "Minimarket / General",
     category: "retail",
     description: "Comercio minorista, minimarkets, tiendas de barrio, papelerías y abarrotes.",
     defaultOfferModel: "physical_products",
@@ -49,8 +93,18 @@ export const BUSINESS_ARCHETYPES: ArchetypeDefinition[] = [
     iconKey: "store",
   },
   {
+    id: "fashion_footwear",
+    label: "Moda & Calzado",
+    category: "retail",
+    description: "Boutiques, zapaterías, indumentaria y accesorios con variantes de talla y color.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Calzado Casual", "Zapatillas Deportivas", "Prendas Superiores", "Accesorios"],
+    iconKey: "shirt",
+  },
+  {
     id: "hardware_store",
-    label: "Ferretería & Materiales",
+    label: "Ferretería & Insumos",
     category: "retail",
     description: "Ferreterías, materiales de obra, herramientas eléctricas y tornillería técnica.",
     defaultOfferModel: "physical_products",
@@ -59,18 +113,8 @@ export const BUSINESS_ARCHETYPES: ArchetypeDefinition[] = [
     iconKey: "wrench",
   },
   {
-    id: "fashion_footwear",
-    label: "Moda, Calzado & Accesorios",
-    category: "retail",
-    description: "Boutiques, zapaterías, marcas de indumentaria y accesorios con tallas y colores.",
-    defaultOfferModel: "physical_products",
-    recommendedModules: ["pedidos", "inventarios"],
-    defaultCategories: ["Calzado Casual", "Zapatillas Deportivas", "Prendas Superiores", "Accesorios"],
-    iconKey: "shirt",
-  },
-  {
     id: "tech_electronics",
-    label: "Tecnología, Móviles & Repuestos",
+    label: "Tecnología & Gadgets",
     category: "retail",
     description: "Telefonía, repuestos de servicio técnico, cómputo, audio y gadgets.",
     defaultOfferModel: "physical_products",
@@ -79,34 +123,78 @@ export const BUSINESS_ARCHETYPES: ArchetypeDefinition[] = [
     iconKey: "laptop",
   },
   {
-    id: "pharmacy_health",
-    label: "Salud, Farmacia & Bienestar",
-    category: "health",
-    description: "Droguerías, suplementos nutricionales, dermocosmética y suministros médicos.",
-    defaultOfferModel: "physical_products",
-    recommendedModules: ["pedidos", "inventarios"],
-    defaultCategories: ["Medicamentos Genéricos", "Cuidado Personal", "Primeros Auxilios", "Vitaminas"],
-    iconKey: "pill",
-  },
-  {
-    id: "services",
-    label: "Servicios, Citas & Talleres",
-    category: "services",
-    description: "Barberías, salones de belleza, talleres de reparación, consultoría y bienestar.",
-    defaultOfferModel: "services_appointments",
-    recommendedModules: ["agendamiento", "turnos", "pedidos"],
-    defaultCategories: ["Cortes & Estilo", "Mantenimiento Preventivo", "Sesiones Técnicas", "Tratamientos"],
-    iconKey: "scissors",
-  },
-  {
     id: "ecommerce_direct",
-    label: "Marca D2C & Envíos Digitales",
+    label: "D2C / Marca Digital",
     category: "retail",
     description: "Ventas por redes sociales y catálogo web con envíos locales y nacionales.",
     defaultOfferModel: "physical_products",
     recommendedModules: ["pedidos", "inventarios", "referidos"],
     defaultCategories: ["Lanzamientos", "Más Vendidos", "Colección Básica", "Promociones"],
     iconKey: "shopping-bag",
+  },
+
+  // ─── 3. Servicios & Citas ──────────────────────────────────────────
+  {
+    id: "services",
+    label: "Barbería & Peluquería",
+    category: "services",
+    description: "Barberías, salones de belleza, estética y cuidado personal con turnos.",
+    defaultOfferModel: "services_appointments",
+    recommendedModules: ["agendamiento", "turnos", "pedidos"],
+    defaultCategories: ["Cortes & Estilo", "Barba & Afeitado", "Tratamientos Capilares", "Estética & Spa"],
+    iconKey: "scissors",
+  },
+  {
+    id: "technical_service",
+    label: "Taller & Servicio Técnico",
+    category: "services",
+    description: "Talleres mecánicos, reparación de móviles, electrodomésticos y servicio técnico.",
+    defaultOfferModel: "hybrid",
+    recommendedModules: ["pedidos", "inventarios", "turnos"],
+    defaultCategories: ["Diagnóstico & Reparación", "Mantenimiento Preventivo", "Repuestos & Partes", "Mano de Obra"],
+    iconKey: "wrench",
+  },
+  {
+    id: "consulting_appointments",
+    label: "Consultoría & Asesoría",
+    category: "services",
+    description: "Abogados, contadores, agencias, academias y consultoría por horas o sesiones.",
+    defaultOfferModel: "services_appointments",
+    recommendedModules: ["agendamiento", "pedidos"],
+    defaultCategories: ["Sesiones de Diagnóstico", "Consultoría Mensual", "Auditoría & Revisión", "Talleres & Formación"],
+    iconKey: "layers",
+  },
+
+  // ─── 4. Salud & Bienestar ──────────────────────────────────────────
+  {
+    id: "pharmacy_health",
+    label: "Droguería & Farmacia",
+    category: "health",
+    description: "Droguerías, farmacias comunitarias, fórmulas médicas y medicamentos genéricos.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Medicamentos Genéricos", "Cuidado Personal", "Primeros Auxilios", "Vitaminas"],
+    iconKey: "pill",
+  },
+  {
+    id: "nutrition_supplements",
+    label: "Suplementos & Nutrición",
+    category: "health",
+    description: "Proteínas, creatinas, vitaminas, aminoácidos y alimentación deportiva.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Proteínas & Creatinas", "Vitaminas & Minerales", "Snacks Saludables", "Accesorios Fitness"],
+    iconKey: "flame",
+  },
+  {
+    id: "clinic_optics",
+    label: "Óptica & Clínica",
+    category: "health",
+    description: "Ópticas, monturas, lentes de contacto, consultorios y valoraciones de salud.",
+    defaultOfferModel: "hybrid",
+    recommendedModules: ["agendamiento", "pedidos", "inventarios"],
+    defaultCategories: ["Consultas & Exámenes", "Monturas & Lentes", "Lentes de Contacto", "Insumos & Cuidados"],
+    iconKey: "pill",
   },
 ];
 
@@ -460,6 +548,160 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
         botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué producto necesitas hoy?",
         botPersona: "asesor de ventas y despacho servicial y experto en catálogo de productos",
       };
+    case "cafe_bakery":
+      return {
+        orderSingle: "Orden de Cafetería",
+        orderPlural: "Órdenes",
+        orderNoun: "Orden",
+        orderNounPlural: "Órdenes",
+        stationName: "Barra de Café & Horno",
+        stationShortName: "Barra & Café",
+        stationNoun: "Barra de Despacho",
+        stationAction: "Preparar Bebidas & Panes",
+        preparationVerb: "En Barra & Calentado",
+        readyVerb: "Listo en Barra",
+        deliveredVerb: "Entregado a Cliente",
+        catalogItem: "Bebida / Horneado",
+        tableOrChannel: "Mesa / Barra / Para Llevar",
+        itemModifiers: "Tipo de Leche & Adiciones",
+        fulfillmentAgent: "Barista / Panadero",
+        requiresKitchenDisplay: true,
+        requiresTableNumber: true,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Te provoca un buen café o algo de panadería?",
+        botPersona: "barista apasionado, amable y conocedor de recetas y notas de café",
+      };
+    case "fast_food":
+      return {
+        orderSingle: "Comanda Express",
+        orderPlural: "Comandas",
+        orderNoun: "Comanda",
+        orderNounPlural: "Comandas",
+        stationName: "Línea de Armado & Freidoras",
+        stationShortName: "Cocina Rápida",
+        stationNoun: "Línea de Armado",
+        stationAction: "Armar & Despachar",
+        preparationVerb: "En Plancha & Freidora",
+        readyVerb: "Listo para Empaque",
+        deliveredVerb: "Despachado / Enviado",
+        catalogItem: "Combo / Entrada",
+        tableOrChannel: "Mesa / Mostrador / Domicilio",
+        itemModifiers: "Salsas & Acompañamientos",
+        fulfillmentAgent: "Cocinero Express",
+        requiresKitchenDisplay: true,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué combo te preparamos hoy?",
+        botPersona: "ágil, entusiasta, enfocado en promociones y tiempos de entrega rápidos",
+      };
+    case "bar_brewery":
+      return {
+        orderSingle: "Ticket de Barra",
+        orderPlural: "Tickets",
+        orderNoun: "Ticket",
+        orderNounPlural: "Tickets",
+        stationName: "Barra & Grifos de Cerveza",
+        stationShortName: "Barra Principal",
+        stationNoun: "Estación de Coctelería",
+        stationAction: "Servir Tragos & Pintas",
+        preparationVerb: "En Coctelera & Servido",
+        readyVerb: "Listo en Barra",
+        deliveredVerb: "Servido en Mesa",
+        catalogItem: "Trago / Cerveza",
+        tableOrChannel: "Mesa / Barra",
+        itemModifiers: "Hielo, Mezclador & Marca",
+        fulfillmentAgent: "Bartender",
+        requiresKitchenDisplay: true,
+        requiresTableNumber: true,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Qué pinta o cóctel te servimos hoy?",
+        botPersona: "bartender conocedor de cócteles de autor y cervezas artesanales",
+      };
+    case "technical_service":
+      return {
+        orderSingle: "Orden de Servicio",
+        orderPlural: "Órdenes de Trabajo",
+        orderNoun: "Orden Técnica",
+        orderNounPlural: "Órdenes Técnicas",
+        stationName: "Banco de Diagnóstico & Trabajo",
+        stationShortName: "Mesa Técnica",
+        stationNoun: "Banco de Trabajo Técnico",
+        stationAction: "Reparar & Probar",
+        preparationVerb: "En Reparación / Mantenimiento",
+        readyVerb: "Reparación Finalizada",
+        deliveredVerb: "Entregado a Propietario",
+        catalogItem: "Servicio / Repuesto",
+        tableOrChannel: "Canal de Recepción",
+        itemModifiers: "Falla Reportada & Repuestos",
+        fulfillmentAgent: "Técnico Especialista",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido al centro de servicio de {storeName}. ¿Qué equipo o vehículo deseas revisar?",
+        botPersona: "técnico especializado, analítico, enfocado en diagnósticos claros y presupuestos",
+      };
+    case "consulting_appointments":
+      return {
+        orderSingle: "Sesión / Asesoría",
+        orderPlural: "Sesiones Agendadas",
+        orderNoun: "Sesión",
+        orderNounPlural: "Sesiones",
+        stationName: "Sala de Sesiones & Consultoría",
+        stationShortName: "Sala de Consultoría",
+        stationNoun: "Agenda de Sesiones",
+        stationAction: "Iniciar Sesión",
+        preparationVerb: "Sesión en Curso",
+        readyVerb: "Confirmada / Esperando Hora",
+        deliveredVerb: "Sesión Completada",
+        catalogItem: "Asesoría / Consultoría",
+        tableOrChannel: "Canal Virtual / Presencial",
+        itemModifiers: "Modalidad & Temática",
+        fulfillmentAgent: "Consultor / Asesor",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿En qué área o fecha deseas programar tu asesoría?",
+        botPersona: "consultor profesional, puntual, formal y orientado a objetivos",
+      };
+    case "nutrition_supplements":
+      return {
+        orderSingle: "Pedido Nutricional",
+        orderPlural: "Pedidos",
+        orderNoun: "Pedido",
+        orderNounPlural: "Pedidos",
+        stationName: "Bodega de Suplementos & Empaque",
+        stationShortName: "Despacho Fitness",
+        stationNoun: "Estación de Picking Fitness",
+        stationAction: "Alistar Suplementos",
+        preparationVerb: "En Alistamiento",
+        readyVerb: "Listo para Envío",
+        deliveredVerb: "Entregados",
+        catalogItem: "Suplemento / Proteína",
+        tableOrChannel: "Canal de Venta",
+        itemModifiers: "Sabor, Peso & Marca",
+        fulfillmentAgent: "Asesor Fitness",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Cuál es tu meta deportiva para asesorarte con los mejores suplementos?",
+        botPersona: "asesor nutricional y fitness motivador, conocedor de suplementación y objetivos",
+      };
+    case "clinic_optics":
+      return {
+        orderSingle: "Valoración / Orden Clínica",
+        orderPlural: "Órdenes Clínicas",
+        orderNoun: "Orden Clínica",
+        orderNounPlural: "Órdenes Clínicas",
+        stationName: "Consultorio & Laboratorio Óptico",
+        stationShortName: "Consultorio",
+        stationNoun: "Consultorio de Valoración",
+        stationAction: "Realizar Valoración",
+        preparationVerb: "En Fabricación / Consulta",
+        readyVerb: "Listo para Entrega",
+        deliveredVerb: "Entregado a Paciente",
+        catalogItem: "Consulta / Montura",
+        tableOrChannel: "Consultorio / Mostrador",
+        itemModifiers: "Fórmula & Tratamiento de Lente",
+        fulfillmentAgent: "Optómetra / Especialista",
+        requiresKitchenDisplay: false,
+        requiresTableNumber: false,
+        botGreetingTemplate: "¡Hola! Bienvenido a {storeName}. ¿Deseas agendar tu valoración visual o cotizar lentes y monturas?",
+        botPersona: "asistente clínico empático, cuidadoso de la salud visual y la puntualidad",
+      };
     case "services":
       return {
         orderSingle: "Cita / Servicio",
@@ -509,7 +751,14 @@ export function getBusinessSemantics(businessType?: BusinessType): BusinessSeman
 }
 
 export function getDefaultRolesForArchetype(businessType?: BusinessType): RolePermission[] {
-  if (businessType === "retail_store" || businessType === "ecommerce_direct") {
+  if (
+    businessType === "retail_store" ||
+    businessType === "ecommerce_direct" ||
+    businessType === "fashion_footwear" ||
+    businessType === "hardware_store" ||
+    businessType === "tech_electronics" ||
+    businessType === "nutrition_supplements"
+  ) {
     return [
       {
         id: "role-owner",
@@ -624,7 +873,13 @@ export function getDefaultRolesForArchetype(businessType?: BusinessType): RolePe
     ];
   }
 
-  if (businessType === "services") {
+  if (
+    businessType === "services" ||
+    businessType === "technical_service" ||
+    businessType === "consulting_appointments" ||
+    businessType === "clinic_optics" ||
+    businessType === "pharmacy_health"
+  ) {
     return [
       {
         id: "role-owner",

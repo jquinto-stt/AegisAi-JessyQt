@@ -1892,21 +1892,27 @@ export const SERVICES_PRODUCTS: ProductItem[] = [
 // Permite que el sistema adapte catálogo, órdenes en vivo e hilos de WhatsApp
 // dinámicamente según el negocio activo seleccionado (Ferretería, Restaurante, etc.)
 // ============================================================================
+const isGastronomy = (t?: BusinessType) =>
+  t === "restaurant_virtual" || t === "cafe_bakery" || t === "fast_food" || t === "bar_brewery";
+
+const isServices = (t?: BusinessType) =>
+  t === "services" || t === "technical_service" || t === "consulting_appointments" || t === "clinic_optics";
+
 export function getMockProductsForBusiness(businessType?: BusinessType, _businessName?: string): ProductItem[] {
-  if (businessType === "restaurant_virtual") {
+  if (isGastronomy(businessType)) {
     return FOOD_PRODUCTS;
   }
   if (businessType === "fashion_footwear") {
     return FASHION_PRODUCTS;
   }
-  if (businessType === "services") {
+  if (isServices(businessType)) {
     return SERVICES_PRODUCTS;
   }
   return RETAIL_PRODUCTS;
 }
 
 export function getMockOrdersForBusiness(businessType?: BusinessType, _businessName?: string): Pedido[] {
-  if (businessType === "restaurant_virtual") {
+  if (isGastronomy(businessType)) {
     return FOOD_ORDERS;
   }
   return RETAIL_ORDERS;
@@ -1914,14 +1920,14 @@ export function getMockOrdersForBusiness(businessType?: BusinessType, _businessN
 
 export function getMockConversationsForBusiness(business?: Business | null): Conversation[] {
   const type = business?.businessType || "retail_store";
-  if (type === "restaurant_virtual") {
+  if (isGastronomy(type)) {
     return FOOD_CONVERSATIONS;
   }
   return RETAIL_CONVERSATIONS;
 }
 
 export function getMockProgramadosForBusiness(businessType?: BusinessType): Pedido[] {
-  if (businessType === "restaurant_virtual") {
+  if (isGastronomy(businessType)) {
     return INITIAL_PROGRAMADOS;
   }
   return RETAIL_PROGRAMADOS;
