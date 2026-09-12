@@ -176,7 +176,7 @@ function Eyebrow({ children, tone = "brand" }: { children: React.ReactNode; tone
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { createBusiness } = useBusiness();
-  const [step, setStep] = useState(3);
+  const [step, setStep] = useState(1);
 
   // Step 1 — Store identity
   const [companyName, setCompanyName] = useState("");
@@ -253,7 +253,7 @@ export default function OnboardingPage() {
   const currentIcon = ARCHETYPE_ICONS[currentArchetype.iconKey] || Store;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
+    <div className="dark flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
       <PageMeta title="Configuración de Nueva Tienda — NECTO" description="Crea y configura el espacio operativo de tu negocio" />
 
       {/* ── Header ───────────────────────────────────────────────────── */}
@@ -740,38 +740,14 @@ export default function OnboardingPage() {
         {/* ── Right: brand panel ─────────────────────────────────────── */}
         <div
           className={cn(
-            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-950 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
+            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
             step === 1 ? "flex" : "hidden lg:flex"
           )}
         >
-          {/* Background image for all steps */}
-          <img
-            src={
-              step === 1
-                ? selectedArchetype.includes("restaurant") || selectedArchetype.includes("cafe")
-                  ? "/onboarding-restaurant.jpg"
-                  : selectedArchetype.includes("services") || selectedArchetype.includes("beauty")
-                  ? "/onboarding-services.jpg"
-                  : selectedArchetype.includes("retail") || selectedArchetype.includes("store")
-                  ? "/onboarding-retail.jpg"
-                  : "/onboarding-modular-sync.jpg"
-                : step === 2
-                ? "/onboarding-operations.jpg"
-                : "/onboarding-whatsapp-orders.jpg"
-            }
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
-          />
-          <div className="absolute inset-0 bg-black/45" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/25" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/30 via-transparent to-black/60" />
-
-          {/* Interactive Dot Grid above background images & overlays */}
-          <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} className="z-10" />
+          <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} />
 
           {step === 1 ? (
-            <div className="relative z-20 flex h-full animate-in flex-col justify-between fade-in duration-300">
+            <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
               <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-7 w-auto" />
 
               <div className="space-y-8">
@@ -801,7 +777,7 @@ export default function OnboardingPage() {
               </div>
             </div>
           ) : (
-            <div className="relative z-20 flex h-full animate-in flex-col justify-between fade-in duration-300">
+            <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
               <div className="flex items-center justify-between">
                 <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-6 w-auto" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">
