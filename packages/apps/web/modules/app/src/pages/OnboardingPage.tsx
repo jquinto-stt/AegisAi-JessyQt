@@ -8,6 +8,7 @@ import {
   BUSINESS_ARCHETYPES,
 } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
+import GridShape from "@/elements/common/GridShape";
 import { Button, Badge } from "@/elements";
 import {
   Users,
@@ -919,31 +920,38 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Right Column: Visual Showcase & Live Blueprint Studio */}
-        <div className="lg:col-span-5 xl:col-span-5 relative bg-[#090A0E] text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-t lg:border-t-0 min-h-[560px]">
+        {/* Right Column: Visual Showcase & Brand Studio (Identical to Login Architecture) */}
+        <div className="lg:col-span-5 xl:col-span-5 relative bg-[#190088] dark:bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-l border-zinc-200 dark:border-zinc-800 min-h-[560px]">
+          {/* Exact Login Brand Grid Pattern */}
+          <GridShape />
+
           {step === 1 ? (
-            /* ── Step 1: Live Blueprint Inference Card (Interactive Studio) ── */
+            /* ── Step 1: Live Blueprint Architecture Studio ── */
             <div className="relative z-10 flex flex-col justify-between h-full space-y-6 animate-fade-in max-w-lg mx-auto w-full">
-              {/* Header Badge */}
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Inferencia Activa en Tiempo Real</span>
+              {/* Brand Top Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/15">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/images/logo/necto-full-white.svg"
+                    alt="Necto"
+                    className="h-6 w-auto"
+                  />
+                  <div className="h-3 w-px bg-white/30" />
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-white/80">
+                    Instancia de Negocio
+                  </span>
                 </div>
-                <span className="text-[11px] font-mono text-gray-400 tracking-wider uppercase">
-                  Necto Engine
+                <span className="text-[10px] font-mono text-white/60 tracking-wider uppercase">
+                  Vista Previa
                 </span>
               </div>
 
               {/* Main Blueprint Terminal Card */}
-              <div className="rounded-2xl bg-white/[0.03] border border-white/10 backdrop-blur-2xl p-6 shadow-2xl space-y-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#190088]/25 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#FF3F1A]/15 rounded-full blur-3xl pointer-events-none" />
-
+              <div className="rounded-2xl bg-black/25 dark:bg-white/[0.04] border border-white/20 backdrop-blur-xl p-6 shadow-2xl space-y-5 relative overflow-hidden">
                 {/* Identity Header */}
-                <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+                <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-5">
                   <div className="space-y-1.5 flex-1 min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-gray-400 block">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/70 block">
                       Espacio Operativo
                     </span>
                     <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 truncate">
@@ -952,16 +960,16 @@ export default function OnboardingPage() {
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-none" />
                       )}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    <div className="flex items-center gap-2 text-xs text-white/80">
+                      <MapPin className="w-3.5 h-3.5 text-white/60" />
                       <span className="truncate">{city ? `${city}, ${country}` : country}</span>
                       <span>·</span>
-                      <span className="font-mono text-white font-semibold px-1.5 py-0.5 rounded bg-white/10 text-[11px]">
+                      <span className="font-mono text-white font-semibold px-1.5 py-0.5 rounded bg-white/15 text-[11px]">
                         {currencyForCountry(country)}
                       </span>
                     </div>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#190088] to-[#14006d] text-white flex items-center justify-center flex-none shadow-md border border-white/10">
+                  <div className="w-11 h-11 rounded-xl bg-white/10 text-white flex items-center justify-center flex-none shadow-md border border-white/20">
                     {currentArchetype.iconKey === "utensils" ? (
                       <Utensils className="w-5 h-5" />
                     ) : currentArchetype.iconKey === "wrench" ? (
@@ -984,19 +992,19 @@ export default function OnboardingPage() {
                 <div className="space-y-4">
                   {/* Archetype & Offer */}
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 block">
+                    <div className="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/60 block">
                         Arquetipo
                       </span>
                       <div className="text-xs font-semibold text-white truncate">
                         {currentArchetype.label}
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-gray-400 block">
+                    <div className="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/60 block">
                         Modelo de Oferta
                       </span>
-                      <div className="text-xs font-semibold text-orange-400 truncate">
+                      <div className="text-xs font-semibold text-[#97D6DF] truncate">
                         {selectedOfferModel === "physical_products"
                           ? "Productos Físicos (SKU)"
                           : selectedOfferModel === "prepared_products"
@@ -1009,90 +1017,90 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Catalog Schema Inferred */}
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-2.5">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-gray-400">
+                  <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 space-y-2.5">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-white/70">
                       <span className="flex items-center gap-2 text-white font-semibold">
                         <Package className="w-3.5 h-3.5 text-[#97D6DF]" />
                         <span>Esquema de Catálogo</span>
                       </span>
-                      <span className="text-emerald-400 text-[10px] font-medium uppercase tracking-wider">
-                        Personalizado
+                      <span className="text-emerald-300 text-[10px] font-medium uppercase tracking-wider">
+                        Estructurado
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-300">
+                    <div className="grid grid-cols-2 gap-2 text-xs text-white/90">
                       {selectedOfferModel === "physical_products" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Control de SKUs</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Talla, color y medidas</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Margen & costos base</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Kardex por bodega</span>
                           </div>
                         </>
                       ) : selectedOfferModel === "prepared_products" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Recetas & escandallo</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Modificadores de plato</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Comanda a cocina</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Descargo de insumos</span>
                           </div>
                         </>
                       ) : selectedOfferModel === "services_appointments" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Duración en minutos</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Asignación de staff</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Buffer entre sesiones</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Recordatorio por WhatsApp</span>
                           </div>
                         </>
                       ) : (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Stock físico de insumos</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Servicios agendables</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Cobro combinado en caja</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
+                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
                             <span>Kardex multimodelo</span>
                           </div>
                         </>
@@ -1101,13 +1109,13 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Operational Capabilities suggested */}
-                  <div className="p-3.5 rounded-xl bg-black/40 border border-white/5 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-gray-400">
+                  <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-white/70">
                       <span className="flex items-center gap-2 text-white font-semibold">
-                        <Layers className="w-3.5 h-3.5 text-orange-400" />
-                        <span>Capacidades Recomendadas (Paso 2)</span>
+                        <Layers className="w-3.5 h-3.5 text-white/80" />
+                        <span>Módulos Operativos (Paso 2)</span>
                       </span>
-                      <span className="text-gray-400 text-[10px]">Ajustable</span>
+                      <span className="text-white/50 text-[10px]">Ajustable</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {currentArchetype.recommendedModules.map(modKey => {
@@ -1115,7 +1123,7 @@ export default function OnboardingPage() {
                         return (
                           <span
                             key={modKey}
-                            className="px-2.5 py-1 rounded-lg bg-white/10 text-xs font-medium text-gray-200 flex items-center gap-1.5"
+                            className="px-2.5 py-1 rounded-lg bg-white/15 text-xs font-medium text-white flex items-center gap-1.5"
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                             <span>{m ? m.title.split(" ")[0] : modKey}</span>
@@ -1128,10 +1136,10 @@ export default function OnboardingPage() {
               </div>
 
               {/* Bottom Guarantee Note */}
-              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 text-xs text-gray-400 flex items-center justify-between">
+              <div className="p-3.5 rounded-xl bg-black/20 border border-white/15 text-xs text-white/80 flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-orange-400 flex-none" />
-                  <span>Configuración modular zero-lockin. Podrás expandir o apagar módulos cuando quieras.</span>
+                  <ShieldCheck className="w-4 h-4 text-[#97D6DF] flex-none" />
+                  <span>Arquitectura desacoplada en 3 capas. Listo para recibir operaciones.</span>
                 </span>
               </div>
             </div>
