@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useBusiness,
@@ -171,6 +171,141 @@ function Eyebrow({ children, tone = "brand" }: { children: React.ReactNode; tone
   );
 }
 
+/* ── Rotating Step Messages Component ───────────────────────────── */
+
+interface MessageItem {
+  title: string;
+  subtitle: string;
+  badge: string;
+}
+
+const STEP_MESSAGES: Record<number, MessageItem[]> = {
+  1: [
+    {
+      title: "Nos cruzamos, nos unimos, crecemos.",
+      subtitle: "Construyendo la identidad digital de tu negocio en un solo lugar.",
+      badge: "Identidad & Marca",
+    },
+    {
+      title: "Sincronización total omnicanal.",
+      subtitle: "WhatsApp, tienda web y mostrador integrados en una misma plataforma.",
+      badge: "Multicanal",
+    },
+    {
+      title: "Adaptado a tu modelo comercial.",
+      subtitle: "Configuración nativa según tus productos, insumos y forma de venta.",
+      badge: "Arquitectura",
+    },
+  ],
+  2: [
+    {
+      title: "Enciende solo lo que necesitas hoy.",
+      subtitle: "Suma o quita módulos cuando quieras, sin rehacer tu configuración.",
+      badge: "Capacidades Modulares",
+    },
+    {
+      title: "Inteligencia artificial para tus ventas.",
+      subtitle: "Interpretación automática de pedidos por WhatsApp con alta precisión.",
+      badge: "IA Conversacional",
+    },
+    {
+      title: "Control en tiempo real de stock e insumos.",
+      subtitle: "Alertas tempranas de reposición y recetas dinámicas integradas.",
+      badge: "Inventario Inteligente",
+    },
+  ],
+  3: [
+    {
+      title: "Tu operación empieza ahora.",
+      subtitle: "Acceso inmediato al centro de operaciones y a la administración de tu tienda.",
+      badge: "Lanzamiento",
+    },
+    {
+      title: "Atención al cliente sin interrupciones.",
+      subtitle: "Bandeja unificada con seguimiento de alistamiento y despacho en vivo.",
+      badge: "Operaciones 360°",
+    },
+    {
+      title: "Analítica en vivo para escalar.",
+      subtitle: "Métricas claras sobre ventas, rotación de productos y rendimiento.",
+      badge: "Crecimiento",
+    },
+  ],
+};
+
+function AnimatedStepMessages({ step }: { step: number }) {
+  const messages = STEP_MESSAGES[step] || STEP_MESSAGES[1];
+  const [index, setIndex] = useState(0);
+  const [fadeState, setFadeState] = useState<"in" | "out">("in");
+
+  useEffect(() => {
+    setIndex(0);
+    setFadeState("in");
+  }, [step]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setFadeState("out");
+      setTimeout(() => {
+        setIndex((prev) => (prev + 1) % messages.length);
+        setFadeState("in");
+      }, 350);
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [step, messages.length]);
+
+  const currentMsg = messages[index] || messages[0];
+
+  return (
+    <div className="space-y-4 min-h-[160px] flex flex-col justify-between">
+      <div className="space-y-3">
+        <div className="flex items-center">
+          <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-all duration-300">
+            {currentMsg.badge}
+          </span>
+        </div>
+
+        <div
+          className={cn(
+            "space-y-2 transition-all duration-500 transform",
+            fadeState === "in"
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 -translate-y-2 pointer-events-none"
+          )}
+        >
+          <h2 className="max-w-sm text-[28px] font-black leading-[1.08] tracking-tight text-white sm:text-[36px]">
+            {currentMsg.title}
+          </h2>
+          <p className="max-w-xs text-xs sm:text-sm leading-relaxed text-white/85">
+            {currentMsg.subtitle}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-1.5 pt-2">
+        {messages.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => {
+              setFadeState("out");
+              setTimeout(() => {
+                setIndex(i);
+                setFadeState("in");
+              }, 250);
+            }}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              i === index ? "w-6 bg-white" : "w-1.5 bg-white/35 hover:bg-white/60"
+            )}
+            aria-label={`Mensaje ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Component ─────────────────────────────────────────────────── */
 
 export default function OnboardingPage() {
@@ -200,12 +335,6 @@ export default function OnboardingPage() {
     setSelectedArchetype(type);
     const arch = BUSINESS_ARCHETYPES.find(a => a.id === type);
     if (arch) {
-      setSelectedOfferModel(arch.defaultOfferModel);
-      setSelectedModules(arch.recommendedModules);
-    }
-  };
-
-  const handleToggleModule = (key: NectoModuleKey) => {
     setSelectedModules(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
   };
 
@@ -253,7 +382,7 @@ export default function OnboardingPage() {
   const currentIcon = ARCHETYPE_ICONS[currentArchetype.iconKey] || Store;
 
   return (
-    <div className="dark flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
       <PageMeta title="Configuración de Nueva Tienda — NECTO" description="Crea y configura el espacio operativo de tu negocio" />
 
       {/* ── Header ───────────────────────────────────────────────────── */}
@@ -750,16 +879,14 @@ export default function OnboardingPage() {
             <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
               <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-7 w-auto" />
 
-              <div className="space-y-8">
-                <h2 className="max-w-sm text-[32px] font-black leading-[1.05] tracking-tight text-white sm:text-[40px]">
-                  Nos cruzamos, nos unimos, crecemos.
-                </h2>
+              <div className="space-y-6 my-auto">
+                <AnimatedStepMessages step={1} />
 
-                <div className="space-y-2 border-t border-white/25 pt-8">
+                <div className="space-y-2 border-t border-white/25 pt-6">
                   <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/60">
                     Tu tienda
                   </span>
-                  <p className="truncate text-[26px] font-black leading-tight tracking-tight">
+                  <p className="truncate text-[24px] font-black leading-tight tracking-tight">
                     {companyName.trim() || "Sin nombre todavía"}
                   </p>
                   <p className="text-sm font-medium text-white/85">
@@ -771,7 +898,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] font-medium text-white/70">
+              <div className="flex items-center justify-between text-[11px] font-medium text-white/70 pt-4">
                 <span>Necto OS · Plataforma de operaciones</span>
                 <span className="font-mono">v3.0</span>
               </div>
@@ -785,22 +912,13 @@ export default function OnboardingPage() {
                 </span>
               </div>
 
-              <div className="space-y-8">
-                <div className="space-y-4">
-                  <h2 className="max-w-sm text-[30px] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-[38px]">
-                    {step === 2 ? "Enciende solo lo que necesitas hoy." : "Tu operación empieza ahora."}
-                  </h2>
-                  <p className="max-w-xs text-sm leading-relaxed text-white/80">
-                    {step === 2
-                      ? "Suma o quita módulos cuando quieras, sin rehacer tu configuración."
-                      : "Acceso inmediato al centro de operaciones y a la administración de tu tienda."}
-                  </p>
-                </div>
+              <div className="my-auto">
+                <AnimatedStepMessages step={step} />
+              </div>
 
-                <div className="flex items-center justify-between text-[11px] font-medium text-white/70">
-                  <span>grow together</span>
-                  <span className="font-mono">v3.0</span>
-                </div>
+              <div className="flex items-center justify-between text-[11px] font-medium text-white/70 pt-4">
+                <span>grow together</span>
+                <span className="font-mono">v3.0</span>
               </div>
             </div>
           )}
