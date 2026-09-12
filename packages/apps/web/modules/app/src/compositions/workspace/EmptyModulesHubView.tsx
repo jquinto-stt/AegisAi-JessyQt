@@ -10,7 +10,7 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
-import { useBusiness, NectoModuleKey, BusinessInstance } from "../../context/BusinessContext";
+import { useBusiness, NectoModuleKey, BusinessInstance, BUSINESS_ARCHETYPES } from "../../context/BusinessContext";
 import { ModuleActivationModal } from "./ModuleActivationModal";
 
 interface EmptyModulesHubViewProps {
@@ -128,13 +128,38 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
   const activeModules = currentBiz?.activeModules || [];
   const [activatingModule, setActivatingModule] = useState<NectoModuleKey | null>(null);
 
+  const currentArchetype = BUSINESS_ARCHETYPES.find(
+    a => a.id === currentBiz?.businessType
+  );
+
   return (
     <div className="space-y-6 pb-16">
-      {/* Subheader con contador y descripción */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Activa o desactiva las herramientas operativas según las necesidades de este negocio.
-        </p>
+      {/* Subheader con contador, arquetipo y descripción */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              {currentBiz?.name || "Mi Negocio"}
+            </span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800/40">
+              {currentBiz?.specialty || currentArchetype?.label || "Comercio"}
+            </span>
+            {currentBiz?.offerModel && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                {currentBiz.offerModel === "physical_products"
+                  ? "Productos Físicos (SKU)"
+                  : currentBiz.offerModel === "prepared_products"
+                  ? "Productos Preparados (Recetas)"
+                  : currentBiz.offerModel === "services_appointments"
+                  ? "Servicios & Citas"
+                  : "Modelo Híbrido"}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Activa o desactiva las capacidades operativas según las necesidades de este negocio.
+          </p>
+        </div>
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 flex-none self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-brand-500" />
           {activeModules.length} de {AVAILABLE_MODULES.length} módulos activos

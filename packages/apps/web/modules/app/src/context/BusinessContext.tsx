@@ -10,6 +10,106 @@ export type BusinessType =
   | "pharmacy_health"
   | "tech_electronics";
 
+export type OfferModel =
+  | "physical_products"
+  | "prepared_products"
+  | "services_appointments"
+  | "hybrid";
+
+export interface ArchetypeDefinition {
+  id: BusinessType;
+  label: string;
+  category: "gastronomy" | "retail" | "services" | "health" | "custom";
+  description: string;
+  defaultOfferModel: OfferModel;
+  recommendedModules: NectoModuleKey[];
+  defaultCategories: string[];
+  iconKey: BusinessIconKey;
+}
+
+export const BUSINESS_ARCHETYPES: ArchetypeDefinition[] = [
+  {
+    id: "restaurant_virtual",
+    label: "Gastronomía & Restauración",
+    category: "gastronomy",
+    description: "Restaurantes, cafeterías, panaderías, bares, comidas rápidas y dark kitchens.",
+    defaultOfferModel: "prepared_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Platos Fuertes", "Acompañamientos", "Bebidas", "Postres"],
+    iconKey: "utensils",
+  },
+  {
+    id: "retail_store",
+    label: "Retail & Minimarket",
+    category: "retail",
+    description: "Comercio minorista, minimarkets, tiendas de barrio, papelerías y abarrotes.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Abarrotes & Despensa", "Bebidas & Snacks", "Aseo & Hogar", "Varios"],
+    iconKey: "store",
+  },
+  {
+    id: "hardware_store",
+    label: "Ferretería & Materiales",
+    category: "retail",
+    description: "Ferreterías, materiales de obra, herramientas eléctricas y tornillería técnica.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Químicos", "Medición & Trazado"],
+    iconKey: "wrench",
+  },
+  {
+    id: "fashion_footwear",
+    label: "Moda, Calzado & Accesorios",
+    category: "retail",
+    description: "Boutiques, zapaterías, marcas de indumentaria y accesorios con tallas y colores.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Calzado Casual", "Zapatillas Deportivas", "Prendas Superiores", "Accesorios"],
+    iconKey: "shirt",
+  },
+  {
+    id: "tech_electronics",
+    label: "Tecnología, Móviles & Repuestos",
+    category: "retail",
+    description: "Telefonía, repuestos de servicio técnico, cómputo, audio y gadgets.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Smartphones & Tablets", "Cables & Cargadores", "Audio & Auriculares", "Repuestos"],
+    iconKey: "laptop",
+  },
+  {
+    id: "pharmacy_health",
+    label: "Salud, Farmacia & Bienestar",
+    category: "health",
+    description: "Droguerías, suplementos nutricionales, dermocosmética y suministros médicos.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios"],
+    defaultCategories: ["Medicamentos Genéricos", "Cuidado Personal", "Primeros Auxilios", "Vitaminas"],
+    iconKey: "pill",
+  },
+  {
+    id: "services",
+    label: "Servicios, Citas & Talleres",
+    category: "services",
+    description: "Barberías, salones de belleza, talleres de reparación, consultoría y bienestar.",
+    defaultOfferModel: "services_appointments",
+    recommendedModules: ["agendamiento", "turnos", "pedidos"],
+    defaultCategories: ["Cortes & Estilo", "Mantenimiento Preventivo", "Sesiones Técnicas", "Tratamientos"],
+    iconKey: "scissors",
+  },
+  {
+    id: "ecommerce_direct",
+    label: "Marca D2C & Envíos Digitales",
+    category: "retail",
+    description: "Ventas por redes sociales y catálogo web con envíos locales y nacionales.",
+    defaultOfferModel: "physical_products",
+    recommendedModules: ["pedidos", "inventarios", "referidos"],
+    defaultCategories: ["Lanzamientos", "Más Vendidos", "Colección Básica", "Promociones"],
+    iconKey: "shopping-bag",
+  },
+];
+
 export type NectoModuleKey =
   | "referidos"
   | "pedidos"
@@ -169,6 +269,7 @@ export interface BusinessInstance {
   name: string;
   slug: string;
   businessType: BusinessType;
+  offerModel?: OfferModel;
   iconKey: BusinessIconKey;
   logoUrl?: string;
   logoTransform?: ImageTransformConfig;
@@ -903,21 +1004,30 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const createBusiness = (data: Omit<BusinessInstance, "id" | "createdAt">): BusinessInstance => {
     const sem = getBusinessSemantics(data.businessType);
+    const archetype = BUSINESS_ARCHETYPES.find(a => a.id === data.businessType);
+    const resolvedOfferModel =
+      data.offerModel ||
+      archetype?.defaultOfferModel ||
+      (data.businessType === "restaurant_virtual" ? "prepared_products" : "physical_products");
+
     const newBiz: BusinessInstance = {
       ...data,
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
-      activeModules: Array.isArray(data.activeModules) ? data.activeModules : [],
+      offerModel: resolvedOfferModel,
+      activeModules:
+        Array.isArray(data.activeModules) && data.activeModules.length > 0
+          ? data.activeModules
+          : (archetype?.recommendedModules || ["pedidos", "inventarios"]),
       botConfig: data.botConfig || {
         greeting: sem?.botGreetingTemplate
           ? sem.botGreetingTemplate.replace("{storeName}", data.name)
           : `¡Hola! Bienvenido a ${data.name}.`,
         personality: sem?.botPersona || "asistente virtual",
         catalogCategories:
-          data.businessType === "retail_store"
-            ? ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Químicos", "Medición & Trazado"]
-            : data.businessType === "services"
-            ? ["Consultas Generales", "Sesiones Técnicas", "Mantenimiento Preventivo"]
-            : ["Platos Fuertes", "Acompañamientos", "Bebidas", "Postres"],
+          archetype?.defaultCategories ||
+          (data.businessType === "restaurant_virtual"
+            ? ["Platos Fuertes", "Acompañamientos", "Bebidas", "Postres"]
+            : ["Abarrotes", "Bebidas", "Varios"]),
       },
       setupProgress: {
         whatsappConnected: data.channels?.whatsapp || false,

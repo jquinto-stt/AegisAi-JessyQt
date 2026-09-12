@@ -1747,19 +1747,166 @@ export const FOOD_CONVERSATIONS: Conversation[] = [
 ];
 
 // ============================================================================
+export const FASHION_PRODUCTS: ProductItem[] = [
+  {
+    id: "prod-fsh-01",
+    code: "MOD-001",
+    name: "Zapatos Oxford Cuero Genuino",
+    category: "Calzado Casual",
+    price: 249000,
+    imageUrl: "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 18,
+    prepTimeMinutes: 10,
+    description: "Cuero vacuno legítimo con suela antideslizante cosida. Terminación artesanal.",
+    demandTag: "Más vendido",
+    activeOrdersCount: 2,
+    salesCount: 420,
+    popularityRank: 1,
+    rating: 4.9,
+    reviewsCount: 94,
+    modifiers: [
+      {
+        id: "mod-talla",
+        title: "Talla",
+        minSelect: 1,
+        maxSelect: 1,
+        options: [
+          { id: "opt-t38", name: "Talla 38", priceDelta: 0 },
+          { id: "opt-t39", name: "Talla 39", priceDelta: 0 },
+          { id: "opt-t40", name: "Talla 40", priceDelta: 0, isDefault: true },
+          { id: "opt-t41", name: "Talla 41", priceDelta: 0 },
+          { id: "opt-t42", name: "Talla 42", priceDelta: 0 },
+        ],
+      },
+      {
+        id: "mod-color",
+        title: "Color de Cuero",
+        minSelect: 1,
+        maxSelect: 1,
+        options: [
+          { id: "opt-col-miel", name: "Miel Envejecido", priceDelta: 0, isDefault: true },
+          { id: "opt-col-negro", name: "Negro Clásico", priceDelta: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "prod-fsh-02",
+    code: "MOD-002",
+    name: "Zapatillas Urbanas Necto Runner",
+    category: "Zapatillas Deportivas",
+    price: 189000,
+    imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 35,
+    prepTimeMinutes: 10,
+    description: "Amortiguación reactiva con capellada transpirable para uso diario prolongado.",
+    demandTag: "Tendencia",
+    activeOrdersCount: 4,
+    salesCount: 680,
+    popularityRank: 2,
+    rating: 4.8,
+    reviewsCount: 152,
+    modifiers: [
+      {
+        id: "mod-talla-run",
+        title: "Talla",
+        minSelect: 1,
+        maxSelect: 1,
+        options: [
+          { id: "opt-r39", name: "Talla 39", priceDelta: 0 },
+          { id: "opt-r40", name: "Talla 40", priceDelta: 0, isDefault: true },
+          { id: "opt-r41", name: "Talla 41", priceDelta: 0 },
+          { id: "opt-r42", name: "Talla 42", priceDelta: 0 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "prod-fsh-03",
+    code: "MOD-003",
+    name: "Camisa Lino Slim Fit Manga Larga",
+    category: "Prendas Superiores",
+    price: 135000,
+    imageUrl: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 28,
+    prepTimeMinutes: 5,
+    description: "Lino natural fresco de alta caída con botones perlados reforzados.",
+    demandTag: "Colección Nueva",
+    activeOrdersCount: 1,
+    salesCount: 310,
+    popularityRank: 3,
+    rating: 4.7,
+    reviewsCount: 68,
+  },
+];
+
+export const SERVICES_PRODUCTS: ProductItem[] = [
+  {
+    id: "prod-srv-01",
+    code: "SRV-001",
+    name: "Corte de Cabello & Barba Clásica",
+    category: "Cortes & Estilo",
+    price: 45000,
+    imageUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 999,
+    prepTimeMinutes: 45,
+    description: "Degradado personalizado, perfilado con toalla caliente, bálsamo y aceites esenciales.",
+    demandTag: "Servicio Estrella",
+    activeOrdersCount: 3,
+    salesCount: 950,
+    popularityRank: 1,
+    rating: 4.9,
+    reviewsCount: 215,
+  },
+  {
+    id: "prod-srv-02",
+    code: "SRV-002",
+    name: "Mantenimiento Técnico & Diagnóstico",
+    category: "Mantenimiento Preventivo",
+    price: 80000,
+    imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+    isActive: true,
+    isAvailable: true,
+    stockEstimated: 999,
+    prepTimeMinutes: 60,
+    description: "Revisión multipunto de componentes, limpieza ultrasónica y reporte de estado.",
+    demandTag: "Recomendado",
+    activeOrdersCount: 1,
+    salesCount: 340,
+    popularityRank: 2,
+    rating: 4.8,
+    reviewsCount: 78,
+  },
+];
+
+// ============================================================================
 // Factory Helpers per Business Archetype
 // Permite que el sistema adapte catálogo, órdenes en vivo e hilos de WhatsApp
 // dinámicamente según el negocio activo seleccionado (Ferretería, Restaurante, etc.)
 // ============================================================================
 export function getMockProductsForBusiness(businessType?: BusinessType, _businessName?: string): ProductItem[] {
-  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
+  if (businessType === "restaurant_virtual") {
     return FOOD_PRODUCTS;
+  }
+  if (businessType === "fashion_footwear") {
+    return FASHION_PRODUCTS;
+  }
+  if (businessType === "services") {
+    return SERVICES_PRODUCTS;
   }
   return RETAIL_PRODUCTS;
 }
 
 export function getMockOrdersForBusiness(businessType?: BusinessType, _businessName?: string): Pedido[] {
-  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
+  if (businessType === "restaurant_virtual") {
     return FOOD_ORDERS;
   }
   return RETAIL_ORDERS;
@@ -1767,14 +1914,14 @@ export function getMockOrdersForBusiness(businessType?: BusinessType, _businessN
 
 export function getMockConversationsForBusiness(business?: Business | null): Conversation[] {
   const type = business?.businessType || "retail_store";
-  if (type === "restaurant_virtual" || type === "food_restaurant" || type === "food_store") {
+  if (type === "restaurant_virtual") {
     return FOOD_CONVERSATIONS;
   }
   return RETAIL_CONVERSATIONS;
 }
 
 export function getMockProgramadosForBusiness(businessType?: BusinessType): Pedido[] {
-  if (businessType === "restaurant_virtual" || businessType === "food_restaurant" || businessType === "food_store") {
+  if (businessType === "restaurant_virtual") {
     return INITIAL_PROGRAMADOS;
   }
   return RETAIL_PROGRAMADOS;
