@@ -22,7 +22,6 @@ import {
   Bot,
   Volume2,
   Clock,
-  Sparkles,
   UserCheck,
   ShoppingBag,
   MapPin,
@@ -30,7 +29,6 @@ import {
   BookOpen,
   HelpCircle,
   ShieldCheck,
-  Headphones,
   FileText,
   CheckCircle2,
   ListChecks,
@@ -38,6 +36,11 @@ import {
   Truck,
   Coins,
   PauseCircle,
+  Plus,
+  Trash2,
+  QrCode,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
 
@@ -48,6 +51,15 @@ export type SettingsTabKey =
   | "payments"
   | "branding"
   | "operations";
+
+export interface CustomCapability {
+  id: string;
+  sourceId: "catalog" | "business" | "faq" | "policies" | "inventory" | "orders" | "human";
+  label: string;
+  desc?: string;
+  instruction: string;
+  enabled: boolean;
+}
 
 export const BusinessSettingsModal: React.FC<{
   business: BusinessInstance | null;
@@ -103,9 +115,64 @@ export const BusinessSettingsModal: React.FC<{
     return true;
   });
 
+  // Conexión oficial de WhatsApp Business
+  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("necto_whatsapp_connected");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true;
+  });
+  const [isConnectWhatsAppModalOpen, setIsConnectWhatsAppModalOpen] = useState(false);
+  const [qrCountdown, setQrCountdown] = useState(30);
+  const [connectionMethod, setConnectionMethod] = useState<"qr" | "code">("qr");
+  const [pairingPhoneInput, setPairingPhoneInput] = useState(contactPhone || "");
+  const [isConnectingSim, setIsConnectingSim] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (isConnectWhatsAppModalOpen && connectionMethod === "qr") {
+      timer = setInterval(() => {
+        setQrCountdown((prev) => (prev > 1 ? prev - 1 : 30));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isConnectWhatsAppModalOpen, connectionMethod]);
+
+  const handleConfirmWhatsAppConnection = () => {
+    setIsConnectingSim(true);
+    setTimeout(() => {
+      setIsConnectingSim(false);
+      setIsWhatsAppConnected(true);
+      setEnableWhatsapp(true);
+      try {
+        localStorage.setItem("necto_whatsapp_connected", "true");
+        localStorage.setItem("necto_whatsapp_channel_enabled", "true");
+        window.dispatchEvent(
+          new CustomEvent("necto_whatsapp_config_changed", {
+            detail: { channelEnabled: true, widgetEnabled: isWhatsAppWidgetEnabled, isConnected: true },
+          })
+        );
+      } catch (e) {}
+      setIsConnectWhatsAppModalOpen(false);
+    }, 1000);
+  };
+
+  const handleDisconnectWhatsApp = () => {
+    setIsWhatsAppConnected(false);
+    try {
+      localStorage.setItem("necto_whatsapp_connected", "false");
+      window.dispatchEvent(
+        new CustomEvent("necto_whatsapp_config_changed", {
+          detail: { channelEnabled: enableWhatsapp, widgetEnabled: isWhatsAppWidgetEnabled, isConnected: false },
+        })
+      );
+    } catch (e) {}
+  };
+
   // 3. Sub-navegación y Configuración del Asistente de WhatsApp IA (Capa de Inteligencia)
   const [botSubTab, setBotSubTab] = useState<
-    "identity" | "knowledge" | "intents" | "orders_oms" | "handoff" | "hours" | "experience"
+    "identity" | "knowledge" | "orders_oms" | "handoff" | "hours" | "experience"
   >("identity");
 
   // 3.1 Identidad & Comportamiento
@@ -122,6 +189,11 @@ export const BusinessSettingsModal: React.FC<{
   const [knowsPolicies, setKnowsPolicies] = useState(true);
   const [knowsInventoryQuery, setKnowsInventoryQuery] = useState(true);
 
+  // Origen de datos por fuente de conocimiento
+  const [catalogDataSource, setCatalogDataSource] = useState<"module_db" | "file" | "url">("module_db");
+  const [faqDataSource, setFaqDataSource] = useState<"file" | "url" | "manual" | "none">("none");
+  const [policiesDataSource, setPoliciesDataSource] = useState<"file" | "url" | "manual" | "none">("none");
+
   // 3.3 Comportamiento Conversacional (Intenciones Soportadas)
   const [intentCatalog, setIntentCatalog] = useState(true);
   const [intentPrice, setIntentPrice] = useState(true);
@@ -132,6 +204,71 @@ export const BusinessSettingsModal: React.FC<{
   const [intentCancelOrder, setIntentCancelOrder] = useState(false);
   const [intentHoursLocation, setIntentHoursLocation] = useState(true);
   const [intentHumanAgent, setIntentHumanAgent] = useState(true);
+
+  // Capacidades dinámicas personalizadas por fuente de conocimiento (Reglas / Directivas de prompt)
+  const [customCapabilities, setCustomCapabilities] = useState<CustomCapability[]>(() => {
+    try {
+      const saved = localStorage.getItem("necto_custom_capabilities");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [
+      {
+        id: "cap_combo_sugerido",
+        sourceId: "catalog",
+        label: "Sugerir maridajes y combos",
+        desc: "Ofrece guarnición o bebida sugerida al elegir plato fuerte",
+        instruction: "Cuando el cliente elija un plato principal, sugiere automáticamente la bebida o combo recomendado con el valor promocional.",
+        enabled: true,
+      },
+      {
+        id: "cap_alergias",
+        sourceId: "business",
+        label: "Protocolo de alérgenos y celiaquía",
+        desc: "Informa advertencias de ingredientes si el cliente lo consulta",
+        instruction: "Si el cliente pregunta por ingredientes alérgenos, trazas de frutos secos o celiaquía, valida la ficha técnica y provee el contacto del responsable de cocina.",
+        enabled: true,
+      },
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("necto_custom_capabilities", JSON.stringify(customCapabilities));
+    } catch (e) {}
+  }, [customCapabilities]);
+
+  // Estado del formulario inline para agregar capacidad
+  const [addingCapSource, setAddingCapSource] = useState<string | null>(null);
+  const [newCapLabel, setNewCapLabel] = useState("");
+  const [newCapDesc, setNewCapDesc] = useState("");
+  const [newCapInstruction, setNewCapInstruction] = useState("");
+
+  const handleAddCustomCapability = (sourceId: any) => {
+    if (!newCapLabel.trim()) return;
+    const newCap: CustomCapability = {
+      id: `custom_${Date.now()}`,
+      sourceId,
+      label: newCapLabel.trim(),
+      desc: newCapDesc.trim() || "Regla conversacional personalizada",
+      instruction: newCapInstruction.trim() || `Responder al cliente según directiva: ${newCapLabel.trim()}`,
+      enabled: true,
+    };
+    setCustomCapabilities((prev) => [...prev, newCap]);
+    setAddingCapSource(null);
+    setNewCapLabel("");
+    setNewCapDesc("");
+    setNewCapInstruction("");
+  };
+
+  const handleToggleCustomCapability = (id: string) => {
+    setCustomCapabilities((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, enabled: !c.enabled } : c))
+    );
+  };
+
+  const handleDeleteCustomCapability = (id: string) => {
+    setCustomCapabilities((prev) => prev.filter((c) => c.id !== id));
+  };
 
   // 3.4 Reglas de Creación y Confirmación de Pedidos (Relación con el OMS)
   const [orderCreationMode, setOrderCreationMode] = useState<"auto_new" | "interactive_confirm" | "human_review">("interactive_confirm");
@@ -486,6 +623,164 @@ export const BusinessSettingsModal: React.FC<{
     onClose();
   };
 
+  const renderCustomCapabilities = (sourceId: CustomCapability["sourceId"]) => {
+    const sourceCaps = customCapabilities.filter((c) => c.sourceId === sourceId);
+    const isAdding = addingCapSource === sourceId;
+
+    return (
+      <div className="space-y-2.5 pt-2">
+        {sourceCaps.length > 0 && (
+          <div className="space-y-2">
+            {sourceCaps.map((cap) => (
+              <div
+                key={cap.id}
+                className="p-3.5 rounded-lg border border-purple-200/80 dark:border-purple-900/40 bg-purple-50/40 dark:bg-purple-950/20 flex items-start justify-between gap-3 transition-all"
+              >
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {cap.label}
+                    </p>
+                    <span className="inline-flex items-center text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                      Personalizada
+                    </span>
+                  </div>
+                  {cap.desc && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{cap.desc}</p>
+                  )}
+                  {cap.instruction && (
+                    <div className="mt-1.5 p-2 rounded-md bg-white dark:bg-gray-900/90 border border-purple-100 dark:border-purple-900/50 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <span className="font-semibold text-purple-700 dark:text-purple-300">Regla / Prompt IA: </span>
+                      {cap.instruction}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-none pt-0.5">
+                  <Toggle
+                    intent={`bot.custom.${cap.id}`}
+                    checked={cap.enabled}
+                    onChange={() => handleToggleCustomCapability(cap.id)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCustomCapability(cap.id)}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                    title="Eliminar capacidad"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isAdding ? (
+          <div className="p-4 rounded-xl border border-brand-300 dark:border-brand-700/60 bg-brand-50/30 dark:bg-brand-950/20 space-y-3 animate-fade-in shadow-theme-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider">
+                Nueva Capacidad Personalizada
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingCapSource(null);
+                  setNewCapLabel("");
+                  setNewCapDesc("");
+                  setNewCapInstruction("");
+                }}
+                className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 cursor-pointer"
+              >
+                Cancelar
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Nombre de la Capacidad *
+                </label>
+                <input
+                  type="text"
+                  value={newCapLabel}
+                  onChange={(e) => setNewCapLabel(e.target.value)}
+                  placeholder="Ej: Recomendar postres y bebidas grandes"
+                  className="w-full h-9 px-3 text-sm rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Descripción Corta
+                </label>
+                <input
+                  type="text"
+                  value={newCapDesc}
+                  onChange={(e) => setNewCapDesc(e.target.value)}
+                  placeholder="Ej: Ofrece sugerencias al momento de elegir el plato fuerte"
+                  className="w-full h-9 px-3 text-sm rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Instrucción para el Asistente IA (Regla de Comportamiento) *
+                </label>
+                <textarea
+                  rows={2}
+                  value={newCapInstruction}
+                  onChange={(e) => setNewCapInstruction(e.target.value)}
+                  placeholder="Ej: Cuando el comprador elija un plato fuerte, sugiere amablemente agregar bebida grande por $1.500 adicionales."
+                  className="w-full p-2.5 text-xs rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAddingCapSource(null);
+                  setNewCapLabel("");
+                  setNewCapDesc("");
+                  setNewCapInstruction("");
+                }}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleAddCustomCapability(sourceId)}
+                disabled={!newCapLabel.trim()}
+                className="px-3.5 py-1.5 text-xs font-medium text-white bg-brand-500 hover:bg-brand-600 disabled:opacity-50 rounded-lg transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Guardar Capacidad
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setAddingCapSource(sourceId);
+              setNewCapLabel("");
+              setNewCapDesc("");
+              setNewCapInstruction("");
+            }}
+            className="w-full py-2.5 px-3 border border-dashed border-gray-300 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50/20 dark:hover:bg-brand-950/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer group"
+          >
+            <Plus className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-500 transition-colors" />
+            <span>Agregar Capacidad Personalizada</span>
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 flex flex-col font-sans animate-fade-in overflow-hidden">
       {/* ── Header ── */}
@@ -797,19 +1092,24 @@ export const BusinessSettingsModal: React.FC<{
                   {/* WhatsApp Business */}
                   <div className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                      <div className="flex items-start gap-3.5 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center flex-none mt-0.5">
                           <Smartphone className="w-5 h-5" />
                         </div>
-                        <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                            WhatsApp Business
-                          </h3>
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              WhatsApp Business
+                            </h3>
+                          </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Recepción de pedidos conversacionales asistidos por IA.
+                            Recepción de pedidos conversacionales asistidos por IA oficial.
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500">
-                            Teléfono vinculado: <span className="text-gray-700 dark:text-gray-300 font-medium">{contactPhone || "Sin asignar"}</span>
+                            Teléfono vinculado:{" "}
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">
+                              {contactPhone || "Sin asignar"}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -823,7 +1123,7 @@ export const BusinessSettingsModal: React.FC<{
                             localStorage.setItem("necto_whatsapp_channel_enabled", JSON.stringify(val));
                             window.dispatchEvent(
                               new CustomEvent("necto_whatsapp_config_changed", {
-                                detail: { channelEnabled: val, widgetEnabled: isWhatsAppWidgetEnabled },
+                                detail: { channelEnabled: val, widgetEnabled: isWhatsAppWidgetEnabled, isConnected: isWhatsAppConnected },
                               })
                             );
                           } catch (e) {}
@@ -840,30 +1140,86 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {enableWhatsapp && (
-                      <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between sm:pl-13">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            Widget Flotante de Chat
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Muestra un botón de chat flotante en la tienda web para abrir WhatsApp directamente.
-                          </p>
+                      <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
+                        {/* Control de vinculación y salto a bot */}
+                        <div className="p-4 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                              Estado de la sesión WhatsApp
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {isWhatsAppConnected
+                                ? "La sesión está activa y sincronizada con el motor de pedidos."
+                                : "Vincula tu teléfono para comenzar a recibir mensajes y órdenes."}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {isWhatsAppConnected ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsConnectWhatsAppModalOpen(true)}
+                                  className="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg shadow-theme-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" />
+                                  <span>Reconectar QR</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={handleDisconnectWhatsApp}
+                                  className="px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  Desvincular
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setIsConnectWhatsAppModalOpen(true)}
+                                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
+                              >
+                                <QrCode className="w-4 h-4" />
+                                <span>Conectar WhatsApp</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => setActiveTab("whatsapp_bot")}
+                              className="px-3.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>Configurar Asistente IA →</span>
+                            </button>
+                          </div>
                         </div>
-                        <Toggle
-                          intent="business.whatsapp.widget.toggle"
-                          checked={isWhatsAppWidgetEnabled}
-                          onChange={(val) => {
-                            setIsWhatsAppWidgetEnabled(val);
-                            try {
-                              localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(val));
-                              window.dispatchEvent(
-                                new CustomEvent("necto_whatsapp_config_changed", {
-                                  detail: { channelEnabled: enableWhatsapp, widgetEnabled: val },
-                                })
-                              );
-                            } catch (e) {}
-                          }}
-                        />
+
+                        {/* Widget flotante */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              Widget Flotante de Chat
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Muestra un botón de chat flotante en la tienda web para abrir WhatsApp directamente.
+                            </p>
+                          </div>
+                          <Toggle
+                            intent="business.whatsapp.widget.toggle"
+                            checked={isWhatsAppWidgetEnabled}
+                            onChange={(val) => {
+                              setIsWhatsAppWidgetEnabled(val);
+                              try {
+                                localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(val));
+                                window.dispatchEvent(
+                                  new CustomEvent("necto_whatsapp_config_changed", {
+                                    detail: { channelEnabled: enableWhatsapp, widgetEnabled: val, isConnected: isWhatsAppConnected },
+                                  })
+                                );
+                              } catch (e) {}
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -991,12 +1347,11 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-xl overflow-x-auto">
                         {[
                           { id: "identity" as const, label: "Identidad", icon: Bot },
-                          { id: "knowledge" as const, label: "Conocimiento", icon: BookOpen },
-                          { id: "intents" as const, label: "Intenciones", icon: ListChecks },
+                          { id: "knowledge" as const, label: "Conocimiento & Capacidades", icon: BookOpen },
                           { id: "orders_oms" as const, label: "Reglas OMS", icon: ShoppingBag },
-                          { id: "handoff" as const, label: "Handoff", icon: Headphones },
+                          { id: "handoff" as const, label: "Handoff", icon: UserCheck },
                           { id: "hours" as const, label: "Horarios", icon: Clock },
-                          { id: "experience" as const, label: "Experiencia", icon: Sparkles },
+                          { id: "experience" as const, label: "Experiencia", icon: SlidersHorizontal },
                         ].map((sub) => {
                           const Icon = sub.icon;
                           const isActive = botSubTab === sub.id;
@@ -1131,156 +1486,550 @@ export const BusinessSettingsModal: React.FC<{
                         </div>
                       )}
 
-                {/* ── ÁREA 2: CONOCIMIENTO DEL NEGOCIO ── */}
+                {/* ── ÁREA 2: CONOCIMIENTO & CAPACIDADES ── */}
                 {botSubTab === "knowledge" && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
-                      {/* Catálogo de Productos */}
-                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
-                            <BookOpen className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              Catálogo Oficial de Productos & Precios
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Permite al asistente consultar nombres, precios vigentes, descripciones y fotos de la sede.
-                            </p>
-                          </div>
-                        </div>
-                        <Toggle intent="bot.knows.catalog" checked={knowsCatalog} onChange={setKnowsCatalog} />
-                      </div>
+                  <div className="space-y-5 animate-fade-in">
 
-                      {/* Información Operativa */}
-                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
-                            <Store className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              Información del Negocio & Ubicación
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Horarios de atención, dirección física, modalidades de entrega y métodos de pago aceptados.
-                            </p>
-                          </div>
-                        </div>
-                        <Toggle intent="bot.knows.business" checked={knowsBusinessInfo} onChange={setKnowsBusinessInfo} />
-                      </div>
-
-                      {/* FAQ */}
-                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center flex-none mt-0.5">
-                            <HelpCircle className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              Preguntas Frecuentes (FAQ)
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Respuestas estándar sobre cobertura, tiempos estimados de preparación y canales de contacto.
-                            </p>
-                          </div>
-                        </div>
-                        <Toggle intent="bot.knows.faq" checked={knowsFaq} onChange={setKnowsFaq} />
-                      </div>
-
-                      {/* Políticas */}
-                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
-                            <ShieldCheck className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              Políticas de Cambios y Garantías
-                            </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Condiciones oficiales para cancelaciones, devoluciones o reclamos de pedidos.
-                            </p>
-                          </div>
-                        </div>
-                        <Toggle intent="bot.knows.policies" checked={knowsPolicies} onChange={setKnowsPolicies} />
-                      </div>
-
-                      {/* Consulta de Inventario */}
-                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3.5">
-                          <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center flex-none mt-0.5">
-                            <ShoppingBag className="w-5 h-5" />
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                                Consulta de Inventario en Tiempo Real
-                              </h3>
-                              <span
-                                className={`text-xs font-medium px-2 py-0.5 rounded-md border ${
-                                  business?.activeModules?.includes("inventarios")
+                    {/* ── Catálogo de Productos & Precios ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center flex-none mt-0.5">
+                              <BookOpen className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  Catálogo de Productos & Precios
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                  knowsCatalog
                                     ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
                                     : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                                }`}
-                              >
-                                {business?.activeModules?.includes("inventarios") ? "Módulo Activo" : "Sin Módulo"}
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsCatalog ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  {knowsCatalog ? "Activo" : "Inactivo"}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                  {(intentCatalog ? 1 : 0) + (intentPrice ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "catalog" && c.enabled).length} / {2 + customCapabilities.filter((c) => c.sourceId === "catalog").length} capacidades activas
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Consulta de nombres, precios vigentes, descripciones y fotos de la sede.
+                              </p>
+                            </div>
+                          </div>
+                          <Toggle intent="bot.knows.catalog" checked={knowsCatalog} onChange={setKnowsCatalog} />
+                        </div>
+
+                        {knowsCatalog && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
+                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                  Origen de datos
+                                </label>
+                                <select
+                                  value={catalogDataSource}
+                                  onChange={(e) => setCatalogDataSource(e.target.value as any)}
+                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                >
+                                  <option value="module_db">Base de datos del módulo (automático)</option>
+                                  <option value="file">Archivo subido (CSV / Excel)</option>
+                                  <option value="url">URL externa (API / Endpoint)</option>
+                                </select>
+                              </div>
+
+                              {catalogDataSource === "file" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Formatos soportados: CSV, XLSX, JSON</span>
+                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Subir Catálogo</span>
+                                    <input type="file" accept=".csv,.xlsx,.xls,.json" className="hidden" />
+                                  </label>
+                                </div>
+                              )}
+
+                              {catalogDataSource === "url" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800">
+                                  <Field
+                                    label="URL del endpoint"
+                                    type="url"
+                                    value=""
+                                    onChange={() => {}}
+                                    placeholder="https://api.mi-negocio.com/catalogo"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                  Capacidades del Catálogo
+                                </p>
+                              </div>
+
+                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+                                <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">Consultar catálogo completo</p>
+                                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Presentar productos y categorías al cliente</p>
+                                  </div>
+                                  <Toggle intent="bot.intent.catalog" checked={intentCatalog} onChange={setIntentCatalog} />
+                                </div>
+                                <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">Consultar precios y promociones</p>
+                                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Informar valores vigentes al comprador</p>
+                                  </div>
+                                  <Toggle intent="bot.intent.price" checked={intentPrice} onChange={setIntentPrice} />
+                                </div>
+                              </div>
+
+                              {renderCustomCapabilities("catalog")}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Información del Negocio & Ubicación ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 flex items-center justify-center flex-none mt-0.5">
+                              <Store className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  Información del Negocio & Ubicación
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                  knowsBusinessInfo
+                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsBusinessInfo ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  {knowsBusinessInfo ? "Activo" : "Inactivo"}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                  {(intentHoursLocation ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "business" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "business").length} capacidades activas
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Horarios, dirección física, modalidades de entrega y métodos de pago.
+                              </p>
+                            </div>
+                          </div>
+                          <Toggle intent="bot.knows.business" checked={knowsBusinessInfo} onChange={setKnowsBusinessInfo} />
+                        </div>
+
+                        {knowsBusinessInfo && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
+                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
+                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                Origen de datos
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-md">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Conectado a la configuración de la sede
+                              </span>
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">Informar horarios y dirección</p>
+                                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Apertura, ubicación física y zonas de cobertura</p>
+                                  </div>
+                                  <Toggle intent="bot.intent.hours" checked={intentHoursLocation} onChange={setIntentHoursLocation} />
+                                </div>
+                              </div>
+
+                              {renderCustomCapabilities("business")}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Preguntas Frecuentes (FAQ) ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center flex-none mt-0.5">
+                              <HelpCircle className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  Preguntas Frecuentes (FAQ)
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                  knowsFaq
+                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsFaq ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  {knowsFaq ? "Activo" : "Inactivo"}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                  {customCapabilities.filter((c) => c.sourceId === "faq" && c.enabled).length} / {Math.max(1, customCapabilities.filter((c) => c.sourceId === "faq").length)} capacidades
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Respuestas estándar sobre cobertura, tiempos de preparación y canales de contacto.
+                              </p>
+                            </div>
+                          </div>
+                          <Toggle intent="bot.knows.faq" checked={knowsFaq} onChange={setKnowsFaq} />
+                        </div>
+
+                        {knowsFaq && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
+                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                  Origen de datos
+                                </label>
+                                <select
+                                  value={faqDataSource}
+                                  onChange={(e) => setFaqDataSource(e.target.value as any)}
+                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                >
+                                  <option value="none">Sin configurar</option>
+                                  <option value="file">Archivo subido (PDF / TXT / Excel)</option>
+                                  <option value="url">URL externa</option>
+                                  <option value="manual">Entrada manual</option>
+                                </select>
+                              </div>
+
+                              {faqDataSource === "none" && (
+                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/50">
+                                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                                    Carga un archivo con preguntas y respuestas para que el bot responda con precisión.
+                                  </p>
+                                </div>
+                              )}
+
+                              {faqDataSource === "file" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">PDF, TXT, CSV, Excel</span>
+                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Subir Archivo FAQ</span>
+                                    <input type="file" accept=".pdf,.txt,.csv,.xlsx,.xls" className="hidden" />
+                                  </label>
+                                </div>
+                              )}
+
+                              {faqDataSource === "url" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800">
+                                  <Field
+                                    label="URL del documento de FAQ"
+                                    type="url"
+                                    value=""
+                                    onChange={() => {}}
+                                    placeholder="https://mi-negocio.com/faq"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              {renderCustomCapabilities("faq")}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Políticas de Cambios y Garantías ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center flex-none mt-0.5">
+                              <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  Políticas de Cambios y Garantías
+                                </h3>
+                                <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                  knowsPolicies
+                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${knowsPolicies ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                  {knowsPolicies ? "Activo" : "Inactivo"}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                  {customCapabilities.filter((c) => c.sourceId === "policies" && c.enabled).length} / {Math.max(1, customCapabilities.filter((c) => c.sourceId === "policies").length)} capacidades
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Condiciones oficiales para cancelaciones, devoluciones o reclamos.
+                              </p>
+                            </div>
+                          </div>
+                          <Toggle intent="bot.knows.policies" checked={knowsPolicies} onChange={setKnowsPolicies} />
+                        </div>
+
+                        {knowsPolicies && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
+                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                  Origen de datos
+                                </label>
+                                <select
+                                  value={policiesDataSource}
+                                  onChange={(e) => setPoliciesDataSource(e.target.value as any)}
+                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                >
+                                  <option value="none">Sin configurar</option>
+                                  <option value="file">Archivo subido (PDF / TXT)</option>
+                                  <option value="url">URL externa</option>
+                                  <option value="manual">Entrada manual</option>
+                                </select>
+                              </div>
+
+                              {policiesDataSource === "none" && (
+                                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-200 dark:border-amber-900/50">
+                                  <p className="text-xs text-amber-800 dark:text-amber-300">
+                                    Carga las políticas para que el bot informe devoluciones o reclamos de acuerdo a tus términos.
+                                  </p>
+                                </div>
+                              )}
+
+                              {policiesDataSource === "file" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">PDF, TXT, DOCX</span>
+                                  <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium shadow-theme-xs transition-colors cursor-pointer">
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Subir Documento</span>
+                                    <input type="file" accept=".pdf,.txt,.docx" className="hidden" />
+                                  </label>
+                                </div>
+                              )}
+
+                              {policiesDataSource === "url" && (
+                                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-800">
+                                  <Field
+                                    label="URL del documento"
+                                    type="url"
+                                    value=""
+                                    onChange={() => {}}
+                                    placeholder="https://mi-negocio.com/politicas"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              {renderCustomCapabilities("policies")}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Consulta de Inventario en Tiempo Real ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center flex-none mt-0.5">
+                              <ShoppingBag className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  Consulta de Inventario en Tiempo Real
+                                </h3>
+                                <span
+                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                    business?.activeModules?.includes("inventarios")
+                                      ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                      : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                                  }`}
+                                >
+                                  {business?.activeModules?.includes("inventarios") ? "Módulo Activo" : "Sin Módulo"}
+                                </span>
+                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                  {(intentStock ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "inventory" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "inventory").length} capacidades activas
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {business?.activeModules?.includes("inventarios")
+                                  ? "Valida existencias en bodega antes de confirmar disponibilidad."
+                                  : "Requiere el módulo de Inventarios activo en esta sede."}
+                              </p>
+                            </div>
+                          </div>
+                          <Toggle
+                            intent="bot.knows.inventory"
+                            checked={knowsInventoryQuery && (business?.activeModules?.includes("inventarios") ?? false)}
+                            onChange={(val) => {
+                              if (business?.activeModules?.includes("inventarios")) {
+                                setKnowsInventoryQuery(val);
+                              }
+                            }}
+                          />
+                        </div>
+
+                        {knowsInventoryQuery && business?.activeModules?.includes("inventarios") && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">Consultar disponibilidad de productos</p>
+                                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">Verificar existencias antes de ofrecer un producto</p>
+                                  </div>
+                                  <Toggle intent="bot.intent.stock" checked={intentStock} onChange={setIntentStock} />
+                                </div>
+                              </div>
+
+                              {renderCustomCapabilities("inventory")}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── Gestión de Pedidos (OMS) ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                Gestión de Pedidos (OMS)
+                              </h3>
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Conectado al OMS
+                              </span>
+                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                {(intentCreateOrder ? 1 : 0) + (intentTrackOrder ? 1 : 0) + (intentModifyOrder ? 1 : 0) + (intentCancelOrder ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "orders" && c.enabled).length} / {4 + customCapabilities.filter((c) => c.sourceId === "orders").length} capacidades activas
                               </span>
                             </div>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {business?.activeModules?.includes("inventarios")
-                                ? "Valida existencias en bodega antes de confirmar la disponibilidad de un producto."
-                                : "Requiere el módulo de Inventarios activo en esta sede."}
+                              Acciones operativas sobre órdenes de compra conectadas al sistema de pedidos.
                             </p>
                           </div>
                         </div>
-                        <Toggle
-                          intent="bot.knows.inventory"
-                          checked={knowsInventoryQuery && (business?.activeModules?.includes("inventarios") ?? false)}
-                          onChange={(val) => {
-                            if (business?.activeModules?.includes("inventarios")) {
-                              setKnowsInventoryQuery(val);
-                            }
-                          }}
-                        />
+
+                        <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades Operativas</p>
+                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+                              {[
+                                { intent: "bot.intent.create", label: "Tomar pedido", desc: "Armar orden de compra en el chat", checked: intentCreateOrder, set: setIntentCreateOrder },
+                                { intent: "bot.intent.track", label: "Estado del pedido", desc: "Rastrear orden en curso en el OMS", checked: intentTrackOrder, set: setIntentTrackOrder },
+                                { intent: "bot.intent.modify", label: "Modificar pedido", desc: "Ajustar ítems antes de preparación", checked: intentModifyOrder, set: setIntentModifyOrder },
+                                { intent: "bot.intent.cancel", label: "Cancelar pedido", desc: "Solicitar cancelación de comanda", checked: intentCancelOrder, set: setIntentCancelOrder },
+                              ].map((cap) => (
+                                <div key={cap.intent} className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white">{cap.label}</p>
+                                      <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{cap.desc}</p>
+                                  </div>
+                                  <Toggle intent={cap.intent} checked={cap.checked} onChange={cap.set} />
+                                </div>
+                              ))}
+                            </div>
+
+                            {renderCustomCapabilities("orders")}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {/* ── ÁREA 3: COMPORTAMIENTO CONVERSACIONAL (INTENCIONES) ── */}
-                {botSubTab === "intents" && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
-                      {[
-                        { id: "catalog", label: "Consultar Catálogo", desc: "Presentar productos y categorías", checked: intentCatalog, set: setIntentCatalog },
-                        { id: "price", label: "Consultar Precios", desc: "Informar valores y promociones", checked: intentPrice, set: setIntentPrice },
-                        { id: "stock", label: "Consultar Disponibilidad", desc: "Verificar existencias de productos", checked: intentStock, set: setIntentStock },
-                        { id: "create", label: "Tomar Pedido", desc: "Armar orden de compra en el chat", checked: intentCreateOrder, set: setIntentCreateOrder },
-                        { id: "track", label: "Estado del Pedido", desc: "Rastrear orden en curso en el OMS", checked: intentTrackOrder, set: setIntentTrackOrder },
-                        { id: "modify", label: "Modificar Pedido", desc: "Ajustar ítems antes de preparación", checked: intentModifyOrder, set: setIntentModifyOrder },
-                        { id: "cancel", label: "Cancelar Pedido", desc: "Solicitar cancelación de comanda", checked: intentCancelOrder, set: setIntentCancelOrder },
-                        { id: "hours", label: "Horarios & Dirección", desc: "Informar apertura y ubicación física", checked: intentHoursLocation, set: setIntentHoursLocation },
-                        { id: "human", label: "Transferir a Asesor", desc: "Pase directo a atención humana", checked: intentHumanAgent, set: setIntentHumanAgent },
-                      ].map((intent) => (
-                        <div key={intent.id} className="p-5 sm:p-6 flex items-start justify-between gap-4">
-                          <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {intent.label}
-                            </h3>
+                    {/* ── Atención Humana ── */}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 shadow-theme-xs overflow-hidden transition-all">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <UserCheck className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                Atención Humana
+                              </h3>
+                              <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                                intentHumanAgent
+                                  ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                  : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${intentHumanAgent ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                {intentHumanAgent ? "Activo" : "Inactivo"}
+                              </span>
+                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                {(intentHumanAgent ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "human" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "human").length} capacidades activas
+                              </span>
+                            </div>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {intent.desc}
+                              Transferencia directa a un asesor real cuando el bot no puede resolver la consulta.
                             </p>
                           </div>
-                          <Toggle
-                            intent={`bot.intent.${intent.id}`}
-                            checked={intent.checked}
-                            onChange={intent.set}
-                          />
                         </div>
-                      ))}
+
+                        <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                              <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">Transferir a asesor humano</p>
+                                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">Nativa (Tool)</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Pase directo a atención humana bajo demanda o por regla</p>
+                                </div>
+                                <Toggle intent="bot.intent.human" checked={intentHumanAgent} onChange={setIntentHumanAgent} />
+                              </div>
+                            </div>
+
+                            {renderCustomCapabilities("human")}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+
                   </div>
                 )}
 
@@ -1994,6 +2743,160 @@ export const BusinessSettingsModal: React.FC<{
           </form>
         </main>
       </div>
+
+      {/* ── MODAL VINCULAR WHATSAPP BUSINESS (QR & EMPAREJAMIENTO) ── */}
+      {isConnectWhatsAppModalOpen && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-scale-up">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center">
+                  <QrCode className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                    Vincular WhatsApp Business
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Conexión oficial para recepción de pedidos y bot conversacional
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConnectWhatsAppModalOpen(false)}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Selector de método: QR vs Código */}
+            <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setConnectionMethod("qr")}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  connectionMethod === "qr"
+                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Escanear Código QR
+              </button>
+              <button
+                type="button"
+                onClick={() => setConnectionMethod("code")}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  connectionMethod === "code"
+                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Vincular por Teléfono
+              </button>
+            </div>
+
+            {connectionMethod === "qr" ? (
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
+                <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col items-center flex-none">
+                  {/* Patrón SVG de código QR oficial de alta fidelidad */}
+                  <svg className="w-36 h-36" viewBox="0 0 100 100" fill="currentColor">
+                    <rect width="100" height="100" fill="white" />
+                    {/* Corners */}
+                    <rect x="5" y="5" width="25" height="25" fill="#111827" rx="2" />
+                    <rect x="9" y="9" width="17" height="17" fill="white" rx="1" />
+                    <rect x="13" y="13" width="9" height="9" fill="#111827" />
+                    <rect x="70" y="5" width="25" height="25" fill="#111827" rx="2" />
+                    <rect x="74" y="9" width="17" height="17" fill="white" rx="1" />
+                    <rect x="78" y="13" width="9" height="9" fill="#111827" />
+                    <rect x="5" y="70" width="25" height="25" fill="#111827" rx="2" />
+                    <rect x="9" y="74" width="17" height="17" fill="white" rx="1" />
+                    <rect x="13" y="78" width="9" height="9" fill="#111827" />
+                    {/* Pattern Matrix */}
+                    <rect x="35" y="8" width="6" height="6" fill="#111827" />
+                    <rect x="45" y="8" width="6" height="6" fill="#111827" />
+                    <rect x="55" y="8" width="8" height="6" fill="#111827" />
+                    <rect x="35" y="20" width="12" height="6" fill="#111827" />
+                    <rect x="52" y="20" width="8" height="6" fill="#111827" />
+                    <rect x="10" y="38" width="12" height="6" fill="#111827" />
+                    <rect x="26" y="38" width="6" height="14" fill="#111827" />
+                    <rect x="38" y="35" width="18" height="18" fill="#059669" rx="3" />
+                    <rect x="62" y="38" width="14" height="6" fill="#111827" />
+                    <rect x="80" y="38" width="12" height="6" fill="#111827" />
+                    <rect x="35" y="60" width="8" height="12" fill="#111827" />
+                    <rect x="48" y="58" width="14" height="6" fill="#111827" />
+                    <rect x="68" y="58" width="10" height="16" fill="#111827" />
+                    <rect x="84" y="60" width="8" height="8" fill="#111827" />
+                    <rect x="35" y="78" width="16" height="6" fill="#111827" />
+                    <rect x="56" y="78" width="8" height="12" fill="#111827" />
+                    <rect x="70" y="80" width="22" height="6" fill="#111827" />
+                  </svg>
+                  <span className="text-[10px] text-gray-500 mt-2 font-mono flex items-center gap-1">
+                    <RefreshCw className="w-3 h-3 text-emerald-600 animate-spin" />
+                    Expira en {qrCountdown}s
+                  </span>
+                </div>
+
+                <div className="space-y-3 flex-1">
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                    Instrucciones de Vinculación
+                  </h4>
+                  <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-300 list-decimal list-inside">
+                    <li>Abre <strong>WhatsApp</strong> en tu teléfono.</li>
+                    <li>Toca <strong>Menú (⋮)</strong> o <strong>Ajustes</strong> y entra a <strong>Dispositivos vinculados</strong>.</li>
+                    <li>Toca en <strong>Vincular un dispositivo</strong> y apunta tu cámara al código QR.</li>
+                  </ol>
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-800 dark:text-emerald-300">
+                    Al escanearlo, tus pedidos y el Asistente IA quedarán conectados automáticamente a esta sede.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-4">
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  Ingresa el número con indicativo de país. Se enviará una solicitud de emparejamiento segura.
+                </p>
+                <Field
+                  label="Número de WhatsApp Business"
+                  type="tel"
+                  value={pairingPhoneInput}
+                  onChange={(e) => setPairingPhoneInput(e.target.value)}
+                  placeholder="+57 300 123 4567"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={() => setIsConnectWhatsAppModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmWhatsAppConnection}
+                disabled={isConnectingSim}
+                className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
+              >
+                {isConnectingSim ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Conectando sesión...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirmar Vinculación</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

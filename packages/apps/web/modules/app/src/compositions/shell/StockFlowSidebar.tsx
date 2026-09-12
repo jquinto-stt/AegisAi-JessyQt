@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import {
@@ -6,6 +6,7 @@ import {
   MenuSectionHeader,
   MenuItem,
   MenuSubmenuItem,
+  useShellConfig,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { useAuth } from "@/auth/AuthContext";
@@ -29,8 +30,82 @@ import {
   GroupIcon,
   BoltIcon,
 } from "@/icons";
-import { PanelLeftClose, Globe, Store, SlidersHorizontal } from "lucide-react";
+import { PanelLeftClose, Globe, Store, SlidersHorizontal, Share2, ChevronDown, ChevronRight } from "lucide-react";
 import { uiStore } from "@/stores";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COLLAPSIBLE SECTION HEADER
+// ═══════════════════════════════════════════════════════════════════════════
+
+const STORAGE_KEY = "necto_sidebar_open_sections";
+
+type SectionKey = "inventario" | "pedidos" | "conversacional" | "sede";
+
+interface SectionState {
+  inventario: boolean;
+  pedidos: boolean;
+  conversacional: boolean;
+  sede: boolean;
+}
+
+const DEFAULT_SECTIONS: SectionState = {
+  inventario: true,
+  pedidos: true,
+  conversacional: true,
+  sede: true,
+};
+
+function loadSectionState(): SectionState {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return { ...DEFAULT_SECTIONS, ...JSON.parse(saved) };
+  } catch {}
+  return { ...DEFAULT_SECTIONS };
+}
+
+function saveSectionState(state: SectionState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
+interface CollapsibleSectionHeaderProps {
+  title: string;
+  sectionKey: SectionKey;
+  isOpen: boolean;
+  onToggle: (key: SectionKey) => void;
+}
+
+const CollapsibleSectionHeader: React.FC<CollapsibleSectionHeaderProps> = observer(
+  ({ title, sectionKey, isOpen, onToggle }) => {
+    const { isExpanded: showExpanded } = useSidebarContext();
+    const { icons: shellIcons } = useShellConfig();
+
+    if (!showExpanded) {
+      return (
+        <h2 className="mb-4 text-xs uppercase flex leading-[20px] text-gray-400 xl:justify-center">
+          {shellIcons.sectionCollapsed}
+        </h2>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => onToggle(sectionKey)}
+        className="mb-2 w-full flex items-center justify-between text-xs uppercase leading-[20px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer group px-1 rounded"
+        title={isOpen ? `Colapsar ${title}` : `Expandir ${title}`}
+      >
+        <span className="select-none">{title}</span>
+        <ChevronRight
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? "rotate-90" : "rotate-0"
+          } opacity-0 group-hover:opacity-100 transition-opacity`}
+        />
+      </button>
+    );
+  }
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LOGO COMPONENTS
@@ -128,7 +203,7 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
             title="Configuración de Sede"
           >
             <span className="menu-item-icon-size menu-item-icon-inactive">
-              <PlugInIcon />
+              <SlidersHorizontal className="w-5 h-5" />
             </span>
             {showExpanded && <span className="menu-item-text">Configuración</span>}
           </button>
@@ -203,6 +278,17 @@ export const StockFlowSidebar = observer(({
   const isFood = activeBusiness?.businessType === "restaurant_virtual";
   const catalogMenuTitle = isFood ? "Menú & Insumos" : "Catálogo & Listas";
 
+  // ── Collapsible sections state ──
+  const [openSections, setOpenSections] = useState<SectionState>(loadSectionState);
+
+  const toggleSection = useCallback((key: SectionKey) => {
+    setOpenSections(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveSectionState(next);
+      return next;
+    });
+  }, []);
+
   // Reactive preparation capability toggle
   const [isPreparacionEnabled, setIsPreparacionEnabled] = useState<boolean>(() => {
     try {
@@ -212,13 +298,21 @@ export const StockFlowSidebar = observer(({
     return true;
   });
 
-  // Reactive WhatsApp capability toggle
+  // Reactive WhatsApp capability and connection state
   const [isWhatsAppEnabled, setIsWhatsAppEnabled] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem("necto_whatsapp_channel_enabled");
       if (saved !== null) return JSON.parse(saved);
     } catch (e) {}
     return true;
+  });
+
+  const [isWhatsAppConnected, setIsWhatsAppConnected] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("necto_whatsapp_connected") === "true";
+    } catch (e) {
+      return false;
+    }
   });
 
   useEffect(() => {
@@ -232,6 +326,8 @@ export const StockFlowSidebar = observer(({
       try {
         const saved = localStorage.getItem("necto_whatsapp_channel_enabled");
         if (saved !== null) setIsWhatsAppEnabled(JSON.parse(saved));
+        const savedConnected = localStorage.getItem("necto_whatsapp_connected") === "true";
+        setIsWhatsAppConnected(savedConnected);
       } catch (e) {}
     };
     window.addEventListener("necto_preparacion_toggle", handleToggle);
@@ -253,161 +349,144 @@ export const StockFlowSidebar = observer(({
           {/* SECCIÓN INVENTARIO (SÓLO SI EL MÓDULO ESTÁ ACTIVO) */}
           {hasInventarios && (
             <div>
-              <MenuSectionHeader title="Inventario" />
-              <ul className="flex flex-col gap-1">
-              <MenuItem
-                icon={<BoxIcon />}
-                name="Productos & Servicios"
-                active={activeModule === "inventarios" && inventarioTab === "products"}
-                onClick={() => onNavigateInventario("products")}
+              <CollapsibleSectionHeader
+                title="Inventario"
+                sectionKey="inventario"
+                isOpen={openSections.inventario}
+                onToggle={toggleSection}
               />
-              <MenuItem
-                icon={<TaskIcon />}
-                name="Compras & Facturas"
-                active={activeModule === "inventarios" && inventarioTab === "purchasing"}
-                onClick={() => onNavigateInventario("purchasing")}
-              />
-              <MenuItem
-                icon={<ListIcon />}
-                name="Movimientos (Kardex)"
-                active={activeModule === "inventarios" && inventarioTab === "kardex"}
-                onClick={() => onNavigateInventario("kardex")}
-              />
-              <MenuItem
-                icon={<DollarLineIcon />}
-                name="Listas de Precios"
-                active={activeModule === "inventarios" && inventarioTab === "pricelists"}
-                onClick={() => onNavigateInventario("pricelists")}
-              />
-              <MenuItem
-                icon={<GridIcon />}
-                name="Bodegas & Sucursales"
-                active={activeModule === "inventarios" && inventarioTab === "locations"}
-                onClick={() => onNavigateInventario("locations")}
-              />
-              <MenuItem
-                icon={<PieChartIcon />}
-                name="Valor de Inventario"
-                active={activeModule === "inventarios" && inventarioTab === "valuation"}
-                onClick={() => onNavigateInventario("valuation")}
-              />
-            </ul>
-          </div>
+              {openSections.inventario && (
+                <ul className="flex flex-col gap-1">
+                  <MenuItem
+                    icon={<BoxIcon />}
+                    name="Productos & Servicios"
+                    active={activeModule === "inventarios" && inventarioTab === "products"}
+                    onClick={() => onNavigateInventario("products")}
+                  />
+                  <MenuItem
+                    icon={<TaskIcon />}
+                    name="Compras & Facturas"
+                    active={activeModule === "inventarios" && inventarioTab === "purchasing"}
+                    onClick={() => onNavigateInventario("purchasing")}
+                  />
+                  <MenuItem
+                    icon={<ListIcon />}
+                    name="Movimientos (Kardex)"
+                    active={activeModule === "inventarios" && inventarioTab === "kardex"}
+                    onClick={() => onNavigateInventario("kardex")}
+                  />
+                  <MenuItem
+                    icon={<DollarLineIcon />}
+                    name="Listas de Precios"
+                    active={activeModule === "inventarios" && inventarioTab === "pricelists"}
+                    onClick={() => onNavigateInventario("pricelists")}
+                  />
+                  <MenuItem
+                    icon={<GridIcon />}
+                    name="Bodegas & Sucursales"
+                    active={activeModule === "inventarios" && inventarioTab === "locations"}
+                    onClick={() => onNavigateInventario("locations")}
+                  />
+                  <MenuItem
+                    icon={<PieChartIcon />}
+                    name="Valor de Inventario"
+                    active={activeModule === "inventarios" && inventarioTab === "valuation"}
+                    onClick={() => onNavigateInventario("valuation")}
+                  />
+                </ul>
+              )}
+            </div>
           )}
 
           {/* SECCIÓN MÓDULO PEDIDOS (OMS) */}
           {hasPedidos && (
             <div>
-              <MenuSectionHeader title="Pedidos" />
-              <ul className="flex flex-col gap-1">
-                <MenuItem
-                  icon={<GridIcon />}
-                  name="Órdenes"
-                  active={activeModule === "pedidos" && (pedidosSection === "ordenes" || pedidosSection === "operacion")}
-                  onClick={() => onNavigatePedidos("ordenes")}
-                />
-                <MenuItem
-                  icon={<CalenderIcon />}
-                  name="Programados"
-                  active={activeModule === "pedidos" && pedidosSection === "programados"}
-                  onClick={() => onNavigatePedidos("programados")}
-                />
-                {isFood && isPreparacionEnabled && (
+              <CollapsibleSectionHeader
+                title="Pedidos"
+                sectionKey="pedidos"
+                isOpen={openSections.pedidos}
+                onToggle={toggleSection}
+              />
+              {openSections.pedidos && (
+                <ul className="flex flex-col gap-1">
                   <MenuItem
-                    icon={<BoxIcon />}
-                    name={semantics?.stationShortName || "Preparación"}
-                    active={activeModule === "pedidos" && pedidosSection === "preparacion"}
-                    onClick={() => onNavigatePedidos("preparacion")}
+                    icon={<GridIcon />}
+                    name="Órdenes"
+                    active={activeModule === "pedidos" && (pedidosSection === "ordenes" || pedidosSection === "operacion")}
+                    onClick={() => onNavigatePedidos("ordenes")}
                   />
-                )}
-              </ul>
+                  <MenuItem
+                    icon={<CalenderIcon />}
+                    name="Programados"
+                    active={activeModule === "pedidos" && pedidosSection === "programados"}
+                    onClick={() => onNavigatePedidos("programados")}
+                  />
+                  {isFood && isPreparacionEnabled && (
+                    <MenuItem
+                      icon={<BoxIcon />}
+                      name={semantics?.stationShortName || "Preparación"}
+                      active={activeModule === "pedidos" && pedidosSection === "preparacion"}
+                      onClick={() => onNavigatePedidos("preparacion")}
+                    />
+                  )}
+                </ul>
+              )}
             </div>
           )}
 
-          {/* SECCIÓN CANALES DE ENTRADA (DESACOPLADOS) */}
-          <div>
-            <div className="flex items-center justify-between px-3 py-1">
-              <MenuSectionHeader title="Canales de Entrada" />
-              <button
-                type="button"
-                onClick={() => onOpenSettingsModal?.("channels")}
-                className="text-[10px] font-mono font-bold text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 cursor-pointer transition-colors"
-                title="Configurar canales en la Sede"
-              >
-                Ajustes →
-              </button>
+          {/* SECCIÓN CANAL CONVERSACIONAL (INDEPENDIENTE Y DESACOPLADO) */}
+          {isWhatsAppEnabled && (
+            <div>
+              <CollapsibleSectionHeader
+                title="Canal Conversacional"
+                sectionKey="conversacional"
+                isOpen={openSections.conversacional}
+                onToggle={toggleSection}
+              />
+              {openSections.conversacional && (
+                <ul className="flex flex-col gap-1">
+                  {isWhatsAppConnected && (
+                    <MenuItem
+                      icon={<ChatIcon />}
+                      name="Conversaciones"
+                      badge={
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10">
+                          WhatsApp
+                        </span>
+                      }
+                      active={activeModule === "pedidos" && (pedidosSection === "conversaciones" || pedidosSection === "whatsapp")}
+                      onClick={() => onNavigatePedidos("conversaciones")}
+                    />
+                  )}
+                  <MenuItem
+                    icon={<Share2 className="w-4 h-4" />}
+                    name="Canales de Entrada"
+                    active={activeModule === "pedidos" && pedidosSection === "canales"}
+                    onClick={() => onNavigatePedidos("canales")}
+                  />
+                </ul>
+              )}
             </div>
-            <ul className="flex flex-col gap-1">
-              {/* WhatsApp Business */}
-              <MenuItem
-                icon={<ChatIcon />}
-                name="WhatsApp Business"
-                badge={
-                  <span
-                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                      isWhatsAppEnabled
-                        ? "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
-                        : "text-zinc-500 bg-zinc-200 dark:bg-zinc-800"
-                    }`}
-                  >
-                    {isWhatsAppEnabled ? "En Línea" : "Inactivo"}
-                  </span>
-                }
-                active={activeModule === "pedidos" && (pedidosSection === "conversaciones" || pedidosSection === "whatsapp")}
-                onClick={() => {
-                  if (isWhatsAppEnabled) {
-                    onNavigatePedidos("conversaciones");
-                  } else {
-                    onOpenSettingsModal?.("channels");
-                  }
-                }}
-              />
-
-              {/* Tienda Web */}
-              <MenuItem
-                icon={<Globe className="w-4 h-4" />}
-                name="Tienda Web"
-                badge={
-                  <span className="text-[9px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-bold">
-                    Web
-                  </span>
-                }
-                active={false}
-                onClick={() => onOpenSettingsModal?.("channels")}
-              />
-
-              {/* POS / Mostrador */}
-              <MenuItem
-                icon={<Store className="w-4 h-4" />}
-                name="POS / Mostrador"
-                badge={
-                  <span className="text-[9px] font-mono text-purple-600 dark:text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-bold">
-                    Local
-                  </span>
-                }
-                active={false}
-                onClick={() => onOpenSettingsModal?.("channels")}
-              />
-            </ul>
-          </div>
+          )}
 
           {/* SECCIÓN SEDE & TIENDA */}
           <div>
-            <MenuSectionHeader title="Sede & Tienda" />
-            <ul className="flex flex-col gap-1">
-              <MenuItem
-                icon={<PlugInIcon />}
-                name="Módulos de Tienda"
-                active={activeModule === "modules-hub"}
-                onClick={() => onNavigateModule("modules-hub")}
-              />
-              <MenuItem
-                icon={<SlidersHorizontal className="w-4 h-4" />}
-                name="Configuración de Sede"
-                active={false}
-                onClick={() => onOpenSettingsModal?.("general")}
-              />
-            </ul>
+            <CollapsibleSectionHeader
+              title="Sede & Tienda"
+              sectionKey="sede"
+              isOpen={openSections.sede}
+              onToggle={toggleSection}
+            />
+            {openSections.sede && (
+              <ul className="flex flex-col gap-1">
+                <MenuItem
+                  icon={<PlugInIcon />}
+                  name="Módulos de Tienda"
+                  active={activeModule === "modules-hub"}
+                  onClick={() => onNavigateModule("modules-hub")}
+                />
+              </ul>
+            )}
           </div>
         </div>
 

@@ -46,11 +46,6 @@ export const Field = ui_dsl<FieldProps>({
     const inputId = id ?? `${nodeId}.${String(props.name ?? label)}`;
     const invalid = Boolean(error);
 
-    const labelClass =
-      labelStyle === 'mono'
-        ? 'text-xs font-mono uppercase tracking-widest text-zinc-500 dark:text-zinc-400'
-        : 'text-xs font-bold text-slate-800 dark:text-zinc-200';
-
     return (
       <label
         data-node-id={nodeId}
@@ -58,19 +53,18 @@ export const Field = ui_dsl<FieldProps>({
         htmlFor={inputId}
         className={className}
       >
-        <span className={labelClass}>{label}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
         <input
           id={inputId}
           data-node-id={`${nodeId}.input`}
           data-intent={`${intent}.control`}
           aria-invalid={invalid}
           className={[
-            'w-full rounded-xl border bg-zinc-50 dark:bg-zinc-900 px-3.5 py-2.5 text-xs text-zinc-900 dark:text-zinc-100 outline-none transition-colors',
-            mono ? 'font-mono font-bold' : 'font-bold',
-            'placeholder:text-zinc-400 dark:placeholder:text-zinc-600',
+            'h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3 transition-colors dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30',
+            mono ? 'font-mono' : 'font-normal',
             invalid
-              ? 'border-red-400 dark:border-red-700 focus:border-red-500'
-              : 'border-zinc-200 dark:border-zinc-700 focus:border-[#FF3F1A] dark:focus:border-[#FF3F1A]',
+              ? 'border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:border-error-500'
+              : 'border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 bg-transparent text-gray-800 dark:focus:border-brand-800',
           ].join(' ')}
           {...(inputProps as InputHTMLAttributes<HTMLInputElement>)}
         />
@@ -78,12 +72,12 @@ export const Field = ui_dsl<FieldProps>({
           <span
             data-node-id={`${nodeId}.error`}
             data-intent="validation.error"
-            className="text-[11px] font-medium text-red-600 dark:text-red-400"
+            className="text-xs font-medium text-error-500 dark:text-error-400 mt-0.5"
           >
             {error}
           </span>
         ) : hint ? (
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             {hint}
           </span>
         ) : null}

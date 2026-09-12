@@ -41,6 +41,7 @@ const PedidosContent: React.FC<{
   targetOrderId?: string | null;
   targetModal?: "ticket" | "ai" | "incidencias" | "product" | null;
   targetProductId?: string | null;
+  onOpenSettings?: (tab?: any) => void;
   onSectionChange?: (s: PedidosSection) => void;
   onOpTabChange?: (t: OperacionTab) => void;
   onGeTabChange?: (t: GestionTab) => void;
@@ -51,6 +52,7 @@ const PedidosContent: React.FC<{
   targetOrderId,
   targetModal,
   targetProductId,
+  onOpenSettings,
   onSectionChange,
   onOpTabChange,
   onGeTabChange,
@@ -234,7 +236,7 @@ const PedidosContent: React.FC<{
         {section === "preparacion" && <PreparacionView />}
 
         {/* 4. CANALES */}
-        {section === "canales" && <CanalesView />}
+        {section === "canales" && <CanalesView onOpenSettings={onOpenSettings} />}
 
         {/* 5. WHATSAPP / CONVERSACIONES (Acceso directo desde menú lateral de la tienda) */}
         {(section === "conversaciones" || section === "whatsapp") && (
@@ -274,6 +276,7 @@ export const PedidosModule: React.FC<{
   targetOrderId?: string | null;
   targetModal?: "ticket" | "ai" | "incidencias" | "product" | null;
   targetProductId?: string | null;
+  onOpenSettings?: (tab?: any) => void;
   onSectionChange?: (s: PedidosSection) => void;
   onOpTabChange?: (t: OperacionTab) => void;
   onGeTabChange?: (t: GestionTab) => void;

@@ -358,8 +358,15 @@ export default function App() {
         handleNavigatePedidos(e.detail.section, e.detail.opTab || e.detail.geTab);
       }
     };
+    const handleOpenSettingsEvent = (e: any) => {
+      handleOpenSettings(e.detail?.tab || "general");
+    };
     window.addEventListener("necto_navigate_pedidos", handleNavigate);
-    return () => window.removeEventListener("necto_navigate_pedidos", handleNavigate);
+    window.addEventListener("necto_open_settings", handleOpenSettingsEvent);
+    return () => {
+      window.removeEventListener("necto_navigate_pedidos", handleNavigate);
+      window.removeEventListener("necto_open_settings", handleOpenSettingsEvent);
+    };
   }, []);
 
   useEffect(() => {
@@ -467,6 +474,8 @@ export default function App() {
     menu: isFood ? "Menú & Insumos" : "Catálogo de Productos",
     analitica: "Analítica & Reportes",
     gestion: "Gestión",
+    whatsapp: "Bandeja de Conversaciones",
+    conversaciones: "Bandeja de Conversaciones",
   };
 
   const currentRoleName = sectionRoleNames[pedidosSection] || "Pedidos";
@@ -478,9 +487,9 @@ export default function App() {
       : pedidosSection === "preparacion"
       ? "Mesa de Preparación & Alistamiento"
       : pedidosSection === "canales"
-      ? "Canales Conectados & Asistente"
+      ? "Canales de Entrada"
       : pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
-      ? "WhatsApp & Chats"
+      ? "Bandeja de Conversaciones"
       : pedidosSection === "configuracion"
       ? "Configuración del Módulo"
       : pedidosGePageNames[pedidosGeTab] || "Pedidos";
@@ -489,7 +498,7 @@ export default function App() {
 
   const pageTitle =
     isModulesHub
-      ? "Módulos de Tienda & Plugins"
+      ? "Módulos de Tienda"
       : activeModule === "inventarios"
       ? (inventarioTab === "valuation"
           ? "Valor de Inventario"
@@ -504,20 +513,24 @@ export default function App() {
           : "Productos & Servicios")
       : currentPageName;
 
-  const breadcrumbItems: BreadcrumbItem[] = [
-    { label: "Operación", href: "/app" },
-    {
-      label: isModulesHub
-        ? "Módulos"
-        : pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
-        ? "Tienda & Canales"
-        : activeModule === "inventarios"
-        ? "Inventario"
-        : "Pedidos",
-      href: "/app?section=ordenes",
-    },
-    { label: pageTitle === "Órdenes Activas" ? "Órdenes" : pageTitle },
-  ];
+  const breadcrumbItems: BreadcrumbItem[] = isModulesHub
+    ? [
+        { label: "Sede & Tienda", href: "/app" },
+        { label: "Módulos de Tienda" },
+      ]
+    : [
+        { label: "Operación", href: "/app" },
+        {
+          label:
+            pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
+              ? "Canal Conversacional"
+              : activeModule === "inventarios"
+              ? "Inventario"
+              : "Pedidos",
+          href: pedidosSection === "conversaciones" ? "/app?section=conversaciones" : "/app?section=ordenes",
+        },
+        { label: pageTitle === "Órdenes Activas" ? "Órdenes" : pageTitle },
+      ];
 
   return (
     <>
@@ -588,6 +601,7 @@ export default function App() {
               targetOrderId={targetOrderId}
               targetModal={targetModal}
               targetProductId={targetProductId}
+              onOpenSettings={handleOpenSettings}
               onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
               onOpTabChange={t => handleNavigatePedidos("operacion", t)}
               onGeTabChange={t => {
