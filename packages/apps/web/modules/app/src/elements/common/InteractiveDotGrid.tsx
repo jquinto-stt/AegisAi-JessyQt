@@ -16,12 +16,12 @@ interface InteractiveDotGridProps {
  * fluidamente con efecto estelar al pasar el cursor del mouse.
  */
 export default function InteractiveDotGrid({
-  dotGap = 20,
-  baseRadius = 0.75,
-  activeRadius = 1.5,
-  glowDistance = 125,
+  dotGap = 26,
+  baseRadius = 1.4,
+  activeRadius = 2.8,
+  glowDistance = 170,
   className = "",
-  dotColor = "rgba(255, 255, 255, 0.12)",
+  dotColor = "rgba(255, 255, 255, 0.18)",
   activeDotColor = "rgba(255, 255, 255, 0.95)",
 }: InteractiveDotGridProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -82,18 +82,18 @@ export default function InteractiveDotGrid({
           const dist = Math.hypot(dx, dy);
 
           let radius = baseRadius;
-          let alpha = 0.12;
+          let alpha = 0.18;
           let isGlowing = false;
 
           if (dist < glowDistance && currentMouse.intensity > 0.01) {
             // Smooth bell curve falloff
             const norm = 1 - dist / glowDistance;
-            const factor = Math.pow(norm, 2.0) * currentMouse.intensity;
+            const factor = Math.pow(norm, 2.2) * currentMouse.intensity;
 
             radius = baseRadius + (activeRadius - baseRadius) * factor;
-            alpha = 0.12 + (0.95 - 0.12) * factor;
+            alpha = 0.18 + (0.95 - 0.18) * factor;
 
-            if (factor > 0.3) {
+            if (factor > 0.35) {
               isGlowing = true;
             }
           }
@@ -102,8 +102,8 @@ export default function InteractiveDotGrid({
           ctx.arc(x, y, radius, 0, Math.PI * 2);
 
           if (isGlowing) {
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
             ctx.fillStyle = activeDotColor;
           } else {
             ctx.shadowBlur = 0;
