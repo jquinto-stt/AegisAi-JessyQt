@@ -8,7 +8,7 @@ import {
   BUSINESS_ARCHETYPES,
 } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
-import GridShape from "@/elements/common/GridShape";
+import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { Button, Badge } from "@/elements";
 import {
   Users,
@@ -924,13 +924,18 @@ export default function OnboardingPage() {
         </div>
 
         {/* Right Column: Visual Showcase & Brand Studio (Identical to Login Architecture) */}
-        <div className="lg:col-span-5 xl:col-span-5 relative bg-[#190088] dark:bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-l border-zinc-200 dark:border-zinc-800 min-h-[560px]">
-          {/* Exact Login Brand Grid Pattern */}
-          <GridShape />
+        <div className="lg:col-span-5 xl:col-span-5 relative bg-[#190088] dark:bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-l border-zinc-200 dark:border-zinc-800 min-h-[560px] select-none">
+          {/* Interactive Google Stitch Dot Mosaic Background */}
+          <InteractiveDotGrid
+            dotGap={24}
+            baseRadius={1.0}
+            activeRadius={2.0}
+            glowDistance={160}
+          />
 
           {step === 1 ? (
             /* ── Step 1: Live Blueprint Architecture Studio ── */
-            <div className="relative z-10 flex flex-col justify-between h-full space-y-5 animate-fade-in w-full">
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-5 animate-fade-in w-full pointer-events-auto">
               {/* Brand Top Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/15">
                 <div className="flex items-center gap-3">
@@ -944,9 +949,6 @@ export default function OnboardingPage() {
                     Instancia de Negocio
                   </span>
                 </div>
-                <span className="text-xs font-mono text-white/70 tracking-wider uppercase px-2.5 py-1 rounded-full bg-white/10">
-                  Vista Previa en Vivo
-                </span>
               </div>
 
               {/* Main Blueprint Terminal Card (Expanded to take real space) */}
