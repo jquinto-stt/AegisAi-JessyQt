@@ -8,6 +8,7 @@ import {
   Incidencia,
   ResumenKPIs,
   OrderStatus,
+  PaymentStatus,
   OrderItem,
   StorePaceMode,
   UrgencyLevel,
@@ -46,9 +47,11 @@ import {
   USE_MOCK as PRODUCTS_USE_MOCK,
 } from "../../../api/products";
 import { toProductItem, toApiProduct } from "../adapters/productAdapter";
-import { inventoryService } from "@/ModuloInventario/services/inventoryService";
+import { createInventoryAdapter, InventoryPort } from "../adapters/inventoryAdapter";
 
 interface PedidosContextType {
+  hasInventarios: boolean;
+  inventoryAdapter: InventoryPort;
   orders: Pedido[];
   historialOrders: Pedido[];
   allOrders: Pedido[];
@@ -85,8 +88,14 @@ interface PedidosContextType {
   rejectOrder: (orderId: string, reason: string) => void;
   cancelOrder: (orderId: string, reason: string) => void;
   sendToKitchen: (orderId: string) => void;
+  sendToPreparation: (orderId: string) => void;
   markOrderReady: (orderId: string) => void;
   deliverOrder: (orderId: string) => void;
+  updatePaymentStatus: (orderId: string, newPaymentStatus: PaymentStatus, note?: string) => boolean;
+  processReturnOrder: (
+    orderId: string,
+    params: { reason: string; returnStock?: boolean; refundPayment?: boolean; author?: string }
+  ) => void;
   adjustEstimate: (orderId: string, deltaMinutes: number) => void;
   approveAIOrder: (orderId: string, customItems?: OrderItem[]) => void;
   toggleProductAvailability: (productId: string) => void;
@@ -151,6 +160,8 @@ const PedidosContext = createContext<PedidosContextType | null>(null);
 export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { getIdToken, user } = useAuth();
   const { activeBusiness, semantics } = useBusiness();
+  const hasInventarios = Boolean(activeBusiness?.activeModules?.includes("inventarios"));
+  const inventoryAdapter = useMemo(() => createInventoryAdapter(hasInventarios), [hasInventarios]);
   const [orders, setOrders] = useState<Pedido[]>(() =>
     activeBusiness ? getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name) : INITIAL_ORDERS
   );
@@ -387,37 +398,50 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
           newTurn = Math.floor(Math.random() * 30) + 1;
         }
 
-        // 1. Reserva preventiva de existencias en el inventario central al confirmar
+        // 1. Notificación de evento OrderConfirmed al puerto de inventario
         if (toStatus === "CONFIRMADO") {
-          void inventoryService.reserveStock({
-            orderId: order.id,
-            items: order.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity })),
-            channel: order.channel || "WhatsApp",
-          });
+          const availCheck = inventoryAdapter.validateAvailableStock(
+            order.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity }))
+          );
+          if (!availCheck.hasStock) {
+            console.warn(
+              `[PedidosContext] Advertencia de sobreventa en orden #${order.id}: ${availCheck.missingItems.map(m => `${m.name} (disponible: ${m.available}, requerido: ${m.requested})`).join(", ")}`
+            );
+          }
+          void inventoryAdapter.handleOrderEvent({ type: "OrderConfirmed", order });
         }
 
-        // 2. Liberación de reserva en el inventario si la orden es cancelada o rechazada
-        if (["CANCELADO", "RECHAZADO"].includes(toStatus)) {
-          void inventoryService.releaseStock(order.id);
+        // 2. Notificación de evento OrderCancelled si la orden es rechazada
+        if (toStatus === "RECHAZADO") {
+          void inventoryAdapter.handleOrderEvent({ type: "OrderCancelled", order, reason: "Orden rechazada" });
         }
 
-        // 3. Descuento formal y asentamiento en Kardex al iniciar preparación o entrega
-        const isProgressiveProduction = ["EN_PREPARACION", "LISTO", "FINALIZADO"].includes(toStatus);
-        const shouldConsumeStock = isProgressiveProduction && !order.isStockConsumed;
+        // 3. Notificación de evento OrderReady al puerto de inventario al llegar a LISTO o entrega
+        // En EN_PREPARACION se mantiene la reserva intacta sin descontar Kardex todavía
+        const isFulfillmentFinished = ["LISTO", "ENTREGADO", "FINALIZADO"].includes(toStatus);
+        const shouldConsumeStock = isFulfillmentFinished && !order.isStockConsumed;
 
         if (shouldConsumeStock) {
+          void inventoryAdapter.handleOrderEvent({ type: "OrderReady", order });
           setTimeout(() => consumeStockForOrder(order), 50);
         }
 
         // Automatic WhatsApp notification to the customer's chat thread
         if (order.channel === "whatsapp") {
           setTimeout(() => {
+            const orderNoun = semantics?.orderNoun?.toLowerCase() || "pedido";
+            const stationNoun = semantics?.stationNoun?.toLowerCase() || "alistamiento y empaque";
             const statusMessages: Partial<Record<OrderStatus, string>> = {
-              CONFIRMADO: `¡Tu pedido #${order.id} fue confirmado! En breve entra a preparación en cocina.`,
-              EN_PREPARACION: `Tu comanda #${order.id} ya ingresó al horno de cocina y se está preparando.`,
-              LISTO: `¡Tu pedido #${order.id} está listo y empacado para retiro / entrega!`,
-              FINALIZADO: `¡Tu pedido #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
-              CANCELADO: `Tu pedido #${order.id} ha sido cancelado. Si tienes dudas, estamos a tu disposición.`,
+              CONFIRMADO: semantics?.requiresKitchenDisplay
+                ? `¡Tu pedido #${order.id} fue confirmado! En breve entra a preparación en cocina.`
+                : `¡Tu ${orderNoun} #${order.id} fue confirmado! En breve inicia su ${stationNoun}.`,
+              EN_PREPARACION: semantics?.requiresKitchenDisplay
+                ? `Tu comanda #${order.id} ya ingresó al horno de cocina y se está preparando.`
+                : `Tu ${orderNoun} #${order.id} ya se encuentra en ${stationNoun}.`,
+              LISTO: `¡Tu ${orderNoun} #${order.id} está listo y empacado para retiro / entrega!`,
+              ENTREGADO: `¡Tu ${orderNoun} #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
+              FINALIZADO: `¡Tu ${orderNoun} #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
+              CANCELADO: `Tu ${orderNoun} #${order.id} ha sido cancelado. Si tienes dudas, estamos a tu disposición.`,
             };
             const msgText = statusMessages[toStatus];
             if (msgText) {
@@ -455,21 +479,40 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const confirmOrder = (orderId: string) => {
-    transitionOrder(orderId, "CONFIRMADO", "Operador de Caja", "Pedido aceptado y comanda confirmada.");
+    const order = orders.find(o => o.id === orderId);
+    if (order && hasInventarios) {
+      const availCheck = inventoryAdapter.validateAvailableStock(
+        order.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity }))
+      );
+      if (!availCheck.hasStock) {
+        const detailStr = availCheck.missingItems.map(m => `${m.name} (disp: ${m.available}, req: ${m.requested})`).join(", ");
+        addIncidencia({
+          title: `Alerta de Stock al Confirmar #${orderId}`,
+          severity: "Media",
+          type: "quiebre_stock",
+          orderId,
+          description: `El pedido se confirmó con déficit en stock disponible: ${detailStr}`,
+        });
+      }
+    }
+    transitionOrder(orderId, "CONFIRMADO", "Operador de Pedidos", "Pedido confirmado y stock reservado.");
   };
 
   const rejectOrder = (orderId: string, reason: string) => {
-    // Liberar reserva preventiva en Inventario
-    void inventoryService.releaseStock(orderId);
+    // Liberar reserva preventiva en Inventario si el módulo está activo
+    void inventoryAdapter.releaseStock(orderId);
 
     setOrders(prev =>
       prev.map(order => {
         if (order.id !== orderId) return order;
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+        const newPaymentStatus: PaymentStatus =
+          order.paymentStatus === "PAGADO" ? "REEMBOLSADO" : "ANULADO";
         return {
           ...order,
           status: "RECHAZADO",
+          paymentStatus: newPaymentStatus,
           rejectionReason: reason,
           history: [
             ...order.history,
@@ -477,7 +520,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
               timestamp: timeStr,
               fromStatus: order.status,
               toStatus: "RECHAZADO",
-              user: "Operador de Caja",
+              fromPaymentStatus: order.paymentStatus,
+              toPaymentStatus: newPaymentStatus,
+              user: "Operador de Pedidos",
               note: `Rechazado por: ${reason}`,
             },
           ],
@@ -486,53 +531,213 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  /**
+   * Cancelación contextual de orden según su etapa operativa:
+   * - NUEVO: cancela directamente sin tocar inventario.
+   * - CONFIRMADO / EN_PREPARACION: libera reserva preventiva sin generar entrada en Kardex.
+   * - LISTO: reversa formalmente la salida de Kardex (ENTRADA / STOCK_ADD) e idempotencia.
+   * - ENTREGADO: bloquea cancelación ordinaria y orienta a processReturnOrder.
+   */
   const cancelOrder = (orderId: string, reason: string) => {
-    // Liberar reserva preventiva en Inventario
-    void inventoryService.releaseStock(orderId);
+    const targetOrder = orders.find(o => o.id === orderId);
+    if (!targetOrder) return;
+
+    if (targetOrder.status === "ENTREGADO" || targetOrder.status === "FINALIZADO") {
+      console.warn("Una orden entregada no puede cancelarse de forma ordinaria. Utilice processReturnOrder para registrar la devolución y reembolso.");
+      return;
+    }
+
+    let inventoryOpId: string | undefined = undefined;
+
+    // Despacho del evento OrderCancelled al puerto de inventario
+    void inventoryAdapter.handleOrderEvent({
+      type: "OrderCancelled",
+      order: targetOrder,
+      reason,
+    }).then(resOpId => {
+      if (resOpId) inventoryOpId = resOpId;
+    });
+
+    // Transición de estado de pago consistente con la cancelación:
+    let newPaymentStatus: PaymentStatus = targetOrder.paymentStatus || "PENDIENTE";
+    if (newPaymentStatus === "PENDIENTE" || newPaymentStatus === "PAGO_CONTRA_ENTREGA") {
+      newPaymentStatus = "ANULADO";
+    } else if (newPaymentStatus === "PAGADO") {
+      newPaymentStatus = "REEMBOLSADO";
+    }
 
     setOrders(prev =>
       prev.map(order => {
         if (order.id !== orderId) return order;
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+        const newEvent: OrderEvent = {
+          timestamp: timeStr,
+          fromStatus: order.status,
+          toStatus: "CANCELADO",
+          fromPaymentStatus: order.paymentStatus || "PENDIENTE",
+          toPaymentStatus: newPaymentStatus,
+          user: "Operador de Pedidos",
+          note: `Cancelado por: ${reason}`,
+          inventoryOperationId: inventoryOpId,
+        };
         return {
           ...order,
           status: "CANCELADO",
+          paymentStatus: newPaymentStatus,
+          isStockReverted: targetOrder.status === "LISTO" ? true : order.isStockReverted,
           cancellationReason: reason,
-          history: [
-            ...order.history,
-            {
-              timestamp: timeStr,
-              fromStatus: order.status,
-              toStatus: "CANCELADO",
-              user: "Supervisor de Turno",
-              note: `Cancelado por: ${reason}`,
-            },
-          ],
+          history: [...order.history, newEvent],
         };
       })
     );
 
     addIncidencia({
-      title: `Pedido ${orderId} cancelado`,
+      title: `Pedido ${orderId} cancelado (${targetOrder.status})`,
       severity: "Alta",
       type: "cancelacion",
       orderId,
-      description: `Motivo de cancelación registrado: ${reason}`,
+      description: `Cancelación en etapa ${targetOrder.status}. Motivo: ${reason}`,
     });
   };
 
+  /**
+   * Flujo formal de Devolución / Anulación para órdenes ENTREGADAS.
+   * La orden conserva su estado operativo (ENTREGADO) pero evoluciona en su eje de
+   * devolución (returnStatus: RECIBIDA) y financiero (paymentStatus: REEMBOLSADO).
+   */
+  const processReturnOrder = (
+    orderId: string,
+    params: { reason: string; returnStock?: boolean; refundPayment?: boolean; author?: string }
+  ) => {
+    const { reason, returnStock = true, refundPayment = false, author = "Supervisor de Devoluciones" } = params;
+    const targetOrder = orders.find(o => o.id === orderId);
+    if (!targetOrder) return;
+
+    let inventoryOpId: string | undefined = undefined;
+
+    // Despacho del evento OrderReturned al puerto de inventario
+    void inventoryAdapter.handleOrderEvent({
+      type: "OrderReturned",
+      order: targetOrder,
+      reason,
+      returnStock,
+    }).then(resOpId => {
+      if (resOpId) inventoryOpId = resOpId;
+    });
+
+    // Modificación del estado financiero correspondiente
+    let newPaymentStatus: PaymentStatus = targetOrder.paymentStatus || "PENDIENTE";
+    if (refundPayment) {
+      if (newPaymentStatus === "PAGADO") {
+        newPaymentStatus = "REEMBOLSADO";
+      } else if (newPaymentStatus === "PENDIENTE" || newPaymentStatus === "PAGO_CONTRA_ENTREGA") {
+        newPaymentStatus = "ANULADO";
+      }
+    }
+
+    setOrders(prev =>
+      prev.map(order => {
+        if (order.id !== orderId) return order;
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+        const newEvent: OrderEvent = {
+          timestamp: timeStr,
+          fromStatus: order.status,
+          toStatus: order.status, // Mantiene su estatus operativo (ej: ENTREGADO)
+          fromPaymentStatus: order.paymentStatus || "PENDIENTE",
+          toPaymentStatus: newPaymentStatus,
+          fromReturnStatus: order.returnStatus || "NO_APLICA",
+          toReturnStatus: "RECIBIDA",
+          user: author,
+          note: `Devolución formal registrada: ${reason} (Reingreso stock: ${returnStock ? "Sí" : "No"}, Reembolso: ${refundPayment ? "Sí" : "No"})`,
+          inventoryOperationId: inventoryOpId,
+        };
+        return {
+          ...order,
+          returnStatus: "RECIBIDA",
+          returnReason: reason,
+          paymentStatus: newPaymentStatus,
+          isStockReverted: returnStock ? true : order.isStockReverted,
+          history: [...order.history, newEvent],
+        };
+      })
+    );
+
+    addIncidencia({
+      title: `Devolución de Pedido ${orderId}`,
+      severity: "Media",
+      type: "cancelacion",
+      orderId,
+      description: `Devolución física registrada por ${author}. Motivo: ${reason}`,
+    });
+  };
+
+  /**
+   * Actualización validada del estado de pago (eje financiero independiente del eje operativo).
+   */
+  const updatePaymentStatus = (orderId: string, newPaymentStatus: PaymentStatus, note?: string): boolean => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return false;
+
+    const current = order.paymentStatus || "PENDIENTE";
+    if (current === newPaymentStatus) return true;
+
+    // Validación de máquina de estados financieros:
+    const allowedTransitions: Record<PaymentStatus, PaymentStatus[]> = {
+      PENDIENTE: ["PAGADO", "PAGO_CONTRA_ENTREGA", "ANULADO"],
+      PAGO_CONTRA_ENTREGA: ["PAGADO", "ANULADO"],
+      PAGADO: ["REEMBOLSADO"],
+      ANULADO: [],
+      REEMBOLSADO: [],
+    };
+
+    if (!allowedTransitions[current]?.includes(newPaymentStatus)) {
+      console.warn(`[PedidosContext] Transición financiera no permitida: ${current} -> ${newPaymentStatus}`);
+      return false;
+    }
+
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    setOrders(prev =>
+      prev.map(o => {
+        if (o.id !== orderId) return o;
+        const newEvent: OrderEvent = {
+          timestamp: timeStr,
+          fromPaymentStatus: current,
+          toPaymentStatus: newPaymentStatus,
+          user: "Cajero / Operador",
+          note: note || `Estado de pago actualizado de ${current} a ${newPaymentStatus}`,
+        };
+        return {
+          ...o,
+          paymentStatus: newPaymentStatus,
+          history: [...o.history, newEvent],
+        };
+      })
+    );
+    return true;
+  };
+
   const sendToKitchen = (orderId: string) => {
-    transitionOrder(orderId, "EN_PREPARACION", "Cocinero Jefe (Carlos Rossi)", "Comanda enviada a horno y KDS de cocina.");
+    const actor = semantics?.requiresKitchenDisplay ? "Cocinero Jefe" : "Operador de Alistamiento";
+    const note = semantics?.requiresKitchenDisplay ? "Comanda enviada a cocina." : "Pedido enviado a alistamiento y empaque.";
+    transitionOrder(orderId, "EN_PREPARACION", actor, note);
+  };
+
+  const sendToPreparation = (orderId: string) => {
+    sendToKitchen(orderId);
   };
 
   const markOrderReady = (orderId: string) => {
-    transitionOrder(orderId, "LISTO", "Cocina de Empanadas", "Elaboración finalizada. Pedido empaquetado y listo para retiro/despacho.");
+    const actor = semantics?.requiresKitchenDisplay ? "Cocina" : (semantics?.stationShortName || "Alistamiento");
+    transitionOrder(orderId, "LISTO", actor, "Alistamiento finalizado. Pedido empacado y listo para retiro/despacho.");
     if (isSoundEnabled) playSuccessSound();
   };
 
   const deliverOrder = (orderId: string) => {
-    transitionOrder(orderId, "FINALIZADO", "Mostrador / Repartidor", "Comanda entregada al cliente.");
+    transitionOrder(orderId, "ENTREGADO", "Mostrador / Repartidor", "Comanda entregada al cliente.");
     if (isSoundEnabled) playSuccessSound();
   };
 
@@ -732,8 +937,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const consumeStockForOrder = (order: Pedido) => {
-    // 1. Descuento unificado en el inventario maestro ERP (ModuloInventario / Kardex)
-    void inventoryService.consumeSaleOrder({
+    // 1. Descuento unificado en el inventario maestro ERP (ModuloInventario / Kardex) si está activo
+    void inventoryAdapter.consumeSaleOrder({
       orderId: order.id,
       items: order.items.map((item) => ({
         productId: item.productId,
@@ -1778,8 +1983,11 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         rejectOrder,
         cancelOrder,
         sendToKitchen,
+        sendToPreparation,
         markOrderReady,
         deliverOrder,
+        updatePaymentStatus,
+        processReturnOrder,
         adjustEstimate,
         approveAIOrder,
         toggleProductAvailability,
@@ -1818,6 +2026,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         simulateAIReply,
         openWhatsAppConversation,
         sendWhatsAppStatusAlert,
+        hasInventarios,
+        inventoryAdapter,
       }}
     >
       {children}

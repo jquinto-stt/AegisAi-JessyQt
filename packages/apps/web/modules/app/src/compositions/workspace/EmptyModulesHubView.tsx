@@ -19,6 +19,7 @@ import {
   Layers,
   Smartphone,
   AlertCircle,
+  Globe,
 } from "lucide-react";
 import { useBusiness, NectoModuleKey, BusinessInstance } from "../../context/BusinessContext";
 import { BusinessIcon } from "./BusinessIcon";
@@ -27,6 +28,7 @@ import { ModuleActivationModal } from "./ModuleActivationModal";
 interface EmptyModulesHubViewProps {
   business?: BusinessInstance;
   onNavigateToModule?: (moduleKey: "pedidos" | "inventarios") => void;
+  onOpenSettings?: (tab?: any) => void;
 }
 
 interface ModuleDefinition {
@@ -44,16 +46,18 @@ interface ModuleDefinition {
 const AVAILABLE_MODULES: ModuleDefinition[] = [
   {
     id: "pedidos",
-    title: "Sistema de Pedidos Omnicanal & Despacho",
-    category: "Ventas & Operación",
-    badge: "Canal WhatsApp & POS",
+    title: "Pedidos",
+    category: "Operación & Despacho",
+    badge: "Módulo Operativo",
     badgeColor: "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
     description:
-      "Recepción y gestión de pedidos vía WhatsApp Bot IA, Web y POS. Incluye tablero Kanban en vivo, estación de preparación/picking, catálogo inteligente y analítica de ventas.",
+      "Gestión y operación del ciclo de vida de las órdenes independientemente del canal de origen.",
     features: [
-      "Bot de WhatsApp interactivo con catálogo",
-      "Kanban de órdenes en vivo y despacho",
-      "Estación de preparación y picking",
+      "Órdenes en vivo",
+      "Estados y flujo operativo",
+      "Preparación y despacho",
+      "Historial y trazabilidad",
+      "Cancelaciones y devoluciones",
     ],
     icon: ShoppingBag,
     isReady: true,
@@ -143,11 +147,18 @@ const AVAILABLE_MODULES: ModuleDefinition[] = [
 export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
   business,
   onNavigateToModule,
+  onOpenSettings,
 }) => {
   const { activeBusiness, toggleModule } = useBusiness();
   const currentBiz = business || activeBusiness;
   const activeModules = currentBiz?.activeModules || [];
   const [activatingModule, setActivatingModule] = useState<NectoModuleKey | null>(null);
+
+  const isWhatsAppConnected = currentBiz?.channels?.whatsapp ?? true;
+  const isWebActive = currentBiz?.channels?.web ?? true;
+  const isPosActive = currentBiz?.channels?.pos ?? true;
+  const configuredChannelsCount = (isWhatsAppConnected ? 1 : 0) + (isWebActive ? 1 : 0) + (isPosActive ? 1 : 0);
+  const totalChannelsCount = 3;
 
   const archetypeLabels: Record<string, string> = {
     retail_store: "Retail, Ferretería & Comercio",
@@ -212,7 +223,7 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Diagnóstico de Salud & Preparación de la Tienda (Setup Readiness) */}
+      {/* 2. Diagnóstico de Salud & Preparación de la Tienda (2 Dimensiones Separadas) */}
       <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2 text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider font-mono">
@@ -220,20 +231,20 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
             <span>Diagnóstico de Preparación de la Tienda</span>
           </div>
           <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-            Arquitectura 3 Capas · Estado en Vivo
+            Arquitectura Necto · Desacoplamiento de Módulos y Canales
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          {/* Capa 1: Base */}
+          {/* Capa 1: Contenedor Base */}
           <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Capa 1 · Contenedor Base</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                100% Lista
+              <span className="text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                100% Configurado
               </span>
             </div>
             <ul className="space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
@@ -247,25 +258,25 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
               </li>
               <li className="flex items-center gap-1.5">
                 <Check className="w-3 h-3 text-emerald-500" />
-                <span>Roles de equipo activos</span>
+                <span>Roles y permisos activos</span>
               </li>
             </ul>
           </div>
 
-          {/* Capa 2: Capacidades */}
+          {/* Capa 2: Módulos / Capacidades (Dimensión Módulos) */}
           <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-orange-500" />
-                <span>Capa 2 · Capacidades</span>
+                <span>Capa 2 · Módulos</span>
               </span>
-              <span className="text-[10px] font-mono font-bold text-zinc-600 dark:text-zinc-300 bg-zinc-200/60 dark:bg-zinc-700 px-2 py-0.5 rounded-full">
-                {activeModules.length} activas
+              <span className="text-[10px] font-mono font-bold text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-full">
+                {activeModules.length} de {AVAILABLE_MODULES.length} activos
               </span>
             </div>
             {activeModules.length === 0 ? (
               <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
-                Tienda limpia. Agrega módulos desde el catálogo inferior cuando tu operación los requiera.
+                Sin módulos activos. Activa capacidades de negocio según tus requerimientos operativos.
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -281,60 +292,61 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
             )}
           </div>
 
-          {/* Capa 3: Conexiones & Canales */}
+          {/* Capa 3: Canales de Entrada (Dimensión Canales) */}
           <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                 <Smartphone className="w-3.5 h-3.5 text-blue-500" />
                 <span>Capa 3 · Canales</span>
               </span>
-              <span
-                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                  currentBiz?.setupProgress?.whatsappConnected
-                    ? "text-emerald-600 bg-emerald-500/10"
-                    : "text-amber-600 bg-amber-500/10"
-                }`}
-              >
-                {currentBiz?.setupProgress?.whatsappConnected ? "WhatsApp Activo" : "Canal Pendiente"}
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20">
+                {configuredChannelsCount} de {totalChannelsCount} configurados
               </span>
             </div>
             <ul className="space-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
               <li className="flex items-center justify-between gap-1">
-                <span>WhatsApp Business:</span>
-                <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                  {currentBiz?.setupProgress?.whatsappConnected ? "Conectado" : "Desconectado"}
+                <span>Tienda Web:</span>
+                <span className={`font-semibold ${isWebActive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"}`}>
+                  {isWebActive ? "Activa" : "Desactivada"}
                 </span>
               </li>
               <li className="flex items-center justify-between gap-1">
-                <span>Ingreso Manual / POS:</span>
+                <span>POS / Mostrador:</span>
                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">Habilitado</span>
               </li>
               <li className="flex items-center justify-between gap-1">
-                <span>Tienda Web:</span>
-                <span className="font-semibold text-zinc-500">
-                  {currentBiz?.channels?.web ? "Activa" : "Desactivada"}
+                <span>WhatsApp Business:</span>
+                <span className={`font-semibold ${isWhatsAppConnected ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-400"}`}>
+                  {isWhatsAppConnected ? "Conectado" : "Desconectado"}
                 </span>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Dynamic Attention Alert if Pedidos is active but WhatsApp is disconnected */}
-        {activeModules.includes("pedidos") && !currentBiz?.setupProgress?.whatsappConnected && (
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-none" />
+        {/* Comunicación Neutral: Pedidos y Canales Desacoplados */}
+        {activeModules.includes("pedidos") && (
+          <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-none" />
               <span>
-                <strong>Aviso de Canales:</strong> Pedidos está instalado y recibiendo órdenes manuales, pero WhatsApp Business aún no está vinculado para recibir órdenes por chat.
+                <strong>Pedidos está activo.</strong> Configura los canales que utilizará este negocio para recibir órdenes (el OMS opera independientemente de los canales externos).
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setActivatingModule("pedidos")}
-              className="py-1 px-3 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white flex-none cursor-pointer self-start sm:self-auto"
-            >
-              Configurar Canales
-            </button>
+            <div className="flex items-center gap-2 flex-none">
+              <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+                {configuredChannelsCount} de {totalChannelsCount} canales
+              </span>
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={() => onOpenSettings("channels")}
+                  className="py-1 px-2.5 rounded-lg text-xs font-semibold bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-700 dark:hover:bg-zinc-600 text-zinc-800 dark:text-zinc-100 cursor-pointer transition-colors"
+                >
+                  Configurar en Sede →
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -449,6 +461,172 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* 4. Sección Independiente: Canales de Entrada & Puntos de Captura */}
+      <div className="space-y-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-blue-500" />
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                Canales de Entrada
+              </h2>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Puntos de captura agnósticos y desacoplados. Conecta o desconecta canales sin alterar la operación de tus módulos.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-xs font-mono font-medium px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              {configuredChannelsCount} de {totalChannelsCount} configurados
+            </span>
+            {onOpenSettings && (
+              <button
+                type="button"
+                onClick={() => onOpenSettings("channels")}
+                className="py-1 px-3 rounded-lg text-xs font-semibold bg-brand-50 hover:bg-brand-100 text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 border border-brand-200 dark:border-brand-800 cursor-pointer transition-colors"
+              >
+                Ajustes de Canales en Sede →
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Canal: WhatsApp Business */}
+          <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col justify-between shadow-xs">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                      WhatsApp Business
+                    </h3>
+                    <p className="text-[11px] text-zinc-500">Canal Conversacional</p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                    isWhatsAppConnected
+                      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
+                      : "text-zinc-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                  }`}
+                >
+                  {isWhatsAppConnected ? "Conectado" : "Desconectado"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Conecta WhatsApp para recibir órdenes y permitir interacción automatizada con clientes.
+              </p>
+            </div>
+            {onOpenSettings && (
+              <div className="pt-4 mt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => onOpenSettings("channels")}
+                  className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    isWhatsAppConnected
+                      ? "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>{isWhatsAppConnected ? "Gestionar Canal →" : "Conectar WhatsApp Business →"}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Canal: Tienda Web */}
+          <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col justify-between shadow-xs">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                      Tienda Web
+                    </h3>
+                    <p className="text-[11px] text-zinc-500">Catálogo Digital</p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                    isWebActive
+                      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
+                      : "text-zinc-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                  }`}
+                >
+                  {isWebActive ? "Activa" : "Desactivada"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Recibe órdenes provenientes del catálogo web y checkout en línea directo.
+              </p>
+            </div>
+            {onOpenSettings && (
+              <div className="pt-4 mt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => onOpenSettings("channels")}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Gestionar Canal →</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Canal: POS / Mostrador */}
+          <div className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col justify-between shadow-xs">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                      POS / Mostrador
+                    </h3>
+                    <p className="text-[11px] text-zinc-500">Operación Presencial</p>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                    isPosActive
+                      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
+                      : "text-zinc-500 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700"
+                  }`}
+                >
+                  {isPosActive ? "Habilitado" : "Deshabilitado"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Permite registrar órdenes manualmente desde la operación o punto de venta físico en el salón.
+              </p>
+            </div>
+            {onOpenSettings && (
+              <div className="pt-4 mt-3 border-t border-zinc-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => onOpenSettings("channels")}
+                  className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300"
+                >
+                  <Store className="w-3.5 h-3.5" />
+                  <span>Gestionar Canal →</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

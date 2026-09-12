@@ -66,7 +66,8 @@ export type StockTrackingAction =
   | "STOCK_COUNT"
   | "STOCK_TRANSFER"
   | "STOCK_CREATE"
-  | "STOCK_ADJUSTMENT";
+  | "STOCK_ADJUSTMENT"
+  | "STOCK_RETURN";
 
 export type AdjustmentReason =
   | "MERMA"

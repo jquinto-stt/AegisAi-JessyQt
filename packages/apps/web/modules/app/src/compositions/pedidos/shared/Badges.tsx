@@ -1,5 +1,5 @@
 import React from "react";
-import { OrderStatus, UrgencyLevel, OrderChannel, AIConfidence, ConversationStatus, HandoffReason } from "../types";
+import { OrderStatus, PaymentStatus, ReturnStatus, UrgencyLevel, OrderChannel, AIConfidence, ConversationStatus, HandoffReason } from "../types";
 import {
   ShoppingBag,
   Clock,
@@ -17,6 +17,7 @@ import {
   Hand,
   UserCheck,
   HelpCircle,
+  RotateCcw,
 } from "lucide-react";
 
 import { useBusiness } from "@/context/BusinessContext";
@@ -69,6 +70,13 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
       border: "border-zinc-200 dark:border-zinc-700",
       icon: <CheckCircle className="w-3 h-3 text-zinc-400" />,
     },
+    ENTREGADO: {
+      label: "Entregado",
+      bg: "bg-zinc-100 dark:bg-zinc-800",
+      text: "text-zinc-500 dark:text-zinc-400",
+      border: "border-zinc-200 dark:border-zinc-700",
+      icon: <CheckCircle className="w-3 h-3 text-zinc-400" />,
+    },
     RECHAZADO: {
       label: "Rechazado",
       bg: "bg-zinc-100 dark:bg-zinc-800",
@@ -85,7 +93,7 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
     },
   };
 
-  const c = configs[status];
+  const c = configs[status] || configs.FINALIZADO;
   const padding = size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs";
 
   return (
@@ -94,6 +102,58 @@ export const OrderStatusBadge: React.FC<{ status: OrderStatus; size?: "sm" | "md
     >
       {c.icon}
       <span>{c.label}</span>
+    </span>
+  );
+};
+
+export const PaymentStatusBadge: React.FC<{ paymentStatus?: PaymentStatus; size?: "sm" | "md" }> = ({
+  paymentStatus = "PENDIENTE",
+  size = "md",
+}) => {
+  const configs: Record<
+    PaymentStatus,
+    { label: string; bg: string; text: string; border: string }
+  > = {
+    PAGADO: {
+      label: "Pagado",
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+      text: "text-emerald-700 dark:text-emerald-400",
+      border: "border-emerald-200 dark:border-emerald-800/60",
+    },
+    PAGO_CONTRA_ENTREGA: {
+      label: "Contra Entrega",
+      bg: "bg-sky-50 dark:bg-sky-950/40",
+      text: "text-sky-700 dark:text-sky-400",
+      border: "border-sky-200 dark:border-sky-800/60",
+    },
+    PENDIENTE: {
+      label: "Cobro Pendiente",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+      text: "text-amber-700 dark:text-amber-400",
+      border: "border-amber-200 dark:border-amber-800/60",
+    },
+    ANULADO: {
+      label: "Cobro Anulado",
+      bg: "bg-gray-100 dark:bg-gray-800",
+      text: "text-gray-500 dark:text-gray-400",
+      border: "border-gray-200 dark:border-gray-700",
+    },
+    REEMBOLSADO: {
+      label: "Reembolsado",
+      bg: "bg-purple-50 dark:bg-purple-950/40",
+      text: "text-purple-700 dark:text-purple-400",
+      border: "border-purple-200 dark:border-purple-800/60",
+    },
+  };
+
+  const c = configs[paymentStatus] || configs.PENDIENTE;
+  const padding = size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-xs";
+
+  return (
+    <span
+      className={`inline-flex items-center font-mono font-semibold rounded-md border ${padding} ${c.bg} ${c.text} ${c.border}`}
+    >
+      {c.label}
     </span>
   );
 };
@@ -266,3 +326,62 @@ export const AIBadge: React.FC<{ confidence?: AIConfidence; onClick?: (e: any) =
     </button>
   );
 };
+
+export const ReturnStatusBadge: React.FC<{ returnStatus: ReturnStatus; size?: "sm" | "md" }> = ({
+  returnStatus,
+  size = "md",
+}) => {
+  const configs: Record<
+    ReturnStatus,
+    { label: string; bg: string; text: string; border: string; icon: React.ReactNode }
+  > = {
+    NO_APLICA: {
+      label: "Sin Devolución",
+      bg: "bg-gray-100 dark:bg-gray-800",
+      text: "text-gray-500 dark:text-gray-400",
+      border: "border-gray-200 dark:border-gray-700",
+      icon: <RotateCcw className="w-3 h-3 text-gray-400" />,
+    },
+    SOLICITADA: {
+      label: "Devolución Solicitada",
+      bg: "bg-amber-50 dark:bg-amber-500/10",
+      text: "text-amber-700 dark:text-amber-300",
+      border: "border-amber-200 dark:border-amber-500/20",
+      icon: <RotateCcw className="w-3 h-3 text-amber-500" />,
+    },
+    APROBADA: {
+      label: "Devolución Aprobada",
+      bg: "bg-blue-50 dark:bg-blue-500/10",
+      text: "text-blue-700 dark:text-blue-300",
+      border: "border-blue-200 dark:border-blue-500/20",
+      icon: <CheckCircle className="w-3 h-3 text-blue-500" />,
+    },
+    RECIBIDA: {
+      label: "Devuelto / Recibido",
+      bg: "bg-purple-50 dark:bg-purple-500/10",
+      text: "text-purple-700 dark:text-purple-300",
+      border: "border-purple-200 dark:border-purple-500/20",
+      icon: <RotateCcw className="w-3 h-3 text-purple-500" />,
+    },
+    RECHAZADA: {
+      label: "Devolución Rechazada",
+      bg: "bg-rose-50 dark:bg-rose-500/10",
+      text: "text-rose-700 dark:text-rose-300",
+      border: "border-rose-200 dark:border-rose-500/20",
+      icon: <XCircle className="w-3 h-3 text-rose-500" />,
+    },
+  };
+
+  const c = configs[returnStatus] || configs.NO_APLICA;
+  const padding = size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs";
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 font-mono font-bold rounded-md border ${padding} ${c.bg} ${c.text} ${c.border}`}
+    >
+      {c.icon}
+      <span>{c.label}</span>
+    </span>
+  );
+};
+

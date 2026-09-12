@@ -24,7 +24,6 @@ import {
   LayoutGrid,
   Package,
 } from "lucide-react";
-import { inventoryService } from "@/ModuloInventario/services/inventoryService";
 import { NectoBanner } from "../shared/NectoBanner";
 
 export const CatalogoInteligenteView: React.FC<{
@@ -38,6 +37,8 @@ export const CatalogoInteligenteView: React.FC<{
     addProduct,
     orders,
     createManualOrder,
+    hasInventarios,
+    inventoryAdapter,
   } = usePedidos();
 
   const { activeBusiness } = useBusiness();
@@ -449,8 +450,8 @@ export const CatalogoInteligenteView: React.FC<{
             </p>
 
             {/* Live Inventory Availability from ModuloInventario */}
-            {(() => {
-              const invStock = inventoryService.getProductStock(product.id, product.name);
+            {hasInventarios && (() => {
+              const invStock = inventoryAdapter.getProductStock(product.id, product.name);
               if (!invStock) return null;
               return (
                 <div className="flex items-center justify-between text-[11px] bg-gray-50 dark:bg-gray-800/60 px-2.5 py-1.5 rounded-xl border border-gray-200/70 dark:border-gray-700">

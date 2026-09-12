@@ -7,7 +7,9 @@ export type PedidosSection =
   | "operacion"
   | "menu"
   | "analitica"
-  | "gestion";
+  | "gestion"
+  | "conversaciones"
+  | "whatsapp";
 
 export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversaciones";
 export type MenuTab = "catalogo" | "insumos";
@@ -31,9 +33,30 @@ export type OrderStatus =
   | "CONFIRMADO"
   | "EN_PREPARACION"
   | "LISTO"
+  | "ENTREGADO"
   | "FINALIZADO"
   | "RECHAZADO"
   | "CANCELADO";
+
+export type PaymentStatus =
+  | "PENDIENTE"
+  | "PAGADO"
+  | "PAGO_CONTRA_ENTREGA"
+  | "ANULADO"
+  | "REEMBOLSADO";
+
+export type ReturnStatus =
+  | "NO_APLICA"
+  | "SOLICITADA"
+  | "APROBADA"
+  | "RECIBIDA"
+  | "RECHAZADA";
+
+export type OrderDomainEvent =
+  | { type: "OrderConfirmed"; order: Pedido }
+  | { type: "OrderReady"; order: Pedido }
+  | { type: "OrderCancelled"; order: Pedido; reason: string }
+  | { type: "OrderReturned"; order: Pedido; reason: string; returnStock: boolean };
 
 export type UrgencyLevel = "A_TIEMPO" | "PROXIMO" | "RETRASADO";
 
@@ -56,10 +79,15 @@ export interface OrderItem {
 export interface OrderEvent {
   timestamp: string;
   fromStatus?: OrderStatus;
-  toStatus: OrderStatus;
+  toStatus?: OrderStatus;
+  fromPaymentStatus?: PaymentStatus;
+  toPaymentStatus?: PaymentStatus;
+  fromReturnStatus?: ReturnStatus;
+  toReturnStatus?: ReturnStatus;
   user: string;
   ruleName?: string;
   note?: string;
+  inventoryOperationId?: string;
 }
 
 export interface Pedido {
@@ -69,6 +97,9 @@ export interface Pedido {
   customerAddress?: string;
   deliveryAddress?: string;
   paymentMethod?: "mercadopago" | "efectivo" | "transferencia" | "pos" | string;
+  paymentStatus?: PaymentStatus;
+  returnStatus?: ReturnStatus;
+  returnReason?: string;
   channel: OrderChannel;
   type: OrderType;
   status: OrderStatus;
@@ -89,6 +120,7 @@ export interface Pedido {
   turnNumber?: number;
   notes?: string;
   isStockConsumed?: boolean;
+  isStockReverted?: boolean;
   isInLiveQueue?: boolean;
   history: OrderEvent[];
 }

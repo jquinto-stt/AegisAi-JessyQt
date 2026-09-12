@@ -5,17 +5,18 @@ import {
   Package,
   Check,
   CheckCircle2,
-  Clock,
   MapPin,
   Phone,
   Search,
-  Truck,
-  ArrowRight,
-  SlidersHorizontal,
-  ExternalLink,
+  Smartphone,
+  Globe,
+  Store,
+  Clock,
+  FileText,
+  Timer,
+  Bike,
 } from "lucide-react";
-import { Button } from "@/elements";
-import { inventoryService } from "@/ModuloInventario/services/inventoryService";
+import { Button, Badge } from "@/elements";
 
 export const PreparacionView: React.FC = () => {
   const {
@@ -94,28 +95,23 @@ export const PreparacionView: React.FC = () => {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-sans">
       {/* Toast */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 animate-slide-up">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 animate-slide-up">
+          <CheckCircle2 className="h-4 w-4 text-success-500" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Header Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      {/* ── Single Authoritative Page Header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-              Preparación
-            </h2>
-            <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
-              {pendingOrders.length} {pendingOrders.length === 1 ? "orden pendiente" : "órdenes pendientes"}
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Alistamiento, preparación física y verificación de productos antes de la entrega o despacho.
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            Mesa de Preparación & Alistamiento
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {pendingOrders.length} {pendingOrders.length === 1 ? "orden en alistamiento" : "órdenes en alistamiento"}
           </p>
         </div>
 
@@ -123,11 +119,10 @@ export const PreparacionView: React.FC = () => {
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
-            type="text"
-            placeholder="Buscar pedido, cliente o ítem..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-xs text-gray-800 placeholder-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-800 dark:text-gray-200"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por cliente, # orden o producto..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
           />
         </div>
       </div>
@@ -152,84 +147,137 @@ export const PreparacionView: React.FC = () => {
             const totalItems = order.items.length;
             const checkedCount = checks.size;
             const isCompleted = totalItems > 0 && checkedCount === totalItems;
+            const progressPercent = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
+
+            const getChannelIcon = (ch?: string) => {
+              switch (ch?.toLowerCase()) {
+                case "whatsapp":
+                  return <Smartphone className="h-5 w-5" />;
+                case "web":
+                  return <Globe className="h-5 w-5" />;
+                default:
+                  return <Store className="h-5 w-5" />;
+              }
+            };
+
+            const getChannelStyle = (ch?: string) => {
+              switch (ch?.toLowerCase()) {
+                case "whatsapp":
+                  return "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400";
+                case "web":
+                  return "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-400";
+                default:
+                  return "bg-secondary-50 text-secondary-600 dark:bg-secondary-500/15 dark:text-secondary-400";
+              }
+            };
 
             return (
               <div
                 key={order.id}
-                className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between transition-all hover:border-gray-300 dark:hover:border-gray-700"
+                onClick={() => setSelectedOrderId(order.id)}
+                className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 hover:border-gray-300 hover:shadow-theme-md dark:hover:border-gray-700 transition-all cursor-pointer space-y-4"
               >
-                <div>
-                  {/* Top Bar: Order ID + Status */}
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedOrderId(order.id)}
-                      className="font-mono text-sm font-bold text-brand-500 hover:underline cursor-pointer flex items-center gap-1"
+                <div className="space-y-3.5">
+                  {/* Top Bar: Channel Icon + ID + Status */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-xs transition-transform group-hover:scale-105 ${getChannelStyle(order.channel)}`}>
+                        {getChannelIcon(order.channel)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white font-mono">
+                            {order.id}
+                          </h3>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-700">
+                            {order.channel}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-[160px] mt-0.5">
+                          {order.customerName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1 flex-none">
+                      <Badge variant="light" size="xs" color="warning">
+                        En Preparación
+                      </Badge>
+                      <div className="flex items-center gap-1 text-[11px] text-gray-400 font-medium">
+                        <Timer className="h-3 w-3 text-warning-500" />
+                        <span>{order.elapsedMinutes}/{order.estimatedMinutes}m</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Operational Badges: Modality & Total Items */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge
+                      variant="light"
+                      size="xs"
+                      color="light"
+                      startIcon={order.customerAddress ? <Bike className="w-3 h-3 text-brand-500" /> : <Store className="w-3 h-3 text-success-600" />}
                     >
-                      <span>{order.id}</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </button>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                      {order.channel}
-                    </span>
+                      {order.customerAddress ? "Domicilio" : "Mostrador / Local"}
+                    </Badge>
+
+                    <Badge variant="light" size="xs" color="light">
+                      {order.items.reduce((s, it) => s + it.quantity, 0)} unidades ({totalItems} productos)
+                    </Badge>
                   </div>
 
-                  {/* Customer Info */}
-                  <div className="mt-3">
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                      {order.customerName}
-                    </h4>
-                    {order.customerPhone && (
-                      <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
-                        <Phone className="h-3 w-3" />
-                        <span>{order.customerPhone}</span>
-                      </p>
-                    )}
-                    {order.customerAddress && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1 truncate">
-                        <MapPin className="h-3 w-3 flex-none text-gray-400" />
-                        <span className="truncate">{order.customerAddress}</span>
-                      </p>
-                    )}
-                  </div>
+                  {/* Checklist Container */}
+                  <div className="rounded-xl bg-gray-50/70 dark:bg-gray-800/40 p-3.5 border border-gray-100 dark:border-gray-800 space-y-2.5">
+                    {/* Header with Progress Bar */}
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-medium text-gray-500 dark:text-gray-400">Progreso de alistamiento</span>
+                        <span className="font-semibold text-gray-800 dark:text-white">
+                          {checkedCount} de {totalItems} listos ({progressPercent}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200/80 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-success-500 h-full rounded-full transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
 
-                  {/* Items Checklist */}
-                  <div className="mt-4 space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                      Artículos de la orden
-                    </p>
-                    <div className="space-y-1.5">
+                    {/* Interactive Items */}
+                    <div className="space-y-1.5 pt-1">
                       {order.items.map((item, idx) => {
                         const isChecked = checks.has(idx);
                         return (
                           <div
                             key={idx}
-                            onClick={() => toggleItemCheck(order.id, idx)}
-                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer select-none transition-all ${
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleItemCheck(order.id, idx);
+                            }}
+                            className={`flex items-center justify-between p-2 rounded-lg border text-xs cursor-pointer select-none transition-all ${
                               isChecked
-                                ? "border-emerald-200 bg-emerald-50/60 text-gray-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-gray-200"
-                                : "border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-300 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-300"
+                                ? "border-success-200 bg-success-50/60 text-success-900 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-200"
+                                : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                             }`}
                           >
-                            <span
-                              className={`flex h-4 w-4 flex-none items-center justify-center rounded border transition-all ${
-                                isChecked
-                                  ? "border-emerald-500 bg-emerald-500 text-white"
-                                  : "border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700"
-                              }`}
-                            >
-                              {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
-                            </span>
-                            <span className="font-semibold text-gray-900 dark:text-white">
-                              {item.quantity}×
-                            </span>
-                            <span
-                              className={`flex-1 truncate ${
-                                isChecked ? "line-through text-gray-400 dark:text-gray-500" : ""
-                              }`}
-                            >
-                              {item.name}
-                            </span>
+                            <div className="flex items-center gap-2 truncate">
+                              <span
+                                className={`flex h-4 w-4 flex-none items-center justify-center rounded border transition-all ${
+                                  isChecked
+                                    ? "border-success-500 bg-success-500 text-white"
+                                    : "border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700"
+                                }`}
+                              >
+                                {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
+                              </span>
+                              <span className="font-bold text-gray-900 dark:text-white">
+                                {item.quantity}×
+                              </span>
+                              <span className={`truncate ${isChecked ? "line-through text-gray-400 dark:text-gray-500 font-normal" : "font-medium"}`}>
+                                {item.name}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
@@ -237,32 +285,18 @@ export const PreparacionView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer: Progress + Action Button */}
-                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500 dark:text-gray-400 font-medium">
-                      Progreso
-                    </span>
-                    <span className="font-bold text-gray-800 dark:text-white">
-                      {checkedCount} de {totalItems} preparados
-                    </span>
-                  </div>
-
-                  <div className="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all duration-300"
-                      style={{
-                        width: `${totalItems > 0 ? (checkedCount / totalItems) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-
+                {/* Footer Action: Single Full-width Authoritative Action */}
+                <div className="pt-3.5 border-t border-gray-100 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
                   <Button
                     size="sm"
+                    variant={isCompleted ? "outline" : "primary"}
                     onClick={() => handleMarkReady(order)}
-                    className="w-full justify-center cursor-pointer font-semibold"
+                    className={`w-full justify-center text-xs font-semibold cursor-pointer shadow-theme-xs ${
+                      isCompleted ? "bg-success-600 hover:bg-success-700 text-white border-transparent" : ""
+                    }`}
+                    startIcon={<CheckCircle2 className="h-3.5 w-3.5" />}
                   >
-                    Marcar como listo
+                    {isCompleted ? "Marcar Listo para Entrega" : "Completar Alistamiento"}
                   </Button>
                 </div>
               </div>

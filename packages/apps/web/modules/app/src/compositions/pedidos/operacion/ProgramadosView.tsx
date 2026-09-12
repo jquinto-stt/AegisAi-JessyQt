@@ -1,59 +1,48 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
-import { Pedido, OperacionTab } from "../types";
+import { OperacionTab } from "../types";
 import {
   Calendar,
   Clock,
   MapPin,
   CheckCircle2,
   Package,
-  ShoppingBag,
-  ArrowLeft,
-  Truck,
   Phone,
   Search,
-  CalendarDays,
-  ExternalLink,
-  Boxes,
-  Layers,
+  Plus,
+  FileText,
+  Smartphone,
+  Globe,
+  Store,
+  Bike,
+  CreditCard,
+  GripVertical,
+  ChevronDown,
+  ChevronRight,
+  MessageSquare,
+  Table2,
+  LayoutGrid,
 } from "lucide-react";
-import {
-  Button,
-  Badge,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardBody,
-  CardFooter,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableCell,
-  SegmentedControl,
-} from "@/elements";
-import { useBusiness } from "@/context/BusinessContext";
+import { Button, Badge } from "@/elements";
 
 export const ProgramadosView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;
-}> = ({ onNavigateOpTab }) => {
+}> = () => {
   const {
     programados,
-    recurrences,
     injectScheduledOrderToLive,
     setSelectedOrderId,
   } = usePedidos();
-  const { semantics } = useBusiness();
 
   const [dateFilter, setDateFilter] = useState<string>("TODOS");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [searchQuery, setSearchQuery] = useState("");
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [isGroupOpen, setIsGroupOpen] = useState(true);
 
   const showToast = (msg: string) => {
     setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3500);
+    setTimeout(() => setSuccessToast(null), 3000);
   };
 
   const hoyList = programados.filter(p => p.scheduledDate === "Hoy");
@@ -64,7 +53,7 @@ export const ProgramadosView: React.FC<{
 
   const handleInjectToFulfillment = (orderId: string, customerName: string) => {
     injectScheduledOrderToLive(orderId, true);
-    showToast(`¡Pedido ${orderId} de ${customerName} trasladado a la cola activa de Alistamiento & Despacho!`);
+    showToast(`Pedido ${orderId} de ${customerName} trasladado a la cola activa.`);
   };
 
   // Filter list
@@ -84,365 +73,471 @@ export const ProgramadosView: React.FC<{
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-sans">
       {/* Toast feedback */}
       {successToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#190088] text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold border border-white/20 animate-slide-up">
-          <CheckCircle2 className="w-4 h-4 text-[#97D6DF]" />
+        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 animate-slide-up">
+          <CheckCircle2 className="h-4 w-4 text-success-500" />
           <span>{successToast}</span>
         </div>
       )}
 
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-white via-zinc-50 to-white dark:from-[#18181B] dark:via-[#202024] dark:to-[#18181B] p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center font-bold shadow-inner">
-            <Calendar className="w-6 h-6 stroke-[2.2]" />
-          </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <h2 className="font-bold text-lg text-zinc-900 dark:text-zinc-100 tracking-tight">
-                Entregas Programadas & Despachos Futuros
-              </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
-                Agenda Comercial
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Planificación y anticipación operativa para pedidos corporativos, cotizaciones pactadas y entregas en fecha específica.
-            </p>
-          </div>
+      {/* ── Single Authoritative Page Header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            Pedidos Programados
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {programados.length} {programados.length === 1 ? "pedido agendado" : "pedidos agendados"} · ${totalAmountAll.toLocaleString("es-CO")} en total
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onNavigateOpTab?.("en-vivo")}
-            className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1 text-[#FF3F1A]" />
-            <span>Volver a Órdenes</span>
-          </Button>
+          <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-800">
+            <button
+              type="button"
+              onClick={() => setViewMode("cards")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                viewMode === "cards"
+                  ? "bg-white shadow-xs text-gray-900 dark:bg-gray-700 dark:text-white"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Tarjetas</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white shadow-xs text-gray-900 dark:bg-gray-700 dark:text-white"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <Table2 className="h-3.5 w-3.5" />
+              <span>Tabla principal</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Filter Bar & Search ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por cliente, # orden o producto..."
+            className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-400 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200"
+          />
+        </div>
+
+        {/* Date Filter Chips */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {[
+            { id: "TODOS", label: `Todos (${programados.length})` },
+            { id: "HOY", label: `Hoy (${hoyList.length})` },
+            { id: "MANANA", label: `Mañana (${mananaList.length})` },
+            { id: "FUTUROS", label: `Próximos días (${futuraList.length})` },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setDateFilter(tab.id)}
+              className={`rounded-lg px-3 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                dateFilter === tab.id
+                  ? "bg-brand-500 text-white shadow-theme-xs"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 4 Planning KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1: Hoy */}
-        <Card className="p-4 border-l-4 border-l-[#FF3F1A] bg-white dark:bg-[#18181B]">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            <span>Programados Hoy</span>
-            <Clock className="w-4 h-4 text-[#FF3F1A]" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
-              {hoyList.length}
-            </span>
-            <span className="text-[11px] font-bold text-[#FF3F1A] bg-[#FF3F1A]/10 px-2 py-0.5 rounded-full">
-              Prioridad alta
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Despachos programados para la jornada de hoy</p>
-        </Card>
-
-        {/* KPI 2: Mañana */}
-        <Card className="p-4 border-l-4 border-l-[#190088] dark:border-l-[#97D6DF] bg-white dark:bg-[#18181B]">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            <span>Programados Mañana</span>
-            <CalendarDays className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-3xl font-black font-mono text-[#190088] dark:text-[#97D6DF]">
-              {mananaList.length}
-            </span>
-            <span className="text-[11px] font-bold text-[#190088] dark:text-[#97D6DF] bg-[#190088]/10 dark:bg-[#97D6DF]/20 px-2 py-0.5 rounded-full">
-              Próxima salida
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Órdenes agendadas para el día de mañana</p>
-        </Card>
-
-        {/* KPI 3: Esta Semana */}
-        <Card className="p-4 border-l-4 border-l-amber-500 bg-white dark:bg-[#18181B]">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            <span>Próximos Días / Futuros</span>
-            <Layers className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-3xl font-black font-mono text-zinc-900 dark:text-zinc-100">
-              {futuraList.length}
-            </span>
-            <span className="text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">
-              En agenda
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Entregas pactadas a mediano plazo</p>
-        </Card>
-
-        {/* KPI 4: Monto Consolidado */}
-        <Card className="p-4 border-l-4 border-l-emerald-500 bg-white dark:bg-[#18181B]">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
-            <span>Valor Consolidado</span>
-            <Truck className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-              ${totalAmountAll.toLocaleString("es-CO")}
-            </span>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-              COP
-            </span>
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Facturación total de entregas pactadas</p>
-        </Card>
-      </div>
-
-      {/* Toolbar: Search, Date Filter & View Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-[#18181B] p-3.5 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="Buscar por orden programada, cliente o ítem..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-9 pr-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-[#FF3F1A]"
-            />
-          </div>
-
-          {/* Date Range Tabs */}
-          <div className="flex items-center gap-1.5">
-            {[
-              { id: "TODOS", label: `Todos (${programados.length})` },
-              { id: "HOY", label: `Hoy (${hoyList.length})` },
-              { id: "MANANA", label: `Mañana (${mananaList.length})` },
-              { id: "FUTUROS", label: `Próximos Días (${futuraList.length})` },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setDateFilter(tab.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  dateFilter === tab.id
-                    ? "bg-[#190088] text-white shadow-2xs"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* View Switcher */}
-        <SegmentedControl
-          intent="programados.view"
-          tone="contrast"
-          value={viewMode}
-          onValueChange={v => setViewMode(v as any)}
-          options={[
-            { value: "cards", label: "Tarjetas de Entrega" },
-            { value: "table", label: "Planilla de Agenda" },
-          ]}
-        />
-      </div>
-
-      {/* Main Content Area */}
+      {/* ── Main Content: Clean Cards or Table ── */}
       {filteredList.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-white dark:bg-[#18181B] border border-zinc-200 dark:border-zinc-800 space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center mx-auto">
-            <Calendar className="w-6 h-6 stroke-[1.5]" />
+        <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-800 mb-3">
+            <Calendar className="h-6 w-6" />
           </div>
-          <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">
-            No hay despachos programados con los filtros seleccionados
-          </h3>
-          <p className="text-xs text-zinc-400 max-w-md mx-auto">
-            Puedes agendar despachos futuros desde las conversaciones de WhatsApp o creando una orden con fecha pactada.
+          <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">
+            No hay pedidos programados con los filtros seleccionados
+          </h4>
+          <p className="mt-1 text-xs text-gray-400">
+            Puedes agendar despachos futuros desde las conversaciones de WhatsApp o registrando órdenes pactadas.
           </p>
         </div>
       ) : viewMode === "cards" ? (
-        /* Cards View: Scheduled Delivery Cards */
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredList.map(order => {
             const isToday = order.scheduledDate === "Hoy";
+            const isTomorrow = order.scheduledDate === "Mañana";
+
+            const getChannelIcon = (ch?: string) => {
+              switch (ch?.toLowerCase()) {
+                case "whatsapp":
+                  return <Smartphone className="h-5 w-5" />;
+                case "web":
+                  return <Globe className="h-5 w-5" />;
+                default:
+                  return <Store className="h-5 w-5" />;
+              }
+            };
+
+            const getChannelStyle = (ch?: string) => {
+              switch (ch?.toLowerCase()) {
+                case "whatsapp":
+                  return "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400";
+                case "web":
+                  return "bg-blue-light-50 text-blue-light-600 dark:bg-blue-light-500/15 dark:text-blue-light-400";
+                default:
+                  return "bg-secondary-50 text-secondary-600 dark:bg-secondary-500/15 dark:text-secondary-400";
+              }
+            };
+
             return (
-              <Card
+              <div
                 key={order.id}
-                className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs hover:border-zinc-300 dark:hover:border-zinc-700 transition-all flex flex-col justify-between"
+                onClick={() => setSelectedOrderId(order.id)}
+                className="group relative flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 hover:border-gray-300 hover:shadow-theme-md dark:hover:border-gray-700 transition-all cursor-pointer space-y-4"
               >
-                {/* Header */}
-                <CardHeader className="p-4 pb-3 border-b border-zinc-100 dark:border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-extrabold text-xs px-2.5 py-1 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/20">
-                        {order.id}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
-                        {order.channel.toUpperCase()}
-                      </span>
+                <div className="space-y-3.5">
+                  {/* Top Bar: Icon + ID + Date Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-xs transition-transform group-hover:scale-105 ${getChannelStyle(order.channel)}`}>
+                        {getChannelIcon(order.channel)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white font-mono">
+                            {order.id}
+                          </h3>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200/60 dark:border-gray-700">
+                            {order.channel}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate max-w-[160px] mt-0.5">
+                          {order.customerName}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Scheduled Badge */}
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 ${
-                        isToday
-                          ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/30"
-                          : "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] border-[#190088]/30"
-                      }`}
-                    >
-                      <Clock className="w-3 h-3" />
-                      <span>{order.scheduledDate || "Fecha pactada"} {order.scheduledTime ? `a las ${order.scheduledTime}` : ""}</span>
-                    </span>
+                    <div className="flex flex-col items-end gap-1 flex-none">
+                      <Badge
+                        variant="light"
+                        size="xs"
+                        color={isToday ? "warning" : isTomorrow ? "info" : "light"}
+                      >
+                        {isToday ? "Hoy" : isTomorrow ? "Mañana" : "Agendado"}
+                      </Badge>
+                      <span className="text-[11px] text-gray-400 font-medium">
+                        {order.scheduledTime ? order.scheduledTime : order.scheduledDate}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Customer & Destination */}
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-sm text-zinc-900 dark:text-zinc-100 truncate flex items-center justify-between">
-                      <span>{order.customerName}</span>
-                      <span className="font-mono text-xs font-extrabold text-zinc-900 dark:text-zinc-100">
+                  {/* Operational Signals: Modality & Items Count */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Badge
+                      variant="light"
+                      size="xs"
+                      color="light"
+                      startIcon={order.customerAddress ? <Bike className="w-3 h-3 text-brand-500" /> : <Store className="w-3 h-3 text-success-600" />}
+                    >
+                      {order.customerAddress ? "Domicilio" : "Mostrador / Local"}
+                    </Badge>
+
+                    <Badge variant="light" size="xs" color="light">
+                      {order.items.reduce((s, i) => s + i.quantity, 0)} unidades ({order.items.length} prods.)
+                    </Badge>
+                  </div>
+
+                  {/* Operational Items Preview (Clean without artificial box-in-box) */}
+                  <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+                    <div className="space-y-1.5">
+                      {order.items.slice(0, 3).map((it, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-300">
+                          <span className="truncate max-w-[200px]">
+                            <strong className="text-brand-600 dark:text-brand-400 font-bold mr-1.5">{it.quantity}×</strong>
+                            {it.name}
+                          </span>
+                          <span className="font-mono text-gray-400 text-[11px] flex-none ml-2">
+                            ${(it.quantity * it.unitPrice).toLocaleString("es-CO")}
+                          </span>
+                        </div>
+                      ))}
+                      {order.items.length > 3 && (
+                        <p className="text-[11px] text-gray-400 font-medium pt-0.5">
+                          + {order.items.length - 3} producto(s) adicional(es)
+                        </p>
+                      )}
+                    </div>
+
+                    {order.notes && (
+                      <p className="text-[11px] text-warning-700 dark:text-warning-300/90 font-medium truncate pt-1">
+                        💬 Nota: "{order.notes}"
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Total pactado:</span>
+                      <span className="font-mono text-sm font-bold text-gray-900 dark:text-white">
                         ${order.total.toLocaleString("es-CO")} COP
                       </span>
-                    </h4>
-                    <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                      <MapPin className="w-3.5 h-3.5 flex-none text-zinc-400" />
-                      <span className="truncate">
-                        {order.customerAddress || "Dirección pactada por confirmar"}
-                      </span>
                     </div>
-                    {order.customerPhone && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                        <Phone className="w-3 h-3 flex-none" />
-                        <span>{order.customerPhone}</span>
-                      </div>
-                    )}
                   </div>
-                </CardHeader>
+                </div>
 
-                {/* Body: Products & Notes */}
-                <CardBody className="p-4 space-y-3 flex-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                    <span>Productos a Entregar</span>
-                    <span className="font-mono text-zinc-600 dark:text-zinc-400">
-                      {order.items.reduce((s, i) => s + i.quantity, 0)} unidades
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 bg-zinc-50/70 dark:bg-zinc-900/50 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                    {order.items.map((it, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-zinc-100 dark:border-zinc-800/60 last:border-0">
-                        <div className="flex items-center gap-2 truncate">
-                          <span className="font-mono font-bold text-[#190088] dark:text-[#97D6DF]">×{it.quantity}</span>
-                          <span className="font-medium text-zinc-800 dark:text-zinc-200 truncate">{it.name}</span>
-                        </div>
-                        <span className="font-mono text-zinc-500 flex-none ml-2">
-                          ${(it.quantity * it.unitPrice).toLocaleString("es-CO")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {order.notes && (
-                    <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-[11px] text-amber-800 dark:text-amber-300">
-                      <strong>Instrucción Logística:</strong> {order.notes}
-                    </div>
-                  )}
-
-                  {order.recurringFrequency && (
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#190088] dark:text-[#97D6DF] bg-[#190088]/5 p-2 rounded-lg border border-[#190088]/15">
-                      <CalendarDays className="w-3.5 h-3.5" />
-                      <span>Frecuencia Recurrente: {order.recurringFrequency}</span>
-                    </div>
-                  )}
-                </CardBody>
-
-                {/* Footer Actions */}
-                <CardFooter className="p-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                {/* Footer Actions: Single Authoritative Full-width Button */}
+                <div className="pt-3.5 border-t border-gray-100 dark:border-gray-800" onClick={(e) => e.stopPropagation()}>
                   <Button
-                    variant="outline"
-                    onClick={() => setSelectedOrderId(order.id)}
-                    className="py-1.5 px-3 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-300"
-                  >
-                    Ver Detalle
-                  </Button>
-
-                  <Button
+                    size="sm"
                     variant="primary"
                     onClick={() => handleInjectToFulfillment(order.id, order.customerName)}
-                    className="flex-1 py-1.5 px-3 text-xs font-bold bg-[#190088] hover:bg-[#14006e] text-white shadow-xs"
+                    className="w-full justify-center text-xs font-semibold cursor-pointer shadow-theme-xs"
+                    startIcon={<Package className="h-3.5 w-3.5" />}
                   >
-                    <Boxes className="w-3.5 h-3.5 mr-1 text-[#97D6DF]" />
-                    <span>Pasar a Alistamiento</span>
+                    Pasar a Alistamiento
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
       ) : (
-        /* Table View: Scheduled Orders */
-        <Card className="bg-white dark:bg-[#18181B] rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-xs overflow-hidden">
-          <Table>
-            <TableHeader className="bg-zinc-50 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 text-xs font-bold uppercase">
-              <TableRow>
-                <TableCell className="py-3 px-4">Orden</TableCell>
-                <TableCell className="py-3 px-4">Fecha & Hora Pactada</TableCell>
-                <TableCell className="py-3 px-4">Cliente</TableCell>
-                <TableCell className="py-3 px-4">Dirección Destino</TableCell>
-                <TableCell className="py-3 px-4">Contenido</TableCell>
-                <TableCell className="py-3 px-4">Total</TableCell>
-                <TableCell className="py-3 px-4 text-right">Acción Logística</TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
-              {filteredList.map(order => (
-                <TableRow key={order.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-900/40">
-                  <TableCell className="py-3.5 px-4 font-mono font-bold text-[#FF3F1A]">
-                    {order.id}
-                    <span className="block text-[10px] text-zinc-400 font-normal uppercase">{order.channel}</span>
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4">
-                    <span className="font-bold text-zinc-900 dark:text-zinc-100 block">
-                      {order.scheduledDate || "Pactada"}
-                    </span>
-                    <span className="text-[11px] font-mono text-[#190088] dark:text-[#97D6DF]">
-                      {order.scheduledTime || "Sin hora fija"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4">
-                    <p className="font-bold text-zinc-900 dark:text-zinc-100">{order.customerName}</p>
-                    <p className="text-[11px] text-zinc-400">{order.customerPhone}</p>
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4 max-w-xs truncate text-zinc-600 dark:text-zinc-300">
-                    {order.customerAddress || "Dirección pactada por confirmar"}
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4">
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200">
-                      {order.items.reduce((s, i) => s + i.quantity, 0)} unidades
-                    </span>
-                    <span className="block text-[11px] text-zinc-400 truncate max-w-[200px]">
-                      {order.items.map(i => i.name).join(", ")}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4 font-mono font-bold text-zinc-900 dark:text-zinc-100">
-                    ${order.total.toLocaleString("es-CO")}
-                  </TableCell>
-                  <TableCell className="py-3.5 px-4 text-right">
-                    <Button
-                      variant="primary"
-                      onClick={() => handleInjectToFulfillment(order.id, order.customerName)}
-                      className="py-1 px-3 text-xs font-bold bg-[#190088] hover:bg-[#14006e] text-white"
-                    >
-                      <Boxes className="w-3.5 h-3.5 mr-1 text-[#97D6DF]" />
-                      <span>Alistar Ahora</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+        /* ── VIEW 2: PLAKY / MONDAY.COM MAIN TABLE ── */
+        <div className="space-y-6 animate-fade-in">
+          {filteredList.length === 0 ? (
+            <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-400 dark:bg-gray-800 mb-3">
+                <Table2 className="h-6 w-6" />
+              </div>
+              <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">
+                No hay pedidos programados con los filtros seleccionados
+              </h4>
+              <p className="mt-1 text-xs text-gray-400">
+                Puedes agendar despachos futuros desde las conversaciones de WhatsApp o registrando órdenes pactadas.
+              </p>
+            </div>
+          ) : (
+            (() => {
+              const totalSum = filteredList.reduce((s, o) => s + o.total, 0);
+              const totalUnits = filteredList.reduce((s, o) => s + o.items.reduce((sum, it) => sum + it.quantity, 0), 0);
+              const hoyCount = filteredList.filter(o => o.scheduledDate === "Hoy").length;
+              const mananaCount = filteredList.filter(o => o.scheduledDate === "Mañana").length;
+              const otrosCount = filteredList.length - hoyCount - mananaCount;
+              const totalCount = filteredList.length || 1;
+
+              return (
+                <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+                  {/* Collapsible Group Header (Monday / Plaky style) */}
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50/90 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsGroupOpen(!isGroupOpen)}
+                        className="flex h-6 w-6 items-center justify-center rounded-md bg-secondary-600 hover:bg-secondary-700 text-white transition-all cursor-pointer shadow-xs"
+                        title={isGroupOpen ? "Colapsar grupo" : "Expandir grupo"}
+                      >
+                        {isGroupOpen ? <ChevronDown className="h-4 w-4 stroke-[2.5]" /> : <ChevronRight className="h-4 w-4 stroke-[2.5]" />}
+                      </button>
+                      <h2 className="text-sm font-bold text-secondary-600 dark:text-secondary-400">
+                        Cronograma de Despachos Programados
+                      </h2>
+                      <span className="rounded-full bg-white dark:bg-gray-800 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                        {filteredList.length} {filteredList.length === 1 ? "agendado" : "agendados"}
+                      </span>
+                      <span className="hidden sm:inline-block text-xs text-gray-400">
+                        · {totalUnits} uds por despachar
+                      </span>
+                    </div>
+                  </div>
+
+                  {isGroupOpen && (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-xs">
+                        <thead className="bg-gray-50/50 dark:bg-gray-800/30 text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider text-[11px]">
+                          <tr>
+                            <th className="w-8 px-3 py-2.5 text-center"></th>
+                            <th className="min-w-[220px] px-4 py-2.5">Orden & Cliente</th>
+                            <th className="min-w-[120px] px-3 py-2.5">Canal</th>
+                            <th className="min-w-[130px] px-3 py-2.5">Modalidad</th>
+                            <th className="min-w-[140px] px-3 py-2.5">Fecha & Hora Pactada</th>
+                            <th className="min-w-[150px] px-3 py-2.5">Artículos</th>
+                            <th className="min-w-[120px] px-3 py-2.5">Total Pactado</th>
+                            <th className="min-w-[140px] px-3 py-2.5 text-center">Programación</th>
+                            <th className="min-w-[140px] px-4 py-2.5 text-right">Acción</th>
+                          </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800/80">
+                          {filteredList.map(order => {
+                            const isToday = order.scheduledDate === "Hoy";
+                            const isTomorrow = order.scheduledDate === "Mañana";
+
+                            return (
+                              <tr
+                                key={order.id}
+                                onClick={() => setSelectedOrderId(order.id)}
+                                className="group transition-colors cursor-pointer border-l-[5px] border-l-secondary-600 hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
+                              >
+                                <td className="w-8 px-3 py-3 text-center">
+                                  <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity inline-block" />
+                                </td>
+
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-mono text-xs font-bold text-gray-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                      {order.id}
+                                    </span>
+                                    <span className="font-semibold text-xs text-gray-800 dark:text-white truncate max-w-[140px]">
+                                      {order.customerName}
+                                    </span>
+                                    {order.notes && (
+                                      <span title={order.notes} className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-warning-700 dark:text-warning-300 bg-warning-50 dark:bg-warning-500/15 px-1.5 py-0.5 rounded-full border border-warning-200/60 dark:border-warning-500/30">
+                                        <MessageSquare className="h-3 w-3" /> 1
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                <td className="px-3 py-3">
+                                  <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border bg-secondary-50 text-secondary-700 border-secondary-200 dark:bg-secondary-950/40 dark:text-secondary-300 dark:border-secondary-800">
+                                    <span className="capitalize">{order.channel}</span>
+                                  </span>
+                                </td>
+
+                                <td className="px-3 py-3">
+                                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+                                    {order.customerAddress ? (
+                                      <>
+                                        <Bike className="h-3.5 w-3.5 text-brand-500 flex-none" />
+                                        <span>Domicilio</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Store className="h-3.5 w-3.5 text-success-600 flex-none" />
+                                        <span>Mostrador</span>
+                                      </>
+                                    )}
+                                  </span>
+                                </td>
+
+                                <td className="px-3 py-3">
+                                  <div className="flex flex-col">
+                                    <span className="text-xs font-semibold text-gray-900 dark:text-white">{order.scheduledDate || "Fecha pactada"}</span>
+                                    <span className="text-[11px] text-gray-500 dark:text-gray-400">{order.scheduledTime || "Sin hora fija"}</span>
+                                  </div>
+                                </td>
+
+                                <td className="px-3 py-3 text-gray-700 dark:text-gray-300">
+                                  <div className="text-xs">
+                                    <span className="font-semibold text-gray-900 dark:text-white">
+                                      {order.items.reduce((s, it) => s + it.quantity, 0)} uds
+                                    </span>
+                                    <span className="text-gray-400 text-[11px] ml-1">
+                                      ({order.items.length} {order.items.length === 1 ? "prod" : "prods"})
+                                    </span>
+                                  </div>
+                                </td>
+
+                                <td className="px-3 py-3 font-mono text-xs font-bold text-gray-900 dark:text-white">
+                                  ${order.total.toLocaleString("es-CO")}
+                                </td>
+
+                                <td className="px-3 py-3 text-center">
+                                  <span className={`block w-full py-1.5 px-3 rounded-md text-center text-xs font-bold uppercase tracking-wider shadow-xs ${
+                                    isToday
+                                      ? "bg-warning-500 text-white"
+                                      : isTomorrow
+                                      ? "bg-blue-light-600 text-white"
+                                      : "bg-secondary-600 text-white"
+                                  }`}>
+                                    {isToday ? "Hoy" : isTomorrow ? "Mañana" : "Agendado"}
+                                  </span>
+                                </td>
+
+                                <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleInjectToFulfillment(order.id, order.customerName)}
+                                    className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-600 transition-colors shadow-xs cursor-pointer inline-flex items-center gap-1"
+                                  >
+                                    <Package className="h-3.5 w-3.5" />
+                                    <span>Alistar</span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+
+                        {/* Plaky / Monday Signature Footer Summary Bar */}
+                        <tfoot className="bg-gray-50/80 dark:bg-gray-800/60 border-t-2 border-gray-200 dark:border-gray-700">
+                          <tr>
+                            <td className="w-8 px-3 py-2.5"></td>
+                            <td className="px-4 py-2.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+                              Total {filteredList.length} agendadas
+                            </td>
+                            <td className="px-3 py-2.5"></td>
+                            <td className="px-3 py-2.5"></td>
+                            <td className="px-3 py-2.5"></td>
+                            <td className="px-3 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300">
+                              {totalUnits} uds
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div className="flex flex-col text-xs font-mono">
+                                <span className="text-[10px] text-gray-400 uppercase font-semibold">sum</span>
+                                <span className="font-bold text-gray-900 dark:text-white">
+                                  ${totalSum.toLocaleString("es-CO")}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <div
+                                className="flex h-4 w-full rounded-md overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-inner"
+                                title={`Distribución: ${hoyCount} Hoy, ${mananaCount} Mañana, ${otrosCount} Próximos`}
+                              >
+                                {hoyCount > 0 && (
+                                  <div
+                                    style={{ width: `${(hoyCount / totalCount) * 100}%` }}
+                                    className="bg-warning-500 transition-all"
+                                    title={`${hoyCount} Para Hoy`}
+                                  />
+                                )}
+                                {mananaCount > 0 && (
+                                  <div
+                                    style={{ width: `${(mananaCount / totalCount) * 100}%` }}
+                                    className="bg-blue-light-600 transition-all"
+                                    title={`${mananaCount} Para Mañana`}
+                                  />
+                                )}
+                                {otrosCount > 0 && (
+                                  <div
+                                    style={{ width: `${(otrosCount / totalCount) * 100}%` }}
+                                    className="bg-secondary-600 transition-all"
+                                    title={`${otrosCount} Agendados futuros`}
+                                  />
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
+          )}
+        </div>
       )}
     </div>
   );

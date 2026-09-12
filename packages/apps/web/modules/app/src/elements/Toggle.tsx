@@ -5,6 +5,8 @@ export interface ToggleProps extends ElementBaseProps {
   checked: boolean;
   /** Callback al alternar; recibe el nuevo valor. */
   onCheckedChange?: (next: boolean) => void;
+  /** Alias común para alternar el valor. */
+  onChange?: (next: boolean) => void;
   /** Etiqueta accesible (aria-label) cuando no hay texto visible. */
   ariaLabel?: string;
   /** Deshabilita el control. */
@@ -33,6 +35,7 @@ export const Toggle = ui_dsl<ToggleProps>({
     const {
       checked,
       onCheckedChange,
+      onChange,
       ariaLabel,
       disabled,
       size = 'md',
@@ -43,6 +46,12 @@ export const Toggle = ui_dsl<ToggleProps>({
       size === 'sm'
         ? { track: 'w-9 h-5', thumb: 'w-4 h-4', on: 'translate-x-4', off: 'translate-x-0' }
         : { track: 'w-12 h-6', thumb: 'w-5 h-5', on: 'translate-x-6', off: 'translate-x-0' };
+
+    const handleToggle = () => {
+      const next = !checked;
+      onCheckedChange?.(next);
+      onChange?.(next);
+    };
 
     return (
       <button
@@ -55,16 +64,16 @@ export const Toggle = ui_dsl<ToggleProps>({
         data-node-id={nodeId}
         data-intent={intent}
         data-state={checked ? 'on' : 'off'}
-        onClick={() => onCheckedChange?.(!checked)}
+        onClick={handleToggle}
         className={[
           className,
           dims.track,
-          checked ? 'bg-[#FF3F1A]' : 'bg-zinc-300 dark:bg-zinc-700',
+          checked ? 'bg-brand-500' : 'bg-gray-200 dark:bg-white/10',
         ].join(' ')}
       >
         <span
           className={[
-            'block rounded-full bg-white shadow-2xs transition-transform',
+            'block rounded-full bg-white shadow-theme-xs transition-transform',
             dims.thumb,
             checked ? dims.on : dims.off,
           ].join(' ')}

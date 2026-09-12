@@ -16,14 +16,14 @@ const columns: FooterColumn[] = [
     links: [
       { label: "Plataforma Necto", href: "#" },
       { label: "Tecnologia IA", href: "#" },
-      { label: "Restaurantes & SST", href: "#" },
+      { label: "Comercio & Retail", href: "#" },
     ],
   },
   {
     title: "Servicios",
     links: [
       { label: "Gestion de Pedidos", href: "#" },
-      { label: "KDS Cocina", href: "#" },
+      { label: "Control de Inventario", href: "#" },
       { label: "Catalogo de Productos", href: "#" },
     ],
   },
@@ -100,7 +100,7 @@ export const AppFooter = () => {
       {/* Copyright bar */}
       <div className="bg-secondary-600 px-8 py-3 text-center">
         <p className="text-xs text-white/90">
-          &copy; 2026 Necto. Plataforma de Operaciones y Gestion para Restaurantes. Todos los derechos reservados.
+          &copy; 2026 Necto. Plataforma modular de operaciones y gestión multinegocio. Todos los derechos reservados.
         </p>
       </div>
     </footer>

@@ -29,7 +29,7 @@ import {
   GroupIcon,
   BoltIcon,
 } from "@/icons";
-import { PanelLeftClose } from "lucide-react";
+import { PanelLeftClose, Globe, Store, SlidersHorizontal } from "lucide-react";
 import { uiStore } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -83,9 +83,10 @@ const LogoCollapsed = () => (
 interface SidebarFooterProps {
   activeRoleName: string;
   onOpenRoleModal: () => void;
+  onOpenSettingsModal?: (tab?: string) => void;
 }
 
-const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal }: SidebarFooterProps) => {
+const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSettingsModal }: SidebarFooterProps) => {
   const { isExpanded: showExpanded } = useSidebarContext();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -120,12 +121,17 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal }: SidebarFoot
           </button>
         </li>
         <li>
-          <Link to="/workspaces" className={rowClasses} title="Gestión de Sucursales">
+          <button
+            type="button"
+            onClick={onOpenSettingsModal || (() => navigate("/workspaces"))}
+            className={rowClasses}
+            title="Configuración de Sede"
+          >
             <span className="menu-item-icon-size menu-item-icon-inactive">
               <PlugInIcon />
             </span>
             {showExpanded && <span className="menu-item-text">Configuración</span>}
-          </Link>
+          </button>
         </li>
         <li>
           <a
@@ -173,6 +179,7 @@ export interface StockFlowSidebarProps {
   onNavigateModule: (module: "pedidos" | "inventarios" | "modules-hub") => void;
   onNavigateInventario: (tab: InventoryTab) => void;
   onOpenRoleModal: () => void;
+  onOpenSettingsModal?: (tab?: string) => void;
   activeRoleName?: string;
 }
 
@@ -186,6 +193,7 @@ export const StockFlowSidebar = observer(({
   onNavigateModule,
   onNavigateInventario,
   onOpenRoleModal,
+  onOpenSettingsModal,
   activeRoleName = "Dueño",
 }: StockFlowSidebarProps) => {
   const { activeBusiness, semantics } = useBusiness();
@@ -204,6 +212,15 @@ export const StockFlowSidebar = observer(({
     return true;
   });
 
+  // Reactive WhatsApp capability toggle
+  const [isWhatsAppEnabled, setIsWhatsAppEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("necto_whatsapp_channel_enabled");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true;
+  });
+
   useEffect(() => {
     const handleToggle = () => {
       try {
@@ -211,11 +228,21 @@ export const StockFlowSidebar = observer(({
         if (saved !== null) setIsPreparacionEnabled(JSON.parse(saved));
       } catch (e) {}
     };
+    const handleWhatsAppToggle = () => {
+      try {
+        const saved = localStorage.getItem("necto_whatsapp_channel_enabled");
+        if (saved !== null) setIsWhatsAppEnabled(JSON.parse(saved));
+      } catch (e) {}
+    };
     window.addEventListener("necto_preparacion_toggle", handleToggle);
+    window.addEventListener("necto_whatsapp_config_changed", handleWhatsAppToggle);
     window.addEventListener("storage", handleToggle);
+    window.addEventListener("storage", handleWhatsAppToggle);
     return () => {
       window.removeEventListener("necto_preparacion_toggle", handleToggle);
+      window.removeEventListener("necto_whatsapp_config_changed", handleWhatsAppToggle);
       window.removeEventListener("storage", handleToggle);
+      window.removeEventListener("storage", handleWhatsAppToggle);
     };
   }, []);
 
@@ -268,7 +295,7 @@ export const StockFlowSidebar = observer(({
           </div>
           )}
 
-          {/* SECCIÓN PEDIDOS */}
+          {/* SECCIÓN MÓDULO PEDIDOS (OMS) */}
           {hasPedidos && (
             <div>
               <MenuSectionHeader title="Pedidos" />
@@ -285,39 +312,100 @@ export const StockFlowSidebar = observer(({
                   active={activeModule === "pedidos" && pedidosSection === "programados"}
                   onClick={() => onNavigatePedidos("programados")}
                 />
-                {isPreparacionEnabled && (
+                {isFood && isPreparacionEnabled && (
                   <MenuItem
                     icon={<BoxIcon />}
-                    name="Preparación"
+                    name={semantics?.stationShortName || "Preparación"}
                     active={activeModule === "pedidos" && pedidosSection === "preparacion"}
                     onClick={() => onNavigatePedidos("preparacion")}
                   />
                 )}
-                <MenuItem
-                  icon={<ChatIcon />}
-                  name="Canales"
-                  active={activeModule === "pedidos" && pedidosSection === "canales"}
-                  onClick={() => onNavigatePedidos("canales")}
-                />
-                <MenuItem
-                  icon={<PlugInIcon />}
-                  name="Configuración"
-                  active={activeModule === "pedidos" && pedidosSection === "configuracion"}
-                  onClick={() => onNavigatePedidos("configuracion")}
-                />
               </ul>
             </div>
           )}
 
-          {/* SECCIÓN MÓDULOS & APPS (SIEMPRE DISPONIBLE PARA GESTIÓN DE PLUGINS) */}
+          {/* SECCIÓN CANALES DE ENTRADA (DESACOPLADOS) */}
           <div>
-            <MenuSectionHeader title="Tienda & Módulos" />
+            <div className="flex items-center justify-between px-3 py-1">
+              <MenuSectionHeader title="Canales de Entrada" />
+              <button
+                type="button"
+                onClick={() => onOpenSettingsModal?.("channels")}
+                className="text-[10px] font-mono font-bold text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 cursor-pointer transition-colors"
+                title="Configurar canales en la Sede"
+              >
+                Ajustes →
+              </button>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {/* WhatsApp Business */}
+              <MenuItem
+                icon={<ChatIcon />}
+                name="WhatsApp Business"
+                badge={
+                  <span
+                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
+                      isWhatsAppEnabled
+                        ? "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
+                        : "text-zinc-500 bg-zinc-200 dark:bg-zinc-800"
+                    }`}
+                  >
+                    {isWhatsAppEnabled ? "En Línea" : "Inactivo"}
+                  </span>
+                }
+                active={activeModule === "pedidos" && (pedidosSection === "conversaciones" || pedidosSection === "whatsapp")}
+                onClick={() => {
+                  if (isWhatsAppEnabled) {
+                    onNavigatePedidos("conversaciones");
+                  } else {
+                    onOpenSettingsModal?.("channels");
+                  }
+                }}
+              />
+
+              {/* Tienda Web */}
+              <MenuItem
+                icon={<Globe className="w-4 h-4" />}
+                name="Tienda Web"
+                badge={
+                  <span className="text-[9px] font-mono text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded font-bold">
+                    Web
+                  </span>
+                }
+                active={false}
+                onClick={() => onOpenSettingsModal?.("channels")}
+              />
+
+              {/* POS / Mostrador */}
+              <MenuItem
+                icon={<Store className="w-4 h-4" />}
+                name="POS / Mostrador"
+                badge={
+                  <span className="text-[9px] font-mono text-purple-600 dark:text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded font-bold">
+                    Local
+                  </span>
+                }
+                active={false}
+                onClick={() => onOpenSettingsModal?.("channels")}
+              />
+            </ul>
+          </div>
+
+          {/* SECCIÓN SEDE & TIENDA */}
+          <div>
+            <MenuSectionHeader title="Sede & Tienda" />
             <ul className="flex flex-col gap-1">
               <MenuItem
                 icon={<PlugInIcon />}
                 name="Módulos de Tienda"
                 active={activeModule === "modules-hub"}
                 onClick={() => onNavigateModule("modules-hub")}
+              />
+              <MenuItem
+                icon={<SlidersHorizontal className="w-4 h-4" />}
+                name="Configuración de Sede"
+                active={false}
+                onClick={() => onOpenSettingsModal?.("general")}
               />
             </ul>
           </div>
@@ -326,6 +414,7 @@ export const StockFlowSidebar = observer(({
         <SidebarFooter
           activeRoleName={activeRoleName}
           onOpenRoleModal={onOpenRoleModal}
+          onOpenSettingsModal={onOpenSettingsModal}
         />
       </nav>
     </BaseAppSidebar>

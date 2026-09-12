@@ -81,12 +81,72 @@ export interface WhatsAppBotConfig {
 
   // AI & Personality
   botPersonality?: BotPersonality;
+  botName?: string;
+  botTone?: "cálido" | "profesional" | "ágil" | "técnico";
+  responseStyle?: "claro" | "conciso" | "extenso";
+  emojiFrequency?: "nunca" | "moderado" | "frecuente";
   isAiUpsellEnabled?: boolean;
   upsellMessage?: string;
   isAutoConfirmOrders?: boolean;
   autoConfirmMaxAmount?: number;
   delayAlertMinutes?: number;
   isDelayAlertEnabled?: boolean;
+
+  // 2. Fuentes de Conocimiento del Asistente
+  knowledgeSources?: {
+    catalog: boolean;
+    businessInfo: boolean;
+    faq: boolean;
+    policies: boolean;
+    inventoryQuery: boolean;
+  };
+
+  // 3. Intenciones Soportadas
+  supportedIntents?: {
+    catalog: boolean;
+    price: boolean;
+    stock: boolean;
+    createOrder: boolean;
+    trackOrder: boolean;
+    modifyOrder: boolean;
+    cancelOrder: boolean;
+    hoursLocation: boolean;
+    humanAgent: boolean;
+  };
+
+  // 4. Reglas Creación & Confirmación OMS
+  orderCreationMode?: "auto_new" | "interactive_confirm" | "human_review";
+  autoConfirmCriteria?: {
+    maxAmount: number;
+    requireStock: boolean;
+    requireCompleteData: boolean;
+    excludeRestricted: boolean;
+  };
+
+  // 5. Handoff a Humano
+  handoffTriggers?: {
+    userRequest: boolean;
+    unhandledQuery: boolean;
+    unhappyCustomer: boolean;
+    outOfStock: boolean;
+    highAmount: boolean;
+    requiresApproval: boolean;
+  };
+  handoffTarget?: "general" | "sales" | "support" | "ops";
+  handoffBehavior?: "pause_ia" | "assist_agent" | "resume_on_finish";
+
+  // 6. Horarios y Disponibilidad del Asistente
+  allowOrdersOutsideHours?: boolean;
+
+  // 7. Experiencia Conversacional del Cliente
+  customerExperience?: {
+    showCatalogCards: boolean;
+    showCategories: boolean;
+    showPictures: boolean;
+    showPrices: boolean;
+    inlineCart: boolean;
+    preConfirmationSummary: boolean;
+  };
 
   // Holiday / Seasonal Profiles
   activeHolidayTheme?: HolidayTheme;
@@ -133,6 +193,7 @@ export interface BusinessInstance {
     personality: string;
     catalogCategories: string[];
   };
+  isPreparacionEnabled?: boolean;
   createdAt: string;
 }
 

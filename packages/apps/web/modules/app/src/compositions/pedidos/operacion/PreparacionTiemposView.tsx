@@ -46,7 +46,6 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useBusiness } from "@/context/BusinessContext";
-import { inventoryService } from "@/ModuloInventario/services/inventoryService";
 
 export const PreparacionTiemposView: React.FC<{
   onNavigateOpTab?: (t: OperacionTab) => void;

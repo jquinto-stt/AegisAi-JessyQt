@@ -13,6 +13,7 @@ export const RejectCancelModal: React.FC = () => {
     setCancelModalOrder,
     rejectOrder,
     cancelOrder,
+    processReturnOrder,
   } = usePedidos();
   const { semantics } = useBusiness();
   const isFood = semantics?.requiresKitchenDisplay;
@@ -24,6 +25,8 @@ export const RejectCancelModal: React.FC = () => {
   const [customReason, setCustomReason] = useState("");
 
   if (!targetOrder) return null;
+
+  const isDelivered = targetOrder.status === "ENTREGADO" || (targetOrder.status as string) === "FINALIZADO";
 
   const reasons = isReject
     ? isFood
@@ -41,23 +44,31 @@ export const RejectCancelModal: React.FC = () => {
           "Dirección fuera de cobertura de envío",
           "Otro motivo",
         ]
+    : isDelivered
+    ? [
+        "Devolución física por defecto o garantía",
+        "Error en la referencia entregada",
+        "Disconformidad del cliente con el producto",
+        "Cancelación post-entrega acordada",
+        "Otro motivo",
+      ]
     : isFood
-      ? [
-          "Solicitud explícita del cliente",
-          "Retraso excesivo en cocina",
-          "Error en el pedido",
-          "Falta de insumos críticos",
-          "Corrección operativa",
-          "Otro motivo",
-        ]
-      : [
-          "Solicitud explícita del cliente",
-          "Retraso en alistamiento o bodega",
-          "Error en el pedido o referencia",
-          "Sin stock disponible en inventario",
-          "Corrección operativa",
-          "Otro motivo",
-        ];
+    ? [
+        "Solicitud explícita del cliente",
+        "Retraso excesivo en cocina",
+        "Error en el pedido",
+        "Falta de insumos críticos",
+        "Corrección operativa",
+        "Otro motivo",
+      ]
+    : [
+        "Solicitud explícita del cliente",
+        "Retraso en alistamiento o bodega",
+        "Error en el pedido o referencia",
+        "Sin stock disponible en inventario",
+        "Corrección operativa",
+        "Otro motivo",
+      ];
 
   const handleClose = () => {
     setRejectModalOrder(null);
@@ -72,6 +83,12 @@ export const RejectCancelModal: React.FC = () => {
 
     if (isReject) {
       rejectOrder(targetOrder.id, finalReason);
+    } else if (isDelivered) {
+      processReturnOrder(targetOrder.id, {
+        reason: finalReason,
+        returnStock: true,
+        refundPayment: targetOrder.paymentStatus === "PAGADO",
+      });
     } else {
       cancelOrder(targetOrder.id, finalReason);
     }
@@ -96,7 +113,11 @@ export const RejectCancelModal: React.FC = () => {
               <AlertTriangle className="w-5 h-5 text-red-500" />
             )}
             <h3 className="font-extrabold text-base text-gray-900 dark:text-gray-100">
-              {isReject ? "Rechazar Pedido" : "Cancelar Pedido"} #{targetOrder.id}
+              {isReject
+                ? "Rechazar Pedido"
+                : isDelivered
+                ? "Registrar Devolución / Anular"
+                : "Cancelar Pedido"} #{targetOrder.id}
             </h3>
           </div>
           <Button variant="ghost" intent="reject-cancel.close" onClick={handleClose} className="w-8 h-8 p-0 text-gray-400">
@@ -104,9 +125,29 @@ export const RejectCancelModal: React.FC = () => {
           </Button>
         </div>
 
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          Debe seleccionar obligatoriamente un motivo para registrar en el log de auditoría.
-        </p>
+        {/* Dynamic Context Notice */}
+        <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/50 text-xs text-gray-600 dark:text-gray-300">
+          {targetOrder.status === "LISTO" && (
+            <p>
+              📦 <strong>Atención:</strong> Esta orden ya generó salida en Kardex. Al confirmar la cancelación, el sistema registrará automáticamente una <strong>reversión formal de inventario (ENTRADA)</strong>.
+            </p>
+          )}
+          {isDelivered && (
+            <p>
+              🔄 <strong>Atención:</strong> Esta orden ya fue entregada. Se registrará una <strong>devolución formal en Kardex (STOCK_RETURN)</strong> {targetOrder.paymentStatus === "PAGADO" ? "y el reembolso correspondiente." : "y la anulación de cobro."}
+            </p>
+          )}
+          {(targetOrder.status === "CONFIRMADO" || targetOrder.status === "EN_PREPARACION") && (
+            <p>
+              🛡 <strong>Liberación de Reserva:</strong> Se liberarán las unidades reservadas en inventario sin alterar el histórico de salidas.
+            </p>
+          )}
+          {targetOrder.status === "NUEVO" && (
+            <p>
+              Se cancelará la orden sin impacto en existencias de inventario.
+            </p>
+          )}
+        </div>
 
         {/* Reason selector */}
         <div className="flex flex-col gap-2">
@@ -161,7 +202,7 @@ export const RejectCancelModal: React.FC = () => {
             onClick={handleSubmit}
             className="flex-1 py-2.5 px-4 text-xs bg-red-600 hover:bg-red-700"
           >
-            Confirmar {isReject ? "Rechazo" : "Cancelación"}
+            Confirmar {isReject ? "Rechazo" : isDelivered ? "Devolución" : "Cancelación"}
           </Button>
         </div>
       </div>

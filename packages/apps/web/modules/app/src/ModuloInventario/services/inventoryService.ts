@@ -540,6 +540,15 @@ class InventoryService {
     // Liberar reservas preventivas asociadas a la orden antes de asentar salida definitiva
     this.releaseStock(orderId, false);
 
+    // Protección de Idempotencia: Si la orden ya tiene salida de Kardex registrada, ignorar duplicación
+    const alreadyConsumed = this.movements.some(
+      (m) => m.referenceDoc === orderId && m.action === "STOCK_REMOVE"
+    );
+    if (alreadyConsumed) {
+      console.warn(`[InventoryService] Idempotencia: La orden #${orderId} ya tiene salida de Kardex. Omitiendo duplicado.`);
+      return [];
+    }
+
     const results: Array<{ product: InventoryProduct; movement: StockMovement }> = [];
     const now = new Date().toISOString();
 
@@ -598,6 +607,193 @@ class InventoryService {
     }
 
     return results;
+  }
+
+  /**
+   * Reversa una salida formal de stock tras la cancelación de un pedido en estado LISTO.
+   * Reingresa stockActual y genera movimiento formal de auditoría en Kardex (ENTRADA / STOCK_ADD).
+   */
+  public async revertSaleOrder(params: {
+    orderId: string;
+    items: Array<{ productId?: string; sku?: string; name: string; quantity: number }>;
+    reason?: string;
+    author?: string;
+  }): Promise<Array<{ product: InventoryProduct; movement: StockMovement }>> {
+    const { orderId, items, reason = "Cancelación de orden en estado LISTO", author = "Sistema de Pedidos" } = params;
+
+    // Protección de Idempotencia: Si la orden ya fue revertida en Kardex, ignorar duplicación
+    const alreadyReverted = this.movements.some(
+      (m) => m.referenceDoc === orderId && (m.action === "STOCK_ADD" && m.concept?.includes("Reversión"))
+    );
+    if (alreadyReverted) {
+      console.warn(`[InventoryService] Idempotencia: La orden #${orderId} ya fue revertida en Kardex. Omitiendo duplicado.`);
+      return [];
+    }
+
+    const results: Array<{ product: InventoryProduct; movement: StockMovement }> = [];
+    const now = new Date().toISOString();
+
+    for (const item of items) {
+      if (item.quantity <= 0) continue;
+
+      const pIndex = this.products.findIndex(
+        (p) =>
+          (item.productId && p.id === item.productId) ||
+          (item.sku && p.sku.toLowerCase() === item.sku.toLowerCase()) ||
+          p.name.toLowerCase() === item.name.toLowerCase()
+      );
+
+      if (pIndex !== -1) {
+        const prod = this.products[pIndex];
+        const prevStock = prod.stockActual;
+        const newStock = Number((prevStock + item.quantity).toFixed(2));
+
+        const updatedProduct: InventoryProduct = {
+          ...prod,
+          stockActual: newStock,
+          status: this.calculateStatus(newStock, prod.stockMinimo),
+          updatedAt: now,
+        };
+
+        this.products[pIndex] = updatedProduct;
+
+        const movement: StockMovement = {
+          id: `mov-rev-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+          productId: prod.id,
+          productSku: prod.sku,
+          productName: prod.name,
+          type: "ENTRADA",
+          action: "STOCK_ADD",
+          quantity: item.quantity,
+          previousStock: prevStock,
+          newStock,
+          toLocation: prod.locationName,
+          concept: `Reversión de Venta / Cancelación Orden #${orderId}`,
+          referenceDoc: orderId,
+          timestamp: now,
+          author,
+          notes: `Reversión formal de salida de inventario por cancelación. Motivo: ${reason}`,
+        };
+
+        this.movements.unshift(movement);
+        results.push({ product: updatedProduct, movement });
+      }
+    }
+
+    if (results.length > 0) {
+      this.persistProducts();
+      this.persistMovements();
+      this.notify();
+    }
+
+    return results;
+  }
+
+  /**
+   * Registra la devolución de mercancía física para una orden previamente ENTREGADA.
+   * Reingresa stockActual y genera movimiento en Kardex de tipo STOCK_RETURN.
+   */
+  public async returnDeliveredOrder(params: {
+    orderId: string;
+    items: Array<{ productId?: string; sku?: string; name: string; quantity: number }>;
+    reason?: string;
+    author?: string;
+  }): Promise<Array<{ product: InventoryProduct; movement: StockMovement }>> {
+    const { orderId, items, reason = "Devolución comercial de orden entregada", author = "Supervisor de Devoluciones" } = params;
+
+    // Protección de Idempotencia: Si la orden ya tiene devolución registrada en Kardex, ignorar duplicación
+    const alreadyReturned = this.movements.some(
+      (m) => m.referenceDoc === orderId && m.action === "STOCK_RETURN"
+    );
+    if (alreadyReturned) {
+      console.warn(`[InventoryService] Idempotencia: La orden #${orderId} ya cuenta con devolución en Kardex. Omitiendo duplicado.`);
+      return [];
+    }
+
+    const results: Array<{ product: InventoryProduct; movement: StockMovement }> = [];
+    const now = new Date().toISOString();
+
+    for (const item of items) {
+      if (item.quantity <= 0) continue;
+
+      const pIndex = this.products.findIndex(
+        (p) =>
+          (item.productId && p.id === item.productId) ||
+          (item.sku && p.sku.toLowerCase() === item.sku.toLowerCase()) ||
+          p.name.toLowerCase() === item.name.toLowerCase()
+      );
+
+      if (pIndex !== -1) {
+        const prod = this.products[pIndex];
+        const prevStock = prod.stockActual;
+        const newStock = Number((prevStock + item.quantity).toFixed(2));
+
+        const updatedProduct: InventoryProduct = {
+          ...prod,
+          stockActual: newStock,
+          status: this.calculateStatus(newStock, prod.stockMinimo),
+          updatedAt: now,
+        };
+
+        this.products[pIndex] = updatedProduct;
+
+        const movement: StockMovement = {
+          id: `mov-ret-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+          productId: prod.id,
+          productSku: prod.sku,
+          productName: prod.name,
+          type: "ENTRADA",
+          action: "STOCK_RETURN",
+          quantity: item.quantity,
+          previousStock: prevStock,
+          newStock,
+          toLocation: prod.locationName,
+          concept: `Devolución Comercial / Orden #${orderId}`,
+          referenceDoc: orderId,
+          timestamp: now,
+          author,
+          notes: `Reingreso por devolución de cliente. Motivo: ${reason}`,
+        };
+
+        this.movements.unshift(movement);
+        results.push({ product: updatedProduct, movement });
+      }
+    }
+
+    if (results.length > 0) {
+      this.persistProducts();
+      this.persistMovements();
+      this.notify();
+    }
+
+    return results;
+  }
+
+  /**
+   * Valida disponibilidad comercial estricta usando availableStock (stockActual - reservedStock).
+   */
+  public validateAvailableStock(items: Array<{ productId?: string; name: string; quantity: number }>): {
+    hasStock: boolean;
+    missingItems: Array<{ name: string; requested: number; available: number }>;
+  } {
+    const missingItems: Array<{ name: string; requested: number; available: number }> = [];
+
+    for (const item of items) {
+      const stockInfo = this.getProductStock(item.productId, item.name);
+      const available = stockInfo ? stockInfo.availableStock : 0;
+      if (available < item.quantity) {
+        missingItems.push({
+          name: item.name,
+          requested: item.quantity,
+          available,
+        });
+      }
+    }
+
+    return {
+      hasStock: missingItems.length === 0,
+      missingItems,
+    };
   }
 
   /**

@@ -74,7 +74,7 @@ export const AIInterpretationModal: React.FC = () => {
               onClick={() => openWhatsAppConversation(aiModalOrder.id)}
               className="text-xs font-bold text-[#190088] dark:text-[#97D6DF] hover:underline cursor-pointer flex items-center gap-1"
             >
-              <span>Ver en WhatsApp</span>
+              <span>Ver conversación de origen</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           </div>

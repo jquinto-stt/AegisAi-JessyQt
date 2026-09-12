@@ -65,12 +65,30 @@ export const CanalesView: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  // Channels state
-  const [channels, setChannels] = useState({
-    whatsapp: activeBusiness?.channels?.whatsapp ?? true,
-    pos: activeBusiness?.channels?.pos ?? true,
-    web: activeBusiness?.channels?.web ?? true,
-    api: true,
+  // Channels state with persistent WhatsApp activation
+  const [channels, setChannels] = useState(() => {
+    let whatsappActive = true;
+    try {
+      const saved = localStorage.getItem("necto_whatsapp_channel_enabled");
+      if (saved !== null) whatsappActive = JSON.parse(saved);
+      else if (activeBusiness?.channels?.whatsapp !== undefined) whatsappActive = activeBusiness.channels.whatsapp;
+    } catch (e) {}
+
+    return {
+      whatsapp: whatsappActive,
+      pos: activeBusiness?.channels?.pos ?? true,
+      web: activeBusiness?.channels?.web ?? true,
+      api: true,
+    };
+  });
+
+  // Floating widget toggle state
+  const [isWidgetEnabled, setIsWidgetEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("necto_whatsapp_widget_enabled");
+      if (saved !== null) return JSON.parse(saved);
+    } catch (e) {}
+    return true;
   });
 
   // WhatsApp Assistant Settings
@@ -103,8 +121,19 @@ export const CanalesView: React.FC = () => {
         },
       });
     }
+
+    try {
+      localStorage.setItem("necto_whatsapp_channel_enabled", JSON.stringify(channels.whatsapp));
+      localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(isWidgetEnabled));
+      window.dispatchEvent(
+        new CustomEvent("necto_whatsapp_config_changed", {
+          detail: { channelEnabled: channels.whatsapp, widgetEnabled: isWidgetEnabled },
+        })
+      );
+    } catch (e) {}
+
     setSelectedChannelForConfig(null);
-    showToast("Configuración del canal WhatsApp actualizada correctamente.");
+    showToast("Configuración del canal WhatsApp y widget actualizada correctamente.");
   };
 
   const handleSelectTone = (tone: ToneOption) => {
@@ -113,38 +142,63 @@ export const CanalesView: React.FC = () => {
   };
 
   const toggleChannel = (key: keyof typeof channels) => {
-    setChannels(prev => ({ ...prev, [key]: !prev[key] }));
-    showToast(`Canal ${key.toUpperCase()} ${channels[key] ? "desactivado" : "activado"}.`);
+    const nextVal = !channels[key];
+    setChannels(prev => ({ ...prev, [key]: nextVal }));
+
+    if (key === "whatsapp") {
+      try {
+        localStorage.setItem("necto_whatsapp_channel_enabled", JSON.stringify(nextVal));
+        window.dispatchEvent(
+          new CustomEvent("necto_whatsapp_config_changed", {
+            detail: { channelEnabled: nextVal, widgetEnabled: isWidgetEnabled },
+          })
+        );
+      } catch (e) {}
+    }
+
+    showToast(`Canal ${key.toUpperCase()} ${nextVal ? "activado" : "desactivado"}.`);
+  };
+
+  const handleToggleWidget = (enabled: boolean) => {
+    setIsWidgetEnabled(enabled);
+    try {
+      localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(enabled));
+      window.dispatchEvent(
+        new CustomEvent("necto_whatsapp_config_changed", {
+          detail: { channelEnabled: channels.whatsapp, widgetEnabled: enabled },
+        })
+      );
+    } catch (e) {}
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in font-sans">
       {/* Toast */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 animate-slide-up">
+        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xl dark:bg-white dark:text-gray-900 animate-slide-up">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
           <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+      {/* ── Single Authoritative Page Header ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
             Canales de Venta
-          </h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Administra los canales donde recibes pedidos, configura asistentes y conecta nuevas integraciones.
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Administra los canales donde recibes pedidos, asistentes de WhatsApp e integraciones
           </p>
         </div>
-        <Button
-          size="sm"
+        <button
+          type="button"
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-1.5 cursor-pointer font-semibold"
+          className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors shadow-theme-xs cursor-pointer flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" />
-          <span>Agregar Canal</span>
-        </Button>
+          <span>Agregar canal</span>
+        </button>
       </div>
 
       {/* Grid of Connected Channels */}
@@ -186,33 +240,57 @@ export const CanalesView: React.FC = () => {
                 <span className="text-gray-400">Tono del asistente:</span>
                 <span className="font-medium capitalize">{selectedTone}</span>
               </div>
-              <div className="flex items-center justify-between py-1">
+              <div className="flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-800">
                 <span className="text-gray-400">Auto-confirmación:</span>
                 <span className="font-medium">
                   {autoConfirmOrders ? "Activa con inventario" : "Manual por operador"}
                 </span>
               </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-400">Widget flotante en pantalla:</span>
+                <span className={`font-semibold ${isWidgetEnabled && channels.whatsapp ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
+                  {isWidgetEnabled && channels.whatsapp ? "Visible en pantalla" : "Oculto"}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedChannelForConfig("whatsapp")}
-              className="flex-1 cursor-pointer font-medium"
-            >
-              <Settings className="h-3.5 w-3.5 mr-1.5" />
-              Configurar Asistente
-            </Button>
-            <Button
-              size="sm"
-              variant={channels.whatsapp ? "outline" : "primary"}
-              onClick={() => toggleChannel("whatsapp")}
-              className="cursor-pointer"
-            >
-              {channels.whatsapp ? "Desactivar" : "Activar"}
-            </Button>
+          <div className="flex flex-col gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedChannelForConfig("whatsapp")}
+                className="flex-1 cursor-pointer font-medium"
+              >
+                <Settings className="h-3.5 w-3.5 mr-1.5" />
+                Configurar Canal & Widget
+              </Button>
+              <Button
+                size="sm"
+                variant={channels.whatsapp ? "outline" : "primary"}
+                onClick={() => toggleChannel("whatsapp")}
+                className="cursor-pointer"
+              >
+                {channels.whatsapp ? "Desactivar" : "Activar"}
+              </Button>
+            </div>
+            {channels.whatsapp && (
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new CustomEvent("necto_navigate_pedidos", {
+                      detail: { section: "conversaciones" },
+                    })
+                  );
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors cursor-pointer border border-emerald-200/60 dark:border-emerald-800/50"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Abrir Módulo de Chats WhatsApp</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -455,6 +533,43 @@ export const CanalesView: React.FC = () => {
 
             {/* Toggles */}
             <div className="space-y-3 pt-2">
+              <label className="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/70 dark:border-gray-700/60">
+                <div>
+                  <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                    Canal WhatsApp Activo
+                  </span>
+                  <p className="text-[11px] text-gray-400">
+                    Habilita la recepción de chats y acceso directo desde el menú lateral de la tienda
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={channels.whatsapp}
+                  onChange={e => {
+                    const checked = e.target.checked;
+                    setChannels(prev => ({ ...prev, whatsapp: checked }));
+                  }}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/70 dark:border-gray-700/60">
+                <div>
+                  <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                    Widget Flotante en Pantalla
+                  </span>
+                  <p className="text-[11px] text-gray-400">
+                    Muestra el botón flotante arrastrable de WhatsApp para chatear rápidamente
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isWidgetEnabled}
+                  onChange={e => handleToggleWidget(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                />
+              </label>
+
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">

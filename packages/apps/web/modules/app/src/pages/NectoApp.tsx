@@ -30,6 +30,7 @@ import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { EmptyModulesHubView } from "@/compositions/workspace/EmptyModulesHubView";
 import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
 import { RoleSelectionModal } from "@/compositions/workspace/RoleSelectionModal";
+import { BusinessSettingsModal } from "@/compositions/workspace/BusinessSettingsModal";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
@@ -230,6 +231,13 @@ export default function App() {
   });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<any>("general");
+
+  const handleOpenSettings = (tab: any = "general") => {
+    setSettingsInitialTab(tab);
+    setIsSettingsModalOpen(true);
+  };
   const { activeBusiness, activeRole, semantics } = useBusiness();
   const isFood = activeBusiness?.businessType === "restaurant_virtual";
   const activeModules = activeBusiness?.activeModules || [];
@@ -323,6 +331,13 @@ export default function App() {
     const s = searchParams.get("section") as PedidosSection | null;
     const t = searchParams.get("tab") as string | null;
     if (s) {
+      if (s === "configuracion") {
+        setIsSettingsModalOpen(true);
+        setActiveModule("pedidos");
+        setPedidosSection("ordenes");
+        setSearchParams({ section: "ordenes" }, { replace: true });
+        return;
+      }
       setActiveModule("pedidos");
       setPedidosSection(s);
       if (s === "operacion") {
@@ -464,6 +479,8 @@ export default function App() {
       ? "Mesa de Preparación & Alistamiento"
       : pedidosSection === "canales"
       ? "Canales Conectados & Asistente"
+      : pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
+      ? "WhatsApp & Chats"
       : pedidosSection === "configuracion"
       ? "Configuración del Módulo"
       : pedidosGePageNames[pedidosGeTab] || "Pedidos";
@@ -488,15 +505,18 @@ export default function App() {
       : currentPageName;
 
   const breadcrumbItems: BreadcrumbItem[] = [
-    { label: activeBusiness?.name || "Necto", href: "/app" },
+    { label: "Operación", href: "/app" },
     {
       label: isModulesHub
-        ? "Espacio & Plugins"
+        ? "Módulos"
+        : pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
+        ? "Tienda & Canales"
         : activeModule === "inventarios"
         ? "Inventario"
-        : currentRoleName,
+        : "Pedidos",
+      href: "/app?section=ordenes",
     },
-    { label: pageTitle },
+    { label: pageTitle === "Órdenes Activas" ? "Órdenes" : pageTitle },
   ];
 
   return (
@@ -513,6 +533,7 @@ export default function App() {
             onNavigateModule={handleNavigateModule}
             onNavigateInventario={handleNavigateInventario}
             onOpenRoleModal={() => setIsRoleModalOpen(true)}
+            onOpenSettingsModal={(tab) => handleOpenSettings(tab || "general")}
             activeRoleName={activeRole?.name || "Dueño"}
           />
         }
@@ -534,10 +555,12 @@ export default function App() {
       >
         <BasePageLayout
           header={
-            <BasePageHeader
-              title={pageTitle}
-              breadcrumbItems={breadcrumbItems}
-            />
+            activeModule === "pedidos" ? null : (
+              <BasePageHeader
+                title={pageTitle}
+                breadcrumbItems={breadcrumbItems}
+              />
+            )
           }
         >
           {isModulesHub ? (
@@ -550,6 +573,7 @@ export default function App() {
                   handleNavigateInventario("products");
                 }
               }}
+              onOpenSettings={handleOpenSettings}
             />
           ) : activeModule === "inventarios" && hasInventarios ? (
             <ModuloInventario
@@ -586,6 +610,7 @@ export default function App() {
                   handleNavigateInventario("products");
                 }
               }}
+              onOpenSettings={handleOpenSettings}
             />
           )}
         </BasePageLayout>
@@ -596,6 +621,12 @@ export default function App() {
         business={activeBusiness}
         isOpen={isRoleModalOpen}
         onClose={() => setIsRoleModalOpen(false)}
+      />
+      <BusinessSettingsModal
+        business={activeBusiness}
+        isOpen={isSettingsModalOpen}
+        initialTab={settingsInitialTab}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </>
   );

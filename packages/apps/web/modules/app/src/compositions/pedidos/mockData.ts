@@ -544,6 +544,7 @@ export const RETAIL_ORDERS: Pedido[] = [
     elapsedMinutes: 12,
     urgency: "A_TIEMPO",
     turnNumber: 14,
+    paymentStatus: "PAGADO",
     history: [
       { timestamp: "18:20", toStatus: "NUEVO", user: "Portal Web StockFlow" },
       { timestamp: "18:21", fromStatus: "NUEVO", toStatus: "CONFIRMADO", user: "Sistema", ruleName: "Regla Conf. Automática #1" },
@@ -567,6 +568,7 @@ export const RETAIL_ORDERS: Pedido[] = [
     elapsedMinutes: 22,
     urgency: "PROXIMO",
     turnNumber: 12,
+    paymentStatus: "PENDIENTE",
     notes: "Factura Electrónica requerida. Despacho en furgón.",
     history: [
       { timestamp: "18:15", toStatus: "NUEVO", user: "WhatsApp Bot" },
@@ -592,6 +594,7 @@ export const RETAIL_ORDERS: Pedido[] = [
     elapsedMinutes: 26,
     urgency: "RETRASADO",
     turnNumber: 9,
+    paymentStatus: "PAGADO",
     notes: "Empacar en caja sellada con precinto de seguridad.",
     history: [
       { timestamp: "18:00", toStatus: "NUEVO", user: "WhatsApp Bot" },
@@ -617,6 +620,7 @@ export const RETAIL_ORDERS: Pedido[] = [
     elapsedMinutes: 21,
     urgency: "A_TIEMPO",
     turnNumber: 8,
+    paymentStatus: "PAGADO",
     notes: "Comprobante Nequi verificado. Listo para entrega en mensajería.",
     history: [
       { timestamp: "17:45", toStatus: "NUEVO", user: "WhatsApp Bot" },
@@ -786,7 +790,7 @@ export const FOOD_ORDERS: Pedido[] = [
     customerPhone: "+54 11 2233-4455",
     channel: "telefono",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     items: [
       { productId: "prod-05", name: "Combo Docena Mixta Clásica", quantity: 1, unitPrice: 54000 },
     ],
@@ -832,7 +836,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 311 456 7890",
     channel: "whatsapp",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "transferencia",
     items: [
       { productId: "prod-05", name: "Combo Docena Mixta Clásica", quantity: 2, unitPrice: 54000 },
@@ -858,7 +862,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 300 987 6543",
     channel: "presencial",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "pos",
     items: [
       { productId: "prod-06", name: "Combo Ejecutivo Express", quantity: 6, unitPrice: 18500 },
@@ -879,7 +883,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 315 222 3344",
     channel: "web",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "mercadopago",
     items: [
       { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 4, unitPrice: 5500 },
@@ -901,7 +905,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 318 777 8899",
     channel: "whatsapp",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "transferencia",
     items: [
       { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 6, unitPrice: 5500 },
@@ -923,7 +927,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 301 555 4433",
     channel: "presencial",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "transferencia",
     items: [
       { productId: "prod-05", name: "Combo Docena Mixta Clásica", quantity: 3, unitPrice: 54000 },
@@ -944,7 +948,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 320 888 1122",
     channel: "telefono",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "efectivo",
     items: [
       { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 4, unitPrice: 5500 },
@@ -966,7 +970,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 312 333 4455",
     channel: "whatsapp",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "transferencia",
     items: [
       { productId: "prod-02", name: "Empanada de Jamón y Muzzarella", quantity: 8, unitPrice: 5200 },
@@ -987,7 +991,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 317 666 9900",
     channel: "presencial",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "efectivo",
     items: [
       { productId: "prod-06", name: "Combo Ejecutivo Express", quantity: 2, unitPrice: 18500 },
@@ -1008,7 +1012,7 @@ export const INITIAL_HISTORIAL_ORDERS: Pedido[] = [
     customerPhone: "+57 314 999 1100",
     channel: "web",
     type: "inmediato",
-    status: "FINALIZADO",
+    status: "ENTREGADO",
     paymentMethod: "mercadopago",
     items: [
       { productId: "prod-05", name: "Combo Docena Mixta Clásica", quantity: 1, unitPrice: 54000 },

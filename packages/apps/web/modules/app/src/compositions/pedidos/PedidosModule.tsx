@@ -149,6 +149,39 @@ const PedidosContent: React.FC<{
     };
   }, [onSectionChange, onOpTabChange, onGeTabChange]);
 
+  // Reactive WhatsApp Channel & Widget preferences
+  const [whatsAppConfig, setWhatsAppConfig] = useState(() => {
+    try {
+      const ch = localStorage.getItem("necto_whatsapp_channel_enabled");
+      const wg = localStorage.getItem("necto_whatsapp_widget_enabled");
+      return {
+        channelEnabled: ch !== null ? JSON.parse(ch) : true,
+        widgetEnabled: wg !== null ? JSON.parse(wg) : true,
+      };
+    } catch (e) {
+      return { channelEnabled: true, widgetEnabled: true };
+    }
+  });
+
+  useEffect(() => {
+    const handleWhatsAppConfigUpdate = () => {
+      try {
+        const ch = localStorage.getItem("necto_whatsapp_channel_enabled");
+        const wg = localStorage.getItem("necto_whatsapp_widget_enabled");
+        setWhatsAppConfig({
+          channelEnabled: ch !== null ? JSON.parse(ch) : true,
+          widgetEnabled: wg !== null ? JSON.parse(wg) : true,
+        });
+      } catch (e) {}
+    };
+    window.addEventListener("necto_whatsapp_config_changed", handleWhatsAppConfigUpdate);
+    window.addEventListener("storage", handleWhatsAppConfigUpdate);
+    return () => {
+      window.removeEventListener("necto_whatsapp_config_changed", handleWhatsAppConfigUpdate);
+      window.removeEventListener("storage", handleWhatsAppConfigUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     const s = sectionProp === "operacion" ? "ordenes" : sectionProp;
     setSection(s);
@@ -178,145 +211,10 @@ const PedidosContent: React.FC<{
     if (onGeTabChange) onGeTabChange(t);
   };
 
-  const activeIncCount = incidencias.filter(i => !i.isResolved).length;
-  const newOrdersCount = orders.filter(o => o.status === "NUEVO").length;
-  const pendingOrdersCount = orders.filter(
-    o => o.status === "CONFIRMADO" || o.status === "EN_PREPARACION"
-  ).length;
-
-  const isKanbanActive = (section === "ordenes" || section === "operacion") && opTab === "en-vivo";
-  const shouldShowTopHeader = isKanbanActive ? layoutPrefs.showTopHeader : true;
-
-  // Active modular sections
-  const modularSections = [
-    {
-      id: "ordenes" as PedidosSection,
-      label: "Órdenes",
-      icon: ShoppingBag,
-      badge: newOrdersCount > 0 ? `${newOrdersCount} nuevos` : undefined,
-    },
-    {
-      id: "programados" as PedidosSection,
-      label: "Programados",
-      icon: Calendar,
-      count: programados.length,
-    },
-    ...(isPreparacionEnabled
-      ? [
-          {
-            id: "preparacion" as PedidosSection,
-            label: "Preparación",
-            icon: Package,
-            count: pendingOrdersCount,
-          },
-        ]
-      : []),
-    {
-      id: "canales" as PedidosSection,
-      label: "Canales",
-      icon: Smartphone,
-    },
-    {
-      id: "configuracion" as PedidosSection,
-      label: "Configuración",
-      icon: SlidersHorizontal,
-    },
-  ];
-
   return (
-    <div className="flex flex-col h-full space-y-4 p-3 sm:p-5 w-full animate-fade-in">
-      {/* Top Module Sub-header: Órdenes ↔ Programados ↔ Preparación ↔ Canales ↔ Configuración */}
-      {shouldShowTopHeader && (
-        <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-5 border border-gray-200 dark:border-gray-800 shadow-theme-sm flex flex-col gap-3 flex-none">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            {/* Modular Section Pill Switcher */}
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto">
-              {modularSections.map(sec => {
-                const Icon = sec.icon;
-                const isSelected =
-                  section === sec.id ||
-                  (sec.id === "ordenes" && section === "operacion");
-
-                return (
-                  <button
-                    key={sec.id}
-                    type="button"
-                    onClick={() => handleSectionSwitch(sec.id)}
-                    className={`px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-none whitespace-nowrap ${
-                      isSelected
-                        ? "bg-brand-500 text-white shadow-theme-xs font-semibold"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <Icon className="size-3.5" />
-                    <span>{sec.label}</span>
-                    {sec.badge && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          isSelected
-                            ? "bg-white text-brand-500"
-                            : "bg-brand-500 text-white"
-                        }`}
-                      >
-                        {sec.badge}
-                      </span>
-                    )}
-                    {sec.count !== undefined && !sec.badge && sec.count > 0 && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          isSelected
-                            ? "bg-white/20 text-white"
-                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                        }`}
-                      >
-                        {sec.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Right Actions: Sound & Incidencias */}
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
-              {/* Audio Alerts Toggle */}
-              <button
-                type="button"
-                onClick={toggleSound}
-                className={`p-2 rounded-xl border transition-colors cursor-pointer flex items-center justify-center flex-none ${
-                  isSoundEnabled
-                    ? "bg-brand-500 text-white border-brand-500"
-                    : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 hover:text-gray-600"
-                }`}
-                title={isSoundEnabled ? "Alertas sonoras activadas" : "Alertas sonoras silenciadas"}
-              >
-                {isSoundEnabled ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsIncidenciasOpen(true)}
-                className={`py-2 px-3 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer flex-none ${
-                  activeIncCount > 0
-                    ? "border-error-200 dark:border-error-500/30 bg-error-50 dark:bg-error-500/10 text-error-600 dark:text-error-400 font-semibold"
-                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:text-brand-500"
-                }`}
-              >
-                <ShieldAlert className={`size-4 ${activeIncCount > 0 ? "text-error-500" : "text-gray-400"}`} />
-                <span>Incidencias</span>
-                {activeIncCount > 0 && (
-                  <span className="bg-error-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-bold">
-                    {activeIncCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="w-full animate-fade-in">
       {/* Main Section Content */}
-      <div className="flex-1 min-h-0">
+      <div>
         {/* 1. ÓRDENES (Default Kanban / Lista switcher) */}
         {(section === "ordenes" || section === "operacion") && (
           <>
@@ -338,7 +236,12 @@ const PedidosContent: React.FC<{
         {/* 4. CANALES */}
         {section === "canales" && <CanalesView />}
 
-        {/* 5. CONFIGURACIÓN */}
+        {/* 5. WHATSAPP / CONVERSACIONES (Acceso directo desde menú lateral de la tienda) */}
+        {(section === "conversaciones" || section === "whatsapp") && (
+          <ConversacionesView />
+        )}
+
+        {/* 6. CONFIGURACIÓN */}
         {section === "configuracion" && <ConfiguracionView />}
 
         {/* Retro-compatibilidad */}
@@ -354,10 +257,10 @@ const PedidosContent: React.FC<{
       <IncidenciasDrawer />
       <ThermalTicketModal />
 
-      {/* Floating WhatsApp Widget on Live Orders */}
-      {(section === "ordenes" || section === "operacion") && opTab === "en-vivo" && (
+      {/* Floating WhatsApp Widget — Only rendered when channel & widget are enabled in settings */}
+      {whatsAppConfig.channelEnabled && whatsAppConfig.widgetEnabled && (
         <WhatsAppFloatingWidget
-          onNavigateToFullView={() => handleOpTabSwitch("conversaciones")}
+          onNavigateToFullView={() => handleSectionSwitch("conversaciones")}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
-import { OrderStatusBadge, UrgencyBadge, ChannelBadge } from "./Badges";
+import { OrderStatusBadge, UrgencyBadge, ChannelBadge, ReturnStatusBadge, PaymentStatusBadge } from "./Badges";
 import {
   X,
   Minus,
@@ -19,9 +19,13 @@ import {
   RotateCcw,
   Package,
   CheckCircle2,
+  AlertTriangle,
+  FileText,
+  MapPin,
+  Phone,
+  CreditCard,
 } from "lucide-react";
-import { inventoryService } from "@/ModuloInventario/services/inventoryService";
-import { Button, SegmentedControl } from "@/elements";
+import { Button } from "@/elements";
 
 export const OrderDetailDrawer: React.FC = () => {
   const {
@@ -39,22 +43,25 @@ export const OrderDetailDrawer: React.FC = () => {
     setCancelModalOrder,
     setAiModalOrder,
     setPrintTicketOrder,
+    updatePaymentStatus,
+    processReturnOrder,
     incidencias,
     resolveIncidencia,
     openWhatsAppConversation,
     sendWhatsAppStatusAlert,
+    hasInventarios,
+    inventoryAdapter,
   } = usePedidos();
 
   const { activeRoleId, semantics } = useBusiness();
   const isCookRole = activeRoleId === "role-cook";
 
-  const [drawerViewMode, setDrawerViewMode] = useState<"operacion" | "general">("operacion");
   const [kitchenChecked, setKitchenChecked] = useState<Record<number, boolean>>({});
   const [sentAlertToast, setSentAlertToast] = useState<string | null>(null);
 
   const handleSendQuickAlert = (orderId: string, text: string) => {
     sendWhatsAppStatusAlert(orderId, text);
-    setSentAlertToast("Mensaje enviado al WhatsApp del cliente");
+    setSentAlertToast("Notificación enviada al cliente");
     setTimeout(() => setSentAlertToast(null), 3000);
   };
   const [whatsappSent, setWhatsappSent] = useState(false);
@@ -87,33 +94,43 @@ export const OrderDetailDrawer: React.FC = () => {
     setTimeout(() => setWhatsappSent(false), 4000);
   };
 
+  const isTicketReady =
+    order.status === "CONFIRMADO" ||
+    order.status === "EN_PREPARACION" ||
+    order.status === "LISTO" ||
+    order.status === "FINALIZADO";
+
   return (
     <div className="fixed inset-0 z-50 overflow-hidden flex justify-end font-sans antialiased">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-[#212121]/60 backdrop-blur-xs transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity animate-fade-in"
         onClick={() => setSelectedOrderId(null)}
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-xl bg-white dark:bg-[#121215] shadow-2xl border-l border-zinc-200/80 dark:border-zinc-800/90 flex flex-col h-full z-10 animate-slide-left overflow-hidden">
+      <div className="relative w-full max-w-xl bg-white dark:bg-gray-900 shadow-2xl border-l border-gray-200 dark:border-gray-800 flex flex-col h-full z-10 animate-slide-left overflow-hidden">
         {/* Drawer Header */}
-        <div className="p-5 sm:p-6 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-[#ECECEC]/30 dark:bg-zinc-900/40 flex items-center justify-between gap-4 flex-none">
+        <div className="p-5 sm:p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/80 flex items-center justify-between gap-4 flex-none">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 rounded-2xl bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center font-bold text-sm border border-[#190088]/20 font-mono shadow-2xs flex-none">
+            <div className="w-11 h-11 rounded-2xl bg-brand-50 dark:bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm border border-brand-100 dark:border-brand-500/20 font-mono shadow-theme-xs flex-none">
               #{order.turnNumber || "00"}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-base sm:text-lg text-[#212121] dark:text-[#ECECEC] font-mono tracking-tight">
+                <h3 className="font-bold text-lg text-gray-900 dark:text-white font-mono tracking-tight">
                   {order.id}
                 </h3>
                 <OrderStatusBadge status={order.status} size="sm" />
+                {order.returnStatus && order.returnStatus !== "NO_APLICA" && (
+                  <ReturnStatusBadge returnStatus={order.returnStatus} size="sm" />
+                )}
+                <PaymentStatusBadge paymentStatus={order.paymentStatus} size="sm" />
                 <ChannelBadge channel={order.channel} />
               </div>
-              <p className="text-[11px] text-zinc-400 mt-0.5">
+              <p className="text-xs text-gray-400 mt-0.5">
                 Ingresó a las{" "}
-                <span className="font-mono font-medium text-zinc-600 dark:text-zinc-300">
+                <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
                   {order.createdAt}
                 </span>{" "}
                 · Turno #{order.turnNumber || "00"}
@@ -122,658 +139,323 @@ export const OrderDetailDrawer: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {(() => {
-              const isTicketReady =
-                order.status === "CONFIRMADO" ||
-                order.status === "EN_PREPARACION" ||
-                order.status === "LISTO" ||
-                order.status === "FINALIZADO";
+            <button
+              type="button"
+              onClick={() => isTicketReady && setPrintTicketOrder(order)}
+              disabled={!isTicketReady}
+              className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isTicketReady
+                  ? "border-gray-200 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  : "border-gray-200/60 bg-gray-100/50 text-gray-300 dark:border-gray-800 dark:bg-gray-800/30 dark:text-gray-600 cursor-not-allowed"
+              }`}
+              title={isTicketReady ? "Imprimir ticket térmico" : "Ticket no disponible"}
+            >
+              <Printer className="w-4 h-4" />
+              <span className="hidden sm:inline">Ticket</span>
+            </button>
 
-              return (
-                <Button
-                  variant="outline"
-                  intent="order-detail.print"
-                  onClick={() => isTicketReady && setPrintTicketOrder(order)}
-                  disabled={!isTicketReady}
-                  className={`py-2 px-3 text-xs transition-all flex items-center gap-1.5 ${
-                    isTicketReady
-                      ? "bg-[#190088]/10 hover:bg-[#190088]/20 dark:bg-[#190088]/30 dark:hover:bg-[#190088]/40 border-[#190088]/30 dark:border-[#97D6DF]/40 text-[#190088] dark:text-[#97D6DF] font-bold cursor-pointer shadow-2xs"
-                      : "bg-zinc-100/70 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 opacity-60 cursor-not-allowed"
-                  }`}
-                  title={
-                    isTicketReady
-                      ? `Imprimir ticket térmico (Turno #${order.turnNumber || "00"})`
-                      : order.status === "NUEVO"
-                      ? "El ticket estará disponible una vez confirmada la comanda"
-                      : "Ticket no disponible para pedidos cancelados/rechazados"
-                  }
-                >
-                  <Printer
-                    className={`w-3.5 h-3.5 ${
-                      isTicketReady
-                        ? "text-[#190088] dark:text-[#97D6DF]"
-                        : "text-zinc-400 dark:text-zinc-500"
-                    }`}
-                  />
-                  <span className="hidden sm:inline">Ticket</span>
-                </Button>
-              );
-            })()}
-
-            {/* High-visibility Close Button */}
             <button
               type="button"
               onClick={() => setSelectedOrderId(null)}
-              className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[#212121] dark:text-[#ECECEC] hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center border border-zinc-200 dark:border-zinc-700 shadow-2xs cursor-pointer transition-colors"
-              title="Cerrar panel"
+              className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center transition-colors cursor-pointer"
+              title="Cerrar"
             >
-              <X className="w-4 h-4 stroke-[2.5]" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="px-5 sm:px-6 py-2.5 bg-zinc-50/70 dark:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/70 flex items-center justify-between gap-3 flex-none">
-          <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider font-mono">
-            Modo de Vista:
-          </span>
-
-          <SegmentedControl
-            intent="drawer.mode"
-            tone="accent"
-            value={drawerViewMode}
-            onValueChange={v => setDrawerViewMode(v as "operacion" | "general")}
-            options={[
-              {
-                value: "operacion",
-                label: semantics?.requiresKitchenDisplay
-                  ? "Ficha de Cocina (KDS)"
-                  : `Ficha de ${semantics?.stationShortName || "Alistamiento"}`,
-              },
-              { value: "general", label: "General & Caja" },
-            ]}
-          />
-        </div>
-
-        {/* Drawer Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 scrollbar-thin">
-          {/* ========================================================================= */}
-          {/* MODE 1: FICHA TÉCNICA OPERATIVA                                           */}
-          {/* ========================================================================= */}
-          {drawerViewMode === "operacion" ? (
-            <div className="space-y-5 animate-fade-in">
-              {/* Turn & Station Card with Smart Bi-directional Timer */}
-              <div className="p-4 rounded-2xl bg-[#ECECEC]/50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
-                <div>
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-                    {semantics?.stationNoun || "Estación de Alistamiento & Despacho"}
-                  </span>
-                  <h4 className="font-extrabold text-sm text-[#212121] dark:text-white mt-0.5">
-                    {semantics?.orderNoun || "Pedido"} Turno #{order.turnNumber || "00"}
-                  </h4>
-                </div>
-
-                <div className="flex flex-col items-end gap-1 font-mono">
-                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-sans">
-                    <Timer className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                    <span>{semantics?.requiresKitchenDisplay ? "Tiempo KDS" : "Tiempo de Alistamiento"}</span>
-                  </div>
-
-                  {/* Smart Bi-directional Stepper */}
-                  <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-800/90 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-2xs">
-                    <button
-                      type="button"
-                      onClick={() => adjustEstimate(order.id, -5)}
-                      disabled={order.estimatedMinutes <= 5}
-                      title="Reducir 5 minutos (mínimo 5 min)"
-                      className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all cursor-pointer"
-                    >
-                      <Minus className="w-3 h-3 stroke-[2.5]" />
-                    </button>
-
-                    <span className="font-extrabold text-xs text-[#212121] dark:text-white px-1.5">
-                      {order.elapsedMinutes} / {order.estimatedMinutes} min
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => adjustEstimate(order.id, 5)}
-                      title="Sumar 5 minutos al tiempo estimado"
-                      className="w-6 h-6 rounded-lg bg-zinc-100 dark:bg-zinc-700 hover:bg-zinc-200 dark:hover:bg-zinc-600 text-zinc-700 dark:text-zinc-200 flex items-center justify-center transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3 stroke-[2.5]" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Critical Kitchen Instructions & Notes */}
-              {order.notes ? (
-                <div className="p-4 rounded-2xl bg-[#EFE6D3]/60 dark:bg-[#EFE6D3]/10 border border-[#EFE6D3] dark:border-[#EFE6D3]/30 text-[#212121] dark:text-[#ECECEC] space-y-1 shadow-2xs">
-                  <span className="font-mono font-bold text-[11px] uppercase tracking-wider text-[#190088] dark:text-[#97D6DF] block">
-                    Instrucción Crítica / Alérgenos
-                  </span>
-                  <p className="text-xs font-bold leading-relaxed">{order.notes}</p>
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-200/60 dark:border-zinc-800/60 text-xs text-zinc-500">
-                  Sin alérgenos ni notas especiales declaradas.
-                </div>
-              )}
-
-              {/* Interactive Preparation Checklist */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-mono font-bold text-xs uppercase tracking-wider text-zinc-400">
-                    {semantics?.requiresKitchenDisplay
-                      ? "Checklist de Elaboración & Empaque"
-                      : "Checklist de Picking & Alistamiento"}
-                  </h4>
-                  <span className="text-[11px] text-[#190088] dark:text-[#97D6DF] font-mono font-bold">
-                    {Object.values(kitchenChecked).filter(Boolean).length} / {order.items.length} listos
-                  </span>
-                </div>
-
-                <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-zinc-900 shadow-2xs">
-                  {order.items.map((it, idx) => {
-                    const isDone = !!kitchenChecked[idx];
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => handleToggleKitchenCheck(idx)}
-                        className={`p-4 flex items-start justify-between gap-3 cursor-pointer transition-colors ${
-                          isDone
-                            ? "bg-[#97D6DF]/10 text-zinc-400 dark:text-zinc-500"
-                            : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-                        }`}
-                      >
-                        <div className="flex items-start gap-3 min-w-0">
-                          <button
-                            type="button"
-                            className="mt-0.5 text-zinc-400 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors cursor-pointer"
-                          >
-                            {isDone ? (
-                              <CheckSquare className="w-5 h-5 text-[#190088] dark:text-[#97D6DF]" />
-                            ) : (
-                              <Square className="w-5 h-5" />
-                            )}
-                          </button>
-
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-sm font-mono font-bold px-2 py-0.5 rounded-lg ${
-                                  isDone
-                                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-400"
-                                    : "bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF]"
-                                }`}
-                              >
-                                ×{it.quantity}
-                              </span>
-                              <p
-                                className={`font-bold text-sm truncate ${
-                                  isDone
-                                    ? "line-through text-zinc-400 dark:text-zinc-500"
-                                    : "text-[#212121] dark:text-zinc-50"
-                                }`}
-                              >
-                                {it.name}
-                              </p>
-                            </div>
-
-                            {it.option && (
-                              <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md inline-block">
-                                {it.option}
-                              </span>
-                            )}
-                            {it.notes && (
-                              <p className="text-xs text-[#190088] dark:text-[#97D6DF] font-medium italic">
-                                Nota: {it.notes}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+        {/* Drawer Scrollable Content — Unified, High-Scannability SaaS Layout */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Section 1: Cliente & Entrega */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-bold text-gray-900 dark:text-white">
+                {order.customerName}
+              </h4>
+              <span className="text-xs text-gray-400 font-mono">
+                Turno #{order.turnNumber || "00"}
+              </span>
             </div>
-          ) : (
-            /* ========================================================================= */
-            /* MODE 2: DETALLE GENERAL & ADMINISTRACIÓN (CAJA / SUPERVISOR)              */
-            /* ========================================================================= */
-            <div className="space-y-5 animate-fade-in">
-              {/* INCIDENT & DELAY ALERT */}
-              {(activeIncident || order.urgency === "RETRASADO") && (
-                <div className="bg-[#ECECEC]/40 dark:bg-zinc-900/60 border border-zinc-200/90 dark:border-zinc-800/90 rounded-2xl p-5 space-y-4 shadow-2xs">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <span className="text-[10px] font-mono uppercase tracking-wider font-bold text-[#190088] dark:text-[#97D6DF]">
-                        Incidencia Operativa · Severidad {activeIncident?.severity || "Alta"}
+
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {order.channel === "whatsapp" ? "WhatsApp" : order.channel === "web" ? "Tienda Web" : "Mostrador / Presencial"}
+              </span>
+              <span>·</span>
+              <span>{order.customerAddress ? "Domicilio" : "Retiro en mostrador"}</span>
+            </div>
+
+            {order.customerAddress && (
+              <p className="text-xs text-gray-600 dark:text-gray-300 flex items-start gap-1.5 pt-0.5">
+                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-none mt-0.5" />
+                <span>{order.customerAddress}</span>
+              </p>
+            )}
+
+            {order.customerPhone && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-gray-400 flex-none" />
+                <a
+                  href={`tel:${order.customerPhone}`}
+                  className="text-gray-700 dark:text-gray-300 hover:underline"
+                >
+                  {order.customerPhone}
+                </a>
+                {order.channel === "whatsapp" && (
+                  <button
+                    type="button"
+                    onClick={() => openWhatsAppConversation(order.id)}
+                    className="text-brand-600 dark:text-brand-400 hover:underline cursor-pointer text-[11px] ml-1"
+                  >
+                    (Ver chat de origen)
+                  </button>
+                )}
+              </p>
+            )}
+
+            {order.notes && (
+              <div className="bg-amber-50/80 dark:bg-amber-950/30 p-2.5 rounded-lg border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300 italic">
+                "{order.notes}"
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-gray-100 dark:border-gray-800" />
+
+          {/* Section 2: Productos */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                Productos
+              </h4>
+              <span className="text-xs text-gray-400 font-medium">
+                {order.items.reduce((acc, it) => acc + it.quantity, 0)} ítems
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {order.items.map((it, idx) => {
+                const isDone = !!kitchenChecked[idx];
+                const invStock = hasInventarios ? inventoryAdapter.getProductStock(it.productId, it.name) : null;
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => handleToggleKitchenCheck(idx)}
+                    className={`p-2.5 rounded-lg border transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                      isDone
+                        ? "bg-gray-50/60 border-gray-200/50 text-gray-400 dark:bg-gray-800/30 dark:border-gray-800 dark:text-gray-500"
+                        : "bg-white border-gray-200/70 hover:border-gray-300 dark:bg-gray-850 dark:border-gray-800 text-gray-900 dark:text-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className={`text-xs font-mono font-bold px-1.5 py-0.5 rounded ${
+                        isDone ? "bg-gray-200 text-gray-400 dark:bg-gray-800" : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                      }`}>
+                        {it.quantity}×
                       </span>
-                      <h4 className="font-bold text-xs text-[#212121] dark:text-[#ECECEC] mt-0.5">
-                        {activeIncident?.title ||
-                          `Retraso en Comanda ${order.id} (+${delayMinutes > 0 ? delayMinutes : 6} min sobre pactado)`}
-                      </h4>
-                    </div>
-
-                    <span className="font-mono text-xs font-bold text-[#190088] dark:text-[#97D6DF] bg-[#97D6DF]/20 px-2 py-0.5 rounded-lg border border-[#97D6DF]/40">
-                      +{delayMinutes > 0 ? delayMinutes : 6}m demora
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#212121] dark:text-zinc-300 leading-relaxed bg-white dark:bg-zinc-950 p-3.5 rounded-xl border border-zinc-200/80 dark:border-zinc-800">
-                    {activeIncident?.description ||
-                      `El pedido superó los ${order.estimatedMinutes} min pactados debido a sobredemanda de alistamiento en ${semantics?.stationShortName || "bodega"}.`}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      variant="outline"
-                      intent="order-detail.add-time"
-                      onClick={() => adjustEstimate(order.id, 10)}
-                      className="py-2 px-3 bg-white dark:bg-zinc-800 text-xs text-[#212121] dark:text-[#ECECEC] border-zinc-200 dark:border-zinc-700 font-bold cursor-pointer"
-                    >
-                      <span>{semantics?.requiresKitchenDisplay ? "+10m a Cocina" : "+10m a Despacho"}</span>
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      intent="order-detail.notify-whatsapp"
-                      onClick={handleSendWhatsAppNotification}
-                      disabled={whatsappSent}
-                      className="py-2 px-3.5 rounded-xl bg-[#190088] hover:bg-[#14006e] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs disabled:opacity-75"
-                    >
-                      <span>{whatsappSent ? "Notificación Enviada" : "Avisar Demora por WhatsApp"}</span>
-                    </Button>
-
-                    {activeIncident && (
-                      <Button
-                        variant="primary"
-                        intent="order-detail.resolve"
-                        onClick={() => resolveIncidencia(activeIncident.id)}
-                        className="py-2 px-3 text-xs ml-auto font-bold bg-[#190088] hover:bg-[#14006e] text-white"
-                      >
-                        <Check className="w-3.5 h-3.5 text-white" />
-                        <span>Resolver</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* WhatsApp Channel & AI Origin Banner */}
-              {order.channel === "whatsapp" && (
-                <div className="bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#190088] dark:bg-[#97D6DF]" />
-                      <span className="font-mono font-bold text-xs text-zinc-900 dark:text-zinc-100">
-                        Canal WhatsApp Business {order.aiConfidence ? `· Confianza ${order.aiConfidence}` : ""}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openWhatsAppConversation(order.id)}
-                      className="text-xs font-bold text-[#190088] dark:text-[#97D6DF] hover:underline cursor-pointer flex items-center gap-1.5 bg-[#190088]/10 dark:bg-[#190088]/20 px-2.5 py-1 rounded-lg border border-[#190088]/20 transition-colors"
-                      title="Abrir la conversación en vivo de este cliente en Atención al Cliente"
-                    >
-                      <span>Ver chat en WhatsApp</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  {order.aiRawMessage ? (
-                    <p className="text-xs text-zinc-600 dark:text-zinc-300 italic bg-white dark:bg-zinc-950 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                      "{order.aiRawMessage}"
-                    </p>
-                  ) : (
-                    <p className="text-xs text-zinc-500 italic">
-                      {semantics?.orderNoun || "Pedido"} gestionado por WhatsApp. Podés enviar avisos directos con 1 clic:
-                    </p>
-                  )}
-
-                  {/* 1-Click WhatsApp Quick Notification Triggers */}
-                  <div className="pt-1 border-t border-zinc-200/60 dark:border-zinc-800/80 space-y-1.5">
-                    <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase block">
-                      Avisos Rápidos al WhatsApp del Cliente:
-                    </span>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSendQuickAlert(
-                            order.id,
-                            `¡Hola ${order.customerName}! Tu pedido #${order.id} ya va en camino con el repartidor.`
-                          )
-                        }
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 hover:bg-[#190088]/10 dark:hover:bg-[#190088]/20 border border-zinc-200 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
-                      >
-                        <Bike className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>En camino</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSendQuickAlert(
-                            order.id,
-                            `¡Hola ${order.customerName}! Tu pedido #${order.id} está listo para que pases a retirarlo.`
-                          )
-                        }
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 hover:bg-[#190088]/10 dark:hover:bg-[#190088]/20 border border-zinc-200 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>Listo para retiro</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleSendQuickAlert(
-                            order.id,
-                            `Hola ${order.customerName}, debido a alta demanda tu pedido #${order.id} tomará aproximadamente 10 min adicionales. Gracias por tu paciencia.`
-                          )
-                        }
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-800 hover:bg-[#190088]/10 dark:hover:bg-[#190088]/20 border border-zinc-200 dark:border-zinc-700 text-[11px] font-bold text-zinc-700 dark:text-zinc-200 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
-                      >
-                        <Clock className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>Demora (+10m)</span>
-                      </button>
-                    </div>
-
-                    {sentAlertToast && (
-                      <div className="text-[11px] font-bold text-[#190088] dark:text-[#97D6DF] flex items-center gap-1 animate-fade-in pt-1">
-                        <Check className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                        <span>{sentAlertToast}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Customer & Delivery Information Card */}
-              <div className="bg-zinc-50/50 dark:bg-zinc-900/40 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 space-y-3.5">
-                <h4 className="font-mono font-bold text-[11px] uppercase tracking-wider text-zinc-400">
-                  Cliente & Entrega
-                </h4>
-
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
-                  <div>
-                    <span className="text-zinc-400 block text-[10px] uppercase tracking-wider">Nombre / Mesa</span>
-                    <p className="font-bold text-[#212121] dark:text-zinc-50 text-sm mt-0.5">
-                      {order.customerName}
-                    </p>
-                  </div>
-
-                  {order.paymentMethod && (
-                    <div>
-                      <span className="text-zinc-400 block text-[10px] uppercase tracking-wider">Pago</span>
-                      <p className="font-bold text-[#212121] dark:text-white uppercase font-mono mt-0.5 text-sm">
-                        {order.paymentMethod}
-                      </p>
-                    </div>
-                  )}
-
-                  {order.customerPhone && (
-                    <div>
-                      <span className="text-zinc-400 block text-[10px] uppercase tracking-wider">WhatsApp</span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <button
-                          type="button"
-                          onClick={() => openWhatsAppConversation(order.id)}
-                          className="font-mono font-bold text-[#190088] dark:text-[#97D6DF] flex items-center gap-1.5 text-xs hover:underline transition-colors cursor-pointer"
-                          title="Abrir chat dentro de Necto"
-                        >
-                          <span>{order.customerPhone}</span>
-                        </button>
-                        <a
-                          href={`https://wa.me/${order.customerPhone.replace(/[^0-9]/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-zinc-400 hover:text-[#190088] dark:hover:text-[#97D6DF] transition-colors"
-                          title="Abrir en WhatsApp Web externo"
-                        >
-                          <ExternalLink className="w-3 h-3 opacity-70" />
-                        </a>
+                      <div className="min-w-0">
+                        <p className={`text-xs font-medium truncate ${isDone ? "line-through text-gray-400" : ""}`}>
+                          {it.name}
+                        </p>
+                        {invStock && (
+                          <span className="text-[10px] text-gray-400">
+                            Stock: {invStock.availableStock} disp.
+                          </span>
+                        )}
                       </div>
                     </div>
-                  )}
 
-                  {order.customerAddress && (
-                    <div className="col-span-2">
-                      <span className="text-zinc-400 block text-[10px] uppercase tracking-wider">Dirección</span>
-                      <p className="font-medium text-zinc-800 dark:text-zinc-200 text-xs mt-0.5">
-                        {order.customerAddress}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Notes callout */}
-                {order.notes && (
-                  <div className="bg-[#EFE6D3]/50 dark:bg-[#EFE6D3]/10 border border-[#EFE6D3] dark:border-[#EFE6D3]/30 px-3 py-2 rounded-xl">
-                    <p className="text-[11px] text-[#212121] dark:text-[#ECECEC] italic leading-relaxed">
-                      "{order.notes}"
-                    </p>
+                    <span className="font-mono text-xs font-medium text-gray-800 dark:text-gray-200 flex-none">
+                      ${(it.unitPrice * it.quantity).toLocaleString("es-CO")}
+                    </span>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 dark:border-gray-800" />
+
+          {/* Section 3: Resumen Financiero & Tiempos */}
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                Total
+              </span>
+              <span className="font-mono font-bold text-base text-gray-900 dark:text-white">
+                ${order.total.toLocaleString("es-CO")} COP
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Pago</span>
+              <div className="flex items-center gap-2">
+                <span className={`font-semibold ${
+                  order.paymentStatus === "PAGADO"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : order.paymentStatus === "PAGO_CONTRA_ENTREGA"
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-amber-600 dark:text-amber-400"
+                }`}>
+                  {order.paymentStatus === "PAGADO"
+                    ? "Pagado"
+                    : order.paymentStatus === "PAGO_CONTRA_ENTREGA"
+                    ? "Contra entrega"
+                    : "Pendiente de pago"}
+                </span>
+                {order.paymentStatus !== "PAGADO" && (
+                  <button
+                    type="button"
+                    onClick={() => updatePaymentStatus(order.id, "PAGADO", "Confirmado")}
+                    className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer ml-1"
+                  >
+                    Marcar Pagado
+                  </button>
                 )}
               </div>
+            </div>
 
-              {/* Kitchen Timer — Clean Card */}
-              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181B] p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] flex items-center justify-center font-mono font-black text-sm">
-                    {order.elapsedMinutes}m
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-mono block">
-                      {semantics?.requiresKitchenDisplay ? "Cocina" : (semantics?.stationShortName || "Alistamiento")}
-                    </span>
-                    <p className="text-xs font-bold text-[#212121] dark:text-zinc-50">
-                      {order.elapsedMinutes} / {order.estimatedMinutes} min
-                    </p>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Orden recibida</span>
+              <span className="text-gray-700 dark:text-gray-300 font-mono">
+                {order.createdAt} · hace {order.elapsedMinutes} min
+              </span>
+            </div>
 
-                <div className="flex items-center gap-2">
-                  <UrgencyBadge
-                    urgency={order.urgency}
-                    elapsedMin={order.elapsedMinutes}
-                    estMin={order.estimatedMinutes}
-                  />
-                  {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
-                    <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                      <button
-                        type="button"
-                        onClick={() => adjustEstimate(order.id, -5)}
-                        className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-[#212121] dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-600 flex items-center justify-center cursor-pointer shadow-xs transition-all active:scale-95"
-                        title="Restar 5 min"
-                      >
-                        <Minus className="w-3.5 h-3.5 stroke-[3]" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => adjustEstimate(order.id, 5)}
-                        className="w-7 h-7 rounded-lg bg-white dark:bg-zinc-700 text-[#212121] dark:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-600 flex items-center justify-center cursor-pointer shadow-xs transition-all active:scale-95"
-                        title="Sumar 5 min"
-                      >
-                        <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Products Breakdown — Clean list */}
-              <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <h4 className="font-mono font-bold text-xs uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-                    Productos
-                  </h4>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {order.status === "CONFIRMADO" && (
-                      <span className="text-[10px] font-mono font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <Package className="w-3 h-3 text-amber-600" />
-                        <span>Reserva Preventiva en Inventario</span>
-                      </span>
-                    )}
-                    {["EN_PREPARACION", "LISTO", "FINALIZADO"].includes(order.status) && (
-                      <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Salida Asentada en Kardex</span>
-                      </span>
-                    )}
-                    <span className="text-[11px] font-mono font-bold text-zinc-400">
-                      {order.items.reduce((acc, it) => acc + it.quantity, 0)} {order.items.reduce((acc, it) => acc + it.quantity, 0) === 1 ? "ítem" : "ítems"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="border border-zinc-200/90 dark:border-zinc-800 rounded-2xl overflow-hidden divide-y divide-zinc-100 dark:divide-zinc-800/80 bg-white dark:bg-[#18181B] shadow-2xs">
-                  {order.items.map((it, idx) => {
-                    const invStock = inventoryService.getProductStock(it.productId, it.name);
-                    return (
-                      <div key={idx} className="p-3.5 flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1 flex items-center gap-2.5">
-                          <span className="font-mono font-bold text-xs bg-[#190088]/10 dark:bg-[#190088]/20 text-[#190088] dark:text-[#97D6DF] border border-[#190088]/20 w-8 h-8 rounded-xl flex items-center justify-center flex-none shadow-2xs">
-                            {it.quantity}×
-                          </span>
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm text-[#212121] dark:text-zinc-50 truncate">
-                              {it.name}
-                            </p>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              {it.option && (
-                                <span className="text-[10px] font-mono font-bold text-[#190088] dark:text-[#97D6DF] bg-[#97D6DF]/15 border border-[#97D6DF]/25 px-1.5 py-px rounded-md">
-                                  {it.option}
-                                </span>
-                              )}
-                              {invStock && (
-                                <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                                  Stock Bodega: {invStock.availableStock} disp.
-                                </span>
-                              )}
-                              {it.notes && (
-                                <span className="text-[10px] text-[#212121]/60 dark:text-[#ECECEC]/60 italic truncate max-w-[180px]">
-                                  "{it.notes}"
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-right flex-none font-mono">
-                          <p className="font-bold text-sm text-[#190088] dark:text-[#97D6DF]">
-                            ${(it.unitPrice * it.quantity).toLocaleString("es-CO")}
-                          </p>
-                          <p className="text-[10px] text-zinc-400">
-                            ${it.unitPrice.toLocaleString("es-CO")} c/u
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Total footer */}
-                  <div className="p-4 bg-[#190088]/5 dark:bg-[#190088]/10 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800">
-                    <span className="font-bold text-sm text-[#212121] dark:text-zinc-50">
-                      Total
-                    </span>
-                    <span className="font-mono font-black text-xl text-[#190088] dark:text-[#97D6DF] tracking-tight">
-                      ${order.total.toLocaleString("es-CO")}
-                    </span>
-                  </div>
+            <div className="flex items-center justify-between py-1.5 border-t border-gray-100 dark:border-gray-800">
+              <span className="text-gray-500 dark:text-gray-400">Tiempo de preparación</span>
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-medium text-gray-800 dark:text-gray-200">
+                  {order.elapsedMinutes} / {order.estimatedMinutes} min
+                </span>
+                <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-0.5 rounded-md">
+                  <button
+                    type="button"
+                    onClick={() => adjustEstimate(order.id, -5)}
+                    disabled={order.estimatedMinutes <= 5}
+                    className="w-5 h-5 rounded flex items-center justify-center text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-30 cursor-pointer"
+                    title="Restar 5 min"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => adjustEstimate(order.id, 5)}
+                    className="w-5 h-5 rounded flex items-center justify-center text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
+                    title="Sumar 5 min"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Retraso Alert (solo si existe demora) */}
+            {order.urgency === "RETRASADO" && (
+              <div className="flex items-center justify-between p-2.5 rounded-lg bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+                <span className="font-medium">⚠ {delayMinutes > 0 ? delayMinutes : 6} min de demora</span>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsAppNotification}
+                  disabled={whatsappSent}
+                  className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+                >
+                  {whatsappSent ? "Aviso enviado ✓" : "Notificar al cliente"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Drawer Footer Actions */}
-        <div className="p-5 border-t border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/60 flex items-center gap-3 flex-none">
+        {/* Drawer Footer Actions — Primary Contextual Action on Top, Secondary Discrete Cancel Below */}
+        <div className="p-5 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col items-center gap-2 flex-none">
           {programados.some(p => p.id === order.id) && (
-            <Button
-              variant="primary"
-              intent="order-detail.inject"
+            <button
+              type="button"
               onClick={() => {
                 injectScheduledOrderToLive(order.id, true);
                 setSelectedOrderId(order.id);
               }}
-              className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl text-xs bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white font-semibold cursor-pointer transition-colors shadow-theme-xs"
             >
-              <span>
-                {semantics?.requiresKitchenDisplay
-                  ? "Enviar a Cocina KDS (Pasar a En Vivo)"
-                  : `Pasar a ${semantics?.stationShortName || "Alistamiento"} (En Vivo)`}
-              </span>
-            </Button>
+              Pasar a preparación
+            </button>
           )}
 
           {!programados.some(p => p.id === order.id) && order.status === "NUEVO" && (
-            <>
-              <Button
-                variant="primary"
-                intent="order-detail.confirm"
-                onClick={() => confirmOrder(order.id)}
-                className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
-              >
-                <span>Aceptar y Confirmar Pedido</span>
-              </Button>
-              <Button
-                variant="outline"
-                intent="order-detail.reject"
-                onClick={() => setRejectModalOrder(order)}
-                className="py-3 px-4 rounded-2xl border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-[#212121] text-xs cursor-pointer"
-              >
-                Rechazar
-              </Button>
-            </>
+            <button
+              type="button"
+              onClick={() => confirmOrder(order.id)}
+              className="w-full py-2.5 px-4 rounded-xl text-xs bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white font-semibold cursor-pointer transition-colors shadow-theme-xs"
+            >
+              Confirmar orden
+            </button>
           )}
 
           {!programados.some(p => p.id === order.id) && order.status === "CONFIRMADO" && (
-            <Button
-              variant="accent"
-              intent="order-detail.send-kitchen"
+            <button
+              type="button"
               onClick={() => sendToKitchen(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl text-xs bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white font-semibold cursor-pointer transition-colors shadow-theme-xs"
             >
-              <span>{semantics?.requiresKitchenDisplay ? "Pasar a Cocina (KDS)" : `Pasar a ${semantics?.stationShortName || "Alistamiento"}`}</span>
-            </Button>
+              Pasar a preparación
+            </button>
           )}
 
           {order.status === "EN_PREPARACION" && (
-            <Button
-              variant="primary"
-              intent="order-detail.mark-ready"
+            <button
+              type="button"
               onClick={() => markOrderReady(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer transition-colors shadow-theme-xs"
             >
-              <span>Marcar Listo para Despacho</span>
-            </Button>
+              Listo para entrega
+            </button>
           )}
 
           {order.status === "LISTO" && (
-            <Button
-              variant="primary"
-              intent="order-detail.deliver"
+            <button
+              type="button"
               onClick={() => deliverOrder(order.id)}
-              className="flex-1 py-3 px-4 rounded-2xl text-xs bg-[#190088] hover:bg-[#14006e] text-white font-bold cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold cursor-pointer transition-colors shadow-theme-xs"
             >
-              <span>Marcar Entregado / Despachado</span>
-            </Button>
+              Entregar orden
+            </button>
           )}
 
-          {!["FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
-            <Button
-              variant="outline"
-              intent="order-detail.cancel"
-              onClick={() => setCancelModalOrder(order)}
-              className="py-3 px-3.5 rounded-2xl border-zinc-200 dark:border-zinc-700 text-zinc-400 hover:text-[#212121] text-xs cursor-pointer"
-              title="Cancelar pedido"
-            >
-              Cancelar
-            </Button>
-          )}
+          {/* Secondary Actions (Discrete Text Buttons Below) */}
+          <div className="flex items-center justify-center gap-4 pt-1">
+            {order.status === "NUEVO" && (
+              <button
+                type="button"
+                onClick={() => setRejectModalOrder(order)}
+                className="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 cursor-pointer transition-colors"
+              >
+                Rechazar orden
+              </button>
+            )}
+
+            {!["ENTREGADO", "FINALIZADO", "CANCELADO", "RECHAZADO"].includes(order.status) && (
+              <button
+                type="button"
+                onClick={() => setCancelModalOrder(order)}
+                className="text-xs text-gray-400 hover:text-red-600 dark:text-gray-500 cursor-pointer transition-colors"
+              >
+                Cancelar pedido
+              </button>
+            )}
+
+            {["ENTREGADO", "FINALIZADO"].includes(order.status) && order.returnStatus !== "RECIBIDA" && (
+              <button
+                type="button"
+                onClick={() => setCancelModalOrder(order)}
+                className="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 cursor-pointer transition-colors"
+              >
+                Registrar Devolución / Anular
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
