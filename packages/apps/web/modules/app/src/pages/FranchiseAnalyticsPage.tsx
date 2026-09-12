@@ -1,59 +1,25 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../context/BusinessContext";
-import { PedidosProvider } from "../compositions/pedidos/context/PedidosContext";
-import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
-import { ResumenDashboardView } from "../compositions/pedidos/gestion/ResumenDashboardView";
-import { HistorialView } from "../compositions/pedidos/gestion/HistorialView";
-import { AnaliticaView } from "../compositions/pedidos/gestion/AnaliticaView";
 import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import {
   ArrowLeft,
   BarChart2,
-  History,
   TrendingUp,
   Building2,
   Sparkles,
-  Calendar,
-  Layers,
 } from "lucide-react";
 import { Button } from "@/elements";
-import { GestionTab } from "../compositions/pedidos/types";
 
-type AnalyticsTab = "resumen" | "historial";
-
-const FranchiseAnalyticsContent: React.FC = () => {
+export const FranchiseAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { currentBusiness, businesses, switchBusiness } = useBusiness();
-
-  // Initial tab from route state or default to resumen
-  const initialTab: AnalyticsTab =
-    (location.state as any)?.tab === "historial" ? "historial" : "resumen";
-
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialTab);
-
-  const tabs: { id: AnalyticsTab; label: string; icon: React.ReactNode; desc: string }[] = [
-    {
-      id: "resumen",
-      label: "Dashboard Ejecutivo 360°",
-      icon: <BarChart2 className="w-4 h-4" />,
-      desc: "Facturación, horas pico, rendimiento por canal y platos estrella",
-    },
-    {
-      id: "historial",
-      label: "Historial de Ventas & Cierre",
-      icon: <History className="w-4 h-4" />,
-      desc: "Auditoría de comandas, arqueo de caja y exportación CSV",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0E0F12] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
-      {/* Top Executive Header (Sin barra lateral de tienda) */}
+      {/* Top Executive Header */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#121316]/95 backdrop-blur-md border-b border-zinc-200/90 dark:border-zinc-800/90 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Left: Back to Hub + Franchise Identity */}
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -68,7 +34,6 @@ const FranchiseAnalyticsContent: React.FC = () => {
 
             <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
 
-            {/* Franchise Info */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden flex-none shadow-2xs">
                 {currentBusiness?.logoUrl ? (
@@ -100,7 +65,6 @@ const FranchiseAnalyticsContent: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Branch Selector Quick Dropdown if multiple branches exist */}
           {businesses.length > 1 && (
             <div className="flex items-center gap-2 self-end md:self-auto">
               <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider hidden lg:inline">
@@ -120,55 +84,23 @@ const FranchiseAnalyticsContent: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Executive Subtabs Bar (2 Tabs) */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {tabs.map(tab => {
-            const isActive = activeTab === tab.id;
-            return (
-              <Button
-                key={tab.id}
-                variant="ghost"
-                intent="analytics.tab.switch"
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer flex-none ${
-                  isActive
-                    ? "bg-[#FF3F1A] text-white shadow-xs"
-                    : "bg-zinc-100/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 hover:bg-[#EFE6D3] dark:hover:bg-[#37332A] hover:text-[#FF3F1A] dark:hover:text-[#FF3F1A]"
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </Button>
-            );
-          })}
-        </div>
       </header>
 
-      {/* Main Executive Body Container (Full Width, No Sidebar) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === "resumen" && (
-          <ResumenDashboardView
-            onNavigateGestion={t => {
-              if (t === "historial") {
-                setActiveTab("historial");
-              }
-            }}
-          />
-        )}
-        {activeTab === "historial" && <HistorialView />}
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="p-8 rounded-3xl bg-white dark:bg-[#121316] border border-zinc-200 dark:border-zinc-800 space-y-4 shadow-sm">
+          <div className="flex items-center gap-3 text-brand-500">
+            <BarChart2 className="w-6 h-6" />
+            <h2 className="text-xl font-black tracking-tight text-zinc-900 dark:text-white">
+              Visión General de Franquicia
+            </h2>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-2xl">
+            Panel ejecutivo consolidado de operaciones. Las métricas operativas se sincronizan en tiempo real al registrar actividad en tus canales activos.
+          </p>
+        </div>
       </main>
     </div>
-  );
-};
-
-export const FranchiseAnalyticsPage: React.FC = () => {
-  return (
-    <CatalogProvider>
-      <PedidosProvider>
-        <FranchiseAnalyticsContent />
-      </PedidosProvider>
-    </CatalogProvider>
   );
 };
 

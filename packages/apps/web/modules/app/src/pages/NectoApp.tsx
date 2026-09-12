@@ -22,10 +22,11 @@ import {
   History,
 } from "lucide-react";
 
-import svgPaths from "@/imports/BannerYFooter/svg-mzezy80iwx";
-import { PedidosModule } from "@/compositions/pedidos/PedidosModule";
-import { ModuloInventario, InventoryTab } from "@/ModuloInventario";
-import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
+export type PedidosSection = "ordenes" | "programados" | "preparacion" | "conversaciones" | "canales" | "configuracion" | "whatsapp" | "menu" | "operacion" | "analitica";
+export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversaciones";
+export type GestionTab = "catalogo" | "resumen" | "historial" | "analitica" | "roles" | "automatizaciones" | "turnos";
+export type InventoryTab = "products" | "purchasing" | "kardex" | "pricelists" | "locations" | "valuation" | "catalog";
+
 import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { EmptyModulesHubView } from "@/compositions/workspace/EmptyModulesHubView";
 import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
@@ -47,7 +48,6 @@ import { StockFlowHeader } from "@/compositions/shell/StockFlowHeader";
 import { eventBus } from "@/infrastructure/eventBus";
 import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
 import { ChannelsProvider } from "@/compositions/channels/context/ChannelsContext";
-import { InventoryProvider } from "@/ModuloInventario/context/InventoryContext";
 
 interface NotificationItem {
   id: string;
@@ -566,57 +566,17 @@ export default function App() {
               )
             }
           >
-            {isModulesHub ? (
-              <EmptyModulesHubView
-                business={activeBusiness}
-                onNavigateToModule={(mod) => {
-                  if (mod === "pedidos") {
-                    handleNavigatePedidos("operacion", "en-vivo");
-                  } else if (mod === "inventarios") {
-                    handleNavigateInventario("catalog");
-                  }
-                }}
-                onOpenSettings={handleOpenSettings}
-              />
-            ) : activeModule === "inventarios" && hasInventarios ? (
-              <ModuloInventario
-                activeTab={inventarioTab}
-                onNavigateTab={handleNavigateInventario}
-              />
-            ) : hasPedidos ? (
-              <PedidosModule
-                sectionProp={pedidosSection}
-                opTabProp={pedidosOpTab}
-                geTabProp={pedidosGeTab}
-                targetOrderId={targetOrderId}
-                targetModal={targetModal}
-                targetProductId={targetProductId}
-                onOpenSettings={handleOpenSettings}
-                onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
-                onOpTabChange={t => handleNavigatePedidos("operacion", t)}
-                onGeTabChange={t => {
-                  const targetSec: PedidosSection =
-                    (t === "resumen" || t === "historial" || t === "analitica")
-                      ? "analitica"
-                      : (t === "roles" || t === "automatizaciones" || t === "turnos")
-                      ? "configuracion"
-                      : "menu";
-                  handleNavigatePedidos(targetSec, t);
-                }}
-              />
-            ) : (
-              <EmptyModulesHubView
-                business={activeBusiness}
-                onNavigateToModule={(mod) => {
-                  if (mod === "pedidos") {
-                    handleNavigatePedidos("operacion", "en-vivo");
-                  } else if (mod === "inventarios") {
-                    handleNavigateInventario("catalog");
-                  }
-                }}
-                onOpenSettings={handleOpenSettings}
-              />
-            )}
+            <EmptyModulesHubView
+              business={activeBusiness}
+              onNavigateToModule={(mod) => {
+                if (mod === "pedidos") {
+                  handleNavigatePedidos("operacion", "en-vivo");
+                } else if (mod === "inventarios") {
+                  handleNavigateInventario("catalog");
+                }
+              }}
+              onOpenSettings={handleOpenSettings}
+            />
           </BasePageLayout>
         </BaseAppShell>
 
@@ -632,7 +592,6 @@ export default function App() {
           initialTab={settingsInitialTab}
           onClose={() => setIsSettingsModalOpen(false)}
         />
-        </InventoryProvider>
       </ChannelsProvider>
     </CatalogProvider>
   );

@@ -3,7 +3,7 @@
  * Strongly typed events for cross-module decoupled communication.
  */
 
-import type { StorePaceMode } from "../compositions/pedidos/types";
+export type StorePaceMode = "habitual" | "rapida" | "demorada";
 import type { OrderChannel, OrderItem, OrderStatus } from "./order.contract";
 
 export interface NectoEventsMap {

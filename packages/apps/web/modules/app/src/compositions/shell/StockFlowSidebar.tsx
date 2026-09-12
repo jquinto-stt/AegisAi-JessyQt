@@ -11,8 +11,11 @@ import {
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { useAuth } from "@/auth/AuthContext";
 import { useBusiness } from "@/context/BusinessContext";
-import { InventoryTab } from "@/ModuloInventario";
-import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
+export type PedidosSection = "ordenes" | "programados" | "preparacion" | "conversaciones" | "canales" | "configuracion" | "whatsapp" | "menu" | "operacion" | "analitica";
+export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversaciones";
+export type GestionTab = "catalogo" | "resumen" | "historial" | "analitica" | "roles" | "automatizaciones" | "turnos";
+export type InventoryTab = "products" | "purchasing" | "kardex" | "pricelists" | "locations" | "valuation" | "catalog";
+
 import { eventBus } from "@/infrastructure/eventBus";
 import {
   GridIcon,

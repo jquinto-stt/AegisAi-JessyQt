@@ -1,13 +1,13 @@
 import type { Product, NewProduct } from './products';
-import { INITIAL_PRODUCTS } from '../compositions/pedidos/mockData';
+
+const INITIAL_PRODUCTS = [
+  { id: 'prod-01', name: 'Empanada de Carne Cortada a Cuchillo', code: 'EMP-CARNE', price: 5500, stockEstimated: 120 },
+  { id: 'prod-02', name: 'Empanada de Pollo al Verdeo', code: 'EMP-POLLO', price: 5200, stockEstimated: 95 },
+  { id: 'prod-03', name: 'Empanada de Queso y Cebolla Caramelizada', code: 'EMP-QUESO', price: 5000, stockEstimated: 80 },
+];
 
 /**
  * In-memory + localStorage mock backend for the Products API.
- *
- * Used while the real WebiAI cloud.core Lambdas are unavailable (blocked on
- * iam:CreateRole). Mirrors the real API contract (Product shape), seeds from
- * Necto's INITIAL_PRODUCTS (mapped to the API model), and persists per user
- * via localStorage keyed by the Cognito `sub` claim.
  */
 
 const STORAGE_PREFIX = 'stockflow.mock.products.';
@@ -17,11 +17,6 @@ function delay<T>(value: T): Promise<T> {
   return new Promise(resolve => setTimeout(() => resolve(value), LATENCY_MS));
 }
 
-/**
- * Best-effort decode of the Cognito JWT `sub` claim to scope mock storage per
- * user. Falls back to a shared key when the token can't be parsed (e.g. mock
- * mode without a real session).
- */
 function ownerFromToken(token: string): string {
   try {
     const payload = token.split('.')[1];
@@ -36,7 +31,7 @@ function storageKey(ownerId: string): string {
   return `${STORAGE_PREFIX}${ownerId}`;
 }
 
-/** Seed the store from Necto's INITIAL_PRODUCTS mapped to the API contract. */
+/** Seed the store from initial products mapped to the API contract. */
 function seed(ownerId: string): Product[] {
   const now = new Date().toISOString();
   return INITIAL_PRODUCTS.map(p => ({

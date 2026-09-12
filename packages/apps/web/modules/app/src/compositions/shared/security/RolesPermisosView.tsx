@@ -25,8 +25,7 @@ import {
   Truck,
   FileSpreadsheet,
 } from "lucide-react";
-import { Button, Field, Select, SearchInput } from "@/elements";
-import { NectoBanner } from "@/compositions/pedidos/shared/NectoBanner";
+
 
 interface RoleTemplateArchetype {
   id: string;
