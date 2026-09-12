@@ -2576,7 +2576,7 @@ export const BusinessSettingsModal: React.FC<{
 
                   <div className="overflow-hidden rounded-2xl bg-gray-50 dark:bg-gray-950">
                     {/* Cover */}
-                    <div className="relative h-32 w-full overflow-hidden">
+                    <div className="relative h-36 w-full overflow-hidden">
                       {bannerUrl ? (
                         <>
                           <img
@@ -2585,12 +2585,14 @@ export const BusinessSettingsModal: React.FC<{
                             style={transformStyle(bannerTransform)}
                             className="h-full w-full object-cover"
                           />
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
                         </>
                       ) : (
-                        <div className="relative h-full w-full bg-gradient-to-br from-brand-500 to-brand-600" />
+                        <div className="relative h-full w-full bg-brand-500">
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-400/35 via-transparent to-brand-700/45" />
+                        </div>
                       )}
-                      <span className="absolute left-3.5 top-3.5 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-900">
+                      <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-800 shadow-theme-xs backdrop-blur-md">
                         <span className="h-1.5 w-1.5 rounded-full bg-success-500" />
                         Operando
                       </span>
@@ -2598,8 +2600,9 @@ export const BusinessSettingsModal: React.FC<{
 
                     {/* Identity */}
                     <div className="px-5 pb-5">
-                      <div className="-mt-8 flex items-end">
-                        <div className="flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-2xl border-[3px] border-white bg-white dark:border-gray-900 dark:bg-gray-800">
+                      {/* `relative z-10` so the positioned cover does not paint over the logo */}
+                      <div className="relative z-10 -mt-7 flex items-end">
+                        <div className="flex h-14 w-14 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-50 ring-4 ring-white dark:bg-gray-800 dark:ring-gray-900">
                           {logoUrl ? (
                             <img
                               src={logoUrl}
@@ -2612,10 +2615,10 @@ export const BusinessSettingsModal: React.FC<{
                           )}
                         </div>
                       </div>
-                      <h4 className="mt-3 truncate text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                      <h4 className="mt-3.5 truncate text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
                         {name.trim() || "Nombre de la sede"}
                       </h4>
-                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                      <p className="mt-1 truncate text-[12.5px] text-gray-500 dark:text-gray-400">
                         {previewLocation}
                       </p>
                     </div>

@@ -153,10 +153,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
               <Card
                 key={biz.id}
                 onClick={() => setRoleSelectBiz(biz)}
-                className="group flex cursor-pointer flex-col overflow-hidden rounded-3xl border-gray-100 p-0 shadow-none transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-theme-md dark:border-gray-800"
+                className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border-gray-100 p-0 shadow-none transition-all duration-300 hover:border-gray-200 hover:shadow-theme-md dark:border-gray-800 dark:hover:border-gray-700"
               >
-                {/* Cover — uploaded banner, or brand orange when there is none */}
-                <div className="relative h-32 w-full flex-none overflow-hidden">
+                {/* Cover — uploaded banner, or a flat brand block when there is none */}
+                <div className="relative h-36 w-full flex-none overflow-hidden">
                   {biz.bannerUrl ? (
                     <>
                       <img
@@ -167,46 +167,49 @@ export const GlobalFranchiseOverview: React.FC = () => {
                             ? `rotate(${biz.bannerTransform.rotate || 0}deg) scale(${biz.bannerTransform.scale || 1}) translate(${biz.bannerTransform.posX || 0}%, ${biz.bannerTransform.posY || 0}%)`
                             : undefined,
                         }}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
                       />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
                     </>
                   ) : (
-                    <div className="relative h-full w-full bg-gradient-to-br from-brand-500 to-brand-600">
+                    <div className="relative h-full w-full bg-brand-500">
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-400/35 via-transparent to-brand-700/45" />
                       <BusinessIcon
                         iconKey={biz.iconKey}
-                        className="absolute -bottom-8 -right-5 size-36 text-white/20 transition-transform duration-500 group-hover:scale-110"
+                        className="absolute -bottom-3 -right-2 size-24 text-white/15 transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
                     </div>
                   )}
 
-                  <span className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-900 shadow-theme-xs backdrop-blur-md">
+                  {/* Status — the only thing that floats on the cover */}
+                  <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-800 shadow-theme-xs backdrop-blur-md">
                     <span className="size-1.5 rounded-full bg-success-500" />
                     Operando
                   </span>
 
-                  {/* Direct route to the cover editor — the banner is visible here,
-                      so this is where people look for a way to change it. */}
+                  {/* Cover editor — a quiet card control, not a second sticker */}
                   <button
                     type="button"
                     title="Editar portada y logo de esta sede"
+                    aria-label="Editar portada y logo de esta sede"
                     onClick={e => {
                       e.stopPropagation();
                       openSettings(biz, "branding");
                     }}
-                    className="absolute right-4 top-4 z-10 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-secondary-600 shadow-theme-xs backdrop-blur-md transition-colors hover:bg-white hover:text-brand-500"
+                    className="absolute right-3 top-3 z-10 inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-white/95 text-secondary-600 shadow-theme-xs backdrop-blur-md transition-colors hover:bg-white hover:text-brand-500"
                   >
-                    <ImageIcon className="size-3" />
-                    {biz.bannerUrl ? "Editar portada" : "Añadir portada"}
+                    <ImageIcon className="size-3.5" />
                   </button>
                 </div>
 
                 {/* Body */}
-                <div className="flex flex-1 flex-col px-5 pb-5">
-                  {/* Avatar + identity */}
-                  <div className="-mt-8 flex items-end gap-3.5">
-                    <div className="flex size-16 flex-none items-center justify-center overflow-hidden rounded-2xl border-[3px] border-white bg-white shadow-theme-sm dark:border-gray-900 dark:bg-gray-800">
+                <div className="flex flex-1 flex-col px-5 pb-4">
+                  {/* Logo — overlaps the cover, exactly as the storefront renders it.
+                      `relative z-10` is load-bearing: the cover is `position: relative`,
+                      so without it the positioned cover paints OVER the static badge
+                      and eats the top half of the logo. */}
+                  <div className="relative z-10 -mt-7 flex items-end">
+                    <div className="flex size-14 flex-none items-center justify-center overflow-hidden rounded-xl bg-gray-50 ring-4 ring-white dark:bg-gray-800 dark:ring-gray-900">
                       {biz.logoUrl ? (
                         <img
                           src={biz.logoUrl}
@@ -219,36 +222,34 @@ export const GlobalFranchiseOverview: React.FC = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <BusinessIcon iconKey={biz.iconKey} className="size-8 text-brand-500" />
+                        <BusinessIcon iconKey={biz.iconKey} className="size-7 text-brand-500" />
                       )}
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-1.5">
-                    <h4 className="truncate text-[17px] font-black leading-snug tracking-tight text-secondary-600 transition-colors group-hover:text-brand-500 dark:text-white">
-                      {biz.name}
-                    </h4>
-                    <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">
-                      {[biz.specialty, biz.city].filter(Boolean).join(" · ")}
-                    </p>
-                  </div>
+                  <h4 className="mt-3.5 truncate text-[17px] font-black leading-snug tracking-tight text-secondary-600 transition-colors group-hover:text-brand-500 dark:text-white">
+                    {biz.name}
+                  </h4>
+                  <p className="mt-1 truncate text-[12.5px] font-medium text-gray-500 dark:text-gray-400">
+                    {[biz.specialty, biz.city].filter(Boolean).join(" · ")}
+                  </p>
 
-                  <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                      {biz.currency}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  {/* Quiet metadata — reads as one line instead of two loose pills */}
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                    <span>{biz.currency}</span>
+                    <span className="size-1 flex-none rounded-full bg-gray-300 dark:bg-gray-700" />
+                    <span>
                       {biz.activeModules.length} {biz.activeModules.length === 1 ? "módulo" : "módulos"}
                     </span>
                   </div>
 
                   {/* Actions — stopPropagation so card-level select does not fire */}
                   <div
-                    className="mt-auto space-y-2.5 pt-5"
+                    className="mt-auto pt-5"
                     onClick={e => e.stopPropagation()}
                     role="presentation"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                       <Button
                         variant="primary"
                         intent="hub.branch.enter"
@@ -267,18 +268,17 @@ export const GlobalFranchiseOverview: React.FC = () => {
                         title="Configurar branding, bot y parámetros de la sede"
                         onClick={() => openSettings(biz)}
                         startIcon={<Settings className="size-4" />}
-                        className="rounded-full px-4 py-2.5 text-[13px] font-bold"
+                        className="rounded-full px-3.5 py-2.5 text-[13px] font-bold"
                       >
                         Configurar
                       </Button>
                     </div>
 
-                    {/* Sales history — promoted from a barely-visible text link
-                        into a real secondary action so it can actually be found. */}
+                    {/* Sales history — a quiet text action, not a third full-width pill */}
                     <button
                       type="button"
                       onClick={() => goToAnalitica(biz.id, "historial")}
-                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-gray-100 py-2.5 text-[12px] font-bold text-secondary-600 transition-colors hover:bg-brand-500 hover:text-white dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-brand-500 dark:hover:text-white"
+                      className="mt-1 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-[12px] font-semibold text-gray-500 transition-colors hover:bg-gray-50 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-brand-400"
                     >
                       <History className="size-3.5" />
                       Historial de ventas
@@ -292,10 +292,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate("/onboarding")}
-              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-200 p-8 text-center transition-all hover:border-brand-500 hover:bg-brand-50/40 dark:border-gray-800 dark:hover:bg-brand-500/5"
+              className="group flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-gray-200 p-8 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/40 dark:border-gray-800 dark:hover:bg-brand-500/5"
             >
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
-                <Plus className="size-6" />
+              <span className="flex size-11 items-center justify-center rounded-full bg-brand-50 text-brand-500 transition-colors group-hover:bg-brand-500 group-hover:text-white dark:bg-brand-500/15 dark:text-brand-400">
+                <Plus className="size-5" />
               </span>
               <span className="text-sm font-black tracking-tight text-secondary-600 dark:text-white">
                 Nueva sucursal
