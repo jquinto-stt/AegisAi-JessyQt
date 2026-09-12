@@ -176,7 +176,7 @@ function Eyebrow({ children, tone = "brand" }: { children: React.ReactNode; tone
 export default function OnboardingPage() {
   const navigate = useNavigate();
   const { createBusiness } = useBusiness();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(3);
 
   // Step 1 — Store identity
   const [companyName, setCompanyName] = useState("");
@@ -529,6 +529,7 @@ export default function OnboardingPage() {
                         type="button"
                         role="checkbox"
                         aria-checked={isSelected}
+                        title={mod.title}
                         onClick={() => handleToggleModule(mod.id)}
                         className={cn(
                           "flex cursor-pointer items-start gap-3.5 rounded-2xl p-4 text-left transition-all",
@@ -550,7 +551,7 @@ export default function OnboardingPage() {
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
                             <span className="text-[13px] font-bold text-gray-900 dark:text-white">
-                              {mod.title}
+                              {mod.shortTitle}
                             </span>
                             {isRecommended && (
                               <span className="rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-500 dark:bg-gray-800">
@@ -641,7 +642,7 @@ export default function OnboardingPage() {
                           return (
                             <span
                               key={m}
-                              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
                             >
                               {def?.shortTitle || m}
                             </span>
@@ -739,14 +740,38 @@ export default function OnboardingPage() {
         {/* ── Right: brand panel ─────────────────────────────────────── */}
         <div
           className={cn(
-            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
+            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-950 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
             step === 1 ? "flex" : "hidden lg:flex"
           )}
         >
-          <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} />
+          {/* Background image for all steps */}
+          <img
+            src={
+              step === 1
+                ? selectedArchetype.includes("restaurant") || selectedArchetype.includes("cafe")
+                  ? "/onboarding-restaurant.jpg"
+                  : selectedArchetype.includes("services") || selectedArchetype.includes("beauty")
+                  ? "/onboarding-services.jpg"
+                  : selectedArchetype.includes("retail") || selectedArchetype.includes("store")
+                  ? "/onboarding-retail.jpg"
+                  : "/onboarding-modular-sync.jpg"
+                : step === 2
+                ? "/onboarding-operations.jpg"
+                : "/onboarding-whatsapp-orders.jpg"
+            }
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
+          />
+          <div className="absolute inset-0 bg-black/45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/25" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/30 via-transparent to-black/60" />
+
+          {/* Interactive Dot Grid above background images & overlays */}
+          <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} className="z-10" />
 
           {step === 1 ? (
-            <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
+            <div className="relative z-20 flex h-full animate-in flex-col justify-between fade-in duration-300">
               <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-7 w-auto" />
 
               <div className="space-y-8">
@@ -776,39 +801,32 @@ export default function OnboardingPage() {
               </div>
             </div>
           ) : (
-            <>
-              <img
-                src={step === 2 ? "/onboarding-operations.jpg" : "/onboarding-whatsapp-orders.jpg"}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/25 via-transparent to-black/50" />
-
-              <div className="relative z-10 flex items-center justify-between">
+            <div className="relative z-20 flex h-full animate-in flex-col justify-between fade-in duration-300">
+              <div className="flex items-center justify-between">
                 <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-6 w-auto" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">
                   {step === 2 ? "Capacidades" : "Lanzamiento"}
                 </span>
               </div>
 
-              <div className="relative z-10 space-y-4">
-                <h2 className="max-w-sm text-[30px] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-[38px]">
-                  {step === 2 ? "Enciende solo lo que necesitas hoy." : "Tu operación empieza ahora."}
-                </h2>
-                <p className="max-w-xs text-sm leading-relaxed text-white/80">
-                  {step === 2
-                    ? "Suma o quita módulos cuando quieras, sin rehacer tu configuración."
-                    : "Acceso inmediato al centro de operaciones y a la administración de tu tienda."}
-                </p>
-              </div>
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <h2 className="max-w-sm text-[30px] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-[38px]">
+                    {step === 2 ? "Enciende solo lo que necesitas hoy." : "Tu operación empieza ahora."}
+                  </h2>
+                  <p className="max-w-xs text-sm leading-relaxed text-white/80">
+                    {step === 2
+                      ? "Suma o quita módulos cuando quieras, sin rehacer tu configuración."
+                      : "Acceso inmediato al centro de operaciones y a la administración de tu tienda."}
+                  </p>
+                </div>
 
-              <div className="relative z-10 flex items-center justify-between text-[11px] font-medium text-white/70">
-                <span>grow together</span>
-                <span className="font-mono">v3.0</span>
+                <div className="flex items-center justify-between text-[11px] font-medium text-white/70">
+                  <span>grow together</span>
+                  <span className="font-mono">v3.0</span>
+                </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
