@@ -927,84 +927,84 @@ export default function OnboardingPage() {
 
           {step === 1 ? (
             /* ── Step 1: Live Blueprint Architecture Studio ── */
-            <div className="relative z-10 flex flex-col justify-between h-full space-y-6 animate-fade-in max-w-lg mx-auto w-full">
+            <div className="relative z-10 flex flex-col justify-between h-full space-y-5 animate-fade-in w-full">
               {/* Brand Top Header */}
               <div className="flex items-center justify-between pb-3 border-b border-white/15">
                 <div className="flex items-center gap-3">
                   <img
                     src="/images/logo/necto-full-white.svg"
                     alt="Necto"
-                    className="h-6 w-auto"
+                    className="h-7 w-auto"
                   />
-                  <div className="h-3 w-px bg-white/30" />
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-white/80">
+                  <div className="h-4 w-px bg-white/30" />
+                  <span className="text-xs font-mono uppercase tracking-widest text-white/90 font-semibold">
                     Instancia de Negocio
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-white/60 tracking-wider uppercase">
-                  Vista Previa
+                <span className="text-xs font-mono text-white/70 tracking-wider uppercase px-2.5 py-1 rounded-full bg-white/10">
+                  Vista Previa en Vivo
                 </span>
               </div>
 
-              {/* Main Blueprint Terminal Card */}
-              <div className="rounded-2xl bg-black/25 dark:bg-white/[0.04] border border-white/20 backdrop-blur-xl p-6 shadow-2xl space-y-5 relative overflow-hidden">
+              {/* Main Blueprint Terminal Card (Expanded to take real space) */}
+              <div className="flex-1 rounded-2xl bg-black/25 dark:bg-white/[0.04] border border-white/20 backdrop-blur-xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
                 {/* Identity Header */}
                 <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-5">
-                  <div className="space-y-1.5 flex-1 min-w-0">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-white/70 block">
+                  <div className="space-y-2 flex-1 min-w-0">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-white/70 block font-semibold">
                       Espacio Operativo
                     </span>
-                    <h3 className="text-xl font-bold text-white tracking-tight flex items-center gap-2 truncate">
+                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3 truncate">
                       <span>{companyName.trim() || "Nombre de tu Tienda"}</span>
                       {companyName.trim() && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-none" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-none" />
                       )}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-white/80">
-                      <MapPin className="w-3.5 h-3.5 text-white/60" />
+                    <div className="flex items-center gap-2.5 text-sm text-white/85">
+                      <MapPin className="w-4 h-4 text-white/70" />
                       <span className="truncate">{city ? `${city}, ${country}` : country}</span>
                       <span>·</span>
-                      <span className="font-mono text-white font-semibold px-1.5 py-0.5 rounded bg-white/15 text-[11px]">
+                      <span className="font-mono text-white font-bold px-2 py-0.5 rounded-md bg-white/20 text-xs tracking-wider">
                         {currencyForCountry(country)}
                       </span>
                     </div>
                   </div>
-                  <div className="w-11 h-11 rounded-xl bg-white/10 text-white flex items-center justify-center flex-none shadow-md border border-white/20">
+                  <div className="w-14 h-14 rounded-2xl bg-white/15 text-white flex items-center justify-center flex-none shadow-lg border border-white/25">
                     {currentArchetype.iconKey === "utensils" ? (
-                      <Utensils className="w-5 h-5" />
+                      <Utensils className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "wrench" ? (
-                      <Wrench className="w-5 h-5" />
+                      <Wrench className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "shirt" ? (
-                      <Shirt className="w-5 h-5" />
+                      <Shirt className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "laptop" ? (
-                      <Laptop className="w-5 h-5" />
+                      <Laptop className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "pill" ? (
-                      <Pill className="w-5 h-5" />
+                      <Pill className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "scissors" ? (
-                      <Scissors className="w-5 h-5" />
+                      <Scissors className="w-7 h-7" />
                     ) : (
-                      <Store className="w-5 h-5" />
+                      <Store className="w-7 h-7" />
                     )}
                   </div>
                 </div>
 
                 {/* Inferred Layers Breakdown */}
-                <div className="space-y-4">
+                <div className="space-y-5 flex-1 flex flex-col justify-around">
                   {/* Archetype & Offer */}
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/60 block">
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="p-4 rounded-xl bg-black/25 border border-white/10 space-y-1.5">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
                         Arquetipo
                       </span>
-                      <div className="text-xs font-semibold text-white truncate">
+                      <div className="text-sm sm:text-base font-bold text-white truncate">
                         {currentArchetype.label}
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-white/60 block">
+                    <div className="p-4 rounded-xl bg-black/25 border border-white/10 space-y-1.5">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
                         Modelo de Oferta
                       </span>
-                      <div className="text-xs font-semibold text-[#97D6DF] truncate">
+                      <div className="text-sm sm:text-base font-bold text-[#97D6DF] truncate">
                         {selectedOfferModel === "physical_products"
                           ? "Productos Físicos (SKU)"
                           : selectedOfferModel === "prepared_products"
@@ -1017,90 +1017,90 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Catalog Schema Inferred */}
-                  <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 space-y-2.5">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-white/70">
-                      <span className="flex items-center gap-2 text-white font-semibold">
-                        <Package className="w-3.5 h-3.5 text-[#97D6DF]" />
+                  <div className="p-4.5 rounded-xl bg-black/25 border border-white/10 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono text-white/75">
+                      <span className="flex items-center gap-2 text-white font-bold">
+                        <Package className="w-4 h-4 text-[#97D6DF]" />
                         <span>Esquema de Catálogo</span>
                       </span>
-                      <span className="text-emerald-300 text-[10px] font-medium uppercase tracking-wider">
+                      <span className="text-emerald-300 text-[11px] font-semibold uppercase tracking-wider">
                         Estructurado
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-white/90">
+                    <div className="grid grid-cols-2 gap-2.5 text-xs sm:text-sm text-white/95">
                       {selectedOfferModel === "physical_products" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Control de SKUs</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Talla, color y medidas</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Margen & costos base</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Kardex por bodega</span>
                           </div>
                         </>
                       ) : selectedOfferModel === "prepared_products" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Recetas & escandallo</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Modificadores de plato</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Comanda a cocina</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Descargo de insumos</span>
                           </div>
                         </>
                       ) : selectedOfferModel === "services_appointments" ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Duración en minutos</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Asignación de staff</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Buffer entre sesiones</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Recordatorio por WhatsApp</span>
                           </div>
                         </>
                       ) : (
                         <>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Stock físico de insumos</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Servicios agendables</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Cobro combinado en caja</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-300 flex-none" />
+                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
                             <span>Kardex multimodelo</span>
                           </div>
                         </>
@@ -1109,23 +1109,23 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Operational Capabilities suggested */}
-                  <div className="p-3.5 rounded-xl bg-black/20 border border-white/10 space-y-2">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-white/70">
-                      <span className="flex items-center gap-2 text-white font-semibold">
-                        <Layers className="w-3.5 h-3.5 text-white/80" />
+                  <div className="p-4.5 rounded-xl bg-black/25 border border-white/10 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-mono text-white/75">
+                      <span className="flex items-center gap-2 text-white font-bold">
+                        <Layers className="w-4 h-4 text-white/85" />
                         <span>Módulos Operativos (Paso 2)</span>
                       </span>
-                      <span className="text-white/50 text-[10px]">Ajustable</span>
+                      <span className="text-white/60 text-[11px]">Ajustable</span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {currentArchetype.recommendedModules.map(modKey => {
                         const m = MODULE_DEFINITIONS.find(def => def.id === modKey);
                         return (
                           <span
                             key={modKey}
-                            className="px-2.5 py-1 rounded-lg bg-white/15 text-xs font-medium text-white flex items-center gap-1.5"
+                            className="px-3 py-1.5 rounded-lg bg-white/15 text-xs font-semibold text-white flex items-center gap-2 border border-white/10"
                           >
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
                             <span>{m ? m.title.split(" ")[0] : modKey}</span>
                           </span>
                         );
@@ -1133,14 +1133,6 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Bottom Guarantee Note */}
-              <div className="p-3.5 rounded-xl bg-black/20 border border-white/15 text-xs text-white/80 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#97D6DF] flex-none" />
-                  <span>Arquitectura desacoplada en 3 capas. Listo para recibir operaciones.</span>
-                </span>
               </div>
             </div>
           ) : (
