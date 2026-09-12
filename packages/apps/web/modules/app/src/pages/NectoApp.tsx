@@ -46,8 +46,6 @@ import { BasePageLayout, BasePageHeader } from "@/layouts/base-page";
 import { StockFlowSidebar } from "@/compositions/shell/StockFlowSidebar";
 import { StockFlowHeader } from "@/compositions/shell/StockFlowHeader";
 import { eventBus } from "@/infrastructure/eventBus";
-import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
-import { ChannelsProvider } from "@/compositions/channels/context/ChannelsContext";
 
 interface NotificationItem {
   id: string;
@@ -480,7 +478,18 @@ export default function App() {
       ? "Configuración del Módulo"
       : pedidosGePageNames[pedidosGeTab] || "Pedidos";
 
-  const isModulesHub = !hasAnyModule || activeModule === "modules-hub";
+  // ⚠️ No module view exists: `pedidos` and `ModuloInventario` were removed, so the
+  // module hub is the only screen the shell can render. `activeModule` / `pedidosSection`
+  // still drive the URL and the label maps below, but there is no view behind them —
+  // which is why the breadcrumb used to claim "Operación / Pedidos / Órdenes" while the
+  // body rendered the hub. The breadcrumb has to describe what is on screen.
+  // 👉 When a module view lands, register its key here and the derived breadcrumb returns.
+  const MODULES_WITH_VIEWS: string[] = [];
+
+  const isModulesHub =
+    !hasAnyModule ||
+    activeModule === "modules-hub" ||
+    !MODULES_WITH_VIEWS.includes(activeModule);
 
   const pageTitle =
     isModulesHub
@@ -521,78 +530,69 @@ export default function App() {
       ];
 
   return (
-    <CatalogProvider>
-      <ChannelsProvider>
-        <InventoryProvider>
-          <BaseAppShell
-          sidebar={
-            <StockFlowSidebar
-              activeModule={activeModule}
-              pedidosSection={pedidosSection}
-              pedidosOpTab={pedidosOpTab}
-              pedidosGeTab={pedidosGeTab}
-              inventarioTab={inventarioTab}
-              onNavigatePedidos={handleNavigatePedidos}
-              onNavigateModule={handleNavigateModule}
-              onNavigateInventario={handleNavigateInventario}
-              onOpenRoleModal={() => setIsRoleModalOpen(true)}
-              onOpenSettingsModal={handleOpenSettings}
-              activeRoleName={activeRole?.name || "Dueño"}
-            />
-          }
-          header={
-            <StockFlowHeader
-              breadcrumbItems={breadcrumbItems}
-              activeRoleName={activeRole?.name || "Dueño"}
-              onOpenRoleModal={() => setIsRoleModalOpen(true)}
-              notificationsDropdown={
-                <NotificationBellDropdown
-                  notifications={notifications}
-                  setNotifications={setNotifications}
-                  onNavigate={handleNavigateFromNotification}
-                />
-              }
-            />
-          }
-          footer={<AppFooter />}
-        >
-          <BasePageLayout
-            header={
-              activeModule === "pedidos" ? null : (
-                <BasePageHeader
-                  title={pageTitle}
-                  breadcrumbItems={breadcrumbItems}
-                />
-              )
+    <>
+      <BaseAppShell
+        sidebar={
+          <StockFlowSidebar
+            activeModule={activeModule}
+            onNavigateModule={handleNavigateModule}
+            onOpenRoleModal={() => setIsRoleModalOpen(true)}
+            onOpenSettingsModal={handleOpenSettings}
+            activeRoleName={activeRole?.name || "Dueño"}
+          />
+        }
+        header={
+          <StockFlowHeader
+            breadcrumbItems={breadcrumbItems}
+            activeRoleName={activeRole?.name || "Dueño"}
+            onOpenRoleModal={() => setIsRoleModalOpen(true)}
+            notificationsDropdown={
+              <NotificationBellDropdown
+                notifications={notifications}
+                setNotifications={setNotifications}
+                onNavigate={handleNavigateFromNotification}
+              />
             }
-          >
-            <EmptyModulesHubView
-              business={activeBusiness}
-              onNavigateToModule={(mod) => {
-                if (mod === "pedidos") {
-                  handleNavigatePedidos("operacion", "en-vivo");
-                } else if (mod === "inventarios") {
-                  handleNavigateInventario("catalog");
-                }
-              }}
-              onOpenSettings={handleOpenSettings}
-            />
-          </BasePageLayout>
-        </BaseAppShell>
+          />
+        }
+        footer={<AppFooter />}
+      >
+        <BasePageLayout
+          header={
+            activeModule === "pedidos" ? null : (
+              <BasePageHeader
+                title={pageTitle}
+                breadcrumbItems={breadcrumbItems}
+              />
+            )
+          }
+        >
+          <EmptyModulesHubView
+            business={activeBusiness}
+            onNavigateToModule={(mod) => {
+              if (mod === "pedidos") {
+                handleNavigatePedidos("operacion", "en-vivo");
+              } else if (mod === "inventarios") {
+                handleNavigateInventario("catalog");
+              }
+            }}
+            onOpenSettings={handleOpenSettings}
+          />
+        </BasePageLayout>
+      </BaseAppShell>
 
-        <CommandPalette />
-        <RoleSelectionModal
-          business={activeBusiness}
-          isOpen={isRoleModalOpen}
-          onClose={() => setIsRoleModalOpen(false)}
-        />
-        <BusinessSettingsModal
-          business={activeBusiness}
-          isOpen={isSettingsModalOpen}
-          initialTab={settingsInitialTab}
-          onClose={() => setIsSettingsModalOpen(false)}
-        />
-      </ChannelsProvider>
-    </CatalogProvider>
+      <CommandPalette />
+      <RoleSelectionModal
+        business={activeBusiness}
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+      />
+      <BusinessSettingsModal
+        business={activeBusiness}
+        isOpen={isSettingsModalOpen}
+        initialTab={settingsInitialTab}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
+    </>
   );
 }
