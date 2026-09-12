@@ -2,20 +2,43 @@ import React from "react";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { Link } from "react-router-dom";
 import { ThemeToggleButton } from "@/shell";
+import { cn } from "@/utils";
+
+export interface AuthPageLayoutProps {
+  children: React.ReactNode;
+  /**
+   * Visual tone of the decorative right panel.
+   * - `"indigo"` — deep brand indigo (default, used by Login)
+   * - `"brand"` — full-bleed brand orange (used by Register, matching the onboarding panel)
+   */
+  panelTone?: "indigo" | "brand";
+  /** Headline displayed on the decorative right panel. */
+  panelHeadline?: string;
+  /** Optional small line displayed under the headline. */
+  panelTagline?: string;
+}
 
 /**
  * @kgId 587cd4dfc73e
  */
 export default function AuthPageLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
+  panelTone = "indigo",
+  panelHeadline = "Plataforma de Operaciones & Gestión",
+  panelTagline,
+}: AuthPageLayoutProps) {
+  const isBrand = panelTone === "brand";
+
   return (
     <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
       <div className="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0">
         {children}
-        <div className="relative items-center hidden w-full h-full lg:w-1/2 bg-[#190088] dark:bg-zinc-950 lg:flex lg:justify-center overflow-hidden border-l border-zinc-200 dark:border-zinc-800 select-none">
+        <div
+          className={cn(
+            "relative items-center hidden w-full h-full lg:w-1/2 lg:flex lg:justify-center overflow-hidden border-l select-none transition-colors duration-300",
+            "bg-brand-500 dark:bg-[#190088] border-brand-500 dark:border-indigo-900/50"
+          )}
+        >
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
           <InteractiveDotGrid
             dotGap={24}
@@ -36,9 +59,22 @@ export default function AuthPageLayout({
               />
             </Link>
 
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white leading-normal max-w-xl mx-auto pb-4 drop-shadow-xs">
-              Plataforma de Operaciones & Gestión
+            <h2
+              className={cn(
+                "max-w-xl mx-auto text-white drop-shadow-xs font-black tracking-tight",
+                isBrand
+                  ? "text-2xl sm:text-3xl md:text-4xl leading-[1.1]"
+                  : "text-xl sm:text-2xl md:text-3xl leading-normal pb-4"
+              )}
+            >
+              {panelHeadline}
             </h2>
+
+            {panelTagline && (
+              <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-white/70">
+                {panelTagline}
+              </p>
+            )}
           </div>
         </div>
         <div className="fixed z-50 hidden bottom-6 right-6 sm:block">

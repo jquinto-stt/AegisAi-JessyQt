@@ -390,7 +390,7 @@ export default function OnboardingPage() {
   };
 
   const locationLabel = city.trim() ? `${city.trim()}, ${country}` : country;
-  const currentIcon = ARCHETYPE_ICONS[currentArchetype.iconKey] || Store;
+  const CurrentIcon = ARCHETYPE_ICONS[currentArchetype.iconKey] || Store;
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
@@ -666,7 +666,7 @@ export default function OnboardingPage() {
                   <div className="rounded-3xl border border-gray-200 p-6 space-y-6 dark:border-gray-800">
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/25">
-                        <currentIcon className="h-6 w-6" />
+                        <CurrentIcon className="h-6 w-6" />
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-gray-900 dark:text-white">
@@ -804,7 +804,7 @@ export default function OnboardingPage() {
         {/* ── Right: brand panel ─────────────────────────────────────── */}
         <div
           className={cn(
-            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 dark:bg-zinc-950 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px] border-l border-transparent dark:border-zinc-800/80 transition-colors duration-300",
+            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 dark:bg-[#190088] p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px] border-l border-transparent dark:border-indigo-900/50 transition-colors duration-300",
             step === 1 ? "flex" : "hidden lg:flex"
           )}
         >
