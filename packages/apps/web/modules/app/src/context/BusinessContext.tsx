@@ -1015,7 +1015,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       id: `biz-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
       offerModel: resolvedOfferModel,
       activeModules:
-        Array.isArray(data.activeModules) && data.activeModules.length > 0
+        Array.isArray(data.activeModules)
           ? data.activeModules
           : (archetype?.recommendedModules || ["pedidos", "inventarios"]),
       botConfig: data.botConfig || {

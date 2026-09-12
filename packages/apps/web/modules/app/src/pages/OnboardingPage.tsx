@@ -468,6 +468,105 @@ export default function OnboardingPage() {
                         })}
                       </div>
                     )}
+
+                    {/* Gastronomy Subtype Selector Pills */}
+                    {selectedArchetype === "restaurant_virtual" && (
+                      <div className="pt-2 flex items-center gap-1.5 flex-wrap animate-fade-in">
+                        <span className="text-[11px] text-gray-400 mr-1 font-mono uppercase tracking-wider">
+                          Especialidad:
+                        </span>
+                        {[
+                          { label: "Restaurante a la Mesa", icon: Utensils, model: "prepared_products" as OfferModel },
+                          { label: "Cafetería & Pastelería", icon: Store, model: "prepared_products" as OfferModel },
+                          { label: "Comidas Rápidas & Delivery", icon: ShoppingBag, model: "prepared_products" as OfferModel },
+                          { label: "Bar & Cervecería", icon: Bookmark, model: "prepared_products" as OfferModel },
+                        ].map((sub, sIdx) => {
+                          const isSubActive = sIdx === 0;
+                          const SubIcon = sub.icon;
+                          return (
+                            <button
+                              type="button"
+                              key={sub.label}
+                              onClick={() => setSelectedOfferModel(sub.model)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+                                isSubActive
+                                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-xs"
+                                  : "bg-gray-100/80 dark:bg-gray-800/80 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              <SubIcon className="w-3.5 h-3.5" />
+                              <span>{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Services Subtype Selector Pills */}
+                    {selectedArchetype === "services" && (
+                      <div className="pt-2 flex items-center gap-1.5 flex-wrap animate-fade-in">
+                        <span className="text-[11px] text-gray-400 mr-1 font-mono uppercase tracking-wider">
+                          Especialidad:
+                        </span>
+                        {[
+                          { label: "Barbería & Peluquería", icon: Scissors, model: "services_appointments" as OfferModel },
+                          { label: "Spa & Estética", icon: Bookmark, model: "services_appointments" as OfferModel },
+                          { label: "Consultoría & Asesoría", icon: Calendar, model: "services_appointments" as OfferModel },
+                          { label: "Taller & Servicio Técnico", icon: Wrench, model: "hybrid" as OfferModel },
+                        ].map((sub, sIdx) => {
+                          const isSubActive = sIdx === 0;
+                          const SubIcon = sub.icon;
+                          return (
+                            <button
+                              type="button"
+                              key={sub.label}
+                              onClick={() => setSelectedOfferModel(sub.model)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+                                isSubActive
+                                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-xs"
+                                  : "bg-gray-100/80 dark:bg-gray-800/80 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              <SubIcon className="w-3.5 h-3.5" />
+                              <span>{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Health Subtype Selector Pills */}
+                    {selectedArchetype === "pharmacy_health" && (
+                      <div className="pt-2 flex items-center gap-1.5 flex-wrap animate-fade-in">
+                        <span className="text-[11px] text-gray-400 mr-1 font-mono uppercase tracking-wider">
+                          Especialidad:
+                        </span>
+                        {[
+                          { label: "Droguería & Farmacia", icon: Pill, model: "physical_products" as OfferModel },
+                          { label: "Suplementos & Nutrición", icon: Package, model: "physical_products" as OfferModel },
+                          { label: "Óptica & Visión", icon: Bookmark, model: "hybrid" as OfferModel },
+                          { label: "Clínica & Consultorio", icon: Calendar, model: "services_appointments" as OfferModel },
+                        ].map((sub, sIdx) => {
+                          const isSubActive = sIdx === 0;
+                          const SubIcon = sub.icon;
+                          return (
+                            <button
+                              type="button"
+                              key={sub.label}
+                              onClick={() => setSelectedOfferModel(sub.model)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+                                isSubActive
+                                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-xs"
+                                  : "bg-gray-100/80 dark:bg-gray-800/80 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              <SubIcon className="w-3.5 h-3.5" />
+                              <span>{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* 2. Offer Model Selector */}
@@ -825,38 +924,36 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                {/* Optional WhatsApp Quick Connect if Pedidos is selected */}
-                {selectedModules.includes("pedidos") && (
-                  <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-none">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
-                          Conexión Opcional con WhatsApp Web
-                        </h4>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                          {isMetaConnected
-                            ? "Canal vinculado con éxito. Podrás calibrar el tono y respuestas en Ajustes."
-                            : "Vincúlalo ahora o déjalo para más adelante desde los ajustes de la tienda."}
-                        </p>
-                      </div>
+                {/* Omnichannel WhatsApp Connection Card */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-none">
+                      <Smartphone className="w-5 h-5" />
                     </div>
-
-                    <Button
-                      variant={isMetaConnected ? "outline" : "primary"}
-                      intent="onboarding.whatsapp.connect"
-                      onClick={() => {
-                        window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
-                        setIsMetaConnected(true);
-                      }}
-                      className="text-xs font-bold py-2 px-4 rounded-xl cursor-pointer flex-none"
-                    >
-                      {isMetaConnected ? "Reabrir WhatsApp Web" : "Conectar WhatsApp Web"}
-                    </Button>
+                    <div>
+                      <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+                        Conexión con WhatsApp Web
+                      </h4>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {isMetaConnected
+                          ? "Canal vinculado con éxito. La tienda recibirá conversaciones y pedidos por este canal."
+                          : "Vincúlalo ahora con el botón o déjalo pendiente para activarlo luego desde Ajustes."}
+                      </p>
+                    </div>
                   </div>
-                )}
+
+                  <Button
+                    variant={isMetaConnected ? "outline" : "primary"}
+                    intent="onboarding.whatsapp.connect"
+                    onClick={() => {
+                      window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
+                      setIsMetaConnected(true);
+                    }}
+                    className="text-xs font-bold py-2 px-4 rounded-xl cursor-pointer flex-none"
+                  >
+                    {isMetaConnected ? "Vinculado ✓" : "Conectar WhatsApp"}
+                  </Button>
+                </div>
               </div>
             )}
           </div>
