@@ -731,7 +731,7 @@ export const BusinessSettingsModal: React.FC<{
               >
                 <div className="space-y-1 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <p className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                       {cap.label}
                     </p>
                     <span className="inline-flex items-center text-[10px] font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-900 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700">
@@ -742,8 +742,8 @@ export const BusinessSettingsModal: React.FC<{
                     <p className="text-xs text-gray-600 dark:text-gray-400">{cap.desc}</p>
                   )}
                   {cap.instruction && (
-                    <div className="mt-1.5 p-2 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Regla / Prompt IA: </span>
+                    <div className="mt-1.5 rounded-xl bg-white p-2 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                      <span className="font-bold text-gray-700 dark:text-gray-300">Regla / Prompt IA: </span>
                       {cap.instruction}
                     </div>
                   )}
@@ -757,7 +757,7 @@ export const BusinessSettingsModal: React.FC<{
                   <button
                     type="button"
                     onClick={() => handleDeleteCustomCapability(cap.id)}
-                    className="p-1.5 rounded-lg text-gray-400 transition-colors hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-950/30 cursor-pointer"
+                    className="cursor-pointer rounded-full p-1.5 text-gray-400 transition-colors hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-950/30"
                     title="Eliminar capacidad"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -771,7 +771,7 @@ export const BusinessSettingsModal: React.FC<{
         {isAdding ? (
           <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 space-y-3 animate-fade-in">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider">
+              <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
                 Nueva Capacidad Personalizada
               </span>
               <button
@@ -790,7 +790,7 @@ export const BusinessSettingsModal: React.FC<{
 
             <div className="space-y-2.5">
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                   Nombre de la Capacidad *
                 </label>
                 <input
@@ -798,12 +798,12 @@ export const BusinessSettingsModal: React.FC<{
                   value={newCapLabel}
                   onChange={(e) => setNewCapLabel(e.target.value)}
                   placeholder="Ej: Recomendar postres y bebidas grandes"
-                  className="w-full h-9 px-3 text-sm rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
+                  className="w-full h-9 px-3 text-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                   Descripción Corta
                 </label>
                 <input
@@ -811,12 +811,12 @@ export const BusinessSettingsModal: React.FC<{
                   value={newCapDesc}
                   onChange={(e) => setNewCapDesc(e.target.value)}
                   placeholder="Ej: Ofrece sugerencias al momento de elegir el plato fuerte"
-                  className="w-full h-9 px-3 text-sm rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
+                  className="w-full h-9 px-3 text-sm rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                   Instrucción para el Asistente IA (Regla de Comportamiento) *
                 </label>
                 <textarea
@@ -824,7 +824,7 @@ export const BusinessSettingsModal: React.FC<{
                   value={newCapInstruction}
                   onChange={(e) => setNewCapInstruction(e.target.value)}
                   placeholder="Ej: Cuando el comprador elija un plato fuerte, sugiere amablemente agregar bebida grande por $1.500 adicionales."
-                  className="w-full p-2.5 text-xs rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden resize-none"
+                  className="w-full p-2.5 text-xs rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white focus:border-brand-500 focus:outline-hidden resize-none"
                 />
               </div>
             </div>
@@ -838,7 +838,7 @@ export const BusinessSettingsModal: React.FC<{
                   setNewCapDesc("");
                   setNewCapInstruction("");
                 }}
-                className="px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+                className="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -862,7 +862,7 @@ export const BusinessSettingsModal: React.FC<{
               setNewCapDesc("");
               setNewCapInstruction("");
             }}
-            className="w-full py-2.5 px-3 border border-dashed border-gray-300 dark:border-gray-700 hover:border-brand-500 dark:hover:border-brand-400 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-brand-50/20 dark:hover:bg-brand-950/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer group"
+            className="group flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full border border-dashed border-gray-300 py-2.5 px-3 text-xs font-bold text-gray-600 transition-colors hover:border-brand-500 hover:bg-brand-50/40 hover:text-brand-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-brand-400 dark:hover:bg-brand-950/20 dark:hover:text-brand-400"
           >
             <Plus className="w-3.5 h-3.5 text-gray-400 group-hover:text-brand-500 transition-colors" />
             <span>Agregar Capacidad Personalizada</span>
@@ -1012,7 +1012,7 @@ export const BusinessSettingsModal: React.FC<{
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Enlace Web de la Tienda (Slug)
                       </label>
-                      <div className="flex items-center h-11 px-4 text-sm bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg shadow-theme-xs focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/20 transition-all">
+                      <div className="flex items-center h-11 px-4 text-sm bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl shadow-theme-xs focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/20 transition-all">
                         <span className="text-gray-400 select-none text-sm font-medium">necto.app/</span>
                         <input
                           type="text"
@@ -1031,7 +1031,7 @@ export const BusinessSettingsModal: React.FC<{
                       <select
                         value={businessType}
                         onChange={(e) => setBusinessType(e.target.value as BusinessType)}
-                        className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                        className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                       >
                         <option value="restaurant_virtual">Gastronomía (Cocina, Mesa & Domicilios)</option>
                         <option value="retail_store">Comercio & Retail (Stock & Mostrador)</option>
@@ -1082,7 +1082,7 @@ export const BusinessSettingsModal: React.FC<{
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}
-                        className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                        className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                       >
                         <option value="COP">COP ($ Pesos Colombianos)</option>
                         <option value="USD">USD ($ Dólares)</option>
@@ -1124,11 +1124,11 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <Truck className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Envíos a Domicilio
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1141,11 +1141,11 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
                           <ShoppingBag className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Retiro en Tienda / Takeaway
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1158,11 +1158,11 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <UtensilsCrossed className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Consumo en Mesa / Salón
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1194,12 +1194,12 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-lg bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <Smartphone className="w-5 h-5" />
                         </div>
                         <div className="space-y-1.5 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                               WhatsApp Business
                             </h3>
                           </div>
@@ -1328,17 +1328,17 @@ export const BusinessSettingsModal: React.FC<{
                   {/* Tienda Web */}
                   <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                         <Globe className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                           Tienda Web & Catálogo en Línea
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Catálogo digital interactivo con carrito y checkout directo.
                         </p>
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">
                           <Globe className="w-3.5 h-3.5 text-gray-400" />
                           <span>necto.app/{slug || name.toLowerCase().replace(/\s+/g, "-")}</span>
                         </div>
@@ -1355,11 +1355,11 @@ export const BusinessSettingsModal: React.FC<{
                   {/* POS / Mostrador */}
                   <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                         <Store className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                           Punto de Venta (POS) / Mostrador
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1503,7 +1503,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={botTone}
                                   onChange={(e) => setBotTone(e.target.value as any)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="cálido">Cálido y Cercano</option>
                                   <option value="profesional">Profesional & Ejecutivo</option>
@@ -1521,7 +1521,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={botPersonality}
                                   onChange={(e) => setBotPersonality(e.target.value as BotPersonality)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="amigable">Amigable (Empático y servicial)</option>
                                   <option value="ejecutivo">Ejecutivo (Sobrio y formal)</option>
@@ -1537,7 +1537,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={responseStyle}
                                   onChange={(e) => setResponseStyle(e.target.value as any)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="conciso">Conciso (Respuestas cortas)</option>
                                   <option value="claro">Claro (Balanceado)</option>
@@ -1552,7 +1552,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={emojiFrequency}
                                   onChange={(e) => setEmojiFrequency(e.target.value as any)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="nunca">Nunca (0 emojis)</option>
                                   <option value="moderado">Moderado (1-2 por mensaje)</option>
@@ -1579,7 +1579,7 @@ export const BusinessSettingsModal: React.FC<{
                                   rows={2}
                                   value={welcomeMessage}
                                   onChange={(e) => setWelcomeMessage(e.target.value)}
-                                  className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
+                                  className="w-full p-3.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
                                 />
                               )}
                             </div>
@@ -1596,12 +1596,12 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <BookOpen className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                   Catálogo de Productos & Precios
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
@@ -1612,7 +1612,7 @@ export const BusinessSettingsModal: React.FC<{
                                   <span className={`w-1.5 h-1.5 rounded-full ${knowsCatalog ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsCatalog ? "Activo" : "Inactivo"}
                                 </span>
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                   {(intentCatalog ? 1 : 0) + (intentPrice ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "catalog" && c.enabled).length} / {2 + customCapabilities.filter((c) => c.sourceId === "catalog").length} capacidades activas
                                 </span>
                               </div>
@@ -1628,13 +1628,13 @@ export const BusinessSettingsModal: React.FC<{
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
                             <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                <label className="text-xs font-bold text-gray-600 dark:text-gray-400">
                                   Origen de datos
                                 </label>
                                 <select
                                   value={catalogDataSource}
                                   onChange={(e) => setCatalogDataSource(e.target.value as any)}
-                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                  className="h-9 px-3 py-1 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
                                 >
                                   <option value="module_db">Base de datos del módulo (automático)</option>
                                   <option value="file">Archivo subido (CSV / Excel)</option>
@@ -1668,12 +1668,12 @@ export const BusinessSettingsModal: React.FC<{
 
                             <div className="space-y-2">
                               <div className="flex items-center justify-between">
-                                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
                                   Capacidades del Catálogo
                                 </p>
                               </div>
 
-                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+                              <div className="rounded-xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                                 <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
                                   <div>
                                     <div className="flex items-center gap-2">
@@ -1708,12 +1708,12 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <Store className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                   Información del Negocio & Ubicación
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
@@ -1724,7 +1724,7 @@ export const BusinessSettingsModal: React.FC<{
                                   <span className={`w-1.5 h-1.5 rounded-full ${knowsBusinessInfo ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsBusinessInfo ? "Activo" : "Inactivo"}
                                 </span>
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                   {(intentHoursLocation ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "business" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "business").length} capacidades activas
                                 </span>
                               </div>
@@ -1739,18 +1739,18 @@ export const BusinessSettingsModal: React.FC<{
                         {knowsBusinessInfo && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
                             <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                              <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
                                 Origen de datos
                               </span>
-                              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border border-success-200 dark:border-success-800 px-2.5 py-1 rounded-md">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border border-success-200 dark:border-success-800 px-2.5 py-1 rounded-full">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                                 Conectado a la configuración de la sede
                               </span>
                             </div>
 
                             <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
-                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades</p>
+                              <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                                 <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
                                   <div>
                                     <div className="flex items-center gap-2">
@@ -1775,12 +1775,12 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-warning-500/10 text-warning-600 dark:text-warning-400 border border-warning-200 dark:border-warning-800/60 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <HelpCircle className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                   Preguntas Frecuentes (FAQ)
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
@@ -1791,7 +1791,7 @@ export const BusinessSettingsModal: React.FC<{
                                   <span className={`w-1.5 h-1.5 rounded-full ${knowsFaq ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsFaq ? "Activo" : "Inactivo"}
                                 </span>
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                   {customCapabilities.filter((c) => c.sourceId === "faq" && c.enabled).length} / {Math.max(1, customCapabilities.filter((c) => c.sourceId === "faq").length)} capacidades
                                 </span>
                               </div>
@@ -1807,13 +1807,13 @@ export const BusinessSettingsModal: React.FC<{
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
                             <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                <label className="text-xs font-bold text-gray-600 dark:text-gray-400">
                                   Origen de datos
                                 </label>
                                 <select
                                   value={faqDataSource}
                                   onChange={(e) => setFaqDataSource(e.target.value as any)}
-                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                  className="h-9 px-3 py-1 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
                                 >
                                   <option value="none">Sin configurar</option>
                                   <option value="file">Archivo subido (PDF / TXT / Excel)</option>
@@ -1855,7 +1855,7 @@ export const BusinessSettingsModal: React.FC<{
                             </div>
 
                             <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades</p>
                               {renderCustomCapabilities("faq")}
                             </div>
                           </div>
@@ -1868,12 +1868,12 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <ShieldCheck className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                   Políticas de Cambios y Garantías
                                 </h3>
                                 <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
@@ -1884,7 +1884,7 @@ export const BusinessSettingsModal: React.FC<{
                                   <span className={`w-1.5 h-1.5 rounded-full ${knowsPolicies ? "bg-success-500" : "bg-gray-400"}`} />
                                   {knowsPolicies ? "Activo" : "Inactivo"}
                                 </span>
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                   {customCapabilities.filter((c) => c.sourceId === "policies" && c.enabled).length} / {Math.max(1, customCapabilities.filter((c) => c.sourceId === "policies").length)} capacidades
                                 </span>
                               </div>
@@ -1900,13 +1900,13 @@ export const BusinessSettingsModal: React.FC<{
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
                             <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                <label className="text-xs font-bold text-gray-600 dark:text-gray-400">
                                   Origen de datos
                                 </label>
                                 <select
                                   value={policiesDataSource}
                                   onChange={(e) => setPoliciesDataSource(e.target.value as any)}
-                                  className="h-9 px-3 py-1 rounded-lg bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
+                                  className="h-9 px-3 py-1 rounded-xl bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-xs font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-500 focus:outline-hidden"
                                 >
                                   <option value="none">Sin configurar</option>
                                   <option value="file">Archivo subido (PDF / TXT)</option>
@@ -1948,7 +1948,7 @@ export const BusinessSettingsModal: React.FC<{
                             </div>
 
                             <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades</p>
                               {renderCustomCapabilities("policies")}
                             </div>
                           </div>
@@ -1961,12 +1961,12 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                               <ShoppingBag className="w-5 h-5" />
                             </div>
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                   Consulta de Inventario en Tiempo Real
                                 </h3>
                                 <span
@@ -1978,7 +1978,7 @@ export const BusinessSettingsModal: React.FC<{
                                 >
                                   {business?.activeModules?.includes("inventarios") ? "Módulo Activo" : "Sin Módulo"}
                                 </span>
-                                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                                <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                   {(intentStock ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "inventory" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "inventory").length} capacidades activas
                                 </span>
                               </div>
@@ -2003,8 +2003,8 @@ export const BusinessSettingsModal: React.FC<{
                         {knowsInventoryQuery && business?.activeModules?.includes("inventarios") && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
                             <div className="space-y-2">
-                              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
-                              <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                              <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades</p>
+                              <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                                 <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
                                   <div>
                                     <div className="flex items-center gap-2">
@@ -2028,19 +2028,19 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start gap-3.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                             <FileText className="w-5 h-5" />
                           </div>
                           <div className="space-y-1.5 min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                 Gestión de Pedidos (OMS)
                               </h3>
                               <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-950/40 border border-success-200 dark:border-success-800 px-2 py-0.5 rounded-full">
                                 <CheckCircle2 className="w-3 h-3" />
                                 Conectado al OMS
                               </span>
-                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                 {(intentCreateOrder ? 1 : 0) + (intentTrackOrder ? 1 : 0) + (intentModifyOrder ? 1 : 0) + (intentCancelOrder ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "orders" && c.enabled).length} / {4 + customCapabilities.filter((c) => c.sourceId === "orders").length} capacidades activas
                               </span>
                             </div>
@@ -2052,8 +2052,8 @@ export const BusinessSettingsModal: React.FC<{
 
                         <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
                           <div className="space-y-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades Operativas</p>
-                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades Operativas</p>
+                            <div className="rounded-xl border border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                               {[
                                 { intent: "bot.intent.create", label: "Tomar pedido", desc: "Armar orden de compra en el chat", checked: intentCreateOrder, set: setIntentCreateOrder },
                                 { intent: "bot.intent.track", label: "Estado del pedido", desc: "Rastrear orden en curso en el OMS", checked: intentTrackOrder, set: setIntentTrackOrder },
@@ -2083,12 +2083,12 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="rounded-2xl bg-white dark:bg-gray-900 overflow-hidden transition-all">
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start gap-3.5 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-error-500/10 text-error-600 dark:text-error-400 border border-error-200 dark:border-error-800/60 flex items-center justify-center flex-none mt-0.5">
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                             <UserCheck className="w-5 h-5" />
                           </div>
                           <div className="space-y-1.5 min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                                 Atención Humana
                               </h3>
                               <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${
@@ -2099,7 +2099,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <span className={`w-1.5 h-1.5 rounded-full ${intentHumanAgent ? "bg-success-500" : "bg-gray-400"}`} />
                                 {intentHumanAgent ? "Activo" : "Inactivo"}
                               </span>
-                              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-md border border-gray-200/60 dark:border-gray-700/60">
+                              <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2 py-0.5 rounded-full border border-gray-200/60 dark:border-gray-700/60">
                                 {(intentHumanAgent ? 1 : 0) + customCapabilities.filter((c) => c.sourceId === "human" && c.enabled).length} / {1 + customCapabilities.filter((c) => c.sourceId === "human").length} capacidades activas
                               </span>
                             </div>
@@ -2111,8 +2111,8 @@ export const BusinessSettingsModal: React.FC<{
 
                         <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
                           <div className="space-y-2">
-                            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Capacidades</p>
-                            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <p className="text-xs font-bold text-gray-500 dark:text-gray-400">Capacidades</p>
+                            <div className="rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
                               <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-transparent">
                                 <div>
                                   <div className="flex items-center gap-2">
@@ -2140,7 +2140,7 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 space-y-3">
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Modalidad de Entrada al OMS
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -2150,7 +2150,7 @@ export const BusinessSettingsModal: React.FC<{
                         <select
                           value={orderCreationMode}
                           onChange={(e) => setOrderCreationMode(e.target.value as any)}
-                          className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                          className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                         >
                           <option value="auto_new">Crear como Nuevo (Ingresa de inmediato como comanda lista para confirmar)</option>
                           <option value="interactive_confirm">Confirmación en Chat (Envía desglose y solicita un 'Sí' explícito)</option>
@@ -2162,7 +2162,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                               Auto-Confirmación Directa
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2173,7 +2173,7 @@ export const BusinessSettingsModal: React.FC<{
                         </div>
 
                         {isAutoConfirmOrders && (
-                          <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 space-y-4">
+                          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-4">
                             <Field
                               label="Monto Máximo para Auto-confirmación ($)"
                               type="number"
@@ -2183,7 +2183,7 @@ export const BusinessSettingsModal: React.FC<{
                             />
 
                             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                              <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
                                 Condiciones obligatorias para auto-confirmar:
                               </p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
@@ -2230,7 +2230,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                               Transferencia a Asesor Humano (Handoff)
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2250,7 +2250,7 @@ export const BusinessSettingsModal: React.FC<{
                                 rows={2}
                                 value={handoffToHumanMessage}
                                 onChange={(e) => setHandoffToHumanMessage(e.target.value)}
-                                className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none transition-all"
+                                className="w-full p-3.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none transition-all"
                               />
                             </div>
 
@@ -2262,7 +2262,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={handoffTarget}
                                   onChange={(e) => setHandoffTarget(e.target.value as any)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="general">Cualquier asesor disponible</option>
                                   <option value="sales">Equipo de Ventas</option>
@@ -2278,7 +2278,7 @@ export const BusinessSettingsModal: React.FC<{
                                 <select
                                   value={handoffBehavior}
                                   onChange={(e) => setHandoffBehavior(e.target.value as any)}
-                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                                 >
                                   <option value="pause_ia">Pausar IA mientras atiende humano</option>
                                   <option value="assist_agent">Modo Copiloto (IA asiste al asesor)</option>
@@ -2299,7 +2299,7 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Permitir tomar pedidos fuera de horario
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2316,7 +2316,7 @@ export const BusinessSettingsModal: React.FC<{
                       <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                               Respuesta automática fuera de horario
                             </h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2331,7 +2331,7 @@ export const BusinessSettingsModal: React.FC<{
                             rows={3}
                             value={closedHoursMessage}
                             onChange={(e) => setClosedHoursMessage(e.target.value)}
-                            className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none placeholder:text-gray-400"
+                            className="w-full p-3.5 rounded-xl bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none placeholder:text-gray-400"
                           />
                         )}
                       </div>
@@ -2345,7 +2345,7 @@ export const BusinessSettingsModal: React.FC<{
                     <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Desplegar catálogo visual en tarjetas
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2357,7 +2357,7 @@ export const BusinessSettingsModal: React.FC<{
 
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Mostrar menú por categorías
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2369,7 +2369,7 @@ export const BusinessSettingsModal: React.FC<{
 
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Incluir fotos y precios en respuestas
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2381,7 +2381,7 @@ export const BusinessSettingsModal: React.FC<{
 
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Permitir armar carrito desde conversación
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2393,7 +2393,7 @@ export const BusinessSettingsModal: React.FC<{
 
                       <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Resumen previo de pedido con desglose completo
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2490,11 +2490,11 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-success-800/40 flex items-center justify-center flex-none mt-0.5">
                           <Coins className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Pago en Efectivo Contra Entrega
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2511,11 +2511,11 @@ export const BusinessSettingsModal: React.FC<{
 
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <CreditCard className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Datáfono / Terminal de Tarjeta
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2776,7 +2776,7 @@ export const BusinessSettingsModal: React.FC<{
                         />
                       </label>
 
-                      <span className="ml-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold uppercase text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                      <span className="ml-1 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                         {brandColor}
                       </span>
                     </div>
@@ -2828,11 +2828,11 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 flex items-center justify-center flex-none mt-0.5">
                           <Clock className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Etapa Intermedia de Preparación
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2873,11 +2873,11 @@ export const BusinessSettingsModal: React.FC<{
                   <div className="rounded-2xl bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 overflow-hidden">
                     <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-10 h-10 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-warning-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 dark:border-warning-800/40 flex items-center justify-center flex-none mt-0.5">
                           <PauseCircle className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-[15px] font-bold tracking-tight text-secondary-600 dark:text-white">
                             Pausar Recepción de Pedidos
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
