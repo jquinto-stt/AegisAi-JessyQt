@@ -15,11 +15,17 @@ import {
   Store,
   Plus,
   Settings,
-  Banknote,
   PackageCheck,
+  Banknote,
+  Sparkles,
 } from "lucide-react";
-import { Button, Card, Badge } from "@/elements";
+import { Button, Card } from "@/elements";
 import { MetricCard } from "../metric-card";
+
+type AnalyticsTab = "resumen" | "historial" | "analitica";
+
+/** Every KPI uses the same brand accent so the row reads as one system. */
+const KPI_ICON_CHIP = "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400";
 
 export const GlobalFranchiseOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -27,19 +33,9 @@ export const GlobalFranchiseOverview: React.FC = () => {
   const [roleSelectBiz, setRoleSelectBiz] = useState<BusinessInstance | null>(null);
   const [selectedBusinessForSettings, setSelectedBusinessForSettings] = useState<BusinessInstance | null>(null);
 
-  const handleNavigateToAnalitica = (
-    e: React.MouseEvent,
-    bizId: string,
-    geTab: "resumen" | "historial" | "analitica"
-  ) => {
-    e.stopPropagation();
+  const goToAnalitica = (bizId: string, tab: AnalyticsTab) => {
     switchBusiness(bizId);
-    navigate("/analitica", {
-      state: {
-        bizId,
-        tab: geTab,
-      },
-    });
+    navigate("/analitica", { state: { bizId, tab } });
   };
 
   // Mock aggregated data across all active branches
@@ -47,151 +43,147 @@ export const GlobalFranchiseOverview: React.FC = () => {
   const totalOrdersToday = 48;
   const avgTicket = "$ 101.000";
 
+  const kpis = [
+    { icon: <DollarSign className="size-5" />, title: "Ventas totales hoy", value: totalRevenue, change: "12%", comparison: "vs ayer" },
+    { icon: <PackageCheck className="size-5" />, title: "Pedidos despachados", value: String(totalOrdersToday), change: "0.5%", comparison: "hoy" },
+    { icon: <Banknote className="size-5" />, title: "Ticket promedio", value: avgTicket, change: "18%", comparison: "por cliente" },
+    { icon: <TrendingUp className="size-5" />, title: "Tasa de crecimiento", value: "+15%", change: "2%", comparison: "vs mes anterior" },
+  ];
+
   return (
-    <div className="w-full space-y-6 sm:space-y-8 antialiased">
-      {/* Enterprise Header — Same clean layout as Repo-prueba-master DashboardPage */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white/90">
-              Visión Franquicia & Grupo
-            </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success-500" />
-              </span>
-              En vivo
-            </span>
-          </div>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Consolidación financiera, operativa y gestión centralizada de todas las sucursales.
+    <div className="w-full space-y-10 antialiased sm:space-y-12">
+      {/* ── Page header ────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-3">
+          <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+            Grupo & Franquicia
+          </span>
+          <h1 className="text-[32px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
+            Visión consolidada
+          </h1>
+          <p className="max-w-xl text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
+            Consolidación financiera, operativa y gestión centralizada de todas tus sucursales y marcas.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="outline"
-            size="sm"
+            intent="hub.audit.global"
             startIcon={<BarChart2 className="size-4" />}
             onClick={() => navigate("/analitica")}
+            className="rounded-full px-5 py-2.5 text-[13px] font-bold"
           >
-            Auditoría Global 360°
+            Auditoría 360°
           </Button>
           <Button
             variant="primary"
-            size="sm"
+            intent="hub.branch.create"
             startIcon={<Plus className="size-4" />}
             onClick={() => navigate("/onboarding")}
+            className="rounded-full px-5 py-2.5 text-[13px] font-bold"
           >
-            Nueva Sucursal / Tienda
+            Nueva sucursal
           </Button>
         </div>
       </div>
 
-      {/* Aggregate KPI Metrics Grid — Pure Elements MetricCard */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        <MetricCard
-          layout="vertical"
-          icon={<DollarSign className="size-5" />}
-          iconBgClass="bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400"
-          title="Ventas Totales Hoy"
-          value={totalRevenue}
-          change="12%"
-          trend="up"
-          comparisonText="vs ayer"
-        />
-
-        <MetricCard
-          layout="vertical"
-          icon={<PackageCheck className="size-5" />}
-          iconBgClass="bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400"
-          title="Pedidos Despachados"
-          value={String(totalOrdersToday)}
-          change="0.5%"
-          trend="up"
-          comparisonText="hoy"
-        />
-
-        <MetricCard
-          layout="vertical"
-          icon={<Banknote className="size-5" />}
-          iconBgClass="bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400"
-          title="Ticket Promedio"
-          value={avgTicket}
-          change="18%"
-          trend="up"
-          comparisonText="por cliente"
-        />
-
-        <MetricCard
-          layout="vertical"
-          icon={<TrendingUp className="size-5" />}
-          iconBgClass="bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400"
-          title="Tasa de Crecimiento"
-          value="+15%"
-          change="2%"
-          trend="up"
-          comparisonText="vs mes ant."
-        />
+      {/* ── Aggregate KPIs ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map(kpi => (
+          <MetricCard
+            key={kpi.title}
+            layout="vertical"
+            icon={kpi.icon}
+            iconBgClass={KPI_ICON_CHIP}
+            title={kpi.title}
+            value={kpi.value}
+            change={kpi.change}
+            trend="up"
+            comparisonText={kpi.comparison}
+            className="rounded-2xl border-gray-100 shadow-none dark:border-gray-800"
+          />
+        ))}
       </div>
 
-      {/* Branch Breakdown Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Building2 className="size-5 text-brand-500" />
-            <h2 className="text-lg font-bold text-gray-800 dark:text-white/90">
-              Sucursales y Marcas del Grupo
+      {/* ── Branches ───────────────────────────────────────────────── */}
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-black tracking-tight text-secondary-600 dark:text-white">
+              Sucursales y marcas
             </h2>
+            <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              {businesses.length}
+            </span>
           </div>
-          <span className="text-xs text-gray-400 hidden sm:inline">
-            Selecciona una sede para entrar al panel de operaciones o gestionar su configuración
+          <span className="hidden text-xs text-gray-400 sm:inline">
+            Elige una sede para entrar al panel de operaciones o ajustar su configuración
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-          {businesses.map((biz) => {
-            return (
+        {businesses.length === 0 ? (
+          /* ── Brand empty state ── */
+          <div className="relative overflow-hidden rounded-3xl bg-brand-500 px-8 py-14 text-center text-white">
+            <Store className="mx-auto mb-5 size-10 text-white/80" />
+            <h3 className="text-xl font-black tracking-tight sm:text-2xl">Aún no tienes sucursales</h3>
+            <p className="mx-auto mt-2 max-w-md text-sm text-white/85">
+              Crea tu primera tienda y Necto preparará el catálogo, las existencias y los canales según tu modelo.
+            </p>
+            <Button
+              variant="outline"
+              intent="hub.branch.create.empty"
+              startIcon={<Plus className="size-4" />}
+              onClick={() => navigate("/onboarding")}
+              className="mt-7 rounded-full border-0 bg-white px-6 py-3 text-[13px] font-bold text-brand-500 hover:bg-white/90 dark:bg-white dark:text-brand-500"
+            >
+              Crear mi primera tienda
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+            {businesses.map(biz => (
               <Card
                 key={biz.id}
                 onClick={() => setRoleSelectBiz(biz)}
-                className="relative rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-theme-xs hover:shadow-theme-md hover:border-brand-500/50 transition-all flex flex-col justify-between overflow-hidden group cursor-pointer p-0"
+                className="group flex cursor-pointer flex-col overflow-hidden rounded-3xl border-gray-100 p-0 shadow-none transition-all hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-theme-md dark:border-gray-800"
               >
-                {/* Top Banner Cover Photo */}
-                <div className="h-32 sm:h-36 w-full relative overflow-hidden bg-gray-900 flex-none select-none">
+                {/* Cover — uploaded banner, or brand orange when there is none */}
+                <div className="relative h-28 w-full flex-none overflow-hidden">
                   {biz.bannerUrl ? (
-                    <img
-                      src={biz.bannerUrl}
-                      alt={biz.name}
-                      style={{
-                        transform: biz.bannerTransform
-                          ? `rotate(${biz.bannerTransform.rotate || 0}deg) scale(${biz.bannerTransform.scale || 1}) translate(${biz.bannerTransform.posX || 0}%, ${biz.bannerTransform.posY || 0}%)`
-                          : undefined,
-                      }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <>
+                      <img
+                        src={biz.bannerUrl}
+                        alt={biz.name}
+                        style={{
+                          transform: biz.bannerTransform
+                            ? `rotate(${biz.bannerTransform.rotate || 0}deg) scale(${biz.bannerTransform.scale || 1}) translate(${biz.bannerTransform.posX || 0}%, ${biz.bannerTransform.posY || 0}%)`
+                            : undefined,
+                        }}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                    </>
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-r from-gray-800 to-gray-900 flex items-center justify-center">
-                      <Store className="size-8 text-white/30" />
+                    <div className="relative h-full w-full bg-gradient-to-br from-brand-500 to-brand-600">
+                      <BusinessIcon
+                        iconKey={biz.iconKey}
+                        className="absolute -right-4 -bottom-6 size-28 text-white/20"
+                      />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
-                  {/* Status Badge */}
-                  <div className="absolute top-3.5 left-3.5 z-10">
-                    <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-success-400 text-xs font-semibold flex items-center gap-1.5 border border-success-500/30">
-                      <span className="size-1.5 rounded-full bg-success-500 animate-pulse" />
-                      Operando
-                    </span>
-                  </div>
+                  <span className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
+                    <span className="size-1.5 rounded-full bg-success-400" />
+                    Operando
+                  </span>
                 </div>
 
-                {/* Card Body */}
-                <div className="p-5 pt-3 space-y-4 flex-1 flex flex-col justify-between">
-                  {/* Floating Logo / Avatar Row */}
-                  <div className="flex items-center justify-between -mt-9 mb-1 z-10">
-                    <div className="size-14 rounded-xl bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-700 flex items-center justify-center flex-none shadow-theme-sm overflow-hidden">
+                {/* Body */}
+                <div className="flex flex-1 flex-col px-5 pb-5">
+                  {/* Avatar + identity */}
+                  <div className="-mt-7 flex items-end gap-3.5">
+                    <div className="flex size-14 flex-none items-center justify-center overflow-hidden rounded-2xl border-2 border-white bg-white shadow-theme-sm dark:border-gray-900 dark:bg-gray-800">
                       {biz.logoUrl ? (
                         <img
                           src={biz.logoUrl}
@@ -201,88 +193,109 @@ export const GlobalFranchiseOverview: React.FC = () => {
                               ? `rotate(${biz.logoTransform.rotate || 0}deg) scale(${biz.logoTransform.scale || 1}) translate(${biz.logoTransform.posX || 0}%, ${biz.logoTransform.posY || 0}%)`
                               : undefined,
                           }}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       ) : (
                         <BusinessIcon iconKey={biz.iconKey} className="size-7 text-brand-500" />
                       )}
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedBusinessForSettings(biz);
-                        }}
-                        title="Configurar branding, bot y parámetros de la sede"
-                        startIcon={<Settings className="size-3.5 text-gray-500" />}
-                      >
-                        Configurar sede
-                      </Button>
+                  <div className="mt-4 space-y-1">
+                    <h4 className="truncate text-base font-black tracking-tight text-secondary-600 transition-colors group-hover:text-brand-500 dark:text-white">
+                      {biz.name}
+                    </h4>
+                    <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">
+                      {[biz.specialty, biz.city].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
 
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {biz.currency}
+                    </span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                      {biz.activeModules.length} {biz.activeModules.length === 1 ? "módulo" : "módulos"}
+                    </span>
+                  </div>
+
+                  {/* Actions — stopPropagation so card-level select does not fire */}
+                  <div
+                    className="mt-auto space-y-3 pt-5"
+                    onClick={e => e.stopPropagation()}
+                    role="presentation"
+                  >
+                    <div className="flex items-center gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
                       <Button
                         variant="primary"
-                        size="xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        intent="hub.branch.enter"
+                        onClick={() => {
                           switchBusiness(biz.id);
                           navigate("/app?section=operacion&tab=en-vivo");
                         }}
-                        endIcon={<ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />}
+                        endIcon={<ArrowRight className="size-4" />}
+                        className="flex-1 rounded-full py-2.5 text-[13px] font-bold"
                       >
                         Entrar
                       </Button>
-                    </div>
-                  </div>
-
-                  {/* Title & Metadata */}
-                  <div className="space-y-1">
-                    <h4 className="text-lg font-bold text-gray-800 dark:text-white/90 group-hover:text-brand-500 transition-colors truncate">
-                      {biz.name}
-                    </h4>
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
-                      <span>{biz.city}</span>
-                      <span>•</span>
-                      <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono font-semibold text-[10px] text-gray-700 dark:text-gray-300">
-                        {biz.currency}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 2 Quick Actions */}
-                  <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                    <span className="text-[11px] font-mono uppercase text-gray-400 font-semibold tracking-wider block">
-                      Analítica Corporativa & Auditoría
-                    </span>
-                    <div className="grid grid-cols-2 gap-2.5">
                       <Button
                         variant="outline"
-                        size="sm"
-                        startIcon={<BarChart2 className="size-3.5 text-brand-500" />}
-                        onClick={(e) => handleNavigateToAnalitica(e, biz.id, "resumen")}
-                        title="Ver Dashboard Ejecutivo 360°"
+                        intent="hub.branch.settings"
+                        title="Configurar branding, bot y parámetros de la sede"
+                        onClick={() => setSelectedBusinessForSettings(biz)}
+                        startIcon={<Settings className="size-4" />}
+                        className="rounded-full px-4 py-2.5 text-[13px] font-bold"
+                      >
+                        Configurar
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] font-semibold text-gray-400">
+                      <button
+                        type="button"
+                        onClick={() => goToAnalitica(biz.id, "resumen")}
+                        className="cursor-pointer transition-colors hover:text-brand-500"
                       >
                         Dashboard 360°
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        startIcon={<History className="size-3.5 text-brand-500" />}
-                        onClick={(e) => handleNavigateToAnalitica(e, biz.id, "historial")}
-                        title="Ver Historial de Ventas y Arqueos"
+                      </button>
+                      <span className="text-gray-300 dark:text-gray-700">·</span>
+                      <button
+                        type="button"
+                        onClick={() => goToAnalitica(biz.id, "historial")}
+                        className="cursor-pointer transition-colors hover:text-brand-500"
                       >
-                        Historial de Ventas
-                      </Button>
+                        Historial de ventas
+                      </button>
                     </div>
                   </div>
                 </div>
               </Card>
-            );
-          })}
-        </div>
+            ))}
+
+            {/* Add-branch tile — keeps the grid balanced and the CTA always visible */}
+            <button
+              type="button"
+              onClick={() => navigate("/onboarding")}
+              className="flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-gray-200 p-8 text-center transition-all hover:border-brand-500 hover:bg-brand-50/40 dark:border-gray-800 dark:hover:bg-brand-500/5"
+            >
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
+                <Plus className="size-6" />
+              </span>
+              <span className="text-sm font-black tracking-tight text-secondary-600 dark:text-white">
+                Nueva sucursal
+              </span>
+              <span className="max-w-[180px] text-xs leading-relaxed text-gray-400">
+                Suma otra marca o sede al grupo en minutos
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Brand signature ────────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-2.5 pt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-300 dark:text-gray-700">
+        <Sparkles className="size-3.5" />
+        <span>Nos cruzamos, nos unimos, crecemos · grow together</span>
       </div>
 
       {/* Role Selection Modal */}
@@ -303,3 +316,5 @@ export const GlobalFranchiseOverview: React.FC = () => {
     </div>
   );
 };
+
+export default GlobalFranchiseOverview;

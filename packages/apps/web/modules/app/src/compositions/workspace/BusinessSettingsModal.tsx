@@ -782,43 +782,43 @@ export const BusinessSettingsModal: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 flex flex-col font-sans animate-fade-in overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-gray-50 font-sans animate-in fade-in duration-200 dark:bg-gray-950">
       {/* ── Header ── */}
-      <header className="h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] px-6 flex items-center justify-between flex-none z-10">
-        <div className="flex items-center gap-4">
+      <header className="z-10 flex h-16 flex-none items-center justify-between border-b border-gray-100 bg-white px-6 dark:border-gray-800 dark:bg-gray-950">
+        <div className="flex min-w-0 items-center gap-4">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/[0.03] transition-colors cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
           >
-            <ArrowRight className="w-4 h-4 rotate-180" />
+            <ArrowRight className="h-4 w-4 rotate-180" />
             <span>Volver</span>
           </button>
 
           <div className="h-5 w-px bg-gray-200 dark:bg-gray-800" />
 
-          <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <h1 className="truncate text-[15px] font-black tracking-tight text-secondary-600 dark:text-white">
             {business?.id ? "Configuración de Sede" : "Nueva Sede"}
           </h1>
           {business?.name && (
-            <span className="text-xs font-medium px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+            <span className="hidden truncate text-xs font-medium text-gray-400 sm:inline dark:text-gray-500">
               {business.name}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-none items-center gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
+            className="inline-flex cursor-pointer items-center rounded-full px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
           >
             Descartar
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 text-sm font-medium shadow-theme-xs transition-colors cursor-pointer disabled:bg-brand-300"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-brand-600 disabled:bg-brand-300"
           >
             <Check className="w-4 h-4" />
             <span>Guardar Cambios</span>
@@ -829,7 +829,7 @@ export const BusinessSettingsModal: React.FC<{
       {/* ── Layout ── */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-60 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] py-4 px-3 flex-none overflow-y-auto space-y-0.5">
+        <aside className="w-60 flex-none space-y-1 overflow-y-auto border-r border-gray-100 bg-white px-3 py-4 dark:border-gray-800 dark:bg-gray-950">
           {[
             { id: "general" as const, label: "General", icon: Store },
             { id: "channels" as const, label: "Canales de Entrada", icon: MessageSquare },
@@ -850,16 +850,16 @@ export const BusinessSettingsModal: React.FC<{
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full px-3 py-2.5 rounded-lg text-left transition-colors cursor-pointer flex items-center justify-between gap-2 text-sm ${
+                className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
                   isActive
-                    ? "bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03] hover:text-gray-900 dark:hover:text-gray-200 font-medium"
+                    ? "bg-brand-500 font-bold text-white"
+                    : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Icon
                     className={`w-[18px] h-[18px] flex-none ${
-                      isActive ? "text-brand-600 dark:text-brand-400" : "text-gray-400"
+                      isActive ? "text-white" : "text-gray-400"
                     }`}
                   />
                   <span className="truncate">{tab.label}</span>
