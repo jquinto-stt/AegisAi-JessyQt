@@ -832,11 +832,6 @@ export default function OnboardingPage() {
                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between text-[11px] font-medium text-white/70 pt-4">
-                <span>Necto OS · Plataforma de operaciones</span>
-                <span className="font-mono">v3.0</span>
-              </div>
             </div>
           ) : (
             <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
@@ -849,11 +844,6 @@ export default function OnboardingPage() {
 
               <div className="my-auto">
                 <AnimatedStepMessages step={step} />
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] font-medium text-white/70 pt-4">
-                <span>grow together</span>
-                <span className="font-mono">v3.0</span>
               </div>
             </div>
           )}
