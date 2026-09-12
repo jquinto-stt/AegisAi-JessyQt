@@ -32,6 +32,7 @@ import {
   BoltIcon,
 } from "@/icons";
 import { PanelLeftClose, Globe, Store, SlidersHorizontal, Share2, ChevronDown, ChevronRight } from "lucide-react";
+import { NectoSidebarWordmark } from "@/compositions/shared/NectoLogo";
 import { uiStore } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -120,11 +121,7 @@ const Logo = () => (
       className="flex items-center cursor-pointer group focus:outline-none"
       title="Colapsar barra lateral"
     >
-      <img
-        src="/images/logo/necto-full.svg"
-        alt="NECTO"
-        className="h-6 w-auto transition-opacity group-hover:opacity-75"
-      />
+      <NectoSidebarWordmark className="transition-opacity group-hover:opacity-75" />
     </button>
     <button
       type="button"

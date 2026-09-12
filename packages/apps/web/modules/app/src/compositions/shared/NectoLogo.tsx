@@ -236,6 +236,36 @@ export function NectoLogo({
   );
 }
 
+/**
+ * Shell wordmark — the static "NECTO + grow together" lockup.
+ *
+ * Why an <img> pair instead of the inline `NectoLogo`: the shell pins this to an
+ * exact `h-6` box, and the inline variant's fixed width steps (w-24 + w-14)
+ * render ~160×21 rather than the file's own 161×23 ratio.
+ *
+ * Why two files: `necto-full.svg` hardcodes indigo (#190088) for the "E" of
+ * NECTO and for the whole sub-brand, so on a dark surface half the lockup is
+ * invisible. `necto-full-dark.svg` is the same artwork with those 13 fills in
+ * white. CSS cannot restyle the inside of an <img>, so the swap is done with
+ * `dark:hidden` / `dark:block` — the box stays byte-identical in both themes.
+ */
+export function NectoSidebarWordmark({ className = "" }: { className?: string }) {
+  return (
+    <>
+      <img
+        src="/images/logo/necto-full.svg"
+        alt="NECTO"
+        className={`h-6 w-auto select-none dark:hidden ${className}`}
+      />
+      <img
+        src="/images/logo/necto-full-dark.svg"
+        alt="NECTO"
+        className={`hidden h-6 w-auto select-none dark:block ${className}`}
+      />
+    </>
+  );
+}
+
 export interface NectoSidebarLogoProps {
   isCollapsed: boolean;
   onToggle: () => void;

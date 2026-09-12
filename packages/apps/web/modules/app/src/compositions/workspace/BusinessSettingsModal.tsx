@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
 import { MenuItem, SidebarProvider } from "@/shell";
+import { NectoSidebarWordmark } from "../shared/NectoLogo";
 
 /** Neutral starting point for the logo/banner framing controls. */
 const DEFAULT_TRANSFORM: ImageTransformConfig = { scale: 1, rotate: 0, posX: 0, posY: 0 };
@@ -935,11 +936,7 @@ export const BusinessSettingsModal: React.FC<{
         <aside className="m-4 flex w-[274px] flex-none flex-col rounded-3xl bg-white px-5 text-gray-900 shadow-theme-lg dark:bg-gray-900">
           {/* Logo section — idéntico a BaseAppSidebar */}
           <div className="flex flex-none justify-start py-8">
-            <img
-              src="/images/logo/necto-full.svg"
-              alt="NECTO"
-              className="h-6 w-auto select-none"
-            />
+            <NectoSidebarWordmark />
           </div>
 
           {/* Content section */}
