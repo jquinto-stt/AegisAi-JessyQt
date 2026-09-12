@@ -9,6 +9,10 @@ import {
   BUSINESS_ARCHETYPES,
 } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
+import { GlobalSearchButton } from "../compositions/shared/GlobalSearchButton";
+import { ThemeToggle } from "../compositions/shared/ThemeToggle";
+import { UserProfileDropdown } from "../compositions/workspace/UserProfileDropdown";
+import { CommandPalette } from "../compositions/workspace/CommandPalette";
 import { PageMeta } from "@/shell/meta";
 import { ThemeToggleButton } from "@/shell";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
@@ -401,13 +405,19 @@ export default function OnboardingPage() {
             Nueva tienda
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate("/workspaces")}
-          className="cursor-pointer text-sm font-medium text-gray-400 transition-colors hover:text-secondary-600 dark:hover:text-white"
-        >
-          Salir
-        </button>
+        {/* Right Header Controls: Search (⌘K), Theme Toggle & User Profile Avatar */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <GlobalSearchButton />
+          <ThemeToggle />
+          <UserProfileDropdown />
+          <button
+            type="button"
+            onClick={() => navigate("/workspaces")}
+            className="cursor-pointer text-xs font-semibold text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors ml-1"
+          >
+            Salir
+          </button>
+        </div>
       </header>
 
       <div className="grid w-full flex-1 grid-cols-1 lg:grid-cols-12">
@@ -939,6 +949,7 @@ export default function OnboardingPage() {
           )}
         </div>
       </div>
+      <CommandPalette />
     </div>
   );
 }
