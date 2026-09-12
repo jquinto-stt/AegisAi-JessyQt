@@ -48,6 +48,8 @@ interface PedidosContextType {
   historialOrders: Pedido[];
   allOrders: Pedido[];
   programados: Pedido[];
+  ingredients: StockIngredientItem[];
+  stockMovements: StockMovement[];
   automations: AutomationRule[];
   recurrences: RecurrenceConfig[];
   shiftInfo: ShiftInfo;
@@ -115,6 +117,8 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [programados, setProgramados] = useState<Pedido[]>(() =>
     activeBusiness ? getMockProgramadosForBusiness(activeBusiness.businessType) : INITIAL_PROGRAMADOS
   );
+  const [ingredients, setIngredients] = useState<StockIngredientItem[]>(INITIAL_INGREDIENTS);
+  const [stockMovements, setStockMovements] = useState<StockMovement[]>(INITIAL_MOVEMENTS);
 
   const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
   const [automations, setAutomations] = useState<AutomationRule[]>(INITIAL_AUTOMATIONS);
