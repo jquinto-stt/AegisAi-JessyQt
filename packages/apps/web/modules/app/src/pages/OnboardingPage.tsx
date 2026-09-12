@@ -951,8 +951,8 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              {/* Main Blueprint Terminal Card (Expanded to take real space) */}
-              <div className="flex-1 rounded-2xl bg-black/25 dark:bg-white/[0.04] border border-white/20 backdrop-blur-xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between space-y-6 relative overflow-hidden">
+              {/* Main Blueprint Terminal Card (Wireframe glass structure so dots shine through) */}
+              <div className="flex-1 rounded-3xl border border-white/20 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative">
                 {/* Identity Header */}
                 <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-5">
                   <div className="space-y-2 flex-1 min-w-0">
@@ -969,12 +969,12 @@ export default function OnboardingPage() {
                       <MapPin className="w-4 h-4 text-white/70" />
                       <span className="truncate">{city ? `${city}, ${country}` : country}</span>
                       <span>·</span>
-                      <span className="font-mono text-white font-bold px-2 py-0.5 rounded-md bg-white/20 text-xs tracking-wider">
+                      <span className="font-mono text-white font-bold px-2 py-0.5 rounded-md border border-white/25 text-xs tracking-wider">
                         {currencyForCountry(country)}
                       </span>
                     </div>
                   </div>
-                  <div className="w-14 h-14 rounded-2xl bg-white/15 text-white flex items-center justify-center flex-none shadow-lg border border-white/25">
+                  <div className="w-14 h-14 rounded-2xl border border-white/25 text-white flex items-center justify-center flex-none">
                     {currentArchetype.iconKey === "utensils" ? (
                       <Utensils className="w-7 h-7" />
                     ) : currentArchetype.iconKey === "wrench" ? (
@@ -997,7 +997,7 @@ export default function OnboardingPage() {
                 <div className="space-y-5 flex-1 flex flex-col justify-around">
                   {/* Archetype & Offer */}
                   <div className="grid grid-cols-2 gap-3.5">
-                    <div className="p-4 rounded-xl bg-black/25 border border-white/10 space-y-1.5">
+                    <div className="p-4 rounded-2xl border border-white/15 space-y-1.5">
                       <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
                         Arquetipo
                       </span>
@@ -1005,7 +1005,7 @@ export default function OnboardingPage() {
                         {currentArchetype.label}
                       </div>
                     </div>
-                    <div className="p-4 rounded-xl bg-black/25 border border-white/10 space-y-1.5">
+                    <div className="p-4 rounded-2xl border border-white/15 space-y-1.5">
                       <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
                         Modelo de Oferta
                       </span>
@@ -1022,7 +1022,7 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Catalog Schema Inferred */}
-                  <div className="p-4.5 rounded-xl bg-black/25 border border-white/10 space-y-3">
+                  <div className="p-4.5 rounded-2xl border border-white/15 space-y-3">
                     <div className="flex items-center justify-between text-xs font-mono text-white/75">
                       <span className="flex items-center gap-2 text-white font-bold">
                         <Package className="w-4 h-4 text-[#97D6DF]" />
@@ -1114,7 +1114,7 @@ export default function OnboardingPage() {
                   </div>
 
                   {/* Operational Capabilities suggested */}
-                  <div className="p-4.5 rounded-xl bg-black/25 border border-white/10 space-y-2.5">
+                  <div className="p-4.5 rounded-2xl border border-white/15 space-y-2.5">
                     <div className="flex items-center justify-between text-xs font-mono text-white/75">
                       <span className="flex items-center gap-2 text-white font-bold">
                         <Layers className="w-4 h-4 text-white/85" />
@@ -1128,7 +1128,7 @@ export default function OnboardingPage() {
                         return (
                           <span
                             key={modKey}
-                            className="px-3 py-1.5 rounded-lg bg-white/15 text-xs font-semibold text-white flex items-center gap-2 border border-white/10"
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white flex items-center gap-2 border border-white/20"
                           >
                             <span className="w-2 h-2 rounded-full bg-emerald-400" />
                             <span>{m ? m.title.split(" ")[0] : modKey}</span>
