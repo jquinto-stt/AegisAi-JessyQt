@@ -33,7 +33,10 @@ import {
 import { Button } from "@/elements";
 import { useBusiness } from "@/context/BusinessContext";
 
+import { useCatalog } from "@/compositions/catalog/context/CatalogContext";
+
 export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ conversation }) => {
+  const { products } = useCatalog();
   const {
     sendOperatorMessage,
     currentOperatorName,
@@ -55,7 +58,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
   const handleSendCustomerSimulated = (textToSend?: string) => {
     const text = textToSend || customerDraft;
     if (!text.trim()) return;
-    simulateCustomerMessage(conversation.id, text);
+    simulateCustomerMessage(conversation.id, text, products);
     if (!textToSend) setCustomerDraft("");
   };
 
@@ -566,6 +569,7 @@ export const ConversationThread: React.FC<{ conversation: Conversation }> = ({ c
                     simulateCustomerMessage(
                       conversation.id,
                       "Listo! Ya les transferí los $45.500 por Nequi. Aquí les adjunto la captura del comprobante.",
+                      products,
                       { isReceipt: true }
                     );
                   }}

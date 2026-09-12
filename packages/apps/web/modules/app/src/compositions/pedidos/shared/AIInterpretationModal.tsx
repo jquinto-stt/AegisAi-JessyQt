@@ -4,8 +4,11 @@ import { MessageSquare, X, Check, Edit2, ArrowRight } from "lucide-react";
 import { OrderItem } from "../types";
 import { Button } from "@/elements";
 
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
+
 export const AIInterpretationModal: React.FC = () => {
-  const { aiModalOrder, setAiModalOrder, approveAIOrder, openWhatsAppConversation } = usePedidos();
+  const { openWhatsAppConversation } = useChannels();
+  const { aiModalOrder, setAiModalOrder, approveAIOrder } = usePedidos();
 
   if (!aiModalOrder) return null;
 

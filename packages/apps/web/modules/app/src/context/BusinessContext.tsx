@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { eventBus } from "@/infrastructure/eventBus";
 
 export type BusinessType =
   // Gastronomía
@@ -1193,19 +1194,17 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setStorePaceState(pace);
     try {
       localStorage.setItem("necto_store_pace", pace);
-      window.dispatchEvent(new CustomEvent("necto_store_pace_changed", { detail: pace }));
+      eventBus.publish("necto_store_pace_changed", { mode: pace });
     } catch (e) {}
   };
 
   useEffect(() => {
-    const handlePaceChange = (e: Event) => {
-      const customEvent = e as CustomEvent<"rapida" | "habitual" | "demorada">;
-      if (customEvent.detail && (customEvent.detail === "rapida" || customEvent.detail === "habitual" || customEvent.detail === "demorada")) {
-        setStorePaceState(customEvent.detail);
+    const unsub = eventBus.subscribe("necto_store_pace_changed", (payload) => {
+      if (payload.mode && (payload.mode === "rapida" || payload.mode === "habitual" || payload.mode === "demorada")) {
+        setStorePaceState(payload.mode);
       }
-    };
-    window.addEventListener("necto_store_pace_changed", handlePaceChange);
-    return () => window.removeEventListener("necto_store_pace_changed", handlePaceChange);
+    });
+    return () => unsub();
   }, []);
 
   // Global Keyboard listener for Command Palette (Ctrl+K or Cmd+K)

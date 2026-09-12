@@ -13,6 +13,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { useBusiness } from "@/context/BusinessContext";
 import { InventoryTab } from "@/ModuloInventario";
 import { PedidosSection, OperacionTab, GestionTab } from "@/compositions/pedidos/types";
+import { eventBus } from "@/infrastructure/eventBus";
 import {
   GridIcon,
   TaskIcon,
@@ -330,13 +331,13 @@ export const StockFlowSidebar = observer(({
         setIsWhatsAppConnected(savedConnected);
       } catch (e) {}
     };
-    window.addEventListener("necto_preparacion_toggle", handleToggle);
-    window.addEventListener("necto_whatsapp_config_changed", handleWhatsAppToggle);
+    const unsubPrep = eventBus.subscribe("necto_preparacion_toggle", () => handleToggle());
+    const unsubWa = eventBus.subscribe("necto_whatsapp_config_changed", () => handleWhatsAppToggle());
     window.addEventListener("storage", handleToggle);
     window.addEventListener("storage", handleWhatsAppToggle);
     return () => {
-      window.removeEventListener("necto_preparacion_toggle", handleToggle);
-      window.removeEventListener("necto_whatsapp_config_changed", handleWhatsAppToggle);
+      unsubPrep();
+      unsubWa();
       window.removeEventListener("storage", handleToggle);
       window.removeEventListener("storage", handleWhatsAppToggle);
     };

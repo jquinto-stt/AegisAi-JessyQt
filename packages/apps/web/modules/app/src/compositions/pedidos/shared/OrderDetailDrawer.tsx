@@ -28,6 +28,7 @@ import {
 import { Button } from "@/elements";
 
 export const OrderDetailDrawer: React.FC = () => {
+  const { openWhatsAppConversation, sendWhatsAppStatusAlert } = useChannels();
   const {
     orders,
     programados,
@@ -47,8 +48,6 @@ export const OrderDetailDrawer: React.FC = () => {
     processReturnOrder,
     incidencias,
     resolveIncidencia,
-    openWhatsAppConversation,
-    sendWhatsAppStatusAlert,
     hasInventarios,
     inventoryAdapter,
   } = usePedidos();

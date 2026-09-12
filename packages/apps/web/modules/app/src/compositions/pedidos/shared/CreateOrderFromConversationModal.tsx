@@ -21,6 +21,10 @@ import {
 import { Button } from "@/elements";
 import { useBusiness } from "@/context/BusinessContext";
 
+import { useCatalog } from "@/compositions/catalog/context/CatalogContext";
+
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
+
 interface CreateOrderFromConversationModalProps {
   conversation: Conversation;
   isOpen: boolean;
@@ -32,11 +36,11 @@ export const CreateOrderFromConversationModal: React.FC<CreateOrderFromConversat
   isOpen,
   onClose,
 }) => {
+  const { products } = useCatalog();
+  const { sendOperatorMessage } = useChannels();
   const {
-    products = [],
     createManualOrder,
     sendToKitchen,
-    sendOperatorMessage,
     setSelectedOrderId,
   } = usePedidos();
   const { semantics } = useBusiness();

@@ -1,4 +1,5 @@
 export type ProductType = "standard" | "perishable" | "apparel" | "electronics" | "pharma" | "raw_material";
+export type { CatalogItem, ProductItem } from "@/contracts/catalog.contract";
 
 export type UnitOfMeasure = "UND" | "KG" | "GR" | "LT" | "ML" | "METRO" | "CAJA" | "PAR" | "PAQUETE" | "ROLLO" | "SERVICIO";
 

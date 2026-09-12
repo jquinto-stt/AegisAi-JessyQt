@@ -1,3 +1,30 @@
+// Re-export domain contracts for backward compatibility
+export type {
+  OrderStatus,
+  PaymentStatus,
+  ReturnStatus,
+  OrderDomainEvent,
+  UrgencyLevel,
+  OrderChannel,
+  OrderType,
+  AIConfidence,
+  OrderItem,
+  OrderEvent,
+  Pedido,
+  DraftOrder,
+  ProductReview,
+  ProductModifierOption,
+  ProductModifierGroup,
+  RecipeIngredient,
+  ProductItem,
+  ConversationStatus,
+  HandoffReason,
+  MessageSender,
+  ChatMessage,
+  ConversationEvent,
+  Conversation,
+} from "../../contracts";
+
 export type PedidosSection =
   | "ordenes"
   | "programados"
@@ -25,135 +52,6 @@ export type GestionTab =
   | "automatizaciones"
   | "turnos"
   | "analitica";
-
-
-export type OrderStatus =
-  | "NUEVO"
-  | "CONFIRMADO"
-  | "EN_PREPARACION"
-  | "LISTO"
-  | "ENTREGADO"
-  | "FINALIZADO"
-  | "RECHAZADO"
-  | "CANCELADO";
-
-export type PaymentStatus =
-  | "PENDIENTE"
-  | "PAGADO"
-  | "PAGO_CONTRA_ENTREGA"
-  | "ANULADO"
-  | "REEMBOLSADO";
-
-export type ReturnStatus =
-  | "NO_APLICA"
-  | "SOLICITADA"
-  | "APROBADA"
-  | "RECIBIDA"
-  | "RECHAZADA";
-
-export type OrderDomainEvent =
-  | { type: "OrderConfirmed"; order: Pedido }
-  | { type: "OrderReady"; order: Pedido }
-  | { type: "OrderCancelled"; order: Pedido; reason: string }
-  | { type: "OrderReturned"; order: Pedido; reason: string; returnStock: boolean };
-
-export type UrgencyLevel = "A_TIEMPO" | "PROXIMO" | "RETRASADO";
-
-export type OrderChannel = "whatsapp" | "web" | "presencial" | "telefono";
-
-export type OrderType = "inmediato" | "programado" | "recurrente";
-
-export type AIConfidence = "Alta" | "Media" | "Baja";
-
-export interface OrderItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  notes?: string;
-  option?: string;
-  category?: string;
-}
-
-export interface OrderEvent {
-  timestamp: string;
-  fromStatus?: OrderStatus;
-  toStatus?: OrderStatus;
-  fromPaymentStatus?: PaymentStatus;
-  toPaymentStatus?: PaymentStatus;
-  fromReturnStatus?: ReturnStatus;
-  toReturnStatus?: ReturnStatus;
-  user: string;
-  ruleName?: string;
-  note?: string;
-  inventoryOperationId?: string;
-}
-
-export interface Pedido {
-  id: string;
-  customerName: string;
-  customerPhone?: string;
-  customerAddress?: string;
-  deliveryAddress?: string;
-  paymentMethod?: "mercadopago" | "efectivo" | "transferencia" | "pos" | string;
-  paymentStatus?: PaymentStatus;
-  returnStatus?: ReturnStatus;
-  returnReason?: string;
-  channel: OrderChannel;
-  type: OrderType;
-  status: OrderStatus;
-  items: OrderItem[];
-  total: number;
-  createdAt: string;
-  estimatedMinutes: number;
-  elapsedMinutes: number;
-  scheduledDate?: string;
-  scheduledTime?: string;
-  recurringFrequency?: string;
-  urgency: UrgencyLevel;
-  isAIOrigin?: boolean;
-  aiRawMessage?: string;
-  aiConfidence?: AIConfidence;
-  rejectionReason?: string;
-  cancellationReason?: string;
-  turnNumber?: number;
-  notes?: string;
-  isStockConsumed?: boolean;
-  isStockReverted?: boolean;
-  isInLiveQueue?: boolean;
-  history: OrderEvent[];
-}
-
-export interface ProductReview {
-  id: string;
-  author: string;
-  rating: number;
-  date: string;
-  comment: string;
-  verifiedOrder: boolean;
-}
-
-export interface ProductModifierOption {
-  id: string;
-  name: string;
-  priceDelta: number;
-  isDefault?: boolean;
-}
-
-export interface ProductModifierGroup {
-  id: string;
-  title: string;
-  minSelect: number;
-  maxSelect: number;
-  options: ProductModifierOption[];
-}
-
-export interface RecipeIngredient {
-  ingredientId: string;
-  ingredientName: string;
-  quantityRequired: number; // Cantidad consumida por unidad de producto
-  unit: string;
-}
 
 export interface StockIngredientItem {
   id: string;
@@ -186,31 +84,6 @@ export interface StockMovement {
   timestamp: string;
 }
 
-export interface ProductItem {
-  id: string;
-  code: string;
-  name: string;
-  category: string;
-  price: number;
-  imageUrl?: string;
-  isActive: boolean;
-  isAvailable: boolean;
-  stockEstimated: number;
-  prepTimeMinutes: number;
-  description: string;
-  demandTag?: "Alta demanda" | "Demanda media" | "Sugerencia de promo";
-  activeOrdersCount?: number;
-  salesCount?: number;
-  popularityRank?: number;
-  rating?: number;
-  reviewsCount?: number;
-  reviews?: ProductReview[];
-  modifiers?: ProductModifierGroup[];
-  recipe?: RecipeIngredient[];
-  autoPauseOnStockOut?: boolean;
-  costEstimated?: number;
-}
-
 export interface AutomationRule {
   id: string;
   name: string;
@@ -221,7 +94,7 @@ export interface AutomationRule {
     checkProductsAvailable: boolean;
     checkBusinessHours: boolean;
     checkKitchenCapacity: boolean;
-    channel?: OrderChannel | "todos";
+    channel?: import("../../contracts").OrderChannel | "todos";
     maxElapsedMinutes?: number;
   };
   actionType: "auto_confirm" | "raise_incidence" | "reassign_staff";
@@ -236,7 +109,7 @@ export interface RecurrenceConfig {
   phone: string;
   frequency: "Diario (Lun-Vie)" | "Todos los lunes" | "Todos los viernes" | "Quincenal";
   scheduledTime: string;
-  items: OrderItem[];
+  items: import("../../contracts").OrderItem[];
   total: number;
   isActive: boolean;
   nextExecution: string;
@@ -289,95 +162,3 @@ export interface ResumenKPIs {
 }
 
 export type StorePaceMode = "rapida" | "habitual" | "demorada";
-
-
-// ============================================================================
-// Human-in-the-Loop (HITL) — Conversaciones de WhatsApp / IA
-// ----------------------------------------------------------------------------
-// Modela el hilo de chat entre el cliente y el negocio. El ciclo de vida de la
-// CONVERSACIÓN es distinto al del PEDIDO (OrderStatus): la conversación es el
-// canal; el pedido es el resultado. Cuando se genera un pedido, la conversación
-// lo referencia por `orderId` y reutiliza las acciones existentes del contexto.
-// ============================================================================
-
-/** Estados del control de una conversación (máquina de estados HITL). */
-export type ConversationStatus =
-  | "IA_ATENDIENDO"          // La IA lleva la conversación
-  | "REQUIERE_INTERVENCION"  // La IA pidió ayuda; nadie la tomó aún (en cola)
-  | "HUMANO_ATENDIENDO"      // Un operador tomó el control (IA en pausa)
-  | "RESUELTO";              // El humano cerró el caso
-
-/** Motivo por el que la IA (o el cliente) solicita intervención humana. */
-export type HandoffReason =
-  | "AMBIGUO"                     // El pedido/mensaje es ambiguo
-  | "FUERA_DE_ALCANCE"            // La IA no puede resolver la solicitud
-  | "MODIFICACION_ESPECIAL"       // El cliente pide una modificación especial
-  | "CONFIRMAR_DATO"              // Hay que confirmar un dato antes de procesar
-  | "CLIENTE_PIDE_HUMANO"         // El cliente pidió explícitamente hablar con alguien
-  | "BAJA_CONFIANZA"              // La interpretación de la IA tiene confianza baja
-  | "VERIFICAR_PAGO_TRANSFERENCIA" // Cliente envió comprobante Nequi/Bancolombia/QR
-  | "RECLAMO_INCIDENCIA";         // Cliente reclama demora o pedido incorrecto
-
-/** Quién emitió un mensaje del hilo. */
-export type MessageSender = "cliente" | "ia" | "humano";
-
-export interface ChatMessage {
-  id: string;
-  sender: MessageSender;
-  /** Nombre del operador cuando sender = "humano". */
-  authorName?: string;
-  text: string;
-  timestamp: string;
-  attachmentUrl?: string;
-  attachmentType?: "image" | "comprobante" | "audio";
-  attachmentMeta?: {
-    bank?: "Nequi" | "Bancolombia" | "Daviplata" | "QR Interbancario" | "Transferencia";
-    amount?: number;
-    reference?: string;
-    status?: "PENDIENTE_VERIFICACION" | "VERIFICADO_OK" | "RECHAZADO";
-  };
-}
-
-/** Evento de auditoría de una transición de control (análogo a OrderEvent). */
-export interface ConversationEvent {
-  timestamp: string;
-  fromStatus?: ConversationStatus;
-  toStatus: ConversationStatus;
-  user: string;
-  note?: string;
-}
-
-export interface DraftOrder {
-  items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number;
-  total: number;
-  deliveryType?: "domicilio" | "pickup";
-  deliveryAddress?: string;
-  paymentMethod?: "nequi" | "bancolombia" | "daviplata" | "efectivo" | "datafono";
-  notes?: string;
-}
-
-export interface Conversation {
-  id: string;
-  customerName: string;
-  customerPhone: string;
-  avatarUrl?: string;
-  channel: OrderChannel;
-  status: ConversationStatus;
-  /** Operador que tiene el control ahora (fuente de verdad de exclusión mutua). */
-  controlledBy: string | null;
-  /** Motivo del handoff cuando el estado es REQUIERE_INTERVENCION. */
-  requiresHandoffReason?: HandoffReason;
-  aiConfidence?: AIConfidence;
-  /** Pedido asociado (si ya se confirmó y pasó al Kanban); enlaza con Pedido.id. */
-  orderId?: string;
-  /** Comanda en borrador que se está armando en el chat antes del pago. */
-  draftOrder?: DraftOrder;
-  messages: ChatMessage[];
-  handoffHistory: ConversationEvent[];
-  lastMessageAt: string;
-  /** Marca visual de "no leído" para el operador (badge en la lista). */
-  unreadForOperator: boolean;
-}
-

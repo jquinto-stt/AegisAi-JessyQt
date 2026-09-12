@@ -32,13 +32,15 @@ const FILTER_TO_STATUS: Record<Exclude<StatusFilter, "todas">, ConversationStatu
   resueltas: "RESUELTO",
 };
 
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
+
 export const ConversacionesView: React.FC<{ isEmbedded?: boolean }> = ({ isEmbedded }) => {
   const {
     conversations,
     selectedConversationId,
     setSelectedConversationId,
     markConversationRead,
-  } = usePedidos();
+  } = useChannels();
 
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("todas");

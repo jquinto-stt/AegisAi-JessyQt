@@ -26,15 +26,20 @@ import {
 } from "lucide-react";
 import { NectoBanner } from "../shared/NectoBanner";
 
+import { useCatalog } from "@/compositions/catalog/context/CatalogContext";
+
 export const CatalogoInteligenteView: React.FC<{
   targetProductId?: string | null;
 }> = ({ targetProductId }) => {
   const {
     products,
-    ingredients,
     toggleProductAvailability,
     updateProduct,
     addProduct,
+  } = useCatalog();
+
+  const {
+    ingredients,
     orders,
     createManualOrder,
     hasInventarios,

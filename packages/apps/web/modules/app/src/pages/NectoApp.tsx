@@ -43,16 +43,8 @@ import { BaseAppShell } from "@/shell";
 import { AppFooter } from "@/shell/footer";
 import { BasePageLayout, BasePageHeader } from "@/layouts/base-page";
 import { StockFlowSidebar } from "@/compositions/shell/StockFlowSidebar";
-import { StockFlowHeader } from "@/compositions/shell/StockFlowHeader";
-
-
-export type InventariosRole = "operador" | "analista";
-export type OperadorSubView = string;
-export type AnalistaSubView = string;
-
-/* ── Brand Colors ────────────────────────────────────────────────────────── */
-
-/* ── Notifications ───────────────────────────────────────────────────────── */
+import { eventBus } from "@/infrastructure/eventBus";
+import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
 
 interface NotificationItem {
   id: string;
@@ -353,19 +345,212 @@ export default function App() {
   }, [searchParams]);
 
   useEffect(() => {
-    const handleNavigate = (e: any) => {
-      if (e.detail?.section) {
-        handleNavigatePedidos(e.detail.section, e.detail.opTab || e.detail.geTab);
+    const unsubNavigate = eventBus.subscribe("necto_navigate_pedidos", (payload) => {
+      if (payload.section) {
+        handleNavigatePedidos(payload.section as any, (payload as any).opTab || (payload as any).geTab);
       }
-    };
-    const handleOpenSettingsEvent = (e: any) => {
-      handleOpenSettings(e.detail?.tab || "general");
-    };
-    window.addEventListener("necto_navigate_pedidos", handleNavigate);
-    window.addEventListener("necto_open_settings", handleOpenSettingsEvent);
+    });
+    const unsubSettings = eventBus.subscribe("necto_open_settings", (payload) => {
+      handleOpenSettings(payload.tab || "general");
+    });
     return () => {
-      window.removeEventListener("necto_navigate_pedidos", handleNavigate);
-      window.removeEventListener("necto_open_settings", handleOpenSettingsEvent);
+      unsubNavigate();
+      unsubSettings();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+
+
+  const [targetOrderId, setTargetOrderId] = useState<string | null>(null);
+  const [targetModal, setTargetModal] = useState<"ticket" | "ai" | "incidencias" | "product" | null>(null);
+  const [targetProductId, setTargetProductId] = useState<string | null>(null);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: "1",
+      title: "Nuevo Pedido Interpretado por IA",
+      desc: "Mariana Silva envió solicitud vía WhatsApp por $75.000 (Confianza Alta)",
+      time: "Hace 2 min",
+      unread: true,
+      type: "order",
+      module: "pedidos",
+      pedidosSection: "operacion",
+      pedidosOpTab: "en-vivo",
+      targetOrderId: "PED-1025",
+      targetModal: "ai",
+    },
+    {
+      id: "2",
+      title: "Alerta de Pedido Retrasado",
+      desc: "PED-1020 superó el tiempo estimado de entrega",
+      time: "Hace 15 min",
+      unread: true,
+      type: "alert",
+      module: "pedidos",
+      pedidosSection: "operacion",
+      pedidosOpTab: "preparacion",
+      targetOrderId: "PED-1020",
+      targetModal: "ticket",
+    },
+    {
+      id: "3",
+      title: "Alerta de Stock Crítico",
+      desc: "Stock en nivel mínimo para producto de alta rotación",
+      time: "Hace 40 min",
+      unread: false,
+      type: "stock",
+      module: "pedidos",
+      pedidosSection: "menu",
+      pedidosGeTab: "catalogo",
+      targetProductId: "p3",
+      targetModal: "product",
+    },
+  ]);
+
+  const handleNavigateFromNotification = (n: NotificationItem) => {
+    setActiveModule("pedidos");
+    const sec: PedidosSection =
+      n.pedidosSection === "gestion"
+        ? (n.pedidosGeTab === "insumos" || n.pedidosGeTab === "catalogo" ? "menu" : "configuracion")
+        : (n.pedidosSection || "operacion");
+    const tab = sec === "operacion" ? (n.pedidosOpTab || "en-vivo") : (n.pedidosGeTab || "catalogo");
+
+    handleNavigatePedidos(sec, tab);
+
+    setTargetOrderId(null);
+    setTargetModal(null);
+    setTargetProductId(null);
+    setTimeout(() => {
+      setTargetOrderId(n.targetOrderId || null);
+      setTargetModal(n.targetModal || null);
+      setTargetProductId(n.targetProductId || null);
+    }, 20);
+  };
+
+  // Breadcrumb Labels Calculation
+  const pedidosOpPageNames: Record<OperacionTab, string> = {
+    "en-vivo": "Pedidos en Vivo",
+    "preparacion": semantics?.stationNoun || "Alistamiento & Despacho",
+    "programados": "Pedidos Programados",
+    "conversaciones": "Atención WhatsApp & Clientes",
+  };
+
+  const pedidosGePageNames: Record<GestionTab, string> = {
+    resumen: "Dashboard de Pedidos",
+    historial: "Historial de Pedidos",
+    catalogo: isFood ? "Catálogo de Platos" : "Catálogo de Productos",
+    insumos: isFood ? "Insumos & Recetas" : "Insumos & Materiales",
+    roles: "Roles & Permisos",
+    automatizaciones: "Automatizaciones & Flujos",
+    turnos: "Turnos y Horarios",
+    analitica: "Analítica Comercial",
+  };
+
+  const sectionRoleNames: Record<PedidosSection, string> = {
+    ordenes: "Órdenes",
+    programados: "Pedidos Programados",
+    preparacion: "Preparación & Alistamiento",
+    canales: "Canales de Venta",
+    configuracion: "Configuración",
+    operacion: "Órdenes",
+    menu: isFood ? "Menú & Insumos" : "Catálogo de Productos",
+    analitica: "Analítica & Reportes",
+    gestion: "Gestión",
+    whatsapp: "Bandeja de Conversaciones",
+    conversaciones: "Bandeja de Conversaciones",
+  };
+
+  const currentRoleName = sectionRoleNames[pedidosSection] || "Pedidos";
+  const currentPageName =
+    pedidosSection === "ordenes" || pedidosSection === "operacion"
+      ? (pedidosOpTab === "conversaciones" ? "Atención WhatsApp & Clientes" : "Órdenes Activas")
+      : pedidosSection === "programados"
+      ? "Pedidos Programados"
+      : pedidosSection === "preparacion"
+      ? "Mesa de Preparación & Alistamiento"
+      : pedidosSection === "canales"
+      ? "Canales de Entrada"
+      : pedidosSection === "conversaciones" || pedidosSection === "whatsapp"
+      ? "Bandeja de Conversaciones"
+      : pedidosSection === "configuracion"
+      ? "Configuración del Módulo"
+      : pedidosGePageNames[pedidosGeTab] || "Pedidos";
+
+  const isModulesHub = !hasAnyModule || activeModule === "modules-hub";
+
+  const pageTitle =
+    isModulesHub
+      ? "Módulos de Tienda"
+      : activeModule === "inventarios"
+      ? (inventarioTab === "valuation"
+          ? "Valor de Inventario"
+          : inventarioTab === "locations"
+          ? "Bodegas & Sucursales"
+          : inventarioTab === "purchasing"
+          ? "Compras & Facturas"
+          : inventarioTab === "kardex"
+          ? "Historial de Movimientos"
+  };
+
+  // Synchronize when URL parameters change (e.g. from CommandPalette, direct links, or Hub)
+  useEffect(() => {
+    const mod = searchParams.get("module");
+    if (mod === "modules-hub") {
+      setActiveModule("modules-hub");
+      return;
+    }
+    if (mod === "inventarios") {
+      setActiveModule("inventarios");
+      const t = searchParams.get("tab") as InventoryTab | null;
+      if (t) {
+        setInventarioTab(t);
+      }
+      return;
+    }
+    const s = searchParams.get("section") as PedidosSection | null;
+    const t = searchParams.get("tab") as string | null;
+    if (s) {
+      if (s === "configuracion") {
+        setIsSettingsModalOpen(true);
+        setActiveModule("pedidos");
+        setPedidosSection("ordenes");
+        setSearchParams({ section: "ordenes" }, { replace: true });
+        return;
+      }
+      setActiveModule("pedidos");
+      setPedidosSection(s);
+      if (s === "operacion") {
+        if (t === "en-vivo" || t === "preparacion" || t === "programados" || t === "conversaciones") {
+          setPedidosOpTab(t as OperacionTab);
+        }
+      } else {
+        if (t) {
+          setPedidosGeTab(t as GestionTab);
+        }
+      }
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const unsubNavigate = eventBus.subscribe("necto_navigate_pedidos", (payload) => {
+      if (payload.section) {
+        handleNavigatePedidos(payload.section as any, (payload as any).opTab || (payload as any).geTab);
+      }
+    });
+    const unsubSettings = eventBus.subscribe("necto_open_settings", (payload) => {
+      handleOpenSettings(payload.tab || "general");
+    });
+    return () => {
+      unsubNavigate();
+      unsubSettings();
     };
   }, []);
 
@@ -533,117 +718,141 @@ export default function App() {
       ];
 
   return (
-    <>
-      <BaseAppShell
-        sidebar={
-          <StockFlowSidebar
-            activeModule={activeModule}
-            pedidosSection={pedidosSection}
-            pedidosOpTab={pedidosOpTab}
-            pedidosGeTab={pedidosGeTab}
-            inventarioTab={inventarioTab}
-            onNavigatePedidos={handleNavigatePedidos}
-            onNavigateModule={handleNavigateModule}
-            onNavigateInventario={handleNavigateInventario}
-            onOpenRoleModal={() => setIsRoleModalOpen(true)}
-            onOpenSettingsModal={(tab) => handleOpenSettings(tab || "general")}
-            activeRoleName={activeRole?.name || "Dueño"}
-          />
-        }
-        header={
-          <StockFlowHeader
-            breadcrumbItems={breadcrumbItems}
-            activeRoleName={activeRole?.name || "Dueño"}
-            onOpenRoleModal={() => setIsRoleModalOpen(true)}
-            notificationsDropdown={
-              <NotificationBellDropdown
-                notifications={notifications}
-                setNotifications={setNotifications}
-                onNavigate={handleNavigateFromNotification}
-              />
-            }
-          />
-        }
-        footer={<AppFooter />}
-      >
-        <BasePageLayout
-          header={
-            activeModule === "pedidos" ? null : (
-              <BasePageHeader
-                title={pageTitle}
-                breadcrumbItems={breadcrumbItems}
-              />
-            )
+    <CatalogProvider>
+      <ChannelsProvider>
+        <InventoryProvider>
+          <BaseAppShell
+          sidebar={
+            <StockFlowSidebar
+              activeSection={
+                activeModule === "inventarios"
+                  ? "inventarios"
+                  : isModulesHub
+                  ? "hub"
+                  : pedidosSection
+              }
+              activeTab={
+                activeModule === "inventarios"
+                  ? inventarioTab
+                  : pedidosSection === "operacion"
+                  ? pedidosOpTab
+                  : pedidosGeTab
+              }
+              onSelectSection={(sec) => {
+                if (sec === "inventarios") {
+                  handleNavigateInventario("products");
+                } else if (sec === "hub") {
+                  setSearchParams({});
+                } else {
+                  handleNavigatePedidos(sec as PedidosSection, sec === "operacion" ? pedidosOpTab : pedidosGeTab);
+                }
+              }}
+              onSelectTab={(tab) => {
+                if (activeModule === "inventarios") {
+                  handleNavigateInventario(tab as InventoryTab);
+                } else if (pedidosSection === "operacion") {
+                  handleNavigatePedidos("operacion", tab as OperacionTab);
+                } else {
+                  handleNavigatePedidos(pedidosSection, tab as GestionTab);
+                }
+              }}
+              onOpenSettings={handleOpenSettings}
+            />
           }
+          header={
+            <StockFlowHeader
+              breadcrumbItems={breadcrumbItems}
+              activeRoleName={activeRole?.name || "Dueño"}
+              onOpenRoleModal={() => setIsRoleModalOpen(true)}
+              notificationsDropdown={
+                <NotificationBellDropdown
+                  notifications={notifications}
+                  setNotifications={setNotifications}
+                  onNavigate={handleNavigateFromNotification}
+                />
+              }
+            />
+          }
+          footer={<AppFooter />}
         >
-          {isModulesHub ? (
-            <EmptyModulesHubView
-              business={activeBusiness}
-              onNavigateToModule={(mod) => {
-                if (mod === "pedidos") {
-                  handleNavigatePedidos("operacion", "en-vivo");
-                } else if (mod === "inventarios") {
-                  handleNavigateInventario("products");
-                }
-              }}
-              onOpenSettings={handleOpenSettings}
-            />
-          ) : activeModule === "inventarios" && hasInventarios ? (
-            <ModuloInventario
-              activeTab={inventarioTab}
-              onNavigateTab={handleNavigateInventario}
-            />
-          ) : hasPedidos ? (
-            <PedidosModule
-              sectionProp={pedidosSection}
-              opTabProp={pedidosOpTab}
-              geTabProp={pedidosGeTab}
-              targetOrderId={targetOrderId}
-              targetModal={targetModal}
-              targetProductId={targetProductId}
-              onOpenSettings={handleOpenSettings}
-              onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
-              onOpTabChange={t => handleNavigatePedidos("operacion", t)}
-              onGeTabChange={t => {
-                const targetSec: PedidosSection =
-                  (t === "resumen" || t === "historial" || t === "analitica")
-                    ? "analitica"
-                    : (t === "roles" || t === "automatizaciones" || t === "turnos")
-                    ? "configuracion"
-                    : "menu";
-                handleNavigatePedidos(targetSec, t);
-              }}
-            />
-          ) : (
-            <EmptyModulesHubView
-              business={activeBusiness}
-              onNavigateToModule={(mod) => {
-                if (mod === "pedidos") {
-                  handleNavigatePedidos("operacion", "en-vivo");
-                } else if (mod === "inventarios") {
-                  handleNavigateInventario("products");
-                }
-              }}
-              onOpenSettings={handleOpenSettings}
-            />
-          )}
-        </BasePageLayout>
-      </BaseAppShell>
+          <BasePageLayout
+            header={
+              activeModule === "pedidos" ? null : (
+                <BasePageHeader
+                  title={pageTitle}
+                  breadcrumbItems={breadcrumbItems}
+                />
+              )
+            }
+          >
+            {isModulesHub ? (
+              <EmptyModulesHubView
+                business={activeBusiness}
+                onNavigateToModule={(mod) => {
+                  if (mod === "pedidos") {
+                    handleNavigatePedidos("operacion", "en-vivo");
+                  } else if (mod === "inventarios") {
+                    handleNavigateInventario("products");
+                  }
+                }}
+                onOpenSettings={handleOpenSettings}
+              />
+            ) : activeModule === "inventarios" && hasInventarios ? (
+              <ModuloInventario
+                activeTab={inventarioTab}
+                onNavigateTab={handleNavigateInventario}
+              />
+            ) : hasPedidos ? (
+              <PedidosModule
+                sectionProp={pedidosSection}
+                opTabProp={pedidosOpTab}
+                geTabProp={pedidosGeTab}
+                targetOrderId={targetOrderId}
+                targetModal={targetModal}
+                targetProductId={targetProductId}
+                onOpenSettings={handleOpenSettings}
+                onSectionChange={s => handleNavigatePedidos(s, s === "operacion" ? pedidosOpTab : pedidosGeTab)}
+                onOpTabChange={t => handleNavigatePedidos("operacion", t)}
+                onGeTabChange={t => {
+                  const targetSec: PedidosSection =
+                    (t === "resumen" || t === "historial" || t === "analitica")
+                      ? "analitica"
+                      : (t === "roles" || t === "automatizaciones" || t === "turnos")
+                      ? "configuracion"
+                      : "menu";
+                  handleNavigatePedidos(targetSec, t);
+                }}
+              />
+            ) : (
+              <EmptyModulesHubView
+                business={activeBusiness}
+                onNavigateToModule={(mod) => {
+                  if (mod === "pedidos") {
+                    handleNavigatePedidos("operacion", "en-vivo");
+                  } else if (mod === "inventarios") {
+                    handleNavigateInventario("products");
+                  }
+                }}
+                onOpenSettings={handleOpenSettings}
+              />
+            )}
+          </BasePageLayout>
+        </BaseAppShell>
 
-      <CommandPalette />
-      <RoleSelectionModal
-        business={activeBusiness}
-        isOpen={isRoleModalOpen}
-        onClose={() => setIsRoleModalOpen(false)}
-      />
-      <BusinessSettingsModal
-        business={activeBusiness}
-        isOpen={isSettingsModalOpen}
-        initialTab={settingsInitialTab}
-        onClose={() => setIsSettingsModalOpen(false)}
-      />
-    </>
+        <CommandPalette />
+        <RoleSelectionModal
+          business={activeBusiness}
+          isOpen={isRoleModalOpen}
+          onClose={() => setIsRoleModalOpen(false)}
+        />
+        <BusinessSettingsModal
+          business={activeBusiness}
+          isOpen={isSettingsModalOpen}
+          initialTab={settingsInitialTab}
+          onClose={() => setIsSettingsModalOpen(false)}
+        />
+        </InventoryProvider>
+      </ChannelsProvider>
+    </CatalogProvider>
   );
 }
-
-

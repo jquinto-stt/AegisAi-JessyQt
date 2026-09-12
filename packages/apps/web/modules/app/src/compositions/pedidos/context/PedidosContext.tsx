@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { eventBus } from "@/infrastructure/eventBus";
 import {
   Pedido,
   ProductItem,
@@ -22,7 +23,6 @@ import {
 import {
   INITIAL_ORDERS,
   INITIAL_HISTORIAL_ORDERS,
-  INITIAL_PRODUCTS,
   INITIAL_AUTOMATIONS,
   INITIAL_RECURRENCES,
   INITIAL_SHIFT_INFO,
@@ -32,7 +32,6 @@ import {
   INITIAL_INGREDIENTS,
   INITIAL_MOVEMENTS,
   INITIAL_CONVERSATIONS,
-  getMockProductsForBusiness,
   getMockOrdersForBusiness,
   getMockConversationsForBusiness,
   getMockProgramadosForBusiness,
@@ -40,13 +39,6 @@ import {
 import { useBusiness } from "@/context/BusinessContext";
 import { playNewOrderSound, playSuccessSound, playUrgentAlertSound } from "../utils/soundEffects";
 import { useAuth } from "../../../auth/AuthContext";
-import {
-  listProducts as apiListProducts,
-  createProduct as apiCreateProduct,
-  updateProduct as apiUpdateProduct,
-  USE_MOCK as PRODUCTS_USE_MOCK,
-} from "../../../api/products";
-import { toProductItem, toApiProduct } from "../adapters/productAdapter";
 import { createInventoryAdapter, InventoryPort } from "../adapters/inventoryAdapter";
 
 interface PedidosContextType {
@@ -56,9 +48,6 @@ interface PedidosContextType {
   historialOrders: Pedido[];
   allOrders: Pedido[];
   programados: Pedido[];
-  products: ProductItem[];
-  ingredients: StockIngredientItem[];
-  stockMovements: StockMovement[];
   automations: AutomationRule[];
   recurrences: RecurrenceConfig[];
   shiftInfo: ShiftInfo;
@@ -98,14 +87,6 @@ interface PedidosContextType {
   ) => void;
   adjustEstimate: (orderId: string, deltaMinutes: number) => void;
   approveAIOrder: (orderId: string, customItems?: OrderItem[]) => void;
-  toggleProductAvailability: (productId: string) => void;
-  updateProductPrice: (productId: string, newPrice: number) => void;
-  updateProduct: (productId: string, updatedFields: Partial<ProductItem>) => void;
-  addProduct: (newProduct: Omit<ProductItem, "id">) => void;
-  addIngredient: (newIng: Omit<StockIngredientItem, "id">) => void;
-  updateIngredient: (id: string, patch: Partial<StockIngredientItem>) => void;
-  deleteIngredient: (id: string) => void;
-  registerStockMovement: (mov: Omit<StockMovement, "id" | "timestamp">) => void;
   consumeStockForOrder: (order: Pedido) => void;
   toggleAutomationRule: (ruleId: string) => void;
   toggleRecurrence: (recurrenceId: string) => void;
@@ -118,41 +99,6 @@ interface PedidosContextType {
   addIncidencia: (inc: Omit<Incidencia, "id" | "timestamp" | "isResolved">) => void;
   createManualOrder: (newOrder: Partial<Pedido>) => void;
   injectScheduledOrderToLive: (orderId: string, directToKitchen?: boolean) => void;
-
-  // Human-in-the-Loop — Conversaciones WhatsApp / IA
-  conversations: Conversation[];
-  selectedConversationId: string | null;
-  setSelectedConversationId: (id: string | null) => void;
-  /** Nombre legible del operador actual (para controlledBy / autoría de mensajes). */
-  currentOperatorName: string;
-  /** Transición genérica de estado del hilo (registra evento de auditoría). */
-  transitionConversation: (conversationId: string, toStatus: ConversationStatus, note?: string) => void;
-  /** El operador toma el control: IA pasa a pausa (HUMANO_ATENDIENDO). */
-  takeControl: (conversationId: string) => void;
-  /** Devuelve el control a la IA (IA_ATENDIENDO). */
-  releaseToAI: (conversationId: string) => void;
-  /** Marca el caso como resuelto (RESUELTO). */
-  resolveConversation: (conversationId: string) => void;
-  /** El operador (dueño del control) envía un mensaje al cliente. */
-  sendOperatorMessage: (conversationId: string, text: string) => void;
-  /** Marca una conversación como que requiere intervención humana. */
-  flagForHandoff: (conversationId: string, reason: HandoffReason) => void;
-  /** Marca la conversación como leída (limpia el badge de no-leído). */
-  markConversationRead: (conversationId: string) => void;
-  /** Crea o confirma el Pedido oficial en el Kanban a partir del borrador de la conversación. */
-  confirmDraftOrder: (conversationId: string) => string | undefined;
-  /** DEMO: simula un mensaje entrante del cliente. */
-  simulateCustomerMessage: (
-    conversationId: string,
-    text: string,
-    options?: { isOrder?: boolean; isReceipt?: boolean }
-  ) => void;
-  /** DEMO: simula una respuesta de la IA (solo si está en IA_ATENDIENDO). */
-  simulateAIReply: (conversationId: string, text: string) => void;
-  /** Navega directamente al hilo de WhatsApp del cliente asociado al pedido */
-  openWhatsAppConversation: (orderIdOrConvId: string) => void;
-  /** Envía un mensaje / alerta operativo directamente al WhatsApp del cliente */
-  sendWhatsAppStatusAlert: (orderId: string, customMessage: string) => void;
 }
 
 const PedidosContext = createContext<PedidosContextType | null>(null);
@@ -171,35 +117,20 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 
   const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
-  const [products, setProducts] = useState<ProductItem[]>(() =>
-    activeBusiness ? getMockProductsForBusiness(activeBusiness.businessType, activeBusiness.name) : INITIAL_PRODUCTS
-  );
-  const [ingredients, setIngredients] = useState<StockIngredientItem[]>(INITIAL_INGREDIENTS);
-  const [stockMovements, setStockMovements] = useState<StockMovement[]>(INITIAL_MOVEMENTS);
   const [automations, setAutomations] = useState<AutomationRule[]>(INITIAL_AUTOMATIONS);
   const [recurrences, setRecurrences] = useState<RecurrenceConfig[]>(INITIAL_RECURRENCES);
   const [shiftInfo, setShiftInfo] = useState<ShiftInfo>(INITIAL_SHIFT_INFO);
   const [storePace, setStorePaceState] = useState<StorePaceMode>("habitual");
   const [incidencias, setIncidencias] = useState<Incidencia[]>(INITIAL_INCIDENCIAS);
   const [kpis, setKpis] = useState<ResumenKPIs>(INITIAL_KPIS);
-  const [conversations, setConversations] = useState<Conversation[]>(() =>
-    activeBusiness ? getMockConversationsForBusiness(activeBusiness) : INITIAL_CONVERSATIONS
-  );
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-
-  // Sincronización reactiva del catálogo, órdenes, programados y conversaciones al cambiar de empresa
+  // Sincronización reactiva de órdenes y programados al cambiar de empresa
   useEffect(() => {
     if (!activeBusiness) return;
-    const newProducts = getMockProductsForBusiness(activeBusiness.businessType, activeBusiness.name);
     const newOrders = getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name);
     const newProgramados = getMockProgramadosForBusiness(activeBusiness.businessType);
-    const newConversations = getMockConversationsForBusiness(activeBusiness);
 
-    setProducts(newProducts);
     setOrders(newOrders);
     setProgramados(newProgramados);
-    setConversations(newConversations);
-    setSelectedConversationId(newConversations[0]?.id ?? null);
   }, [activeBusiness?.id]);
 
   // Nombre legible del operador actual. En el mockup, si no hay sesión Cognito
@@ -269,7 +200,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsPreparacionEnabledState(enabled);
     try {
       localStorage.setItem("necto_pedidos_preparacion_enabled", JSON.stringify(enabled));
-      window.dispatchEvent(new Event("necto_preparacion_toggle"));
+      eventBus.publish("necto_preparacion_toggle", { active: enabled });
     } catch (e) {}
   };
 
@@ -280,10 +211,12 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (saved !== null) setIsPreparacionEnabledState(JSON.parse(saved));
       } catch (e) {}
     };
-    window.addEventListener("necto_preparacion_toggle", handleToggle);
+    const unsub = eventBus.subscribe("necto_preparacion_toggle", (payload) => {
+      setIsPreparacionEnabledState(payload.active);
+    });
     window.addEventListener("storage", handleToggle);
     return () => {
-      window.removeEventListener("necto_preparacion_toggle", handleToggle);
+      unsub();
       window.removeEventListener("storage", handleToggle);
     };
   }, []);
@@ -422,49 +355,15 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const shouldConsumeStock = isFulfillmentFinished && !order.isStockConsumed;
 
         if (shouldConsumeStock) {
-          void inventoryAdapter.handleOrderEvent({ type: "OrderReady", order });
-          setTimeout(() => consumeStockForOrder(order), 50);
+          consumeStockForOrder(order);
         }
 
         // Automatic WhatsApp notification to the customer's chat thread
         if (order.channel === "whatsapp") {
-          setTimeout(() => {
-            const orderNoun = semantics?.orderNoun?.toLowerCase() || "pedido";
-            const stationNoun = semantics?.stationNoun?.toLowerCase() || "alistamiento y empaque";
-            const statusMessages: Partial<Record<OrderStatus, string>> = {
-              CONFIRMADO: semantics?.requiresKitchenDisplay
-                ? `¡Tu pedido #${order.id} fue confirmado! En breve entra a preparación en cocina.`
-                : `¡Tu ${orderNoun} #${order.id} fue confirmado! En breve inicia su ${stationNoun}.`,
-              EN_PREPARACION: semantics?.requiresKitchenDisplay
-                ? `Tu comanda #${order.id} ya ingresó al horno de cocina y se está preparando.`
-                : `Tu ${orderNoun} #${order.id} ya se encuentra en ${stationNoun}.`,
-              LISTO: `¡Tu ${orderNoun} #${order.id} está listo y empacado para retiro / entrega!`,
-              ENTREGADO: `¡Tu ${orderNoun} #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
-              FINALIZADO: `¡Tu ${orderNoun} #${order.id} ha sido entregado! Muchas gracias por tu compra.`,
-              CANCELADO: `Tu ${orderNoun} #${order.id} ha sido cancelado. Si tienes dudas, estamos a tu disposición.`,
-            };
-            const msgText = statusMessages[toStatus];
-            if (msgText) {
-              setConversations(prevConvs =>
-                prevConvs.map(c => {
-                  if (c.orderId === order.id || (c.customerPhone && order.customerPhone && c.customerPhone.replace(/\D/g, '') === order.customerPhone.replace(/\D/g, ''))) {
-                    const newMsg: ChatMessage = {
-                      id: `m-auto-${Date.now()}`,
-                      sender: "ia",
-                      text: msgText,
-                      timestamp: timeStr,
-                    };
-                    return {
-                      ...c,
-                      lastMessageAt: timeStr,
-                      messages: [...c.messages, newMsg],
-                    };
-                  }
-                  return c;
-                })
-              );
-            }
-          }, 60);
+          eventBus.publish("orderStateChanged", {
+            orderId: order.id,
+            newState: toStatus,
+          });
         }
 
         return {
@@ -779,217 +678,10 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
-  // Persist a partial product update to the Products API (best-effort).
-  const persistUpdate = async (
-    productId: string,
-    patch: Partial<{ name: string; sku: string; price: number; stock: number }>,
-  ) => {
-    try {
-      const token = await getIdToken().catch(() => "");
-      await apiUpdateProduct(productId, patch, token);
-    } catch (err) {
-      console.error("[PedidosContext] failed to update product", err);
-    }
-  };
-
-  // Synergy with Catalog
-  const toggleProductAvailability = (productId: string) => {
-    setProducts(prev =>
-      prev.map(p => {
-        if (p.id !== productId) return p;
-        const nextAvail = !p.isAvailable;
-        if (!nextAvail) {
-          addIncidencia({
-            title: `Producto '${p.name}' deshabilitado`,
-            severity: "Media",
-            type: "producto_desactivado",
-            description: `Se desactivó la disponibilidad de ${p.name} en catálogo. Los pedidos activos vigentes se mantendrán.`,
-          });
-        }
-        return { ...p, isAvailable: nextAvail };
-      })
-    );
-  };
-
-  const updateProductPrice = (productId: string, newPrice: number) => {
-    // Optimistic local update, then persist to the API (best-effort).
-    setProducts(prev =>
-      prev.map(p => (p.id === productId ? { ...p, price: newPrice } : p))
-    );
-    void persistUpdate(productId, { price: newPrice });
-  };
-
-  const updateProduct = (productId: string, updatedFields: Partial<ProductItem>) => {
-    setProducts(prev =>
-      prev.map(p => (p.id === productId ? { ...p, ...updatedFields } : p))
-    );
-    // Persist only the fields the Products API owns (name/sku/price/stock).
-    const apiPatch: Partial<{ name: string; sku: string; price: number; stock: number }> = {};
-    if (updatedFields.name !== undefined) apiPatch.name = updatedFields.name;
-    if (updatedFields.code !== undefined) apiPatch.sku = updatedFields.code;
-    if (updatedFields.price !== undefined) apiPatch.price = updatedFields.price;
-    if (updatedFields.stockEstimated !== undefined) apiPatch.stock = updatedFields.stockEstimated;
-    if (Object.keys(apiPatch).length > 0) void persistUpdate(productId, apiPatch);
-  };
-
-  const addProduct = (newProduct: Omit<ProductItem, "id">) => {
-    // Optimistic insert with a temporary id, then reconcile with the API id.
-    const tempId = `tmp-${Date.now()}`;
-    const optimistic: ProductItem = { ...newProduct, id: tempId };
-    setProducts(prev => [optimistic, ...prev]);
-
-    (async () => {
-      try {
-        const token = await getIdToken().catch(() => "");
-        const created = await apiCreateProduct(
-          toApiProduct({
-            name: newProduct.name,
-            code: newProduct.code,
-            price: newProduct.price,
-            stockEstimated: newProduct.stockEstimated,
-          }),
-          token,
-        );
-        setProducts(prev =>
-          prev.map(p => (p.id === tempId ? toProductItem(created, { ...optimistic, id: created.id }) : p))
-        );
-      } catch (err) {
-        console.error("[PedidosContext] failed to create product", err);
-        if (!PRODUCTS_USE_MOCK) {
-          // Roll back the optimistic insert on a real API failure.
-          setProducts(prev => prev.filter(p => p.id !== tempId));
-        }
-      }
-    })();
-  };
-
-  const addIngredient = (newIng: Omit<StockIngredientItem, "id">) => {
-    const nextId = `ing-${Date.now().toString().slice(-4)}`;
-    const created: StockIngredientItem = { ...newIng, id: nextId };
-    setIngredients(prev => [created, ...prev]);
-  };
-
-  const updateIngredient = (id: string, patch: Partial<StockIngredientItem>) => {
-    setIngredients(prev =>
-      prev.map(ing => {
-        if (ing.id !== id) return ing;
-        const updated = { ...ing, ...patch };
-        if (patch.currentStock !== undefined || patch.minThreshold !== undefined) {
-          const stock = patch.currentStock !== undefined ? patch.currentStock : ing.currentStock;
-          const min = patch.minThreshold !== undefined ? patch.minThreshold : ing.minThreshold;
-          if (stock <= 0) updated.status = "AGOTADO";
-          else if (stock <= min * 0.5) updated.status = "CRITICO";
-          else if (stock <= min) updated.status = "BAJO";
-          else updated.status = "OPTIMO";
-        }
-        return updated;
-      })
-    );
-  };
-
-  const deleteIngredient = (id: string) => {
-    setIngredients(prev => prev.filter(i => i.id !== id));
-  };
-
-  const registerStockMovement = (mov: Omit<StockMovement, "id" | "timestamp">) => {
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const nextId = `mov-${Date.now().toString().slice(-4)}`;
-    const newMovement: StockMovement = {
-      ...mov,
-      id: nextId,
-      timestamp: `Hoy ${timeStr}`,
-    };
-
-    setStockMovements(prev => [newMovement, ...prev]);
-
-    setIngredients(prev =>
-      prev.map(ing => {
-        if (ing.id !== mov.ingredientId) return ing;
-        const newStock = Math.max(0, Number((ing.currentStock + mov.quantity).toFixed(2)));
-        let newStatus: StockIngredientItem["status"] = "OPTIMO";
-        if (newStock <= 0) newStatus = "AGOTADO";
-        else if (newStock <= ing.minThreshold * 0.5) newStatus = "CRITICO";
-        else if (newStock <= ing.minThreshold) newStatus = "BAJO";
-
-        if (newStock <= 0 && ing.currentStock > 0) {
-          products.forEach(p => {
-            if (p.recipe?.some(r => r.ingredientId === ing.id) && p.autoPauseOnStockOut && p.isAvailable) {
-              toggleProductAvailability(p.id);
-            }
-          });
-          addIncidencia({
-            title: `Quiebre de Stock: ${ing.name}`,
-            severity: "Alta",
-            type: "producto_desactivado",
-            description: `El insumo '${ing.name}' se agotó (${newStock} ${ing.unit}). Se pausaron automáticamente los productos asociados del catálogo.`,
-          });
-        }
-
-        return {
-          ...ing,
-          currentStock: newStock,
-          status: newStatus,
-          lastRestockedAt: mov.type === "INGRESO_PROVEEDOR" ? `Hoy ${timeStr}` : ing.lastRestockedAt,
-        };
-      })
-    );
-  };
-
   const consumeStockForOrder = (order: Pedido) => {
-    // 1. Descuento unificado en el inventario maestro ERP (ModuloInventario / Kardex) si está activo
-    void inventoryAdapter.consumeSaleOrder({
-      orderId: order.id,
-      items: order.items.map((item) => ({
-        productId: item.productId,
-        name: item.name,
-        quantity: item.quantity,
-      })),
-      channel: order.channel || "Comanda Digital",
-      author: "Motor de Ventas",
-    });
-
-    // 2. Descuento en recetas / insumos locales de cocina si aplica
-    order.items.forEach(orderItem => {
-      const product = products.find(p => p.id === orderItem.productId || p.name === orderItem.name);
-      if (product && product.recipe && product.recipe.length > 0) {
-        product.recipe.forEach(rec => {
-          const totalQty = rec.quantityRequired * orderItem.quantity;
-          registerStockMovement({
-            ingredientId: rec.ingredientId,
-            ingredientName: rec.ingredientName,
-            type: "VENTA_PEDIDO",
-            quantity: -Number(totalQty.toFixed(2)),
-            unit: rec.unit,
-            orderId: order.id,
-            reason: `Consumo automático por ${orderItem.quantity}x ${product.name} (Comanda ${order.id})`,
-            registeredBy: "Motor de Pedidos",
-          });
-        });
-      } else if (ingredients.length > 0) {
-        // Fallback: match by common ingredient keywords
-        const nameLower = orderItem.name.toLowerCase();
-        const matchedIng =
-          ingredients.find(
-            ing =>
-              nameLower.includes(ing.name.toLowerCase()) ||
-              ing.name.toLowerCase().includes(nameLower.split(" ")[0])
-          ) || ingredients[0];
-
-        if (matchedIng) {
-          const qty = matchedIng.unit === "kg" ? 0.12 * orderItem.quantity : orderItem.quantity;
-          registerStockMovement({
-            ingredientId: matchedIng.id,
-            ingredientName: matchedIng.name,
-            type: "VENTA_PEDIDO",
-            quantity: -Number(qty.toFixed(2)),
-            unit: matchedIng.unit,
-            orderId: order.id,
-            reason: `Consumo proporcional por ${orderItem.quantity}x ${orderItem.name} (Comanda ${order.id})`,
-            registeredBy: "Motor de Pedidos",
-          });
-        }
-      }
+    void inventoryAdapter.handleOrderEvent({
+      type: "OrderReady",
+      order,
     });
   };
 
@@ -1086,9 +778,9 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       type: newOrderData.type || "inmediato",
       status: "NUEVO",
       items: newOrderData.items || [
-        { productId: products[0].id, name: products[0].name, quantity: 2, unitPrice: products[0].price },
+        { productId: "p-01", name: "Producto de Catálogo", quantity: 2, unitPrice: 25000 },
       ],
-      total: newOrderData.total || products[0].price * 2,
+      total: newOrderData.total || 50000,
       createdAt: timeStr,
       estimatedMinutes: newOrderData.estimatedMinutes || 15 + shiftInfo.suggestedPrepBufferMinutes,
       elapsedMinutes: 0,
@@ -1358,593 +1050,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return newOrderId;
   };
 
-  // --- Simuladores de demo con respuesta y toma de pedido autónoma de IA ---
-  const simulateCustomerMessage = (
-    conversationId: string,
-    text: string,
-    options?: { isOrder?: boolean; isReceipt?: boolean }
-  ) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const timeStr = nowTime();
 
-    setConversations(prev =>
-      prev.map(conv => {
-        if (conv.id !== conversationId) return conv;
-        return {
-          ...conv,
-          lastMessageAt: timeStr,
-          unreadForOperator: conv.status !== "HUMANO_ATENDIENDO" ? true : conv.unreadForOperator,
-          messages: [
-            ...conv.messages,
-            {
-              id: `m-${Date.now()}`,
-              sender: "cliente",
-              text: trimmed,
-              timestamp: timeStr,
-              ...(options?.isReceipt
-                ? {
-                    attachmentType: "comprobante" as const,
-                    attachmentUrl:
-                      "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=400&q=80",
-                    attachmentMeta: {
-                      bank: "Nequi",
-                      amount: 45500,
-                      reference: `NQ-${Math.floor(1000000 + Math.random() * 9000000)}`,
-                      status: "PENDIENTE_VERIFICACION" as const,
-                    },
-                  }
-                : {}),
-            },
-          ],
-        };
-      })
-    );
-
-    // La IA responde automáticamente en 600ms con lógica conversacional multi-turno
-    setTimeout(() => {
-      setConversations(currentConvs => {
-        const conv = currentConvs.find(c => c.id === conversationId);
-        if (!conv) return currentConvs;
-
-        const lower = trimmed.toLowerCase();
-        const replyTime = nowTime();
-        const customerName = conv.customerName || "Lucía";
-
-        // CASO 1: Comprobante de pago o transferencia enviada
-        const isReceiptRequest =
-          options?.isReceipt ||
-          lower.includes("comprobante") ||
-          lower.includes("transferí") ||
-          lower.includes("transferencia") ||
-          lower.includes("pagué") ||
-          lower.includes("acá está el pago") ||
-          lower.includes("adjunto el pago");
-
-        if (isReceiptRequest) {
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "REQUIERE_INTERVENCION" as const,
-                  requiresHandoffReason: "VERIFICAR_PAGO_TRANSFERENCIA" as const,
-                  lastMessageAt: replyTime,
-                  unreadForOperator: true,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `Comprobante de Nequi recibido por $45.500 COP (Ref: #NQ-${Math.floor(100000 + Math.random() * 900000)})!\n\nPor seguridad financiera, un Administrador está validando la acreditación en la cuenta bancaria. Apenas se verifique el saldo, tu comanda entrará al horno inmediatamente. ¡Muchas gracias, ${customerName}!`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // CASO 2: Modificación / Upsell / Adición a comanda en borrador
-        const isAddingItems =
-          lower.includes("agrega") ||
-          lower.includes("sumale") ||
-          lower.includes("adicional") ||
-          lower.includes("también quiero") ||
-          lower.includes("chimichurri") ||
-          lower.includes("salsa") ||
-          lower.includes("gaseosa") ||
-          lower.includes("coca") ||
-          lower.includes("postre");
-
-        if (isAddingItems) {
-          return currentConvs.map(c => {
-            if (c.id !== conversationId) return c;
-            const currentDraft = c.draftOrder || {
-              items: [
-                { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 6, unitPrice: 5500, option: "Horneada" },
-                { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
-              ],
-              subtotal: 42000,
-              deliveryFee: 0,
-              total: 42000,
-            };
-
-            const hasChimi = currentDraft.items.some(i => i.name.includes("Chimichurri"));
-            const newItems = hasChimi
-              ? [
-                  ...currentDraft.items,
-                  { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 1, unitPrice: 4500 },
-                ]
-              : [
-                  ...currentDraft.items,
-                  { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
-                ];
-            const newSubtotal = newItems.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-            const newTotal = newSubtotal + (currentDraft.deliveryFee || 0);
-
-            return {
-              ...c,
-              draftOrder: {
-                ...currentDraft,
-                items: newItems,
-                subtotal: newSubtotal,
-                total: newTotal,
-              },
-              status: "IA_ATENDIENDO" as const,
-              lastMessageAt: replyTime,
-              messages: [
-                ...c.messages,
-                {
-                  id: `m-${Date.now()}`,
-                  sender: "ia",
-                  text: `¡Listo, ${customerName}! Agregué: 1x ${hasChimi ? "Gaseosa Cola" : "Salsa Chimichurri Especial de la Casa"}.\nNuevo total: $${newTotal.toLocaleString("es-CO")} COP.\n\n¿Confirmamos entrega a tu dirección habitual (Calle 72 # 11-45) o prefieres retirar por el local? ¿Cómo deseas pagar (Nequi / Daviplata / Efectivo)?`,
-                  timestamp: replyTime,
-                },
-              ],
-            };
-          });
-        }
-
-        // CASO 3: Confirmación de Dirección / Método de Pago
-        const isAddressOrPayment =
-          lower.includes("calle") ||
-          lower.includes("carrera") ||
-          lower.includes("dirección") ||
-          lower.includes("domicilio") ||
-          lower.includes("enviar a") ||
-          lower.includes("nequi") ||
-          lower.includes("bancolombia") ||
-          lower.includes("efectivo") ||
-          lower.includes("transferencia");
-
-        if (isAddressOrPayment) {
-          return currentConvs.map(c => {
-            if (c.id !== conversationId) return c;
-            const currentDraft = c.draftOrder || {
-              items: [
-                { productId: "prod-01", name: "Empanada de Carne Cortada a Cuchillo", quantity: 6, unitPrice: 5500, option: "Horneada" },
-                { productId: "prod-07", name: "Gaseosa Cola 354ml", quantity: 2, unitPrice: 4500 },
-                { productId: "extra-01", name: "Salsa Chimichurri Especial (120ml)", quantity: 1, unitPrice: 3500 },
-              ],
-              subtotal: 45500,
-              deliveryFee: 0,
-              total: 45500,
-            };
-
-            return {
-              ...c,
-              draftOrder: {
-                ...currentDraft,
-                deliveryAddress: "Calle 72 # 11-45 (Apto 402)",
-                deliveryType: "domicilio",
-                paymentMethod: "nequi",
-              },
-              status: "IA_ATENDIENDO" as const,
-              lastMessageAt: replyTime,
-              messages: [
-                ...c.messages,
-                {
-                  id: `m-${Date.now()}`,
-                  sender: "ia",
-                  text: `¡Perfecto! Despacho agendado para: Calle 72 # 11-45 (Apto 402).\n\n**Datos de Transferencia Oficial:**\n• **Nequi / Daviplata:** 310 987 6543\n• **Bancolombia Ahorros:** 104-892134-55\n• **Titular:** ${activeBusiness?.name || "StockFlow"} S.A.S.\n• **Total:** $${currentDraft.total.toLocaleString("es-CO")} COP\n\nPor favor envíanos la captura de tu comprobante por aquí para validar el pago y enviar tu ${semantics?.orderNoun?.toLowerCase() || "orden"} a ${semantics?.stationNoun?.toLowerCase() || "despacho"}.`,
-                  timestamp: replyTime,
-                },
-              ],
-            };
-          });
-        }
-
-        const storeName = activeBusiness?.name || "nuestra tienda";
-        const botGreeting = activeBusiness?.botConfig?.greeting || `¡Hola ${customerName}! Bienvenido a ${storeName}.`;
-
-        // CASO 4: Pedido nuevo o solicitud de cotización/orden (Construye el borrador en el chat consumiendo el catálogo del Tenant)
-        const isOrderRequest =
-          options?.isOrder ||
-          lower.includes("quiero") ||
-          lower.includes("pedir") ||
-          lower.includes("comprar") ||
-          lower.includes("precio") ||
-          lower.includes("cotizar") ||
-          lower.includes("ordenar") ||
-          lower.includes("catalogo") ||
-          lower.includes("disponible") ||
-          lower.includes("taladro") ||
-          lower.includes("tornillo") ||
-          lower.includes("zapato") ||
-          lower.includes("empanada");
-
-        if (isOrderRequest) {
-          // El OMS toma los productos directamente del catálogo activo de la tienda (Tenant)
-          const primaryItem = products[0] || { id: "p-01", name: "Producto de Catálogo", price: 50000 };
-          const secondaryItem = products[1] || { id: "p-02", name: "Accesorio / Complemento", price: 25000 };
-
-          const initialItems = [
-            {
-              productId: primaryItem.id,
-              name: primaryItem.name,
-              quantity: 1,
-              unitPrice: primaryItem.price,
-            },
-            ...(products[1]
-              ? [
-                  {
-                    productId: secondaryItem.id,
-                    name: secondaryItem.name,
-                    quantity: 1,
-                    unitPrice: secondaryItem.price,
-                  },
-                ]
-              : []),
-          ];
-
-          const subtotal = initialItems.reduce((acc, i) => acc + i.quantity * i.unitPrice, 0);
-
-          const orderReplyText = `¡Hola ${customerName}! Con gusto, te armé el borrador de tu pedido para ${storeName}:\n\n${initialItems
-            .map(i => `• ${i.quantity}× ${i.name} ($${i.unitPrice.toLocaleString("es-CO")})`)
-            .join("\n")}\n\n• **Subtotal:** $${subtotal.toLocaleString("es-CO")} COP\n\n¿Deseas agregar algún producto adicional o confirmamos tus datos para entrega?`;
-
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  draftOrder: {
-                    items: initialItems,
-                    subtotal,
-                    deliveryFee: 0,
-                    total: subtotal,
-                  },
-                  status: "IA_ATENDIENDO" as const,
-                  lastMessageAt: replyTime,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: orderReplyText,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // CASO 5: Disparadores Human-in-the-Loop (HITL)
-        // 5a. Cliente solicita hablar con un operador humano
-        if (
-          lower.includes("humano") ||
-          lower.includes("persona") ||
-          lower.includes("asesor") ||
-          lower.includes("operador") ||
-          lower.includes("alguien real") ||
-          lower.includes("atención humana") ||
-          lower.includes("hablar con alguien")
-        ) {
-          if (isSoundEnabled) playUrgentAlertSound();
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "REQUIERE_INTERVENCION" as const,
-                  requiresHandoffReason: "CLIENTE_PIDE_HUMANO" as const,
-                  lastMessageAt: replyTime,
-                  unreadForOperator: true,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `¡Entendido, ${customerName}! Te estoy transfiriendo con un Administrador de nuestro equipo en vivo. En un momento un asesor tomará el control de este chat para asistirte.`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // 5b. Reclamos, pedidos demorados o incidencias
-        if (
-          lower.includes("reclamo") ||
-          lower.includes("queja") ||
-          lower.includes("no llega") ||
-          lower.includes("demorado") ||
-          lower.includes("está frío") ||
-          lower.includes("está fria") ||
-          lower.includes("llegó frío") ||
-          lower.includes("llegó mal") ||
-          lower.includes("incompleto") ||
-          lower.includes("pedido equivocado") ||
-          lower.includes("pieza equivocada")
-        ) {
-          if (isSoundEnabled) playUrgentAlertSound();
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "REQUIERE_INTERVENCION" as const,
-                  requiresHandoffReason: "RECLAMO_INCIDENCIA" as const,
-                  lastMessageAt: replyTime,
-                  unreadForOperator: true,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `Lamentamos mucho el inconveniente, ${customerName}. He marcado este caso con máxima prioridad y transferido la conversación a la Administración para darte una solución inmediata.`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // 5c. Solicitudes especiales, cotizaciones o facturación electrónica
-        if (
-          lower.includes("personalizada") ||
-          lower.includes("modificación") ||
-          lower.includes("descuento") ||
-          lower.includes("50 personas") ||
-          lower.includes("evento") ||
-          lower.includes("factura electrónica") ||
-          lower.includes("rut") ||
-          lower.includes("obra") ||
-          lower.includes("mayorista")
-        ) {
-          if (isSoundEnabled) playUrgentAlertSound();
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "REQUIERE_INTERVENCION" as const,
-                  requiresHandoffReason: "MODIFICACION_ESPECIAL" as const,
-                  lastMessageAt: replyTime,
-                  unreadForOperator: true,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: `Para solicitudes especiales o corporativas (${lower.includes("factura") ? "Facturación Electrónica DIAN" : "Cotización Especial de Volumen"}), he derivado tu consulta al Administrador para cotizar y validar directamente con ${semantics?.stationNoun?.toLowerCase() || "operaciones"}.`,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // CASO 6: Preguntas sobre Alérgenos, Tiempos, Garantías o Catálogo
-        if (
-          lower.includes("alergia") ||
-          lower.includes("alérgeno") ||
-          lower.includes("garantia") ||
-          lower.includes("garantía") ||
-          lower.includes("ficha") ||
-          lower.includes("calidad") ||
-          lower.includes("especificación") ||
-          lower.includes("cebolla") ||
-          lower.includes("queso") ||
-          lower.includes("celiaquia") ||
-          lower.includes("gluten")
-        ) {
-          const specReply = isFood
-            ? `¡Muy buena pregunta, ${customerName}!\n\nNuestras opciones contienen ingredientes frescos. Si tienes intolerancia a los lácteos o celiaquía estricta, avísanos para activar el protocolo de preparación en bandeja sellada libre de trazas. ¿Deseas que te recomiende opciones según tus preferencias?`
-            : `¡Muy buena pregunta, ${customerName}!\n\nEn ${activeBusiness?.name || "nuestra tienda"}, todos los productos y materiales cuentan con **garantía oficial de fabricante**, ficha técnica y certificación de calidad. Si requieres ficha técnica en PDF o especificación para obra civil, nuestro equipo te la suministra de inmediato. ¿Deseas consultar sobre algún material en particular?`;
-
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "IA_ATENDIENDO" as const,
-                  lastMessageAt: replyTime,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: specReply,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        if (
-          lower.includes("cuanto demora") ||
-          lower.includes("tiempo") ||
-          lower.includes("tardan") ||
-          lower.includes("demora") ||
-          lower.includes("hora")
-        ) {
-          const timeReply = isFood
-            ? `Nuestro tiempo promedio de entrega hoy es de **20 a 25 minutos** (10 min en cocción + 15 min de traslado en moto). Si realizas tu pedido ahora, te llegará aproximadamente en 25 minutos. ¿Te gustaría ordenar?`
-            : `Nuestro tiempo promedio de entrega es de **30 a 45 minutos** (preparación y embalaje en bodega + despacho express urbano con guía de seguimiento). Si confirmas tu orden antes de las 5:00 PM, sale en la ruta de hoy. ¿Te gustaría ordenar?`;
-
-          return currentConvs.map(c =>
-            c.id === conversationId
-              ? {
-                  ...c,
-                  status: "IA_ATENDIENDO" as const,
-                  lastMessageAt: replyTime,
-                  messages: [
-                    ...c.messages,
-                    {
-                      id: `m-${Date.now()}`,
-                      sender: "ia",
-                      text: timeReply,
-                      timestamp: replyTime,
-                    },
-                  ],
-                }
-              : c
-          );
-        }
-
-        // CASO 7: Respuesta general conversacional adaptada al tipo de negocio
-        const categories = activeBusiness?.botConfig?.catalogCategories || ["Herramientas Eléctricas", "Tornillería & Fijaciones", "Pinturas & Adhesivos"];
-        const generalReply = isFood
-          ? `¡Hola ${customerName}! Con gusto te atiendo. Estamos en turno con nuestro menú gastronómico, bebidas y combos. ¿Deseas hacer un pedido para entrega inmediata o consultar nuestra carta?`
-          : `${botGreeting}\n\nTenemos catálogo activo con stock disponible en:\n${categories.map(cat => `• ${cat}`).join("\n")}\n\n¿Deseas cotizar algún producto o consultar stock en bodega?`;
-
-        return currentConvs.map(c =>
-          c.id === conversationId
-            ? {
-                ...c,
-                status: "IA_ATENDIENDO" as const,
-                lastMessageAt: replyTime,
-                messages: [
-                  ...c.messages,
-                  {
-                    id: `m-${Date.now()}`,
-                    sender: "ia",
-                    text: generalReply,
-                    timestamp: replyTime,
-                  },
-                ],
-              }
-            : c
-        );
-      });
-    }, 600);
-  };
-
-  const simulateAIReply = (conversationId: string, text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const timeStr = nowTime();
-    setConversations(prev =>
-      prev.map(conv => {
-        if (conv.id !== conversationId) return conv;
-        // La IA sólo responde si tiene el control (exclusión mutua con el humano).
-        if (conv.status !== "IA_ATENDIENDO") return conv;
-        return {
-          ...conv,
-          lastMessageAt: timeStr,
-          messages: [
-            ...conv.messages,
-            { id: `m-${Date.now()}`, sender: "ia", text: trimmed, timestamp: timeStr },
-          ],
-        };
-      })
-    );
-  };
-
-  const openWhatsAppConversation = (orderIdOrConvId: string) => {
-    // 1. Find existing conversation by conv ID or order ID
-    let targetConv = conversations.find(
-      c => c.id === orderIdOrConvId || c.orderId === orderIdOrConvId
-    );
-
-    // 2. If not found by direct ID, search by order customer phone or name
-    const relatedOrder = allOrders.find(o => o.id === orderIdOrConvId);
-    if (!targetConv && relatedOrder) {
-      targetConv = conversations.find(
-        c =>
-          (c.customerPhone && relatedOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === relatedOrder.customerPhone.replace(/\D/g, "")) ||
-          c.customerName.toLowerCase() === relatedOrder.customerName.toLowerCase()
-      );
-    }
-
-    // 3. If still not found, create a realistic new conversation dynamically from the order details
-    if (!targetConv && relatedOrder) {
-      const newConvId = `CONV-${relatedOrder.id}`;
-      const newConv: Conversation = {
-        id: newConvId,
-        customerName: relatedOrder.customerName,
-        customerPhone: relatedOrder.customerPhone || "+54 11 0000-0000",
-        avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
-        channel: "whatsapp",
-        status: "IA_ATENDIENDO",
-        controlledBy: null,
-        aiConfidence: relatedOrder.aiConfidence || "Alta",
-        orderId: relatedOrder.id,
-        lastMessageAt: relatedOrder.createdAt || "18:30",
-        unreadForOperator: false,
-        messages: [
-          {
-            id: `m-init-1`,
-            sender: "cliente",
-            text: relatedOrder.aiRawMessage || `Hola! Queremos: ${relatedOrder.items.map(i => `${i.quantity}× ${i.name}`).join(", ")} porfa.`,
-            timestamp: relatedOrder.createdAt || "18:28",
-          },
-          {
-            id: `m-init-2`,
-            sender: "ia",
-            text: `¡Hola ${relatedOrder.customerName}! Registrado con gusto:\n${relatedOrder.items.map(i => `• ${i.quantity}× ${i.name} ${i.option ? `(${i.option})` : ""}`).join("\n")}\n\nTotal: $${relatedOrder.total.toLocaleString("es-CO")} COP\n${relatedOrder.customerAddress ? `Dirección: ${relatedOrder.customerAddress}\n` : ""}Tu ${semantics?.orderNoun?.toLowerCase() || "orden"} #${relatedOrder.id} está registrada en el sistema.`,
-            timestamp: relatedOrder.createdAt || "18:29",
-          },
-        ],
-        handoffHistory: [],
-      };
-      setConversations(prev => [newConv, ...prev]);
-      targetConv = newConv;
-    }
-
-    const convId = targetConv ? targetConv.id : orderIdOrConvId;
-    setSelectedConversationId(convId);
-    setSelectedOrderId(null);
-    setAiModalOrder(null);
-
-    // Notify application to navigate to WhatsApp tab
-    window.dispatchEvent(
-      new CustomEvent("necto_navigate_pedidos", {
-        detail: { section: "operacion", opTab: "conversaciones", conversationId: convId },
-      })
-    );
-  };
-
-  const sendWhatsAppStatusAlert = (orderId: string, customMessage: string) => {
-    const targetOrder = allOrders.find(o => o.id === orderId);
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    setConversations(prevConvs =>
-      prevConvs.map(c => {
-        if (
-          c.orderId === orderId ||
-          (targetOrder && c.customerPhone && targetOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === targetOrder.customerPhone.replace(/\D/g, "")) ||
-          (targetOrder && c.customerName.toLowerCase() === targetOrder.customerName.toLowerCase())
-        ) {
-          const newMsg: ChatMessage = {
-            id: `m-alert-${Date.now()}`,
-            sender: "ia",
-            text: customMessage,
-            timestamp: timeStr,
-          };
-          return {
-            ...c,
-            lastMessageAt: timeStr,
-            messages: [...c.messages, newMsg],
-          };
-        }
-        return c;
-      })
-    );
-  };
 
   return (
     <PedidosContext.Provider
@@ -1953,7 +1059,6 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         historialOrders,
         allOrders,
         programados,
-        products,
         ingredients,
         stockMovements,
         automations,
@@ -1990,14 +1095,6 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
         processReturnOrder,
         adjustEstimate,
         approveAIOrder,
-        toggleProductAvailability,
-        updateProductPrice,
-        updateProduct,
-        addProduct,
-        addIngredient,
-        updateIngredient,
-        deleteIngredient,
-        registerStockMovement,
         consumeStockForOrder,
         toggleAutomationRule,
         toggleRecurrence,

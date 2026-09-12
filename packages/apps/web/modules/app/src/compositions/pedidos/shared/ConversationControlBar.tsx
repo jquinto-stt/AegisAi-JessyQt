@@ -20,20 +20,24 @@ import { Button } from "@/elements";
 import { useBusiness } from "@/context/BusinessContext";
 import { CreateOrderFromConversationModal } from "./CreateOrderFromConversationModal";
 
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
+
 export const ConversationControlBar: React.FC<{ conversation: Conversation }> = ({ conversation }) => {
   const { semantics } = useBusiness();
   const {
-    orders,
     takeControl,
     releaseToAI,
     resolveConversation,
+    currentOperatorName,
+  } = useChannels();
+  const {
+    orders,
     confirmOrder,
     sendToKitchen,
     markOrderReady,
     deliverOrder,
     setAiModalOrder,
     setSelectedOrderId,
-    currentOperatorName,
   } = usePedidos();
 
   const [isCreateOrderModalOpen, setIsCreateOrderModalOpen] = useState(false);

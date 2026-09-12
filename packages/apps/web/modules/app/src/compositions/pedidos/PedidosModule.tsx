@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PedidosProvider, usePedidos } from "./context/PedidosContext";
 import { PedidosSection, OperacionTab, GestionTab } from "./types";
+import { eventBus } from "@/infrastructure/eventBus";
 import { PedidosEnVivoView } from "./operacion/PedidosEnVivoView";
 import { ProgramadosView } from "./operacion/ProgramadosView";
 import { PreparacionView } from "./operacion/PreparacionView";
@@ -124,30 +125,29 @@ const PedidosContent: React.FC<{
         }
       } catch (e) {}
     };
-    window.addEventListener("necto_layout_changed", handleLayoutUpdate);
+    const unsubLayout = eventBus.subscribe("necto_layout_changed", () => handleLayoutUpdate());
     window.addEventListener("storage", handleLayoutUpdate);
 
-    const handleNavigateEvent = (e: any) => {
-      if (e.detail?.section) {
-        const s = e.detail.section === "operacion" ? "ordenes" : e.detail.section;
-        setSection(s);
-        if (onSectionChange) onSectionChange(s);
+    const unsubNav = eventBus.subscribe("necto_navigate_pedidos", (payload) => {
+      if (payload.section) {
+        const s = payload.section === "operacion" ? "ordenes" : payload.section;
+        setSection(s as any);
+        if (onSectionChange) onSectionChange(s as any);
       }
-      if (e.detail?.opTab) {
-        setOpTab(e.detail.opTab);
-        if (onOpTabChange) onOpTabChange(e.detail.opTab);
+      if ((payload as any).opTab) {
+        setOpTab((payload as any).opTab);
+        if (onOpTabChange) onOpTabChange((payload as any).opTab);
       }
-      if (e.detail?.geTab) {
-        setGeTab(e.detail.geTab);
-        if (onGeTabChange) onGeTabChange(e.detail.geTab);
+      if ((payload as any).geTab) {
+        setGeTab((payload as any).geTab);
+        if (onGeTabChange) onGeTabChange((payload as any).geTab);
       }
-    };
-    window.addEventListener("necto_navigate_pedidos", handleNavigateEvent);
+    });
 
     return () => {
-      window.removeEventListener("necto_layout_changed", handleLayoutUpdate);
+      unsubLayout();
       window.removeEventListener("storage", handleLayoutUpdate);
-      window.removeEventListener("necto_navigate_pedidos", handleNavigateEvent);
+      unsubNav();
     };
   }, [onSectionChange, onOpTabChange, onGeTabChange]);
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useBusiness } from "@/context/BusinessContext";
+import { eventBus } from "@/infrastructure/eventBus";
 import {
   Smartphone,
   Globe,
@@ -29,9 +30,7 @@ export const CanalesView: React.FC<CanalesViewProps> = ({ onOpenSettings }) => {
     if (onOpenSettings) {
       onOpenSettings("channels");
     } else {
-      window.dispatchEvent(
-        new CustomEvent("necto_open_settings", { detail: { tab: "channels" } })
-      );
+      eventBus.publish("necto_open_settings", { tab: "channels" });
     }
   };
 
@@ -39,9 +38,7 @@ export const CanalesView: React.FC<CanalesViewProps> = ({ onOpenSettings }) => {
     if (onOpenSettings) {
       onOpenSettings("whatsapp_bot");
     } else {
-      window.dispatchEvent(
-        new CustomEvent("necto_open_settings", { detail: { tab: "whatsapp_bot" } })
-      );
+      eventBus.publish("necto_open_settings", { tab: "whatsapp_bot" });
     }
   };
 

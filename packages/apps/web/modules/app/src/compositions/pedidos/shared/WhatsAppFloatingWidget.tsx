@@ -9,12 +9,14 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
+
 export const WhatsAppFloatingWidget: React.FC<{
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   onNavigateToFullView?: () => void;
 }> = ({ isOpen: controlledIsOpen, onOpenChange, onNavigateToFullView }) => {
-  const { conversations } = usePedidos();
+  const { conversations } = useChannels();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
