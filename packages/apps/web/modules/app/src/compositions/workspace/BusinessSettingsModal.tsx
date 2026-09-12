@@ -46,8 +46,10 @@ import {
   RotateCcw,
   Move,
   ImageIcon,
+  Sparkles,
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
+import { NectoLogo } from "../shared/NectoLogo";
 
 /** Neutral starting point for the logo/banner framing controls. */
 const DEFAULT_TRANSFORM: ImageTransformConfig = { scale: 1, rotate: 0, posX: 0, posY: 0 };
@@ -931,6 +933,11 @@ export const BusinessSettingsModal: React.FC<{
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-60 flex-none space-y-1 overflow-y-auto border-r border-gray-100 bg-white px-3 py-4 dark:border-gray-800 dark:bg-gray-950">
+          {/* ── Brand lockup ── */}
+          <div className="mb-3 flex items-center gap-2 border-b border-gray-100 px-3.5 pb-4 dark:border-gray-800">
+            <NectoLogo size="xs" inline />
+          </div>
+
           {[
             { id: "general" as const, label: "General", icon: Store },
             { id: "channels" as const, label: "Canales de Entrada", icon: MessageSquare },
@@ -978,11 +985,14 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 1: GENERAL & UBICACIÓN ── */}
             {activeTab === "general" && (
               <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Identidad de la sede
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     General & Ubicación
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Identidad comercial, dirección física y modalidades de servicio de la sede.
                   </p>
                 </div>
@@ -1180,11 +1190,14 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 2: CANALES DE ENTRADA ── */}
             {activeTab === "channels" && (
               <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Puntos de contacto
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     Canales de Entrada
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Gestiona los medios por donde tus clientes envían pedidos a esta sede.
                   </p>
                 </div>
@@ -1382,11 +1395,14 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "whatsapp_bot" && (
               <div className="space-y-6 animate-fade-in">
                 {/* Header */}
-                <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Atención automatizada
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     Asistente de WhatsApp IA
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Configura la personalidad, fuentes de información y reglas de atención conversacional.
                   </p>
                 </div>
@@ -2414,11 +2430,14 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 4: CUENTAS & PAGOS ── */}
             {activeTab === "payments" && (
               <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Cobros y transferencias
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     Cuentas & Métodos de Pago
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Cuentas receptoras para transferencias de clientes y métodos de cobro presencial habilitados.
                   </p>
                 </div>
@@ -2537,11 +2556,14 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 5: MARCA & IDENTIDAD VISUAL ── */}
             {activeTab === "branding" && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div>
-                  <h2 className="text-[22px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Identidad visual
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     Personalización de la sede
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Así verán tus clientes esta sede. Ajusta el logo, la portada y el color de marca.
                   </p>
                 </div>
@@ -2805,11 +2827,14 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 6: OPERACIONES & SEDE ── */}
             {activeTab === "operations" && (
               <div className="space-y-6 animate-fade-in">
-                <div>
-                  <h2 className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white">
+                <div className="space-y-2">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-brand-500">
+                    Operación diaria
+                  </span>
+                  <h2 className="text-[22px] font-black leading-tight tracking-tight text-secondary-600 dark:text-white">
                     Operaciones & Estado de Sede
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     Flujo de órdenes, pausas programadas y acciones críticas de la sede.
                   </p>
                 </div>
@@ -2961,6 +2986,11 @@ export const BusinessSettingsModal: React.FC<{
               </div>
             )}
 
+            {/* ── Brand signature ── */}
+            <div className="flex items-center justify-center gap-2.5 pt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-gray-300 dark:text-gray-700">
+              <Sparkles className="size-3.5" />
+              <span>Nos cruzamos, nos unimos, crecemos · grow together</span>
+            </div>
           </form>
         </main>
       </div>
