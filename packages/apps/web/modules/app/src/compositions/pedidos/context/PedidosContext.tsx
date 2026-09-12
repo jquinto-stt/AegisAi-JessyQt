@@ -278,29 +278,7 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  // Load catalog products from the WebiAI Products API (mock fallback).
-  // Necto-only presentation fields are preserved by merging over existing items.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const token = await getIdToken().catch(() => "");
-        const apiProducts = await apiListProducts(token);
-        if (cancelled) return;
-        setProducts(prev => {
-          const byId = new Map(prev.map(p => [p.id, p]));
-          return apiProducts.map(ap => toProductItem(ap, byId.get(ap.id)));
-        });
-      } catch (err) {
-        // Non-fatal: keep the seeded INITIAL_PRODUCTS so the UI stays usable.
-        console.error("[PedidosContext] failed to load products", err);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   // Recalculate KPIs when orders or historial change
   useEffect(() => {

@@ -66,7 +66,8 @@ export const ResumenDashboardView: React.FC<{ onNavigateGestion?: (tab: GestionT
   ];
 
   // Top products
-  const topProducts = [...products]
+  const safeProducts = Array.isArray(products) ? products : [];
+  const topProducts = [...safeProducts]
     .sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
     .slice(0, 4);
 
