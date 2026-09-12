@@ -49,7 +49,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
-import { NectoLogo } from "../shared/NectoLogo";
+import { MenuItem, SidebarProvider } from "@/shell";
 
 /** Neutral starting point for the logo/banner framing controls. */
 const DEFAULT_TRANSFORM: ImageTransformConfig = { scale: 1, rotate: 0, posX: 0, posY: 0 };
@@ -931,51 +931,46 @@ export const BusinessSettingsModal: React.FC<{
 
       {/* ── Layout ── */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-60 flex-none space-y-1 overflow-y-auto border-r border-gray-100 bg-white px-3 py-4 dark:border-gray-800 dark:bg-gray-950">
-          {/* ── Brand lockup ── */}
-          <div className="mb-3 flex items-center gap-2 border-b border-gray-100 px-3.5 pb-4 dark:border-gray-800">
-            <NectoLogo size="xs" inline />
+        {/* Sidebar — réplica del diseño de la barra lateral del shell (BaseAppSidebar) */}
+        <aside className="m-4 flex w-[274px] flex-none flex-col rounded-3xl bg-white px-5 text-gray-900 shadow-theme-lg dark:bg-gray-900">
+          {/* Logo section — idéntico a BaseAppSidebar */}
+          <div className="flex flex-none justify-start py-8">
+            <img
+              src="/images/logo/necto-full.svg"
+              alt="NECTO"
+              className="h-6 w-auto select-none"
+            />
           </div>
 
-          {[
-            { id: "general" as const, label: "General", icon: Store },
-            { id: "channels" as const, label: "Canales de Entrada", icon: MessageSquare },
-            {
-              id: "whatsapp_bot" as const,
-              label: "Asistente WhatsApp IA",
-              icon: Bot,
-            },
-            { id: "payments" as const, label: "Pagos", icon: CreditCard },
-            { id: "branding" as const, label: "Marca & Visual", icon: Camera },
-            { id: "operations" as const, label: "Operaciones", icon: SlidersHorizontal },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+          {/* Content section */}
+          <div className="no-scrollbar flex flex-1 flex-col overflow-y-auto duration-300 ease-linear">
+            <SidebarProvider collapsed={false}>
+              <nav className="flex flex-1 flex-col">
+                <ul className="flex flex-col gap-1">
+                  {[
+                    { id: "general" as const, label: "General", icon: Store },
+                    { id: "channels" as const, label: "Canales de Entrada", icon: MessageSquare },
+                    { id: "whatsapp_bot" as const, label: "Asistente WhatsApp IA", icon: Bot },
+                    { id: "payments" as const, label: "Pagos", icon: CreditCard },
+                    { id: "branding" as const, label: "Marca & Visual", icon: Camera },
+                    { id: "operations" as const, label: "Operaciones", icon: SlidersHorizontal },
+                  ].map((tab) => {
+                    const Icon = tab.icon;
 
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-full px-3.5 py-2.5 text-left text-sm transition-colors ${
-                  isActive
-                    ? "bg-brand-500 font-bold text-white"
-                    : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Icon
-                    className={`w-[18px] h-[18px] flex-none ${
-                      isActive ? "text-white" : "text-gray-400"
-                    }`}
-                  />
-                  <span className="truncate">{tab.label}</span>
-                </div>
-
-              </button>
-            );
-          })}
+                    return (
+                      <MenuItem
+                        key={tab.id}
+                        icon={<Icon />}
+                        name={tab.label}
+                        active={activeTab === tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                      />
+                    );
+                  })}
+                </ul>
+              </nav>
+            </SidebarProvider>
+          </div>
         </aside>
 
         {/* Content */}
