@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useBusiness } from "../context/BusinessContext";
 import { PedidosProvider } from "../compositions/pedidos/context/PedidosContext";
+import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
 import { ResumenDashboardView } from "../compositions/pedidos/gestion/ResumenDashboardView";
 import { HistorialView } from "../compositions/pedidos/gestion/HistorialView";
 import { AnaliticaView } from "../compositions/pedidos/gestion/AnaliticaView";
@@ -163,9 +164,11 @@ const FranchiseAnalyticsContent: React.FC = () => {
 
 export const FranchiseAnalyticsPage: React.FC = () => {
   return (
-    <PedidosProvider>
-      <FranchiseAnalyticsContent />
-    </PedidosProvider>
+    <CatalogProvider>
+      <PedidosProvider>
+        <FranchiseAnalyticsContent />
+      </PedidosProvider>
+    </CatalogProvider>
   );
 };
 
