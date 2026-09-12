@@ -35,6 +35,9 @@ import {
   CheckCircle2,
   ListChecks,
   Share2,
+  Truck,
+  Coins,
+  PauseCircle,
 } from "lucide-react";
 import { Button, Field, Toggle } from "@/elements";
 
@@ -483,8 +486,6 @@ export const BusinessSettingsModal: React.FC<{
     onClose();
   };
 
-  const configuredChannelsCount = (enableWhatsapp ? 1 : 0) + (enableWeb ? 1 : 0) + (enablePos ? 1 : 0);
-
   return (
     <div className="fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900 flex flex-col font-sans animate-fade-in overflow-hidden">
       {/* ── Header ── */}
@@ -541,7 +542,6 @@ export const BusinessSettingsModal: React.FC<{
               id: "whatsapp_bot" as const,
               label: "Asistente WhatsApp IA",
               icon: Bot,
-              badge: enableWhatsapp ? undefined : "Off",
             },
             { id: "payments" as const, label: "Pagos", icon: CreditCard },
             { id: "branding" as const, label: "Marca & Visual", icon: Camera },
@@ -569,11 +569,7 @@ export const BusinessSettingsModal: React.FC<{
                   />
                   <span className="truncate">{tab.label}</span>
                 </div>
-                {tab.badge && (
-                  <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 flex-none">
-                    {tab.badge}
-                  </span>
-                )}
+
               </button>
             );
           })}
@@ -581,29 +577,33 @@ export const BusinessSettingsModal: React.FC<{
 
         {/* Content */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <form onSubmit={handleSave} className="max-w-2xl mx-auto py-8 px-6 space-y-8">
+          <form onSubmit={handleSave} className="max-w-4xl mx-auto py-8 px-8 space-y-8">
 
             {/* ── TAB 1: GENERAL & UBICACIÓN ── */}
             {activeTab === "general" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                     General & Ubicación
                   </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Identidad comercial, dirección física y modalidades de servicio de la sede.
                   </p>
                 </div>
 
-                {/* Tarjeta Identidad */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Identidad Comercial
-                  </h3>
+                {/* Identidad Comercial */}
+                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                  <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Identidad Comercial
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Nombre público y modelo operativo principal de la sede.
+                    </p>
+                  </div>
 
                   <Field
                     label="Nombre Comercial de la Sede"
-                    labelStyle="bold"
                     type="text"
                     required
                     value={name}
@@ -611,62 +611,50 @@ export const BusinessSettingsModal: React.FC<{
                     placeholder="Ej: Necto Gourmet — Sede Central"
                   />
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white">
-                      Enlace Web de la Tienda (Slug)
-                    </label>
-                    <div className="flex items-center px-3.5 py-2.5 text-xs bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus-within:border-brand-500 transition-colors">
-                      <span className="text-gray-400 select-none  text-xs">necto.app/</span>
-                      <input
-                        type="text"
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
-                        placeholder="mi-tienda"
-                        className="flex-1 bg-transparent  font-bold text-gray-900 dark:text-white focus:outline-none ml-1 lowercase"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Enlace Web de la Tienda (Slug)
+                      </label>
+                      <div className="flex items-center h-11 px-4 text-sm bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg shadow-theme-xs focus-within:border-brand-300 focus-within:ring-3 focus-within:ring-brand-500/20 transition-all">
+                        <span className="text-gray-400 select-none text-sm font-medium">necto.app/</span>
+                        <input
+                          type="text"
+                          value={slug}
+                          onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+                          placeholder="mi-tienda"
+                          className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none ml-1 lowercase"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2 pt-2">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white">
-                      Modelo de Operación Principal
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {[
-                        { id: "restaurant_virtual", label: "Gastronomía", desc: "Cocina & Mesa", icon: UtensilsCrossed },
-                        { id: "retail_store", label: "Comercio & Retail", desc: "Stock & Mostrador", icon: Store },
-                        { id: "services", label: "Servicios & Citas", desc: "Citas & Agenda", icon: SlidersHorizontal },
-                      ].map((item) => {
-                        const isSelected = businessType === item.id;
-                        const Icon = item.icon;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() => setBusinessType(item.id as BusinessType)}
-                            className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
-                              isSelected
-                                ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 ring-1 ring-brand-500"
-                                : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-white/[0.03]"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Icon className={`w-4 h-4 ${isSelected ? "text-brand-600" : "text-gray-400"}`} />
-                              <span className="text-xs font-bold text-gray-900 dark:text-white">{item.label}</span>
-                            </div>
-                            <span className="text-xs text-gray-500">{item.desc}</span>
-                          </button>
-                        );
-                      })}
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Modelo de Operación Principal
+                      </label>
+                      <select
+                        value={businessType}
+                        onChange={(e) => setBusinessType(e.target.value as BusinessType)}
+                        className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                      >
+                        <option value="restaurant_virtual">Gastronomía (Cocina, Mesa & Domicilios)</option>
+                        <option value="retail_store">Comercio & Retail (Stock & Mostrador)</option>
+                        <option value="services">Servicios & Citas (Agenda & Atención)</option>
+                      </select>
                     </div>
                   </div>
                 </div>
 
-                {/* Tarjeta Ubicación Física & Horarios */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Ubicación & Horarios de Atención
-                  </h3>
+                {/* Ubicación Física & Horarios */}
+                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                  <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Ubicación & Horarios
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Dirección física, zona geográfica y horarios regulares de atención.
+                    </p>
+                  </div>
 
                   <Field
                     label="Dirección Física Exacta"
@@ -692,13 +680,13 @@ export const BusinessSettingsModal: React.FC<{
                       placeholder="Colombia"
                     />
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-gray-900 dark:text-white">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Moneda Operativa
                       </label>
                       <select
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as any)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                        className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                       >
                         <option value="COP">COP ($ Pesos Colombianos)</option>
                         <option value="USD">USD ($ Dólares)</option>
@@ -724,25 +712,69 @@ export const BusinessSettingsModal: React.FC<{
                       placeholder="Ej: 11:00 - 22:00"
                     />
                   </div>
+                </div>
 
-                  {/* Modalidades de Entrega */}
-                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white">
-                      Modalidades de Servicio Habilitadas
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Envíos a Domicilio</span>
-                        <Toggle intent="service.delivery" checked={serviceDelivery} onChange={setServiceDelivery} />
+                {/* Modalidades de Servicio — Idéntico estándar visual de Canales de Entrada */}
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Modalidades de Servicio
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Define cómo pueden recibir o consumir los pedidos tus clientes.
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <Truck className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Envíos a Domicilio
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Entrega directa con mensajería o delivery propio hasta la dirección del cliente.
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Retiro en Tienda</span>
-                        <Toggle intent="service.takeaway" checked={serviceTakeaway} onChange={setServiceTakeaway} />
+                      <Toggle intent="service.delivery" checked={serviceDelivery} onChange={setServiceDelivery} />
+                    </div>
+
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <ShoppingBag className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Retiro en Tienda / Takeaway
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            El cliente recoge su orden preparada directamente en el local físico.
+                          </p>
+                        </div>
                       </div>
-                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200">Consumo en Mesa</span>
-                        <Toggle intent="service.dinein" checked={serviceDineIn} onChange={setServiceDineIn} />
+                      <Toggle intent="service.takeaway" checked={serviceTakeaway} onChange={setServiceTakeaway} />
+                    </div>
+
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <UtensilsCrossed className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Consumo en Mesa / Salón
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Atención presencial en mesas, mostrador o barra del establecimiento.
+                          </p>
+                        </div>
                       </div>
+                      <Toggle intent="service.dinein" checked={serviceDineIn} onChange={setServiceDineIn} />
                     </div>
                   </div>
                 </div>
@@ -752,48 +784,32 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 2: CANALES DE ENTRADA ── */}
             {activeTab === "channels" && (
               <div className="space-y-6 animate-fade-in">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-gray-200 dark:border-gray-800">
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                      Canales de Entrada de la Sede
-                    </h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      Puntos de captura desacoplados. Las órdenes entran por estos canales al OMS.
-                    </p>
-                  </div>
-                  <span className="text-xs  font-semibold px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 self-start sm:self-auto">
-                    {configuredChannelsCount} de 3 habilitados
-                  </span>
+                <div>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                    Canales de Entrada
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Gestiona los medios por donde tus clientes envían pedidos a esta sede.
+                  </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
                   {/* WhatsApp Business */}
-                  <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
+                  <div className="p-5 sm:p-6 space-y-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3.5">
-                        <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center flex-none mt-0.5">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
                           <Smartphone className="w-5 h-5" />
                         </div>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                              WhatsApp Business
-                            </h3>
-                            <span
-                              className={`text-xs  font-bold px-2 py-0.5 rounded-full border ${
-                                enableWhatsapp
-                                  ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/20"
-                                  : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                              }`}
-                            >
-                              {enableWhatsapp ? "Canal Activo" : "Canal Inactivo"}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Recepción conversacional de pedidos para clientes vía WhatsApp.
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            WhatsApp Business
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Recepción de pedidos conversacionales asistidos por IA.
                           </p>
-                          <p className="text-xs text-gray-500 ">
-                            Teléfono vinculado: <strong className="text-gray-700 dark:text-gray-300">{contactPhone || "Sin asignar"}</strong>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Teléfono vinculado: <span className="text-gray-700 dark:text-gray-300 font-medium">{contactPhone || "Sin asignar"}</span>
                           </p>
                         </div>
                       </div>
@@ -824,104 +840,82 @@ export const BusinessSettingsModal: React.FC<{
                     </div>
 
                     {enableWhatsapp && (
-                      <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between sm:pl-13">
                         <div>
-                          <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
-                            Widget Flotante en Pantalla
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            Widget Flotante de Chat
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Muestra un botón de chat flotante en la interfaz de la tienda.
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Muestra un botón de chat flotante en la tienda web para abrir WhatsApp directamente.
                           </p>
                         </div>
-                        <div className="flex items-center">
-                          <Toggle
-                            intent="business.whatsapp.widget.toggle"
-                            checked={isWhatsAppWidgetEnabled}
-                            onChange={(val) => {
-                              setIsWhatsAppWidgetEnabled(val);
-                              try {
-                                localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(val));
-                                window.dispatchEvent(
-                                  new CustomEvent("necto_whatsapp_config_changed", {
-                                    detail: { channelEnabled: enableWhatsapp, widgetEnabled: val },
-                                  })
-                                );
-                              } catch (e) {}
-                            }}
-                          />
-                        </div>
+                        <Toggle
+                          intent="business.whatsapp.widget.toggle"
+                          checked={isWhatsAppWidgetEnabled}
+                          onChange={(val) => {
+                            setIsWhatsAppWidgetEnabled(val);
+                            try {
+                              localStorage.setItem("necto_whatsapp_widget_enabled", JSON.stringify(val));
+                              window.dispatchEvent(
+                                new CustomEvent("necto_whatsapp_config_changed", {
+                                  detail: { channelEnabled: enableWhatsapp, widgetEnabled: val },
+                                })
+                              );
+                            } catch (e) {}
+                          }}
+                        />
                       </div>
                     )}
                   </div>
 
                   {/* Tienda Web */}
-                  <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-11 h-11 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center flex-none mt-0.5">
-                          <Globe className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                              Tienda Web & Catálogo en Línea
-                            </h3>
-                            <span
-                              className={`text-xs  font-bold px-2 py-0.5 rounded-full border ${
-                                enableWeb
-                                  ? "text-blue-600 bg-blue-500/10 border-blue-500/20"
-                                  : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                              }`}
-                            >
-                              {enableWeb ? "En Línea" : "Desactivada"}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Catálogo interactivo con checkout directo para compradores en la web.
-                          </p>
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs  text-gray-700 dark:text-gray-300">
-                            <Globe className="w-3 h-3 text-blue-500" />
-                            <span>necto.app/{slug || name.toLowerCase().replace(/\s+/g, "-")}</span>
-                          </div>
+                  <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Tienda Web & Catálogo en Línea
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Catálogo digital interactivo con carrito y checkout directo.
+                        </p>
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          <Globe className="w-3.5 h-3.5 text-blue-500" />
+                          <span>necto.app/{slug || name.toLowerCase().replace(/\s+/g, "-")}</span>
                         </div>
                       </div>
-
-                      <Toggle
-                        intent="business.channel.toggle"
-                        checked={enableWeb}
-                        onChange={setEnableWeb}
-                      />
                     </div>
+
+                    <Toggle
+                      intent="business.channel.toggle"
+                      checked={enableWeb}
+                      onChange={setEnableWeb}
+                    />
                   </div>
 
                   {/* POS / Mostrador */}
-                  <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-3 shadow-theme-xs">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center flex-none mt-0.5">
-                          <Store className="w-5 h-5" />
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                              POS / Mostrador Presencial
-                            </h3>
-                            <span className="text-xs  font-bold px-2 py-0.5 rounded-full border text-emerald-600 bg-emerald-500/10 border-emerald-500/20">
-                              {enablePos ? "Habilitado" : "Deshabilitado"}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            Toma directa de comandas en local físico o salón. Funciona de manera autónoma sin requerir canales externos.
-                          </p>
-                        </div>
+                  <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                      <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
+                        <Store className="w-5 h-5" />
                       </div>
-
-                      <Toggle
-                        intent="business.channel.toggle"
-                        checked={enablePos}
-                        onChange={setEnablePos}
-                      />
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Punto de Venta (POS) / Mostrador
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Toma de comandas y ventas presenciales en salón o caja registradora.
+                        </p>
+                      </div>
                     </div>
+
+                    <Toggle
+                      intent="business.channel.toggle"
+                      checked={enablePos}
+                      onChange={setEnablePos}
+                    />
                   </div>
                 </div>
               </div>
@@ -930,59 +924,27 @@ export const BusinessSettingsModal: React.FC<{
             {/* ── TAB 3: ASISTENTE DE WHATSAPP IA (CAPA DE INTELIGENCIA) ── */}
             {activeTab === "whatsapp_bot" && (
               <div className="space-y-6 animate-fade-in">
-                {/* Header & Arquitectura */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-200 dark:border-gray-800">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                        Asistente de WhatsApp IA
-                      </h2>
-                      <span className="text-xs  font-bold px-2 py-0.5 rounded-full border text-brand-600 bg-brand-500/10 border-brand-500/20">
-                        Capa de Inteligencia
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                      Inteligencia conversacional desacoplada. Interpreta chats en WhatsApp y canaliza pedidos estructurados hacia el OMS.
-                    </p>
-                  </div>
-
-                  {/* Estado de Integración */}
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`text-xs  font-semibold px-2 py-0.5 rounded-md border ${
-                        enableWhatsapp
-                          ? "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/20"
-                          : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                      }`}
-                    >
-                      {enableWhatsapp ? "Canal Vinculado" : "Canal Inactivo"}
-                    </span>
-                    <span
-                      className={`text-xs  font-semibold px-2 py-0.5 rounded-md border ${
-                        business?.activeModules?.includes("inventarios")
-                          ? "text-blue-700 dark:text-blue-300 bg-blue-500/10 border-blue-500/20"
-                          : "text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20"
-                      }`}
-                    >
-                      {business?.activeModules?.includes("inventarios") ? "Stock Vivo Activo" : "Catálogo Base"}
-                    </span>
-                  </div>
+                {/* Header */}
+                <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+                    Asistente de WhatsApp IA
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Configura la personalidad, fuentes de información y reglas de atención conversacional.
+                  </p>
                 </div>
 
                 {!enableWhatsapp ? (
-                  <div className="p-8 sm:p-12 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 text-center max-w-xl mx-auto space-y-5 shadow-theme-xs my-6">
-                    <div className="w-16 h-16 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
-                      <Bot className="w-8 h-8" />
+                  <div className="p-8 sm:p-10 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 text-center max-w-lg mx-auto space-y-4 shadow-theme-xs my-8">
+                    <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 flex items-center justify-center mx-auto">
+                      <Bot className="w-6 h-6" />
                     </div>
-                    <div className="space-y-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs  font-bold border border-amber-200 dark:border-amber-800">
-                        Canal WhatsApp Inactivo
-                      </span>
-                      <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                        El Asistente IA requiere que WhatsApp Business esté Activo
+                    <div className="space-y-1.5">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                        Activa WhatsApp Business para configurar el Asistente IA
                       </h3>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed max-w-md mx-auto">
-                        El Asistente IA no puede operar con el canal apagado: es la <strong>capa de inteligencia</strong> sobre WhatsApp Business. Para calibrar su identidad, fuentes de conocimiento de catálogo, reglas de pedidos y handoff, activa primero el canal.
+                      <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                        El asistente opera sobre los mensajes de WhatsApp. Activa el canal para calibrar su identidad, catálogo y reglas de toma de pedidos.
                       </p>
                     </div>
 
@@ -1008,25 +970,25 @@ export const BusinessSettingsModal: React.FC<{
                             });
                           }
                         }}
-                        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-theme-xs transition-all cursor-pointer flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium text-sm shadow-theme-xs transition-colors cursor-pointer flex items-center justify-center gap-2"
                       >
                         <Smartphone className="w-4 h-4" />
-                        <span>Activar Canal WhatsApp Business</span>
+                        <span>Activar Canal WhatsApp</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setActiveTab("channels")}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-xs transition-colors cursor-pointer"
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 font-medium text-sm transition-colors cursor-pointer"
                       >
-                        Ver Canales de Entrada
+                        Ver Canales
                       </button>
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div className="flex gap-6 -mx-6">
-                      {/* Bot sub-nav — vertical sidebar */}
-                      <nav className="w-44 flex-none space-y-0.5">
+                    <div className="space-y-6">
+                      {/* Segmented control bar superior */}
+                      <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-xl overflow-x-auto">
                         {[
                           { id: "identity" as const, label: "Identidad", icon: Bot },
                           { id: "knowledge" as const, label: "Conocimiento", icon: BookOpen },
@@ -1043,276 +1005,245 @@ export const BusinessSettingsModal: React.FC<{
                               key={sub.id}
                               type="button"
                               onClick={() => setBotSubTab(sub.id)}
-                              className={`w-full px-3 py-2 rounded-lg text-left text-sm transition-colors flex items-center gap-2.5 cursor-pointer ${
+                              className={`px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
                                 isActive
-                                  ? "bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-semibold"
-                                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03] hover:text-gray-900 dark:hover:text-gray-200 font-medium"
+                                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs font-semibold"
+                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                               }`}
                             >
-                              <Icon className={`w-4 h-4 flex-none ${isActive ? "text-brand-600 dark:text-brand-400" : "text-gray-400"}`} />
+                              <Icon className={`w-4 h-4 flex-none ${isActive ? "text-brand-500" : "text-gray-400"}`} />
                               <span>{sub.label}</span>
                             </button>
                           );
                         })}
-                      </nav>
-
-                      {/* Bot content area */}
-                      <div className="flex-1 min-w-0">
-
-                {/* ── ÁREA 1: IDENTIDAD & COMPORTAMIENTO ── */}
-                {botSubTab === "identity" && (
-                  <div className="space-y-6 animate-fade-in">
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                        <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                          Identidad del Asistente & Tono de Respuesta
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Define el nombre, personalidad y el estilo con el que interactuará con tus compradores.
-                        </p>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Field
-                          label="Nombre del Asistente"
-                          type="text"
-                          value={botName}
-                          onChange={(e) => setBotName(e.target.value)}
-                          placeholder="Ej: Sofía de Necto"
-                        />
+                      {/* ── ÁREA 1: IDENTIDAD & COMPORTAMIENTO ── */}
+                      {botSubTab === "identity" && (
+                        <div className="space-y-6 animate-fade-in">
+                          <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                            <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                Identidad & Tono de Respuesta
+                              </h3>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                Define el nombre y el estilo con el que interactuará con tus compradores.
+                              </p>
+                            </div>
 
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-gray-900 dark:text-white">
-                            Tono de Atención
-                          </label>
-                          <select
-                            value={botTone}
-                            onChange={(e) => setBotTone(e.target.value as any)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
-                          >
-                            <option value="cálido">Cálido y Cercano</option>
-                            <option value="profesional">Profesional & Ejecutivo</option>
-                            <option value="ágil">Ágil & Directo</option>
-                            <option value="técnico">Técnico & Especializado</option>
-                          </select>
-                        </div>
-                      </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <Field
+                                label="Nombre del Asistente"
+                                type="text"
+                                value={botName}
+                                onChange={(e) => setBotName(e.target.value)}
+                                placeholder="Ej: Sofía de Necto"
+                              />
 
-                      {/* Personalidad */}
-                      <div className="space-y-2 pt-2">
-                        <label className="text-xs font-bold text-gray-900 dark:text-white">
-                          Personalidad Base
-                        </label>
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                          {[
-                            { id: "amigable" as BotPersonality, label: "Amigable", desc: "Empático y servicial" },
-                            { id: "ejecutivo" as BotPersonality, label: "Ejecutivo", desc: "Sobrio y corporativo" },
-                            { id: "chef" as BotPersonality, label: "Especialista", desc: "Experto en producto" },
-                            { id: "dinamico" as BotPersonality, label: "Dinámico", desc: "Rápido y proactivo" },
-                          ].map((item) => {
-                            const isSelected = botPersonality === item.id;
-                            return (
-                              <button
-                                type="button"
-                                key={item.id}
-                                onClick={() => setBotPersonality(item.id)}
-                                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                                  isSelected
-                                    ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 ring-1 ring-brand-500"
-                                    : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-white/[0.03]"
-                                }`}
-                              >
-                                <p className="text-xs font-bold text-gray-900 dark:text-white">{item.label}</p>
-                                <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Tono de Atención
+                                </label>
+                                <select
+                                  value={botTone}
+                                  onChange={(e) => setBotTone(e.target.value as any)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="cálido">Cálido y Cercano</option>
+                                  <option value="profesional">Profesional & Ejecutivo</option>
+                                  <option value="ágil">Ágil & Directo</option>
+                                  <option value="técnico">Técnico & Especializado</option>
+                                </select>
+                              </div>
+                            </div>
 
-                      {/* Estilo & Emojis */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-gray-900 dark:text-white">
-                            Estilo & Extensión de Respuesta
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { id: "conciso" as const, label: "Conciso", desc: "Respuestas cortas" },
-                              { id: "claro" as const, label: "Claro", desc: "Balanceado" },
-                              { id: "extenso" as const, label: "Extenso", desc: "Detallado" },
-                            ].map((s) => (
-                              <button
-                                type="button"
-                                key={s.id}
-                                onClick={() => setResponseStyle(s.id)}
-                                className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-colors cursor-pointer ${
-                                  responseStyle === s.id
-                                    ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/30 text-brand-700 dark:text-brand-300 font-semibold"
-                                    : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                                }`}
-                              >
-                                <span className="text-xs font-semibold leading-tight">{s.label}</span>
-                                <span className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{s.desc}</span>
-                              </button>
-                            ))}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Personalidad Base
+                                </label>
+                                <select
+                                  value={botPersonality}
+                                  onChange={(e) => setBotPersonality(e.target.value as BotPersonality)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="amigable">Amigable (Empático y servicial)</option>
+                                  <option value="ejecutivo">Ejecutivo (Sobrio y formal)</option>
+                                  <option value="chef">Especialista (Experto en la carta)</option>
+                                  <option value="dinamico">Dinámico (Rápido y proactivo)</option>
+                                </select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Estilo de Respuesta
+                                </label>
+                                <select
+                                  value={responseStyle}
+                                  onChange={(e) => setResponseStyle(e.target.value as any)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="conciso">Conciso (Respuestas cortas)</option>
+                                  <option value="claro">Claro (Balanceado)</option>
+                                  <option value="extenso">Extenso (Detallado)</option>
+                                </select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Frecuencia de Emojis
+                                </label>
+                                <select
+                                  value={emojiFrequency}
+                                  onChange={(e) => setEmojiFrequency(e.target.value as any)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="nunca">Nunca (0 emojis)</option>
+                                  <option value="moderado">Moderado (1-2 por mensaje)</option>
+                                  <option value="frecuente">Frecuente (Expresivo)</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Saludo inicial */}
+                            <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    Saludo de Bienvenida Inicial
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    Primer mensaje que envía el bot cuando un cliente escribe.
+                                  </p>
+                                </div>
+                                <Toggle intent="bot.welcome" checked={isWelcomeEnabled} onChange={setIsWelcomeEnabled} />
+                              </div>
+                              {isWelcomeEnabled && (
+                                <textarea
+                                  rows={2}
+                                  value={welcomeMessage}
+                                  onChange={(e) => setWelcomeMessage(e.target.value)}
+                                  className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
+                                />
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-gray-900 dark:text-white">
-                            Uso de Emojis
-                          </label>
-                          <div className="grid grid-cols-3 gap-2">
-                            {[
-                              { id: "nunca" as const, label: "Nunca", desc: "0 emojis" },
-                              { id: "moderado" as const, label: "Moderado", desc: "1-2 por mensaje" },
-                              { id: "frecuente" as const, label: "Frecuente", desc: "Expresivo" },
-                            ].map((e) => (
-                              <button
-                                type="button"
-                                key={e.id}
-                                onClick={() => setEmojiFrequency(e.id)}
-                                className={`flex flex-col items-center justify-center p-2.5 rounded-lg border text-center transition-colors cursor-pointer ${
-                                  emojiFrequency === e.id
-                                    ? "border-brand-500 bg-brand-50/50 dark:bg-brand-950/30 text-brand-700 dark:text-brand-300 font-semibold"
-                                    : "border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                                }`}
-                              >
-                                <span className="text-xs font-semibold leading-tight">{e.label}</span>
-                                <span className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">{e.desc}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Saludo inicial */}
-                      <div className="space-y-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-gray-900 dark:text-white">
-                            Saludo de Bienvenida Inicial
-                          </label>
-                          <Toggle intent="bot.welcome" checked={isWelcomeEnabled} onChange={setIsWelcomeEnabled} />
-                        </div>
-                        {isWelcomeEnabled && (
-                          <textarea
-                            rows={2}
-                            value={welcomeMessage}
-                            onChange={(e) => setWelcomeMessage(e.target.value)}
-                            className="w-full p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                      )}
 
                 {/* ── ÁREA 2: CONOCIMIENTO DEL NEGOCIO ── */}
                 {botSubTab === "knowledge" && (
                   <div className="space-y-6 animate-fade-in">
-                    {/* Explicación conceptual rigurosa */}
-                    <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200">
-                      <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-none mt-0.5" />
-                      <div>
-                        <p className="font-bold">Fuentes de Verdad Desacopladas</p>
-                        <p className="text-xs opacity-90 mt-0.5">
-                          El asistente no memoriza respuestas al azar. Consulta las fuentes del negocio autorizadas en tiempo real. <strong>Inventario no es conocimiento estático del asistente:</strong> solo se consulta si el módulo de Inventario está instalado y activo en la sede.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                        Fuentes de Conocimiento Autorizadas
-                      </h3>
-
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
                       {/* Catálogo de Productos */}
-                      <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">
-                            Catálogo Oficial de Productos & Precios
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Permite al asistente consultar nombres, precios vigentes, descripciones y fotos del catálogo de la sede.
-                          </p>
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                            <BookOpen className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Catálogo Oficial de Productos & Precios
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Permite al asistente consultar nombres, precios vigentes, descripciones y fotos de la sede.
+                            </p>
+                          </div>
                         </div>
                         <Toggle intent="bot.knows.catalog" checked={knowsCatalog} onChange={setKnowsCatalog} />
                       </div>
 
                       {/* Información Operativa */}
-                      <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">
-                            Información del Negocio & Ubicación
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Horarios de atención, dirección física, modalidades de entrega (domicilio/retiro) y métodos de pago aceptados.
-                          </p>
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
+                            <Store className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Información del Negocio & Ubicación
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Horarios de atención, dirección física, modalidades de entrega y métodos de pago aceptados.
+                            </p>
+                          </div>
                         </div>
                         <Toggle intent="bot.knows.business" checked={knowsBusinessInfo} onChange={setKnowsBusinessInfo} />
                       </div>
 
                       {/* FAQ */}
-                      <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">
-                            Preguntas Frecuentes (FAQ)
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Respuestas estándar sobre cobertura, tiempos estimados de preparación y canales de contacto.
-                          </p>
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center flex-none mt-0.5">
+                            <HelpCircle className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Preguntas Frecuentes (FAQ)
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Respuestas estándar sobre cobertura, tiempos estimados de preparación y canales de contacto.
+                            </p>
+                          </div>
                         </div>
                         <Toggle intent="bot.knows.faq" checked={knowsFaq} onChange={setKnowsFaq} />
                       </div>
 
                       {/* Políticas */}
-                      <div className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 dark:border-gray-800">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">
-                            Políticas de Cambios, Devoluciones y Garantías
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Condiciones oficiales para cancelaciones, devoluciones o reclamos antes y después del despacho.
-                          </p>
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
+                            <ShieldCheck className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Políticas de Cambios y Garantías
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Condiciones oficiales para cancelaciones, devoluciones o reclamos de pedidos.
+                            </p>
+                          </div>
                         </div>
                         <Toggle intent="bot.knows.policies" checked={knowsPolicies} onChange={setKnowsPolicies} />
                       </div>
 
-                      {/* Consulta de Inventario en Tiempo Real (Condicionado al módulo) */}
-                      <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 space-y-2">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
+                      {/* Consulta de Inventario */}
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center flex-none mt-0.5">
+                            <ShoppingBag className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <p className="text-xs font-bold text-gray-900 dark:text-white">
-                                Consulta de Inventario & Stock en Tiempo Real
-                              </p>
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                                Consulta de Inventario en Tiempo Real
+                              </h3>
                               <span
-                                className={`text-xs  font-bold px-2 py-0.5 rounded-full border ${
+                                className={`text-xs font-medium px-2 py-0.5 rounded-md border ${
                                   business?.activeModules?.includes("inventarios")
-                                    ? "text-emerald-700 bg-emerald-500/10 border-emerald-500/20"
-                                    : "text-gray-500 bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+                                    ? "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                                    : "text-gray-500 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
                                 }`}
                               >
-                                {business?.activeModules?.includes("inventarios") ? "Módulo Instalado" : "Módulo Inactivo"}
+                                {business?.activeModules?.includes("inventarios") ? "Módulo Activo" : "Sin Módulo"}
                               </span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
                               {business?.activeModules?.includes("inventarios")
-                                ? "El asistente valida existencias vivas en bodega antes de confirmar la disponibilidad de un producto al cliente."
-                                : "El módulo Inventario no está instalado en esta sede. El asistente no fingirá stock real y responderá con base en el catálogo general."}
+                                ? "Valida existencias en bodega antes de confirmar la disponibilidad de un producto."
+                                : "Requiere el módulo de Inventarios activo en esta sede."}
                             </p>
                           </div>
-                          <Toggle
-                            intent="bot.knows.inventory"
-                            checked={knowsInventoryQuery && (business?.activeModules?.includes("inventarios") ?? false)}
-                            onChange={(val) => {
-                              if (business?.activeModules?.includes("inventarios")) {
-                                setKnowsInventoryQuery(val);
-                              }
-                            }}
-                          />
                         </div>
+                        <Toggle
+                          intent="bot.knows.inventory"
+                          checked={knowsInventoryQuery && (business?.activeModules?.includes("inventarios") ?? false)}
+                          onChange={(val) => {
+                            if (business?.activeModules?.includes("inventarios")) {
+                              setKnowsInventoryQuery(val);
+                            }
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1321,49 +1252,34 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 3: COMPORTAMIENTO CONVERSACIONAL (INTENCIONES) ── */}
                 {botSubTab === "intents" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                        <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                          Intenciones Conversacionales Habilitadas
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Selecciona las acciones que el asistente tiene autorización de ejecutar de forma autónoma con el cliente.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {[
-                          { id: "catalog", label: "Consultar Catálogo", desc: "Presentar productos y categorías", checked: intentCatalog, set: setIntentCatalog },
-                          { id: "price", label: "Consultar Precio", desc: "Informar costos y promociones", checked: intentPrice, set: setIntentPrice },
-                          { id: "stock", label: "Consultar Disponibilidad", desc: "Verificar stock en tiempo real", checked: intentStock, set: setIntentStock },
-                          { id: "create", label: "Crear Pedido", desc: "Tomar y armar orden de compra", checked: intentCreateOrder, set: setIntentCreateOrder },
-                          { id: "track", label: "Consultar Estado de Pedido", desc: "Rastrear orden en el OMS", checked: intentTrackOrder, set: setIntentTrackOrder },
-                          { id: "modify", label: "Modificar Pedido", desc: "Agregar o remover ítems antes de cocina", checked: intentModifyOrder, set: setIntentModifyOrder },
-                          { id: "cancel", label: "Cancelar Pedido", desc: "Solicitar baja de pedido", checked: intentCancelOrder, set: setIntentCancelOrder },
-                          { id: "hours", label: "Horarios & Ubicación", desc: "Dirección, mapas y apertura", checked: intentHoursLocation, set: setIntentHoursLocation },
-                          { id: "human", label: "Hablar con Asesor", desc: "Transferencia directa a humano", checked: intentHumanAgent, set: setIntentHumanAgent },
-                        ].map((intent) => (
-                          <label
-                            key={intent.id}
-                            className={`p-3.5 rounded-xl border flex items-start justify-between gap-3 cursor-pointer transition-colors ${
-                              intent.checked
-                                ? "border-brand-500/40 bg-brand-50/10 dark:bg-brand-950/10"
-                                : "border-gray-200 dark:border-gray-800 opacity-60 hover:opacity-80"
-                            }`}
-                          >
-                            <div className="space-y-0.5">
-                              <p className="text-xs font-bold text-gray-900 dark:text-white">{intent.label}</p>
-                              <p className="text-xs text-gray-500">{intent.desc}</p>
-                            </div>
-                            <input
-                              type="checkbox"
-                              checked={intent.checked}
-                              onChange={(e) => intent.set(e.target.checked)}
-                              className="mt-0.5 rounded text-brand-600 focus:ring-brand-500 w-4 h-4 cursor-pointer"
-                            />
-                          </label>
-                        ))}
-                      </div>
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                      {[
+                        { id: "catalog", label: "Consultar Catálogo", desc: "Presentar productos y categorías", checked: intentCatalog, set: setIntentCatalog },
+                        { id: "price", label: "Consultar Precios", desc: "Informar valores y promociones", checked: intentPrice, set: setIntentPrice },
+                        { id: "stock", label: "Consultar Disponibilidad", desc: "Verificar existencias de productos", checked: intentStock, set: setIntentStock },
+                        { id: "create", label: "Tomar Pedido", desc: "Armar orden de compra en el chat", checked: intentCreateOrder, set: setIntentCreateOrder },
+                        { id: "track", label: "Estado del Pedido", desc: "Rastrear orden en curso en el OMS", checked: intentTrackOrder, set: setIntentTrackOrder },
+                        { id: "modify", label: "Modificar Pedido", desc: "Ajustar ítems antes de preparación", checked: intentModifyOrder, set: setIntentModifyOrder },
+                        { id: "cancel", label: "Cancelar Pedido", desc: "Solicitar cancelación de comanda", checked: intentCancelOrder, set: setIntentCancelOrder },
+                        { id: "hours", label: "Horarios & Dirección", desc: "Informar apertura y ubicación física", checked: intentHoursLocation, set: setIntentHoursLocation },
+                        { id: "human", label: "Transferir a Asesor", desc: "Pase directo a atención humana", checked: intentHumanAgent, set: setIntentHumanAgent },
+                      ].map((intent) => (
+                        <div key={intent.id} className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {intent.label}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {intent.desc}
+                            </p>
+                          </div>
+                          <Toggle
+                            intent={`bot.intent.${intent.id}`}
+                            checked={intent.checked}
+                            onChange={intent.set}
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1371,84 +1287,43 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 4: REGLAS DE CREACIÓN & CONFIRMACIÓN DE PEDIDOS (OMS) ── */}
                 {botSubTab === "orders_oms" && (
                   <div className="space-y-6 animate-fade-in">
-                    {/* Explicación de frontera OMS */}
-                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
-                      <ShoppingBag className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-none mt-0.5" />
-                      <div>
-                        <p className="font-bold">Frontera Desacoplada con el OMS</p>
-                        <p className="text-xs opacity-90 mt-0.5">
-                          El asistente IA toma la conversación y la convierte en un pedido compatible con el OMS. El OMS recibe la comanda sin importar que su origen haya sido WhatsApp.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
-                      <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                        Comportamiento al Confirmar Pedido en Chat
-                      </h3>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                          {
-                            id: "auto_new" as const,
-                            title: "Crear como NUEVO",
-                            desc: "Ingresa de inmediato a la bandeja del OMS sin confirmación intermedia.",
-                          },
-                          {
-                            id: "interactive_confirm" as const,
-                            title: "Confirmación Interactiva",
-                            desc: "Muestra resumen completo y solicita aprobación explícita al comprador.",
-                          },
-                          {
-                            id: "human_review" as const,
-                            title: "Enviar a Revisión Humana",
-                            desc: "Queda en borrador hasta que un operador humano valide el pedido.",
-                          },
-                        ].map((mode) => {
-                          const isSelected = orderCreationMode === mode.id;
-                          return (
-                            <button
-                              type="button"
-                              key={mode.id}
-                              onClick={() => setOrderCreationMode(mode.id)}
-                              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                                isSelected
-                                  ? "border-brand-500 bg-brand-50/20 dark:bg-brand-950/20 ring-1 ring-brand-500"
-                                  : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-white/[0.03]"
-                              }`}
-                            >
-                              <div>
-                                <p className="text-xs font-bold text-gray-900 dark:text-white">{mode.title}</p>
-                                <p className="text-xs text-gray-500 mt-1">{mode.desc}</p>
-                              </div>
-                              <span
-                                className={`text-xs  font-bold mt-2 ${
-                                  isSelected ? "text-brand-600" : "text-gray-400"
-                                }`}
-                              >
-                                {isSelected ? "● Seleccionado" : "○ Elegir"}
-                              </span>
-                            </button>
-                          );
-                        })}
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                      <div className="p-5 sm:p-6 space-y-3">
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Modalidad de Entrada al OMS
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Define cómo ingresan al sistema de pedidos las órdenes pactadas en el chat.
+                          </p>
+                        </div>
+                        <select
+                          value={orderCreationMode}
+                          onChange={(e) => setOrderCreationMode(e.target.value as any)}
+                          className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                        >
+                          <option value="auto_new">Crear como Nuevo (Ingresa de inmediato como comanda lista para confirmar)</option>
+                          <option value="interactive_confirm">Confirmación en Chat (Envía desglose y solicita un 'Sí' explícito)</option>
+                          <option value="human_review">Revisión Previa (Queda en borrador hasta validación de un operador humano)</option>
+                        </select>
                       </div>
 
-                      {/* Auto-confirmación Avanzada */}
-                      <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
+                      {/* Auto-confirmación */}
+                      <div className="p-5 sm:p-6 space-y-4">
                         <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Auto-Confirmación Inteligente Directa
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Pasa la orden automáticamente a preparación si cumple con las condiciones operacionales fijadas.
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Auto-Confirmación Directa
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Pasa la orden automáticamente a preparación si cumple los montos y stock requeridos.
                             </p>
                           </div>
                           <Toggle intent="bot.autoconfirm" checked={isAutoConfirmOrders} onChange={setIsAutoConfirmOrders} />
                         </div>
 
                         {isAutoConfirmOrders && (
-                          <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 space-y-3">
+                          <div className="p-4 rounded-lg bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 space-y-4">
                             <Field
                               label="Monto Máximo para Auto-confirmación ($)"
                               type="number"
@@ -1458,36 +1333,36 @@ export const BusinessSettingsModal: React.FC<{
                             />
 
                             <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <p className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                                 Condiciones obligatorias para auto-confirmar:
                               </p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                                <label className="flex items-center gap-2 cursor-pointer text-gray-700 dark:text-gray-300">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
+                                <label className="flex items-center gap-2.5 cursor-pointer text-gray-700 dark:text-gray-300">
                                   <input
                                     type="checkbox"
                                     checked={autoConfirmRequireStock}
                                     onChange={(e) => setAutoConfirmRequireStock(e.target.checked)}
-                                    className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
+                                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 w-4 h-4"
                                   />
-                                  <span>Requiere stock disponible confirmado</span>
+                                  <span>Requiere stock confirmado</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-gray-700 dark:text-gray-300">
+                                <label className="flex items-center gap-2.5 cursor-pointer text-gray-700 dark:text-gray-300">
                                   <input
                                     type="checkbox"
                                     checked={autoConfirmRequireCompleteData}
                                     onChange={(e) => setAutoConfirmRequireCompleteData(e.target.checked)}
-                                    className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
+                                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 w-4 h-4"
                                   />
-                                  <span>Cliente con datos completos (dirección/teléfono)</span>
+                                  <span>Cliente con datos completos</span>
                                 </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-gray-700 dark:text-gray-300">
+                                <label className="flex items-center gap-2.5 cursor-pointer text-gray-700 dark:text-gray-300">
                                   <input
                                     type="checkbox"
                                     checked={autoConfirmExcludeRestricted}
                                     onChange={(e) => setAutoConfirmExcludeRestricted(e.target.checked)}
-                                    className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
+                                    className="rounded border-gray-300 text-brand-500 focus:ring-brand-500/20 w-4 h-4"
                                   />
-                                  <span>Sin productos con preparación especial restringida</span>
+                                  <span>Sin ítems con preparación restringida</span>
                                 </label>
                               </div>
                             </div>
@@ -1501,137 +1376,69 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 5: HANDOFF A HUMANO ── */}
                 {botSubTab === "handoff" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <div className="flex items-start justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3">
-                        <div>
-                          <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                            Transferencia Automática a Asesor Humano (Handoff)
-                          </h3>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Configura con precisión en qué momentos y bajo qué reglas el bot debe ceder el control del chat.
-                          </p>
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Transferencia a Asesor Humano (Handoff)
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Configura en qué momentos y bajo qué reglas el bot debe ceder el control del chat a un asesor del equipo.
+                            </p>
+                          </div>
+                          <Toggle intent="bot.handoff" checked={isHandoffEnabled} onChange={setIsHandoffEnabled} />
                         </div>
-                        <Toggle intent="bot.handoff" checked={isHandoffEnabled} onChange={setIsHandoffEnabled} />
+
+                        {isHandoffEnabled && (
+                          <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-5">
+                            <div className="space-y-1.5">
+                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Mensaje de Transición al Cliente
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={handoffToHumanMessage}
+                                onChange={(e) => setHandoffToHumanMessage(e.target.value)}
+                                className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none transition-all"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Destino de la Transferencia
+                                </label>
+                                <select
+                                  value={handoffTarget}
+                                  onChange={(e) => setHandoffTarget(e.target.value as any)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="general">Cualquier asesor disponible</option>
+                                  <option value="sales">Equipo de Ventas</option>
+                                  <option value="support">Servicio al Cliente & Soporte</option>
+                                  <option value="ops">Operaciones & Despacho</option>
+                                </select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Comportamiento de la IA
+                                </label>
+                                <select
+                                  value={handoffBehavior}
+                                  onChange={(e) => setHandoffBehavior(e.target.value as any)}
+                                  className="h-11 w-full px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                                >
+                                  <option value="pause_ia">Pausar IA mientras atiende humano</option>
+                                  <option value="assist_agent">Modo Copiloto (IA asiste al asesor)</option>
+                                  <option value="resume_on_finish">Reanudar IA al cerrar la conversación</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-
-                      {isHandoffEnabled && (
-                        <div className="space-y-4">
-                          {/* Mensaje de traspaso */}
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-900 dark:text-white">
-                              Mensaje de Transición al Cliente
-                            </label>
-                            <textarea
-                              rows={2}
-                              value={handoffToHumanMessage}
-                              onChange={(e) => setHandoffToHumanMessage(e.target.value)}
-                              className="w-full p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
-                            />
-                          </div>
-
-                          {/* Disparadores */}
-                          <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                            <label className="text-xs font-bold text-gray-900 dark:text-white">
-                              Disparadores Automáticos de Transferencia
-                            </label>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerUserRequest}
-                                  onChange={(e) => setHandoffTriggerUserRequest(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>Cliente solicita asesor explícitamente</span>
-                              </label>
-
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerUnhandled}
-                                  onChange={(e) => setHandoffTriggerUnhandled(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>IA no puede resolver la consulta</span>
-                              </label>
-
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerUnhappy}
-                                  onChange={(e) => setHandoffTriggerUnhappy(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>Detección de reclamo o cliente insatisfecho</span>
-                              </label>
-
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerOutOfStock}
-                                  onChange={(e) => setHandoffTriggerOutOfStock(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>Producto solicitado sin stock</span>
-                              </label>
-
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerHighAmount}
-                                  onChange={(e) => setHandoffTriggerHighAmount(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>Pedido de alto monto especial</span>
-                              </label>
-
-                              <label className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={handoffTriggerRequiresAuth}
-                                  onChange={(e) => setHandoffTriggerRequiresAuth(e.target.checked)}
-                                  className="rounded text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
-                                />
-                                <span>Solicitud requiere autorización administrativa</span>
-                              </label>
-                            </div>
-                          </div>
-
-                          {/* Destino y Comportamiento */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-gray-900 dark:text-white">
-                                Destino de la Transferencia
-                              </label>
-                              <select
-                                value={handoffTarget}
-                                onChange={(e) => setHandoffTarget(e.target.value as any)}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
-                              >
-                                <option value="general">Cualquier asesor disponible</option>
-                                <option value="sales">Equipo de Ventas</option>
-                                <option value="support">Servicio al Cliente & Soporte</option>
-                                <option value="ops">Operaciones & Despacho</option>
-                              </select>
-                            </div>
-
-                            <div className="space-y-1.5">
-                              <label className="text-xs font-bold text-gray-900 dark:text-white">
-                                Comportamiento de la IA
-                              </label>
-                              <select
-                                value={handoffBehavior}
-                                onChange={(e) => setHandoffBehavior(e.target.value as any)}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
-                              >
-                                <option value="pause_ia">Pausar IA mientras atiende humano</option>
-                                <option value="assist_agent">Modo Copiloto (IA asiste al asesor)</option>
-                                <option value="resume_on_finish">Reanudar IA al cerrar la conversación</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -1639,24 +1446,14 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 6: HORARIOS & DISPONIBILIDAD ── */}
                 {botSubTab === "hours" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                        <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                          Horarios & Operación Autónoma
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Define cómo interactúa el bot fuera del horario habitual de la sede ({openingDays}, {openingHours}).
-                        </p>
-                      </div>
-
-                      {/* ¿Recibir pedidos fuera de horario? */}
-                      <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold text-gray-900 dark:text-white">
-                            ¿Permitir tomar pedidos fuera de horario?
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Si está activo, el asistente tomará la orden y la dejará programada en el OMS para el próximo turno de apertura.
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Permitir tomar pedidos fuera de horario
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Si está activo, el asistente tomará la orden y la dejará programada en el OMS para el próximo turno.
                           </p>
                         </div>
                         <Toggle
@@ -1666,20 +1463,25 @@ export const BusinessSettingsModal: React.FC<{
                         />
                       </div>
 
-                      {/* Mensaje Fuera de Horario */}
-                      <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-bold text-gray-900 dark:text-white">
-                            Respuesta Automática Fuera de Horario
-                          </label>
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                              Respuesta automática fuera de horario
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              Mensaje que recibirá el cliente si contacta a la sede cuando se encuentra cerrada.
+                            </p>
+                          </div>
                           <Toggle intent="bot.closed" checked={isClosedHoursEnabled} onChange={setIsClosedHoursEnabled} />
                         </div>
+
                         {isClosedHoursEnabled && (
                           <textarea
                             rows={3}
                             value={closedHoursMessage}
                             onChange={(e) => setClosedHoursMessage(e.target.value)}
-                            className="w-full p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none"
+                            className="w-full p-3.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 resize-none placeholder:text-gray-400"
                           />
                         )}
                       </div>
@@ -1690,104 +1492,97 @@ export const BusinessSettingsModal: React.FC<{
                 {/* ── ÁREA 7: EXPERIENCIA DEL CLIENTE ── */}
                 {botSubTab === "experience" && (
                   <div className="space-y-6 animate-fade-in">
-                    <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                      <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
-                        <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                          Experiencia del Cliente en el Chat
-                        </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Controla cómo se despliega el catálogo interactivo y la confirmación visual de compra en WhatsApp.
-                        </p>
+                    <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Desplegar catálogo visual en tarjetas
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Envía carrusel o tarjetas interactivas de productos directamente en el chat.
+                          </p>
+                        </div>
+                        <Toggle intent="exp.cards" checked={expShowCatalogCards} onChange={setExpShowCatalogCards} />
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Desplegar Catálogo Visual en Tarjetas
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Envía carrusel o tarjetas interactivas de productos directamente en el chat.
-                            </p>
-                          </div>
-                          <Toggle intent="exp.cards" checked={expShowCatalogCards} onChange={setExpShowCatalogCards} />
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Mostrar menú por categorías
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Agrupa los productos en botones rápidos de categorías.
+                          </p>
                         </div>
+                        <Toggle intent="exp.categories" checked={expShowCategories} onChange={setExpShowCategories} />
+                      </div>
 
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Mostrar Menú por Categorías
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Agrupa los productos en botones rápidos de categorías.
-                            </p>
-                          </div>
-                          <Toggle intent="exp.categories" checked={expShowCategories} onChange={setExpShowCategories} />
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Incluir fotos y precios en respuestas
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Adjunta la fotografía y precio oficial de cada producto consultado.
+                          </p>
                         </div>
+                        <Toggle intent="exp.pictures" checked={expShowPictures} onChange={setExpShowPictures} />
+                      </div>
 
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Incluir Fotos y Precios en Respuestas
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Adjunta la fotografía y precio oficial de cada producto consultado.
-                            </p>
-                          </div>
-                          <Toggle intent="exp.pictures" checked={expShowPictures} onChange={setExpShowPictures} />
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Permitir armar carrito desde conversación
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            El cliente puede sumar y restar ítems en el chat sin salir a enlaces externos.
+                          </p>
                         </div>
+                        <Toggle intent="exp.cart" checked={expInlineCart} onChange={setExpInlineCart} />
+                      </div>
 
-                        <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Permitir Armar Carrito desde Conversación
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              El cliente puede sumar y restar ítems en el chat sin salir a enlaces externos.
-                            </p>
-                          </div>
-                          <Toggle intent="exp.cart" checked={expInlineCart} onChange={setExpInlineCart} />
+                      <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Resumen previo de pedido con desglose completo
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Antes de confirmar, envía un resumen con ítems, dirección, entrega, medio de pago y total exacto.
+                          </p>
                         </div>
-
-                        <div className="flex items-center justify-between py-2">
-                          <div>
-                            <p className="text-xs font-bold text-gray-900 dark:text-white">
-                              Resumen Previo de Pedido con Desglose Completo
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Antes de confirmar, envía un resumen con ítems, dirección, entrega, medio de pago y total exacto.
-                            </p>
-                          </div>
-                          <Toggle intent="exp.summary" checked={expPreConfirmationSummary} onChange={setExpPreConfirmationSummary} />
-                        </div>
+                        <Toggle intent="exp.summary" checked={expPreConfirmationSummary} onChange={setExpPreConfirmationSummary} />
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          </>
-        )}
-      </div>
-    )}
+            </>
+          )}
+        </div>
+      )}
 
             {/* ── TAB 4: CUENTAS & PAGOS ── */}
             {activeTab === "payments" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                     Cuentas & Métodos de Pago
                   </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    Datos donde tus clientes realizarán transferencias y métodos presenciales admitidos.
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Cuentas receptoras para transferencias de clientes y métodos de cobro presencial habilitados.
                   </p>
                 </div>
 
                 {/* Transferencias */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Transferencias Bancarias & Móviles
-                  </h3>
+                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                  <div className="border-b border-gray-100 dark:border-gray-800 pb-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Transferencias Bancarias & Billeteras Digitales
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Información que se le compartirá al comprador en el canal de venta para transferir.
+                    </p>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field
@@ -1806,7 +1601,7 @@ export const BusinessSettingsModal: React.FC<{
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
                     <Field
                       label="Cuenta Bancolombia / Banco"
                       type="text"
@@ -1832,41 +1627,58 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Cobro en Sede */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Cobro Presencial en Sede
-                  </h3>
-
-                  <div className="flex items-center justify-between py-1">
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">
-                        Pago en Efectivo Contra Entrega
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Permite a los compradores abonar en efectivo al recibir el pedido.
-                      </p>
-                    </div>
-                    <Toggle
-                      intent="payment.cash.toggle"
-                      checked={allowCashOnDelivery}
-                      onChange={setAllowCashOnDelivery}
-                    />
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Cobro Presencial en Sede
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Métodos admitidos al entregar pedidos en mesa, mostrador o contra entrega.
+                    </p>
                   </div>
 
-                  <div className="flex items-center justify-between py-1 border-t border-gray-100 dark:border-gray-800 pt-3">
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">
-                        Datáfono / Terminal de Tarjeta
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Acepta cobro con tarjeta de crédito o débito presencial.
-                      </p>
+                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <Coins className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Pago en Efectivo Contra Entrega
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Permite a los compradores abonar en efectivo al momento de recibir su pedido.
+                          </p>
+                        </div>
+                      </div>
+                      <Toggle
+                        intent="payment.cash.toggle"
+                        checked={allowCashOnDelivery}
+                        onChange={setAllowCashOnDelivery}
+                      />
                     </div>
-                    <Toggle
-                      intent="payment.card.toggle"
-                      checked={allowCardTerminal}
-                      onChange={setAllowCardTerminal}
-                    />
+
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Datáfono / Terminal de Tarjeta
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Acepta cobro presencial con tarjeta de débito o crédito mediante terminal física.
+                          </p>
+                        </div>
+                      </div>
+                      <Toggle
+                        intent="payment.card.toggle"
+                        checked={allowCardTerminal}
+                        onChange={setAllowCardTerminal}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1876,10 +1688,10 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "branding" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                     Marca & Identidad Visual
                   </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Logo, portada de tienda, colores distintivos y sonidos de alerta para la operación.
                   </p>
                 </div>
@@ -1887,7 +1699,7 @@ export const BusinessSettingsModal: React.FC<{
                 {/* Logo & Portada */}
                 <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-6 shadow-theme-xs">
                   <div>
-                    <h3 className="text-xs font-bold text-gray-900 dark:text-white   mb-3">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
                       Logo de la Sede
                     </h3>
                     <div className="flex items-center gap-6">
@@ -1901,8 +1713,8 @@ export const BusinessSettingsModal: React.FC<{
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <label className="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-900 hover:bg-black text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 transition-colors cursor-pointer flex items-center gap-1.5">
-                            <Upload className="w-3.5 h-3.5" />
+                          <label className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-900 hover:bg-black text-white dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 transition-colors cursor-pointer flex items-center gap-2 shadow-theme-xs">
+                            <Upload className="w-4 h-4" />
                             <span>Subir Logo</span>
                             <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                           </label>
@@ -1911,36 +1723,36 @@ export const BusinessSettingsModal: React.FC<{
                             <button
                               type="button"
                               onClick={() => setLogoUrl("")}
-                              className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                              className="px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                             >
                               Quitar
                             </button>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500">
-                          Recomendado: Imagen cuadrada de al menos 400x400 px.
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Recomendado: Formato cuadrado de al menos 400x400 px (PNG, JPG o WebP).
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Banner de Portada */}
-                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                    <h3 className="text-xs font-bold text-gray-900 dark:text-white   mb-3">
+                  <div className="pt-5 border-t border-gray-100 dark:border-gray-800">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
                       Portada / Banner de la Tienda Web
                     </h3>
                     <div className="space-y-3">
-                      <div className="w-full h-32 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center">
+                      <div className="w-full h-36 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center">
                         {bannerUrl ? (
                           <img src={bannerUrl} alt="Banner Sede" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-xs text-gray-400">Sin portada configurada</span>
+                          <span className="text-sm text-gray-400">Sin portada configurada</span>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <label className="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors cursor-pointer flex items-center gap-1.5 border border-gray-200 dark:border-gray-700">
-                          <Upload className="w-3.5 h-3.5" />
+                        <label className="px-4 py-2 rounded-lg text-sm font-medium bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer flex items-center gap-2 border border-gray-300 dark:border-gray-700 shadow-theme-xs">
+                          <Upload className="w-4 h-4" />
                           <span>Cambiar Portada</span>
                           <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
                         </label>
@@ -1948,7 +1760,7 @@ export const BusinessSettingsModal: React.FC<{
                           <button
                             type="button"
                             onClick={() => setBannerUrl("")}
-                            className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                            className="px-3 py-2 rounded-lg text-sm font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                           >
                             Quitar portada
                           </button>
@@ -1959,14 +1771,19 @@ export const BusinessSettingsModal: React.FC<{
                 </div>
 
                 {/* Color & Sonido */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Color & Alerta Sonora de Comandas
-                  </h3>
+                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-5 shadow-theme-xs">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Color Distintivo & Alertas
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Personalización de tono primario y timbre de avisos operativos.
+                    </p>
+                  </div>
 
-                  <div className="space-y-3">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white">
-                      Color Distintivo de Marca
+                  <div className="space-y-2.5">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Color de Marca
                     </label>
                     <div className="flex items-center gap-3">
                       {[
@@ -1980,7 +1797,7 @@ export const BusinessSettingsModal: React.FC<{
                           key={c.hex}
                           type="button"
                           onClick={() => setBrandColor(c.hex)}
-                          className={`w-9 h-9 rounded-xl cursor-pointer transition-transform flex items-center justify-center ${
+                          className={`w-9 h-9 rounded-lg cursor-pointer transition-transform flex items-center justify-center ${
                             brandColor === c.hex ? "ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-105" : "hover:scale-105"
                           }`}
                           style={{ backgroundColor: c.hex }}
@@ -1989,20 +1806,20 @@ export const BusinessSettingsModal: React.FC<{
                           {brandColor === c.hex && <Check className="w-4 h-4 text-white stroke-[3]" />}
                         </button>
                       ))}
-                      <span className="text-xs  font-bold text-gray-600 dark:text-gray-400 ml-2">
+                      <span className="text-sm font-mono text-gray-600 dark:text-gray-400 ml-2">
                         {brandColor}
                       </span>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white">
+                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Sonido de Alerta de Nuevos Pedidos
                     </label>
                     <select
                       value={soundAlert}
                       onChange={(e) => setSoundAlert(e.target.value as any)}
-                      className="w-full sm:w-64 px-3.5 py-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
+                      className="h-11 w-full sm:w-72 px-3.5 py-2.5 rounded-lg bg-transparent dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-900 dark:text-white shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                     >
                       <option value="bell">Campana Suave (Bell)</option>
                       <option value="chime">Timbre Dinámico (Chime)</option>
@@ -2019,125 +1836,151 @@ export const BusinessSettingsModal: React.FC<{
             {activeTab === "operations" && (
               <div className="space-y-6 animate-fade-in">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-white">
                     Operaciones & Estado de Sede
                   </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     Flujo de órdenes, pausas programadas y acciones críticas de la sede.
                   </p>
                 </div>
 
                 {/* Preparación de Pedidos */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Flujo Operativo de Órdenes
-                  </h3>
-
-                  <div className="flex items-center justify-between py-1">
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">
-                        Etapa Intermedia de Preparación
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Si está activa, las órdenes pasan a "En Preparación" antes de marcarse como Listas.
-                      </p>
-                    </div>
-                    <Toggle
-                      intent="orders.prep.toggle"
-                      checked={isPreparacionEnabled}
-                      onChange={setIsPreparacionEnabled}
-                    />
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Flujo Operativo de Órdenes
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Configura el comportamiento del tablero de comandas y los tiempos de cocina.
+                    </p>
                   </div>
 
-                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
-                    <Field
-                      label="Tiempo Estimado de Preparación / Buffer (Minutos)"
-                      type="number"
-                      value={kitchenBufferMin}
-                      onChange={(e) => setKitchenBufferMin(Number(e.target.value) || 0)}
-                      placeholder="20"
-                    />
+                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <Clock className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Etapa Intermedia de Preparación
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Si está activa, las órdenes pasan a "En Preparación" antes de marcarse como Listas para entrega.
+                          </p>
+                        </div>
+                      </div>
+                      <Toggle
+                        intent="orders.prep.toggle"
+                        checked={isPreparacionEnabled}
+                        onChange={setIsPreparacionEnabled}
+                      />
+                    </div>
+
+                    <div className="p-5 sm:p-6">
+                      <Field
+                        label="Tiempo Estimado de Preparación / Buffer (Minutos)"
+                        type="number"
+                        value={kitchenBufferMin}
+                        onChange={(e) => setKitchenBufferMin(Number(e.target.value) || 0)}
+                        placeholder="20"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Pausa / Vacaciones */}
-                <div className="p-6 rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 space-y-4 shadow-theme-xs">
-                  <h3 className="text-xs font-bold text-gray-900 dark:text-white  ">
-                    Pausa Temporal / Modo Vacaciones
-                  </h3>
-
-                  <div className="flex items-center justify-between py-1">
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">
-                        Pausar Recepción de Pedidos
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Suspende temporalmente el ingreso de nuevas compras desde la web o chat.
-                      </p>
-                    </div>
-                    <Toggle
-                      intent="business.pause.toggle"
-                      checked={isPaused}
-                      onChange={setIsPaused}
-                    />
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                      Pausa Temporal / Modo Vacaciones
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                      Suspende temporalmente el ingreso de nuevas compras desde la web o chat.
+                    </p>
                   </div>
 
-                  {isPaused && (
-                    <div className="space-y-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      <Field
-                        label="Motivo de la Pausa"
-                        type="text"
-                        value={pauseReason}
-                        onChange={(e) => setPauseReason(e.target.value)}
-                        placeholder="Ej: Vacaciones colectivas / Mantenimiento de cocina"
-                      />
-                      <Field
-                        label="Mensaje Automático para Clientes"
-                        type="text"
-                        value={pauseMessage}
-                        onChange={(e) => setPauseMessage(e.target.value)}
-                        placeholder="En este momento nos encontramos en pausa. Regresamos pronto."
+                  <div className="rounded-xl bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800 shadow-theme-xs overflow-hidden">
+                    <div className="p-5 sm:p-6 flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/40 flex items-center justify-center flex-none mt-0.5">
+                          <PauseCircle className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Pausar Recepción de Pedidos
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            Al activarse, los clientes verán que la sede está en pausa y no podrán generar órdenes nuevas.
+                          </p>
+                        </div>
+                      </div>
+                      <Toggle
+                        intent="business.pause.toggle"
+                        checked={isPaused}
+                        onChange={setIsPaused}
                       />
                     </div>
-                  )}
+
+                    {isPaused && (
+                      <div className="p-5 sm:p-6 space-y-4">
+                        <Field
+                          label="Motivo de la Pausa"
+                          type="text"
+                          value={pauseReason}
+                          onChange={(e) => setPauseReason(e.target.value)}
+                          placeholder="Ej: Vacaciones colectivas / Mantenimiento de cocina"
+                        />
+                        <Field
+                          label="Mensaje Automático para Clientes"
+                          type="text"
+                          value={pauseMessage}
+                          onChange={(e) => setPauseMessage(e.target.value)}
+                          placeholder="En este momento nos encontramos en pausa. Regresamos pronto."
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Zona de Peligro */}
-                <div className="p-6 rounded-xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-rose-800 dark:text-rose-400  ">
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    <span>Zona de Peligro</span>
+                <div className="p-6 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                    <h3 className="text-base font-semibold text-rose-800 dark:text-rose-300">
+                      Zona de Peligro
+                    </h3>
                   </div>
 
-                  <p className="text-xs text-rose-700 dark:text-rose-300">
-                    Eliminar esta sede borrará sus órdenes locales, configuración y enlaces. Esta acción no se puede deshacer.
+                  <p className="text-sm text-rose-700 dark:text-rose-300">
+                    Eliminar esta sede borrará sus órdenes locales, configuración y enlaces. Esta acción es irreversible.
                   </p>
 
                   {!confirmDelete ? (
                     <button
                       type="button"
                       onClick={() => setConfirmDelete(true)}
-                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-theme-xs transition-colors"
+                      className="px-4 py-2.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium cursor-pointer shadow-theme-xs transition-colors"
                     >
                       Eliminar esta Sede
                     </button>
                   ) : (
-                    <div className="p-4 rounded-xl bg-white dark:bg-white/[0.03] border border-rose-300 dark:border-rose-800 space-y-3">
-                      <p className="text-xs font-bold text-rose-900 dark:text-rose-200">
+                    <div className="p-4 rounded-lg bg-white dark:bg-gray-900 border border-rose-200 dark:border-rose-900/60 space-y-3">
+                      <p className="text-sm font-medium text-rose-900 dark:text-rose-200">
                         ¿Confirmas que deseas eliminar permanentemente la sede "{name}"?
                       </p>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={handleDelete}
-                          className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold cursor-pointer shadow-theme-xs transition-colors"
+                          className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium cursor-pointer shadow-theme-xs transition-colors"
                         >
                           Sí, eliminar definitivamente
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDelete(false)}
-                          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold cursor-pointer transition-colors"
+                          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium cursor-pointer transition-colors"
                         >
                           Cancelar
                         </button>
