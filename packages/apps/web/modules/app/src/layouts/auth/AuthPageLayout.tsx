@@ -18,25 +18,25 @@ export default function AuthPageLayout({
         <div className="relative items-center hidden w-full h-full lg:w-1/2 bg-[#190088] dark:bg-zinc-950 lg:flex lg:justify-center overflow-hidden border-l border-zinc-200 dark:border-zinc-800 select-none">
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
           <InteractiveDotGrid
-            dotGap={28}
-            baseRadius={1.5}
-            activeRadius={3.0}
-            glowDistance={180}
+            dotGap={20}
+            baseRadius={0.75}
+            activeRadius={1.5}
+            glowDistance={125}
           />
 
-          <div className="relative z-10 flex flex-col items-center w-full max-w-xl px-8 sm:px-12 text-center pointer-events-auto">
+          <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">
             <Link
               to="/"
-              className="inline-block mb-8 transition-transform duration-300 hover:scale-105 cursor-pointer"
+              className="inline-block mb-6 transition-transform duration-300 hover:scale-105 cursor-pointer"
             >
               <img
                 src="/images/logo/necto-full-white.svg"
                 alt="Necto Logo"
-                className="h-14 sm:h-16 w-auto max-w-full drop-shadow-md"
+                className="h-12 sm:h-14 md:h-16 w-auto max-w-full drop-shadow-md"
               />
             </Link>
 
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight max-w-lg mx-auto drop-shadow-xs">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white leading-normal max-w-xl mx-auto pb-4 drop-shadow-xs">
               Plataforma de Operaciones & Gestión
             </h2>
           </div>
