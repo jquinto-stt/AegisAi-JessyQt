@@ -1146,6 +1146,46 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
   };
 
+  const simulateCustomerMessage = (conversationId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        return {
+          ...conv,
+          lastMessageAt: timeStr,
+          unreadForOperator: conv.status !== "HUMANO_ATENDIENDO" ? true : conv.unreadForOperator,
+          messages: [
+            ...conv.messages,
+            { id: `m-${Date.now()}`, sender: "cliente", text: trimmed, timestamp: timeStr },
+          ],
+        };
+      })
+    );
+  };
+
+  const simulateAIReply = (conversationId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const timeStr = nowTime();
+    setConversations(prev =>
+      prev.map(conv => {
+        if (conv.id !== conversationId) return conv;
+        if (conv.status !== "IA_ATENDIENDO") return conv;
+        return {
+          ...conv,
+          lastMessageAt: timeStr,
+          messages: [
+            ...conv.messages,
+            { id: `m-${Date.now()}`, sender: "ia", text: trimmed, timestamp: timeStr },
+          ],
+        };
+      })
+    );
+  };
+
   return (
     <PedidosContext.Provider
       value={{
