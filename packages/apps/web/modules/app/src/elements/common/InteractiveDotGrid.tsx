@@ -17,8 +17,8 @@ interface InteractiveDotGridProps {
  */
 export default function InteractiveDotGrid({
   dotGap = 26,
-  baseRadius = 1.4,
-  activeRadius = 2.8,
+  baseRadius = 2.1,
+  activeRadius = 4.2,
   glowDistance = 170,
   className = "",
   dotColor = "rgba(255, 255, 255, 0.18)",

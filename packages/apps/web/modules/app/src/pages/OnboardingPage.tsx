@@ -4,12 +4,15 @@ import {
   useBusiness,
   NectoModuleKey,
   BusinessType,
+  BusinessIconKey,
   OfferModel,
   BUSINESS_ARCHETYPES,
 } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
+import { PageMeta } from "@/shell/meta";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
-import { Button, Badge } from "@/elements";
+import { Button } from "@/elements";
+import { cn } from "@/utils";
 import {
   Users,
   ShoppingBag,
@@ -20,19 +23,12 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
-  ShieldCheck,
   Building2,
   MapPin,
-  Phone,
   Store,
-  Activity,
   Layers,
   CheckCircle2,
   Smartphone,
-  Globe,
-  Bell,
-  Sparkles,
-  Info,
   Utensils,
   Wrench,
   Shirt,
@@ -41,75 +37,139 @@ import {
   Scissors,
   Coffee,
   Flame,
+  Rocket,
+  type LucideIcon,
 } from "lucide-react";
 
-/* ── Module Definitions (Capacidades Plug & Play) ─────────────────────── */
+/* ── Static catalogs ────────────────────────────────────────────────── */
 
 interface ModuleConfig {
   id: NectoModuleKey;
   title: string;
+  shortTitle: string;
   description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tag: string;
-  isRecommended?: boolean;
+  icon: LucideIcon;
 }
 
 const MODULE_DEFINITIONS: ModuleConfig[] = [
   {
     id: "pedidos",
-    title: "Sistema de Pedidos Omnicanal",
-    description: "Recepción y flujo de pedidos por WhatsApp, Web y mostrador con Kanban y alistamiento en vivo.",
+    title: "Pedidos Omnicanal",
+    shortTitle: "Pedidos",
+    description: "WhatsApp, web y mostrador en un solo flujo, con alistamiento en vivo.",
     icon: ShoppingBag,
-    tag: "Ventas & Operación",
-    isRecommended: true,
   },
   {
     id: "inventarios",
-    title: "Inventario & Control de Stock",
-    description: "Control de existencias, kardex de movimientos, compras a proveedores y alertas de reposición.",
+    title: "Inventario & Stock",
+    shortTitle: "Inventario",
+    description: "Existencias, kardex de movimientos, compras y alertas de reposición.",
     icon: Package,
-    tag: "Logística & Stock",
-    isRecommended: true,
   },
   {
     id: "turnos",
-    title: "Turnos & Horarios Operativos",
-    description: "Cuadrantes de rotación de personal, control de horarios y asignación por área de trabajo.",
+    title: "Turnos & Horarios",
+    shortTitle: "Turnos",
+    description: "Rotación de personal, control de horarios y asignación por área.",
     icon: Clock,
-    tag: "Equipo & Turnos",
-    isRecommended: false,
   },
   {
     id: "reservas",
-    title: "Reservas de Espacios & Mesas",
-    description: "Gestión de citas presenciales, asignación de boxes, mesas o salones según disponibilidad.",
+    title: "Reservas de Espacios",
+    shortTitle: "Reservas",
+    description: "Asignación de mesas, boxes o salones según disponibilidad.",
     icon: Bookmark,
-    tag: "Aforo & Espacios",
-    isRecommended: false,
   },
   {
     id: "agendamiento",
     title: "Agendamiento & Citas",
-    description: "Calendario sincronizado con reservas automáticas y confirmación directa con clientes.",
+    shortTitle: "Agendamiento",
+    description: "Calendario sincronizado con confirmación directa al cliente.",
     icon: Calendar,
-    tag: "Planificación",
-    isRecommended: false,
   },
   {
     id: "referidos",
-    title: "Programa de Fidelización & Clientes",
-    description: "Registro de compradores, cupones dinámicos, tracking de recompra y fidelización.",
+    title: "Fidelización & Clientes",
+    shortTitle: "Referidos",
+    description: "Cupones, tracking de recompra y programa de referidos.",
     icon: Users,
-    tag: "Crecimiento & Clientes",
-    isRecommended: false,
   },
 ];
 
-const STEPS = [
-  { num: 1, label: "Contexto & Arquetipo", desc: "Identidad y modelo de negocio" },
-  { num: 2, label: "Capacidades Modulares", desc: "¿Qué deseas gestionar?" },
-  { num: 3, label: "Lanzamiento", desc: "Resumen y acceso a la tienda" },
+interface MacroGroup {
+  id: "retail" | "gastronomy" | "services" | "health";
+  label: string;
+  short: string;
+  icon: LucideIcon;
+  defaultType: BusinessType;
+}
+
+const MACRO_GROUPS: MacroGroup[] = [
+  { id: "retail", label: "Retail & Comercio", short: "Retail", icon: ShoppingBag, defaultType: "retail_store" },
+  { id: "gastronomy", label: "Gastronomía", short: "Gastronomía", icon: Utensils, defaultType: "restaurant_virtual" },
+  { id: "services", label: "Servicios & Citas", short: "Servicios", icon: Scissors, defaultType: "services" },
+  { id: "health", label: "Salud & Bienestar", short: "Salud", icon: Pill, defaultType: "pharmacy_health" },
 ];
+
+const OFFER_MODELS: { id: OfferModel; title: string; short: string; icon: LucideIcon }[] = [
+  { id: "physical_products", title: "Productos físicos", short: "Productos", icon: Package },
+  { id: "prepared_products", title: "Preparados", short: "Preparados", icon: Utensils },
+  { id: "services_appointments", title: "Servicios", short: "Servicios", icon: Calendar },
+  { id: "hybrid", title: "Híbrido", short: "Híbrido", icon: Layers },
+];
+
+const OFFER_MODEL_LABEL: Record<OfferModel, string> = {
+  physical_products: "Productos físicos",
+  prepared_products: "Preparados",
+  services_appointments: "Servicios & citas",
+  hybrid: "Modelo híbrido",
+};
+
+const ARCHETYPE_ICONS: Record<BusinessIconKey, LucideIcon> = {
+  utensils: Utensils,
+  flame: Flame,
+  coffee: Coffee,
+  store: Store,
+  chef: Utensils,
+  layers: Layers,
+  shirt: Shirt,
+  wrench: Wrench,
+  pill: Pill,
+  laptop: Laptop,
+  scissors: Scissors,
+  "shopping-bag": ShoppingBag,
+};
+
+const COUNTRIES = [
+  { value: "Colombia", label: "Colombia (COP $)" },
+  { value: "México", label: "México (MXN $)" },
+  { value: "Estados Unidos", label: "EE.UU. (USD $)" },
+  { value: "Argentina", label: "Argentina (ARS $)" },
+  { value: "Chile", label: "Chile (CLP $)" },
+  { value: "España", label: "España (EUR €)" },
+];
+
+const STEPS = [
+  { num: 1, label: "Identidad", desc: "Identidad" },
+  { num: 2, label: "Capacidades", desc: "Capacidades" },
+  { num: 3, label: "Lanzamiento", desc: "Lanzamiento" },
+];
+
+const inputClass =
+  "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 outline-none transition-all placeholder:font-normal placeholder:text-gray-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-brand-500";
+
+function Eyebrow({ children, tone = "brand" }: { children: React.ReactNode; tone?: "brand" | "muted" }) {
+  return (
+    <span
+      className={cn(
+        "text-[11px] font-bold uppercase tracking-[0.2em]",
+        tone === "brand" ? "text-brand-500" : "text-gray-400"
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 /* ── Main Component ─────────────────────────────────────────────────── */
 
@@ -118,7 +178,7 @@ export default function OnboardingPage() {
   const { createBusiness } = useBusiness();
   const [step, setStep] = useState(1);
 
-  // Store Container State (Nivel 1: Contexto e Identidad)
+  // Step 1 — Store identity
   const [companyName, setCompanyName] = useState("");
   const [country, setCountry] = useState("Colombia");
   const [city, setCity] = useState("");
@@ -126,16 +186,15 @@ export default function OnboardingPage() {
   const [selectedArchetype, setSelectedArchetype] = useState<BusinessType>("retail_store");
   const [selectedOfferModel, setSelectedOfferModel] = useState<OfferModel>("physical_products");
 
-  // Capabilities State (Nivel 2)
-  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>([
-    "pedidos",
-    "inventarios",
-  ]);
+  // Step 2 — Capabilities
+  const [selectedModules, setSelectedModules] = useState<NectoModuleKey[]>(["pedidos", "inventarios"]);
   const [isMetaConnected, setIsMetaConnected] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
 
   const currentArchetype =
     BUSINESS_ARCHETYPES.find(a => a.id === selectedArchetype) || BUSINESS_ARCHETYPES[1];
+
+  const canProceedStep1 = companyName.trim().length >= 2;
 
   const handleSelectArchetype = (type: BusinessType) => {
     setSelectedArchetype(type);
@@ -147,17 +206,7 @@ export default function OnboardingPage() {
   };
 
   const handleToggleModule = (key: NectoModuleKey) => {
-    setSelectedModules(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
-    );
-  };
-
-  const handleSelectAllRecommended = () => {
-    setSelectedModules(currentArchetype.recommendedModules);
-  };
-
-  const handleClearModules = () => {
-    setSelectedModules([]);
+    setSelectedModules(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
   };
 
   const currencyForCountry = (c: string) => {
@@ -185,6 +234,8 @@ export default function OnboardingPage() {
           iconKey: currentArchetype.iconKey,
           currency: currencyForCountry(country),
           city: city ? `${city}, ${country}` : country,
+          country,
+          contactPhone: contactPhone.trim() || undefined,
           channels: { whatsapp: isMetaConnected, web: true, pos: true },
           kitchenBufferMin: selectedArchetype === "restaurant_virtual" ? 20 : 10,
           specialty: currentArchetype.label,
@@ -198,390 +249,239 @@ export default function OnboardingPage() {
     }, 600);
   };
 
-  const canProceedStep1 = companyName.trim().length >= 2;
+  const locationLabel = city.trim() ? `${city.trim()}, ${country}` : country;
+  const currentIcon = ARCHETYPE_ICONS[currentArchetype.iconKey] || Store;
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-[#09090B] text-gray-900 dark:text-gray-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
-      {/* Top Standard Navigation Header */}
-      <header className="h-14 px-6 sm:px-10 border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-[#09090B]/90 backdrop-blur-md sticky top-0 z-40 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
+      <PageMeta title="Configuración de Nueva Tienda — NECTO" description="Crea y configura el espacio operativo de tu negocio" />
+
+      {/* ── Header ───────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-gray-100 bg-white/90 px-5 backdrop-blur-md sm:px-10 dark:border-gray-800 dark:bg-gray-950/90">
         <div className="flex items-center gap-3">
           <NectoLogo size="xs" inline />
-          <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block" />
-          <span className="text-xs font-medium text-gray-500 dark:text-gray-400 hidden sm:inline">
-            Configuración de Nueva Tienda
+          <span className="hidden h-5 w-px bg-gray-200 sm:block dark:bg-gray-800" />
+          <span className="hidden text-sm font-medium text-gray-400 sm:inline dark:text-gray-500">
+            Nueva tienda
           </span>
         </div>
-
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-gray-500 dark:text-gray-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Necto OS v3.0</span>
-          </div>
-
-          <Button
-            variant="ghost"
-            intent="onboarding.header.exit"
-            onClick={() => navigate("/workspaces")}
-            className="text-xs text-gray-500 hover:text-gray-900 dark:hover:text-white py-1.5 px-3 rounded-lg"
-          >
-            Salir al Panel
-          </Button>
-        </div>
+        <button
+          type="button"
+          onClick={() => navigate("/workspaces")}
+          className="cursor-pointer text-sm font-medium text-gray-400 transition-colors hover:text-secondary-600 dark:hover:text-white"
+        >
+          Salir
+        </button>
       </header>
 
-      {/* Full-Width Workspace Grid */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 w-full min-h-[calc(100vh-3.5rem)]">
-        {/* Left Column: Interactive Assistant Studio (Expanded & Clean) */}
-        <div className="lg:col-span-7 xl:col-span-7 px-8 sm:px-14 lg:px-16 py-8 sm:py-10 flex flex-col justify-between space-y-8 bg-white dark:bg-[#0D0D10] border-r border-gray-200/80 dark:border-gray-800/80">
-          <div className="space-y-8 max-w-2xl mx-auto w-full">
-            {/* Step Navigation Bar */}
-            <div className="space-y-3 pb-2 border-b border-gray-100 dark:border-gray-800/60">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-gray-400 uppercase tracking-widest text-[10px]">
-                  Fase {step} de 3
-                </span>
-                <span className="text-[#190088] dark:text-[#97D6DF] font-bold tracking-tight">
-                  {STEPS[step - 1].label}
-                </span>
-              </div>
-
-              {/* Step Progress Indicators */}
-              <div className="flex items-center gap-3">
-                {STEPS.map((s, idx) => {
-                  const isCurrent = s.num === step;
-                  const isPassed = s.num < step;
-
+      <div className="grid w-full flex-1 grid-cols-1 lg:grid-cols-12">
+        {/* ── Left: form ─────────────────────────────────────────────── */}
+        <div className="flex flex-col justify-between px-5 py-10 sm:px-10 lg:col-span-7 lg:px-16 lg:py-14 dark:bg-[#0D0D10]">
+          <div className="mx-auto w-full max-w-xl">
+            {/* Stepper */}
+            <div className="mb-10 flex items-center gap-4">
+              <div className="flex flex-1 items-center gap-2">
+                {STEPS.map(s => {
+                  const done = s.num < step;
+                  const active = s.num === step;
+                  const reachable = s.num < step || canProceedStep1;
                   return (
-                    <React.Fragment key={s.num}>
-                      <button
-                        type="button"
-                        disabled={s.num > step && !canProceedStep1}
-                        onClick={() => {
-                          if (s.num < step || canProceedStep1) setStep(s.num);
-                        }}
-                        className={`flex items-center gap-2.5 text-xs transition-all text-left cursor-pointer ${
-                          isCurrent
-                            ? "text-gray-950 dark:text-white font-semibold"
-                            : isPassed
-                            ? "text-gray-500 dark:text-gray-400 hover:text-gray-950 dark:hover:text-gray-200"
-                            : "text-gray-300 dark:text-gray-700 cursor-not-allowed"
-                        }`}
-                      >
-                        <div
-                          className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-all ${
-                            isCurrent
-                              ? "bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#09090B] ring-4 ring-[#190088]/10 dark:ring-[#97D6DF]/10"
-                              : isPassed
-                              ? "bg-emerald-500 text-white"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600"
-                          }`}
-                        >
-                          {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : s.num}
-                        </div>
-                        <span className="hidden sm:inline font-medium">{s.label}</span>
-                      </button>
-
-                      {idx < STEPS.length - 1 && (
-                        <div
-                          className={`h-0.5 flex-1 transition-colors rounded-full ${
-                            s.num < step
-                              ? "bg-emerald-500"
-                              : isCurrent
-                              ? "bg-[#190088]/30 dark:bg-[#97D6DF]/30"
-                              : "bg-gray-100 dark:bg-gray-800"
-                          }`}
-                        />
+                    <button
+                      key={s.num}
+                      type="button"
+                      disabled={!reachable}
+                      aria-label={s.label}
+                      aria-current={active ? "step" : undefined}
+                      onClick={() => reachable && setStep(s.num)}
+                      className={cn(
+                        "h-1 flex-1 rounded-full transition-all duration-300",
+                        active
+                          ? "bg-brand-500"
+                          : done
+                          ? "bg-brand-500/40"
+                          : "bg-gray-200 dark:bg-gray-800",
+                        reachable ? "cursor-pointer" : "cursor-not-allowed"
                       )}
-                    </React.Fragment>
+                    />
                   );
                 })}
               </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                {step}/{STEPS.length}
+              </span>
             </div>
 
-            {/* ─── STEP 1: IDENTIDAD DE LA TIENDA (EL CONTENEDOR PURO) ────── */}
+            {/* ─── STEP 1 ─────────────────────────────────────────────── */}
             {step === 1 && (
-              <div className="space-y-8 animate-fade-in">
-                <div className="space-y-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-950 dark:text-white">
-                    Identidad y Naturaleza de la Tienda
+              <div key="s1" className="animate-in space-y-10 fade-in slide-in-from-bottom-1 duration-300">
+                <div className="space-y-3">
+                  <Eyebrow>Paso 1 — Identidad</Eyebrow>
+                  <h1 className="text-[34px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
+                    Configura tu tienda
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                    Indica los datos clave de tu negocio. Necto pre-configurará el catálogo, existencias y canales acordes a tu modelo operativo.
+                  <p className="max-w-md text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
+                    Define lo esencial. Necto prepara el catálogo, las existencias y los canales según tu modelo.
                   </p>
                 </div>
 
-                {/* Form Elements with clean, minimalist hierarchy */}
-                <div className="space-y-6">
-                  {/* Store Name Input */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-between">
-                      <span>Nombre Comercial</span>
-                      <span className="text-[11px] text-gray-400 font-normal">Requerido</span>
-                    </label>
-                    <div className="relative flex items-center">
-                      <Building2 className="w-4 h-4 absolute left-3.5 text-gray-400" />
-                      <input
-                        type="text"
-                        required
-                        placeholder="Ej. Milano Store / Ferretería Central / Burger House"
-                        value={companyName}
-                        onChange={e => setCompanyName(e.target.value)}
-                        autoFocus
-                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-medium focus:outline-none focus:border-[#190088] dark:focus:border-[#97D6DF] focus:bg-white dark:focus:bg-gray-900 transition-all shadow-xs"
-                      />
-                    </div>
+                {/* Name */}
+                <div className="space-y-2.5">
+                  <label htmlFor="store-name" className="text-[13px] font-semibold text-gray-900 dark:text-gray-200">
+                    Nombre comercial
+                  </label>
+                  <div className="relative">
+                    <Building2 className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                      id="store-name"
+                      type="text"
+                      required
+                      autoFocus
+                      placeholder="Milano Store, Ferretería Central, Burger House…"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      className={cn(inputClass, "pl-11 font-semibold")}
+                    />
                   </div>
+                </div>
 
-                  {/* 1. Primary Activity Cards */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        1. Tipo de Negocio / Actividad Principal
-                      </label>
-                      <span className="text-[11px] font-mono text-[#190088] dark:text-[#97D6DF]">
-                        Modelo de Operación
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {[
-                        {
-                          id: "retail",
-                          label: "Retail & Comercio",
-                          desc: "Venta física o digital",
-                          icon: ShoppingBag,
-                          defaultType: "retail_store" as BusinessType,
-                        },
-                        {
-                          id: "gastronomy",
-                          label: "Gastronomía",
-                          desc: "Comanda & recetas",
-                          icon: Utensils,
-                          defaultType: "restaurant_virtual" as BusinessType,
-                        },
-                        {
-                          id: "services",
-                          label: "Servicios & Citas",
-                          desc: "Turnos & reservas",
-                          icon: Scissors,
-                          defaultType: "services" as BusinessType,
-                        },
-                        {
-                          id: "health",
-                          label: "Salud & Bienestar",
-                          desc: "Farmacia & clínica",
-                          icon: Pill,
-                          defaultType: "pharmacy_health" as BusinessType,
-                        },
-                      ].map(group => {
-                        const isGroupActive = currentArchetype.category === group.id;
-                        const Icon = group.icon;
-
-                        return (
-                          <button
-                            type="button"
-                            key={group.id}
-                            onClick={() => handleSelectArchetype(group.defaultType)}
-                            className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between cursor-pointer relative ${
-                              isGroupActive
-                                ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#97D6DF] ring-1 ring-[#190088] dark:ring-[#97D6DF]"
-                                : "bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between w-full mb-3">
-                              <div
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                                  isGroupActive
-                                    ? "bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#09090B]"
-                                    : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                                }`}
-                              >
-                                <Icon className="w-4 h-4" />
-                              </div>
-                              {isGroupActive && (
-                                <div className="w-4 h-4 rounded-full bg-[#190088] dark:bg-[#97D6DF] text-white dark:text-[#09090B] flex items-center justify-center">
-                                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold text-gray-900 dark:text-white leading-snug">
-                                {group.label}
-                              </div>
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">
-                                {group.desc}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Dynamic Specialty Subtype Pills for the Active Macro Operation */}
-                    {(() => {
-                      const categorySpecialties = BUSINESS_ARCHETYPES.filter(
-                        a => a.category === currentArchetype.category
-                      );
-                      if (categorySpecialties.length <= 1) return null;
-
+                {/* Business type */}
+                <div className="space-y-3.5">
+                  <label className="text-[13px] font-semibold text-gray-900 dark:text-gray-200">
+                    ¿Qué tipo de negocio es?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    {MACRO_GROUPS.map(group => {
+                      const isActive = currentArchetype.category === group.id;
+                      const Icon = group.icon;
                       return (
-                        <div className="pt-2 flex items-center gap-1.5 flex-wrap animate-fade-in">
-                          <span className="text-[11px] text-gray-400 mr-1 font-mono uppercase tracking-wider">
-                            Especialidad:
-                          </span>
-                          {categorySpecialties.map(sub => {
-                            const isSubActive = selectedArchetype === sub.id;
-                            const SubIcon =
-                              sub.iconKey === "shirt"
-                                ? Shirt
-                                : sub.iconKey === "wrench"
-                                ? Wrench
-                                : sub.iconKey === "pill"
-                                ? Pill
-                                : sub.iconKey === "laptop"
-                                ? Laptop
-                                : sub.iconKey === "scissors"
-                                ? Scissors
-                                : sub.iconKey === "coffee"
-                                ? Coffee
-                                : sub.iconKey === "flame"
-                                ? Flame
-                                : sub.iconKey === "shopping-bag"
-                                ? ShoppingBag
-                                : sub.iconKey === "store"
-                                ? Store
-                                : sub.iconKey === "layers"
-                                ? Bookmark
-                                : Utensils;
-
-                            return (
-                              <button
-                                type="button"
-                                key={sub.id}
-                                onClick={() => handleSelectArchetype(sub.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
-                                  isSubActive
-                                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 border-gray-900 dark:border-white shadow-xs"
-                                    : "bg-gray-100/80 dark:bg-gray-800/80 border-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-                                }`}
-                              >
-                                <SubIcon className="w-3.5 h-3.5" />
-                                <span>{sub.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <button
+                          key={group.id}
+                          type="button"
+                          aria-pressed={isActive}
+                          title={group.label}
+                          onClick={() => handleSelectArchetype(group.defaultType)}
+                          className={cn(
+                            "flex cursor-pointer flex-col items-start gap-3 rounded-2xl p-3.5 text-left transition-all",
+                            isActive
+                              ? "bg-brand-500 text-white shadow-lg shadow-brand-500/25"
+                              : "bg-gray-50 text-gray-900 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-400")} />
+                          <span className="text-[13px] font-bold leading-tight">{group.short}</span>
+                        </button>
                       );
-                    })()}
+                    })}
                   </div>
 
-                  {/* 2. Offer Model Selector */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        2. ¿Qué comercializas principalmente?
-                      </label>
-                      <span className="text-[11px] font-mono text-gray-400">
-                        Lógica del Catálogo
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {[
-                        {
-                          id: "physical_products" as OfferModel,
-                          title: "Productos Físicos",
-                          desc: "SKUs, variantes de stock y kardex",
-                        },
-                        {
-                          id: "prepared_products" as OfferModel,
-                          title: "Preparados",
-                          desc: "Recetas, insumos y comanda",
-                        },
-                        {
-                          id: "services_appointments" as OfferModel,
-                          title: "Servicios",
-                          desc: "Turnos, reservas y duraciones",
-                        },
-                        {
-                          id: "hybrid" as OfferModel,
-                          title: "Híbrido",
-                          desc: "Combinación mixta con stock",
-                        },
-                      ].map(om => {
-                        const isSelected = selectedOfferModel === om.id;
-                        return (
-                          <div
-                            key={om.id}
-                            onClick={() => setSelectedOfferModel(om.id)}
-                            className={`p-3 rounded-xl border transition-all cursor-pointer text-left ${
-                              isSelected
-                                ? "bg-orange-500/5 dark:bg-orange-500/10 border-[#FF3F1A] dark:border-[#FF3F1A] ring-1 ring-[#FF3F1A]"
-                                : "bg-white dark:bg-gray-900/40 border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                                {om.title}
-                              </span>
-                              {isSelected && (
-                                <span className="text-[10px] font-bold text-[#FF3F1A] font-mono">
-                                  ✓
-                                </span>
+                  {/* Specialty chips */}
+                  {(() => {
+                    const specialties = BUSINESS_ARCHETYPES.filter(a => a.category === currentArchetype.category);
+                    if (specialties.length <= 1) return null;
+                    return (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {specialties.map(sub => {
+                          const isActive = selectedArchetype === sub.id;
+                          return (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              aria-pressed={isActive}
+                              onClick={() => handleSelectArchetype(sub.id)}
+                              className={cn(
+                                "cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                                isActive
+                                  ? "bg-brand-50 text-brand-600 ring-1 ring-brand-500/30 dark:bg-brand-500/15 dark:text-brand-400"
+                                  : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                               )}
-                            </div>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-snug line-clamp-2">
-                              {om.desc}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                            >
+                              {sub.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
 
-                  {/* 3. Location & Phone Details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        País & Moneda
+                {/* Offer model */}
+                <div className="space-y-3.5">
+                  <label className="text-[13px] font-semibold text-gray-900 dark:text-gray-200">
+                    ¿Qué comercializas?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    {OFFER_MODELS.map(om => {
+                      const isActive = selectedOfferModel === om.id;
+                      const Icon = om.icon;
+                      return (
+                        <button
+                          key={om.id}
+                          type="button"
+                          aria-pressed={isActive}
+                          title={om.title}
+                          onClick={() => setSelectedOfferModel(om.id)}
+                          className={cn(
+                            "flex cursor-pointer flex-col items-start gap-3 rounded-2xl p-3.5 text-left transition-all",
+                            isActive
+                              ? "bg-brand-500 text-white shadow-lg shadow-brand-500/25"
+                              : "bg-gray-50 text-gray-900 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                          )}
+                        >
+                          <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-400")} />
+                          <span className="text-[13px] font-bold leading-tight">{om.short}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-3.5 border-t border-gray-100 pt-8 dark:border-gray-800">
+                  <label className="text-[13px] font-semibold text-gray-900 dark:text-gray-200">
+                    Ubicación y contacto
+                  </label>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <label htmlFor="store-country" className="text-[11px] font-medium text-gray-400">
+                        País y moneda
                       </label>
                       <select
+                        id="store-country"
                         value={country}
                         onChange={e => setCountry(e.target.value)}
-                        className="w-full px-3 py-2 text-xs bg-gray-50/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-medium focus:outline-none focus:border-[#190088] cursor-pointer"
+                        className={cn(inputClass, "cursor-pointer px-3 py-2.5 text-[13px]")}
                       >
-                        <option value="Colombia">Colombia (COP $)</option>
-                        <option value="México">México (MXN $)</option>
-                        <option value="Estados Unidos">EE.UU. (USD $)</option>
-                        <option value="Argentina">Argentina (ARS $)</option>
-                        <option value="Chile">Chile (CLP $)</option>
-                        <option value="España">España (EUR €)</option>
+                        {COUNTRIES.map(c => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    <div className="space-y-2">
+                      <label htmlFor="store-city" className="text-[11px] font-medium text-gray-400">
                         Ciudad
                       </label>
                       <input
+                        id="store-city"
                         type="text"
-                        placeholder="Ej. Bogotá, CDMX"
+                        placeholder="Bogotá, CDMX…"
                         value={city}
                         onChange={e => setCity(e.target.value)}
-                        className="w-full px-3 py-2 text-xs bg-gray-50/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-medium focus:outline-none focus:border-[#190088]"
+                        className={cn(inputClass, "px-3 py-2.5 text-[13px]")}
                       />
                     </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        Teléfono de Contacto
+                    <div className="space-y-2">
+                      <label htmlFor="store-phone" className="text-[11px] font-medium text-gray-400">
+                        Teléfono
                       </label>
                       <input
+                        id="store-phone"
                         type="tel"
                         placeholder="+57 300 123 4567"
                         value={contactPhone}
                         onChange={e => setContactPhone(e.target.value)}
-                        className="w-full px-3 py-2 text-xs bg-gray-50/50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white font-medium focus:outline-none focus:border-[#190088]"
+                        className={cn(inputClass, "px-3 py-2.5 text-[13px]")}
                       />
                     </div>
                   </div>
@@ -589,222 +489,150 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* ─── STEP 2: CAPACIDADES MODULARES (PLUG & PLAY) ───────────── */}
+            {/* ─── STEP 2 ─────────────────────────────────────────────── */}
             {step === 2 && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-orange-500/10 text-[#FF3F1A] text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Nivel 2 · Capacidades Plug & Play</span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
-                    ¿Qué deseas gestionar en tu tienda?
+              <div key="s2" className="animate-in space-y-9 fade-in slide-in-from-bottom-1 duration-300">
+                <div className="space-y-3">
+                  <Eyebrow>Paso 2 — Capacidades</Eyebrow>
+                  <h1 className="text-[34px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
+                    ¿Qué quieres gestionar?
                   </h1>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Los módulos son capacidades independientes que se agregan a tu contenedor. Puedes activar los que necesitas hoy o comenzar con la tienda limpia y agregarlos después.
+                  <p className="max-w-md text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
+                    Activa solo lo que necesitas hoy. Puedes sumar módulos después, sin reconfigurar nada.
                   </p>
                 </div>
 
-                {/* Archetype Recommendation Banner */}
-                <div className="p-3.5 rounded-2xl bg-[#190088]/5 dark:bg-[#190088]/20 border border-[#190088]/20 flex items-start gap-3 shadow-2xs">
-                  <Sparkles className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] mt-0.5 flex-none" />
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-[#190088] dark:text-[#97D6DF]">
-                      Sugerencia para {currentArchetype.label}
-                    </span>
-                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                      Hemos preseleccionado los módulos esenciales para tu modelo de{" "}
-                      <strong>
-                        {selectedOfferModel === "physical_products"
-                          ? "productos físicos con control de existencias"
-                          : selectedOfferModel === "prepared_products"
-                          ? "productos preparados y cocina"
-                          : selectedOfferModel === "services_appointments"
-                          ? "servicios y turnos por agenda"
-                          : "operación híbrida"}
-                      </strong>
-                      . Puedes activar o desactivar cualquiera según tu necesidad.
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="font-bold text-gray-900 dark:text-white">{selectedModules.length}</span>{" "}
+                    {selectedModules.length === 1 ? "módulo activo" : "módulos activos"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedModules(selectedModules.length ? [] : currentArchetype.recommendedModules)
+                    }
+                    className="cursor-pointer text-xs font-bold text-brand-500 transition-opacity hover:opacity-70"
+                  >
+                    {selectedModules.length ? "Quitar todos" : "Usar recomendados"}
+                  </button>
                 </div>
 
-                {/* Quick Toggle Action Bar */}
-                <div className="p-3 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 shadow-2xs">
-                  <div className="flex items-center gap-2 pl-2">
-                    <span className="w-2 h-2 rounded-full bg-[#190088] dark:bg-[#97D6DF]" />
-                    <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                      {selectedModules.length === 0
-                        ? "Tienda limpia (0 capacidades seleccionadas)"
-                        : `${selectedModules.length} capacidad(es) seleccionada(s)`}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {selectedModules.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleClearModules}
-                        className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 px-3 py-1.5 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                      >
-                        Limpiar todos (Empezar en 0)
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={handleSelectAllRecommended}
-                        className="text-xs font-semibold text-[#190088] dark:text-[#97D6DF] hover:underline px-3 py-1.5 rounded-xl hover:bg-[#190088]/10 transition-colors cursor-pointer"
-                      >
-                        Activar recomendados
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Modules Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {MODULE_DEFINITIONS.map(mod => {
                     const isSelected = selectedModules.includes(mod.id);
+                    const isRecommended = currentArchetype.recommendedModules.includes(mod.id);
                     const Icon = mod.icon;
-
                     return (
-                      <div
+                      <button
                         key={mod.id}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={isSelected}
                         onClick={() => handleToggleModule(mod.id)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
+                        className={cn(
+                          "flex cursor-pointer items-start gap-3.5 rounded-2xl p-4 text-left transition-all",
                           isSelected
-                            ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] dark:border-[#190088]/70 ring-1 ring-[#190088]/30 shadow-xs"
-                            : "bg-white dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/60 dark:hover:bg-zinc-900/70"
-                        }`}
+                            ? "bg-brand-50 ring-1 ring-brand-500 dark:bg-brand-500/10"
+                            : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
+                        )}
                       >
-                        <div className="flex items-center justify-between">
-                          <div
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                              isSelected
-                                ? "bg-[#190088] text-white"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 group-hover:text-[#190088] dark:group-hover:text-white"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono text-zinc-500 uppercase">
-                              {mod.tag}
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 flex-none items-center justify-center rounded-xl transition-colors",
+                            isSelected
+                              ? "bg-brand-500 text-white"
+                              : "bg-white text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="text-[13px] font-bold text-gray-900 dark:text-white">
+                              {mod.title}
                             </span>
-                            <div
-                              className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
-                                isSelected
-                                  ? "bg-[#FF3F1A] text-white"
-                                  : "border border-zinc-300 dark:border-zinc-700"
-                              }`}
-                            >
-                              {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <h4 className="text-xs font-bold text-zinc-950 dark:text-white">
-                            {mod.title}
-                          </h4>
-                          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-snug">
+                            {isRecommended && (
+                              <span className="rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-500 dark:bg-gray-800">
+                                Recomendado
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                             {mod.description}
-                          </p>
-                        </div>
-                      </div>
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full transition-all",
+                            isSelected
+                              ? "bg-brand-500 text-white"
+                              : "border border-gray-300 dark:border-gray-700"
+                          )}
+                        >
+                          {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                        </span>
+                      </button>
                     );
                   })}
                 </div>
 
-                {/* Information Callout */}
-                <div className="p-4 rounded-2xl bg-zinc-100/80 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 flex items-start gap-3">
-                  <Info className="w-4 h-4 text-[#190088] dark:text-[#97D6DF] mt-0.5 flex-none" />
-                  <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    <strong>Desacoplamiento total:</strong> Si no seleccionas ningún módulo, tu tienda se abrirá con el hub de módulos disponible para instalar capacidades en caliente con 1 solo clic.
-                  </p>
-                </div>
+                <p className="text-xs leading-relaxed text-gray-400">
+                  Si no activas ningún módulo, tu tienda abrirá con el hub de módulos listo para instalar
+                  capacidades en caliente.
+                </p>
               </div>
             )}
 
-            {/* ─── STEP 3: LANZAMIENTO Y CANAL WHATSAPP ───────────────────── */}
+            {/* ─── STEP 3 ─────────────────────────────────────────────── */}
             {step === 3 && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider font-mono">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Nivel 3 · Configuración & Lanzamiento</span>
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#190088] dark:text-[#EFE6D3]">
-                    Tu tienda está lista para despegar
+              <div key="s3" className="animate-in space-y-9 fade-in slide-in-from-bottom-1 duration-300">
+                <div className="space-y-3">
+                  <Eyebrow>Paso 3 — Lanzamiento</Eyebrow>
+                  <h1 className="text-[34px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
+                    Todo listo para despegar
                   </h1>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                    Revisa el resumen de tu espacio de trabajo antes de entrar al centro de mando.
+                  <p className="max-w-md text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
+                    Revisa el resumen y entra al centro de mando de tu tienda.
                   </p>
                 </div>
 
-                {/* Store Passport Summary Card */}
-                <div className="p-6 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/90 dark:border-zinc-800 space-y-5 shadow-xs">
-                  <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 pb-4">
-                    <div className="space-y-0.5">
-                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
-                        Espacio de Trabajo
-                      </span>
-                      <h3 className="text-lg font-extrabold text-zinc-900 dark:text-white">
-                        {companyName.trim() || "Mi Tienda"}
-                      </h3>
-                    </div>
-                    <Badge variant="light" color="primary" intent="onboarding.passport.badge">
-                      {currencyForCountry(country)}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                    <div>
-                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Ubicación</span>
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        {city ? `${city}, ${country}` : country}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Arquetipo</span>
-                      <span className="font-semibold text-[#190088] dark:text-[#97D6DF]">
-                        {currentArchetype.label}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Modelo de Oferta</span>
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        {selectedOfferModel === "physical_products"
-                          ? "Productos Físicos (SKU)"
-                          : selectedOfferModel === "prepared_products"
-                          ? "Preparados (Recetas)"
-                          : selectedOfferModel === "services_appointments"
-                          ? "Servicios & Citas"
-                          : "Modelo Híbrido"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-zinc-400 text-[10px] font-mono uppercase block">Contacto</span>
-                      <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-                        {contactPhone || "Línea por configurar"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Seed Catalog & Categories Inferred */}
-                  <div className="p-3.5 rounded-2xl bg-zinc-100/70 dark:bg-zinc-800/40 border border-zinc-200/70 dark:border-zinc-800 space-y-1">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                      Catálogo & Categorías Semilla:
+                {/* Summary */}
+                <div className="space-y-6 rounded-3xl bg-gray-50 p-6 sm:p-7 dark:bg-gray-900">
+                  <div className="flex items-center gap-4">
+                    <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-brand-500 text-white">
+                      {React.createElement(currentIcon, { className: "h-6 w-6" })}
                     </span>
-                    <p className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
-                      {currentArchetype.defaultCategories.join(" · ")}
-                    </p>
+                    <div className="min-w-0">
+                      <p className="truncate text-lg font-black tracking-tight text-secondary-600 dark:text-white">
+                        {companyName.trim() || "Mi Tienda"}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {locationLabel} · {currencyForCountry(country)}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Active Capabilities Summary */}
-                  <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 block">
-                      Capacidades a Instalar:
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-gray-200 pt-6 sm:grid-cols-3 dark:border-gray-800">
+                    {[
+                      { label: "Arquetipo", value: currentArchetype.label },
+                      { label: "Modelo de oferta", value: OFFER_MODEL_LABEL[selectedOfferModel] },
+                      { label: "Contacto", value: contactPhone.trim() || "Por configurar" },
+                    ].map(item => (
+                      <div key={item.label} className="space-y-1">
+                        <dt className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                          {item.label}
+                        </dt>
+                        <dd className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
+                          {item.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+
+                  <div className="space-y-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                      Módulos a instalar
                     </span>
                     {selectedModules.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
@@ -813,41 +641,36 @@ export default function OnboardingPage() {
                           return (
                             <span
                               key={m}
-                              className="px-2.5 py-1 rounded-lg bg-[#190088]/10 text-[#190088] dark:text-[#97D6DF] text-xs font-bold border border-[#190088]/20 flex items-center gap-1.5"
+                              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200"
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-[#190088] dark:text-[#97D6DF]" />
-                              <span>{def?.title || m}</span>
+                              {def?.shortTitle || m}
                             </span>
                           );
                         })}
                       </div>
                     ) : (
-                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2">
-                        <Store className="w-4 h-4 text-amber-600 flex-none" />
-                        <span>Tienda Limpia: No se instalarán módulos iniciales. Podrás activarlos cuando desees.</span>
-                      </div>
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400">
+                        Tienda limpia — podrás activar módulos cuando quieras.
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Omnichannel WhatsApp Connection Card */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                {/* WhatsApp */}
+                <div className="flex flex-col justify-between gap-4 rounded-3xl border border-gray-200 p-5 sm:flex-row sm:items-center dark:border-gray-800">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center flex-none">
-                      <Smartphone className="w-5 h-5" />
-                    </div>
+                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+                      <Smartphone className="h-5 w-5" />
+                    </span>
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
-                        Conexión con WhatsApp Web
-                      </h4>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <p className="text-[13px] font-bold text-gray-900 dark:text-white">Conectar WhatsApp</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {isMetaConnected
-                          ? "Canal vinculado con éxito. La tienda recibirá conversaciones y pedidos por este canal."
-                          : "Vincúlalo ahora con el botón o déjalo pendiente para activarlo luego desde Ajustes."}
+                          ? "Canal vinculado. Ya recibes conversaciones y pedidos."
+                          : "Vincúlalo ahora o actívalo después desde Ajustes."}
                       </p>
                     </div>
                   </div>
-
                   <Button
                     variant={isMetaConnected ? "outline" : "primary"}
                     intent="onboarding.whatsapp.connect"
@@ -855,37 +678,35 @@ export default function OnboardingPage() {
                       window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
                       setIsMetaConnected(true);
                     }}
-                    className="text-xs font-bold py-2 px-4 rounded-xl cursor-pointer flex-none"
+                    className="flex-none rounded-full px-5 py-2.5 text-xs font-bold"
                   >
-                    {isMetaConnected ? "Vinculado ✓" : "Conectar WhatsApp"}
+                    {isMetaConnected ? "Vinculado" : "Conectar"}
                   </Button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Wizard Footer Navigation */}
-          <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          {/* Footer nav */}
+          <div className="sticky bottom-0 z-20 mx-auto mt-12 flex w-full max-w-xl items-center justify-between bg-white/95 pt-6 pb-3 backdrop-blur-md dark:bg-[#0D0D10]/95">
             {step > 1 ? (
-              <Button
-                variant="ghost"
-                intent="onboarding.step.prev"
+              <button
+                type="button"
                 onClick={() => setStep(step - 1)}
-                className="py-2.5 px-4 text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1.5 cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-gray-400 transition-colors hover:text-secondary-600 dark:hover:text-white"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Paso Anterior</span>
-              </Button>
+                <ArrowLeft className="h-4 w-4" />
+                Atrás
+              </button>
             ) : (
-              <Button
-                variant="ghost"
-                intent="onboarding.step.cancel"
+              <button
+                type="button"
                 onClick={() => navigate("/workspaces")}
-                className="py-2.5 px-4 text-xs font-bold text-zinc-500 hover:text-zinc-950 dark:hover:text-white flex items-center gap-1.5 cursor-pointer"
+                className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-gray-400 transition-colors hover:text-secondary-600 dark:hover:text-white"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Cancelar / Volver</span>
-              </Button>
+                <ArrowLeft className="h-4 w-4" />
+                Cancelar
+              </button>
             )}
 
             {step < 3 ? (
@@ -894,333 +715,98 @@ export default function OnboardingPage() {
                 intent="onboarding.step.next"
                 disabled={step === 1 && !canProceedStep1}
                 onClick={() => setStep(step + 1)}
-                className="py-3 px-7 text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white shadow-md cursor-pointer"
+                className="rounded-full px-6 py-3 text-[13px] font-bold"
               >
-                <span>Siguiente Paso</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                Continuar
+                <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button
                 variant="primary"
                 intent="onboarding.finish"
+                loading={isDeploying}
                 disabled={isDeploying}
                 onClick={handleFinish}
-                className="py-3 px-8 text-xs font-bold bg-[#FF3F1A] hover:bg-[#e03412] text-white shadow-md cursor-pointer"
+                className="rounded-full px-7 py-3 text-[13px] font-bold"
               >
-                {isDeploying ? (
-                  <>
-                    <Activity className="w-4 h-4 animate-spin" />
-                    <span>Configurando Espacio...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Finalizar & Entrar a mi Tienda</span>
-                    <Store className="w-4 h-4" />
-                  </>
-                )}
+                {isDeploying ? "Creando tienda…" : "Entrar a mi tienda"}
+                {!isDeploying && <Rocket className="h-4 w-4" />}
               </Button>
             )}
           </div>
         </div>
 
-        {/* Right Column: Visual Showcase & Brand Studio (Identical to Login Architecture) */}
-        <div className="lg:col-span-5 xl:col-span-5 relative bg-[#190088] dark:bg-zinc-950 text-white p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-l border-zinc-200 dark:border-zinc-800 min-h-[560px] select-none">
-          {/* Interactive Google Stitch Dot Mosaic Background */}
-          <InteractiveDotGrid
-            dotGap={24}
-            baseRadius={1.0}
-            activeRadius={2.0}
-            glowDistance={160}
-          />
+        {/* ── Right: brand panel ─────────────────────────────────────── */}
+        <div
+          className={cn(
+            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
+            step === 1 ? "flex" : "hidden lg:flex"
+          )}
+        >
+          <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} />
 
           {step === 1 ? (
-            /* ── Step 1: Live Blueprint Architecture Studio ── */
-            <div className="relative z-10 flex flex-col justify-between h-full space-y-5 animate-fade-in w-full pointer-events-auto">
-              {/* Brand Top Header */}
-              <div className="flex items-center justify-between pb-3 border-b border-white/15">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/images/logo/necto-full-white.svg"
-                    alt="Necto"
-                    className="h-7 w-auto"
-                  />
-                  <div className="h-4 w-px bg-white/30" />
-                  <span className="text-xs font-mono uppercase tracking-widest text-white/90 font-semibold">
-                    Instancia de Negocio
+            <div className="relative z-10 flex h-full animate-in flex-col justify-between fade-in duration-300">
+              <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-7 w-auto" />
+
+              <div className="space-y-8">
+                <h2 className="max-w-sm text-[32px] font-black leading-[1.05] tracking-tight text-white sm:text-[40px]">
+                  Nos cruzamos, nos unimos, crecemos.
+                </h2>
+
+                <div className="space-y-2 border-t border-white/25 pt-8">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/60">
+                    Tu tienda
                   </span>
+                  <p className="truncate text-[26px] font-black leading-tight tracking-tight">
+                    {companyName.trim() || "Sin nombre todavía"}
+                  </p>
+                  <p className="text-sm font-medium text-white/85">
+                    {currentArchetype.label} · {OFFER_MODEL_LABEL[selectedOfferModel]}
+                  </p>
+                  <p className="text-sm font-medium text-white/85">
+                    {locationLabel} · {currencyForCountry(country)}
+                  </p>
                 </div>
               </div>
 
-              {/* Main Blueprint Terminal Card (Wireframe glass structure so dots shine through) */}
-              <div className="flex-1 rounded-3xl border border-white/20 p-6 sm:p-8 flex flex-col justify-between space-y-6 relative">
-                {/* Identity Header */}
-                <div className="flex items-start justify-between gap-4 border-b border-white/15 pb-5">
-                  <div className="space-y-2 flex-1 min-w-0">
-                    <span className="text-[11px] font-mono uppercase tracking-widest text-white/70 block font-semibold">
-                      Espacio Operativo
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3 truncate">
-                      <span>{companyName.trim() || "Nombre de tu Tienda"}</span>
-                      {companyName.trim() && (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-none" />
-                      )}
-                    </h3>
-                    <div className="flex items-center gap-2.5 text-sm text-white/85">
-                      <MapPin className="w-4 h-4 text-white/70" />
-                      <span className="truncate">{city ? `${city}, ${country}` : country}</span>
-                      <span>·</span>
-                      <span className="font-mono text-white font-bold px-2 py-0.5 rounded-md border border-white/25 text-xs tracking-wider">
-                        {currencyForCountry(country)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-14 h-14 rounded-2xl border border-white/25 text-white flex items-center justify-center flex-none">
-                    {currentArchetype.iconKey === "utensils" ? (
-                      <Utensils className="w-7 h-7" />
-                    ) : currentArchetype.iconKey === "wrench" ? (
-                      <Wrench className="w-7 h-7" />
-                    ) : currentArchetype.iconKey === "shirt" ? (
-                      <Shirt className="w-7 h-7" />
-                    ) : currentArchetype.iconKey === "laptop" ? (
-                      <Laptop className="w-7 h-7" />
-                    ) : currentArchetype.iconKey === "pill" ? (
-                      <Pill className="w-7 h-7" />
-                    ) : currentArchetype.iconKey === "scissors" ? (
-                      <Scissors className="w-7 h-7" />
-                    ) : (
-                      <Store className="w-7 h-7" />
-                    )}
-                  </div>
-                </div>
-
-                {/* Inferred Layers Breakdown */}
-                <div className="space-y-5 flex-1 flex flex-col justify-around">
-                  {/* Archetype & Offer */}
-                  <div className="grid grid-cols-2 gap-3.5">
-                    <div className="p-4 rounded-2xl border border-white/15 space-y-1.5">
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
-                        Arquetipo
-                      </span>
-                      <div className="text-sm sm:text-base font-bold text-white truncate">
-                        {currentArchetype.label}
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-2xl border border-white/15 space-y-1.5">
-                      <span className="text-[11px] font-mono uppercase tracking-wider text-white/70 block">
-                        Modelo de Oferta
-                      </span>
-                      <div className="text-sm sm:text-base font-bold text-[#97D6DF] truncate">
-                        {selectedOfferModel === "physical_products"
-                          ? "Productos Físicos (SKU)"
-                          : selectedOfferModel === "prepared_products"
-                          ? "Preparados (Recetas)"
-                          : selectedOfferModel === "services_appointments"
-                          ? "Servicios (Citas)"
-                          : "Híbrido Mixto"}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Catalog Schema Inferred */}
-                  <div className="p-4.5 rounded-2xl border border-white/15 space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-white/75">
-                      <span className="flex items-center gap-2 text-white font-bold">
-                        <Package className="w-4 h-4 text-[#97D6DF]" />
-                        <span>Esquema de Catálogo</span>
-                      </span>
-                      <span className="text-emerald-300 text-[11px] font-semibold uppercase tracking-wider">
-                        Estructurado
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2.5 text-xs sm:text-sm text-white/95">
-                      {selectedOfferModel === "physical_products" ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Control de SKUs</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Talla, color y medidas</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Margen & costos base</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Kardex por bodega</span>
-                          </div>
-                        </>
-                      ) : selectedOfferModel === "prepared_products" ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Recetas & escandallo</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Modificadores de plato</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Comanda a cocina</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Descargo de insumos</span>
-                          </div>
-                        </>
-                      ) : selectedOfferModel === "services_appointments" ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Duración en minutos</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Asignación de staff</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Buffer entre sesiones</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Recordatorio por WhatsApp</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Stock físico de insumos</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Servicios agendables</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Cobro combinado en caja</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-300 flex-none" />
-                            <span>Kardex multimodelo</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Operational Capabilities suggested */}
-                  <div className="p-4.5 rounded-2xl border border-white/15 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-mono text-white/75">
-                      <span className="flex items-center gap-2 text-white font-bold">
-                        <Layers className="w-4 h-4 text-white/85" />
-                        <span>Módulos Operativos (Paso 2)</span>
-                      </span>
-                      <span className="text-white/60 text-[11px]">Ajustable</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {currentArchetype.recommendedModules.map(modKey => {
-                        const m = MODULE_DEFINITIONS.find(def => def.id === modKey);
-                        return (
-                          <span
-                            key={modKey}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white flex items-center gap-2 border border-white/20"
-                          >
-                            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                            <span>{m ? m.title.split(" ")[0] : modKey}</span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between text-[11px] font-medium text-white/70">
+                <span>Necto OS · Plataforma de operaciones</span>
+                <span className="font-mono">v3.0</span>
               </div>
             </div>
           ) : (
-            /* ── Step 2 & 3: Standard Visual Showcase ── */
             <>
-              {/* High-Resolution Background Photography */}
               <img
-                src={
-                  step === 2
-                    ? "/onboarding-operations.jpg"
-                    : "/onboarding-whatsapp-orders.jpg"
-                }
-                alt="Necto Core Architecture"
-                className="absolute inset-0 w-full h-full object-cover opacity-90 transition-all duration-700 scale-100"
+                src={step === 2 ? "/onboarding-operations.jpg" : "/onboarding-whatsapp-orders.jpg"}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand-500/25 via-transparent to-black/50" />
 
-              {/* Soft Dark Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/15" />
-              <div className="absolute inset-0 bg-gradient-to-br from-[#FF3F1A]/15 via-transparent to-black/40 pointer-events-none" />
-
-              {/* Top Brand & Trust Badge */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-xs font-semibold shadow-sm">
-                  <Layers className="w-3.5 h-3.5 text-orange-400" />
-                  <span>Arquitectura 3 Capas</span>
-                </div>
-
-                <span className="text-[11px] font-mono text-zinc-300 uppercase tracking-wider px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15">
-                  Necto Core
+                <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-6 w-auto" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">
+                  {step === 2 ? "Capacidades" : "Lanzamiento"}
                 </span>
               </div>
 
-              {/* Center Value Content */}
-              <div className="relative z-10 space-y-6 my-auto py-8">
-                <div className="space-y-3">
-                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-orange-400 px-3 py-1 rounded-lg bg-orange-500/20 backdrop-blur-md border border-orange-500/40 inline-block shadow-sm">
-                    {step === 2 ? "Capacidades Plug & Play" : "Tu Tienda en Vivo"}
-                  </span>
-
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight drop-shadow-md">
-                    {step === 2
-                      ? "Enciende únicamente los módulos que requieres hoy."
-                      : "Tu espacio de trabajo está listo para recibir operaciones."}
-                  </h2>
-
-                  <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed max-w-md drop-shadow-sm font-medium">
-                    {step === 2
-                      ? "Los módulos son capacidades independientes. Si necesitas pedidos, inventario o turnos, los activas sin rehacer tu configuración."
-                      : "Acceso inmediato al centro de operaciones, catálogo de módulos y administración transversal."}
-                  </p>
-                </div>
-
-                {/* Feature Highlights Grid */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  <div className="p-3.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 space-y-1">
-                    <div className="flex items-center gap-1.5 text-orange-400 text-xs font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>0 Módulos</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-300 leading-snug">
-                      La tienda funciona por sí sola con sus roles y configuración base.
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 space-y-1">
-                    <div className="flex items-center gap-1.5 text-orange-400 text-xs font-bold">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Plug & Play</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-300 leading-snug">
-                      Activa o remueve capacidades en cualquier momento sin fricción.
-                    </p>
-                  </div>
-                </div>
+              <div className="relative z-10 space-y-4">
+                <h2 className="max-w-sm text-[30px] font-black uppercase leading-[1.05] tracking-tight text-white sm:text-[38px]">
+                  {step === 2 ? "Enciende solo lo que necesitas hoy." : "Tu operación empieza ahora."}
+                </h2>
+                <p className="max-w-xs text-sm leading-relaxed text-white/80">
+                  {step === 2
+                    ? "Suma o quita módulos cuando quieras, sin rehacer tu configuración."
+                    : "Acceso inmediato al centro de operaciones y a la administración de tu tienda."}
+                </p>
               </div>
 
-              {/* Bottom Security Note */}
-              <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Multi-Tenant Seguro</span>
-                </span>
-                <span className="font-mono text-zinc-500">v3.0.0</span>
+              <div className="relative z-10 flex items-center justify-between text-[11px] font-medium text-white/70">
+                <span>grow together</span>
+                <span className="font-mono">v3.0</span>
               </div>
             </>
           )}

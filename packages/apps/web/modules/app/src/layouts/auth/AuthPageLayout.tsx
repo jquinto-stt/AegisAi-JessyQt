@@ -19,8 +19,8 @@ export default function AuthPageLayout({
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
           <InteractiveDotGrid
             dotGap={24}
-            baseRadius={1.0}
-            activeRadius={2.0}
+            baseRadius={1.5}
+            activeRadius={3.0}
             glowDistance={160}
           />
 
