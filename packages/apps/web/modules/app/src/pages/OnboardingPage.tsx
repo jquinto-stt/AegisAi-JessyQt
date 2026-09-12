@@ -10,6 +10,7 @@ import {
 } from "../context/BusinessContext";
 import { NectoLogo } from "../compositions/shared/NectoLogo";
 import { PageMeta } from "@/shell/meta";
+import { ThemeToggleButton } from "@/shell";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { Button } from "@/elements";
 import { cn } from "@/utils";
@@ -556,35 +557,22 @@ export default function OnboardingPage() {
                           title={om.title}
                           onClick={() => setSelectedOfferModel(om.id)}
                           className={cn(
-                            "flex cursor-pointer flex-col items-start gap-3 rounded-2xl p-3.5 text-left transition-all",
-                            isActive
-                              ? "bg-brand-500 text-white shadow-lg shadow-brand-500/25"
-                              : "bg-gray-50 text-gray-900 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                          )}
-                        >
-                          <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-gray-400")} />
-                          <span className="text-[13px] font-bold leading-tight">{om.short}</span>
-                        </button>
-                      );
-                    })}
+                      className={inputClass}
+                      autoFocus
+                    />
                   </div>
-                </div>
 
-                {/* Location */}
-                <div className="space-y-3.5 border-t border-gray-100 pt-8 dark:border-gray-800">
-                  <label className="text-[13px] font-semibold text-gray-900 dark:text-gray-200">
-                    Ubicación y contacto
-                  </label>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {/* Location */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <label htmlFor="store-country" className="text-[11px] font-medium text-gray-400">
-                        País y moneda
+                      <label htmlFor="country-select" className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                        País
                       </label>
                       <select
-                        id="store-country"
+                        id="country-select"
                         value={country}
                         onChange={e => setCountry(e.target.value)}
-                        className={cn(inputClass, "cursor-pointer px-3 py-2.5 text-[13px]")}
+                        className={inputClass}
                       >
                         {COUNTRIES.map(c => (
                           <option key={c.value} value={c.value}>
@@ -594,230 +582,252 @@ export default function OnboardingPage() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label htmlFor="store-city" className="text-[11px] font-medium text-gray-400">
-                        Ciudad
+                      <label htmlFor="city-input" className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                        Ciudad / Municipio
                       </label>
                       <input
-                        id="store-city"
+                        id="city-input"
                         type="text"
-                        placeholder="Bogotá, CDMX…"
+                        placeholder="Ej. Bogotá, Medellín…"
                         value={city}
                         onChange={e => setCity(e.target.value)}
-                        className={cn(inputClass, "px-3 py-2.5 text-[13px]")}
+                        className={inputClass}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label htmlFor="store-phone" className="text-[11px] font-medium text-gray-400">
-                        Teléfono
-                      </label>
-                      <input
-                        id="store-phone"
-                        type="tel"
-                        placeholder="+57 300 123 4567"
-                        value={contactPhone}
-                        onChange={e => setContactPhone(e.target.value)}
-                        className={cn(inputClass, "px-3 py-2.5 text-[13px]")}
-                      />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-2">
+                    <label htmlFor="contact-phone" className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                      Teléfono de contacto / WhatsApp
+                    </label>
+                    <input
+                      id="contact-phone"
+                      type="tel"
+                      placeholder="Ej. +57 300 123 4567"
+                      value={contactPhone}
+                      onChange={e => setContactPhone(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  {/* Archetypes grid */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                        Arquetipo de operación
+                      </span>
+                      <span className="text-[11px] text-gray-400">
+                        Define recomendaciones iniciales
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                      {BUSINESS_ARCHETYPES.map(arch => {
+                        const Icon = ARCHETYPE_ICONS[arch.iconKey] || Store;
+                        const isSelected = selectedArchetype === arch.id;
+                        return (
+                          <button
+                            key={arch.id}
+                            type="button"
+                            onClick={() => handleSelectArchetype(arch.id)}
+                            className={cn(
+                              "flex flex-col items-start rounded-2xl border p-3.5 text-left transition-all cursor-pointer",
+                              isSelected
+                                ? "border-brand-500 bg-brand-50/50 dark:bg-brand-500/10 dark:border-brand-500/50 ring-2 ring-brand-500/20"
+                                : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "flex h-8 w-8 items-center justify-center rounded-xl transition-colors mb-2.5",
+                                isSelected
+                                  ? "bg-brand-500 text-white"
+                                  : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <span className="text-xs font-bold text-gray-900 dark:text-white">
+                              {arch.label}
+                            </span>
+                            <span className="mt-0.5 text-[11px] text-gray-400 line-clamp-1">
+                              {arch.description}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ─── STEP 2 ─────────────────────────────────────────────── */}
+            {/* Step 2: Capacidades */}
             {step === 2 && (
-              <div key="s2" className="animate-in space-y-9 fade-in slide-in-from-bottom-1 duration-300">
-                <div className="space-y-3">
-                  <Eyebrow>Paso 2 — Capacidades</Eyebrow>
-                  <h1 className="text-[34px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
-                    ¿Qué quieres gestionar?
+              <div className="space-y-8 animate-in fade-in duration-300">
+                <div>
+                  <Eyebrow>Paso 2 · Capacidades</Eyebrow>
+                  <h1 className="mt-2 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl dark:text-white">
+                    Capacidades y Módulos
                   </h1>
-                  <p className="max-w-md text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
-                    Activa solo lo que necesitas hoy. Puedes sumar módulos después, sin reconfigurar nada.
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                    Activa los módulos que necesitas hoy. Podrás cambiar esta configuración cuando quieras.
                   </p>
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    <span className="font-bold text-gray-900 dark:text-white">{selectedModules.length}</span>{" "}
-                    {selectedModules.length === 1 ? "módulo activo" : "módulos activos"}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedModules(selectedModules.length ? [] : currentArchetype.recommendedModules)
-                    }
-                    className="cursor-pointer text-xs font-bold text-brand-500 transition-opacity hover:opacity-70"
-                  >
-                    {selectedModules.length ? "Quitar todos" : "Usar recomendados"}
-                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {MODULE_DEFINITIONS.map(mod => {
                     const isSelected = selectedModules.includes(mod.id);
-                    const isRecommended = currentArchetype.recommendedModules.includes(mod.id);
-                    const Icon = mod.icon;
+                    const ModIcon = mod.icon;
                     return (
                       <button
                         key={mod.id}
                         type="button"
-                        role="checkbox"
-                        aria-checked={isSelected}
-                        title={mod.title}
                         onClick={() => handleToggleModule(mod.id)}
                         className={cn(
-                          "flex cursor-pointer items-start gap-3.5 rounded-2xl p-4 text-left transition-all",
+                          "flex items-start gap-3.5 rounded-2xl border p-4 text-left transition-all cursor-pointer select-none",
                           isSelected
-                            ? "bg-brand-50 ring-1 ring-brand-500 dark:bg-brand-500/10"
-                            : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
+                            ? "border-brand-500 bg-brand-50/50 dark:bg-brand-500/10 dark:border-brand-500/50 ring-2 ring-brand-500/20"
+                            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
                         )}
                       >
                         <span
                           className={cn(
-                            "flex h-10 w-10 flex-none items-center justify-center rounded-xl transition-colors",
+                            "flex h-9 w-9 flex-none items-center justify-center rounded-xl transition-colors mt-0.5",
                             isSelected
                               ? "bg-brand-500 text-white"
-                              : "bg-white text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+                              : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                           )}
                         >
-                          <Icon className="h-5 w-5" />
+                          <ModIcon className="h-4.5 w-4.5" />
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2">
-                            <span className="text-[13px] font-bold text-gray-900 dark:text-white">
-                              {mod.shortTitle}
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-gray-900 dark:text-white">
+                              {mod.title}
                             </span>
-                            {isRecommended && (
-                              <span className="rounded-full bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-brand-500 dark:bg-gray-800">
-                                Recomendado
-                              </span>
-                            )}
-                          </span>
-                          <span className="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                            <span
+                              className={cn(
+                                "flex h-4 w-4 items-center justify-center rounded-full border transition-colors",
+                                isSelected
+                                  ? "border-brand-500 bg-brand-500 text-white"
+                                  : "border-gray-300 dark:border-gray-700"
+                              )}
+                            >
+                              {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
                             {mod.description}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            "mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full transition-all",
-                            isSelected
-                              ? "bg-brand-500 text-white"
-                              : "border border-gray-300 dark:border-gray-700"
-                          )}
-                        >
-                          {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                        </span>
+                          </p>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-
-                <p className="text-xs leading-relaxed text-gray-400">
-                  Si no activas ningún módulo, tu tienda abrirá con el hub de módulos listo para instalar
-                  capacidades en caliente.
-                </p>
               </div>
             )}
 
-            {/* ─── STEP 3 ─────────────────────────────────────────────── */}
+            {/* Step 3: Resumen */}
             {step === 3 && (
-              <div key="s3" className="animate-in space-y-9 fade-in slide-in-from-bottom-1 duration-300">
-                <div className="space-y-3">
-                  <Eyebrow>Paso 3 — Lanzamiento</Eyebrow>
-                  <h1 className="text-[34px] font-black leading-[1.08] tracking-tight text-secondary-600 sm:text-[40px] dark:text-white">
-                    Todo listo para despegar
+              <div className="space-y-8 animate-in fade-in duration-300">
+                <div>
+                  <Eyebrow>Paso 3 · Lanzamiento</Eyebrow>
+                  <h1 className="mt-2 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl dark:text-white">
+                    Resumen de configuración
                   </h1>
-                  <p className="max-w-md text-[15px] leading-relaxed text-gray-500 dark:text-gray-400">
-                    Revisa el resumen y entra al centro de mando de tu tienda.
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                    Revisa los datos antes de crear tu espacio operativo.
                   </p>
                 </div>
 
-                {/* Summary */}
-                <div className="space-y-6 rounded-3xl bg-gray-50 p-6 sm:p-7 dark:bg-gray-900">
-                  <div className="flex items-center gap-4">
-                    <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-brand-500 text-white">
-                      {React.createElement(currentIcon, { className: "h-6 w-6" })}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-lg font-black tracking-tight text-secondary-600 dark:text-white">
-                        {companyName.trim() || "Mi Tienda"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {locationLabel} · {currencyForCountry(country)}
-                      </p>
+                <div className="space-y-6">
+                  <div className="rounded-3xl border border-gray-200 p-6 space-y-6 dark:border-gray-800">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/25">
+                        <currentIcon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                          {companyName.trim() || "Sin nombre"}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {locationLabel} · {currencyForCountry(country)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-gray-200 pt-6 sm:grid-cols-3 dark:border-gray-800">
+                      {[
+                        { label: "Arquetipo", value: currentArchetype.label },
+                        { label: "Modelo de oferta", value: OFFER_MODEL_LABEL[selectedOfferModel] },
+                        { label: "Contacto", value: contactPhone.trim() || "Por configurar" },
+                      ].map(item => (
+                        <div key={item.label} className="space-y-1">
+                          <dt className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                            {item.label}
+                          </dt>
+                          <dd className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
+                            {item.value}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+
+                    <div className="space-y-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+                      <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                        Módulos a instalar
+                      </span>
+                      {selectedModules.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedModules.map(m => {
+                            const def = MODULE_DEFINITIONS.find(d => d.id === m);
+                            return (
+                              <span
+                                key={m}
+                                className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
+                              >
+                                {def?.shortTitle || m}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-[13px] text-gray-500 dark:text-gray-400">
+                          Tienda limpia — podrás activar módulos cuando quieras.
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-gray-200 pt-6 sm:grid-cols-3 dark:border-gray-800">
-                    {[
-                      { label: "Arquetipo", value: currentArchetype.label },
-                      { label: "Modelo de oferta", value: OFFER_MODEL_LABEL[selectedOfferModel] },
-                      { label: "Contacto", value: contactPhone.trim() || "Por configurar" },
-                    ].map(item => (
-                      <div key={item.label} className="space-y-1">
-                        <dt className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                          {item.label}
-                        </dt>
-                        <dd className="text-[13px] font-semibold text-gray-900 dark:text-gray-100">
-                          {item.value}
-                        </dd>
+                  {/* WhatsApp */}
+                  <div className="flex flex-col justify-between gap-4 rounded-3xl border border-gray-200 p-5 sm:flex-row sm:items-center dark:border-gray-800">
+                    <div className="flex items-center gap-3.5">
+                      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+                        <Smartphone className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <p className="text-[13px] font-bold text-gray-900 dark:text-white">Conectar WhatsApp</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {isMetaConnected
+                            ? "Canal vinculado. Ya recibes conversaciones y pedidos."
+                            : "Vincúlalo ahora o actívalo después desde Ajustes."}
+                        </p>
                       </div>
-                    ))}
-                  </dl>
-
-                  <div className="space-y-3 border-t border-gray-200 pt-6 dark:border-gray-800">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                      Módulos a instalar
-                    </span>
-                    {selectedModules.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedModules.map(m => {
-                          const def = MODULE_DEFINITIONS.find(d => d.id === m);
-                          return (
-                            <span
-                              key={m}
-                              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700"
-                            >
-                              {def?.shortTitle || m}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-[13px] text-gray-500 dark:text-gray-400">
-                        Tienda limpia — podrás activar módulos cuando quieras.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* WhatsApp */}
-                <div className="flex flex-col justify-between gap-4 rounded-3xl border border-gray-200 p-5 sm:flex-row sm:items-center dark:border-gray-800">
-                  <div className="flex items-center gap-3.5">
-                    <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                      <Smartphone className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="text-[13px] font-bold text-gray-900 dark:text-white">Conectar WhatsApp</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {isMetaConnected
-                          ? "Canal vinculado. Ya recibes conversaciones y pedidos."
-                          : "Vincúlalo ahora o actívalo después desde Ajustes."}
-                      </p>
                     </div>
+                    <Button
+                      variant={isMetaConnected ? "outline" : "primary"}
+                      intent="onboarding.whatsapp.connect"
+                      onClick={() => {
+                        window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
+                        setIsMetaConnected(true);
+                      }}
+                      className="flex-none rounded-full px-5 py-2.5 text-xs font-bold"
+                    >
+                      {isMetaConnected ? "Vinculado" : "Conectar"}
+                    </Button>
                   </div>
-                  <Button
-                    variant={isMetaConnected ? "outline" : "primary"}
-                    intent="onboarding.whatsapp.connect"
-                    onClick={() => {
-                      window.open("https://web.whatsapp.com", "_blank", "noopener,noreferrer");
-                      setIsMetaConnected(true);
-                    }}
-                    className="flex-none rounded-full px-5 py-2.5 text-xs font-bold"
-                  >
-                    {isMetaConnected ? "Vinculado" : "Conectar"}
-                  </Button>
                 </div>
               </div>
             )}
@@ -859,8 +869,7 @@ export default function OnboardingPage() {
             ) : (
               <Button
                 variant="primary"
-                intent="onboarding.finish"
-                loading={isDeploying}
+                intent="onboarding.step.finish"
                 disabled={isDeploying}
                 onClick={handleFinish}
                 className="rounded-full px-7 py-3 text-[13px] font-bold"
@@ -875,7 +884,7 @@ export default function OnboardingPage() {
         {/* ── Right: brand panel ─────────────────────────────────────── */}
         <div
           className={cn(
-            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px]",
+            "relative min-h-[420px] flex-col justify-between overflow-hidden bg-brand-500 dark:bg-zinc-950 p-8 text-white sm:p-12 lg:col-span-5 lg:min-h-[560px] border-l border-transparent dark:border-zinc-800/80 transition-colors duration-300",
             step === 1 ? "flex" : "hidden lg:flex"
           )}
         >
