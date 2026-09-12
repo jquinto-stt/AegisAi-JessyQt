@@ -769,7 +769,7 @@ export const BusinessSettingsModal: React.FC<{
         )}
 
         {isAdding ? (
-          <div className="p-4 rounded-xl border border-brand-300 dark:border-brand-700/60 bg-brand-50/30 dark:bg-brand-950/20 space-y-3 animate-fade-in shadow-theme-xs">
+          <div className="p-4 rounded-2xl bg-brand-50/50 dark:bg-brand-950/20 space-y-3 animate-fade-in">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-brand-700 dark:text-brand-300 uppercase tracking-wider">
                 Nueva Capacidad Personalizada
@@ -951,7 +951,7 @@ export const BusinessSettingsModal: React.FC<{
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`flex w-full cursor-pointer items-center justify-between gap-2 rounded-full px-3.5 py-2.5 text-left text-sm transition-colors ${
                   isActive
                     ? "bg-brand-500 font-bold text-white"
                     : "font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
@@ -1243,7 +1243,7 @@ export const BusinessSettingsModal: React.FC<{
                     {enableWhatsapp && (
                       <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
                         {/* Control de vinculación y salto a bot */}
-                        <div className="p-4 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">
                               Estado de la sesión WhatsApp
@@ -1393,7 +1393,7 @@ export const BusinessSettingsModal: React.FC<{
 
                 {!enableWhatsapp ? (
                   <div className="p-8 sm:p-10 rounded-2xl bg-white dark:bg-gray-900 text-center max-w-lg mx-auto space-y-4 my-8">
-                    <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800 flex items-center justify-center mx-auto">
+                    <div className="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-950/40 text-brand-500 dark:text-brand-400 flex items-center justify-center mx-auto">
                       <Bot className="w-6 h-6" />
                     </div>
                     <div className="space-y-1.5">
@@ -1445,7 +1445,7 @@ export const BusinessSettingsModal: React.FC<{
                   <>
                     <div className="space-y-6">
                       {/* Segmented control bar superior */}
-                      <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 dark:bg-gray-800/80 rounded-xl overflow-x-auto">
+                      <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-x-auto">
                         {[
                           { id: "identity" as const, label: "Identidad", icon: Bot },
                           { id: "knowledge" as const, label: "Conocimiento & Capacidades", icon: BookOpen },
@@ -1461,10 +1461,10 @@ export const BusinessSettingsModal: React.FC<{
                               key={sub.id}
                               type="button"
                               onClick={() => setBotSubTab(sub.id)}
-                              className={`px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+                              className={`px-3.5 py-2 rounded-full text-sm whitespace-nowrap transition-colors cursor-pointer flex items-center gap-2 ${
                                 isActive
-                                  ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs font-semibold"
-                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                                  ? "bg-white dark:bg-gray-900 text-secondary-600 dark:text-white shadow-xs font-bold"
+                                  : "text-gray-600 font-medium hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                               }`}
                             >
                               <Icon className={`w-4 h-4 flex-none ${isActive ? "text-brand-500" : "text-gray-400"}`} />
@@ -1626,7 +1626,7 @@ export const BusinessSettingsModal: React.FC<{
 
                         {knowsCatalog && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
-                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                            <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                   Origen de datos
@@ -1738,7 +1738,7 @@ export const BusinessSettingsModal: React.FC<{
 
                         {knowsBusinessInfo && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 sm:pl-13 space-y-4">
-                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 flex items-center justify-between">
+                            <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
                               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                 Origen de datos
                               </span>
@@ -1805,7 +1805,7 @@ export const BusinessSettingsModal: React.FC<{
 
                         {knowsFaq && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
-                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                            <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                   Origen de datos
@@ -1898,7 +1898,7 @@ export const BusinessSettingsModal: React.FC<{
 
                         {knowsPolicies && (
                           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4 sm:pl-13">
-                            <div className="p-3.5 rounded-xl bg-gray-50/70 dark:bg-gray-900/40 border border-gray-200/80 dark:border-gray-800 space-y-3">
+                            <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-3">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                                 <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                   Origen de datos
@@ -2967,15 +2967,23 @@ export const BusinessSettingsModal: React.FC<{
 
       {/* ── MODAL VINCULAR WHATSAPP BUSINESS (QR & EMPAREJAMIENTO) ── */}
       {isConnectWhatsAppModalOpen && (
-        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="whatsapp-link-title"
+          className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+        >
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl animate-scale-up">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-success-500/10 text-success-600 dark:text-success-400 border border-success-200 dark:border-success-800/60 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center">
                   <QrCode className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3
+                    id="whatsapp-link-title"
+                    className="text-[17px] font-black tracking-tight text-secondary-600 dark:text-white"
+                  >
                     Vincular WhatsApp Business
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -2986,21 +2994,23 @@ export const BusinessSettingsModal: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsConnectWhatsAppModalOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors"
+                aria-label="Cerrar"
+                className="cursor-pointer rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Selector de método: QR vs Código */}
-            <div className="flex items-center gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-full">
               <button
                 type="button"
                 onClick={() => setConnectionMethod("qr")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                aria-pressed={connectionMethod === "qr"}
+                className={`flex-1 py-2 text-xs rounded-full transition-colors cursor-pointer ${
                   connectionMethod === "qr"
-                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs"
-                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-white dark:bg-gray-900 text-secondary-600 dark:text-white font-bold shadow-xs"
+                    : "text-gray-500 font-medium hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Escanear Código QR
@@ -3008,10 +3018,11 @@ export const BusinessSettingsModal: React.FC<{
               <button
                 type="button"
                 onClick={() => setConnectionMethod("code")}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                aria-pressed={connectionMethod === "code"}
+                className={`flex-1 py-2 text-xs rounded-full transition-colors cursor-pointer ${
                   connectionMethod === "code"
-                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-xs"
-                    : "text-gray-500 hover:text-gray-900 dark:hover:text-white"
+                    ? "bg-white dark:bg-gray-900 text-secondary-600 dark:text-white font-bold shadow-xs"
+                    : "text-gray-500 font-medium hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 Vincular por Teléfono
@@ -3019,8 +3030,8 @@ export const BusinessSettingsModal: React.FC<{
             </div>
 
             {connectionMethod === "qr" ? (
-              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800">
-                <div className="p-3 bg-white rounded-xl border border-gray-200 shadow-xs flex flex-col items-center flex-none">
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800">
+                <div className="p-3 bg-white rounded-2xl shadow-xs flex flex-col items-center flex-none">
                   {/* Patrón SVG de código QR oficial de alta fidelidad */}
                   <svg className="w-36 h-36" viewBox="0 0 100 100" fill="currentColor">
                     <rect width="100" height="100" fill="white" />
@@ -3042,7 +3053,7 @@ export const BusinessSettingsModal: React.FC<{
                     <rect x="52" y="20" width="8" height="6" fill="#111827" />
                     <rect x="10" y="38" width="12" height="6" fill="#111827" />
                     <rect x="26" y="38" width="6" height="14" fill="#111827" />
-                    <rect x="38" y="35" width="18" height="18" fill="#059669" rx="3" />
+                    <rect x="38" y="35" width="18" height="18" fill="#FF3F1A" rx="3" />
                     <rect x="62" y="38" width="14" height="6" fill="#111827" />
                     <rect x="80" y="38" width="12" height="6" fill="#111827" />
                     <rect x="35" y="60" width="8" height="12" fill="#111827" />
@@ -3053,28 +3064,28 @@ export const BusinessSettingsModal: React.FC<{
                     <rect x="56" y="78" width="8" height="12" fill="#111827" />
                     <rect x="70" y="80" width="22" height="6" fill="#111827" />
                   </svg>
-                  <span className="mt-2 flex items-center gap-1 text-[10px] font-bold text-gray-500 dark:text-gray-400">
+                  <span className="mt-2 flex items-center gap-1 text-[11px] font-bold text-gray-500 dark:text-gray-400">
                     <RefreshCw className="w-3 h-3 animate-spin text-brand-500" />
                     Expira en {qrCountdown}s
                   </span>
                 </div>
 
                 <div className="space-y-3 flex-1">
-                  <h4 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                    Instrucciones de Vinculación
+                  <h4 className="text-xs font-bold text-gray-900 dark:text-white">
+                    Instrucciones de vinculación
                   </h4>
                   <ol className="space-y-2 text-xs text-gray-600 dark:text-gray-300 list-decimal list-inside">
                     <li>Abre <strong>WhatsApp</strong> en tu teléfono.</li>
                     <li>Toca <strong>Menú (⋮)</strong> o <strong>Ajustes</strong> y entra a <strong>Dispositivos vinculados</strong>.</li>
                     <li>Toca en <strong>Vincular un dispositivo</strong> y apunta tu cámara al código QR.</li>
                   </ol>
-                  <div className="p-2.5 rounded-lg bg-success-50 border border-success-200 text-[11px] text-success-700 dark:bg-success-950/30 dark:text-success-300">
+                  <div className="p-2.5 rounded-2xl bg-white dark:bg-gray-900 text-[11px] text-gray-600 dark:text-gray-300">
                     Al escanearlo, tus pedidos y el Asistente IA quedarán conectados automáticamente a esta sede.
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-5 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 space-y-4">
+              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-gray-800 space-y-4">
                 <p className="text-xs text-gray-600 dark:text-gray-300">
                   Ingresa el número con indicativo de país. Se enviará una solicitud de emparejamiento segura.
                 </p>
@@ -3092,7 +3103,7 @@ export const BusinessSettingsModal: React.FC<{
               <button
                 type="button"
                 onClick={() => setIsConnectWhatsAppModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+                className="cursor-pointer rounded-full px-4 py-2 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
               >
                 Cancelar
               </button>
@@ -3100,7 +3111,7 @@ export const BusinessSettingsModal: React.FC<{
                 type="button"
                 onClick={handleConfirmWhatsAppConnection}
                 disabled={isConnectingSim}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 rounded-xl shadow-theme-xs transition-all flex items-center gap-2 cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-brand-500 px-5 py-2.5 text-xs font-bold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
               >
                 {isConnectingSim ? (
                   <>
