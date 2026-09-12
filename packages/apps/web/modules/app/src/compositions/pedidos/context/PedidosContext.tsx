@@ -50,6 +50,10 @@ interface PedidosContextType {
   programados: Pedido[];
   ingredients: StockIngredientItem[];
   stockMovements: StockMovement[];
+  conversations: Conversation[];
+  selectedConversationId: string | null;
+  setSelectedConversationId: (id: string | null) => void;
+  currentOperatorName: string;
   automations: AutomationRule[];
   recurrences: RecurrenceConfig[];
   shiftInfo: ShiftInfo;
@@ -101,6 +105,18 @@ interface PedidosContextType {
   addIncidencia: (inc: Omit<Incidencia, "id" | "timestamp" | "isResolved">) => void;
   createManualOrder: (newOrder: Partial<Pedido>) => void;
   injectScheduledOrderToLive: (orderId: string, directToKitchen?: boolean) => void;
+  transitionConversation: (conversationId: string, toStatus: ConversationStatus, note?: string) => void;
+  takeControl: (conversationId: string) => void;
+  releaseToAI: (conversationId: string) => void;
+  resolveConversation: (conversationId: string) => void;
+  sendOperatorMessage: (conversationId: string, text: string) => void;
+  flagForHandoff: (conversationId: string, reason: HandoffReason) => void;
+  markConversationRead: (conversationId: string) => void;
+  confirmDraftOrder: (conversationId: string) => string | undefined;
+  simulateCustomerMessage: (conversationId: string, text: string, options?: { isOrder?: boolean; isReceipt?: boolean }) => void;
+  simulateAIReply: (conversationId: string, text: string) => void;
+  openWhatsAppConversation: (orderIdOrConvId: string) => void;
+  sendWhatsAppStatusAlert: (orderId: string, customMessage: string) => void;
 }
 
 const PedidosContext = createContext<PedidosContextType | null>(null);
@@ -119,6 +135,12 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
   const [ingredients, setIngredients] = useState<StockIngredientItem[]>(INITIAL_INGREDIENTS);
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(INITIAL_MOVEMENTS);
+  const [conversations, setConversations] = useState<Conversation[]>(() =>
+    activeBusiness ? getMockConversationsForBusiness(activeBusiness) : INITIAL_CONVERSATIONS
+  );
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(() =>
+    activeBusiness ? getMockConversationsForBusiness(activeBusiness)[0]?.id ?? null : INITIAL_CONVERSATIONS[0]?.id ?? null
+  );
 
   const allOrders = useMemo(() => [...orders, ...historialOrders], [orders, historialOrders]);
   const [automations, setAutomations] = useState<AutomationRule[]>(INITIAL_AUTOMATIONS);
@@ -127,14 +149,17 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [storePace, setStorePaceState] = useState<StorePaceMode>("habitual");
   const [incidencias, setIncidencias] = useState<Incidencia[]>(INITIAL_INCIDENCIAS);
   const [kpis, setKpis] = useState<ResumenKPIs>(INITIAL_KPIS);
-  // Sincronización reactiva de órdenes y programados al cambiar de empresa
+  // Sincronización reactiva de órdenes, programados y conversaciones al cambiar de empresa
   useEffect(() => {
     if (!activeBusiness) return;
     const newOrders = getMockOrdersForBusiness(activeBusiness.businessType, activeBusiness.name);
     const newProgramados = getMockProgramadosForBusiness(activeBusiness.businessType);
+    const newConversations = getMockConversationsForBusiness(activeBusiness);
 
     setOrders(newOrders);
     setProgramados(newProgramados);
+    setConversations(newConversations);
+    setSelectedConversationId(newConversations[0]?.id ?? null);
   }, [activeBusiness?.id]);
 
   // Nombre legible del operador actual. En el mockup, si no hay sesión Cognito
@@ -1054,7 +1079,94 @@ export const PedidosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return newOrderId;
   };
 
+  const openWhatsAppConversation = (orderIdOrConvId: string) => {
+    let targetConv = conversations.find(
+      c => c.id === orderIdOrConvId || c.orderId === orderIdOrConvId
+    );
 
+    const relatedOrder = allOrders.find(o => o.id === orderIdOrConvId);
+    if (!targetConv && relatedOrder) {
+      targetConv = conversations.find(
+        c =>
+          (c.customerPhone && relatedOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === relatedOrder.customerPhone.replace(/\D/g, "")) ||
+          c.customerName.toLowerCase() === relatedOrder.customerName.toLowerCase()
+      );
+    }
+
+    if (!targetConv && relatedOrder) {
+      const newConvId = `CONV-${relatedOrder.id}`;
+      const newConv: Conversation = {
+        id: newConvId,
+        customerName: relatedOrder.customerName,
+        customerPhone: relatedOrder.customerPhone || "+54 11 0000-0000",
+        avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+        channel: "whatsapp",
+        status: "IA_ATENDIENDO",
+        controlledBy: null,
+        aiConfidence: relatedOrder.aiConfidence || "Alta",
+        orderId: relatedOrder.id,
+        lastMessageAt: relatedOrder.createdAt || "18:30",
+        unreadForOperator: false,
+        messages: [
+          {
+            id: `m-init-1`,
+            sender: "cliente",
+            text: relatedOrder.aiRawMessage || `Hola! Queremos: ${relatedOrder.items.map(i => `${i.quantity}× ${i.name}`).join(", ")} porfa.`,
+            timestamp: relatedOrder.createdAt || "18:28",
+          },
+          {
+            id: `m-init-2`,
+            sender: "ia",
+            text: `¡Hola ${relatedOrder.customerName}! Registrado con gusto:\n${relatedOrder.items.map(i => `• ${i.quantity}× ${i.name} ${i.option ? `(${i.option})` : ""}`).join("\n")}\n\nTotal: $${relatedOrder.total.toLocaleString("es-CO")} COP\n${relatedOrder.customerAddress ? `Dirección: ${relatedOrder.customerAddress}\n` : ""}Tu comanda #${relatedOrder.id} está registrada en el sistema.`,
+            timestamp: relatedOrder.createdAt || "18:29",
+          },
+        ],
+        handoffHistory: [],
+      };
+      setConversations(prev => [newConv, ...prev]);
+      targetConv = newConv;
+    }
+
+    const convId = targetConv ? targetConv.id : orderIdOrConvId;
+    setSelectedConversationId(convId);
+    setSelectedOrderId(null);
+    setAiModalOrder(null);
+
+    window.dispatchEvent(
+      new CustomEvent("necto_navigate_pedidos", {
+        detail: { section: "operacion", opTab: "conversaciones", conversationId: convId },
+      })
+    );
+  };
+
+  const sendWhatsAppStatusAlert = (orderId: string, customMessage: string) => {
+    const targetOrder = allOrders.find(o => o.id === orderId);
+    const now = new Date();
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    setConversations(prevConvs =>
+      prevConvs.map(c => {
+        if (
+          c.orderId === orderId ||
+          (targetOrder && c.customerPhone && targetOrder.customerPhone && c.customerPhone.replace(/\D/g, "") === targetOrder.customerPhone.replace(/\D/g, "")) ||
+          (targetOrder && c.customerName.toLowerCase() === targetOrder.customerName.toLowerCase())
+        ) {
+          const newMsg: ChatMessage = {
+            id: `m-alert-${Date.now()}`,
+            sender: "ia",
+            text: customMessage,
+            timestamp: timeStr,
+          };
+          return {
+            ...c,
+            lastMessageAt: timeStr,
+            messages: [...c.messages, newMsg],
+          };
+        }
+        return c;
+      })
+    );
+  };
 
   return (
     <PedidosContext.Provider
