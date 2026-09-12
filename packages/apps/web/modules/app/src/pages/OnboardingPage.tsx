@@ -335,6 +335,12 @@ export default function OnboardingPage() {
     setSelectedArchetype(type);
     const arch = BUSINESS_ARCHETYPES.find(a => a.id === type);
     if (arch) {
+      setSelectedOfferModel(arch.defaultOfferModel);
+      setSelectedModules(arch.recommendedModules);
+    }
+  };
+
+  const handleToggleModule = (key: NectoModuleKey) => {
     setSelectedModules(prev => (prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]));
   };
 
