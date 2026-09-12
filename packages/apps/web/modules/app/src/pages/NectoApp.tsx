@@ -498,7 +498,10 @@ export default function App() {
           ? "Compras & Facturas"
           : inventarioTab === "kardex"
           ? "Historial de Movimientos"
-  };
+          : inventarioTab === "pricelists"
+          ? "Listas de Precios"
+          : "Productos & Servicios")
+      : currentPageName;
 
   // Synchronize when URL parameters change (e.g. from CommandPalette, direct links, or Hub)
   useEffect(() => {
