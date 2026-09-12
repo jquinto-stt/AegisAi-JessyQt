@@ -8,6 +8,36 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet" />
     <title>Necto — Plataforma de Operaciones y Gestión</title>
 
+    <!--
+      Apply the persisted theme before first paint to avoid a light->dark flash.
+      Mirrors the precedence used by uiStore.loadFromStorage(): the canonical
+      "webforge-ui-preferences" key first, then the legacy standalone "theme" key.
+    -->
+    <script>
+      (function () {
+        try {
+          var theme = null;
+          var raw = localStorage.getItem("webforge-ui-preferences");
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed && (parsed.theme === "light" || parsed.theme === "dark")) {
+              theme = parsed.theme;
+            }
+          }
+          if (!theme) {
+            var legacy = localStorage.getItem("theme");
+            if (legacy === "light" || legacy === "dark") theme = legacy;
+          }
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {
+          /* storage unavailable — fall back to the default light theme */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

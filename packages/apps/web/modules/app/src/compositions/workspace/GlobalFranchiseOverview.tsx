@@ -6,7 +6,6 @@ import { BusinessIcon } from "./BusinessIcon";
 import { RoleSelectionModal } from "./RoleSelectionModal";
 import { BusinessSettingsModal } from "./BusinessSettingsModal";
 import {
-  Building2,
   TrendingUp,
   ArrowRight,
   DollarSign,
@@ -146,10 +145,10 @@ export const GlobalFranchiseOverview: React.FC = () => {
               <Card
                 key={biz.id}
                 onClick={() => setRoleSelectBiz(biz)}
-                className="group flex cursor-pointer flex-col overflow-hidden rounded-3xl border-gray-100 p-0 shadow-none transition-all hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-theme-md dark:border-gray-800"
+                className="group flex cursor-pointer flex-col overflow-hidden rounded-3xl border-gray-100 p-0 shadow-none transition-all duration-300 hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-theme-md dark:border-gray-800"
               >
                 {/* Cover — uploaded banner, or brand orange when there is none */}
-                <div className="relative h-28 w-full flex-none overflow-hidden">
+                <div className="relative h-32 w-full flex-none overflow-hidden">
                   {biz.bannerUrl ? (
                     <>
                       <img
@@ -162,19 +161,20 @@ export const GlobalFranchiseOverview: React.FC = () => {
                         }}
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent" />
                     </>
                   ) : (
                     <div className="relative h-full w-full bg-gradient-to-br from-brand-500 to-brand-600">
                       <BusinessIcon
                         iconKey={biz.iconKey}
-                        className="absolute -right-4 -bottom-6 size-28 text-white/20"
+                        className="absolute -bottom-8 -right-5 size-36 text-white/20 transition-transform duration-500 group-hover:scale-110"
                       />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
                     </div>
                   )}
 
-                  <span className="absolute left-3.5 top-3.5 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-md">
-                    <span className="size-1.5 rounded-full bg-success-400" />
+                  <span className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-gray-900 shadow-theme-xs backdrop-blur-md">
+                    <span className="size-1.5 rounded-full bg-success-500" />
                     Operando
                   </span>
                 </div>
@@ -182,8 +182,8 @@ export const GlobalFranchiseOverview: React.FC = () => {
                 {/* Body */}
                 <div className="flex flex-1 flex-col px-5 pb-5">
                   {/* Avatar + identity */}
-                  <div className="-mt-7 flex items-end gap-3.5">
-                    <div className="flex size-14 flex-none items-center justify-center overflow-hidden rounded-2xl border-2 border-white bg-white shadow-theme-sm dark:border-gray-900 dark:bg-gray-800">
+                  <div className="-mt-8 flex items-end gap-3.5">
+                    <div className="flex size-16 flex-none items-center justify-center overflow-hidden rounded-2xl border-[3px] border-white bg-white shadow-theme-sm dark:border-gray-900 dark:bg-gray-800">
                       {biz.logoUrl ? (
                         <img
                           src={biz.logoUrl}
@@ -196,13 +196,13 @@ export const GlobalFranchiseOverview: React.FC = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <BusinessIcon iconKey={biz.iconKey} className="size-7 text-brand-500" />
+                        <BusinessIcon iconKey={biz.iconKey} className="size-8 text-brand-500" />
                       )}
                     </div>
                   </div>
 
-                  <div className="mt-4 space-y-1">
-                    <h4 className="truncate text-base font-black tracking-tight text-secondary-600 transition-colors group-hover:text-brand-500 dark:text-white">
+                  <div className="mt-4 space-y-1.5">
+                    <h4 className="truncate text-[17px] font-black leading-snug tracking-tight text-secondary-600 transition-colors group-hover:text-brand-500 dark:text-white">
                       {biz.name}
                     </h4>
                     <p className="truncate text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -210,22 +210,22 @@ export const GlobalFranchiseOverview: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                  <div className="mt-3.5 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                       {biz.currency}
                     </span>
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                       {biz.activeModules.length} {biz.activeModules.length === 1 ? "módulo" : "módulos"}
                     </span>
                   </div>
 
                   {/* Actions — stopPropagation so card-level select does not fire */}
                   <div
-                    className="mt-auto space-y-3 pt-5"
+                    className="mt-auto space-y-2.5 pt-5"
                     onClick={e => e.stopPropagation()}
                     role="presentation"
                   >
-                    <div className="flex items-center gap-2 border-t border-gray-100 pt-4 dark:border-gray-800">
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="primary"
                         intent="hub.branch.enter"
@@ -250,23 +250,16 @@ export const GlobalFranchiseOverview: React.FC = () => {
                       </Button>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[11px] font-semibold text-gray-400">
-                      <button
-                        type="button"
-                        onClick={() => goToAnalitica(biz.id, "resumen")}
-                        className="cursor-pointer transition-colors hover:text-brand-500"
-                      >
-                        Dashboard 360°
-                      </button>
-                      <span className="text-gray-300 dark:text-gray-700">·</span>
-                      <button
-                        type="button"
-                        onClick={() => goToAnalitica(biz.id, "historial")}
-                        className="cursor-pointer transition-colors hover:text-brand-500"
-                      >
-                        Historial de ventas
-                      </button>
-                    </div>
+                    {/* Sales history — promoted from a barely-visible text link
+                        into a real secondary action so it can actually be found. */}
+                    <button
+                      type="button"
+                      onClick={() => goToAnalitica(biz.id, "historial")}
+                      className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-gray-100 py-2.5 text-[12px] font-bold text-secondary-600 transition-colors hover:bg-brand-500 hover:text-white dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-brand-500 dark:hover:text-white"
+                    >
+                      <History className="size-3.5" />
+                      Historial de ventas
+                    </button>
                   </div>
                 </div>
               </Card>
