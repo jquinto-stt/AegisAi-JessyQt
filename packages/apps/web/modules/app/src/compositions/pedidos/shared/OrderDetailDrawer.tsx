@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
+import { useChannels } from "@/compositions/channels/context/ChannelsContext";
 import { OrderStatusBadge, UrgencyBadge, ChannelBadge, ReturnStatusBadge, PaymentStatusBadge } from "./Badges";
 import {
   X,

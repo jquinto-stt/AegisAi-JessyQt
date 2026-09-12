@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { usePedidos } from "../context/PedidosContext";
 import { useBusiness } from "@/context/BusinessContext";
-import { Printer, X, Check, Copy } from "lucide-react";
+import { Printer, X, Check, Copy, QrCode } from "lucide-react";
 import { Button } from "@/elements";
 
 export const ThermalTicketModal: React.FC = () => {

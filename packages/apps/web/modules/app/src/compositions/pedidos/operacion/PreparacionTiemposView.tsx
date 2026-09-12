@@ -58,6 +58,7 @@ export const PreparacionTiemposView: React.FC<{
     adjustEstimate,
     setSelectedOrderId,
     setPrintTicketOrder,
+    inventoryAdapter,
   } = usePedidos();
   const { activeBusiness, semantics } = useBusiness();
 
@@ -463,9 +464,10 @@ export const PreparacionTiemposView: React.FC<{
                   <div className="space-y-2">
                     {order.items.map((it, idx) => {
                       const isChecked = currentChecks.has(idx);
-                      // Look up live inventory stock for realism
-                      const invItem = inventoryService.findProductMatch(it.name, it.productId);
-                      const availableStock = invItem ? invItem.stock - invItem.reservado : 18;
+                      // Look up live inventory stock through the port, not the
+                      // concrete service: it returns null when the module is off.
+                      const liveStock = inventoryAdapter.getProductStock(it.productId, it.name);
+                      const availableStock = liveStock ? liveStock.availableStock : 18;
 
                       return (
                         <div

@@ -19,6 +19,7 @@ import {
   ConversationStatus,
   HandoffReason,
   ChatMessage,
+  OrderEvent,
 } from "../types";
 import {
   INITIAL_ORDERS,
