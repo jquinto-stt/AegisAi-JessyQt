@@ -18,10 +18,10 @@ export default function AuthPageLayout({
         <div className="relative items-center hidden w-full h-full lg:w-1/2 bg-[#190088] dark:bg-zinc-950 lg:flex lg:justify-center overflow-hidden border-l border-zinc-200 dark:border-zinc-800 select-none">
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
           <InteractiveDotGrid
-            dotGap={28}
-            baseRadius={1.5}
-            activeRadius={3.0}
-            glowDistance={180}
+            dotGap={22}
+            baseRadius={0.75}
+            activeRadius={1.5}
+            glowDistance={140}
           />
 
           <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">

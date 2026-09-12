@@ -102,7 +102,7 @@ export default function InteractiveDotGrid({
           ctx.arc(x, y, radius, 0, Math.PI * 2);
 
           if (isGlowing) {
-            ctx.shadowBlur = 6;
+            ctx.shadowBlur = activeRadius * 1.5;
             ctx.shadowColor = "rgba(255, 255, 255, 0.75)";
             ctx.fillStyle = activeDotColor;
           } else {
