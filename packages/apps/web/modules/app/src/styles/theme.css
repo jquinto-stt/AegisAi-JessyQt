@@ -130,6 +130,16 @@ html, body {
   animation: fadeIn 0.2s ease-in-out;
 }
 
+/*
+ * Tailwind v4 ships no `animate-fade-in` utility (there is no --animate-fade-in
+ * theme token), yet the class is used across the workspace views — so those
+ * animations were silently doing nothing. Define it once here, reusing the
+ * fadeIn keyframes below, instead of patching every call site.
+ */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }

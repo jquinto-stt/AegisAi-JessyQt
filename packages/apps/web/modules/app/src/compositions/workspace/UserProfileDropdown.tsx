@@ -10,16 +10,15 @@ import {
   ChevronDown,
   Building2,
   Layers,
-  Settings,
   LogOut,
   Check,
-  ArrowRight,
-  ShieldCheck,
   Shield,
   ChevronRight,
-  Sparkles,
 } from "lucide-react";
-import { Button, Badge } from "@/elements";
+
+/** Menu rows share one shape so the list reads as a single system. */
+const MENU_ROW =
+  "group flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold text-secondary-600 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800";
 
 export const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
@@ -60,108 +59,116 @@ export const UserProfileDropdown: React.FC = () => {
   return (
     <>
       <div className="relative" ref={dropdownRef}>
-        {/* Profile Trigger Button - Circular with Person Photo */}
+        {/* Trigger — avatar with the brand's isotype dot */}
         <button
           type="button"
           onClick={() => {
             setIsOpen(!isOpen);
             if (!isOpen) setShowBranches(false);
           }}
-          className="relative flex h-10 w-10 sm:h-11 sm:w-11 aspect-square flex-none items-center justify-center rounded-full border-2 border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-all hover:ring-2 hover:ring-[#FF3F1A]/50 shadow-sm hover:scale-105 active:scale-95 cursor-pointer p-0.5"
+          aria-label="Perfil de usuario y sucursales"
+          aria-expanded={isOpen}
           title="Perfil de Usuario y Sucursales"
+          className="relative flex h-10 w-10 flex-none cursor-pointer items-center justify-center rounded-full border border-gray-200 bg-white p-0.5 shadow-sm transition-transform hover:scale-105 active:scale-95 sm:h-11 sm:w-11 dark:border-gray-800 dark:bg-gray-900"
         >
-          <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-zinc-800">
+          <span className="h-full w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
             <img
               src={userAvatarUrl}
               alt={displayName}
-              className="w-full h-full object-cover rounded-full"
+              className="h-full w-full rounded-full object-cover"
             />
-          </div>
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#97D6DF] border-2 border-white dark:border-gray-900" />
+          </span>
+          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-accent-300 dark:border-gray-900" />
         </button>
 
-        {/* Dropdown Menu */}
+        {/* Dropdown */}
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2.5 w-80 sm:w-88 rounded-3xl bg-white dark:bg-[#2C2D31] border border-zinc-200 dark:border-zinc-700 shadow-2xl p-3.5 z-50 animate-scale-up space-y-3 font-sans">
-            {/* User Identity Header */}
-            <div className="p-3.5 rounded-2xl bg-[#ECECEC]/60 dark:bg-[#212121]/60 border border-zinc-200 dark:border-zinc-700 flex items-center gap-3 shadow-2xs">
+          <div className="absolute right-0 top-full z-50 mt-2.5 w-80 space-y-3 rounded-3xl border border-gray-100 bg-white p-3.5 font-sans shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150 sm:w-88 dark:border-gray-800 dark:bg-[#1C1C1F]">
+            {/* Identity */}
+            <div className="flex items-center gap-3 rounded-2xl bg-gray-50 p-3.5 dark:bg-gray-900">
               <img
                 src={userAvatarUrl}
                 alt={displayName}
-                className="w-12 h-12 rounded-full object-cover shadow-sm flex-none border-2 border-white dark:border-zinc-700"
+                className="h-12 w-12 flex-none rounded-full object-cover"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-extrabold text-[#212121] dark:text-[#ECECEC] truncate">
+                  <h4 className="truncate text-[13px] font-black tracking-tight text-secondary-600 dark:text-white">
                     {displayName}
                   </h4>
                   <span
-                    className="text-[9px] py-0.5 px-1.5 font-bold uppercase rounded-md bg-[#190088]/10 text-[#190088] dark:bg-[#190088]/30 dark:text-[#97D6DF] border border-[#190088]/20 truncate max-w-[130px]"
+                    className="max-w-[130px] flex-none truncate rounded-full bg-brand-500 px-2 py-0.5 text-[10px] font-bold text-white"
                     title={`Rol activo: ${activeRole?.name || "Dueño"}`}
                   >
                     {activeRole?.name || "Dueño"}
                   </span>
                 </div>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                <p className="mt-0.5 truncate text-[11px] text-gray-500 dark:text-gray-400">
                   {username}
                 </p>
                 {!isOnHub && (
-                  <p className="text-[10px] font-mono text-[#FF3F1A] font-bold mt-0.5 truncate flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A] inline-block" />
-                    <span>{activeBusiness?.name || "Sucursal Activa"}</span>
+                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] font-bold text-brand-500">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" />
+                    <span className="truncate">{activeBusiness?.name || "Sucursal Activa"}</span>
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Option: Sucursales Activas Card Trigger — only in Store view */}
+            {/* Branch switcher — only inside a store view */}
             {!isOnHub && (
               <div className="space-y-2">
                 <button
                   type="button"
                   onClick={() => setShowBranches(!showBranches)}
-                  className={`w-full p-3 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer group ${
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-2xl p-3 text-left transition-colors ${
                     showBranches
-                      ? "bg-[#190088]/5 dark:bg-[#190088]/20 border-[#190088] text-[#190088] dark:text-[#97D6DF]"
-                      : "bg-[#ECECEC]/50 dark:bg-[#212121]/50 hover:bg-[#ECECEC] dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-[#212121] dark:text-[#ECECEC]"
+                      ? "bg-brand-50 dark:bg-brand-500/10"
+                      : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-[#190088] text-white flex items-center justify-center flex-none shadow-2xs">
-                      <Building2 className="w-4 h-4" />
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div
+                      className={`flex h-8 w-8 flex-none items-center justify-center rounded-xl transition-colors ${
+                        showBranches
+                          ? "bg-brand-500 text-white"
+                          : "bg-white text-brand-500 dark:bg-gray-800 dark:text-brand-400"
+                      }`}
+                    >
+                      <Building2 className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold leading-tight text-[#212121] dark:text-[#ECECEC]">
+                        <span className="text-[13px] font-bold leading-tight text-secondary-600 dark:text-white">
                           Sucursales & Locales
                         </span>
-                        <span className="text-[10px] font-mono font-black px-1.5 py-0.2 rounded-full bg-[#FF3F1A] text-white">
+                        <span className="rounded-full bg-brand-500 px-1.5 text-[10px] font-bold text-white">
                           {businesses.length}
                         </span>
                       </div>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
-                        {showBranches ? "Ocultar selector" : `Actual: ${activeBusiness?.name || "Sin seleccionar"}`}
+                      <p className="truncate text-[11px] text-gray-500 dark:text-gray-400">
+                        {showBranches
+                          ? "Ocultar selector"
+                          : `Actual: ${activeBusiness?.name || "Sin seleccionar"}`}
                       </p>
                     </div>
                   </div>
 
                   <ChevronDown
-                    className={`w-4 h-4 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 transition-transform duration-200 flex-none ${
-                      showBranches ? "rotate-180 text-[#190088] dark:text-[#97D6DF]" : ""
+                    className={`h-4 w-4 flex-none text-gray-400 transition-transform duration-200 ${
+                      showBranches ? "rotate-180 text-brand-500" : ""
                     }`}
                   />
                 </button>
 
-                {/* Collapsible Branches List */}
+                {/* Branch list */}
                 {showBranches && (
-                  <div className="p-2 rounded-2xl bg-[#ECECEC]/60 dark:bg-[#212121]/60 border border-zinc-200 dark:border-zinc-700 space-y-1.5 animate-fade-in">
-                    <div className="flex items-center justify-between px-1.5 pt-1">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-bold">
-                        Sucursales Activas ({businesses.length})
-                      </span>
-                    </div>
+                  <div className="space-y-1.5 rounded-2xl bg-gray-50 p-2 animate-in fade-in slide-in-from-top-1 duration-150 dark:bg-gray-900">
+                    <span className="block px-1.5 pt-1 text-[11px] font-bold text-gray-400 dark:text-gray-500">
+                      Sucursales activas ({businesses.length})
+                    </span>
 
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+                    <div className="max-h-48 space-y-1.5 overflow-y-auto pr-1">
                       {businesses.map(biz => {
                         const isSelected = biz.id === activeBusiness?.id;
                         return (
@@ -171,43 +178,50 @@ export const UserProfileDropdown: React.FC = () => {
                               switchBusiness(biz.id);
                               setShowBranches(false);
                             }}
-                            className={`p-2 rounded-xl flex items-center justify-between gap-2.5 transition-all cursor-pointer border ${
+                            className={`flex cursor-pointer items-center justify-between gap-2.5 rounded-xl p-2 transition-colors ${
                               isSelected
-                                ? "bg-white dark:bg-[#2C2D31] text-[#212121] dark:text-[#ECECEC] border-[#FF3F1A] shadow-2xs font-bold"
-                                : "bg-white/80 dark:bg-zinc-800/70 hover:bg-white dark:hover:bg-zinc-800 border-zinc-200/60 dark:border-zinc-700/60 text-zinc-700 dark:text-zinc-300"
+                                ? "bg-brand-50 dark:bg-brand-500/10"
+                                : "hover:bg-white dark:hover:bg-gray-800"
                             }`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="flex min-w-0 items-center gap-2.5">
                               <div
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-none overflow-hidden ${
+                                className={`flex h-7 w-7 flex-none items-center justify-center overflow-hidden rounded-lg ${
                                   isSelected
-                                    ? "bg-[#FF3F1A] text-white"
-                                    : "bg-[#ECECEC] dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+                                    ? "bg-brand-500 text-white"
+                                    : "bg-white text-brand-500 dark:bg-gray-800 dark:text-brand-400"
                                 }`}
                               >
                                 {biz.logoUrl ? (
-                                  <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
-                                ) : (
-                                  <BusinessIcon
-                                    iconKey={biz.iconKey}
-                                    className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-[#FF3F1A]"}`}
+                                  <img
+                                    src={biz.logoUrl}
+                                    alt={biz.name}
+                                    className="h-full w-full object-cover"
                                   />
+                                ) : (
+                                  <BusinessIcon iconKey={biz.iconKey} className="h-3.5 w-3.5" />
                                 )}
                               </div>
 
                               <div className="min-w-0 text-left">
-                                <p className="text-xs font-bold truncate leading-tight">
+                                <p
+                                  className={`truncate text-[12px] leading-tight ${
+                                    isSelected
+                                      ? "font-bold text-secondary-600 dark:text-white"
+                                      : "font-medium text-gray-600 dark:text-gray-300"
+                                  }`}
+                                >
                                   {biz.name}
                                 </p>
-                                <p className="text-[10px] text-zinc-400 truncate">
+                                <p className="truncate text-[10px] text-gray-400 dark:text-gray-500">
                                   {biz.city || "Principal"}
                                 </p>
                               </div>
                             </div>
 
                             {isSelected && (
-                              <span className="w-5 h-5 rounded-full bg-[#97D6DF] text-[#190088] flex items-center justify-center flex-none shadow-2xs font-bold">
-                                <Check className="w-3 h-3 stroke-[3]" />
+                              <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-brand-500 text-white">
+                                <Check className="h-3 w-3 stroke-[3]" />
                               </span>
                             )}
                           </div>
@@ -219,21 +233,21 @@ export const UserProfileDropdown: React.FC = () => {
               </div>
             )}
 
-            {/* Menu Links */}
-            <div className="pt-2 border-t border-zinc-100 dark:border-zinc-700 space-y-0.5">
+            {/* Links */}
+            <div className="space-y-0.5 border-t border-gray-100 pt-2 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => {
                   setIsAccountModalOpen(true);
                   setIsOpen(false);
                 }}
-                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-[#212121] dark:text-[#ECECEC] hover:bg-[#ECECEC]/60 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between cursor-pointer"
+                className={MENU_ROW}
               >
-                <div className="flex items-center gap-2.5">
-                  <User className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                <span className="flex items-center gap-2.5">
+                  <User className="h-4 w-4 text-gray-400 transition-colors group-hover:text-brand-500" />
                   <span>Ajustes de Perfil</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
               </button>
 
               <button
@@ -242,13 +256,13 @@ export const UserProfileDropdown: React.FC = () => {
                   setIsRoleModalOpen(true);
                   setIsOpen(false);
                 }}
-                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-[#212121] dark:text-[#ECECEC] hover:bg-[#ECECEC]/60 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between cursor-pointer"
+                className={MENU_ROW}
               >
-                <div className="flex items-center gap-2.5">
-                  <Shield className="w-4 h-4 text-[#FF3F1A]" />
+                <span className="flex items-center gap-2.5">
+                  <Shield className="h-4 w-4 text-gray-400 transition-colors group-hover:text-brand-500" />
                   <span>Cambiar Perfil / Rol ({activeRole?.name || "Dueño"})</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
               </button>
 
               {!isOnHub && (
@@ -258,13 +272,13 @@ export const UserProfileDropdown: React.FC = () => {
                     navigate("/workspaces");
                     setIsOpen(false);
                   }}
-                  className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-[#212121] dark:text-[#ECECEC] hover:bg-[#ECECEC]/60 dark:hover:bg-zinc-800 transition-colors flex items-center justify-between cursor-pointer"
+                  className={MENU_ROW}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Layers className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                  <span className="flex items-center gap-2.5">
+                    <Layers className="h-4 w-4 text-gray-400 transition-colors group-hover:text-brand-500" />
                     <span>Dashboard de Franquicias</span>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
                 </button>
               )}
 
@@ -274,9 +288,9 @@ export const UserProfileDropdown: React.FC = () => {
                   signOut();
                   navigate("/login");
                 }}
-                className="w-full px-3 py-2 rounded-xl text-xs font-bold text-[#FF3F1A] hover:bg-[#FF3F1A]/10 transition-colors flex items-center gap-2.5 cursor-pointer"
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-bold text-brand-500 transition-colors hover:bg-brand-50 dark:hover:bg-brand-500/10"
               >
-                <LogOut className="w-4 h-4 text-[#FF3F1A]" />
+                <LogOut className="h-4 w-4" />
                 <span>Cerrar Sesión</span>
               </button>
             </div>

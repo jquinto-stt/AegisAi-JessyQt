@@ -43,8 +43,11 @@ import { BaseAppShell } from "@/shell";
 import { AppFooter } from "@/shell/footer";
 import { BasePageLayout, BasePageHeader } from "@/layouts/base-page";
 import { StockFlowSidebar } from "@/compositions/shell/StockFlowSidebar";
+import { StockFlowHeader } from "@/compositions/shell/StockFlowHeader";
 import { eventBus } from "@/infrastructure/eventBus";
 import { CatalogProvider } from "@/compositions/catalog/context/CatalogContext";
+import { ChannelsProvider } from "@/compositions/channels/context/ChannelsContext";
+import { InventoryProvider } from "@/ModuloInventario/context/InventoryContext";
 
 interface NotificationItem {
   id: string;
@@ -60,7 +63,6 @@ interface NotificationItem {
   targetOrderId?: string;
   targetModal?: "ticket" | "ai" | "incidencias" | "product";
   targetProductId?: string;
-  inventariosRole?: InventariosRole;
   inventariosSubView?: any;
 }
 
@@ -213,7 +215,6 @@ export function TailAdminBreadcrumb({
 /* ── Main Root Component ─────────────────────────────────────────────────── */
 
 export default function App() {
-  const [isDarkMode] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeModule, setActiveModule] = useState<"pedidos" | "inventarios" | "modules-hub">(() => {
     const mod = searchParams.get("module");
@@ -359,15 +360,10 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-
+  // NOTE: the theme is owned exclusively by uiStore (it sets the `dark` class on
+  // <html> and persists to localStorage). A local useState(false) effect used to
+  // force light mode here on mount, which made /app permanently ignore the
+  // user's choice. Do not reintroduce theme handling in this component.
 
   const [targetOrderId, setTargetOrderId] = useState<string | null>(null);
   const [targetModal, setTargetModal] = useState<"ticket" | "ai" | "incidencias" | "product" | null>(null);
@@ -531,39 +527,17 @@ export default function App() {
           <BaseAppShell
           sidebar={
             <StockFlowSidebar
-              activeSection={
-                activeModule === "inventarios"
-                  ? "inventarios"
-                  : isModulesHub
-                  ? "hub"
-                  : pedidosSection
-              }
-              activeTab={
-                activeModule === "inventarios"
-                  ? inventarioTab
-                  : pedidosSection === "operacion"
-                  ? pedidosOpTab
-                  : pedidosGeTab
-              }
-              onSelectSection={(sec) => {
-                if (sec === "inventarios") {
-                  handleNavigateInventario("products");
-                } else if (sec === "hub") {
-                  setSearchParams({});
-                } else {
-                  handleNavigatePedidos(sec as PedidosSection, sec === "operacion" ? pedidosOpTab : pedidosGeTab);
-                }
-              }}
-              onSelectTab={(tab) => {
-                if (activeModule === "inventarios") {
-                  handleNavigateInventario(tab as InventoryTab);
-                } else if (pedidosSection === "operacion") {
-                  handleNavigatePedidos("operacion", tab as OperacionTab);
-                } else {
-                  handleNavigatePedidos(pedidosSection, tab as GestionTab);
-                }
-              }}
-              onOpenSettings={handleOpenSettings}
+              activeModule={activeModule}
+              pedidosSection={pedidosSection}
+              pedidosOpTab={pedidosOpTab}
+              pedidosGeTab={pedidosGeTab}
+              inventarioTab={inventarioTab}
+              onNavigatePedidos={handleNavigatePedidos}
+              onNavigateModule={handleNavigateModule}
+              onNavigateInventario={handleNavigateInventario}
+              onOpenRoleModal={() => setIsRoleModalOpen(true)}
+              onOpenSettingsModal={handleOpenSettings}
+              activeRoleName={activeRole?.name || "Dueño"}
             />
           }
           header={
@@ -599,7 +573,7 @@ export default function App() {
                   if (mod === "pedidos") {
                     handleNavigatePedidos("operacion", "en-vivo");
                   } else if (mod === "inventarios") {
-                    handleNavigateInventario("products");
+                    handleNavigateInventario("catalog");
                   }
                 }}
                 onOpenSettings={handleOpenSettings}
@@ -637,7 +611,7 @@ export default function App() {
                   if (mod === "pedidos") {
                     handleNavigatePedidos("operacion", "en-vivo");
                   } else if (mod === "inventarios") {
-                    handleNavigateInventario("products");
+                    handleNavigateInventario("catalog");
                   }
                 }}
                 onOpenSettings={handleOpenSettings}

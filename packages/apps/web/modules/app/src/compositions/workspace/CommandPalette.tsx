@@ -16,7 +16,6 @@ import {
   Package,
   X,
 } from "lucide-react";
-import { Button } from "@/elements";
 
 export const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
@@ -57,18 +56,22 @@ export const CommandPalette: React.FC = () => {
     badge?: string;
   }
 
+  /**
+   * Icons deliberately carry no colour of their own — they inherit from the
+   * chip that wraps them, so the whole list stays on the single brand accent.
+   */
   const items: PaletteItem[] = [
     {
       id: "global-overview",
       category: "Vistas Especiales",
       title: "Vista Franquicia / Resumen Global",
       subtitle: "Dashboard consolidado con ventas y métricas de todas las marcas",
-      icon: <LayoutGrid className="w-4 h-4 text-[#FF3F1A]" />,
+      icon: <LayoutGrid className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/workspaces?tab=franchise_overview");
       },
-      badge: "MULTI-LOCAL",
+      badge: "Multi-local",
     },
 
     // Businesses
@@ -77,7 +80,7 @@ export const CommandPalette: React.FC = () => {
       category: "Espacios de Trabajo" as const,
       title: b.name,
       subtitle: `${b.city || "Sucursal"} · ${b.currency} · ${b.specialty || "Restaurante"}`,
-      icon: <BusinessIcon iconKey={b.iconKey} className="w-4 h-4 text-[#FF3F1A]" />,
+      icon: <BusinessIcon iconKey={b.iconKey} className="w-4 h-4" />,
       action: () => {
         switchBusiness(b.id);
         setIsCommandPaletteOpen(false);
@@ -93,7 +96,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acciones",
       title: "Crear nuevo negocio / sucursal",
       subtitle: "Wizard guiado en 2 pasos para dar de alta una nueva marca",
-      icon: <Plus className="w-4 h-4 text-emerald-500" />,
+      icon: <Plus className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/onboarding");
@@ -104,7 +107,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acciones",
       title: "Abrir Hub de Gestión de Negocios",
       subtitle: "Ver todas las sedes, estados de suscripción y parámetros",
-      icon: <Building2 className="w-4 h-4 text-blue-500" />,
+      icon: <Building2 className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/workspaces");
@@ -117,7 +120,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acceso Rápido a Módulos",
       title: "Órdenes",
       subtitle: "Monitor omnicanal de comandas (WhatsApp, Web y POS)",
-      icon: <ShoppingBag className="w-4 h-4 text-orange-500" />,
+      icon: <ShoppingBag className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=operacion&tab=en-vivo");
@@ -130,7 +133,7 @@ export const CommandPalette: React.FC = () => {
       subtitle: isFood
         ? "Estación táctil de preparación para cocineros y horneros"
         : "Estación táctil de alistamiento, empaque y despacho",
-      icon: isFood ? <Flame className="w-4 h-4 text-rose-500" /> : <Package className="w-4 h-4 text-rose-500" />,
+      icon: isFood ? <Flame className="w-4 h-4" /> : <Package className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=operacion&tab=preparacion");
@@ -143,7 +146,7 @@ export const CommandPalette: React.FC = () => {
       subtitle: isFood
         ? "Gestión de cartas, fotos, secciones y opciones extras"
         : "Gestión de productos, variantes, precios y catálogo",
-      icon: <Layers className="w-4 h-4 text-amber-500" />,
+      icon: <Layers className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=menu&tab=catalogo");
@@ -154,7 +157,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acceso Rápido a Módulos",
       title: "Insumos & Stock (Escandallos)",
       subtitle: "Control de materias primas y coste unitario por receta",
-      icon: <Building2 className="w-4 h-4 text-emerald-500" />,
+      icon: <Building2 className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=menu&tab=insumos");
@@ -165,7 +168,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acceso Rápido a Módulos",
       title: "Dashboard Analítico & Rendimiento",
       subtitle: "Métricas de facturación, ticket promedio y canales",
-      icon: <BarChart3 className="w-4 h-4 text-violet-500" />,
+      icon: <BarChart3 className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=analitica&tab=resumen");
@@ -176,7 +179,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acceso Rápido a Módulos",
       title: "Historial Completo de Ventas",
       subtitle: "Auditoría de tickets finalizados y trazabilidad",
-      icon: <ShoppingBag className="w-4 h-4 text-indigo-500" />,
+      icon: <ShoppingBag className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=analitica&tab=historial");
@@ -187,7 +190,7 @@ export const CommandPalette: React.FC = () => {
       category: "Acceso Rápido a Módulos",
       title: "Automatizaciones & Reglas WhatsApp",
       subtitle: "Reglas de despacho automático y atención configurada",
-      icon: <SlidersHorizontal className="w-4 h-4 text-orange-500" />,
+      icon: <SlidersHorizontal className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=configuracion&tab=automatizaciones");
@@ -200,14 +203,13 @@ export const CommandPalette: React.FC = () => {
       subtitle: isFood
         ? "Dotación de personal y buffer de tiempos de entrega"
         : "Dotación de personal y capacidad de despacho",
-      icon: <Users className="w-4 h-4 text-sky-500" />,
+      icon: <Users className="w-4 h-4" />,
       action: () => {
         setIsCommandPaletteOpen(false);
         navigate("/app?section=configuracion&tab=turnos");
       },
     },
   ];
-
 
   // Filter items
   const filteredItems = items.filter(item => {
@@ -238,16 +240,20 @@ export const CommandPalette: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 pt-20 backdrop-blur-sm animate-in fade-in duration-150 sm:pt-28"
       onClick={() => setIsCommandPaletteOpen(false)}
+      role="presentation"
     >
       <div
-        className="w-full max-w-xl bg-white dark:bg-[#18181B] rounded-3xl shadow-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col max-h-[75vh]"
+        className="flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 dark:bg-[#1C1C1F]"
         onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paleta de comandos"
       >
-        {/* Search Input Bar */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-          <Search className="w-5 h-5 text-[#FF3F1A] flex-none" />
+        {/* Search input */}
+        <div className="flex items-center gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+          <Search className="h-5 w-5 flex-none text-brand-500" />
           <input
             ref={inputRef}
             type="text"
@@ -258,33 +264,35 @@ export const CommandPalette: React.FC = () => {
             }}
             onKeyDown={handleKeyDown}
             placeholder="Buscar sucursal, comanda, módulo o comando..."
-            className="w-full bg-transparent text-sm sm:text-base font-medium text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden"
+            className="w-full bg-transparent text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-hidden dark:text-white"
           />
           {search ? (
-            <Button
-              variant="ghost"
-              intent="command.search.clear"
+            <button
+              type="button"
               onClick={() => setSearch("")}
-              className="!p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-transparent"
+              aria-label="Limpiar búsqueda"
+              className="flex h-7 w-7 flex-none cursor-pointer items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
             >
-              <X className="w-4 h-4" />
-            </Button>
+              <X className="h-4 w-4" />
+            </button>
           ) : (
-            <div className="flex items-center gap-1">
-              <kbd className="px-2 py-0.5 text-[10px] font-mono font-bold bg-zinc-200/80 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-md border border-zinc-300/80 dark:border-zinc-700">
-                ESC
-              </kbd>
-            </div>
+            <kbd className="flex-none rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              ESC
+            </kbd>
           )}
         </div>
 
-        {/* Results List */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1">
+        {/* Results */}
+        <div className="flex-1 space-y-1 overflow-y-auto p-2.5">
           {filteredItems.length === 0 ? (
-            <div className="p-8 text-center text-zinc-400 dark:text-zinc-500">
-              <Building2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-medium">No se encontraron resultados</p>
-              <p className="text-xs mt-1">Prueba buscando por nombre de negocio o módulo</p>
+            <div className="p-8 text-center">
+              <Building2 className="mx-auto mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
+              <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                No se encontraron resultados
+              </p>
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Prueba buscando por nombre de negocio o módulo
+              </p>
             </div>
           ) : (
             filteredItems.map((item, idx) => {
@@ -295,20 +303,20 @@ export const CommandPalette: React.FC = () => {
                   key={item.id}
                   onClick={() => item.action()}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center justify-between gap-3 px-3.5 py-3 rounded-2xl cursor-pointer transition-all ${
+                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl px-3.5 py-3 transition-colors ${
                     isSelected
-                      ? "bg-[#FF3F1A] text-white shadow-md"
+                      ? "bg-brand-500 text-white"
                       : item.active
-                      ? "bg-orange-50/70 dark:bg-orange-950/30 text-zinc-900 dark:text-zinc-100"
-                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      ? "bg-brand-50 dark:bg-brand-500/10"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-900"
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${
+                      className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl transition-colors ${
                         isSelected
-                          ? "bg-white/10 text-white"
-                          : "bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
+                          ? "bg-white/20 text-white"
+                          : "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400"
                       }`}
                     >
                       {item.icon}
@@ -317,18 +325,18 @@ export const CommandPalette: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p
-                          className={`text-xs font-bold truncate leading-tight ${
-                            isSelected ? "text-white" : "text-zinc-900 dark:text-zinc-100"
+                          className={`truncate text-[13px] font-bold leading-tight ${
+                            isSelected ? "text-white" : "text-secondary-600 dark:text-white"
                           }`}
                         >
                           {item.title}
                         </p>
                         {item.badge && (
                           <span
-                            className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-md ${
+                            className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-bold ${
                               isSelected
                                 ? "bg-white/20 text-white"
-                                : "bg-orange-100 dark:bg-orange-900/50 text-[#FF3F1A]"
+                                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
                             }`}
                           >
                             {item.badge}
@@ -337,8 +345,8 @@ export const CommandPalette: React.FC = () => {
                       </div>
                       {item.subtitle && (
                         <p
-                          className={`text-[11px] truncate leading-tight mt-0.5 ${
-                            isSelected ? "text-zinc-300" : "text-zinc-400"
+                          className={`mt-0.5 truncate text-[11px] leading-tight ${
+                            isSelected ? "text-white/75" : "text-gray-400 dark:text-gray-500"
                           }`}
                         >
                           {item.subtitle}
@@ -347,20 +355,18 @@ export const CommandPalette: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-none">
+                  <div className="flex flex-none items-center gap-2">
                     {item.active && (
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isSelected
-                            ? "bg-emerald-500 text-white"
-                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isSelected ? "bg-white/20 text-white" : "bg-brand-500 text-white"
                         }`}
                       >
                         Activo
                       </span>
                     )}
                     {isSelected && (
-                      <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 text-white">
+                      <kbd className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px] text-white">
                         ↵
                       </kbd>
                     )}
@@ -371,26 +377,23 @@ export const CommandPalette: React.FC = () => {
           )}
         </div>
 
-        {/* Footer shortcuts hint */}
-        <div className="px-5 py-2.5 border-t border-zinc-100 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/80 flex items-center justify-between text-[11px] text-zinc-400">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded font-mono text-[10px]">
-                ↑
-              </kbd>
-              <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded font-mono text-[10px]">
-                ↓
-              </kbd>
-              Navegar
-            </span>
-            <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 rounded font-mono text-[10px]">
-                ↵
-              </kbd>
-              Seleccionar
-            </span>
-          </div>
-          <span className="font-mono text-[10px]">Necto Hub Command</span>
+        {/* Shortcut hints */}
+        <div className="flex items-center gap-4 border-t border-gray-100 bg-gray-50 px-5 py-2.5 text-[11px] text-gray-400 dark:border-gray-800 dark:bg-gray-900/60">
+          <span className="flex items-center gap-1.5">
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+              ↑
+            </kbd>
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+              ↓
+            </kbd>
+            Navegar
+          </span>
+          <span className="flex items-center gap-1.5">
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+              ↵
+            </kbd>
+            Seleccionar
+          </span>
         </div>
       </div>
     </div>

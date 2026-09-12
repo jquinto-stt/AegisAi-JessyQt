@@ -6,7 +6,7 @@ import {
   Users,
   Calendar,
   Award,
-  CheckCircle2,
+  Check,
   Plus,
   ArrowRight,
 } from "lucide-react";
@@ -118,6 +118,12 @@ const AVAILABLE_MODULES: ModuleDefinition[] = [
   },
 ];
 
+const OFFER_MODEL_LABELS: Record<string, string> = {
+  physical_products: "Productos físicos (SKU)",
+  prepared_products: "Productos preparados (Recetas)",
+  services_appointments: "Servicios & citas",
+};
+
 export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
   business,
   onNavigateToModule,
@@ -133,139 +139,136 @@ export const EmptyModulesHubView: React.FC<EmptyModulesHubViewProps> = ({
   );
 
   return (
-    <div className="space-y-6 pb-16">
-      {/* Subheader con contador, arquetipo y descripción */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-bold text-gray-900 dark:text-white">
+    <div className="space-y-8 pb-16">
+      {/* Subheader — business identity + module counter */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-[22px] font-black tracking-tight text-secondary-600 sm:text-[26px] dark:text-white">
               {currentBiz?.name || "Mi Negocio"}
-            </span>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800/40">
+            </h2>
+            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
               {currentBiz?.specialty || currentArchetype?.label || "Comercio"}
             </span>
             {currentBiz?.offerModel && (
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                {currentBiz.offerModel === "physical_products"
-                  ? "Productos Físicos (SKU)"
-                  : currentBiz.offerModel === "prepared_products"
-                  ? "Productos Preparados (Recetas)"
-                  : currentBiz.offerModel === "services_appointments"
-                  ? "Servicios & Citas"
-                  : "Modelo Híbrido"}
+              <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                {OFFER_MODEL_LABELS[currentBiz.offerModel] || "Modelo híbrido"}
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="max-w-xl text-sm leading-relaxed text-gray-500 dark:text-gray-400">
             Activa o desactiva las capacidades operativas según las necesidades de este negocio.
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 flex-none self-start sm:self-auto">
-          <span className="w-2 h-2 rounded-full bg-brand-500" />
+
+        <span className="inline-flex flex-none items-center gap-2 self-start rounded-full bg-gray-100 px-3.5 py-1.5 text-xs font-bold text-gray-600 sm:self-auto dark:bg-gray-800 dark:text-gray-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
           {activeModules.length} de {AVAILABLE_MODULES.length} módulos activos
         </span>
       </div>
 
-      {/* Catálogo de Módulos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {AVAILABLE_MODULES.map(mod => {
-            const isActive = activeModules.includes(mod.id);
-            const Icon = mod.icon;
+      {/* Module catalogue */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {AVAILABLE_MODULES.map(mod => {
+          const isActive = activeModules.includes(mod.id);
+          const Icon = mod.icon;
 
-            return (
-              <div
-                key={mod.id}
-                className={`relative flex flex-col justify-between rounded-2xl border transition-all duration-200 p-6 ${
-                  isActive
-                    ? "border-brand-500/40 bg-white dark:bg-gray-900 shadow-md ring-1 ring-brand-500/20"
-                    : "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-sm"
-                }`}
-              >
-                <div>
-                  {/* Top Bar Card */}
-                  <div className="flex items-start justify-between gap-3 mb-4">
-                    <div
-                      className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${
-                        isActive
-                          ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
-                          : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                      }`}
-                    >
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    {isActive && (
-                      <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Activo
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Title & Description */}
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">
-                    {mod.title}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
-                    {mod.description}
-                  </p>
-
-                  {/* Feature Bullets */}
-                  <ul className="space-y-1.5 mb-6 border-t border-gray-100 dark:border-gray-800/80 pt-3">
-                    {mod.features.map((feat, i) => (
-                      <li key={i} className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"}`} />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-2 flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!currentBiz) return;
-                      if (isActive) {
-                        toggleModule(currentBiz.id, mod.id);
-                      } else {
-                        setActivatingModule(mod.id);
-                      }
-                    }}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          return (
+            <div
+              key={mod.id}
+              className={`flex flex-col justify-between rounded-3xl p-6 transition-colors ${
+                isActive
+                  ? "bg-brand-50 dark:bg-brand-500/10"
+                  : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-800"
+              }`}
+            >
+              <div>
+                {/* Icon + status */}
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div
+                    className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${
                       isActive
-                        ? "bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 border border-gray-200 dark:bg-gray-800 dark:hover:bg-red-950/30 dark:text-gray-200 dark:hover:text-red-400 dark:border-gray-700"
-                        : "bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-500/20 active:scale-[0.98]"
+                        ? "bg-brand-500 text-white"
+                        : "bg-white text-brand-500 dark:bg-gray-800 dark:text-brand-400"
                     }`}
                   >
-                    {isActive ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        <span>Módulo Instalado (Clic para Desactivar)</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        <span>Activar Módulo</span>
-                      </>
-                    )}
-                  </button>
-
-                  {isActive && (mod.id === "pedidos" || mod.id === "inventarios") && onNavigateToModule && (
-                    <button
-                      type="button"
-                      onClick={() => onNavigateToModule(mod.id as "pedidos" | "inventarios")}
-                      className="w-full py-2 px-3 rounded-xl text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                    >
-                      <span>Abrir módulo</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  {isActive && (
+                    <span className="rounded-full bg-brand-500 px-2.5 py-1 text-[11px] font-bold text-white">
+                      Activo
+                    </span>
                   )}
                 </div>
+
+                {/* Title & description */}
+                <h3 className="mb-2 text-[15px] font-black leading-snug tracking-tight text-secondary-600 dark:text-white">
+                  {mod.title}
+                </h3>
+                <p className="mb-4 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
+                  {mod.description}
+                </p>
+
+                {/* Features */}
+                <ul className="mb-6 space-y-2">
+                  {mod.features.map((feat, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400"
+                    >
+                      <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-brand-500" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!currentBiz) return;
+                    if (isActive) {
+                      toggleModule(currentBiz.id, mod.id);
+                    } else {
+                      setActivatingModule(mod.id);
+                    }
+                  }}
+                  className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-full py-2.5 text-[13px] font-bold transition-colors ${
+                    isActive
+                      ? "bg-white text-gray-600 hover:text-brand-500 dark:bg-gray-800 dark:text-gray-300 dark:hover:text-brand-400"
+                      : "bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.98]"
+                  }`}
+                >
+                  {isActive ? (
+                    <>
+                      <Check className="h-4 w-4 text-brand-500" />
+                      <span>Desactivar</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4" />
+                      <span>Activar módulo</span>
+                    </>
+                  )}
+                </button>
+
+                {isActive && (mod.id === "pedidos" || mod.id === "inventarios") && onNavigateToModule && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateToModule(mod.id as "pedidos" | "inventarios")}
+                    className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-full py-2 text-[12px] font-bold text-brand-500 transition-colors hover:bg-white dark:hover:bg-gray-800"
+                  >
+                    <span>Abrir módulo</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Contextual Module Activation Onboarding Modal */}
       {currentBiz && (
