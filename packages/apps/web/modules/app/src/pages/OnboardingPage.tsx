@@ -14,7 +14,6 @@ import { ThemeToggle } from "../compositions/shared/ThemeToggle";
 import { UserProfileDropdown } from "../compositions/workspace/UserProfileDropdown";
 import { CommandPalette } from "../compositions/workspace/CommandPalette";
 import { PageMeta } from "@/shell/meta";
-import { ThemeToggleButton } from "@/shell";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { Button } from "@/elements";
 import { cn } from "@/utils";
@@ -29,10 +28,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Building2,
-  MapPin,
   Store,
   Layers,
-  CheckCircle2,
   Smartphone,
   Utensils,
   Wrench,

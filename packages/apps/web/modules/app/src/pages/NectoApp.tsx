@@ -1,25 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import {
-  Home, Eye, Users, Settings, HelpCircle, LogOut,
-  ChevronDown, ChevronRight, ChevronLeft, PanelLeftClose, PanelLeftOpen, X, Mail, Megaphone, Package, Gift,
-  FileText, BarChart2, UserCircle, Bell,
-  Shield,
+  X, Package, Bell,
   ShieldAlert, ShoppingBag,
-  ChefHat, Layers, SlidersHorizontal, Activity, Menu,
   Building2,
-  MessageSquare,
-  Boxes,
-  Truck,
-  Bookmark,
-  Calendar,
-  Clock,
-  Store,
-  Tag,
-  Coins,
-  TrendingUp,
-  History,
 } from "lucide-react";
 
 export type PedidosSection = "ordenes" | "programados" | "preparacion" | "conversaciones" | "canales" | "configuracion" | "whatsapp" | "menu" | "operacion" | "analitica";
@@ -27,17 +12,11 @@ export type OperacionTab = "en-vivo" | "preparacion" | "programados" | "conversa
 export type GestionTab = "catalogo" | "resumen" | "historial" | "analitica" | "roles" | "automatizaciones" | "turnos";
 export type InventoryTab = "products" | "purchasing" | "kardex" | "pricelists" | "locations" | "valuation" | "catalog";
 
-import { BusinessSwitcher } from "@/compositions/workspace/BusinessSwitcher";
 import { EmptyModulesHubView } from "@/compositions/workspace/EmptyModulesHubView";
-import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
 import { RoleSelectionModal } from "@/compositions/workspace/RoleSelectionModal";
 import { BusinessSettingsModal } from "@/compositions/workspace/BusinessSettingsModal";
 import { CommandPalette } from "@/compositions/workspace/CommandPalette";
-import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
-import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
-import { NectoLogo, NectoSidebarLogo } from "@/compositions/shared/NectoLogo";
 import { useBusiness } from "@/context/BusinessContext";
-import { useAuth } from "@/auth/AuthContext";
 import { Button, Badge, Breadcrumb } from "@/elements";
 import type { BreadcrumbItem } from "@/elements/ui/breadcrumb";
 import { BaseAppShell } from "@/shell";

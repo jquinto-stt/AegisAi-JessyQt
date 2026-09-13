@@ -167,7 +167,7 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
         <li>
           <button
             type="button"
-            onClick={onOpenSettingsModal || (() => navigate("/workspaces"))}
+            onClick={() => (onOpenSettingsModal ? onOpenSettingsModal() : navigate("/workspaces"))}
             className={rowClasses}
             title="Configuración de Sede"
           >

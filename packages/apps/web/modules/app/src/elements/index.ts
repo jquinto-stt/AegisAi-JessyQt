@@ -44,7 +44,7 @@ export { Breadcrumb } from './ui/breadcrumb';
 export type { BreadcrumbProps, BreadcrumbItem } from './ui/breadcrumb';
 
 export { ButtonsGroup } from './ui/buttons-group';
-export type { ButtonsGroupProps, ButtonGroupOption } from './ui/buttons-group';
+export type { ButtonsGroupProps, ButtonsGroupItem } from './ui/buttons-group';
 
 // Form Elements
 export { Input } from './form/input';

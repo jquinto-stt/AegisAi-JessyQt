@@ -1108,6 +1108,9 @@ const DEFAULT_BUSINESS: BusinessInstance = {
     web: true,
     pos: true,
   },
+  // Required by BusinessInstance. Non-restaurant default is 10, matching the
+  // convention OnboardingPage uses (restaurant_virtual -> 20, otherwise -> 10).
+  kitchenBufferMin: 10,
   specialty: "Materiales, Tornillería & Herramientas",
   activeModules: ["pedidos", "inventarios", "referidos"],
   setupProgress: {

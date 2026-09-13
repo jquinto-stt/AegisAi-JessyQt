@@ -21,19 +21,14 @@ import {
   AlertTriangle,
   Smartphone,
   Bot,
-  Volume2,
   Clock,
   UserCheck,
   ShoppingBag,
-  MapPin,
-  Calendar,
   BookOpen,
   HelpCircle,
   ShieldCheck,
   FileText,
   CheckCircle2,
-  ListChecks,
-  Share2,
   Truck,
   Coins,
   PauseCircle,
@@ -48,7 +43,7 @@ import {
   ImageIcon,
   Sparkles,
 } from "lucide-react";
-import { Button, Field, Toggle } from "@/elements";
+import { Field, Toggle } from "@/elements";
 import { MenuItem, SidebarProvider } from "@/shell";
 import { NectoSidebarWordmark } from "../shared/NectoLogo";
 

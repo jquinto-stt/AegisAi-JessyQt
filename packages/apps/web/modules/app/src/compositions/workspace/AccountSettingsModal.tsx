@@ -8,25 +8,19 @@ import {
   User,
   Lock,
   Phone,
-  Mail,
   Eye,
   EyeOff,
   Shield,
   ShieldCheck,
   Monitor,
   Smartphone,
-  MapPin,
-  Briefcase,
   Calendar,
   Clock,
   KeyRound,
-  FileText,
-  Building2,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
 } from "lucide-react";
-import { Button, Field, Toggle, Select, Textarea, Badge } from "@/elements";
+import { Button, Field, Toggle, Select, Textarea } from "@/elements";
 
 type AccountTab = "profile" | "contact" | "security" | "permissions";
 
@@ -310,9 +304,8 @@ export const AccountSettingsModal: React.FC<{
                         Sede Habitual de Operación
                       </label>
                       <Select
-                        intent="account.branch"
-                        value={assignedBranch}
-                        onChange={e => setAssignedBranch(e.target.value)}
+                        defaultValue={assignedBranch}
+                        onChange={setAssignedBranch}
                         options={businesses.map(b => ({
                           value: b.id,
                           label: `${b.name} (${b.city || "Principal"})`,
@@ -346,10 +339,9 @@ export const AccountSettingsModal: React.FC<{
                       Biografía / Notas Internas de la Cuenta
                     </label>
                     <Textarea
-                      intent="account.bio"
                       rows={2}
                       value={bio}
-                      onChange={e => setBio(e.target.value)}
+                      onChange={setBio}
                       placeholder="Descripción breve de tus responsabilidades o notas operativas..."
                     />
                   </div>
@@ -444,9 +436,8 @@ export const AccountSettingsModal: React.FC<{
                       Disponibilidad de Horario para Alertas
                     </label>
                     <Select
-                      intent="account.shift"
-                      value={availabilityShift}
-                      onChange={e => setAvailabilityShift(e.target.value)}
+                      defaultValue={availabilityShift}
+                      onChange={setAvailabilityShift}
                       options={[
                         { value: "all_shifts", label: "24/7 — Todos los turnos y aperturas" },
                         { value: "day_shift", label: "Turno Diurno (08:00 AM a 05:00 PM)" },

@@ -5,15 +5,12 @@ import { BusinessIcon } from "../compositions/workspace/BusinessIcon";
 import {
   ArrowLeft,
   BarChart2,
-  TrendingUp,
-  Building2,
-  Sparkles,
 } from "lucide-react";
 import { Button } from "@/elements";
 
 export const FranchiseAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentBusiness, businesses, switchBusiness } = useBusiness();
+  const { activeBusiness, businesses, switchBusiness } = useBusiness();
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0E0F12] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-[#FF3F1A] selection:text-white antialiased">
@@ -36,15 +33,15 @@ export const FranchiseAnalyticsPage: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center overflow-hidden flex-none shadow-2xs">
-                {currentBusiness?.logoUrl ? (
+                {activeBusiness?.logoUrl ? (
                   <img
-                    src={currentBusiness.logoUrl}
-                    alt={currentBusiness.name}
+                    src={activeBusiness.logoUrl}
+                    alt={activeBusiness.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <BusinessIcon
-                    iconKey={currentBusiness?.iconKey || "store"}
+                    iconKey={activeBusiness?.iconKey || "store"}
                     className="w-5 h-5 text-[#FF3F1A]"
                   />
                 )}
@@ -52,14 +49,14 @@ export const FranchiseAnalyticsPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-sm font-bold text-zinc-950 dark:text-white leading-tight">
-                    {currentBusiness?.name || "Franquicia"}
+                    {activeBusiness?.name || "Franquicia"}
                   </h1>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider border border-emerald-200/50 dark:border-emerald-800/50">
                     Analítica Corporativa
                   </span>
                 </div>
                 <p className="text-[11px] text-zinc-500 mt-0.5">
-                  {currentBusiness?.city} · Moneda: <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">{currentBusiness?.currency}</span>
+                  {activeBusiness?.city} · Moneda: <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">{activeBusiness?.currency}</span>
                 </p>
               </div>
             </div>
@@ -71,7 +68,7 @@ export const FranchiseAnalyticsPage: React.FC = () => {
                 Sede:
               </span>
               <select
-                value={currentBusiness?.id}
+                value={activeBusiness?.id}
                 onChange={e => switchBusiness(e.target.value)}
                 className="px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs font-bold text-zinc-900 dark:text-zinc-100 outline-none cursor-pointer hover:border-zinc-400 transition-colors"
               >

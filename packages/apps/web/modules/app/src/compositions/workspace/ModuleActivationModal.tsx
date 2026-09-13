@@ -19,10 +19,7 @@ import {
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
-  AlertCircle,
   FileSpreadsheet,
-  Building,
-  Layers,
   HelpCircle,
 } from "lucide-react";
 

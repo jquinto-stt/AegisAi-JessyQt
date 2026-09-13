@@ -5,14 +5,8 @@ import { BusinessIcon } from "./BusinessIcon";
 import {
   ChevronDown,
   Check,
-  LayoutGrid,
-  Building2,
   Layers,
   ArrowRight,
-  ShieldCheck,
-  Clock,
-  Zap,
-  Flame,
 } from "lucide-react";
 import { Button } from "@/elements";
 
