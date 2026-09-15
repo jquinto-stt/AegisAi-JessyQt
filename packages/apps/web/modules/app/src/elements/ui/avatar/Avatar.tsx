@@ -51,6 +51,10 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
 
+  useEffect(() => {
+    setImgFailed(false);
+  }, [src]);
+
   const handleError = () => {
     setImgFailed(true);
     onError?.();

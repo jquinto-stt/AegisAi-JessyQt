@@ -37,37 +37,37 @@ const CANDIDATES: ConversationCounterpartSeed[] = [
     name: "Andrea Gómez", 
     phone: "+57 300 214 7788", 
     role: "Content Writer",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-01.jpg"
   },
   { 
     name: "Carlos Restrepo", 
     phone: "+57 311 908 3321", 
     role: "Front-end Developer",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-02.jpg"
   },
   { 
     name: "María Fernanda Ruiz", 
     phone: "+57 320 445 9012", 
     role: "Digital Marketer",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-03.jpg"
   },
   { 
     name: "Julián Ospina", 
     phone: "+57 301 776 2043", 
     role: "Product Designer",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-04.jpg"
   },
   { 
     name: "Luisa Toro", 
     phone: "+57 315 330 8890", 
     role: "Copywriter",
-    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-05.jpg"
   },
   { 
     name: "Andrés Mejía", 
     phone: "+57 304 118 5567", 
     role: "Project Manager",
-    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80"
+    avatar: "/images/user/user-06.jpg"
   },
 ];
 

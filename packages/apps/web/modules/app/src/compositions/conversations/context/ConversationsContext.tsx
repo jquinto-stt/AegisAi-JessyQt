@@ -135,6 +135,14 @@ function writeArray<T>(key: string, value: T[]): void {
 function loadConversations(businessId: string): Conversation[] {
   return readArray<Conversation>(CONVERSATIONS_KEY)
     .filter(c => c && typeof c === "object" && c.businessId === businessId)
+    .map((c, idx) => ({
+      ...c,
+      counterpart: {
+        ...c.counterpart,
+        avatar: c.counterpart?.avatar || `/images/user/user-0${(idx % 6) + 1}.jpg`,
+        role: c.counterpart?.role || "Cliente",
+      },
+    }))
     .sort((a, b) => (a.lastMessageAt < b.lastMessageAt ? 1 : -1));
 }
 
