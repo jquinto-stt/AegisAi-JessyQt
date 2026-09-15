@@ -53,11 +53,12 @@
  */
 
 import { useMemo, useState } from "react";
-import { Columns3, Inbox, Rows3, SlidersHorizontal } from "lucide-react";
+import { ArrowRight, CheckCircle2, Columns3, Inbox, Package, Rows3, SlidersHorizontal, User } from "lucide-react";
 
-import { Button, SegmentedControl } from "@/elements";
+import { Badge, Button, SegmentedControl } from "@/elements";
 import type { SegmentOption } from "@/elements";
 import type { Order, OrderStatus } from "@/contracts/order.contract";
+import { useOrders } from "../context/OrdersContext";
 import { OrderSourceCell } from "../shared/OrderSource";
 import { OrderStatusChip } from "../shared/OrderStatusChip";
 import { OrdersBoard } from "../shared/OrdersBoard";
@@ -195,6 +196,7 @@ export function OrdersInboxView({
   onDismissMovement,
   initialPhase,
 }: OperationalViewProps) {
+  const { transitionOrder } = useOrders();
   const {
     filters,
     phaseOptions,
@@ -219,7 +221,8 @@ export function OrdersInboxView({
 
   const { sort, toggle, apply } = useOrderSort("elapsed");
 
-  const [view, setView] = useState<InboxViewMode>("list");
+  // Predeterminado en modo Tablero (experiencia visual táctil e intuitiva)
+  const [view, setView] = useState<InboxViewMode>("board");
 
   const sorted = useMemo(() => apply(visible), [apply, visible]);
 
@@ -250,31 +253,83 @@ export function OrdersInboxView({
   );
 
   /**
-   * El cuerpo de la tarjeta del tablero.
+   * El cuerpo de la tarjeta del tablero (Estilo Premium TailAdmin / Elements).
    *
-   * ⚠️ Lleva **lo mismo** que la fila de la tabla, en menos sitio: número, quién
-   * pidió, cuánto lleva esperando, de dónde vino y cuánto vale. Si el tablero
-   * mostrara menos, cambiar de vista obligaría a volver a la lista para decidir.
+   * Diseñado con tipografía legible, badge de canal destacado,
+   * tiempo transcurrido y botón de acción rápida directo.
    */
-  const renderCardBody = (order: Order) => (
-    <>
-      <span className="flex items-start justify-between gap-2">
-        <span className="min-w-0 truncate text-theme-sm font-semibold text-secondary-600 dark:text-white/90">
-          {order.number}
-        </span>
-        <OrderTotalCell order={order} formatMoney={formatMoneyFor} />
-      </span>
+  const renderCardBody = (order: Order) => {
+    const isPending = order.status === "PENDING";
+    const totalItems = order.items.reduce((s, i) => s + i.quantity, 0);
 
-      <span className="block truncate text-theme-xs text-gray-500 dark:text-gray-400">
-        {orderIdentityLine(order)}
-      </span>
+    const handleQuickAction = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isPending) {
+        transitionOrder(order.id, "CONFIRMED");
+      } else if (order.status === "CONFIRMED") {
+        transitionOrder(order.id, "IN_PREPARATION");
+      }
+    };
 
-      <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-gray-100 pt-2.5 dark:border-gray-800">
-        <OrderElapsedCell order={order} thresholdMinutes={inboxWaitMinutes} />
-        <OrderSourceCell source={order.source} />
-      </span>
-    </>
-  );
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Cabecera de la tarjeta: Número de orden grande + Precio destacado */}
+        <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-2.5 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold tracking-tight text-brand-600 dark:text-brand-400">
+              {order.number}
+            </span>
+          </div>
+          <div className="text-right">
+            <span className="text-base font-bold tabular-nums text-gray-900 dark:text-white">
+              {formatMoneyFor(order.totals.total)}
+            </span>
+          </div>
+        </div>
+
+        {/* Cliente y Resumen de carga */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 text-theme-sm font-medium text-gray-800 dark:text-white/90">
+            <User className="h-4 w-4 flex-none text-gray-400" />
+            <span className="truncate">{orderIdentityLine(order)}</span>
+          </div>
+          <span className="inline-flex flex-none items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-theme-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            <Package className="h-3 w-3" />
+            {totalItems} {totalItems === 1 ? "ítem" : "ítems"}
+          </span>
+        </div>
+
+        {/* Metadatos: Origen (WhatsApp, Web, etc.) + Tiempo de Espera */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-theme-xs">
+          <OrderSourceCell source={order.source} />
+          <OrderElapsedCell order={order} thresholdMinutes={inboxWaitMinutes} />
+        </div>
+
+        {/* Acción directa de un clic (estilo tarjeta de atención de Turnos) */}
+        <div className="mt-1 pt-2.5 border-t border-gray-100 dark:border-gray-800">
+          {isPending ? (
+            <button
+              type="button"
+              onClick={handleQuickAction}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-[0.99] dark:bg-brand-600 dark:hover:bg-brand-500"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              <span>Confirmar pedido</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleQuickAction}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-secondary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-secondary-700 active:scale-[0.99] dark:bg-secondary-500 dark:hover:bg-secondary-600"
+            >
+              <ArrowRight className="h-4 w-4" />
+              <span>Pasar a alistamiento</span>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div data-orders-inbox className="flex flex-col gap-5">

@@ -94,7 +94,7 @@ export function OrdersBoard<Lane extends string>({
   }, [orders, lanes, sortWithinLane]);
 
   return (
-    <div data-orders-board={anchor} className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <div data-orders-board={anchor} className="grid grid-cols-1 gap-5 md:grid-cols-2">
       {lanes.map(lane => {
         const list = byLane.get(lane.key) ?? [];
         return (
@@ -102,17 +102,17 @@ export function OrdersBoard<Lane extends string>({
             key={lane.key}
             data-orders-lane={lane.key}
             data-orders-lane-count={list.length}
-            className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]"
+            className="flex flex-col overflow-hidden rounded-2xl border border-gray-200/80 bg-gray-50/50 p-1.5 shadow-sm transition-all dark:border-gray-800/80 dark:bg-gray-900/40"
           >
-            <header className="flex items-center justify-between gap-2 border-b border-gray-200 px-3.5 py-2.5 dark:border-gray-800">
-              <span className="flex min-w-0 items-center gap-2">
+            <header className="flex items-center justify-between gap-2 px-3.5 py-3">
+              <span className="flex min-w-0 items-center gap-2.5">
                 {lane.dotClass ? (
                   <span
-                    className={`h-2 w-2 flex-none rounded-full ${lane.dotClass}`}
+                    className={`h-2.5 w-2.5 flex-none rounded-full ring-2 ring-white dark:ring-gray-900 ${lane.dotClass}`}
                     aria-hidden
                   />
                 ) : null}
-                <span className="truncate text-theme-sm font-semibold text-secondary-600 dark:text-white/90">
+                <span className="truncate text-theme-sm font-bold text-gray-800 dark:text-white/90">
                   {lane.label}
                 </span>
               </span>
@@ -122,36 +122,31 @@ export function OrdersBoard<Lane extends string>({
                   sería adivinar dónde acaba el rótulo. */}
               <span
                 data-orders-lane-badge={lane.key}
-                className="flex-none rounded-full bg-gray-200/80 px-2 py-0.5 text-theme-xs font-bold tabular-nums text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                className="flex-none rounded-full bg-white px-2.5 py-0.5 text-theme-xs font-semibold tabular-nums text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-300"
               >
                 {list.length}
               </span>
             </header>
 
-            <div className="flex flex-1 flex-col gap-2 p-2.5">
+            <div className="flex flex-1 flex-col gap-3 p-2">
               {list.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-gray-200 px-3 py-6 text-center text-theme-xs text-gray-400 dark:border-gray-800 dark:text-gray-500">
-                  {emptyLaneLabel}
-                </p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200/90 py-10 text-center dark:border-gray-800">
+                  <p className="text-theme-xs font-medium text-gray-400 dark:text-gray-500">
+                    {emptyLaneLabel}
+                  </p>
+                </div>
               ) : (
                 list.map(order => (
-                  <button
+                  <div
                     key={order.id}
-                    type="button"
                     onClick={() => onOpenOrder(order.id)}
-                    // ⚠️ Emite **también** `data-order-row`, el mismo ancla que la
-                    // fila de la tabla. No es duplicación: `data-order-row`
-                    // significa "el control que abre el detalle de esta orden", y
-                    // ese control es el mismo concepto en las dos superficies. Con
-                    // un ancla distinta, cada guarda y cada captura tendrían que
-                    // saber en qué vista está para poder buscar.
                     data-order-row={order.number}
                     data-orders-board-card={order.number}
                     data-intent="orders.board.open"
-                    className="flex w-full cursor-pointer flex-col gap-2.5 rounded-lg border border-gray-200 bg-white p-3.5 text-left transition-colors hover:border-brand-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500/40"
+                    className="group relative flex w-full cursor-pointer flex-col gap-3 rounded-2xl border border-gray-200/90 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-theme-md active:translate-y-0 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500/50"
                   >
                     {renderCardBody(order)}
-                  </button>
+                  </div>
                 ))
               )}
             </div>
