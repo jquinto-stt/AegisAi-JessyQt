@@ -9,7 +9,7 @@ import { srvApiEnvVisitor, type SrvApiEnv } from './env.js';
  * SrvApi — Backend & Compute Stack for Necto
  *
  * Provisions:
- * - DynamoDB Tables (Pedidos & Inventarios)
+ * - DynamoDB Table (shared application store)
  * - ECS / Fargate Cluster & Service (Containerized backend)
  * - API Gateway (HTTP API v2 with JWT Cognito Authorizer)
  * - Lambda Handlers for fast endpoints
@@ -63,6 +63,17 @@ export class SrvApi extends Stack<SrvApiEnv> {
         allowHeaders: ['Content-Type', 'Authorization'],
       },
     });
+
+    // Public, VPC-less health check so the serverless path can be probed
+    // independently of the Fargate service.
+    const healthFn = new sst.aws.Function('HealthCheck', {
+      handler: 'infra/functions/health.handler',
+      runtime: 'nodejs22.x',
+      memory: '128 MB',
+      timeout: '10 seconds',
+    });
+    gateway.route('GET /health', { lambda: healthFn.arn });
+
     Object.assign(this.api, { gateway });
     return this;
   }

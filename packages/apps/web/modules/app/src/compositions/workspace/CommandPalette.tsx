@@ -1,21 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBusiness } from "../../context/BusinessContext";
-import { BusinessIcon } from "./BusinessIcon";
-import {
-  Search,
-  Building2,
-  Plus,
-  LayoutGrid,
-  SlidersHorizontal,
-  ShoppingBag,
-  Flame,
-  BarChart3,
-  Users,
-  Layers,
-  Package,
-  X,
-} from "lucide-react";
+import { Search, X, Building2 } from "lucide-react";
+import { createPaletteItems } from "./command-palette/palette.items";
+import type { PaletteItem } from "./command-palette/palette.types";
 
 export const CommandPalette: React.FC = () => {
   const navigate = useNavigate();
@@ -27,7 +15,6 @@ export const CommandPalette: React.FC = () => {
     setIsCommandPaletteOpen,
     semantics,
   } = useBusiness();
-  const isFood = semantics?.requiresKitchenDisplay;
 
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -44,172 +31,14 @@ export const CommandPalette: React.FC = () => {
 
   if (!isCommandPaletteOpen) return null;
 
-  // Build searchable items
-  interface PaletteItem {
-    id: string;
-    category: "Espacios de Trabajo" | "Vistas Especiales" | "Acceso Rápido a Módulos" | "Acciones";
-    title: string;
-    subtitle?: string;
-    icon: React.ReactNode;
-    action: () => void;
-    active?: boolean;
-    badge?: string;
-  }
-
-  /**
-   * Icons deliberately carry no colour of their own — they inherit from the
-   * chip that wraps them, so the whole list stays on the single brand accent.
-   */
-  const items: PaletteItem[] = [
-    {
-      id: "global-overview",
-      category: "Vistas Especiales",
-      title: "Vista Franquicia / Resumen Global",
-      subtitle: "Dashboard consolidado con ventas y métricas de todas las marcas",
-      icon: <LayoutGrid className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/workspaces?tab=franchise_overview");
-      },
-      badge: "Multi-local",
-    },
-
-    // Businesses
-    ...businesses.map(b => ({
-      id: `biz-${b.id}`,
-      category: "Espacios de Trabajo" as const,
-      title: b.name,
-      subtitle: `${b.city || "Sucursal"} · ${b.currency} · ${b.specialty || "Restaurante"}`,
-      icon: <BusinessIcon iconKey={b.iconKey} className="w-4 h-4" />,
-      action: () => {
-        switchBusiness(b.id);
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=operacion&tab=en-vivo");
-      },
-      active: b.id === activeBusinessId,
-      badge: b.businessType === "retail_store" ? "Retail" : "Gastro",
-    })),
-
-    // Actions
-    {
-      id: "create-business",
-      category: "Acciones",
-      title: "Crear nuevo negocio / sucursal",
-      subtitle: "Wizard guiado en 2 pasos para dar de alta una nueva marca",
-      icon: <Plus className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/onboarding");
-      },
-    },
-    {
-      id: "hub-workspaces",
-      category: "Acciones",
-      title: "Abrir Hub de Gestión de Negocios",
-      subtitle: "Ver todas las sedes, estados de suscripción y parámetros",
-      icon: <Building2 className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/workspaces");
-      },
-    },
-
-    // Modules Navigation (Exact direct routing)
-    {
-      id: "mod-pedidos",
-      category: "Acceso Rápido a Módulos",
-      title: "Órdenes",
-      subtitle: "Monitor omnicanal de comandas (WhatsApp, Web y POS)",
-      icon: <ShoppingBag className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=operacion&tab=en-vivo");
-      },
-    },
-    {
-      id: "mod-kds",
-      category: "Acceso Rápido a Módulos",
-      title: isFood ? "Pantalla KDS Cocina & Tiempos" : `Pantalla de ${semantics?.stationShortName || "Despacho"} & Tiempos`,
-      subtitle: isFood
-        ? "Estación táctil de preparación para cocineros y horneros"
-        : "Estación táctil de alistamiento, empaque y despacho",
-      icon: isFood ? <Flame className="w-4 h-4" /> : <Package className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=operacion&tab=preparacion");
-      },
-    },
-    {
-      id: "mod-catalogo",
-      category: "Acceso Rápido a Módulos",
-      title: isFood ? "Catálogo de Platos & Modificadores" : "Catálogo de Productos & Variantes",
-      subtitle: isFood
-        ? "Gestión de cartas, fotos, secciones y opciones extras"
-        : "Gestión de productos, variantes, precios y catálogo",
-      icon: <Layers className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=menu&tab=catalogo");
-      },
-    },
-    {
-      id: "mod-insumos",
-      category: "Acceso Rápido a Módulos",
-      title: "Insumos & Stock (Escandallos)",
-      subtitle: "Control de materias primas y coste unitario por receta",
-      icon: <Building2 className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=menu&tab=insumos");
-      },
-    },
-    {
-      id: "mod-analitica",
-      category: "Acceso Rápido a Módulos",
-      title: "Dashboard Analítico & Rendimiento",
-      subtitle: "Métricas de facturación, ticket promedio y canales",
-      icon: <BarChart3 className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=analitica&tab=resumen");
-      },
-    },
-    {
-      id: "mod-historial",
-      category: "Acceso Rápido a Módulos",
-      title: "Historial Completo de Ventas",
-      subtitle: "Auditoría de tickets finalizados y trazabilidad",
-      icon: <ShoppingBag className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=analitica&tab=historial");
-      },
-    },
-    {
-      id: "mod-automatizaciones",
-      category: "Acceso Rápido a Módulos",
-      title: "Automatizaciones & Reglas WhatsApp",
-      subtitle: "Reglas de despacho automático y atención configurada",
-      icon: <SlidersHorizontal className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=configuracion&tab=automatizaciones");
-      },
-    },
-    {
-      id: "mod-turnos",
-      category: "Acceso Rápido a Módulos",
-      title: isFood ? "Turnos y Capacidad de Cocina" : "Turnos y Capacidad Operativa",
-      subtitle: isFood
-        ? "Dotación de personal y buffer de tiempos de entrega"
-        : "Dotación de personal y capacidad de despacho",
-      icon: <Users className="w-4 h-4" />,
-      action: () => {
-        setIsCommandPaletteOpen(false);
-        navigate("/app?section=configuracion&tab=turnos");
-      },
-    },
-  ];
+  const items: PaletteItem[] = createPaletteItems(
+    businesses,
+    semantics,
+    navigate,
+    switchBusiness,
+    () => setIsCommandPaletteOpen(false),
+    activeBusinessId
+  );
 
   // Filter items
   const filteredItems = items.filter(item => {
@@ -245,7 +74,7 @@ export const CommandPalette: React.FC = () => {
       role="presentation"
     >
       <div
-        className="flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl animate-in fade-in zoom-in-95 duration-200 dark:bg-[#1C1C1F]"
+        className="flex max-h-[75vh] w-full max-w-xl flex-col overflow-hidden rounded-3xl bg-white shadow-theme-xl animate-in fade-in zoom-in-95 duration-200 dark:bg-gray-900"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -263,8 +92,8 @@ export const CommandPalette: React.FC = () => {
               setSelectedIndex(0);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar sucursal, comanda, módulo o comando..."
-            className="w-full bg-transparent text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-hidden dark:text-white"
+            placeholder="Buscar sucursal, comanda, módulo o comando…"
+            className="w-full bg-transparent text-theme-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-hidden dark:text-white"
           />
           {search ? (
             <button
@@ -276,7 +105,7 @@ export const CommandPalette: React.FC = () => {
               <X className="h-4 w-4" />
             </button>
           ) : (
-            <kbd className="flex-none rounded-md bg-gray-100 px-2 py-0.5 font-mono text-[10px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <kbd className="flex-none rounded-md bg-gray-100 px-2 py-0.5 font-mono text-theme-xs font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
               ESC
             </kbd>
           )}
@@ -287,10 +116,10 @@ export const CommandPalette: React.FC = () => {
           {filteredItems.length === 0 ? (
             <div className="p-8 text-center">
               <Building2 className="mx-auto mb-2 h-8 w-8 text-gray-300 dark:text-gray-600" />
-              <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
+              <p className="text-theme-sm font-bold text-gray-500 dark:text-gray-400">
                 No se encontraron resultados
               </p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              <p className="mt-1 text-theme-xs text-gray-400 dark:text-gray-500">
                 Prueba buscando por nombre de negocio o módulo
               </p>
             </div>
@@ -303,7 +132,7 @@ export const CommandPalette: React.FC = () => {
                   key={item.id}
                   onClick={() => item.action()}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl px-3.5 py-3 transition-colors ${
+                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-3 transition-colors ${
                     isSelected
                       ? "bg-brand-500 text-white"
                       : item.active
@@ -325,7 +154,7 @@ export const CommandPalette: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <p
-                          className={`truncate text-[13px] font-bold leading-tight ${
+                          className={`truncate text-theme-sm font-bold leading-tight ${
                             isSelected ? "text-white" : "text-secondary-600 dark:text-white"
                           }`}
                         >
@@ -333,7 +162,7 @@ export const CommandPalette: React.FC = () => {
                         </p>
                         {item.badge && (
                           <span
-                            className={`flex-none rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            className={`flex-none rounded-full px-2 py-0.5 text-theme-xs font-bold ${
                               isSelected
                                 ? "bg-white/20 text-white"
                                 : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
@@ -345,7 +174,7 @@ export const CommandPalette: React.FC = () => {
                       </div>
                       {item.subtitle && (
                         <p
-                          className={`mt-0.5 truncate text-[11px] leading-tight ${
+                          className={`mt-0.5 truncate text-theme-xs leading-tight ${
                             isSelected ? "text-white/75" : "text-gray-400 dark:text-gray-500"
                           }`}
                         >
@@ -358,7 +187,7 @@ export const CommandPalette: React.FC = () => {
                   <div className="flex flex-none items-center gap-2">
                     {item.active && (
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`rounded-full px-2 py-0.5 text-theme-xs font-bold ${
                           isSelected ? "bg-white/20 text-white" : "bg-brand-500 text-white"
                         }`}
                       >
@@ -366,7 +195,7 @@ export const CommandPalette: React.FC = () => {
                       </span>
                     )}
                     {isSelected && (
-                      <kbd className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px] text-white">
+                      <kbd className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-theme-xs text-white">
                         ↵
                       </kbd>
                     )}
@@ -378,18 +207,18 @@ export const CommandPalette: React.FC = () => {
         </div>
 
         {/* Shortcut hints */}
-        <div className="flex items-center gap-4 border-t border-gray-100 bg-gray-50 px-5 py-2.5 text-[11px] text-gray-400 dark:border-gray-800 dark:bg-gray-900/60">
+        <div className="flex items-center gap-4 border-t border-gray-100 bg-gray-50 px-5 py-2.5 text-theme-xs text-gray-400 dark:border-gray-800 dark:bg-gray-900/60">
           <span className="flex items-center gap-1.5">
-            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-theme-xs dark:bg-gray-800">
               ↑
             </kbd>
-            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-theme-xs dark:bg-gray-800">
               ↓
             </kbd>
             Navegar
           </span>
           <span className="flex items-center gap-1.5">
-            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-[10px] dark:bg-gray-800">
+            <kbd className="rounded bg-gray-200/80 px-1.5 py-0.5 font-mono text-theme-xs dark:bg-gray-800">
               ↵
             </kbd>
             Seleccionar

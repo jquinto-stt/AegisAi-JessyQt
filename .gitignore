@@ -1,5 +1,6 @@
 node_modules/
 dist
+dist-verify*/
 .sst
 .devlink/
 *.tsbuildinfo
@@ -10,4 +11,13 @@ dist
 Repo-prueba-master/
 .workbuddy-ai/
 .agents/
+
+# Salidas de ejecución local: no son fuente.
+# `artifacts/` son capturas y reportes que escriben los propios harnesses
+# (scripts/verify-*.mjs), regenerables en cada corrida.
+artifacts/
+vite-dev.log
+# Sondas de depuración sueltas en la raíz (las suites reales viven en scripts/).
+.probe-*.mjs
+.verify-*.mjs
 

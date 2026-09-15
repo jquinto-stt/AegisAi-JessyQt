@@ -13,7 +13,7 @@ export const ToggleAppSidebar: React.FC = observer(() => {
         isOpen ? "bg-gray-100 dark:bg-white/[0.03]" : ""
       }`}
       onClick={() => uiStore.toggleSidebar()}
-      aria-label="Toggle Sidebar"
+      aria-label="Mostrar u ocultar barra lateral"
     >
       {isOpen ? (
         <svg

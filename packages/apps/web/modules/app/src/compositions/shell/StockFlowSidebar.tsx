@@ -1,12 +1,17 @@
-import { useState, useCallback } from "react";
+import { Fragment, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { BaseAppSidebar, MenuItem, useShellConfig } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { useAuth } from "@/auth/AuthContext";
+import { CLIENT_ADMIN_ROLE_LABEL } from "@/auth/profile";
+import { useBusiness } from "@/context/BusinessContext";
+import type { NectoModuleKey } from "@/context/BusinessContext";
 import { PlugInIcon, InfoIcon, ArrowRightIcon, UserCircleIcon } from "@/icons";
-import { PanelLeftClose, SlidersHorizontal, ChevronRight, MessageSquare, Bot } from "lucide-react";
+import { PanelLeftClose, SlidersHorizontal, ChevronRight, MessageSquare, Bot, Layers, LifeBuoy, LayoutDashboard, ShoppingBag } from "lucide-react";
 import { NectoSidebarWordmark } from "@/compositions/shared/NectoLogo";
+import { ORDERS_SECTION_META } from "@/compositions/orders";
+import type { OrdersSectionKey } from "@/compositions/orders";
 import { uiStore } from "@/stores";
 
 
@@ -16,15 +21,17 @@ import { uiStore } from "@/stores";
 
 const STORAGE_KEY = "necto_sidebar_open_sections";
 
-type SectionKey = "conversacional" | "sede";
+type SectionKey = "conversacional" | "modulos" | "sede";
 
 interface SectionState {
   conversacional: boolean;
+  modulos: boolean;
   sede: boolean;
 }
 
 const DEFAULT_SECTIONS: SectionState = {
   conversacional: true,
+  modulos: true,
   sede: true,
 };
 
@@ -126,11 +133,15 @@ const LogoCollapsed = () => (
 
 interface SidebarFooterProps {
   activeRoleName: string;
-  onOpenRoleModal: () => void;
   onOpenSettingsModal?: (tab?: string) => void;
 }
 
-const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSettingsModal }: SidebarFooterProps) => {
+/**
+ * Acciones fijas del pie: rol (informativo), Dashboard, Configuración, Ayuda y
+ * salir. El rol dejó de ser un botón que abría el selector de perfil de acceso:
+ * con un único rol (Admin Cliente, §5.3) no hay nada que elegir.
+ */
+const SidebarFooter = observer(({ activeRoleName, onOpenSettingsModal }: SidebarFooterProps) => {
   const { isExpanded: showExpanded } = useSidebarContext();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -150,16 +161,16 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
         <li>
           <button
             type="button"
-            onClick={onOpenRoleModal}
+            onClick={() => navigate("/workspaces")}
             className={rowClasses}
-            title={`Rol activo: ${activeRoleName}. Clic para cambiar.`}
+            title="Ir al Dashboard de franquicias y sucursales"
           >
             <span className="menu-item-icon-size menu-item-icon-inactive text-brand-500">
-              <UserCircleIcon />
+              <Layers className="w-5 h-5" />
             </span>
             {showExpanded && (
               <span className="menu-item-text truncate">
-                Rol: <span className="font-semibold text-brand-500">{activeRoleName}</span>
+                Dashboard de franquicias
               </span>
             )}
           </button>
@@ -169,7 +180,7 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
             type="button"
             onClick={() => (onOpenSettingsModal ? onOpenSettingsModal() : navigate("/workspaces"))}
             className={rowClasses}
-            title="Configuración de Sede"
+            title="Configuración de sede"
           >
             <span className="menu-item-icon-size menu-item-icon-inactive">
               <SlidersHorizontal className="w-5 h-5" />
@@ -178,17 +189,36 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
           </button>
         </li>
         <li>
-          <a
-            href="https://necto.app/help"
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Antes salía a `https://necto.app/help`; ahora es la página interna
+              `/ayuda`, que se puede leer incluso sin sesión. */}
+          <button
+            type="button"
+            onClick={() => navigate("/ayuda")}
             className={rowClasses}
+            title="Centro de ayuda y preguntas frecuentes"
           >
             <span className="menu-item-icon-size menu-item-icon-inactive">
               <InfoIcon />
             </span>
             {showExpanded && <span className="menu-item-text">Ayuda</span>}
-          </a>
+          </button>
+        </li>
+        <li>
+          {/* Antes era un `div` sin acción, por la misma razón que la fila de rol:
+              no existía canal de soporte al que llevar, y la afordancia de clic
+              habría sido una promesa vacía. Ahora sí hay página (`/soporte`), así
+              que la fila pasa a `button` —igual que su vecina, que va a `/ayuda`. */}
+          <button
+            type="button"
+            onClick={() => navigate("/soporte")}
+            className={rowClasses}
+            title="Soporte: canales de contacto y formulario"
+          >
+            <span className="menu-item-icon-size menu-item-icon-inactive">
+              <LifeBuoy className="w-5 h-5" />
+            </span>
+            {showExpanded && <span className="menu-item-text">Soporte</span>}
+          </button>
         </li>
         <li>
           <button
@@ -213,24 +243,86 @@ const SidebarFooter = observer(({ activeRoleName, onOpenRoleModal, onOpenSetting
 // SIDEBAR CONTENT
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Los destinos de la sede: lo que la barra lateral puede pedir que se muestre.
+ *
+ * ⚠️ `dashboard` es la pantalla de la sede y el destino **por defecto**: la
+ * tienda existe primero y el Dashboard es su casa. `modules-hub` es el catálogo
+ * de módulos, una pantalla **secundaria** que sólo se abre pidiéndola —antes era
+ * la única, así que la sede no tenía pantalla propia—. `pedidos` **ya tiene vista**
+ * (se registra en `MODULES_WITH_VIEWS`, en `NectoApp`) e `inventarios` sigue sin
+ * ella: se conserva como destino para cuando aterrice.
+ *
+ * El vocabulario es un array `as const` para que el tipo se **derive** de él: el
+ * que valida lo que llega por enlace y el que describe el estado no pueden
+ * divergir, y un destino nuevo es alcanzable sin tocar el tipo.
+ */
+export const APP_DESTINATIONS = ["dashboard", "whatsapp", "pedidos", "inventarios", "modules-hub"] as const;
+
+export type AppDestination = (typeof APP_DESTINATIONS)[number];
+
+/**
+ * Los módulos acoplados que **tienen pantalla propia** y por tanto se listan en la
+ * barra. Es un espejo de `NectoApp.MODULES_WITH_VIEWS`, del lado de la navegación:
+ * un módulo sin vista no aparece —un enlace a una pantalla que no existe es peor
+ * que su ausencia— y uno nuevo se añade en los dos sitios.
+ */
+const MODULE_NAV_ENTRIES: {
+  key: AppDestination;
+  moduleKey: NectoModuleKey;
+  label: string;
+  icon: React.ReactNode;
+}[] = [{ key: "pedidos", moduleKey: "pedidos", label: "Pedidos", icon: <ShoppingBag className="w-4 h-4" /> }];
+
 export interface StockFlowSidebarProps {
-  activeModule: "pedidos" | "inventarios" | "modules-hub";
-  onNavigateModule: (module: "pedidos" | "inventarios" | "modules-hub") => void;
-  onOpenRoleModal: () => void;
+  activeModule: AppDestination;
+  onNavigateModule: (module: AppDestination) => void;
   onOpenSettingsModal?: (tab?: string) => void;
   activeRoleName?: string;
+  /**
+   * La sección de Pedidos en la que está el operador.
+   *
+   * ⚠️ La barra lateral **no conoce el módulo**: no importa su estado ni su
+   * vocabulario de secciones, sólo pinta los enlaces que el shell le pasa. Por eso
+   * la sección activa entra como dato y los rótulos salen de `ORDERS_SECTION_META`
+   * —que es la misma fuente que usa la barra del módulo, así que no pueden
+   * discrepar.
+   */
+  activeOrdersSection?: OrdersSectionKey;
+  /** Navega a una sección de Pedidos. */
+  onNavigateOrdersSection?: (section: OrdersSectionKey) => void;
 }
 
 export const StockFlowSidebar = observer(({
   activeModule,
   onNavigateModule,
-  onOpenRoleModal,
   onOpenSettingsModal,
-  activeRoleName = "Dueño",
+  activeRoleName = CLIENT_ADMIN_ROLE_LABEL,
+  activeOrdersSection,
+  onNavigateOrdersSection,
 }: StockFlowSidebarProps) => {
 
   // ── Collapsible sections state ──
   const [openSections, setOpenSections] = useState<SectionState>(loadSectionState);
+
+  // ⚠️ Los módulos que la barra lista se **derivan** de `activeModules` de la
+  // sede, no de un estado propio: si el módulo se desacopla desde el catálogo, su
+  // enlace desaparece sin que nada haya que sincronizar. Y sólo se ofrecen los que
+  // tienen vista (`MODULE_NAV_ENTRIES`), porque un enlace a una pantalla
+  // inexistente es peor que su ausencia.
+  const { activeBusiness } = useBusiness();
+  const activeModules = activeBusiness?.activeModules ?? [];
+  const moduleEntries = MODULE_NAV_ENTRIES.filter(entry =>
+    activeModules.includes(entry.moduleKey)
+  );
+
+  /**
+   * ⚠️ Con la barra colapsada, un grupo cuyos hijos no se pintan deja su
+   * destino inalcanzable (no hay icono que lo represente). Los módulos se
+   * listan igualmente en ese estado: es la única vía al módulo que tiene el
+   * usuario cuando la barra está estrecha.
+   */
+  const { isExpanded: sidebarExpanded } = useSidebarContext();
 
   const toggleSection = useCallback((key: SectionKey) => {
     setOpenSections(prev => {
@@ -247,31 +339,117 @@ export const StockFlowSidebar = observer(({
           {/* SECCIÓN CANAL CONVERSACIONAL — capacidad de la SEDE, no de un módulo */}
           <div>
             <CollapsibleSectionHeader
-              title="Canal Conversacional"
+              title="Canal conversacional"
               sectionKey="conversacional"
               isOpen={openSections.conversacional}
               onToggle={toggleSection}
             />
             {openSections.conversacional && (
               <ul className="flex flex-col gap-1">
+                {/* ⚠️ WhatsApp es un **destino de la sede**, no un puente a
+                    Ajustes: su chat es una superficie propia del canal. Antes
+                    esta sección sólo tenía dos atajos al modal de configuración
+                    —Canales de entrada y Asistente— y ningún sitio donde
+                    atender las conversaciones. */}
                 <MenuItem
                   icon={<MessageSquare className="w-4 h-4" />}
-                  name="Canales de Entrada"
+                  name="WhatsApp"
+                  active={activeModule === "whatsapp"}
+                  onClick={() => onNavigateModule("whatsapp")}
+                />
+                <MenuItem
+                  icon={<PlugInIcon />}
+                  name="Canales de entrada"
                   onClick={() => onOpenSettingsModal?.("channels")}
                 />
                 <MenuItem
                   icon={<Bot className="w-4 h-4" />}
-                  name="Asistente WhatsApp IA"
-                  onClick={() => onOpenSettingsModal?.("whatsapp_bot")}
+                  name="Asistente de WhatsApp IA"
+                  onClick={() => onOpenSettingsModal?.("assistant")}
                 />
               </ul>
             )}
           </div>
 
+          {/* SECCIÓN MÓDULOS — sólo los acoplados con pantalla propia.
+              ⚠️ Con la barra **colapsada** el grupo no puede quedarse en un
+              encabezado mudo: los hijos no se pintan y el módulo quedaría
+              inalcanzable. En ese estado se listan los módulos directamente,
+              que es la única forma de que sigan siendo accesibles. */}
+          {moduleEntries.length > 0 && (
+            <div>
+              <CollapsibleSectionHeader
+                title="Módulos"
+                sectionKey="modulos"
+                isOpen={openSections.modulos}
+                onToggle={toggleSection}
+              />
+              {(openSections.modulos || !sidebarExpanded) && (
+                <ul className="flex flex-col gap-1">
+                  {moduleEntries.map(entry => (
+                    <Fragment key={entry.key}>
+                      <MenuItem
+                        icon={entry.icon}
+                        name={entry.label}
+                        active={activeModule === entry.key}
+                        onClick={() => onNavigateModule(entry.key)}
+                      />
+
+                      {/* ── Sub-destinos de Pedidos ────────────────────────────
+                       *
+                       * ⚠️ Sólo con la barra **expandida** y Pedidos abierto. Con
+                       * la barra colapsada (78 px) los hijos no se pintan y el
+                       * grupo quedaría en un encabezado mudo; además, el acceso
+                       * directo al módulo ya está garantizado por el `MenuItem`
+                       * padre, que es la vía que el operador conserva siempre.
+                       *
+                       * ⚠️ Se pintan como hermanos indentados y **no** anidados
+                       * dentro del `<li>` de Pedidos: anidarlos haría que el
+                       * nombre accesible del elemento padre incluyera los siete
+                       * hijos ("Pedidos Bandeja de entrada Mesa de alistamiento…")
+                       * y dejaría de ser localizable por su nombre.
+                       */}
+                      {entry.key === "pedidos" && sidebarExpanded && onNavigateOrdersSection && (
+                        <li data-orders-subnav className="flex flex-col gap-0.5 py-0.5 pl-4">
+                          {ORDERS_SECTION_META.map(meta => {
+                            const isActive =
+                              activeModule === "pedidos" && activeOrdersSection === meta.key;
+                            return (
+                              <button
+                                key={meta.key}
+                                type="button"
+                                onClick={() => onNavigateOrdersSection(meta.key)}
+                                aria-current={isActive ? "page" : undefined}
+                                data-orders-sidebar-section={meta.key}
+                                className={`flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-theme-xs font-medium transition-colors ${
+                                  isActive
+                                    ? "bg-gray-100 text-gray-900 dark:bg-white/5 dark:text-white"
+                                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-white"
+                                }`}
+                              >
+                                <span
+                                  className={`h-1.5 w-1.5 flex-none rounded-full ${
+                                    isActive ? "bg-brand-500" : "bg-gray-300 dark:bg-gray-600"
+                                  }`}
+                                  aria-hidden
+                                />
+                                <span className="truncate">{meta.shortLabel}</span>
+                              </button>
+                            );
+                          })}
+                        </li>
+                      )}
+                    </Fragment>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
           {/* SECCIÓN SEDE & TIENDA */}
           <div>
             <CollapsibleSectionHeader
-              title="Sede & Tienda"
+              title="Sede y tienda"
               sectionKey="sede"
               isOpen={openSections.sede}
               onToggle={toggleSection}
@@ -279,8 +457,14 @@ export const StockFlowSidebar = observer(({
             {openSections.sede && (
               <ul className="flex flex-col gap-1">
                 <MenuItem
+                  icon={<LayoutDashboard className="w-4 h-4" />}
+                  name="Dashboard"
+                  active={activeModule === "dashboard"}
+                  onClick={() => onNavigateModule("dashboard")}
+                />
+                <MenuItem
                   icon={<PlugInIcon />}
-                  name="Módulos de Tienda"
+                  name="Módulos de tienda"
                   active={activeModule === "modules-hub"}
                   onClick={() => onNavigateModule("modules-hub")}
                 />
@@ -291,7 +475,6 @@ export const StockFlowSidebar = observer(({
 
         <SidebarFooter
           activeRoleName={activeRoleName}
-          onOpenRoleModal={onOpenRoleModal}
           onOpenSettingsModal={onOpenSettingsModal}
         />
       </nav>

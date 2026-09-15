@@ -3,7 +3,13 @@
  *
  * Orange band with the white logo, three link columns (Nosotros, Servicios,
  * Contacto), social icons, and an indigo copyright bar at the bottom.
+ *
+ * The copyright bar also carries the legal links (terms, privacy, cookies):
+ * they belong there rather than in a fourth product column, and they are the
+ * only way to reach the legal pages once inside the app.
  */
+
+import { LegalFooterLinks } from "../../legal/LegalFooterLinks";
 
 interface FooterColumn {
   title: string;
@@ -15,22 +21,22 @@ const columns: FooterColumn[] = [
     title: "Nosotros",
     links: [
       { label: "Plataforma Necto", href: "#" },
-      { label: "Tecnologia IA", href: "#" },
-      { label: "Comercio & Retail", href: "#" },
+      { label: "Tecnología IA", href: "#" },
+      { label: "Comercio y retail", href: "#" },
     ],
   },
   {
     title: "Servicios",
     links: [
-      { label: "Gestion de Pedidos", href: "#" },
+      { label: "Gestión de pedidos", href: "#" },
       { label: "Control de Inventario", href: "#" },
-      { label: "Catalogo de Productos", href: "#" },
+      { label: "Catálogo de productos", href: "#" },
     ],
   },
   {
     title: "Contacto",
     links: [
-      { label: "Soporte Tecnico", href: "#" },
+      { label: "Soporte técnico", href: "#" },
       { label: "Mesa de Ayuda", href: "#" },
       { label: "Comunidad", href: "#" },
     ],
@@ -98,10 +104,22 @@ export const AppFooter = () => {
       </div>
 
       {/* Copyright bar */}
-      <div className="bg-secondary-600 px-8 py-3 text-center">
-        <p className="text-xs text-white/90">
+      <div className="flex flex-col items-center gap-3 bg-secondary-600 px-8 py-4 sm:flex-row sm:justify-between">
+        <p className="text-center text-xs text-white/90 sm:text-left">
           &copy; 2026 Necto. Plataforma modular de operaciones y gestión multinegocio. Todos los derechos reservados.
         </p>
+
+        {/*
+          Los enlaces legales van **aquí** y no en una cuarta columna de la banda:
+          las tres columnas de arriba son de producto (qué hace Necto), y meter
+          términos y cookies entre "Nosotros" y "Servicios" los presentaría como
+          otra función. En la barra de copyright es donde se buscan.
+          Las rutas salen del catálogo legal, así que no se repiten a mano.
+        */}
+        <LegalFooterLinks
+          tone="onDark"
+          className="justify-center sm:justify-end"
+        />
       </div>
     </footer>
   );

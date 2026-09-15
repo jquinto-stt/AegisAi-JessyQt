@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { MenuBadge } from '@/shell/menu/MenuBadge';
 import { useSidebarContext } from '@/shell/sidebar/SidebarContext';
 import { useShellConfig } from '@/shell/ShellContext';
+import { uiStore } from '@/stores';
 
 interface SubItemPath {
   path: string;
@@ -123,18 +124,44 @@ export const MenuItem: React.FC<MenuItemProps> = observer(({
     }
   }, []); // Only on mount
 
+  /**
+   * ⚠️⚠️ Con la barra **colapsada**, un `MenuItem` con hijos no pintaba nada: el
+   * `showExpanded && …` de más abajo sólo dibujaba el icono del padre, y los
+   * hijos —el destino real ("Pedidos")— quedaban fuera del DOM. En una barra
+   * estrecha eso hacía el destino **inalcanzable**: no había ningún otro enlace
+   * al módulo. El icono del padre pasa a ser el acceso directo (con `title` para
+   * que el rótulo siga siendo legible), así que un módulo acoplado nunca
+   * desaparece por colapsar la barra.
+   */
+  const collapsedAsAction = !showExpanded && hasChildren;
+
   // Render as action button
-  if (isActionBtn) {
+  if (isActionBtn || collapsedAsAction) {
     const handleActionClick = () => {
       if (isControlled) {
         onMenuToggle(null);
       }
-      onClick?.();
+      if (onClick) {
+        onClick();
+      } else {
+        // Sin `onClick` propio no hay acción que ejecutar: se expande la barra,
+        // que es lo que el usuario querría al pulsar el icono de un grupo.
+        uiStore.toggleSidebar();
+      }
     };
 
     return (
       <li ref={itemRef}>
-        <button type="button" onClick={handleActionClick} className={`${itemClasses} cursor-pointer`}>
+        <button
+          type="button"
+          onClick={handleActionClick}
+          // ⚠️ Colapsado el rótulo no se pinta (`showExpanded && …`), así que el
+          // `title` es la única forma de que el usuario sepa qué hace el icono.
+          // Antes sólo lo llevaba el caso de grupo: los ítems de acción —los
+          // módulos, entre ellos— quedaban como iconos anónimos.
+          title={showExpanded ? undefined : name}
+          className={`${itemClasses} cursor-pointer`}
+        >
           <span className={iconClasses}>{icon}</span>
           {showExpanded && <span className="menu-item-text">{name}</span>}
           {badge && showExpanded && <span className="ml-auto">{badge}</span>}
@@ -158,7 +185,12 @@ export const MenuItem: React.FC<MenuItemProps> = observer(({
 
     return (
       <li ref={itemRef}>
-        <Link to={path!} className={itemClasses} onClick={handleLinkClick}>
+        <Link
+          to={path!}
+          className={itemClasses}
+          onClick={handleLinkClick}
+          title={showExpanded ? undefined : name}
+        >
           <span className={iconClasses}>{icon}</span>
           {showExpanded && <span className="menu-item-text">{name}</span>}
           {badge && showExpanded && <span className="ml-auto">{badge}</span>}

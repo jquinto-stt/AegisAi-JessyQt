@@ -13,9 +13,9 @@ export type BadgeVariant = "light" | "solid";
 /**
  * Available sizes for the Badge component.
  *
- * - `"xs"` — Tiny: `text-[10px]` `px-1.5` `py-0.5` — compact indicators, table cells
+ * - `"xs"` — Tiny: `text-theme-xs` `px-1.5` `py-0.5` — compact indicators, table cells
  * - `"sm"` — Small: `text-theme-xs` `px-2` `py-0.5` — inline labels, tags
- * - `"md"` — Standard: `text-sm` `px-2.5` `py-1` — default for most contexts *(default)*
+ * - `"md"` — Standard: `text-theme-sm` `px-2.5` `py-1` — default for most contexts *(default)*
  * - `"lg"` — Large: `text-base` `px-3.5` `py-1.5` — prominent status, hero sections
  * @kgId 316444bbd12b
  */
@@ -166,9 +166,9 @@ const Badge: React.FC<BadgeProps> = ({
 
   // Define size styles (font-size + padding progresivos)
   const sizeStyles = {
-    xs: "text-[10px] px-1.5 py-0.5",
+    xs: "text-theme-xs px-1.5 py-0.5",
     sm: "text-theme-xs px-2 py-0.5",
-    md: "text-sm px-2.5 py-1",
+    md: "text-theme-sm px-2.5 py-1",
     lg: "text-base px-3.5 py-1.5",
   };
 

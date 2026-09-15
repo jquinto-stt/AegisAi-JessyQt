@@ -4,20 +4,22 @@ import { BaseAppHeader, ToggleAppSidebar } from "@/shell";
 import { ThemeToggleButton } from "@/shell/header/theme-toggle-button";
 import { Breadcrumb, type BreadcrumbItem } from "@/elements/ui/breadcrumb";
 import { GlobalSearchButton } from "@/compositions/shared/GlobalSearchButton";
+import { SupportButton } from "@/compositions/shared/SupportButton";
 import { UserProfileDropdown } from "@/compositions/workspace/UserProfileDropdown";
-import { Shield, ChevronDown } from "lucide-react";
 
 interface StockFlowHeaderProps {
   breadcrumbItems: BreadcrumbItem[];
-  activeRoleName: string;
-  onOpenRoleModal: () => void;
   notificationsDropdown: React.ReactNode;
 }
 
+/**
+ * ⚠️ Aquí vivía una "píldora de rol" con `ChevronDown` que abría el selector de
+ * perfil de acceso. Se retiró con el catálogo de roles: hoy hay un único rol
+ * (Admin Cliente, §5.3), así que la píldora no tenía nada que ofrecer y el rol
+ * ya se muestra en el menú de perfil y en el pie del sidebar.
+ */
 export const StockFlowHeader = observer(({
   breadcrumbItems,
-  activeRoleName,
-  onOpenRoleModal,
   notificationsDropdown,
 }: StockFlowHeaderProps) => {
   return (
@@ -45,19 +47,7 @@ export const StockFlowHeader = observer(({
           <GlobalSearchButton />
         </div>
 
-        {/* Role Switcher Pill */}
-        <button
-          type="button"
-          onClick={onOpenRoleModal}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.03] hover:bg-gray-100 dark:hover:bg-white/[0.08] hover:border-gray-300 dark:hover:border-gray-700 transition-all cursor-pointer shadow-theme-xs group"
-          title={`Rol activo: ${activeRoleName}. Clic para cambiar de perfil.`}
-        >
-          <Shield className="w-3.5 h-3.5 text-brand-500" />
-          <span className="text-xs font-medium text-gray-700 dark:text-gray-200 group-hover:text-gray-900 dark:group-hover:text-white truncate max-w-[130px]">
-            {activeRoleName}
-          </span>
-          <ChevronDown className="w-3 h-3 text-gray-400 group-hover:text-gray-600 transition-transform" />
-        </button>
+        <SupportButton />
 
         {notificationsDropdown}
 

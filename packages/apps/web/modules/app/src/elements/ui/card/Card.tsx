@@ -69,6 +69,29 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
    * ```
    */
   layout?: CardLayout;
+
+  /**
+   * Marks the card as a clickable surface.
+   *
+   * Adds `cursor-pointer` and the shadow transition only — the *look* of each
+   * state stays with the consumer, because a selectable card tints with the
+   * accent while a plain clickable one merely lifts. Pair with
+   * `className="hover:shadow-theme-md"` for the plain case.
+   *
+   * The element itself remains a `<div>`. When the card is the only control,
+   * wrap it in a `<button>` (see the reference `SelectCard`) so keyboard users
+   * need exactly one tab stop and `aria-pressed` has a home.
+   *
+   * @default false
+   *
+   * @example
+   * ```tsx
+   * <Card interactive className="hover:shadow-theme-md" onClick={open}>
+   *   <CardTitle>Franchise hub</CardTitle>
+   * </Card>
+   * ```
+   */
+  interactive?: boolean;
 }
 
 /**
@@ -126,8 +149,13 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
  * @see {@link Modal} — For full-attention overlays.
  * @kgId a98cbc10b9a9
  */
-const Card: React.FC<CardProps> = ({ children, className, layout = "vertical", ...props }) => {
+const Card: React.FC<CardProps> = ({ children, className, layout = "vertical", interactive, ...props }) => {
   const isHorizontal = layout === "horizontal";
+
+  // `interactive` suma el estado de señal al contenedor; la *apariencia* de cada
+  // estado la decide quien consume (un `Card` seleccionable tiñe con el acento,
+  // uno puramente clicable sólo eleva). Por eso aquí sólo va la mecánica.
+  const interactiveClasses = interactive && "cursor-pointer transition-shadow duration-300";
 
   return (
     <div
@@ -136,6 +164,7 @@ const Card: React.FC<CardProps> = ({ children, className, layout = "vertical", .
         isHorizontal
           ? "flex flex-col gap-5 p-4 sm:flex-row sm:items-center sm:gap-6"
           : "p-5 sm:p-6",
+        interactiveClasses,
         className
       )}
       {...props}

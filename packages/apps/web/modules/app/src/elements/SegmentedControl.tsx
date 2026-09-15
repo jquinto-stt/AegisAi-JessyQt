@@ -18,7 +18,7 @@ export interface SegmentedControlProps<V extends string = string> {
   onValueChange?: (value: V) => void;
   /**
    * Estilo visual del segmento activo:
-   *  - 'contrast' (default): activo oscuro (zinc-950 / dark:white).
+   *  - 'contrast' (default): activo oscuro (gray-950 / dark:white).
    *  - 'accent': activo naranja de marca (#FF3F1A).
    *  - 'panel': activo blanco sobre track gris (look de pestañas suaves).
    */
@@ -52,20 +52,20 @@ export function SegmentedControl<V extends string = string>({
 }: SegmentedControlProps<V>) {
   const activeClass =
     tone === 'accent'
-      ? 'bg-[#FF3F1A] text-white shadow-2xs'
+      ? 'bg-brand-500 text-white shadow-2xs'
       : tone === 'panel'
-        ? 'bg-white dark:bg-zinc-900 text-[#212121] dark:text-[#ECECEC] shadow-2xs'
-        : 'bg-[#190088] text-white shadow-2xs';
+        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-2xs'
+        : 'bg-secondary-600 text-white shadow-2xs';
 
   const inactiveClass =
-    'text-[#212121]/70 dark:text-[#ECECEC]/70 hover:text-[#212121] dark:hover:text-white';
+    'text-gray-900/70 dark:text-gray-100/70 hover:text-gray-900 dark:hover:text-white';
 
   return (
     <div
       data-node-id={NODE_ID}
       data-intent={intent}
       role="tablist"
-      className={`inline-flex items-center gap-1 p-1 rounded-xl bg-[#ECECEC] dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700 ${className}`}
+      className={`inline-flex items-center gap-1 p-1 rounded-xl bg-gray-100 dark:bg-gray-800/90 border border-gray-200/80 dark:border-gray-700 ${className}`}
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -80,7 +80,7 @@ export function SegmentedControl<V extends string = string>({
             data-state={active ? 'active' : 'inactive'}
             onClick={() => onValueChange?.(opt.value)}
             className={[
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-theme-xs font-bold transition-all cursor-pointer whitespace-nowrap',
               active ? activeClass : inactiveClass,
             ].join(' ')}
           >

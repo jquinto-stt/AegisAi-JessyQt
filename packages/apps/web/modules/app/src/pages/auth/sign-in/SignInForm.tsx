@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Checkbox } from "@/elements/form/checkbox";
 import { Button } from "@/elements/ui/button";
+import { Link } from "@/elements/ui/link";
 import { useAuth } from "../../../auth/AuthContext";
+import { consumePendingRoute } from "../../../compositions/workspace/pending-action";
 
 /**
  * @kgId 07b80348fc4c
@@ -17,32 +19,83 @@ export default function SignInForm() {
   const [isChecked, setIsChecked] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { signIn } = useAuth();
+  const {
+    signIn,
+    signInWithGoogle,
+    isLoading,
+    isAuthenticated,
+    isNewUserOnboardingComplete,
+  } = useAuth();
   const navigate = useNavigate();
+
+  /**
+   * El destino depende del **onboarding del usuario**, no solo de la sesión.
+   *
+   * Quien entra sin haberlo completado (se registró y lo abandonó a medias)
+   * vuelve a `onboarding_new_user` para retomarlo, en lugar de aterrizar en el
+   * hub sin configuración inicial. Quien ya lo completó entra directo al hub y
+   * **no vuelve a ver el asistente** en cada inicio de sesión.
+   *
+   * ⚠️ **La intención pendiente manda sobre todo lo anterior.** Si el usuario
+   * pulsó "Nueva sucursal" en el hub sin sesión, venir del login y aterrizar en
+   * el hub era otro callejón sin salida: había que volver a buscar el botón. La
+   * intención se lee y se **consume** aquí (`consumePendingRoute`), así que sólo
+   * desvía el inicio de sesión que la originó.
+   *
+   * Se decide aquí y no dentro de `handleSubmit` porque tras `signIn` el perfil
+   * se hidrata de forma asíncrona: el valor que vería el handler sería el del
+   * render anterior a iniciar sesión.
+   */
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    const pending = consumePendingRoute();
+    if (pending) {
+      navigate(pending, { replace: true });
+      return;
+    }
+    navigate(isNewUserOnboardingComplete ? "/workspaces" : "/onboarding/nuevo-usuario", {
+      replace: true,
+    });
+  }, [isLoading, isAuthenticated, isNewUserOnboardingComplete, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!email.trim()) {
+      setError("Introduce tu correo electrónico.");
+      return;
+    }
+    if (!password) {
+      setError("Introduce tu contraseña.");
+      return;
+    }
+
     setLoading(true);
     try {
-      if (signIn) {
-        await signIn(email || "admin@necto.app", password || "necto123");
-      }
-      navigate("/workspaces");
+      await signIn(email, password);
     } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
+      setError(err?.message || "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Acceso con Google.
+   *
+   * Google aporta la identidad **externa** (`sub`); Necto conserva su propio
+   * `userId`. Si ya existía una cuenta con ese correo, se **vincula** Google a
+   * ella en lugar de crear un segundo usuario. Ambas vías —formulario y
+   * Google— desembocan en el mismo `onboarding_new_user`.
+   */
   const handleGoogleSignIn = async () => {
+    setError("");
     setLoading(true);
     try {
-      if (signIn) {
-        await signIn("usuario.google@necto.app", "google_token");
-      }
-      navigate("/workspaces");
+      await signInWithGoogle();
+    } catch (err: any) {
+      setError(err?.message || "No se pudo iniciar sesión con Google.");
     } finally {
       setLoading(false);
     }
@@ -57,22 +110,15 @@ export default function SignInForm() {
               Inicia sesión en Necto
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ingresa tus credenciales para acceder a tu centro de operaciones.
+              Ingresa con tu correo y contraseña para acceder a tu centro de operaciones.
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 space-y-2">
+            <div className="mb-4 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900">
               <p className="text-xs font-semibold text-red-600 dark:text-red-400">
                 {error}
               </p>
-              <button
-                type="button"
-                onClick={() => navigate("/workspaces")}
-                className="w-full py-1.5 px-3 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-white dark:text-zinc-900 text-xs font-bold transition-all cursor-pointer"
-              >
-                Continuar a Espacios de Trabajo (Modo Demo / Local)
-              </button>
             </div>
           )}
 
@@ -80,11 +126,12 @@ export default function SignInForm() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div>
-                  <Label>
+                  <Label htmlFor="signin-email">
                     Correo electrónico <span className="text-error-500">*</span>
                   </Label>
                   <Input
                     type="email"
+                    id="signin-email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="nombre@empresa.com"
@@ -92,12 +139,13 @@ export default function SignInForm() {
                   />
                 </div>
                 <div>
-                  <Label>
+                  <Label htmlFor="signin-password">
                     Contraseña <span className="text-error-500">*</span>
                   </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
+                      id="signin-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
@@ -124,14 +172,14 @@ export default function SignInForm() {
                   </div>
                   <Link
                     to="/forgot-password"
-                    className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </Link>
+                    text="¿Olvidaste tu contraseña?"
+                    variant="secondary"
+                    className="text-xs font-medium hover:text-brand-600 dark:text-brand-400"
+                  />
                 </div>
                 <div>
                   <Button className="w-full" size="sm" type="submit" disabled={loading}>
-                    {loading ? "Iniciando sesión..." : "Iniciar sesión"}
+                    {loading ? "Iniciando sesión…" : "Iniciar sesión"}
                   </Button>
                 </div>
               </div>
@@ -148,27 +196,44 @@ export default function SignInForm() {
               </div>
             </div>
 
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="inline-flex items-center justify-center w-full gap-3 py-3 text-sm font-medium text-gray-700 transition-colors border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:text-white/90 dark:hover:bg-white/5 cursor-pointer shadow-xs"
+              startIcon={
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z" fill="#4285F4" />
+                  <path d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z" fill="#34A853" />
+                  <path d="M5.10014 11.7305C4.91165 11.186 4.80257 10.6027 4.80257 9.99992C4.80257 9.3971 4.91165 8.81379 5.09022 8.26935L5.08523 8.1534L2.29464 6.02954L2.20333 6.0721C1.5982 7.25823 1.25098 8.5902 1.25098 9.99992C1.25098 11.4096 1.5982 12.7415 2.20333 13.9277L5.10014 11.7305Z" fill="#FBBC05" />
+                  <path d="M10.1789 4.63331C11.8554 4.63331 12.9864 5.34303 13.6312 5.93612L16.1511 3.525C14.6035 2.11528 12.5895 1.25 10.1789 1.25C6.68676 1.25 3.67088 3.21387 2.20264 6.07218L5.08953 8.26943C5.81381 6.15972 7.81776 4.63331 10.1789 4.63331Z" fill="#EB4335" />
+                </svg>
+              }
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z" fill="#4285F4" />
-                <path d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z" fill="#34A853" />
-                <path d="M5.10014 11.7305C4.91165 11.186 4.80257 10.6027 4.80257 9.99992C4.80257 9.3971 4.91165 8.81379 5.09022 8.26935L5.08523 8.1534L2.29464 6.02954L2.20333 6.0721C1.5982 7.25823 1.25098 8.5902 1.25098 9.99992C1.25098 11.4096 1.5982 12.7415 2.20333 13.9277L5.10014 11.7305Z" fill="#FBBC05" />
-                <path d="M10.1789 4.63331C11.8554 4.63331 12.9864 5.34303 13.6312 5.93612L16.1511 3.525C14.6035 2.11528 12.5895 1.25 10.1789 1.25C6.68676 1.25 3.67088 3.21387 2.20264 6.07218L5.08953 8.26943C5.81381 6.15972 7.81776 4.63331 10.1789 4.63331Z" fill="#EB4335" />
-              </svg>
-              <span>Acceder con Google</span>
-            </button>
+              Acceder con Google
+            </Button>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-2">
               <p className="text-xs font-normal text-gray-600 dark:text-gray-400">
                 ¿Aún no tienes una cuenta?{" "}
-                <Link to="/register" className="font-bold text-[#FF3F1A] hover:underline">
-                  Regístrate aquí
-                </Link>
+                <Link
+                  to="/register"
+                  text="Regístrate aquí"
+                  variant="secondary"
+                  className="font-bold hover:underline"
+                />
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                ¿Tienes alguna duda sobre Necto?{" "}
+                <Link
+                  to="/ayuda"
+                  text="Centro de ayuda y FAQ"
+                  variant="gray"
+                  underline
+                  className="font-semibold text-gray-700 dark:text-gray-300 hover:text-success-500 dark:hover:text-success-400"
+                />
               </p>
             </div>
           </div>

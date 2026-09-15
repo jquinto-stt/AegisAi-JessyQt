@@ -189,7 +189,7 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
 
   return (
     <div
-      className={cn("flex items-center justify-between gap-3 w-full sm:max-w-[340px] rounded-md border-b-4 p-3 shadow-theme-sm dark:bg-[#1E2634]", borderColor, className)}
+      className={cn("flex items-center justify-between gap-3 w-full sm:max-w-[340px] rounded-md border-b-4 p-3 shadow-theme-sm dark:bg-gray-900", borderColor, className)}
     >
       <div className="flex items-center gap-4">
         <div
@@ -198,11 +198,11 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
           {icon}
         </div>
         <div>
-          <h4 className="text-sm text-gray-800 sm:text-base dark:text-white/90">
+          <h4 className="text-theme-sm text-gray-800 sm:text-base dark:text-white/90">
             {title}
           </h4>
           {description && (
-            <p className="mt-1 text-xs text-gray-600 sm:text-sm dark:text-white/70">
+            <p className="mt-1 text-theme-xs text-gray-600 sm:text-theme-sm dark:text-white/70">
               {description}
             </p>
           )}
@@ -230,7 +230,7 @@ const BannerNotification: React.FC<NotificationBannerProps> = ({
   className,
 }) => {
   return (
-    <div className={cn("w-full max-w-[607px] rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1E2634]", className)}>
+    <div className={cn("w-full max-w-[607px] rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900", className)}>
       <div className="flex items-start gap-3">
         {icon && <div className="text-brand-500">{icon}</div>}
         <div className="flex flex-col items-center gap-5 sm:flex-row">
@@ -238,7 +238,7 @@ const BannerNotification: React.FC<NotificationBannerProps> = ({
             <h5 className="mb-1 text-base font-medium text-gray-800 dark:text-white/90">
               {title}
             </h5>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-theme-sm text-gray-500 dark:text-gray-400">
               {message}
             </p>
           </div>
@@ -250,8 +250,8 @@ const BannerNotification: React.FC<NotificationBannerProps> = ({
                   type="button"
                   className={
                     action.variant === "primary"
-                      ? "flex justify-center px-4 py-3 text-sm font-medium text-white rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
-                      : "flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                      ? "flex justify-center px-4 py-3 text-theme-sm font-medium text-white rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                      : "flex justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
                   }
                   onClick={action.onClick}
                 >
@@ -287,7 +287,7 @@ const ConsentNotification: React.FC<NotificationConsentProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={cn("relative w-full max-w-[577px] rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#1E2634]", className)}>
+    <div className={cn("relative w-full max-w-[577px] rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900", className)}>
       <button
         className="absolute text-gray-400 right-3 top-3 hover:text-gray-800 dark:hover:text-white/90"
         onClick={handleClose}
@@ -295,14 +295,14 @@ const ConsentNotification: React.FC<NotificationConsentProps> = ({
       >
         <CloseIcon className="size-5" />
       </button>
-      <p className="pr-4 mb-6 text-sm text-gray-700 dark:text-gray-400">
+      <p className="pr-4 mb-6 text-theme-sm text-gray-700 dark:text-gray-400">
         {message}
       </p>
       <div className="flex flex-col justify-end gap-6 sm:flex-row sm:items-center sm:gap-4">
         {secondaryAction && (
           <button
             type="button"
-            className="text-sm font-medium text-left text-gray-700 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-theme-sm font-medium text-left text-gray-700 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
             onClick={secondaryAction.onClick}
           >
             {secondaryAction.label}
@@ -316,8 +316,8 @@ const ConsentNotification: React.FC<NotificationConsentProps> = ({
                 type="button"
                 className={
                   action.variant === "primary"
-                    ? "flex justify-center w-full px-4 py-3 text-sm font-medium text-white rounded-lg sm:w-auto bg-brand-500 shadow-theme-xs hover:bg-brand-600"
-                    : "flex w-full sm:w-auto justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+                    ? "flex justify-center w-full px-4 py-3 text-theme-sm font-medium text-white rounded-lg sm:w-auto bg-brand-500 shadow-theme-xs hover:bg-brand-600"
+                    : "flex w-full sm:w-auto justify-center rounded-lg border border-gray-300 bg-white px-4 py-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
                 }
                 onClick={() => {
                   action.onClick?.();

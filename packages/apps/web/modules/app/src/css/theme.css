@@ -63,6 +63,31 @@
   --color-secondary-900: #0a003a;
   --color-secondary-950: #060022;
 
+  /* NECTO público — banda de las páginas de contenido abierto.
+     Cubre las cuatro pantallas que se leen **sin sesión**: el centro de ayuda
+     (`/ayuda`), soporte (`/soporte`) y los tres documentos legales. Es el verde
+     de marca alternativo (#17B363) y significa "contenido público", no un
+     resultado: `success-*` sigue queriendo decir "salió bien", y prestarlo como
+     fondo de banda haría leer una página de marca como un aviso de estado.
+
+     ⚠️ **No es una escala, son dos pasos con dos papeles** — y no conviene
+     completarla "por simetría", porque cada paso inventado que nadie usa es un
+     color que envejece sin que nadie lo revise:
+
+       500  la banda (blanco encima) y el verde como texto sobre superficie
+            oscura (6.9:1 sobre `gray-950`).
+       700  el mismo verde como **texto sobre blanco** (5.4:1). El 500 a pelo
+            sobre blanco da 2.7:1 y no sirve para enlaces ni rótulos.
+
+     Las tintas intermedias no hacen falta: se resuelven con el modificador de
+     opacidad sobre el 500 (`bg-public-500/10`, `border-public-500/30`), que no
+     necesita un token nuevo.
+
+     La banda no tiene estados (ni hover, ni activo, ni variante oscura): el tema
+     oscuro pinta el mismo verde, porque el hero es de marca y no de superficie. */
+  --color-public-500: #17b363;
+  --color-public-700: #0e7a43;
+
   /* NECTO accent — light blue (#97D6DF) */
   --color-accent-25: #f5fcfd;
   --color-accent-50: #eaf7f9;
@@ -159,6 +184,22 @@
   --color-warning-800: #93370d;
   --color-warning-900: #7a2e0e;
   --color-warning-950: #4e1d09;
+
+  /* WhatsApp — color de **canal**, no de estado.
+     `success-*` significa "salió bien"; prestarlo como fondo decorativo
+     rompería esa regla y haría leer un panel de marca como un aviso de
+     resultado. El verde de WhatsApp identifica al canal, así que tiene su
+     propia escala (500 y 700 son los oficiales de la marca). */
+  --color-whatsapp-50: #eafdf1;
+  --color-whatsapp-100: #cdf8dd;
+  --color-whatsapp-200: #9ceebd;
+  --color-whatsapp-300: #63e09a;
+  --color-whatsapp-400: #34cd74;
+  --color-whatsapp-500: #25d366;
+  --color-whatsapp-600: #1da851;
+  --color-whatsapp-700: #128c7e;
+  --color-whatsapp-800: #075e54;
+  --color-whatsapp-900: #0b3d2e;
 
   --color-theme-pink-500: #ee46bc;
 
