@@ -66,9 +66,11 @@ import {
   orderIdentityLine,
 } from "../shared/OrderCells";
 import type { OperationalViewProps } from "../shared/operational-view";
+import { OrdersQueueWalk } from "../shared/OrdersQueueWalk";
 import { useOperationalScreen } from "../shared/use-operational-screen";
 import type { OperationalPhase } from "../shared/use-operational-screen";
 import { useOrderSort } from "../shared/use-order-sort";
+import { useOrderWalk } from "../shared/use-order-walk";
 import { useFlowSettings } from "../operational/flow-settings";
 import {
   historyOrders,
@@ -76,7 +78,7 @@ import {
   orderCycle,
   orderStateVisits,
 } from "../operational/order-operations";
-import { formatDuration, formatOrderDate, formatRelative } from "../order-presentation.utils";
+import { formatDuration, formatOrderDate } from "../order-presentation.utils";
 
 /* ── Fases del historial ───────────────────────────────────────────────────── */
 
@@ -104,10 +106,26 @@ const HISTORY_UNIVERSE = historyOrders;
 
 /* ── Columnas ──────────────────────────────────────────────────────────────── */
 
+/**
+ * Las columnas del Historial.
+ *
+ * ⚠️ Se retiró **«Entrega»**, y aquí con más motivo que en ninguna otra pantalla:
+ * el Historial **no se opera**, se consulta y se responde por lo que ocurrió. Las
+ * que quedan son las que sostienen esa respuesta —desenlace, cuándo se cerró, por
+ * qué y por cuánto—, y la modalidad no forma parte del relato: nadie pregunta
+ * "¿por qué se canceló?" esperando oír "porque era a domicilio". El visor de
+ * auditoría, que sí es el sitio de la ficha completa, la sigue enseñando (§12, §14).
+ *
+ * ⚠️ Y se retiró también **«Origen»**, por el mismo criterio llevado un paso más
+ * lejos: el canal es *cómo entró* la orden, no *cómo terminó*, y la pregunta de
+ * esta pantalla es la segunda. Con seis columnas la tabla no cabía junto al
+ * detalle —la columna «Total», que es la cifra que se viene a auditar, quedaba
+ * detrás de un scroll horizontal—, y el origen se sigue leyendo en la primera
+ * sección del detalle, que es donde se pregunta por él (§12: lo secundario vive
+ * en el detalle, no en la fila).
+ */
 const HISTORY_COLUMNS: OrdersTableColumn[] = [
   { key: "status", label: "Desenlace" },
-  { key: "source", label: "Origen" },
-  { key: "mode", label: "Entrega" },
   { key: "closed", label: "Cierre", sortable: true },
   { key: "reason", label: "Motivo" },
   { key: "total", label: "Total", sortable: true, align: "right" },
@@ -313,6 +331,7 @@ function AuditPanel({
 
 export function OrdersHistoryView({
   onOpenOrder,
+  openOrderId,
   onSeeMovement,
   movement,
   onDismissMovement,
@@ -357,11 +376,23 @@ export function OrdersHistoryView({
     [sorted, auditedId]
   );
 
+  /**
+   * Recorrer la cola con el teclado (§14).
+   *
+   * ⚠️ Es la lista del **listado**, no la del visor: el visor audita un cierre
+   * —tiene su propia selección, y por eso `audited` no se toca—, mientras que esto
+   * recorre las filas con el detalle abierto al lado. Son dos preguntas distintas
+   * sobre la misma tabla y por eso pueden tener dos selecciones a la vez.
+   */
+  const walkIds = useMemo(() => sorted.map(order => order.id), [sorted]);
+  const walk = useOrderWalk(walkIds, openOrderId, onOpenOrder);
+
   return (
     <div data-orders-history className="flex flex-col gap-5">
+      {/* ⚠️ Sin descripción: «Historial y auditoría» ya dice que aquí no se opera,
+          y el visor de auditoría de abajo dice qué se consulta y cómo. */}
       <OrdersScreenHeader
         title="Historial y auditoría"
-        description="Órdenes ya resueltas —completadas, canceladas o devueltas— con quién las cerró, cuándo y por qué. Aquí no se opera: se consulta y se responde por lo que ocurrió."
         filters={
           <OrdersFilterBar
             phaseOptions={phaseOptions}
@@ -387,7 +418,14 @@ export function OrdersHistoryView({
 
       <OrdersMovementNotice movement={movement} onDismiss={onDismissMovement} onSee={onSeeMovement} />
 
+      {/* ⚠️ Se pinta sólo con el detalle abierto y más de un cierre delante: la
+          pieza se autodescarta cuando la orden abierta no está en esta lista. */}
+      <OrdersQueueWalk {...walk} />
+
       {sorted.length === 0 ? (
+        // ⚠️ `description` sólo cuando el vacío es real: con un filtro puesto, el
+        // título ya dice que nada coincide y el botón ya dice qué hacer, así que
+        // una frase más repetiría el botón con otras palabras (§15).
         <OrdersEmptyState
           icon={Archive}
           anchor="historial"
@@ -396,8 +434,8 @@ export function OrdersHistoryView({
           }
           description={
             filters.isFiltered
-              ? "Ninguna orden cerrada entra en el filtro elegido. Prueba a limpiarlo."
-              : "Ninguna orden se ha cerrado aún en esta sede. Cuando se complete, se cancele o se devuelva una, quedará registrada aquí con su motivo."
+              ? undefined
+              : "Aquí quedará lo que se complete, se cancele o se devuelva."
           }
           action={
             filters.isFiltered ? (
@@ -427,10 +465,6 @@ export function OrdersHistoryView({
               switch (key) {
                 case "status":
                   return <OrderStatusChip status={order.status} />;
-                case "source":
-                  return <OrderSourceCell source={order.source} />;
-                case "mode":
-                  return <OrderModeCell order={order} />;
                 case "closed":
                   return <OrderClosedCell order={order} />;
                 case "reason":
@@ -441,14 +475,6 @@ export function OrdersHistoryView({
                   return null;
               }
             }}
-            footer={
-              <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                {sorted.length} {sorted.length === 1 ? "cierre" : "cierres"} · último{" "}
-                {sorted[0]?.history.length
-                  ? formatRelative(sorted[0].history[sorted[0].history.length - 1].at)
-                  : "—"}
-              </p>
-            }
           />
 
           <AuditPanel

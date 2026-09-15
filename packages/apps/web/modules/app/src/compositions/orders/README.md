@@ -57,6 +57,7 @@ compositions/orders/
 │   ├── OrdersFilterBar.tsx       ← fase · canal · modalidad · búsqueda
 │   ├── OrdersTable.tsx           ← tabla de sólo lectura (la fila sólo abre el detalle)
 │   ├── OrdersBoard.tsx           ← ★ tablero por carriles (kanban), reutilizable
+│   ├── OrdersDayRhythmChart.tsx  ← ★ pulso del día (entradas vs cierres, hora a hora)
 │   ├── OrdersEmptyState.tsx      ← vacío explicado, con salida
 │   ├── OrdersStagnationAlert.tsx ← alerta de órdenes demoradas
 │   ├── OrdersOverdueAlert.tsx    ← alerta de programadas vencidas (§15)
@@ -70,7 +71,7 @@ compositions/orders/
 │   ├── OrderSource.tsx           ← origen + panel de origen del detalle (§18)
 │   └── OrderTimeline.tsx         ← recorrido con duración por tramo (§10)
 ├── views/
-│   ├── OrdersPanelView.tsx       ← §5  · Panel de Pedidos (atajos + atención + pulso del día)
+│   ├── OrdersPanelView.tsx       ← §5  · Panel de Pedidos (atención + destinos + día)
 │   ├── OrdersInboxView.tsx       ← §11 · Bandeja de Entrada (lista o tablero)
 │   ├── OrdersPreparationView.tsx ← §16 · Mesa de Alistamiento (tarjetas con líneas)
 │   ├── OrdersDispatchView.tsx    ← §8  · Despacho y Entrega (por modalidad)
@@ -142,6 +143,64 @@ cabecera no hacía:
 ⚠️ No hay "Analítica" dentro de Pedidos: el **Dashboard de la Tienda** es otra cosa y
 Pedidos sólo aporta un widget (§25). El Panel es una pantalla **del módulo**, con
 `ORDERS_SECTIONS` propio, y no toca el Dashboard.
+
+### 3.2 Lo que se dibuja se pulsa; lo que no, no se dibuja
+
+El Panel llegó a tener un conmutador de vista —*Completo / Métricas y Gráficos /
+Operativo*— que obligaba a elegir entre **mirar** y **actuar**. Ese conmutador ya no
+existe: los gráficos y el operativo son la misma superficie.
+
+La regla que lo sostiene: **todo lo que se dibuja se puede pulsar, y lo que se pulsa
+abre exactamente la lista que el dibujo representa.** No es una animación decorativa
+sobre una cifra; es un atajo con forma de dato.
+
+| Pieza | Qué dibuja | Qué hace al pulsarla |
+| --- | --- | --- |
+| `OrdersDayRhythmChart` | El pulso del día: entradas y cierres, hora a hora | — (presenta una *forma*; sus tres totales sí son botones) |
+| Cifras del día | Entraron / Completadas / Canceladas | Abre Historial con la fase, o Bandeja sin fase |
+| Atajos | Siete destinos, con su cifra viva | Abre ese destino |
+| Filas de atención | Lo que se está pasando de tiempo | Abre su pantalla **con la fase puesta** |
+
+Dos decisiones que no son obvias y no conviene deshacer:
+
+1. **`entered` no lleva fase.** Lo que entró hoy está repartido por todo el flujo; ofrecer
+   un filtro sería inventar una fase que no existe. Sí lleva fase `completed` y
+   `cancelled`, que sí son fases reales de Historial.
+2. **El gráfico del día es la única pieza que no navega, y es deliberado.** No presenta
+   cifras —presenta una *forma*, con la lectura al pasar el cursor—, así que no incumple
+   la regla: no hay ningún número que el operador pueda leer y no pueda accionar.
+
+#### Las dos barras que se retiraron
+
+El Panel tuvo dos barras apiladas —**Flujo por estado** y **Reparto por canal**, en
+`shared/OrdersFlowBar.tsx`, hoy en temp— y se retiraron por decisión de producto. El
+motivo, para no reponerlas sin querer:
+
+- **El flujo por estado repetía**, en forma de gráfico, la cifra que la tarjeta de destino
+  de al lado ya da —y peor: sin el nombre de la pantalla que la resuelve, que es lo que la
+  hace accionable—.
+- **El reparto por canal es un dato comercial, no operativo.** Quien alista y despacha no
+  decide nada por saber el porcentaje que entró por WhatsApp.
+- Y las dos juntas ocupaban **la franja más valiosa de la pantalla**, entre lo urgente y
+  los atajos.
+
+Con ellas se fueron `stageFlow`, `channelFlow`, `STAGE_FLOW_ORDER` y sus tipos (§7 de
+`order-operations.ts`). **`orderCountsBySource` se queda**: lo consume `ChannelsView`. La
+guarda lo afirma al revés —`panel.flowBars === 0`—, así que reponerlas la pone roja.
+
+⚠️ Y una regla de honestidad, que costó un defecto real: **el gráfico y la frase que lo
+interpreta tienen que usar la misma definición de «cerrada».** `todayHours` contaba como
+cierre cualquier orden *tocada* hoy —incluidas las que seguían en alistamiento— y llegó a
+pintar **20 cierres** con 2 completadas y 1 cancelada al lado. `dayReading` repetía el
+error un piso más arriba: restaba sólo las completadas, así que anunciaba «entraron 18
+más de las que se cerraron» sobre una leyenda «Se cerraron» que valía 3. **Cerrada =
+`COMPLETED | CANCELLED | RETURNED`, y la fecha tiene que ser de hoy: las dos condiciones
+a la vez.**
+
+Las animaciones de los gráficos las pone **Recharts** (`animationDuration`, apagada a `0`
+con `prefers-reduced-motion`). Las clases propias que quedan en `styles/theme.css` —
+`animate-fade-in`, `animate-scale-up`, `animate-view-transition`— están cubiertas por una
+guarda `prefers-reduced-motion` de ámbito de proyecto.
 
 ---
 
@@ -368,6 +427,7 @@ es lo que permite que un módulo nuevo no toque el shell — y lo que la guarda
 | Un umbral del flujo | `flow-settings.tsx` + su control en `OrdersFlowConfigView` **con su efecto medido** | Una constante copiada en cada pantalla |
 | Un dato de rubro | `BusinessSemanticConfig` (**de la Tienda**) | El contrato de Pedidos |
 | Una pantalla nueva | `views/` + registrarla en `ORDERS_SECTIONS` y `ORDERS_SECTION_META` | Un modo más dentro de otra pantalla (§11) |
+| Un gráfico nuevo | `order-operations.ts` (la serie, **medida**) + un componente de `shared/` que la pinte **y la accione** | Una serie calculada dentro del JSX, o un `|| 14` de relleno |
 
 ⚠️ Al añadir una sección a `ORDERS_SECTIONS`, el shell **rompe la compilación** hasta que
 le pongas rótulo en `ORDERS_SECTION_META`: es deliberado, para que la URL, el breadcrumb y
@@ -381,16 +441,25 @@ cambia nada que se pueda ver, no es un ajuste.
 ⚠️ Al añadir un **estado** al contrato, hay que decidir en qué pantalla se opera. Si no, cae
 en el `return` final de `screenForStatus` y aparecería en Historial como si fuera un cierre.
 
+⚠️ Al añadir una **serie** a un gráfico del Panel, la cifra se mide en `order-operations.ts`
+y la vista sólo la pinta. La analítica que hubo aquí se retiró justamente por esto: pintaba
+`counts.whatsapp || 14` canales, un `factor = 1.4` de fin de semana y un `+12.5%` escrito a
+mano — 63 canales sobre un almacén de 25 órdenes. Y leía `order.source.channel`, un campo
+que **no existe** en el contrato, así que el `||` disparaba siempre. Una serie que no sale
+de una medición no es un dato: es una opinión con forma de gráfico.
+
 ---
 
 ## 11. Estado actual y lo que falta
 
 **Implementado:** la suite completa —8 destinos, el **Panel** como puerta de entrada con
-sus atajos y su deep-link, 5 pantallas de trabajo con filtros con conteo, el **tablero**
-de la Bandeja, el detalle con acciones derivadas, el **visor de auditoría** con duración
-por tramo, los umbrales persistidos por sede con **efecto medido**, los dos avisos con
-consumidor real, el movimiento confirmado, la semilla de 22 órdenes y 7 rubros, y el
-widget del Dashboard— y su guarda de regresión.
+sus **siete tarjetas de destino** (cada una abre su lista, con la cifra viva al lado) y su
+**gráfico del día** en Recharts, 5 pantallas de
+trabajo con filtros con conteo, el **tablero** de la Bandeja, el detalle con acciones
+derivadas, el **visor de auditoría** con duración por tramo, los umbrales persistidos por
+sede con **efecto medido**, los dos avisos con consumidor real, el movimiento confirmado, la
+semilla de 22 órdenes y 7 rubros, y el widget del Dashboard— y su guarda de regresión
+(199 aserciones).
 
 **Backend / futuro** (fuera del alcance por decisión explícita del usuario):
 

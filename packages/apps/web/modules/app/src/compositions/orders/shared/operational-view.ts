@@ -29,6 +29,16 @@ export interface OperationalViewProps {
   /** Abre el detalle de una orden. */
   onOpenOrder: (orderId: string) => void;
   /**
+   * La orden cuyo detalle está abierto ahora mismo, o `null`.
+   *
+   * ⚠️ La vista necesita **saberlo**, no sólo poder abrir: el detalle ya no es un
+   * modal que tapa la lista, así que la vista tiene que poder recorrer la cola con
+   * el teclado (`useOrderWalk`) y para eso necesita saber desde dónde avanza. Sin
+   * esta prop, la flecha abajo no tendría origen y el operador volvería al ratón
+   * para cada orden — que es justo el bucle que se quería romper.
+   */
+  openOrderId: string | null;
+  /**
    * Pide ir a la pantalla donde vive ahora una orden recién movida (§27).
    *
    * ⚠️ Sin esto, la confirmación de un movimiento diría "pasó de Lista a

@@ -224,21 +224,39 @@ export function OrderDetailDrawer({
     order.totals.discounts.length > 0 || order.totals.charges.length > 0;
 
   return (
-    <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 z-[100000] bg-gray-900/40 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden
-      />
-
+    /*
+     * ⚠️ El detalle **dejó de ser un modal**, y ése es el cambio de fondo de esta
+     * superficie. Antes era un diálogo a pantalla completa sobre un velo
+     * (`fixed inset-0 … backdrop-blur`), y eso imponía el bucle de trabajo: abrir
+     * ficha → leer → actuar → cerrar, una vez por orden. Trabajar doce órdenes eran
+     * doce aperturas con su cierre, y la lista —lo único que dice qué queda por
+     * hacer— desaparecía detrás del velo justo cuando hacía falta. Ahora es un panel
+     * **anclado al lado de la lista**: la cola sigue a la vista mientras se resuelve
+     * la orden que se tiene delante, y se puede pasar a la siguiente sin volver a
+     * buscar dónde se estaba.
+     *
+     * ⚠️ Se van `role="dialog"` y `aria-modal` porque describían el **velo**, no el
+     * panel: sin velo no hay nada que aislar, y anunciar un diálogo modal sobre una
+     * superficie que no bloquea el fondo le mentiría a quien usa lector de pantalla.
+     * El nombre accesible se queda (`aria-label`), que es lo que hacía falta de verdad.
+     *
+     * ⚠️ La **altura no se decide aquí**: este archivo no sabe si está en una columna
+     * al lado de la lista o apilado encima en una pantalla estrecha. Quien la acota
+     * es el marco de `OrdersModule`. Aquí sólo se declara que el **cuerpo** es lo que
+     * desplaza (`flex-1 overflow-y-auto`), para que la cabecera y el pie de acciones
+     * no se marchen al fondo de una orden con veinte ítems.
+     *
+     * ⚠️ `min-h-0` en las dos capas no es decorativo: sin él, un flex item tiene
+     * `min-height: auto` y **se niega a encogerse** por debajo de su contenido, así
+     * que el `overflow-y-auto` del cuerpo nunca llegaría a activarse y el panel
+     * crecería hasta salirse del marco.
+     */
+    <div className="flex min-h-0 flex-col">
       {/* Panel */}
       <aside
-        role="dialog"
-        aria-modal="true"
         aria-label={`Detalle de la orden ${order.number}`}
         data-order-detail={order.number}
-        className="fixed inset-y-0 right-0 z-[100001] flex w-full max-w-xl flex-col bg-white shadow-theme-lg dark:bg-secondary-950"
+        className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-secondary-950"
       >
         {/* ── Cabecera: resumen (§14) ──────────────────────────────────────── */}
         <header className="flex-none border-b border-gray-100 px-6 pb-5 pt-6 dark:border-gray-800">
@@ -628,7 +646,7 @@ export function OrderDetailDrawer({
           )}
         </footer>
       </aside>
-    </>
+    </div>
   );
 }
 

@@ -33,8 +33,17 @@ export interface OrdersEmptyStateProps {
   icon: LucideIcon;
   /** Qué no hay. Frase corta, en positivo cuando se pueda. */
   title: string;
-  /** Por qué puede estar vacío, y qué lo llenaría. */
-  description: string;
+  /**
+   * Por qué puede estar vacío, y qué lo llenaría.
+   *
+   * ⚠️ Es **opcional**, y omitirla es la respuesta correcta cuando el vacío lo
+   * causó un filtro: ahí el título ya dice que nada coincide y el botón ya dice
+   * qué hacer, así que una frase más sólo repite el botón con otras palabras.
+   * Se pinta únicamente cuando aporta el *porqué* que ni el título ni la acción
+   * dan —"todo lo que entró ya tiene un compromiso asumido"—, que es
+   * información, no relleno (§15).
+   */
+  description?: string;
   /** Salida opcional: limpiar filtros, ir a otra fase… */
   action?: ReactNode;
   /** Gancho estable para las guardas, por pantalla (`data-orders-empty="…"`). */
@@ -64,9 +73,11 @@ export function OrdersEmptyState({
 
       <div className="max-w-md">
         <p className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">{title}</p>
-        <p className="mt-1 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-          {description}
-        </p>
+        {description ? (
+          <p className="mt-1 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+            {description}
+          </p>
+        ) : null}
       </div>
 
       {action}

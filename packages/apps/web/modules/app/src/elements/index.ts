@@ -135,3 +135,10 @@ export type { SegmentedControlProps, SegmentOption } from './SegmentedControl';
 
 export { Toggle } from './Toggle';
 export type { ToggleProps } from './Toggle';
+
+// Elements UI additions from Webi.AI Elements Catalog
+export { Avatar } from './ui/avatar';
+export type { AvatarProps, AvatarSize, AvatarStatus } from './ui/avatar';
+
+export { Dropdown, DropdownItem } from './ui/dropdown';
+export type { DropdownProps, DropdownItemProps } from './ui/dropdown';

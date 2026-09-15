@@ -135,9 +135,19 @@ html, body {
  * theme token), yet the class is used across the workspace views — so those
  * animations were silently doing nothing. Define it once here, reusing the
  * fadeIn keyframes below, instead of patching every call site.
+ *
+ * ⚠️ `both` no es decorativo: sin él, un elemento con `animation-delay` se ve
+ * **entero** durante el retardo y luego parpadea al empezar la animación. Con
+ * `both` se queda en el fotograma inicial mientras espera, que es lo que hace
+ * posible escalonar una lista (el Panel de Pedidos lo hace con sus filas y sus
+ * atajos). Con retardo cero el resultado es idéntico, así que añadirlo no cambia
+ * ninguno de los sitios que ya lo usaban.
+ *
+ * La misma trampa tiene `animate-in` de `tw-animate-css`, cuyo relleno por
+ * defecto es `none`: allí hay que pedir `fill-mode-backwards` explícitamente.
  */
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-in-out;
+  animation: fadeIn 0.2s ease-in-out both;
 }
 
 /*
@@ -159,4 +169,28 @@ html, body {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/*
+ * ⚠️ Aquí vivían `flowGrow`/`.animate-flow-grow` y `riseUp`/`.animate-rise-up`, los
+ * dos gestos de los gráficos del Panel de Pedidos. Se retiraron con ellos: la barra
+ * de flujo (`OrdersFlowBar`) se quitó del Panel y el gráfico horario pasó a Recharts,
+ * que anima sus propias barras. Nadie más las usaba, así que dejarlas habría sido
+ * CSS muerto con un comentario que describe algo que ya no existe.
+ */
+
+/*
+ * ⚠️ Guarda de accesibilidad, y no un detalle: sin esto, quien tiene el sistema
+ * configurado para reducir el movimiento recibe igualmente una veintena de
+ * animaciones encadenadas cada vez que abre el Panel. `0.01ms` en vez de `none`
+ * es a propósito — así los eventos `animationend` siguen disparándose y ningún
+ * código que espere a que termine una animación se queda colgado.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-scale-up,
+  .animate-view-transition {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
 }

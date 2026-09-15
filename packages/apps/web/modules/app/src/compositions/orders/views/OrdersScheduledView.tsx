@@ -31,7 +31,6 @@ import { CalendarClock, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/elements";
 import type { Order } from "@/contracts/order.contract";
-import { OrderSourceCell } from "../shared/OrderSource";
 import { OrderStatusChip } from "../shared/OrderStatusChip";
 import { OrdersEmptyState } from "../shared/OrdersEmptyState";
 import { OrdersFilterBar } from "../shared/OrdersFilterBar";
@@ -49,9 +48,11 @@ import {
   orderIdentityLine,
 } from "../shared/OrderCells";
 import type { OperationalViewProps } from "../shared/operational-view";
+import { OrdersQueueWalk } from "../shared/OrdersQueueWalk";
 import { useOperationalScreen } from "../shared/use-operational-screen";
 import type { OperationalPhase } from "../shared/use-operational-screen";
 import { useOrderSort } from "../shared/use-order-sort";
+import { useOrderWalk } from "../shared/use-order-walk";
 import { useFlowSettings } from "../operational/flow-settings";
 import {
   SCHEDULE_STATE_LABELS,
@@ -89,10 +90,22 @@ const SCHEDULED_UNIVERSE = scheduledOpenOrders;
 
 /* ── Columnas ──────────────────────────────────────────────────────────────── */
 
+/**
+ * Las columnas de Programados.
+ *
+ * ⚠️ Se retiró **«Origen»**. Esta pantalla responde a *cuándo* hay que ejecutar
+ * cada orden, y lo que eso exige saber es la ventana comprometida y **cómo sale**
+ * —la modalidad sí es operativa aquí, porque planificar un reparto no es
+ * planificar una recogida—. El canal de origen es contexto, no plan: vive en
+ * «Canales de origen», que es la pantalla que existe para eso, y en el detalle.
+ *
+ * ⚠️ Y por eso **no** se retiró «Entrega», que en la Bandeja sí se retiró: la
+ * misma columna es ruido en una pantalla y carga de trabajo en otra. La regla no
+ * es "quitar columnas", es "quitar las que no se usan **aquí**" (§12).
+ */
 const SCHEDULED_COLUMNS: OrdersTableColumn[] = [
   { key: "status", label: "Estado" },
   { key: "schedule", label: "Ventana comprometida", sortable: true },
-  { key: "source", label: "Origen" },
   { key: "mode", label: "Entrega" },
   { key: "items", label: "Carga", sortable: true },
   { key: "total", label: "Total", sortable: true, align: "right" },
@@ -102,6 +115,7 @@ const SCHEDULED_COLUMNS: OrdersTableColumn[] = [
 
 export function OrdersScheduledView({
   onOpenOrder,
+  openOrderId,
   onSeeMovement,
   movement,
   onDismissMovement,
@@ -147,14 +161,23 @@ export function OrdersScheduledView({
     [sorted]
   );
 
+  /**
+   * Recorrer la cola con el teclado (§14).
+   *
+   * ⚠️ Los ids salen de `sorted` y no de `groups`: esta pantalla agrupa por día,
+   * pero el agrupador **conserva el orden** de la lista, así que recorrer `sorted`
+   * baja por los días igual que la vista —y evita que el recorrido dependa de cómo
+   * se agrupe, que es presentación.
+   */
+  const walkIds = useMemo(() => sorted.map(order => order.id), [sorted]);
+  const walk = useOrderWalk(walkIds, openOrderId, onOpenOrder);
+
   const renderCell = (order: Order, key: string) => {
     switch (key) {
       case "status":
         return <OrderStatusChip status={order.status} />;
       case "schedule":
         return <OrderScheduleCell order={order} />;
-      case "source":
-        return <OrderSourceCell source={order.source} />;
       case "mode":
         return <OrderModeCell order={order} />;
       case "items":
@@ -168,9 +191,11 @@ export function OrdersScheduledView({
 
   return (
     <div data-orders-scheduled className="flex flex-col gap-5">
+      {/* ⚠️ Sin descripción: las fases —vencida, por vencer, futura— y la columna
+          de ventana comprometida ya dicen que aquí se lee *cuándo*, no *en qué
+          punto del flujo*. La prosa repetía esa distinción antes de mostrarla. */}
       <OrdersScreenHeader
         title="Programados"
-        description="Órdenes con fecha y hora comprometidas, agrupadas por jornada. Una orden programada sigue teniendo su estado operativo: aquí se ve cuándo hay que ejecutarla, no en qué punto del flujo está."
         alert={
           <>
             {/* ⚠️ Dos avisos distintos, y por eso van los dos: "vencida" mide el
@@ -213,7 +238,14 @@ export function OrdersScheduledView({
 
       <OrdersMovementNotice movement={movement} onDismiss={onDismissMovement} onSee={onSeeMovement} />
 
+      {/* ⚠️ Se pinta sólo con el detalle abierto y más de una orden delante: la
+          pieza se autodescarta cuando la orden abierta no está en esta lista. */}
+      <OrdersQueueWalk {...walk} />
+
       {sorted.length === 0 ? (
+        // ⚠️ `description` sólo cuando el vacío es real: con un filtro puesto, el
+        // título ya dice que nada coincide y el botón ya dice qué hacer, así que
+        // una frase más repetiría el botón con otras palabras (§15).
         <OrdersEmptyState
           icon={CalendarClock}
           anchor="programados"
@@ -223,9 +255,7 @@ export function OrdersScheduledView({
               : "No hay órdenes programadas"
           }
           description={
-            filters.isFiltered
-              ? "Ninguna de las órdenes programadas entra en el filtro elegido. Prueba a limpiarlo."
-              : "Ninguna orden tiene fecha comprometida ahora mismo. Las que se programen desde el detalle aparecerán aquí agrupadas por jornada."
+            filters.isFiltered ? undefined : "Ninguna orden tiene fecha comprometida."
           }
           action={
             filters.isFiltered ? (

@@ -7,7 +7,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { CLIENT_ADMIN_ROLE_LABEL } from "@/auth/profile";
 import { useBusiness } from "@/context/BusinessContext";
 import type { NectoModuleKey } from "@/context/BusinessContext";
-import { InfoIcon, ArrowRightIcon, UserCircleIcon } from "@/icons";
+import { InfoIcon, ArrowRightIcon, UserCircleIcon, PlugInIcon } from "@/icons";
 import { PanelLeftClose, SlidersHorizontal, ChevronRight, MessageSquare, Layers, LifeBuoy, LayoutDashboard, ShoppingBag } from "lucide-react";
 import { NectoSidebarWordmark } from "@/compositions/shared/NectoLogo";
 import { ORDERS_SECTION_META } from "@/compositions/orders";
@@ -348,7 +348,7 @@ export const StockFlowSidebar = observer(({
               <ul className="flex flex-col gap-1">
                 <MenuItem
                   icon={<MessageSquare className="w-4 h-4" />}
-                  name="WhatsApp"
+                  name="Mensajes Necto"
                   active={activeModule === "whatsapp"}
                   onClick={() => onNavigateModule("whatsapp")}
                 />

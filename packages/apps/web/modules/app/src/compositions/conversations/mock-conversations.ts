@@ -33,17 +33,49 @@ import type {
 
 /** Interlocutores posibles. La sede escoge un tramo **distinto** de esta lista. */
 const CANDIDATES: ConversationCounterpartSeed[] = [
-  { name: "Andrea Gómez", phone: "+57 300 214 7788" },
-  { name: "Carlos Restrepo", phone: "+57 311 908 3321" },
-  { name: "María Fernanda Ruiz", phone: "+57 320 445 9012" },
-  { name: "Julián Ospina", phone: "+57 301 776 2043" },
-  { name: "Luisa Toro", phone: "+57 315 330 8890" },
-  { name: "Andrés Mejía", phone: "+57 304 118 5567" },
+  { 
+    name: "Andrea Gómez", 
+    phone: "+57 300 214 7788", 
+    role: "Content Writer",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80"
+  },
+  { 
+    name: "Carlos Restrepo", 
+    phone: "+57 311 908 3321", 
+    role: "Front-end Developer",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+  },
+  { 
+    name: "María Fernanda Ruiz", 
+    phone: "+57 320 445 9012", 
+    role: "Digital Marketer",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+  },
+  { 
+    name: "Julián Ospina", 
+    phone: "+57 301 776 2043", 
+    role: "Product Designer",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
+  },
+  { 
+    name: "Luisa Toro", 
+    phone: "+57 315 330 8890", 
+    role: "Copywriter",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
+  },
+  { 
+    name: "Andrés Mejía", 
+    phone: "+57 304 118 5567", 
+    role: "Project Manager",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80"
+  },
 ];
 
 interface ConversationCounterpartSeed {
   name: string;
   phone: string;
+  role: string;
+  avatar: string;
 }
 
 /**
@@ -216,6 +248,8 @@ export function buildDemoConversations(businessId: string): Conversation[] {
         name: candidate.name,
         phone: candidate.phone,
         initials: initialsOf(candidate.name, candidate.phone),
+        avatar: candidate.avatar,
+        role: candidate.role,
       },
       lastMessagePreview: script.preview,
       lastMessageAt: new Date(now - lastMinutesAgo * 60_000).toISOString(),

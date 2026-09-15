@@ -45,9 +45,11 @@ import {
   orderIdentityLine,
 } from "../shared/OrderCells";
 import type { OperationalViewProps } from "../shared/operational-view";
+import { OrdersQueueWalk } from "../shared/OrdersQueueWalk";
 import { useOperationalScreen } from "../shared/use-operational-screen";
 import type { OperationalPhase } from "../shared/use-operational-screen";
 import { useOrderSort } from "../shared/use-order-sort";
+import { useOrderWalk } from "../shared/use-order-walk";
 import {
   dispatchOrders,
   splitDispatchByMode,
@@ -100,7 +102,19 @@ const TRANSIT_COLUMNS: OrdersTableColumn[] = [
 interface DispatchBlockProps {
   anchor: string;
   title: string;
-  description: string;
+  /**
+   * Contexto que **no** se puede deducir del bloque.
+   *
+   * ⚠️ Opcional, y hoy no lo pasa ninguno de los dos bloques. Los dos llevaban
+   * una frase explicando qué es una recogida y qué es un envío —"Recogidas y
+   * atenciones en sitio: la orden no sale a la calle, así que se entrega en el
+   * mostrador y no pasa por tránsito"—, y eso es describir la propia interfaz
+   * (§8): el título ya dice dónde se entrega, la columna «Destino» dice a dónde
+   * va cada orden, y que el bloque local no ofrezca tránsito se ve en el detalle
+   * de cualquier orden suya. Sobrevive el prop para el caso en que un bloque
+   * tenga que decir algo que no esté ya en pantalla.
+   */
+  description?: string;
   icon: typeof Store;
   orders: Order[];
   columns: OrdersTableColumn[];
@@ -140,9 +154,11 @@ function DispatchBlock({
               {orders.length}
             </span>
           </h3>
-          <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            {description}
-          </p>
+          {description ? (
+            <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
+              {description}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -199,6 +215,7 @@ function DispatchBlock({
 
 export function OrdersDispatchView({
   onOpenOrder,
+  openOrderId,
   onSeeMovement,
   movement,
   onDismissMovement,
@@ -233,11 +250,27 @@ export function OrdersDispatchView({
   const sorted = useMemo(() => apply(visible), [apply, visible]);
   const { onSite, withTransit } = useMemo(() => splitDispatchByMode(sorted), [sorted]);
 
+  /**
+   * Recorrer la cola con el teclado (§14).
+   *
+   * ⚠️ El orden de los ids es el de la **pantalla**, no el de `sorted`: esta
+   * pantalla parte la lista en dos bloques —primero lo que se entrega en el local,
+   * después lo que sale con transporte—, así que avanzar siguiendo `sorted`
+   * saltaría de un bloque al otro y volvería, en vez de bajar por lo que se ve.
+   */
+  const walkIds = useMemo(
+    () => [...onSite, ...withTransit].map(order => order.id),
+    [onSite, withTransit]
+  );
+  const walk = useOrderWalk(walkIds, openOrderId, onOpenOrder);
+
   return (
     <div data-orders-dispatch className="flex flex-col gap-5">
+      {/* ⚠️ Sin descripción: los dos bloques de abajo ya se titulan por modalidad
+          y cada uno dice qué hay que hacer con él. La frase que lo explicaba era
+          la misma información, en prosa y antes de que se viera. */}
       <OrdersScreenHeader
         title="Despacho y entrega"
-        description="Lo que está listo, lo que va en camino y lo que llegó pero falta cerrar. Separado por modalidad, porque entregar en el local y enviar con transporte no son el mismo trabajo."
         alert={
           // ⚠️ El interruptor «Avisar de órdenes demoradas» (§17) se respeta aquí.
           // Antes se guardaba y ninguna pantalla lo leía: un ajuste sin consumidor
@@ -275,7 +308,14 @@ export function OrdersDispatchView({
 
       <OrdersMovementNotice movement={movement} onDismiss={onDismissMovement} onSee={onSeeMovement} />
 
+      {/* ⚠️ Se pinta sólo con el detalle abierto y más de una orden delante: la
+          pieza se autodescarta cuando la orden abierta no está en esta lista. */}
+      <OrdersQueueWalk {...walk} />
+
       {visible.length === 0 ? (
+        // ⚠️ `description` sólo cuando el vacío es real: con un filtro puesto, el
+        // título ya dice que nada coincide y el botón ya dice qué hacer, así que
+        // una frase más repetiría el botón con otras palabras (§15).
         <OrdersEmptyState
           icon={PackageCheck}
           anchor="despacho"
@@ -285,9 +325,7 @@ export function OrdersDispatchView({
               : "No hay nada por despachar"
           }
           description={
-            filters.isFiltered
-              ? "Ninguna de las órdenes en despacho entra en el filtro elegido. Prueba a limpiarlo."
-              : "Ni salidas pendientes ni entregas sin cerrar. Cuando una orden se marque como lista, aparecerá aquí."
+            filters.isFiltered ? undefined : "Nada listo para salir ni entregas sin cerrar."
           }
           action={
             filters.isFiltered ? (
@@ -308,7 +346,6 @@ export function OrdersDispatchView({
           <DispatchBlock
             anchor="despacho-local"
             title="Se entregan en el local"
-            description="Recogidas y atenciones en sitio: la orden no sale a la calle, así que se entrega en el mostrador y no pasa por tránsito."
             icon={Store}
             orders={onSite}
             columns={BASE_COLUMNS}
@@ -323,7 +360,6 @@ export function OrdersDispatchView({
           <DispatchBlock
             anchor="despacho-transporte"
             title="Salen con transporte"
-            description="Envíos con domicilio: pasan por tránsito y necesitan un responsable de la entrega en la calle."
             icon={Truck}
             orders={withTransit}
             columns={TRANSIT_COLUMNS}
@@ -335,12 +371,6 @@ export function OrdersDispatchView({
             emptyLine="No hay envíos con transporte pendientes."
           />
         </div>
-      )}
-
-      {visible.length > 0 && (
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          {onSite.length} se entregan en el local · {withTransit.length} salen con transporte
-        </p>
       )}
     </div>
   );

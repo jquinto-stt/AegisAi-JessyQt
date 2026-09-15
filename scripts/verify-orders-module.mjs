@@ -56,7 +56,7 @@ const ROOT = path.resolve(HERE, "..");
 const SRC = path.join(ROOT, "packages/apps/web/modules/app/src");
 const ORDERS = path.join(SRC, "compositions/orders");
 
-const CDP = "http://127.0.0.1:9222";
+const CDP = process.env.NECTO_CDP_URL || "http://127.0.0.1:9222";
 // ⚠️ El puerto por defecto es el del dev server de este repo (y el que asume
 // `verify-all.mjs` al limpiar el `localStorage`). Antes decía 5174, que no es el
 // que arranca `npm run dev`: el arnés aislado apuntaba a un servidor inexistente.
@@ -925,7 +925,35 @@ const panel = await evaluate(`(() => {
     rhythm: [...root.querySelectorAll('[data-orders-rhythm]')].map(r => ({
       key: attr(r, 'data-orders-rhythm'),
       value: Number(attr(r, 'data-orders-rhythm-value')),
+      // ⚠️ Los tres totales del día son **puertas**, no cifras pintadas. Se
+      // comprueba el nombre de la etiqueta y no "es pulsable" a secas: un div con
+      // un manejador de clic pasaría un onclick suelto y no sería alcanzable con
+      // el teclado, que es la mitad de la accesibilidad de un atajo.
+      tag: r.tagName,
+      label: attr(r, 'aria-label'),
     })),
+    /* ── Las barras que se retiraron (§5) ────────────────────────────────── */
+    /**
+     * ⚠️ "Flujo por estado" y "Reparto por canal" se retiraron del Panel: eran dos
+     * franjas de color entre lo urgente y los atajos que repetían, en forma de
+     * gráfico, lo que las tarjetas de destino dicen en forma de puerta. Esta cuenta
+     * es la que impide que vuelvan sin que nadie lo note.
+     */
+    flowBars: root.querySelectorAll('[data-orders-flow-bar]').length,
+    dayChart: !!root.querySelector('[data-orders-day-chart]'),
+    dayEmpty: !!root.querySelector('[data-orders-day-empty]'),
+    // La frase que interpreta los tres números del día. Sin ancla no se puede
+    // leer, y sin leerla la guarda sólo sabe que hay un párrafo.
+    dayReading: (root.querySelector('[data-orders-day-reading]')?.textContent || '').trim(),
+    dayHours: [...root.querySelectorAll('[data-orders-day-hour]')].map(d => ({
+      hour: Number(attr(d, 'data-orders-day-hour')),
+      entered: Number(attr(d, 'data-orders-day-entered')),
+      closed: Number(attr(d, 'data-orders-day-closed')),
+    })),
+    // ⚠️ La analítica retirada se anunciaba con una insignia "TailAdmin" en
+    // pantalla: el nombre de la plantilla de referencia no es información para el
+    // tendero. Se comprueba que no vuelva.
+    templateName: /tailadmin/i.test(root.textContent || ''),
     // ⚠️ Ninguna tarjeta de métrica puede sobrevivir **aquí**: el Panel existe
     // justamente para retirarlas de todas las pantallas, y traerlas al Panel sería
     // devolver el problema a su sitio natural.
@@ -943,6 +971,14 @@ const ATTENTION_TARGETS = {
   overdueScheduled: "programados",
 };
 const ATTENTION_ORDER = Object.keys(ATTENTION_TARGETS);
+
+/*
+ * ⚠️ Aquí vivía `STAGE_TARGETS`: la tabla independiente de "a qué pantalla y con
+ * qué fase lleva cada tramo del flujo por estado". Se retiró con la barra que
+ * medía —el Panel ya no tiene tramos que pulsar—, y no se sustituye por nada: el
+ * salto con fase se sigue midiendo, con la misma fuerza, sobre las filas de
+ * atención (más abajo) y sobre las tarjetas de destino.
+ */
 
 if (panel) {
   check(
@@ -994,6 +1030,171 @@ if (panel) {
     panel.rhythm.map((r) => r.key).join(",") === "entered,completed,cancelled" &&
       panel.rhythm.every((r) => Number.isFinite(r.value)),
     panel.rhythm.map((r) => `${r.key}=${r.value}`).join(" ")
+  );
+
+  /* ── Los gráficos que se operan (§5), medidos contra el almacén ───────── */
+
+  /**
+   * ⚠️ La comprobación que de verdad importa no es "hay dos barras", sino que
+   * **las cifras de las barras sumen lo que hay en el almacén**.
+   *
+   * La analítica que esta pantalla tenía antes pintaba `counts.whatsapp || 14`
+   * —y leía además `order.source.channel`, un campo que **no existe** en el
+   * contrato, de modo que el respaldo se aplicaba siempre—: cuatro canales con
+   * cifras inventadas que sumaban 63 sobre una tienda con 25 órdenes. Una
+   * aserción sobre la *forma* de la barra habría pasado en verde; ésta no.
+   *
+   * Y se lee el **almacén persistido**, no el DOM: medir la pantalla contra sí
+   * misma no comprueba nada.
+   */
+  const storeFlow = await evaluate(`(() => {
+    const businessId = localStorage.getItem('necto_active_business_id');
+    const raw = localStorage.getItem('necto_orders_v1');
+    const all = raw ? JSON.parse(raw) : [];
+    const mine = all.filter(o => o && o.businessId === businessId);
+    const byStatus = {};
+    const bySource = {};
+    for (const order of mine) {
+      byStatus[order.status] = (byStatus[order.status] || 0) + 1;
+      const key = String((order.source && order.source.type) || '').toUpperCase();
+      bySource[key] = (bySource[key] || 0) + 1;
+    }
+    // ⚠️ El flujo vivo se declara aquí, no se lee del código: la guarda tiene que
+    // saber por su cuenta qué es "trabajo pendiente" para poder medir la pantalla
+    // contra esa expectativa. Una orden cerrada no espera a nadie.
+    const LIVE = ['PENDING','CONFIRMED','IN_PREPARATION','READY','IN_TRANSIT','DELIVERED'];
+    const openTotal = mine.filter(o => LIVE.includes(o.status)).length;
+    // El pulso horario se recalcula aquí, con la misma regla que la pantalla pero
+    // escrita aparte: día **local**, y el cierre es la última entrada del historial.
+    const today = new Date();
+    const isToday = (iso) => {
+      const d = new Date(iso);
+      return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+    };
+    const byHour = {};
+    // ⚠️ Un **cierre** es una orden en estado terminal cuya última entrada del
+    // historial es de hoy. Las dos condiciones a la vez, y escritas aquí como
+    // contrato: la primera versión de esta guarda copió la condición de la
+    // implementación —que sólo miraba la fecha— y por eso las dos coincidían en
+    // contar como cierres 20 órdenes de las que sólo 3 lo estaban. Una guarda que
+    // repite la regla del código comprueba que el código coincide consigo mismo.
+    const CLOSED = ['COMPLETED', 'CANCELLED', 'RETURNED'];
+    let returnedToday = 0;
+    for (const order of mine) {
+      if (isToday(order.createdAt)) {
+        const h = new Date(order.createdAt).getHours();
+        if (!byHour[h]) byHour[h] = { entered: 0, closed: 0 };
+        byHour[h].entered += 1;
+      }
+      const last = order.history && order.history[order.history.length - 1];
+      if (last && last.at && CLOSED.includes(order.status) && isToday(last.at)) {
+        const h = new Date(last.at).getHours();
+        if (!byHour[h]) byHour[h] = { entered: 0, closed: 0 };
+        byHour[h].closed += 1;
+        if (order.status === 'RETURNED') returnedToday += 1;
+      }
+    }
+    return { total: mine.length, openTotal, live: LIVE, byStatus, bySource, byHour, returnedToday };
+  })()`);
+
+  /**
+   * ⚠️ Las dos barras se retiraron del Panel, y esta aserción existe para que no
+   * vuelvan por la puerta de atrás.
+   *
+   * "Flujo por estado" repetía, en forma de gráfico, la cifra que la tarjeta de
+   * destino de al lado ya da —con el nombre de la pantalla que la resuelve, que es
+   * lo que la hace accionable—. "Reparto por canal" es un dato comercial, no
+   * operativo: quien alista y despacha no decide nada por saber el porcentaje que
+   * entró por WhatsApp. Y las dos juntas ocupaban la franja más valiosa de la
+   * pantalla, entre lo urgente y los atajos.
+   *
+   * Un elemento que se puede quitar sin perder ni una decisión posible es ruido.
+   * Esto no comprueba que el código coincida consigo mismo: comprueba que **no**
+   * está lo que se decidió quitar.
+   */
+  check(
+    "§5 — las dos barras del Panel siguen retiradas (flujo por estado y reparto por canal)",
+    panel.flowBars === 0,
+    `barras=${panel.flowBars}`
+  );
+
+  check(
+    "§5 — el pulso del día se dibuja sólo si hubo actividad, y lo dice cuando no la hubo",
+    panel.dayChart !== panel.dayEmpty,
+    `gráfico=${panel.dayChart} vacío=${panel.dayEmpty}`
+  );
+
+  /**
+   * ⚠️ Comprobar que hay columnas no es comprobar que el gráfico **diga la
+   * verdad**. Estas dos aserciones comparan cada altura con el almacén, hora por
+   * hora: son las que impiden que un gráfico bonito y vacío pase por bueno.
+   */
+  const chartEntered = panel.dayHours.reduce((sum, h) => sum + h.entered, 0);
+  const chartClosed = panel.dayHours.reduce((sum, h) => sum + h.closed, 0);
+  const storeEntered = Object.values(storeFlow.byHour).reduce((sum, h) => sum + h.entered, 0);
+  const storeClosed = Object.values(storeFlow.byHour).reduce((sum, h) => sum + h.closed, 0);
+  check(
+    "§5 — el pulso del día es un gráfico REAL: sus columnas suman las órdenes de hoy del almacén",
+    chartEntered === storeEntered && chartClosed === storeClosed,
+    `entraron ${chartEntered}/${storeEntered} · se cerraron ${chartClosed}/${storeClosed}`
+  );
+  check(
+    "§5 — y cada hora lleva su cifra, hora por hora",
+    panel.dayHours.every(
+      (h) =>
+        h.entered === (storeFlow.byHour[h.hour]?.entered ?? 0) &&
+        h.closed === (storeFlow.byHour[h.hour]?.closed ?? 0)
+    ),
+    panel.dayHours.map((h) => `${h.hour}:${h.entered}/${h.closed}`).join(" ")
+  );
+
+  /**
+   * ⚠️ Y una que **no** depende de mi propia recomputación, porque ésa es la que
+   * se puede equivocar conmigo: los cierres del gráfico no pueden superar lo que
+   * el propio Panel afirma haber cerrado tres centímetros más abajo.
+   *
+   * Esta aserción es la que habría cazado el fallo de verdad: la primera versión
+   * contaba como cierre cualquier orden *tocada* hoy —incluidas las que siguen en
+   * alistamiento— y el gráfico llegó a mostrar 20 cierres mientras las cifras de
+   * al lado decían 2 completadas y 1 cancelada.
+   */
+  const shownCompleted = panel.rhythm.find((r) => r.key === "completed")?.value ?? 0;
+  const shownCancelled = panel.rhythm.find((r) => r.key === "cancelled")?.value ?? 0;
+  check(
+    "§5 — los cierres del gráfico no superan lo que el Panel dice haber cerrado",
+    chartClosed >= shownCompleted + shownCancelled &&
+      chartClosed <= shownCompleted + shownCancelled + storeFlow.returnedToday,
+    `gráfico=${chartClosed} vs panel=${shownCompleted}+${shownCancelled}+${storeFlow.returnedToday} devueltas`
+  );
+  check(
+    "§12 — los tres totales del día son botones con su destino escrito",
+    panel.rhythm.every((r) => r.tag === "BUTTON" && typeof r.label === "string" && r.label.length > 0),
+    panel.rhythm.map((r) => `${r.key}:${r.tag}`).join(" ")
+  );
+
+  /**
+   * ⚠️ La frase que interpreta el día tiene que hacer **la misma cuenta** que el
+   * gráfico que tiene justo encima.
+   *
+   * Aquí vivía el mismo error de definición que en `todayHours`, un piso más
+   * arriba: la frase restaba sólo las completadas, así que anunciaba «entraron 18
+   * más de las que se cerraron» sobre una leyenda «Se cerraron» que valía 3. Dos
+   * definiciones distintas de «cerrada» en la misma tarjeta. La cuenta se
+   * recomputa aquí desde las columnas del gráfico, no desde el texto del Panel.
+   */
+  const expectedNet = Math.abs(chartEntered - chartClosed);
+  const readingNumber = Number((panel.dayReading.match(/(\d+)\s+(?:orden|órdenes)/) || [])[1] ?? NaN);
+  check(
+    "§5 — la frase del día hace la misma cuenta que el gráfico que tiene al lado",
+    chartEntered === chartClosed
+      ? Number.isNaN(readingNumber) && /cola se mantuvo|no se movió nada/.test(panel.dayReading)
+      : readingNumber === expectedNet,
+    `frase="${panel.dayReading}" → dice ${readingNumber} vs ${chartEntered}-${chartClosed}=${expectedNet}`
+  );
+  check(
+    "§5 — la plantilla de referencia no se anuncia en pantalla",
+    panel.templateName === false,
+    "aparece «TailAdmin» dentro del Panel"
   );
 
   /* ── El atajo de verdad: pulsar una cifra abre su lista, ya filtrada ──── */
@@ -1050,6 +1251,51 @@ if (panel) {
     "§26 — el atajo publica la pantalla en la URL (el enlace es enlazable)",
     deepLink.skipped === undefined && new RegExp(`section=${picked?.target}`).test(deepLink.url || ""),
     deepLink.url
+  );
+
+  /* ── Y una tarjeta de destino navega, no sólo informa ────────────────── */
+
+  /**
+   * ⚠️ Hay que **volver al Panel** antes de pulsar una tarjeta: el paseo anterior
+   * acaba de navegar a la pantalla de la condición que pulsó, así que el Panel ya
+   * no está montado y la tarjeta no existe en el DOM. Sin esto, la guarda diría "no
+   * se pudo pulsar" y culparía a la tarjeta de un fallo de secuencia suyo.
+   */
+  await openSection("panel");
+
+  /**
+   * ⚠️ Esta comprobación **sustituye** a la que pulsaba un tramo del gráfico, y no
+   * deja un hueco: hasta ahora se medía que las cifras de las tarjetas de destino
+   * coinciden con el universo de su pantalla (más abajo), pero no que pulsarlas
+   * lleve allí. Un panel cuyas cifras son correctas y cuyos botones no navegan es
+   * exactamente el cuadro de mando que esta pantalla existe para no ser.
+   *
+   * ⚠️ Se elige una tarjeta que no sea Canales: Canales no opera órdenes, así que
+   * probaría el salto a medias.
+   */
+  const shortcutProbe = panel.shortcuts.find((s) => s.key !== "canales");
+  const shortcutLink = await (async () => {
+    if (!shortcutProbe) return { skipped: "ninguna tarjeta de destino que pulsar" };
+    const clicked = await evaluate(clickFirst(`[data-orders-shortcut="${shortcutProbe.key}"]`));
+    if (!clicked) return { skipped: `no se pudo pulsar ${shortcutProbe.key}` };
+    await sleep(1500);
+
+    return await evaluate(`(() => ({
+      section: document.querySelector('[data-orders-section][aria-current="page"]')?.getAttribute('data-orders-section') ?? null,
+      url: location.pathname + location.search,
+    }))()`);
+  })();
+
+  check(
+    "§5 — pulsar una tarjeta de destino abre SU pantalla (no una genérica)",
+    shortcutLink.skipped === undefined && shortcutLink.section === shortcutProbe.key,
+    shortcutLink.skipped || JSON.stringify(shortcutLink)
+  );
+  check(
+    "§26 — y el salto queda en la URL (el atajo es enlazable)",
+    shortcutLink.skipped === undefined &&
+      new RegExp(`section=${shortcutProbe.key}`).test(shortcutLink.url || ""),
+    shortcutLink.url
   );
 
   // Volver al Panel: el resto de la suite navega por su cuenta, pero dejarlo

@@ -68,7 +68,10 @@ export function OrdersOverdueAlert({ orders }: OrdersOverdueAlertProps) {
   return (
     // ⚠️ El `Alert` del catálogo no reenvía props nativas, así que el ancla va en
     // un contenedor propio. Es el mismo recurso que usa la alerta de demora.
-    <div data-orders-overdue={overdue.length}>
+    //
+    // ⚠️ Y cede el ancho cuando comparte fila con la de demora —es lo que pasa en
+    // Programados—: ver el porqué en `OrdersStagnationAlert`.
+    <div data-orders-overdue={overdue.length} className="lg:min-w-0 lg:flex-1">
       <Alert
         variant="error"
         title={
@@ -76,7 +79,13 @@ export function OrdersOverdueAlert({ orders }: OrdersOverdueAlertProps) {
             ? "1 orden pasó su hora comprometida"
             : `${overdue.length} órdenes pasaron su hora comprometida`
         }
-        message={`${list}. La más retrasada lleva ${formatDuration(worst)} de retraso sobre la ventana pactada con el cliente.`}
+        /**
+         * ⚠️ Una sola línea: el retraso peor ya lo dice la columna «Ventana
+         * comprometida» de la fila, con su chip «Vencida». La frase que lo repetía
+         * aquí —"sobre la ventana pactada con el cliente"— además explicaba la
+         * propia interfaz (§8).
+         */
+        message={`${list} · la más retrasada, ${formatDuration(worst)}`}
       />
     </div>
   );

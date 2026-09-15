@@ -497,7 +497,7 @@ export default function App() {
           {
             label:
               activeModule === "whatsapp"
-                ? "Canal conversacional"
+                ? "Mensajes Necto"
                 : activeModule === "inventarios"
                 ? "Inventario"
                 : "Pedidos",

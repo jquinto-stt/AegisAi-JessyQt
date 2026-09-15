@@ -2,8 +2,8 @@
  * Pedidos — Vocabulario de destinos del módulo.
  * ==============================================
  *
- * Las ocho pantallas de Pedidos, con su clave, su rótulo, su icono y **para qué
- * sirve cada una**, en un solo sitio.
+ * Las ocho pantallas de Pedidos, con su clave, su rótulo, su icono, **su grupo** y
+ * **para qué sirve cada una**, en un solo sitio.
  *
  * ── Por qué esto no vive en `OrdersModule.tsx` ──────────────────────────────
  *
@@ -48,6 +48,10 @@ import type { LucideIcon } from "lucide-react";
  * cerrado, y al final el contexto. Un orden alfabético o por antigüedad de
  * implementación obligaría al operador a memorizar dónde está cada cosa en lugar
  * de leerla.
+ *
+ * ⚠️ Y el orden **no** se toca para agrupar visualmente: los dos destinos de
+ * contexto ya son los dos últimos, así que agruparlos es un asunto de
+ * presentación —un separador y un peso menor—, no de reordenar la lista.
  */
 export const ORDERS_SECTIONS = [
   "panel",
@@ -87,13 +91,30 @@ export function oneOfSections(value: string | null): OrdersSectionKey | null {
     : null;
 }
 
+/**
+ * De qué clase es un destino, y por qué la distinción existe.
+ *
+ * ⚠️ `work` son las pantallas donde **se opera**: seis destinos con una cola
+ * dentro y trabajo que hacer. `context` son las dos que **explican** algo —de
+ * dónde vienen las órdenes, cómo se comporta el flujo— y no tienen cola: se
+ * consultan de vez en cuando, no se visitan a diario.
+ *
+ * ⚠️ No es una etiqueta decorativa: la barra del módulo la usa para **separar**
+ * los dos bloques y bajarle el peso al segundo. Sin declararlo aquí, la barra
+ * tendría que llevar su propia lista de "cuáles son de contexto" —el segundo sitio
+ * donde se decide qué es un destino, que es justo lo que este archivo evita—.
+ */
+export type OrdersSectionGroup = "work" | "context";
+
 export interface OrdersSectionMeta {
   key: OrdersSectionKey;
   /** Rótulo completo, para la barra del módulo. */
   label: string;
-  /** Rótulo corto, para la barra lateral estrecha. */
+  /** Rótulo corto, para la barra lateral estrecha y las pantallas angostas. */
   shortLabel: string;
   icon: LucideIcon;
+  /** Si la pantalla opera órdenes o sólo explica contexto. */
+  group: OrdersSectionGroup;
   /**
    * Para qué sirve esta pantalla, en una frase.
    *
@@ -124,6 +145,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Panel de pedidos",
     shortLabel: "Panel",
     icon: LayoutDashboard,
+    group: "work",
     purpose: "El estado del día y un atajo a cada pantalla.",
   },
   {
@@ -131,6 +153,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Bandeja de entrada",
     shortLabel: "Bandeja",
     icon: Inbox,
+    group: "work",
     purpose: "Valida lo que acaba de entrar y asume el compromiso.",
   },
   {
@@ -138,6 +161,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Mesa de alistamiento",
     shortLabel: "Alistamiento",
     icon: ClipboardList,
+    group: "work",
     purpose: "Prepara las órdenes que ya están comprometidas.",
   },
   {
@@ -145,6 +169,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Despacho y entrega",
     shortLabel: "Despacho",
     icon: Truck,
+    group: "work",
     purpose: "Saca lo terminado y cierra lo que llegó a destino.",
   },
   {
@@ -152,6 +177,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Programados",
     shortLabel: "Programados",
     icon: CalendarClock,
+    group: "work",
     purpose: "Lo que tiene fecha y hora comprometidas.",
   },
   {
@@ -159,6 +185,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Historial y auditoría",
     shortLabel: "Historial",
     icon: Archive,
+    group: "work",
     purpose: "Responde por lo que ya ocurrió: quién, cuándo y por qué.",
   },
   {
@@ -166,6 +193,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Canales de origen",
     shortLabel: "Canales",
     icon: Radio,
+    group: "context",
     purpose: "De dónde vienen las órdenes y cuánto pesa cada canal.",
   },
   {
@@ -173,6 +201,7 @@ export const ORDERS_SECTION_META: readonly OrdersSectionMeta[] = [
     label: "Configuración del flujo",
     shortLabel: "Configuración",
     icon: Settings2,
+    group: "context",
     purpose: "El ritmo de trabajo: cuándo una orden se considera demorada.",
   },
 ];

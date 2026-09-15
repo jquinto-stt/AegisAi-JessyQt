@@ -62,7 +62,7 @@ import {
   DEFAULT_ORDERS_SECTION,
   ORDERS_SECTION_META,
 } from "./shared/orders-destinations";
-import type { OrdersSectionKey } from "./shared/orders-destinations";
+import type { OrdersSectionKey, OrdersSectionMeta } from "./shared/orders-destinations";
 import { OrderDetailDrawer } from "./views/OrderDetailDrawer";
 import { OrdersPanelView } from "./views/OrdersPanelView";
 import { OrdersInboxView } from "./views/OrdersInboxView";
@@ -215,6 +215,15 @@ function OrdersModuleShell({
   const goToSection = useCallback(
     (next: OrdersSectionKey) => {
       setPendingDeepLink(null);
+      /**
+       * ⚠️ El detalle se cierra al cambiar de pantalla, y no es un detalle menor:
+       * el panel está **anclado a la pantalla que lo abrió**, así que dejarlo
+       * abierto al saltar a otra sección pondría la ficha de una orden de la
+       * Bandeja al lado de Canales —una pantalla que no opera órdenes y no tiene
+       * nada que decir sobre ella—. Y al revés: el operador acaba de pedir otra
+       * pantalla, y la ficha que tenía delante ya no es la que estaba mirando.
+       */
+      setOpenOrderId(null);
       setSection(next);
       onSectionChange?.(next);
     },
@@ -288,78 +297,194 @@ function OrdersModuleShell({
   const openOrder = openOrderId ? orderById(openOrderId) ?? null : null;
   const viewProps = {
     onOpenOrder: setOpenOrderId,
+    /**
+     * ⚠️ La vista recibe **cuál** está abierta, no sólo la capacidad de abrir.
+     * Mientras el detalle fue un modal daba igual —la lista quedaba tapada y no
+     * había nada que hacer con ella—, pero al anclarlo al lado la lista sigue
+     * viva, y lo que falta es poder **recorrerla con el teclado** desde la orden
+     * abierta (`useOrderWalk`). Sin saber desde dónde avanza, la flecha abajo no
+     * tendría origen y el operador volvería al ratón para cada orden, que es justo
+     * el bucle que se quería romper.
+     */
+    openOrderId,
     onSeeMovement: seeMovement,
     movement,
     onDismissMovement: dismiss,
   };
 
+  /* ── La barra del módulo ─────────────────────────────────────────────────── */
+
+  /**
+   * ⚠️ La barra pinta **dos bloques**, no ocho destinos sueltos: el trabajo y el
+   * contexto. El corte sale de `meta.group`, que se declara en el vocabulario
+   * —no aquí—: si la barra llevara su propia lista de "cuáles son de contexto",
+   * habría un segundo sitio donde se decide qué es un destino, que es justo lo
+   * que `orders-destinations.ts` existe para evitar.
+   *
+   * ⚠️ El **orden no cambia**. Se filtran los dos bloques y `.filter` respeta el
+   * orden declarado, que ya deja el contexto al final. Reordenar para agrupar
+   * obligaría al operador a reaprender dónde está cada cosa.
+   */
+  const workDestinations = ORDERS_SECTION_META.filter(meta => meta.group === "work");
+  const contextDestinations = ORDERS_SECTION_META.filter(meta => meta.group === "context");
+
+  /**
+   * Un destino de la barra.
+   *
+   * ⚠️ Pinta `shortLabel`, no `label`. La barra es un **conmutador**: su trabajo es
+   * decir dónde estoy y a dónde puedo ir, no describir cada pantalla. Con los
+   * rótulos largos —"Mesa de alistamiento", "Configuración del flujo"— la fila
+   * medía más de mil píxeles y saltaba a dos líneas en pantallas de 1280,
+   * empujando hacia abajo lo único que importa en cada pantalla, que es el
+   * contenido. El nombre completo sigue en el `title`, y la barra lateral y los
+   * atajos del Panel ya usan este mismo rótulo corto: la misma pantalla se llama
+   * igual en los tres sitios.
+   */
+  const renderDestination = (meta: OrdersSectionMeta) => {
+    const Icon = meta.icon;
+    const isActive = section === meta.key;
+    return (
+      <button
+        key={meta.key}
+        type="button"
+        onClick={() => goToSection(meta.key)}
+        aria-current={isActive ? "page" : undefined}
+        data-orders-section={meta.key}
+        title={meta.label}
+        className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 text-theme-sm font-medium transition-colors ${
+          isActive
+            ? "bg-secondary-600 text-white dark:bg-white dark:text-secondary-900"
+            : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+        }`}
+      >
+        <Icon className="h-4 w-4 flex-none" aria-hidden />
+        {meta.shortLabel}
+      </button>
+    );
+  };
+
   return (
     <div data-orders-module className="flex flex-col gap-6">
       {/* ── Navegación del módulo ──────────────────────────────────────────── */}
+      {/*
+       * ⚠️ Un conmutador, no un menú: ocho destinos en el orden declarado. La
+       * separación entre trabajo y contexto es **sólo presentación**, no un
+       * reordenamiento — el orden ya deja los dos destinos de contexto al final.
+       *
+       * ⚠️ El separador es el `border-l` del segundo bloque, **no** un `<span>`
+       * suelto entre los dos: un elemento suelto se queda huérfano al principio
+       * de la línea cuando la fila salta a dos, mientras que el borde viaja con
+       * su bloque.
+       *
+       * ⚠️ Y el bloque de contexto **no** lleva `data-orders-section`: no es un
+       * destino. La guarda lee ese atributo para comprobar los ocho destinos y
+       * su orden, así que un contenedor con el atributo la haría contar nueve.
+       *
+       * ⚠️ Los ocho pills se pintan **iguales**, a propósito. Bajarle el color a
+       * los dos de contexto los dejaría por debajo de 4.5:1 sobre blanco, y un
+       * peso tipográfico distinto en la misma fila se lee como un descuido, no
+       * como jerarquía. La jerarquía la lleva el borde: separa sin restar
+       * legibilidad. Lo que sí baja es el sitio que ocupan (menos relleno), para
+       * que la fila quepa en una línea.
+       */}
       <nav
         aria-label="Secciones de Pedidos"
-        className="flex flex-wrap items-center gap-1.5 border-b border-gray-200 pb-3 dark:border-gray-800"
+        className="flex flex-wrap items-center gap-1 border-b border-gray-200 pb-3 dark:border-gray-800"
       >
-        {ORDERS_SECTION_META.map(meta => {
-          const Icon = meta.icon;
-          const isActive = section === meta.key;
-          return (
-            <button
-              key={meta.key}
-              type="button"
-              onClick={() => goToSection(meta.key)}
-              aria-current={isActive ? "page" : undefined}
-              data-orders-section={meta.key}
-              title={meta.label}
-              className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-2 text-theme-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-secondary-600 text-white dark:bg-white dark:text-secondary-900"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-              }`}
-            >
-              <Icon className="h-4 w-4 flex-none" aria-hidden />
-              {meta.label}
-            </button>
-          );
-        })}
+        {workDestinations.map(renderDestination)}
+
+        {/* Los dos destinos de contexto —de dónde vienen las órdenes, cómo se
+            comporta el flujo— se consultan de vez en cuando, no se visitan a
+            diario: van separados para que no compitan con las seis pantallas
+            donde sí hay una cola esperando. */}
+        <div className="ml-1 flex items-center gap-1 border-l border-gray-200 pl-2 dark:border-gray-800">
+          {contextDestinations.map(renderDestination)}
+        </div>
       </nav>
 
-      {/* ── Sección activa ─────────────────────────────────────────────────── */}
-      {section === "panel" && <OrdersPanelView onNavigate={goToSectionWithPhase} />}
-      {section === "bandeja" && (
-        <OrdersInboxView {...viewProps} initialPhase={initialPhaseFor("bandeja")} />
-      )}
-      {section === "alistamiento" && (
-        <OrdersPreparationView {...viewProps} initialPhase={initialPhaseFor("alistamiento")} />
-      )}
-      {section === "despacho" && (
-        <OrdersDispatchView {...viewProps} initialPhase={initialPhaseFor("despacho")} />
-      )}
-      {section === "programados" && (
-        <OrdersScheduledView {...viewProps} initialPhase={initialPhaseFor("programados")} />
-      )}
-      {section === "historial" && (
-        <OrdersHistoryView {...viewProps} initialPhase={initialPhaseFor("historial")} />
-      )}
-      {section === "canales" && (
-        <ChannelsView onOpenStoreChannels={onOpenStoreChannels ?? (() => {})} />
-      )}
-      {section === "configuracion" && (
-        <OrdersFlowConfigView onOpenStoreSettings={onOpenStoreSettings ?? (() => {})} />
-      )}
-
-      {/* ── Detalle (única instancia, §14) ─────────────────────────────────── */}
-      <OrderDetailDrawer
-        order={openOrder}
-        onClose={() => setOpenOrderId(null)}
-        onReplyToSource={
-          onReplyToSource && openOrderId
-            ? () => onReplyToSource(openOrderId)
-            : undefined
+      {/*
+       * ── La pantalla activa y, a su lado, el detalle ────────────────────────
+       *
+       * ⚠️ Las dos superficies van **lado a lado**, no una encima de la otra, y ése
+       * es el cambio que reordena el módulo entero. El detalle era un modal a
+       * pantalla completa: abrir una orden tapaba la cola, así que el trabajo era
+       * "abrir ficha → leer → actuar → cerrar" repetido una vez por orden, y la
+       * lista —lo único que dice qué queda por hacer— se perdía justo cuando hacía
+       * falta. Anclado a la derecha, la cola sigue delante y la ficha se resuelve
+       * sin soltarla.
+       *
+       * ⚠️ La columna del detalle **sólo existe cuando hay detalle**. Reservar los
+       * 24rem con la columna vacía dejaría un pasillo muerto en mitad de la
+       * pantalla cada vez que no se está mirando una orden, que es la mayor parte
+       * del tiempo.
+       *
+       * ⚠️ Y son 24rem, no más: la lista es lo que se viene a trabajar, y cada
+       * rem que se lleve el panel sale de las columnas de la tabla. Con 26rem, el
+       * Historial —seis columnas— se quedaba con scroll horizontal en cuanto se
+       * abría una orden. El panel, en cambio, se lee igual de bien con 384 px
+       * porque su contenido es de una columna.
+       *
+       * ⚠️ Y en pantallas estrechas la columna del detalle va **primero en el DOM**
+       * (`order-first`), donde no caben las dos lado a lado: apilada debajo de una
+       * tabla de cuarenta filas, la ficha que se acaba de abrir quedaría a dos
+       * pantallas de scroll del sitio donde se pulsó.
+       *
+       * ⚠️ La altura del marco no es decorativa: es lo que hace que el panel
+       * **desplace su cuerpo** en vez de crecer sin fin. `min-h-0` en las capas
+       * intermedias es obligatorio —un flex item con `min-height: auto` se niega a
+       * encogerse por debajo de su contenido, y entonces el `overflow-y-auto` del
+       * cuerpo nunca llegaría a activarse—, y `sticky` mantiene la ficha a la vista
+       * mientras se recorre una cola larga.
+       */}
+      <div
+        className={
+          openOrder
+            ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]"
+            : "grid gap-6"
         }
-        replyUnavailableHint={replyUnavailableHint}
-        onTransition={report}
-      />
+      >
+        <div className="flex min-w-0 flex-col gap-6">
+          {section === "panel" && <OrdersPanelView onNavigate={goToSectionWithPhase} />}
+          {section === "bandeja" && (
+            <OrdersInboxView {...viewProps} initialPhase={initialPhaseFor("bandeja")} />
+          )}
+          {section === "alistamiento" && (
+            <OrdersPreparationView {...viewProps} initialPhase={initialPhaseFor("alistamiento")} />
+          )}
+          {section === "despacho" && (
+            <OrdersDispatchView {...viewProps} initialPhase={initialPhaseFor("despacho")} />
+          )}
+          {section === "programados" && (
+            <OrdersScheduledView {...viewProps} initialPhase={initialPhaseFor("programados")} />
+          )}
+          {section === "historial" && (
+            <OrdersHistoryView {...viewProps} initialPhase={initialPhaseFor("historial")} />
+          )}
+          {section === "canales" && (
+            <ChannelsView onOpenStoreChannels={onOpenStoreChannels ?? (() => {})} />
+          )}
+          {section === "configuracion" && (
+            <OrdersFlowConfigView onOpenStoreSettings={onOpenStoreSettings ?? (() => {})} />
+          )}
+        </div>
+
+        {/* ── Detalle (única instancia, §14) ─────────────────────────────────── */}
+        {openOrder ? (
+          <div className="order-first flex min-h-0 flex-col xl:order-none xl:sticky xl:top-6 xl:max-h-[calc(100vh-11rem)]">
+            <OrderDetailDrawer
+              order={openOrder}
+              onClose={() => setOpenOrderId(null)}
+              onReplyToSource={
+                onReplyToSource && openOrderId
+                  ? () => onReplyToSource(openOrderId)
+                  : undefined
+              }
+              replyUnavailableHint={replyUnavailableHint}
+              onTransition={report}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

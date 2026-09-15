@@ -2,42 +2,11 @@ import { useMemo, useState } from "react";
 import { MessageSquare } from "lucide-react";
 
 import type { Conversation } from "@/contracts/conversation.contract";
-import { Badge, SearchInput } from "@/elements";
-import { filterConversations } from "../context/ConversationsContext";
+import { Avatar, Dropdown, DropdownItem } from "@/elements";
 import { formatListTimestamp } from "../conversation-time.utils";
-import { CounterpartAvatar } from "../shared/CounterpartAvatar";
 import { cn } from "@/utils";
+import { MoreDotIcon } from "@/icons";
 
-/* ── Lista de conversaciones (panel izquierdo) ───────────────────────────────
- *
- * ── Qué se conserva de la referencia `wacrm-main` ───────────────────────────
- *
- *   · La fila tiene **dos líneas**: arriba nombre + hora, abajo vista previa +
- *     contador de no leídos. Es la densidad correcta: cabe lo justo para decidir
- *     a cuál entrar sin convertir la lista en una tabla.
- *   · La **hora** va arriba, junto al nombre, y no como una tercera línea: es
- *     metadato de la fila, no del mensaje.
- *   · El **no leído** es una píldora rellena, no un punto: el número importa.
- *   · El hilo **activo** se marca con fondo, no con un borde de color suelto.
- *   · `min-height: 0` en el contenedor con scroll: sin él, un hijo flex crece para
- *     caber todo y la lista se desborda sin barra (fue un fallo real del original).
- *
- * ── Qué NO se conserva, a propósito ─────────────────────────────────────────
- *
- *   · Los filtros `open / pending / closed`: son **estados de un CRM** (§10). Un
- *     canal conversacional no tiene embudo; tiene mensajes sin leer, y eso es lo
- *     único que se filtra.
- *   · Los filtros por **etiqueta** y por **empresa**: pertenecen al modelo de
- *     contactos del CRM, que aquí no existe.
- *   · El **punto de estado** por fila: era el estado del pipeline pintado como un
- *     punto de color sin leyenda. Aquí el único indicador es el de no leídos, que
- *     se explica solo.
- *
- * La búsqueda **sí** se conserva tal cual: busca en nombre, teléfono y último
- * mensaje, que es exactamente lo que se ve en cada fila.
- * ─────────────────────────────────────────────────────────────────────────── */
-
-/** Los filtros de la bandeja operativa de atención. */
 const FILTERS = [
   { key: "all", label: "Todas" },
   { key: "pending", label: "Por atender" },
@@ -62,6 +31,7 @@ export function ConversationList({
 }: ConversationListProps) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<ConversationFilter>("all");
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -98,20 +68,83 @@ export function ConversationList({
   return (
     <div
       data-conversation-list
-      className="flex h-full w-full min-h-0 flex-col border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 lg:w-[350px] lg:flex-none lg:border-r"
+      className="flex h-full w-full min-h-0 flex-col border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02] lg:w-[360px] lg:flex-none lg:border-r"
     >
-      {/* ── Búsqueda y filtros ─────────────────────────────────────────────── */}
-      <div className="flex-none space-y-2.5 border-b border-gray-200 p-3.5 dark:border-gray-800">
-        <SearchInput
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar chat, teléfono o asesor..."
-          aria-label="Buscar conversación"
-          data-conversation-search
-          intent="conversations.list.search"
-        />
+      {/* ── Encabezado estilo Elements ChatHeaderTitle ──────────────────────── */}
+      <div className="flex-none p-4 pb-3 sm:px-5 sm:pt-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-gray-800 text-theme-xl dark:text-white/90 sm:text-2xl flex items-center gap-2">
+              Chats
+              <span className="text-xs font-normal text-gray-400 dark:text-gray-500">
+                ({conversations.length})
+              </span>
+            </h3>
+          </div>
+          <div className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setIsHeaderMenuOpen(prev => !prev)}
+              aria-label="Opciones de chat"
+              className="p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <MoreDotIcon className="size-5" />
+            </button>
+            <Dropdown isOpen={isHeaderMenuOpen} onClose={() => setIsHeaderMenuOpen(false)} className="w-44 p-1.5">
+              <DropdownItem
+                onItemClick={() => {
+                  setFilter("all");
+                  setIsHeaderMenuOpen(false);
+                }}
+                className="rounded-lg text-theme-xs font-medium"
+              >
+                Ver todas las conversaciones
+              </DropdownItem>
+              <DropdownItem
+                onItemClick={() => {
+                  setFilter("unread");
+                  setIsHeaderMenuOpen(false);
+                }}
+                className="rounded-lg text-theme-xs font-medium"
+              >
+                Filtrar no leídas
+              </DropdownItem>
+            </Dropdown>
+          </div>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar conversaciones">
+        {/* ── Buscador estilo Elements ─────────────────────────────────────── */}
+        <div className="relative mt-3.5 w-full">
+          <span className="absolute -translate-y-1/2 left-3.5 top-1/2 text-gray-400 pointer-events-none">
+            <svg
+              className="fill-gray-400 dark:fill-gray-500"
+              width="18"
+              height="18"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M3.04199 9.37381C3.04199 5.87712 5.87735 3.04218 9.37533 3.04218C12.8733 3.04218 15.7087 5.87712 15.7087 9.37381C15.7087 12.8705 12.8733 15.7055 9.37533 15.7055C5.87735 15.7055 3.04199 12.8705 3.04199 9.37381ZM9.37533 1.54218C5.04926 1.54218 1.54199 5.04835 1.54199 9.37381C1.54199 13.6993 5.04926 17.2055 9.37533 17.2055C11.2676 17.2055 13.0032 16.5346 14.3572 15.4178L17.1773 18.2381C17.4702 18.531 17.945 18.5311 18.2379 18.2382C18.5308 17.9453 18.5309 17.4704 18.238 17.1775L15.4182 14.3575C16.5367 13.0035 17.2087 11.2671 17.2087 9.37381C17.2087 5.04835 13.7014 1.54218 9.37533 1.54218Z"
+                fill=""
+              />
+            </svg>
+          </span>
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search..."
+            aria-label="Buscar conversación"
+            data-conversation-search
+            className="h-10 w-full rounded-lg border border-gray-300 bg-transparent py-2 pl-10 pr-3 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900/80 dark:text-white/90 dark:placeholder:text-gray-500 dark:focus:border-brand-500"
+          />
+        </div>
+
+        {/* ── Filtros rápidos de atención ─────────────────────────────────── */}
+        <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar conversaciones">
           {FILTERS.map(option => {
             const isActive = filter === option.key;
             const count = counts[option.key];
@@ -124,14 +157,14 @@ export function ConversationList({
                 data-conversation-filter={option.key}
                 data-conversation-filter-count={count}
                 className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-theme-xs font-semibold transition-all",
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-all",
                   isActive
-                    ? "bg-[#190088] text-white shadow-xs dark:bg-white dark:text-[#190088]"
-                    : "text-gray-600 hover:bg-[#EFE6D3]/40 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5"
+                    ? "bg-brand-500 text-white shadow-theme-xs"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
                 )}
               >
                 {option.label}
-                <span className={cn("tabular-nums text-[11px]", isActive ? "opacity-95 font-bold" : "opacity-60")}>
+                <span className={cn("tabular-nums text-[10px]", isActive ? "opacity-95 font-bold" : "opacity-60")}>
                   {count}
                 </span>
               </button>
@@ -140,17 +173,17 @@ export function ConversationList({
         </div>
       </div>
 
-      {/* ── Filas de conversación ───────────────────────────────────────────── */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      {/* ── Filas de conversación (Elements ChatList) ───────────────────────── */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 sm:px-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-12" role="status">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-[#FF3F1A]" />
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500" />
             <span className="sr-only">Cargando conversaciones</span>
           </div>
         ) : visible.length === 0 ? (
           <ConversationListEmpty hasQuery={query.trim().length > 0} hasFilter={filter !== "all"} />
         ) : (
-          <ul className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800/60" data-conversation-rows>
+          <ul className="flex flex-col gap-1 py-1" data-conversation-rows>
             {visible.map(conversation => (
               <li key={conversation.id}>
                 <ConversationItem
@@ -167,7 +200,7 @@ export function ConversationList({
   );
 }
 
-/* ── Fila de Conversación Necto Style ──────────────────────────────────────── */
+/* ── Fila de Conversación Elements Style ───────────────────────────────────── */
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -179,23 +212,11 @@ function ConversationItem({ conversation, isActive, onSelect }: ConversationItem
   const { counterpart, lastMessagePreview, lastMessageAt, unreadCount, attentionStatus = "pending", assignedTo } = conversation;
   const hasUnread = unreadCount > 0;
 
-  const statusConfig = {
-    pending: {
-      label: "Por atender",
-      badgeClass: "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/30 dark:bg-[#FF3F1A]/20 dark:text-[#FF3F1A]",
-      dotClass: "bg-[#FF3F1A]",
-    },
-    in_progress: {
-      label: "En atención",
-      badgeClass: "bg-[#190088]/10 text-[#190088] border-[#190088]/20 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF] dark:border-[#97D6DF]/30",
-      dotClass: "bg-[#190088] dark:bg-[#97D6DF]",
-    },
-    resolved: {
-      label: "Resuelta",
-      badgeClass: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
-      dotClass: "bg-gray-400",
-    },
-  }[attentionStatus];
+  const statusVariant = attentionStatus === "resolved" 
+    ? "offline" 
+    : attentionStatus === "in_progress" 
+    ? "busy" 
+    : "online";
 
   return (
     <button
@@ -205,27 +226,27 @@ function ConversationItem({ conversation, isActive, onSelect }: ConversationItem
       data-conversation-row={conversation.id}
       data-conversation-row-unread={hasUnread ? "true" : "false"}
       className={cn(
-        "flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left transition-all border-l-3",
+        "flex w-full cursor-pointer items-center gap-3 rounded-xl p-3 text-left transition-all",
         isActive
-          ? "border-[#FF3F1A] bg-[#EFE6D3]/25 dark:border-[#FF3F1A] dark:bg-white/[0.05]"
-          : "border-transparent hover:bg-[#EFE6D3]/15 dark:hover:bg-white/[0.02]"
+          ? "bg-brand-500/[0.08] dark:bg-white/[0.08] ring-1 ring-brand-500/20 shadow-theme-xs"
+          : "hover:bg-gray-100 dark:hover:bg-white/[0.03]"
       )}
     >
-      {/* Avatar con presencia online */}
-      <div className="relative flex-none">
-        <CounterpartAvatar initials={counterpart.initials} size={42} tone="brand" />
-        <span
-          className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-[1.5px] border-white bg-[#97D6DF] dark:border-gray-900 shadow-xs"
-          aria-hidden="true"
-        />
-      </div>
+      {/* Avatar oficial de Elements con indicador de presencia */}
+      <Avatar
+        size="large"
+        src={counterpart.avatar}
+        initials={counterpart.initials}
+        status={statusVariant}
+        alt={counterpart.name}
+      />
 
       <div className="min-w-0 flex-1">
-        {/* Fila 1: Nombre + Hora */}
-        <div className="flex items-baseline justify-between gap-1.5">
+        {/* Línea 1: Nombre + Hora relativa */}
+        <div className="flex items-center justify-between gap-1.5">
           <span
             className={cn(
-              "truncate text-theme-sm text-gray-900 dark:text-white",
+              "truncate text-theme-sm text-gray-800 dark:text-white/90",
               hasUnread ? "font-bold" : "font-semibold"
             )}
           >
@@ -233,52 +254,39 @@ function ConversationItem({ conversation, isActive, onSelect }: ConversationItem
           </span>
           <span
             className={cn(
-              "flex-none text-[11px] tabular-nums",
-              hasUnread ? "font-bold text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
+              "flex-none text-theme-xs tabular-nums",
+              hasUnread ? "font-bold text-brand-500" : "text-gray-400 dark:text-gray-500"
             )}
           >
             {formatListTimestamp(lastMessageAt)}
           </span>
         </div>
 
-        {/* Fila 2: Snippet + Badge No Leídos */}
+        {/* Línea 2: Role o Snippet + Badge No Leídos */}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p
             className={cn(
               "truncate text-theme-xs",
-              hasUnread ? "font-semibold text-gray-800 dark:text-gray-200" : "text-gray-500 dark:text-gray-400"
+              hasUnread ? "font-medium text-gray-800 dark:text-white/90" : "text-gray-500 dark:text-gray-400"
             )}
           >
-            {lastMessagePreview}
+            {counterpart.role || lastMessagePreview}
           </p>
           {hasUnread && (
             <span data-conversation-unread-badge={unreadCount} className="inline-flex flex-none">
-              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[11px] font-bold text-white shadow-xs">
+              <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-theme-xs">
                 {unreadCount}
               </span>
             </span>
           )}
         </div>
 
-        {/* Fila 3: Metadatos operativos (Estado de atención + Agente asignado) */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium leading-none",
-              statusConfig.badgeClass
-            )}
-          >
-            <span className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dotClass)} />
-            {statusConfig.label}
-          </span>
-
-          {assignedTo ? (
-            <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
-              <span className="truncate max-w-[90px]">👤 {assignedTo.name}</span>
-            </span>
-          ) : (
-            <span className="text-gray-400 dark:text-gray-500 italic">
-              Sin asignar
+        {/* Línea 3: Rol / Operador asignado */}
+        <div className="mt-1 flex items-center justify-between gap-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+          <span className="truncate">{counterpart.phone}</span>
+          {assignedTo && (
+            <span className="truncate text-brand-600 dark:text-brand-400 font-medium">
+              {assignedTo.name}
             </span>
           )}
         </div>
@@ -289,26 +297,21 @@ function ConversationItem({ conversation, isActive, onSelect }: ConversationItem
 
 /* ── Estados vacíos ────────────────────────────────────────────────────────── */
 
-/**
- * ⚠️ El vacío **dice por qué** está vacío. "No hay conversaciones" cuando el
- * operador acaba de buscar algo es una respuesta equivocada a la pregunta que
- * hizo: buscó y no encontró, que no es lo mismo que no tener ninguna.
- */
 function ConversationListEmpty({ hasQuery, hasFilter }: { hasQuery: boolean; hasFilter: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center">
-      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500">
-        <MessageSquare className="h-5 w-5" aria-hidden />
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-white/5 dark:text-gray-400">
+        <MessageSquare className="h-6 w-6" aria-hidden />
       </span>
-      <p className="text-theme-sm font-medium text-gray-600 dark:text-gray-300">
+      <p className="text-theme-sm font-semibold text-gray-700 dark:text-gray-200">
         {hasQuery ? "Sin resultados" : hasFilter ? "Nada sin leer" : "Sin conversaciones"}
       </p>
-      <p className="text-theme-xs text-gray-400 dark:text-gray-500">
+      <p className="text-theme-xs text-gray-400 dark:text-gray-500 max-w-xs">
         {hasQuery
           ? "Ninguna conversación coincide con la búsqueda."
           : hasFilter
           ? "Todas las conversaciones están al día."
-          : "Aquí aparecerán las conversaciones de WhatsApp de esta sede."}
+          : "Aquí aparecerán los mensajes y chats entrantes de esta sede."}
       </p>
     </div>
   );

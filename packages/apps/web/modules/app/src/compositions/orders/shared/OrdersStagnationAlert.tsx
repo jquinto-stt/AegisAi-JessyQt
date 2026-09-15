@@ -60,7 +60,12 @@ export function OrdersStagnationAlert({
   return (
     // ⚠️ El `Alert` del catálogo no reenvía props nativas, así que el ancla va en
     // un contenedor propio. Es el mismo recurso que usa el chip de estado.
-    <div data-orders-stagnation={orders.length}>
+    //
+    // ⚠️ Y el contenedor cede el ancho cuando hay un segundo aviso al lado —en
+    // Programados conviven éste y el de vencidas—: dos franjas a todo lo ancho
+    // apiladas empujaban la tabla más de cien píxeles hacia abajo. En fila, cada
+    // una ocupa la mitad y el conjunto pesa la mitad.
+    <div data-orders-stagnation={orders.length} className="lg:min-w-0 lg:flex-1">
       <Alert
         variant="warning"
         title={
@@ -68,7 +73,13 @@ export function OrdersStagnationAlert({
             ? "1 orden lleva más de " + formatDuration(thresholdMinutes) + " sin moverse"
             : `${orders.length} órdenes llevan más de ${formatDuration(thresholdMinutes)} sin moverse`
         }
-        message={`${scopeLabel}: ${list}. La más antigua lleva ${formatDuration(longest)} en su estado actual.`}
+        /**
+         * ⚠️ Una sola línea. Antes decía "…La más antigua lleva 50 min en su estado
+         * actual.", y ese segundo dato ya está en la columna «Tiempo» de la fila,
+         * junto al chip «Demorada»: repetirlo aquí engordaba el aviso sin añadir
+         * nada que no se pudiera leer tres centímetros más abajo.
+         */
+        message={`${scopeLabel}: ${list} · la más antigua, ${formatDuration(longest)}`}
       />
     </div>
   );

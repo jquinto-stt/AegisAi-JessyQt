@@ -26,7 +26,7 @@
  */
 
 import type { Order, OrderStatus } from "@/contracts/order.contract";
-import { isOrderOpen, modeUsesTransit } from "@/contracts/order.contract";
+import { isOrderOpen, modeUsesTransit, TERMINAL_ORDER_STATUSES } from "@/contracts/order.contract";
 import type { BadgeColor } from "@/elements";
 import { minutesBetween, minutesSince } from "../order-presentation.utils";
 
@@ -763,3 +763,103 @@ export function todayRhythm(orders: readonly Order[]): TodayRhythm {
  * pantalla necesita una cifra, la necesita **accionable y con su lista debajo**,
  * y eso es lo que el Panel ya ofrece.
  */
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 7. El pulso del día — datos para el gráfico del Panel (§5)
+ * ════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * ⚠️ Por qué esto vive aquí y no en la vista.
+ *
+ * La sección de analítica que hubo en el Panel **inventaba** sus series: cuando
+ * una cifra salía cero, el gráfico pintaba `|| 14` canales de WhatsApp, un
+ * `factor = 1.4` de fin de semana y un `+12.5%` escrito a mano. Sobre un panel de
+ * pedidos eso no es un detalle estético: es afirmar cosas falsas sobre el negocio
+ * de alguien, y en una pantalla que se usa para decidir.
+ *
+ * La regla que lo impide no es «no usar rellenos» —eso se olvida—, sino que **la
+ * vista no calcula**: recibe cifras ya medidas y sólo decide cómo se ven. Si un
+ * gráfico necesita un dato que no está aquí, el dato no existe.
+ *
+ * ⚠️ Aquí vivieron además `stageFlow` y `channelFlow`, los datos de las dos barras
+ * del Panel —"Flujo por estado" y "Reparto por canal"—. Se retiraron con ellas, y
+ * el motivo está escrito entero en la cabecera de `OrdersPanelView`: no respondían
+ * a ninguna pregunta operativa. Lo que **no** se perdió: el reparto por canal se
+ * sigue midiendo con `orderCountsBySource` (§18), que es lo que Canales de origen
+ * usa, y el flujo por estado se sigue leyendo en las tarjetas de destino del Panel,
+ * que dan la misma cifra con el nombre de la pantalla que la resuelve.
+ */
+
+/** Una hora del día con lo que entró y lo que se cerró. */
+export interface HourBucket {
+  /** Hora local, 0–23. */
+  hour: number;
+  entered: number;
+  closed: number;
+}
+
+/**
+ * El pulso del día, hora a hora.
+ *
+ * ⚠️ Sólo se devuelve el tramo **con actividad**, más una hora de aire a cada
+ * lado. Pintar las 24 horas cuando la tienda abre de 8 a 20 deja 18 columnas
+ * vacías que aplastan las 6 que sí dicen algo: eso no es un gráfico, es una
+ * cuadrícula. Si no hubo actividad, devuelve `[]` y la vista lo dice con una
+ * frase en vez de dibujar un eje sin datos.
+ *
+ * ⚠️ `closed` cuenta **todos** los cierres (completadas, canceladas y devueltas),
+ * mientras que `todayRhythm` separa completadas de canceladas porque son las dos
+ * que el operador acciona. Un día con una devolución tendrá `closed` mayor que
+ * `completed + cancelled`, y eso es correcto: devolver también cierra la orden.
+ */
+export function todayHours(orders: readonly Order[]): HourBucket[] {
+  const buckets = new Map<number, HourBucket>();
+  const ensure = (hour: number): HourBucket => {
+    let bucket = buckets.get(hour);
+    if (!bucket) {
+      bucket = { hour, entered: 0, closed: 0 };
+      buckets.set(hour, bucket);
+    }
+    return bucket;
+  };
+
+  for (const order of orders) {
+    if (isToday(order.createdAt)) {
+      ensure(new Date(order.createdAt).getHours()).entered += 1;
+    }
+
+    /**
+     * ⚠️ Sólo cuenta lo que **cerró**, no lo que se tocó.
+     *
+     * Sin el filtro por estado terminal, cualquier orden cuya última entrada del
+     * historial fuera de hoy entraba en "Se cerraron" —incluidas las que siguen
+     * en alistamiento y sólo recibieron una nota—. Con la semilla de demostración
+     * eso daba **20 cierres sobre 3 órdenes realmente cerradas**: el gráfico
+     * afirmaba un día de trabajo que no había ocurrido, y lo hacía con la misma
+     * pinta de dato medido que el resto del panel.
+     *
+     * `todayRhythm` no tenía el problema porque filtra por estado *después* de
+     * mirar la fecha; aquí la fecha y el estado tienen que cumplirse a la vez.
+     */
+    const last = order.history[order.history.length - 1];
+    if (
+      last !== undefined &&
+      TERMINAL_ORDER_STATUSES.includes(order.status) &&
+      isToday(last.at)
+    ) {
+      ensure(new Date(last.at).getHours()).closed += 1;
+    }
+  }
+
+  if (buckets.size === 0) return [];
+
+  const hours = [...buckets.keys()].sort((a, b) => a - b);
+  const from = Math.max(0, hours[0] - 1);
+  const to = Math.min(23, hours[hours.length - 1] + 1);
+
+  const window: HourBucket[] = [];
+  for (let hour = from; hour <= to; hour += 1) {
+    window.push(buckets.get(hour) ?? { hour, entered: 0, closed: 0 });
+  }
+  return window;
+}

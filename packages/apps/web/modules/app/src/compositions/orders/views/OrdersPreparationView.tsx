@@ -42,9 +42,11 @@ import { OrdersScreenHeader } from "../shared/OrdersScreenHeader";
 import { OrdersStagnationAlert } from "../shared/OrdersStagnationAlert";
 import { orderIdentityLine } from "../shared/OrderCells";
 import type { OperationalViewProps } from "../shared/operational-view";
+import { OrdersQueueWalk } from "../shared/OrdersQueueWalk";
 import { useOperationalScreen } from "../shared/use-operational-screen";
 import type { OperationalPhase } from "../shared/use-operational-screen";
 import { useOrderSort } from "../shared/use-order-sort";
+import { useOrderWalk } from "../shared/use-order-walk";
 import {
   URGENCY_LABELS,
   URGENCY_TO_BADGE,
@@ -198,6 +200,7 @@ function WorkCard({ order, thresholdMinutes, formatMoney, onOpen }: WorkCardProp
 
 export function OrdersPreparationView({
   onOpenOrder,
+  openOrderId,
   onSeeMovement,
   movement,
   onDismissMovement,
@@ -209,7 +212,6 @@ export function OrdersPreparationView({
     channelOptions,
     modeOptions,
     visible,
-    phaseCounts,
     stagnant,
     stagnationMinutes,
     alertOnStagnation,
@@ -233,11 +235,23 @@ export function OrdersPreparationView({
 
   const sorted = useMemo(() => apply(visible), [apply, visible]);
 
+  /**
+   * Recorrer la mesa con el teclado (§14).
+   *
+   * ⚠️ Los ids salen de `sorted` —la mesa **tal como se ve**— y no del universo:
+   * avanzar lleva a la tarjeta siguiente de lo que el operador tiene delante, no a
+   * una orden que su propio filtro dejó fuera. En una rejilla de tres columnas el
+   * recorrido es el de lectura: izquierda a derecha y de arriba abajo.
+   */
+  const walkIds = useMemo(() => sorted.map(order => order.id), [sorted]);
+  const walk = useOrderWalk(walkIds, openOrderId, onOpenOrder);
+
   return (
     <div data-orders-preparation className="flex flex-col gap-5">
+      {/* ⚠️ Sin descripción: el título y las tarjetas —que ya traen sus líneas y
+          su urgencia— dicen qué se opera aquí. */}
       <OrdersScreenHeader
         title="Mesa de alistamiento"
-        description="Las órdenes que se están preparando ahora mismo, con sus líneas a la vista. Lo que más lleva esperando aparece primero."
         alert={
           // ⚠️ El interruptor «Avisar de órdenes demoradas» (§17) se respeta aquí.
           // Antes se guardaba y ninguna pantalla lo leía: un ajuste sin consumidor
@@ -275,7 +289,14 @@ export function OrdersPreparationView({
 
       <OrdersMovementNotice movement={movement} onDismiss={onDismissMovement} onSee={onSeeMovement} />
 
+      {/* ⚠️ Se pinta sólo con el detalle abierto y más de una orden delante: la
+          pieza se autodescarta cuando la orden abierta no está en esta mesa. */}
+      <OrdersQueueWalk {...walk} />
+
       {sorted.length === 0 ? (
+        // ⚠️ `description` sólo cuando el vacío es real: con un filtro puesto, el
+        // título ya dice que nada coincide y el botón ya dice qué hacer, así que
+        // una frase más repetiría el botón con otras palabras (§15).
         <OrdersEmptyState
           icon={ClipboardList}
           anchor="alistamiento"
@@ -283,9 +304,7 @@ export function OrdersPreparationView({
             filters.isFiltered ? "Ninguna orden coincide con los filtros" : "Nada en alistamiento"
           }
           description={
-            filters.isFiltered
-              ? "Ninguna de las órdenes en preparación entra en el filtro elegido. Prueba a limpiarlo."
-              : "No hay trabajo en curso. Cuando se confirme una orden y empiece a prepararse, aparecerá aquí con sus líneas."
+            filters.isFiltered ? undefined : "Nada en preparación ahora mismo."
           }
           action={
             filters.isFiltered ? (
@@ -313,13 +332,6 @@ export function OrdersPreparationView({
             />
           ))}
         </div>
-      )}
-
-      {sorted.length > 0 && (
-        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-          {phaseCounts.late ?? 0} demoradas de {visible.length} en la mesa · umbral de{" "}
-          {formatDuration(stagnationMinutes)}
-        </p>
       )}
     </div>
   );

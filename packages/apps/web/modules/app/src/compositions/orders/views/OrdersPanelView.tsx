@@ -37,9 +37,8 @@
  *    pulsarla la pantalla destino abre con esa fase ya puesta. Sólo aparece lo que
  *    tiene cifra: cuatro ceros no son información, son ruido con forma de dato.
  *
- * 2. **Cómo está repartido** — la forma de la operación, en barras donde **cada
- *    tramo es una puerta**: el flujo por estado y el reparto por canal de origen.
- *    Debajo, los siete destinos con su cifra viva, que son el atajo de siempre.
+ * 2. **Tus pantallas** — los siete destinos con su cifra viva. Es el atajo de
+ *    siempre, y está entero: cada tarjeta es una puerta.
  *
  * 3. **Cómo va el día** — el pulso horario y sus tres totales. Va al final y en un
  *    solo bloque discreto: es contexto, no trabajo.
@@ -47,6 +46,27 @@
  * ⚠️ La jerarquía es la del trabajo, no la del interés: lo que hay que hacer hoy
  * arriba, la navegación en medio, el contexto abajo. Un panel que empieza por el
  * ritmo del día obliga a leer tres bloques antes de saber si hay algo urgente.
+ *
+ * ── Las dos barras que se retiraron, y por qué ──────────────────────────────
+ *
+ * ⚠️ Aquí hubo dos barras apiladas —"Flujo por estado" y "Reparto por canal"—,
+ * cada tramo con su cifra y su puerta. Se retiraron porque **no respondían a
+ * ninguna pregunta que el operador se haga delante de esta pantalla**: el reparto
+ * por canal es un dato comercial, no operativo —quien alista y despacha no decide
+ * nada por saber que el 40 % entró por WhatsApp—, y el flujo por estado ya está
+ * dicho entero, y mejor, por las tarjetas de destino que van justo debajo: los
+ * mismos números, con el nombre de la pantalla que los resuelve.
+ *
+ * ⚠️ Y no era sólo redundancia: eran **dos franjas de colores apiladas en la parte
+ * alta**, entre lo urgente y los atajos, ocupando el sitio más valioso de la
+ * pantalla para repetir en forma de gráfico lo que el bloque siguiente dice en
+ * forma de puerta. Un elemento que se puede quitar sin perder ni una decisión
+ * posible es ruido, por muy bien dibujado que esté.
+ *
+ * ⚠️ Lo que **no** se perdió con ellas: la cifra de Canales sigue en su tarjeta de
+ * destino, que es donde se acciona. Si un tramo del flujo llevaba a una fase
+ * concreta de una pantalla, esa fase se sigue alcanzando desde la propia pantalla,
+ * que es donde el operador ya está mirando las órdenes.
  *
  * ── Por qué ya no hay conmutador de vistas ─────────────────────────────────
  *
@@ -62,6 +82,32 @@
  * pedidos eso no es un detalle de acabado: es afirmar cosas falsas sobre el
  * negocio de alguien. Todo lo que se pinta aquí sale de `order-operations`, medido
  * sobre las órdenes reales de la sede.
+ *
+ * ── La cuarta capa que volvió, y por qué se fue otra vez ────────────────────
+ *
+ * ⚠️ Aquí apareció un cuarto bloque —"Métricas de Rendimiento y Análisis",
+ * "inteligencia de datos TailAdmin"— que se anunciaba en pantalla con el nombre de
+ * la plantilla de referencia y pintaba cuatro tarjetas, un medidor radial de
+ * objetivo y tres gráficos con **conmutadores propios** (periodo, pestaña de
+ * gráfico, eje de barras). Se retiró, y el motivo no es de acabado:
+ *
+ *   1. **Sus cifras eran inventadas.** `counts.whatsapp || 14`, `counts.pos || 24`,
+ *      `counts.web || 18`, `counts.delivery || 11`, un `factor = 1.5` de fin de
+ *      semana, un `(idx % 3) + 1` de relleno horario y un `Math.min(100, …)` como
+ *      "objetivo alcanzado". Y leía `order.source.channel`, un campo que **no
+ *      existe** en el contrato, así que el respaldo se aplicaba siempre: cuatro
+ *      canales sumando 63 sobre una sede con 25 órdenes. Afirmar eso sobre el
+ *      negocio de alguien es peor que no pintarlo.
+ *   2. **Duplicaba lo que ya estaba al lado.** El reparto por canal es la barra de
+ *      `flow-channel` y el pulso del día es la tarjeta de abajo; el bloque los
+ *      repetía con otra forma y otras cifras, y dos respuestas distintas a la misma
+ *      pregunta dejan al operador sin saber cuál creer.
+ *   3. **No se podía pulsar.** Tres conmutadores para elegir qué mirar, y ninguna
+ *      de sus cifras llevaba a su lista: era exactamente el cuadro de mando que
+ *      esta pantalla existe para no ser.
+ *
+ * El nombre de la plantilla de referencia tampoco es información para el tendero:
+ * se comprueba en la guarda que no vuelva a anunciarse.
  */
 
 import { useMemo } from "react";
@@ -76,16 +122,13 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { OPEN_ORDER_STATUSES } from "@/contracts/order.contract";
 import { Card } from "@/elements";
 import { cn } from "@/utils";
 import { useOrders } from "../context/OrdersContext";
 import { useFlowSettings } from "../operational/flow-settings";
 import {
   attentionItems,
-  channelFlow,
   destinationFigures,
-  stageFlow,
   todayHours,
   todayRhythm,
 } from "../operational/order-operations";
@@ -94,16 +137,10 @@ import type {
   DashboardTarget,
   TodayRhythm,
 } from "../operational/order-operations";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../order-status.constants";
-import type { OrderStatusTone } from "../order-status.constants";
-import { formatSourceLabel } from "../order-presentation.utils";
 import { ORDERS_SECTION_META } from "../shared/orders-destinations";
 import type { OrdersSectionMeta } from "../shared/orders-destinations";
 import { OrdersScreenHeader } from "../shared/OrdersScreenHeader";
-import { OrdersFlowBar } from "../shared/OrdersFlowBar";
-import type { FlowBarSegment } from "../shared/OrdersFlowBar";
 import { OrdersDayRhythmChart } from "../shared/OrdersDayRhythmChart";
-import { OrdersAnalyticsSection } from "./OrdersAnalyticsSection";
 
 export interface OrdersPanelViewProps {
   /**
@@ -132,48 +169,6 @@ const ATTENTION_ICONS: Record<AttentionKey, LucideIcon> = {
   unsentReady: PackageCheck,
   overdueScheduled: CalendarClock,
 };
-
-/* ── Color de cada tramo de las barras ─────────────────────────────────────── */
-
-/**
- * El relleno de un tramo del flujo, leído de su **tono de estado**.
- *
- * ⚠️ No hay una tabla de colores por estado: hay una de tonos —que ya existe en
- * `order-status.constants.ts` y es la que decide qué significa cada estado— y esto
- * sólo la traduce a clases. Escribir aquí `PENDING: gris, CONFIRMED: azul…` sería
- * el segundo sitio donde se decide qué significa un estado, y el día que cambie el
- * primero este se quedaría atrás sin que nadie lo note.
- *
- * ⚠️ Todos los rellenos son de paso 400–500 porque el rótulo va en blanco encima.
- */
-const TONE_FILL: Record<OrderStatusTone, string> = {
-  neutral: "bg-gray-400 dark:bg-gray-500",
-  accent: "bg-secondary-500 dark:bg-secondary-400",
-  progress: "bg-brand-500 dark:bg-brand-400",
-  success: "bg-success-500 dark:bg-success-400",
-  danger: "bg-error-500 dark:bg-error-400",
-};
-
-/**
- * El relleno de cada canal de origen.
- *
- * ⚠️ El vocabulario de canales es **abierto** (§18), así que esto es un mapa con
- * respaldo y no un `Record` cerrado: un canal que no esté aquí se pinta en gris y
- * sigue funcionando. Lo que **no** se hace es inventarle un color fijo por
- * posición en la lista —eso haría que el color de un canal cambiara al aparecer
- * otro, y el operador leería un cambio de negocio donde sólo hubo un reordenamiento.
- *
- * ⚠️ WhatsApp lleva su propio verde a propósito: es el color con el que el
- * operador ya reconoce el canal en el resto de la aplicación.
- */
-const CHANNEL_FILL: Record<string, string> = {
-  WHATSAPP: "bg-whatsapp-500 dark:bg-whatsapp-600",
-  POS: "bg-secondary-500 dark:bg-secondary-400",
-  WEB: "bg-brand-500 dark:bg-brand-400",
-  COUNTER: "bg-gray-500 dark:bg-gray-400",
-  API: "bg-success-500 dark:bg-success-400",
-};
-const CHANNEL_FILL_FALLBACK = "bg-gray-400 dark:bg-gray-500";
 
 /* ── Lectura del día ───────────────────────────────────────────────────────── */
 
@@ -224,11 +219,6 @@ function dayReading({ entered, completed, cancelled }: TodayRhythm): string {
   return readings.join(" ");
 }
 
-/** `3` → `3 órdenes`. Para las etiquetas accesibles de los tramos. */
-function pluralOrders(count: number): string {
-  return `${count} ${count === 1 ? "orden" : "órdenes"}`;
-}
-
 /* ── Piezas de la pantalla ─────────────────────────────────────────────────── */
 
 /** Rótulo de bloque, con una pista opcional que explica el criterio de lectura. */
@@ -255,18 +245,6 @@ function PanelBlock({
       </div>
       {children}
     </section>
-  );
-}
-
-/** Rótulo de una barra: qué es y cuánto suma. */
-function BarHeading({ title, note }: { title: string; note: string }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-      <h4 className="text-theme-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        {title}
-      </h4>
-      <span className="text-theme-xs text-gray-400 dark:text-gray-500">{note}</span>
-    </div>
   );
 }
 
@@ -304,14 +282,6 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
   const rhythm = useMemo(() => todayRhythm(orders), [orders]);
   const hours = useMemo(() => todayHours(orders), [orders]);
 
-  const stages = useMemo(() => stageFlow(orders), [orders]);
-  const sources = useMemo(() => channelFlow(orders, formatSourceLabel), [orders]);
-
-  const liveCount = useMemo(
-    () => orders.filter(order => !["COMPLETED", "CANCELLED", "RETURNED"].includes(order.status)).length,
-    [orders]
-  );
-
   /**
    * Los destinos que ofrece el bloque de atajos: todos menos este mismo panel.
    *
@@ -332,51 +302,10 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
   const labelOf = (key: DashboardTarget): string =>
     ORDERS_SECTION_META.find(meta => meta.key === key)?.shortLabel ?? key;
 
-  const fullLabelOf = (key: DashboardTarget): string =>
-    ORDERS_SECTION_META.find(meta => meta.key === key)?.label ?? key;
-
   const allClear =
     orders.length === 0
       ? "Todavía no hay órdenes. Cuando entren, aquí aparecerán las que se estén pasando de tiempo."
       : "Ninguna orden se está pasando de tiempo: todo va dentro del ritmo que fijaste.";
-
-  /* ── Los tramos de las dos barras ───────────────────────────────────────── */
-
-  /**
-   * ⚠️ La barra de flujo muestra **sólo el trabajo vivo**, no el ciclo completo.
-   *
-   * Se probó con los nueve estados y el resultado era peor por dos razones a la
-   * vez. La primera es de espacio: nueve tramos obligan a que los pequeños caigan
-   * por debajo del ancho mínimo legible y el rótulo se corta —"Devuelta" quedaba en
-   * "Dev…"—, con lo que el gráfico deja de poder leerse justo en los tramos que
-   * menos órdenes tienen. La segunda es de significado: una orden completada o
-   * cancelada **no está en el flujo**, es el resultado del día, y mezclarla con las
-   * que sí esperan trabajo hace que la barra responda a dos preguntas distintas.
-   *
-   * Lo cerrado ya se cuenta donde corresponde: en los atajos (Historial) y en el
-   * bloque del día, que separa completadas de canceladas.
-   */
-  const liveStages = stages.filter(
-    segment => OPEN_ORDER_STATUSES.includes(segment.status) && segment.count > 0
-  );
-
-  const stageSegments: FlowBarSegment[] = liveStages.map(segment => ({
-    key: segment.status,
-    label: ORDER_STATUS_LABELS[segment.status],
-    count: segment.count,
-    fill: TONE_FILL[ORDER_STATUS_TONES[segment.status]],
-    ariaLabel: `${ORDER_STATUS_LABELS[segment.status]}: ${pluralOrders(
-      segment.count
-    )}. Abrir ${fullLabelOf(segment.target)}.`,
-  }));
-
-  const sourceSegments: FlowBarSegment[] = sources.map(segment => ({
-    key: segment.key,
-    label: segment.label,
-    count: segment.count,
-    fill: CHANNEL_FILL[segment.key] ?? CHANNEL_FILL_FALLBACK,
-    ariaLabel: `${segment.label}: ${pluralOrders(segment.count)}. Abrir Canales de origen.`,
-  }));
 
   /* ── Los tres totales del día, cada uno con su puerta ───────────────────── */
 
@@ -412,10 +341,13 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
 
   return (
     <div data-orders-panel className="flex flex-col gap-8">
-      <OrdersScreenHeader
-        title="Panel de pedidos"
-        description="Todo lo que tu operación tiene entre manos, y la puerta a donde se resuelve. Cada tramo de los gráficos abre la lista que representa."
-      />
+      {/*
+       * ⚠️ Sin descripción. «Panel de pedidos» ya dice qué es, y el propio
+       * contenido —tres bloques titulados y siete puertas con cifra— dice cómo se
+       * usa. Una frase que explique la pantalla compite con el título y empuja
+       * hacia abajo lo único que aquí se viene a mirar.
+       */}
+      <OrdersScreenHeader title="Panel de pedidos" />
 
       {/* ── 1. Lo urgente ──────────────────────────────────────────────────── */}
       <PanelBlock
@@ -523,8 +455,14 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
         )}
       </PanelBlock>
 
-      {/* ── 2. Tus pantallas operativas (lo que el operador viene a buscar) ─ */}
-      <PanelBlock anchor="destinations" title="Tus pantallas" hint="cada una con lo que tiene en cola">
+      {/* ── 2. A dónde ir: los siete atajos, con su cifra viva ─────────────── */}
+      <PanelBlock anchor="destinations" title="Tus pantallas" hint="cada atajo lleva a su lista">
+        {/*
+         * ⚠️ Aquí vivieron dos barras apiladas —"Flujo por estado" y "Reparto por
+         * canal"— y se retiraron. Lo que queda es el atajo entero: cada tarjeta es
+         * una puerta a su pantalla con la cifra viva al lado. El porqué está largo
+         * arriba, en la cabecera del archivo.
+         */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {destinations.map((meta, index) => {
             const Icon = meta.icon;
@@ -612,18 +550,6 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
             {dayReading(rhythm)}
           </p>
         </Card>
-      </PanelBlock>
-
-      {/* ── 4. Dashboard Inteligente TailAdmin (12 columnas) ───────────────── */}
-      <PanelBlock
-        anchor="analytics"
-        title="Métricas de Rendimiento y Análisis"
-        hint="inteligencia de datos TailAdmin"
-      >
-        <OrdersAnalyticsSection
-          orders={orders}
-          onNavigateToSection={(key) => onNavigate(key as DashboardTarget)}
-        />
       </PanelBlock>
     </div>
   );

@@ -72,14 +72,15 @@ import type { OrdersTableColumn } from "../shared/OrdersTable";
 import {
   OrderElapsedCell,
   OrderItemsCell,
-  OrderModeCell,
   OrderTotalCell,
   orderIdentityLine,
 } from "../shared/OrderCells";
 import type { OperationalViewProps } from "../shared/operational-view";
+import { OrdersQueueWalk } from "../shared/OrdersQueueWalk";
 import { useOperationalScreen } from "../shared/use-operational-screen";
 import type { OperationalPhase } from "../shared/use-operational-screen";
 import { useOrderSort } from "../shared/use-order-sort";
+import { useOrderWalk } from "../shared/use-order-walk";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../order-status.constants";
 import { ORDER_STATUS_DOT_CLASSES } from "../order-presentation.utils";
 import { INBOX_STATUSES, inboxOrders, minutesInCurrentState } from "../operational/order-operations";
@@ -162,10 +163,23 @@ const BY_WAIT_DESC = (a: Order, b: Order) =>
 
 /* ── Columnas ──────────────────────────────────────────────────────────────── */
 
+/**
+ * Las columnas del triaje, y por qué son cinco y no seis.
+ *
+ * ⚠️ Se retiró **«Entrega»**. En la Bandeja la pregunta es una —¿asumo esta
+ * orden?— y la modalidad no la responde: nadie decide *cómo* se entrega antes de
+ * aceptarla, y cuando importa de verdad (reparto con transporte) la pantalla que
+ * la trabaja es Despacho, que ya agrupa por modalidad. El detalle la enseña en su
+ * propia sección. Una columna que sólo se confirma, y que se paga con el ancho de
+ * la lista, es ruido (§12).
+ *
+ * ⚠️ Y se conserva **«Carga»**: el número de ítems sí es señal de triaje —una
+ * orden de veinte líneas no se valida como una de dos— y es un dato que no se
+ * quiere descubrir abriendo el detalle.
+ */
 const INBOX_COLUMNS: OrdersTableColumn[] = [
   { key: "status", label: "Estado" },
   { key: "source", label: "Origen" },
-  { key: "mode", label: "Entrega" },
   { key: "items", label: "Carga", sortable: true },
   { key: "elapsed", label: "Espera", sortable: true },
   { key: "total", label: "Total", sortable: true, align: "right" },
@@ -175,6 +189,7 @@ const INBOX_COLUMNS: OrdersTableColumn[] = [
 
 export function OrdersInboxView({
   onOpenOrder,
+  openOrderId,
   onSeeMovement,
   movement,
   onDismissMovement,
@@ -187,7 +202,6 @@ export function OrdersInboxView({
     modeOptions,
     visible,
     universe,
-    phaseCounts,
     inboxWaitMinutes,
     alertOnStagnation,
     formatMoneyFor,
@@ -208,6 +222,16 @@ export function OrdersInboxView({
   const [view, setView] = useState<InboxViewMode>("list");
 
   const sorted = useMemo(() => apply(visible), [apply, visible]);
+
+  /**
+   * Recorrer la cola con el teclado (§14).
+   *
+   * ⚠️ Los ids salen de `sorted` —la lista **tal como se ve**, ya filtrada y
+   * ordenada— y no del universo: avanzar tiene que llevar a la fila siguiente de lo
+   * que el operador tiene delante, no a una orden que su propio filtro dejó fuera.
+   */
+  const walkIds = useMemo(() => sorted.map(order => order.id), [sorted]);
+  const walk = useOrderWalk(walkIds, openOrderId, onOpenOrder);
 
   /**
    * Las órdenes que llevan demasiado esperando **en el triaje**.
@@ -254,9 +278,11 @@ export function OrdersInboxView({
 
   return (
     <div data-orders-inbox className="flex flex-col gap-5">
+      {/* ⚠️ Sin descripción: «Bandeja de entrada» ya dice qué es, y la barra de
+          fases de abajo dice qué se puede acotar. Una frase que explique la
+          pantalla compite con el título y empuja la lista hacia abajo. */}
       <OrdersScreenHeader
         title="Bandeja de entrada"
-        description="Todo lo que ha entrado y aún no se ha empezado a trabajar. Aquí se valida el pedido y se asume —o no— el compromiso operativo."
         aside={
           <SegmentedControl<InboxViewMode>
             intent="orders.inbox.view"
@@ -305,9 +331,18 @@ export function OrdersInboxView({
           franja, el único rastro sería que ya no está. */}
       <OrdersMovementNotice movement={movement} onDismiss={onDismissMovement} onSee={onSeeMovement} />
 
+      {/* ⚠️ Se pinta sólo con el detalle abierto y más de una orden delante: la
+          pieza se autodescarta cuando la orden abierta no está en esta lista. */}
+      <OrdersQueueWalk {...walk} />
+
       {sorted.length === 0 ? (
         // ⚠️ El estado vacío es el mismo para las dos vistas. Un tablero con dos
         // columnas vacías diría "no hay nada" dos veces y peor.
+        //
+        // ⚠️ Y `description` sólo se pasa cuando el vacío es **real**: con un
+        // filtro puesto, el título ya dice que nada coincide y el botón ya dice
+        // qué hacer, así que la frase que había aquí repetía el botón con otras
+        // palabras (§15).
         <OrdersEmptyState
           icon={Inbox}
           anchor="bandeja"
@@ -316,8 +351,8 @@ export function OrdersInboxView({
           }
           description={
             filters.isFiltered
-              ? "Prueba con otro canal, otra modalidad o sin búsqueda: puede que la orden esté en una fase distinta."
-              : "No hay órdenes esperando validación. Todo lo que entró ya tiene un compromiso operativo asumido."
+              ? undefined
+              : "Todo lo que entró ya tiene un compromiso asumido."
           }
           action={
             filters.isFiltered ? (
@@ -361,8 +396,6 @@ export function OrdersInboxView({
                 return <OrderStatusChip status={order.status} />;
               case "source":
                 return <OrderSourceCell source={order.source} />;
-              case "mode":
-                return <OrderModeCell order={order} />;
               case "items":
                 return <OrderItemsCell order={order} />;
               case "elapsed":
@@ -373,13 +406,6 @@ export function OrdersInboxView({
                 return null;
             }
           }}
-          footer={
-            <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-              {phaseCounts.pending ?? 0} por validar · {phaseCounts.confirmed ?? 0} confirmadas
-              {" · "}
-              {phaseCounts.waiting ?? 0} con más de {inboxWaitMinutes} min sin moverse
-            </p>
-          }
         />
       )}
     </div>

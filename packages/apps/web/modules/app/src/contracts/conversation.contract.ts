@@ -134,6 +134,10 @@ export interface ConversationCounterpart {
    * hay iniciales que sacar; aquí ya viene resuelto.
    */
   initials: string;
+  /** URL opcional de avatar de perfil. */
+  avatar?: string;
+  /** Rol o subtítulo del contacto (ej. Cliente frecuente, Diseñadora). */
+  role?: string;
 }
 
 /** Estado operativo de atención en la bandeja. */

@@ -166,15 +166,20 @@ export function ConversationsModule({
       {/* ── Encabezado del canal + secciones ───────────────────────────────── */}
       <div className="flex flex-col gap-3 border-b border-gray-200 pb-3 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]">
+          <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
             <Radio className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-theme-xl font-bold text-[#190088] dark:text-white">
-              WhatsApp
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="truncate text-theme-xl font-bold text-gray-900 dark:text-white">
+                Mensajes Necto
+              </h1>
+              <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400 border border-brand-500/20">
+                Canal Activo
+              </span>
+            </div>
             <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
-              Bandeja de atención de conversaciones de {activeBusiness.name}
+              Centro de mensajería y atención conversacional de {activeBusiness.name}
             </p>
           </div>
         </div>
@@ -195,8 +200,8 @@ export function ConversationsModule({
                 data-conversation-section={def.key}
                 className={`inline-flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1.5 text-theme-sm font-semibold transition-all ${
                   isActive
-                    ? "bg-[#190088] text-white shadow-xs dark:bg-white dark:text-[#190088]"
-                    : "text-gray-600 hover:bg-[#EFE6D3]/40 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                    ? "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
                 }`}
               >
                 <Icon className="h-4 w-4 flex-none" aria-hidden />
@@ -226,30 +231,34 @@ export function ConversationsModule({
          * `dark:bg-gray-900` propio: el `dark:bg-white/[0.03]` del catálogo dejaría
          * la superficie casi transparente bajo el hilo.
          */
-        <Card className="flex h-[clamp(520px,calc(100vh-220px),820px)] min-h-0 overflow-hidden rounded-2xl border border-gray-200 bg-white p-0 sm:p-0 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-          <div className={openConversationId ? "hidden lg:flex" : "flex w-full"}>
-            <ConversationList
-              conversations={conversations}
-              activeConversationId={openConversationId}
-              onSelect={handleSelect}
-              isLoading={isLoading}
-            />
+        <div className="flex h-[clamp(560px,calc(100vh-210px),860px)] min-h-0 gap-5 xl:gap-6">
+          <div className={openConversationId ? "hidden lg:flex lg:w-[340px] xl:w-[380px] lg:flex-none" : "flex w-full lg:w-[340px] xl:w-[380px] lg:flex-none"}>
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <ConversationList
+                conversations={conversations}
+                activeConversationId={openConversationId}
+                onSelect={handleSelect}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
 
           <div className={openConversationId ? "flex min-w-0 flex-1" : "hidden lg:flex lg:min-w-0 lg:flex-1"}>
-            <ConversationView
-              conversation={activeThread?.conversation ?? null}
-              counterpart={activeThread?.conversation.counterpart ?? null}
-              messages={activeThread?.messages ?? []}
-              conversationId={activeThread?.conversation.id ?? null}
-              onSend={handleSend}
-              onBack={() => setOpenConversationId(null)}
-              onUpdateStatus={updateAttentionStatus}
-              onAssignOperator={assignOperator}
-              onUpdateNotes={updateNotes}
-            />
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <ConversationView
+                conversation={activeThread?.conversation ?? null}
+                counterpart={activeThread?.conversation.counterpart ?? null}
+                messages={activeThread?.messages ?? []}
+                conversationId={activeThread?.conversation.id ?? null}
+                onSend={handleSend}
+                onBack={() => setOpenConversationId(null)}
+                onUpdateStatus={updateAttentionStatus}
+                onAssignOperator={assignOperator}
+                onUpdateNotes={updateNotes}
+              />
+            </div>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

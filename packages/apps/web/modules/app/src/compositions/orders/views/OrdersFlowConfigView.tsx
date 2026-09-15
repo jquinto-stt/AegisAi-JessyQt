@@ -226,10 +226,16 @@ export function OrdersFlowConfigView({ onOpenStoreSettings }: OrdersFlowConfigVi
       <SettingsCard>
         {/* ── Umbrales (§12, §16, §17) ────────────────────────────────────────
             El corazón de la pantalla: los dos números que deciden qué se marca
-            como atrasado, y que leen las cinco pantallas de trabajo. */}
+            como atrasado, y que leen las cinco pantallas de trabajo.
+
+            ⚠️ La descripción del grupo dice **sólo el alcance** —"se aplica a
+            todas las pantallas a la vez"—. Decía además qué es un umbral
+            ("Cuánto puede esperar una orden antes de que la operación la marque
+            como atrasada"), y eso ya lo dicen el propio título del grupo y la
+            descripción de cada fila: era la misma frase tres veces (§8). */}
         <SettingsSection
           title="Ritmo de trabajo"
-          description="Cuánto puede esperar una orden antes de que la operación la marque como atrasada. Se aplica a todas las pantallas a la vez."
+          description="Se aplica a todas las pantallas de trabajo a la vez."
         >
           <SettingsRowGroup>
             <SettingsRow
@@ -298,11 +304,14 @@ export function OrdersFlowConfigView({ onOpenStoreSettings }: OrdersFlowConfigVi
           </SettingsRowGroup>
         </SettingsSection>
 
-        {/* ── Avisos ───────────────────────────────────────────────────────── */}
-        <SettingsSection
-          title="Avisos en pantalla"
-          description="Qué señala la operación por su cuenta. Son avisos de lectura: no cambian el ciclo de vida de ninguna orden."
-        >
+        {/* ── Avisos ─────────────────────────────────────────────────────────
+            ⚠️ El grupo ya **no lleva descripción**. Decía "Qué señala la
+            operación por su cuenta. Son avisos de lectura: no cambian el ciclo de
+            vida de ninguna orden." — la primera frase repetía el título, y la
+            segunda explicaba la propia interfaz (§8). Que un interruptor llamado
+            "Mostrar una alerta al principio de la pantalla…" no toca datos lo dice
+            su propia descripción de fila, que sigue ahí. */}
+        <SettingsSection title="Avisos en pantalla">
           <SettingsRowGroup>
             <SettingsRow
               icon={Eye}
