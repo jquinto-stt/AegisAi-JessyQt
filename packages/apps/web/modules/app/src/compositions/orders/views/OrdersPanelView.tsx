@@ -50,15 +50,18 @@
  * bloque y pasa a ser la decoración que esta pantalla vino a retirar.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   AlarmClock,
   ArrowRight,
+  BarChart3,
   CalendarClock,
   CheckCircle2,
   Hourglass,
+  LayoutDashboard,
   PackageCheck,
+  Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -79,10 +82,12 @@ import type {
 import { ORDERS_SECTION_META } from "../shared/orders-destinations";
 import type { OrdersSectionMeta } from "../shared/orders-destinations";
 import { OrdersScreenHeader } from "../shared/OrdersScreenHeader";
+import { OrdersAnalyticsSection } from "./OrdersAnalyticsSection";
 
 export interface OrdersPanelViewProps {
   /**
    * Lleva a un destino, opcionalmente con una fase ya elegida.
+
    *
    * ⚠️ La fase viaja con el destino porque es lo que hace accionable la cifra: si
    * el operador pulsa "3 demoradas" y aterriza en Alistamiento sin el filtro
@@ -227,6 +232,8 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
       ? "Todavía no hay órdenes. Cuando entren, aquí aparecerán las que se estén pasando de tiempo."
       : "Ninguna orden se está pasando de tiempo: todo va dentro del ritmo que fijaste.";
 
+  const [viewMode, setViewMode] = useState<"all" | "analytics" | "operational">("all");
+
   const rhythmFigures = [
     { key: "entered", label: "Entraron", value: String(rhythm.entered) },
     { key: "completed", label: "Completadas", value: String(rhythm.completed) },
@@ -234,18 +241,80 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
   ];
 
   return (
-    <div data-orders-panel className="flex flex-col gap-6">
+    <div data-orders-panel className="flex flex-col gap-8">
       <OrdersScreenHeader
         title="Panel de pedidos"
-        description="El estado del día y un atajo a cada pantalla. Todo lo que hay aquí se puede pulsar: cada cifra lleva a la lista que la resuelve."
+        description="Centro de control y análisis de pedidos: monitoreo de colas, volumen transaccional y métricas de rendimiento en tiempo real."
+        aside={
+          <div className="inline-flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <button
+              type="button"
+              onClick={() => setViewMode("all")}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                viewMode === "all"
+                  ? "bg-brand-50 text-brand-700 shadow-xs dark:bg-brand-500/15 dark:text-brand-300"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              )}
+            >
+              Completo
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("analytics")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                viewMode === "analytics"
+                  ? "bg-brand-50 text-brand-700 shadow-xs dark:bg-brand-500/15 dark:text-brand-300"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              )}
+            >
+              <BarChart3 className="size-3.5" />
+              Métricas y Gráficos
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("operational")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                viewMode === "operational"
+                  ? "bg-brand-50 text-brand-700 shadow-xs dark:bg-brand-500/15 dark:text-brand-300"
+                  : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+              )}
+            >
+              <LayoutDashboard className="size-3.5" />
+              Operativo
+            </button>
+          </div>
+        }
       />
 
-      {/* ── 1. Lo urgente ──────────────────────────────────────────────────── */}
-      <PanelBlock
-        anchor="attention"
-        title="Requiere tu atención"
-        hint={pending.length > 0 ? "por orden de trabajo" : undefined}
-      >
+      {/* ── Vista Analítica TailAdmin ──────────────────────────────────────── */}
+      {(viewMode === "all" || viewMode === "analytics") && (
+        <OrdersAnalyticsSection
+          orders={orders}
+          onNavigateToSection={(section) => onNavigate(section as DashboardTarget)}
+        />
+      )}
+
+      {/* ── Vista Operativa (Colas, Atajos y Ritmo) ───────────────────────── */}
+      {(viewMode === "all" || viewMode === "operational") && (
+        <div className="flex flex-col gap-6 pt-2">
+          {viewMode === "all" && (
+            <div className="flex items-center gap-3 border-t border-gray-200/80 pt-6 dark:border-gray-800">
+              <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Flujo Operativo de Pedidos
+              </h3>
+              <div className="h-px flex-1 bg-gray-200/80 dark:bg-gray-800" />
+            </div>
+          )}
+
+          {/* ── 1. Lo urgente ──────────────────────────────────────────────────── */}
+          <PanelBlock
+            anchor="attention"
+            title="Requiere tu atención"
+            hint={pending.length > 0 ? "por orden de trabajo" : undefined}
+          >
         {pending.length === 0 ? (
           // ⚠️ El caso "nada" se dice una vez y en voz baja. Repetir las cuatro
           // condiciones con un cero cada una sería el mismo error que estas filas
@@ -404,6 +473,8 @@ export function OrdersPanelView({ onNavigate }: OrdersPanelViewProps) {
           </p>
         </Card>
       </PanelBlock>
+        </div>
+      )}
     </div>
   );
 }
