@@ -71,10 +71,10 @@ export function MessageBubble({
           // lo que une visualmente el bloque.
           "rounded-2xl",
           isOutgoing
-            ? cn("bg-whatsapp-100 text-gray-900 dark:bg-whatsapp-900 dark:text-white", 
+            ? cn("bg-[#190088] text-white shadow-xs dark:bg-[#190088]", 
                  isBurstEnd ? "rounded-br-md" : "rounded-br-2xl",
                  isBurstStart ? "rounded-tr-2xl" : "rounded-tr-md")
-            : cn("bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white/90",
+            : cn("bg-white text-gray-900 border border-gray-200/70 shadow-2xs dark:bg-gray-800 dark:text-white dark:border-gray-700/60",
                  isBurstEnd ? "rounded-bl-md" : "rounded-bl-2xl",
                  isBurstStart ? "rounded-tl-2xl" : "rounded-tl-md")
         )}
@@ -91,7 +91,7 @@ export function MessageBubble({
           <span
             className={cn(
               "text-[11px] tabular-nums",
-              isOutgoing ? "text-whatsapp-800/70 dark:text-white/60" : "text-gray-500 dark:text-gray-400"
+              isOutgoing ? "text-[#97D6DF] font-medium" : "text-gray-400 dark:text-gray-500"
             )}
           >
             {formatTime(message.sentAt)}
@@ -99,7 +99,7 @@ export function MessageBubble({
           {/* ⚠️ Sólo el saliente lleva estado. Un entrante ya está entregado por
               definición y pintarle un check afirmaría algo que nadie confirmó. */}
           {isOutgoing && (
-            <MessageStatusIcon status={message.status} onDark={false} />
+            <MessageStatusIcon status={message.status} onDark={true} />
           )}
         </div>
       </div>

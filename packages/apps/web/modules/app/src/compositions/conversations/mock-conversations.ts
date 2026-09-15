@@ -166,6 +166,13 @@ function initialsOf(name: string, phone: string): string {
   return digits.slice(-2) || "?";
 }
 
+/** Operadores de atención disponibles en la sede. */
+export const STORE_OPERATORS = [
+  { id: "op_1", name: "Jessy Quinto" },
+  { id: "op_2", name: "Carlos Mendoza" },
+  { id: "op_3", name: "Valentina Gómez" },
+];
+
 /**
  * Construye los hilos de demostración de una sede.
  *
@@ -178,10 +185,28 @@ export function buildDemoConversations(businessId: string): Conversation[] {
   const seed = hashSeed(businessId);
   const now = Date.now();
 
+  const statuses: ("pending" | "in_progress" | "resolved")[] = [
+    "pending",
+    "in_progress",
+    "pending",
+    "resolved",
+    "resolved",
+  ];
+
+  const notesList = [
+    "Cliente consultando disponibilidad de agenda para el día jueves.",
+    "Interesado en productos del catálogo. Pendiente cotización de envío a domicilio.",
+    "Consulta horarios de atención en domingo y recogida directa.",
+    "Gestión de factura de compra #1042. Caso atendido.",
+    "Orientación sobre ubicación física de la sede y parqueadero.",
+  ];
+
   return SCRIPTS.map((script, index) => {
     const candidateIndex = (seed + index) % CANDIDATES.length;
     const candidate = CANDIDATES[candidateIndex];
     const lastMinutesAgo = Math.min(...script.lines.map(l => l.minutesAgo));
+    const status = statuses[index % statuses.length];
+    const assignedOp = status === "pending" && index % 2 === 0 ? null : STORE_OPERATORS[index % STORE_OPERATORS.length];
 
     return {
       id: `conv_${businessId}_${index}`,
@@ -195,6 +220,9 @@ export function buildDemoConversations(businessId: string): Conversation[] {
       lastMessagePreview: script.preview,
       lastMessageAt: new Date(now - lastMinutesAgo * 60_000).toISOString(),
       unreadCount: script.unread,
+      attentionStatus: status,
+      assignedTo: assignedOp,
+      notes: notesList[index % notesList.length],
     };
   }).sort((a, b) => (a.lastMessageAt < b.lastMessageAt ? 1 : -1));
 }

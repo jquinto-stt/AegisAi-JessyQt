@@ -136,6 +136,16 @@ export interface ConversationCounterpart {
   initials: string;
 }
 
+/** Estado operativo de atención en la bandeja. */
+export type AttentionStatus = "pending" | "in_progress" | "resolved";
+
+/** Operador o persona encargada de atender la conversación en la sede. */
+export interface AssignedOperator {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 /**
  * Un hilo de WhatsApp de **una** sede.
  *
@@ -158,6 +168,12 @@ export interface Conversation {
   lastMessageAt: string;
   /** Mensajes entrantes sin leer. Cero es el caso normal, no una excepción. */
   unreadCount: number;
+  /** Estado de atención operativa. */
+  attentionStatus?: AttentionStatus;
+  /** Persona responsable asignada para la atención. */
+  assignedTo?: AssignedOperator | null;
+  /** Notas operativas o contexto de atención. */
+  notes?: string;
 }
 
 /** Una conversación con sus mensajes, ya cargada. Es lo que pinta la ventana. */

@@ -35,8 +35,8 @@ export function CounterpartAvatar({
 }: CounterpartAvatarProps) {
   const toneClasses =
     tone === "brand"
-      ? "bg-whatsapp-50 text-whatsapp-800 dark:bg-whatsapp-900 dark:text-whatsapp-100"
-      : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300";
+      ? "bg-[#EFE6D3] text-[#190088] dark:bg-white/10 dark:text-[#97D6DF] font-bold"
+      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200 font-semibold";
 
   return (
     <span

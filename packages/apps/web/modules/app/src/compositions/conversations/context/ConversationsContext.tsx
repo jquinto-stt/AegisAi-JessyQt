@@ -39,11 +39,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from "react";
 
 import type {
+  AssignedOperator,
+  AttentionStatus,
   Conversation,
   ConversationEventPayload,
   ConversationMessage,
   ConversationMessageContent,
-  ConversationThread,
 } from "@/contracts/conversation.contract";
 import { eventBus } from "@/infrastructure/eventBus";
 import {
@@ -92,6 +93,12 @@ export interface ConversationsContextValue {
    * pueden divergir de los mensajes reales.
    */
   sendMessage: (conversationId: string, content: ConversationMessageContent) => ConversationMessage | null;
+  /** Actualiza el estado de atención operativa del hilo. */
+  updateAttentionStatus: (conversationId: string, status: AttentionStatus) => void;
+  /** Asigna o desasigna un operador responsable de la atención. */
+  assignOperator: (conversationId: string, operator: AssignedOperator | null) => void;
+  /** Actualiza las notas operativas del hilo. */
+  updateNotes: (conversationId: string, notes: string) => void;
 }
 
 const ConversationsContext = createContext<ConversationsContextValue | undefined>(undefined);
@@ -285,14 +292,67 @@ export function ConversationsProvider({ businessId, children }: ConversationsPro
     [conversations, businessId, publish]
   );
 
+  const updateAttentionStatus = useCallback<ConversationsContextValue["updateAttentionStatus"]>(
+    (conversationId, status) => {
+      setConversations(prev => {
+        const next = prev.map(c => (c.id === conversationId ? { ...c, attentionStatus: status } : c));
+        mergeWithOtherStores<Conversation>(CONVERSATIONS_KEY, next, r => r.businessId === businessId);
+        return next;
+      });
+    },
+    [businessId]
+  );
+
+  const assignOperator = useCallback<ConversationsContextValue["assignOperator"]>(
+    (conversationId, operator) => {
+      setConversations(prev => {
+        const next = prev.map(c => (c.id === conversationId ? { ...c, assignedTo: operator } : c));
+        mergeWithOtherStores<Conversation>(CONVERSATIONS_KEY, next, r => r.businessId === businessId);
+        return next;
+      });
+    },
+    [businessId]
+  );
+
+  const updateNotes = useCallback<ConversationsContextValue["updateNotes"]>(
+    (conversationId, notes) => {
+      setConversations(prev => {
+        const next = prev.map(c => (c.id === conversationId ? { ...c, notes } : c));
+        mergeWithOtherStores<Conversation>(CONVERSATIONS_KEY, next, r => r.businessId === businessId);
+        return next;
+      });
+    },
+    [businessId]
+  );
+
   const unreadTotal = useMemo(
     () => conversations.reduce((sum, c) => sum + c.unreadCount, 0),
     [conversations]
   );
 
   const value = useMemo<ConversationsContextValue>(
-    () => ({ conversations, messages, isLoading, unreadTotal, openThread, sendMessage }),
-    [conversations, messages, isLoading, unreadTotal, openThread, sendMessage]
+    () => ({
+      conversations,
+      messages,
+      isLoading,
+      unreadTotal,
+      openThread,
+      sendMessage,
+      updateAttentionStatus,
+      assignOperator,
+      updateNotes,
+    }),
+    [
+      conversations,
+      messages,
+      isLoading,
+      unreadTotal,
+      openThread,
+      sendMessage,
+      updateAttentionStatus,
+      assignOperator,
+      updateNotes,
+    ]
   );
 
   return <ConversationsContext.Provider value={value}>{children}</ConversationsContext.Provider>;

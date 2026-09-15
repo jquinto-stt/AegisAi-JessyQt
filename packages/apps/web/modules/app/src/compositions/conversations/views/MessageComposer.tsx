@@ -152,10 +152,10 @@ export function MessageComposer({ onSend, conversationId }: MessageComposerProps
           onChange={e => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
-          placeholder="Escribe un mensaje…"
+          placeholder="Escribe un mensaje de respuesta..."
           aria-label="Escribe un mensaje"
           data-composer-input
-          className="max-h-[132px] min-h-10 flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-800/60 dark:text-white/90 dark:placeholder:text-gray-500"
+          className="max-h-[132px] min-h-10 flex-1 resize-none rounded-xl border border-gray-200 bg-[#ECECEC]/30 px-4 py-2.5 text-theme-sm text-gray-800 placeholder:text-gray-400 focus:border-[#FF3F1A] focus:bg-white focus:outline-none dark:border-gray-800 dark:bg-gray-800/60 dark:text-white/90 dark:placeholder:text-gray-500"
         />
 
         <button
@@ -166,9 +166,9 @@ export function MessageComposer({ onSend, conversationId }: MessageComposerProps
           title="Enviar mensaje"
           data-composer-send
           className={cn(
-            "flex h-10 w-10 flex-none items-center justify-center rounded-full transition-colors",
+            "flex h-10 w-10 flex-none items-center justify-center rounded-xl transition-all",
             canSend
-              ? "cursor-pointer bg-whatsapp-700 text-white hover:bg-whatsapp-800"
+              ? "cursor-pointer bg-[#FF3F1A] text-white hover:bg-[#e03310] shadow-sm active:scale-95"
               : "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
           )}
         >

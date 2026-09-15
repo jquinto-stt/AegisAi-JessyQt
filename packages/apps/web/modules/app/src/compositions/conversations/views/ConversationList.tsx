@@ -37,9 +37,11 @@ import { cn } from "@/utils";
  * mensaje, que es exactamente lo que se ve en cada fila.
  * ─────────────────────────────────────────────────────────────────────────── */
 
-/** Los filtros del canal: todo o sólo lo que espera respuesta. */
+/** Los filtros de la bandeja operativa de atención. */
 const FILTERS = [
   { key: "all", label: "Todas" },
+  { key: "pending", label: "Por atender" },
+  { key: "in_progress", label: "En atención" },
   { key: "unread", label: "Sin leer" },
 ] as const;
 
@@ -62,31 +64,48 @@ export function ConversationList({
   const [filter, setFilter] = useState<ConversationFilter>("all");
 
   const visible = useMemo(() => {
-    const searched = filterConversations(conversations, query);
-    return filter === "unread" ? searched.filter(c => c.unreadCount > 0) : searched;
+    const q = query.trim().toLowerCase();
+    const searched = q
+      ? conversations.filter(c => {
+          const name = c.counterpart.name.toLowerCase();
+          const phone = c.counterpart.phone.toLowerCase();
+          const preview = c.lastMessagePreview.toLowerCase();
+          const op = c.assignedTo?.name.toLowerCase() || "";
+          return name.includes(q) || phone.includes(q) || preview.includes(q) || op.includes(q);
+        })
+      : [...conversations];
+
+    switch (filter) {
+      case "unread":
+        return searched.filter(c => c.unreadCount > 0);
+      case "pending":
+        return searched.filter(c => c.attentionStatus === "pending");
+      case "in_progress":
+        return searched.filter(c => c.attentionStatus === "in_progress");
+      case "all":
+      default:
+        return searched;
+    }
   }, [conversations, query, filter]);
 
-  const unreadTotal = useMemo(
-    () => conversations.reduce((sum, c) => sum + c.unreadCount, 0),
-    [conversations]
-  );
+  const counts = useMemo(() => ({
+    all: conversations.length,
+    pending: conversations.filter(c => c.attentionStatus === "pending").length,
+    in_progress: conversations.filter(c => c.attentionStatus === "in_progress").length,
+    unread: conversations.reduce((sum, c) => sum + (c.unreadCount > 0 ? 1 : 0), 0),
+  }), [conversations]);
 
   return (
     <div
       data-conversation-list
-      className="flex h-full min-h-0 flex-col border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 lg:w-[320px] lg:flex-none lg:border-r"
+      className="flex h-full w-full min-h-0 flex-col border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 lg:w-[350px] lg:flex-none lg:border-r"
     >
       {/* ── Búsqueda y filtros ─────────────────────────────────────────────── */}
-      <div className="flex-none space-y-2.5 border-b border-gray-200 p-3 dark:border-gray-800">
-        {/* ⚠️ `SearchInput` es la extensión local del proyecto, y se elige por una
-            razón dura: reenvía `{...rest}` al `<input>` REAL, que es lo único que
-            satisface a la guarda — le escribe el valor con el setter nativo de
-            `HTMLInputElement.prototype` y dispara `input`. El `Input` del catálogo no
-            reenvía `data-*` y no admite icono a la izquierda: no sirve aquí. */}
+      <div className="flex-none space-y-2.5 border-b border-gray-200 p-3.5 dark:border-gray-800">
         <SearchInput
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar conversación"
+          placeholder="Buscar chat, teléfono o asesor..."
           aria-label="Buscar conversación"
           data-conversation-search
           intent="conversations.list.search"
@@ -95,7 +114,7 @@ export function ConversationList({
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrar conversaciones">
           {FILTERS.map(option => {
             const isActive = filter === option.key;
-            const count = option.key === "unread" ? unreadTotal : conversations.length;
+            const count = counts[option.key];
             return (
               <button
                 key={option.key}
@@ -105,31 +124,33 @@ export function ConversationList({
                 data-conversation-filter={option.key}
                 data-conversation-filter-count={count}
                 className={cn(
-                  "inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-theme-xs font-medium transition-colors",
+                  "inline-flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-theme-xs font-semibold transition-all",
                   isActive
-                    ? "bg-secondary-600 text-white dark:bg-white dark:text-secondary-900"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
+                    ? "bg-[#190088] text-white shadow-xs dark:bg-white dark:text-[#190088]"
+                    : "text-gray-600 hover:bg-[#EFE6D3]/40 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5"
                 )}
               >
                 {option.label}
-                <span className={cn("tabular-nums", isActive ? "opacity-80" : "opacity-60")}>{count}</span>
+                <span className={cn("tabular-nums text-[11px]", isActive ? "opacity-95 font-bold" : "opacity-60")}>
+                  {count}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── Filas ──────────────────────────────────────────────────────────── */}
+      {/* ── Filas de conversación ───────────────────────────────────────────── */}
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-12" role="status">
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-brand-500" />
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-[#FF3F1A]" />
             <span className="sr-only">Cargando conversaciones</span>
           </div>
         ) : visible.length === 0 ? (
-          <ConversationListEmpty hasQuery={query.trim().length > 0} hasFilter={filter === "unread"} />
+          <ConversationListEmpty hasQuery={query.trim().length > 0} hasFilter={filter !== "all"} />
         ) : (
-          <ul className="flex flex-col" data-conversation-rows>
+          <ul className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800/60" data-conversation-rows>
             {visible.map(conversation => (
               <li key={conversation.id}>
                 <ConversationItem
@@ -146,7 +167,7 @@ export function ConversationList({
   );
 }
 
-/* ── Fila ──────────────────────────────────────────────────────────────────── */
+/* ── Fila de Conversación Necto Style ──────────────────────────────────────── */
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -155,8 +176,26 @@ interface ConversationItemProps {
 }
 
 function ConversationItem({ conversation, isActive, onSelect }: ConversationItemProps) {
-  const { counterpart, lastMessagePreview, lastMessageAt, unreadCount } = conversation;
+  const { counterpart, lastMessagePreview, lastMessageAt, unreadCount, attentionStatus = "pending", assignedTo } = conversation;
   const hasUnread = unreadCount > 0;
+
+  const statusConfig = {
+    pending: {
+      label: "Por atender",
+      badgeClass: "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/30 dark:bg-[#FF3F1A]/20 dark:text-[#FF3F1A]",
+      dotClass: "bg-[#FF3F1A]",
+    },
+    in_progress: {
+      label: "En atención",
+      badgeClass: "bg-[#190088]/10 text-[#190088] border-[#190088]/20 dark:bg-[#97D6DF]/15 dark:text-[#97D6DF] dark:border-[#97D6DF]/30",
+      dotClass: "bg-[#190088] dark:bg-[#97D6DF]",
+    },
+    resolved: {
+      label: "Resuelta",
+      badgeClass: "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700",
+      dotClass: "bg-gray-400",
+    },
+  }[attentionStatus];
 
   return (
     <button
@@ -166,57 +205,80 @@ function ConversationItem({ conversation, isActive, onSelect }: ConversationItem
       data-conversation-row={conversation.id}
       data-conversation-row-unread={hasUnread ? "true" : "false"}
       className={cn(
-        "flex w-full cursor-pointer items-start gap-3 px-3 py-3 text-left transition-colors",
+        "flex w-full cursor-pointer items-start gap-3 px-3.5 py-3 text-left transition-all border-l-3",
         isActive
-          ? "bg-gray-100 dark:bg-white/[0.06]"
-          : "hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+          ? "border-[#FF3F1A] bg-[#EFE6D3]/25 dark:border-[#FF3F1A] dark:bg-white/[0.05]"
+          : "border-transparent hover:bg-[#EFE6D3]/15 dark:hover:bg-white/[0.02]"
       )}
     >
-      <CounterpartAvatar initials={counterpart.initials} size={40} />
+      {/* Avatar con presencia online */}
+      <div className="relative flex-none">
+        <CounterpartAvatar initials={counterpart.initials} size={42} tone="brand" />
+        <span
+          className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-[1.5px] border-white bg-[#97D6DF] dark:border-gray-900 shadow-xs"
+          aria-hidden="true"
+        />
+      </div>
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
+        {/* Fila 1: Nombre + Hora */}
+        <div className="flex items-baseline justify-between gap-1.5">
           <span
             className={cn(
-              "truncate text-theme-sm text-gray-800 dark:text-white/90",
-              hasUnread ? "font-semibold" : "font-medium"
+              "truncate text-theme-sm text-gray-900 dark:text-white",
+              hasUnread ? "font-bold" : "font-semibold"
             )}
           >
             {counterpart.name}
           </span>
           <span
             className={cn(
-              "flex-none text-theme-xs tabular-nums",
-              hasUnread ? "font-medium text-brand-500" : "text-gray-400 dark:text-gray-500"
+              "flex-none text-[11px] tabular-nums",
+              hasUnread ? "font-bold text-[#FF3F1A]" : "text-gray-400 dark:text-gray-500"
             )}
           >
             {formatListTimestamp(lastMessageAt)}
           </span>
         </div>
 
+        {/* Fila 2: Snippet + Badge No Leídos */}
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p
             className={cn(
               "truncate text-theme-xs",
-              hasUnread ? "text-gray-700 dark:text-gray-300" : "text-gray-500 dark:text-gray-400"
+              hasUnread ? "font-semibold text-gray-800 dark:text-gray-200" : "text-gray-500 dark:text-gray-400"
             )}
           >
             {lastMessagePreview}
           </p>
           {hasUnread && (
-            /* ⚠️ El `Badge` del catálogo no reenvía `data-*` (lista de props fija, sólo
-               emite `data-intent`): el atributo cuyo valor cuenta la guarda vive en el
-               `<span>` que lo envuelve. */
             <span data-conversation-unread-badge={unreadCount} className="inline-flex flex-none">
-              <Badge
-                color="primary"
-                variant="solid"
-                size="sm"
-                className="h-[18px] min-w-[18px] justify-center px-1 text-[11px] font-semibold leading-none"
-                intent="conversations.list.unread"
-              >
+              <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[11px] font-bold text-white shadow-xs">
                 {unreadCount}
-              </Badge>
+              </span>
+            </span>
+          )}
+        </div>
+
+        {/* Fila 3: Metadatos operativos (Estado de atención + Agente asignado) */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-medium leading-none",
+              statusConfig.badgeClass
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dotClass)} />
+            {statusConfig.label}
+          </span>
+
+          {assignedTo ? (
+            <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
+              <span className="truncate max-w-[90px]">👤 {assignedTo.name}</span>
+            </span>
+          ) : (
+            <span className="text-gray-400 dark:text-gray-500 italic">
+              Sin asignar
             </span>
           )}
         </div>

@@ -7,8 +7,8 @@ import { useAuth } from "@/auth/AuthContext";
 import { CLIENT_ADMIN_ROLE_LABEL } from "@/auth/profile";
 import { useBusiness } from "@/context/BusinessContext";
 import type { NectoModuleKey } from "@/context/BusinessContext";
-import { PlugInIcon, InfoIcon, ArrowRightIcon, UserCircleIcon } from "@/icons";
-import { PanelLeftClose, SlidersHorizontal, ChevronRight, MessageSquare, Bot, Layers, LifeBuoy, LayoutDashboard, ShoppingBag } from "lucide-react";
+import { InfoIcon, ArrowRightIcon, UserCircleIcon } from "@/icons";
+import { PanelLeftClose, SlidersHorizontal, ChevronRight, MessageSquare, Layers, LifeBuoy, LayoutDashboard, ShoppingBag } from "lucide-react";
 import { NectoSidebarWordmark } from "@/compositions/shared/NectoLogo";
 import { ORDERS_SECTION_META } from "@/compositions/orders";
 import type { OrdersSectionKey } from "@/compositions/orders";
@@ -346,26 +346,11 @@ export const StockFlowSidebar = observer(({
             />
             {openSections.conversacional && (
               <ul className="flex flex-col gap-1">
-                {/* ⚠️ WhatsApp es un **destino de la sede**, no un puente a
-                    Ajustes: su chat es una superficie propia del canal. Antes
-                    esta sección sólo tenía dos atajos al modal de configuración
-                    —Canales de entrada y Asistente— y ningún sitio donde
-                    atender las conversaciones. */}
                 <MenuItem
                   icon={<MessageSquare className="w-4 h-4" />}
                   name="WhatsApp"
                   active={activeModule === "whatsapp"}
                   onClick={() => onNavigateModule("whatsapp")}
-                />
-                <MenuItem
-                  icon={<PlugInIcon />}
-                  name="Canales de entrada"
-                  onClick={() => onOpenSettingsModal?.("channels")}
-                />
-                <MenuItem
-                  icon={<Bot className="w-4 h-4" />}
-                  name="Asistente de WhatsApp IA"
-                  onClick={() => onOpenSettingsModal?.("assistant")}
                 />
               </ul>
             )}
