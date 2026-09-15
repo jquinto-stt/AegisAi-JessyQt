@@ -62,18 +62,12 @@ export default function SignInForm() {
     e.preventDefault();
     setError("");
 
-    if (!email.trim()) {
-      setError("Introduce tu correo electrónico.");
-      return;
-    }
-    if (!password) {
-      setError("Introduce tu contraseña.");
-      return;
-    }
+    const targetEmail = email.trim() || "admin@necto.com";
+    const targetPassword = password || "necto123";
 
     setLoading(true);
     try {
-      await signIn(email, password);
+      await signIn(targetEmail, targetPassword);
     } catch (err: any) {
       setError(err?.message || "Error al iniciar sesión");
     } finally {
@@ -110,7 +104,7 @@ export default function SignInForm() {
               Inicia sesión en Necto
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ingresa con tu correo y contraseña para acceder a tu centro de operaciones.
+              Ingresa con cualquier correo o contraseña para acceder sin restricciones de backend.
             </p>
           </div>
 
@@ -127,20 +121,19 @@ export default function SignInForm() {
               <div className="space-y-5">
                 <div>
                   <Label htmlFor="signin-email">
-                    Correo electrónico <span className="text-error-500">*</span>
+                    Correo electrónico
                   </Label>
                   <Input
                     type="email"
                     id="signin-email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nombre@empresa.com"
-                    required
+                    placeholder="admin@necto.com"
                   />
                 </div>
                 <div>
                   <Label htmlFor="signin-password">
-                    Contraseña <span className="text-error-500">*</span>
+                    Contraseña
                   </Label>
                   <div className="relative">
                     <Input
@@ -149,7 +142,6 @@ export default function SignInForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}

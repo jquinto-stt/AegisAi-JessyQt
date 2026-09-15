@@ -20,4 +20,5 @@ vite-dev.log
 # Sondas de depuración sueltas en la raíz (las suites reales viven en scripts/).
 .probe-*.mjs
 .verify-*.mjs
-
+tailadmin-free-tailwind-dashboard-template-main/
+packages/apps/web/modules/app/dist-orders-verify/
