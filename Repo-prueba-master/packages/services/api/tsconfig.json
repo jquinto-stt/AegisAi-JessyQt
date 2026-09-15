@@ -1,0 +1,54 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "paths": {
+      "@res": [
+        "./resources/index"
+      ],
+      "@res/*": [
+        "./resources/*"
+      ],
+      "@module:service": [
+        "./modules/service/src/index"
+      ],
+      "@module:service/*": [
+        "./modules/service/src/*"
+      ],
+      "@sst/platform/*": [
+        "./.sst/platform/src/*"
+      ],
+      "@webiai/sdk.infra/*": [
+        "./.sst/webiai/dist/*"
+      ],
+      "@pulumi/pulumi": [
+        "./.sst/platform/node_modules/@pulumi/pulumi"
+      ],
+      "@pulumi/pulumi/*": [
+        "./.sst/platform/node_modules/@pulumi/pulumi/*"
+      ],
+      "@pulumi/aws": [
+        "./.sst/platform/node_modules/@pulumi/aws"
+      ],
+      "@pulumi/aws/*": [
+        "./.sst/platform/node_modules/@pulumi/aws/*"
+      ]
+    }
+  },
+  "include": [
+    "infra/**/*",
+    "shared/**/*",
+    "resources/**/*",
+    "sst.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".sst",
+    "modules"
+  ]
+}

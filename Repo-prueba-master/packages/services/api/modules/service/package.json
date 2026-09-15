@@ -1,0 +1,15 @@
+{
+  "name": "@stt/repo-prueba.srv.api.service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --enable-source-maps dist/main.js",
+    "dev": "bun --watch src/main.ts",
+    "bundle": "bun build src/main.ts --outdir dist --target node --format esm",
+    "webiai:bundle": "run-s bundle"
+  },
+  "dependencies": {
+    "@stt/repo-prueba.srv.api": "file:../.."
+  }
+}

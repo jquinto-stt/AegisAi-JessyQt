@@ -1,0 +1,10 @@
+{
+  "name": "@stt/repo-prueba.cloud.core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [],
+  "scripts": {
+    "cloud.core": "npm run webiai:dev"
+  }
+}

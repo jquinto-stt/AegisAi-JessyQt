@@ -1,0 +1,35 @@
+{
+  "name": "@stt/repo-prueba",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "bun --watch packages/services/api/modules/service/src/main.ts",
+    "dev:web": "npm run dev --prefix packages/apps/web/modules/app"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "workspaces": [
+    "packages/services/api",
+    "packages/apps/web",
+    "packages/cloud/core"
+  ],
+  "devDependencies": {
+    "@webiai/devlink": "^2.8.1",
+    "@webiai/sdk.cli": "0.23.11",
+    "concurrently": "^10.0.5",
+    "typescript": "~5.7.2"
+  },
+  "overrides": {
+    "google-protobuf": "3.21.2"
+  },
+  "dependencies": {
+    "@webiai/sdk.core": "0.23.11",
+    "@webiai/sdk.aws": "0.23.11",
+    "@webiai/sdk.infra-provider": "0.23.11",
+    "@webiai/sdk.http": "0.23.11",
+    "@webiai/sdk.ioc": "0.23.11"
+  }
+}
