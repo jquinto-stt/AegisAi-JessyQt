@@ -94,7 +94,7 @@ export const OperadoresPage = observer(({ modulo }: OperadoresPageProps) => {
 
   const operadores = operadoresStore.porModulo(modulo);
   const pendientes = operadoresStore.pendientesCount(modulo);
-  const moduloLabel = modulo === "turnos" ? "Turnos" : "Agendamiento";
+  const moduloLabel = { turnos: "Turnos", agendamiento: "Agendamiento", pedidos: "Pedidos" }[modulo];
   const operadorPerfil = operadores.find((o) => o.id === perfilId) ?? null;
 
   const set = (campo: keyof OperadorForm) => (value: string) =>

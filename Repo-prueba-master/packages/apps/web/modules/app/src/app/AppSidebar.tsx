@@ -170,6 +170,7 @@ const SidebarContent = observer(() => {
   const sinSeleccion = sessionStore.modulos.length === 0;
   const verTurnos = sinSeleccion || sessionStore.hasModulo("turnos");
   const verAgendamiento = sinSeleccion || sessionStore.hasModulo("agendamiento");
+  const verPedidos = sinSeleccion || sessionStore.hasModulo("pedidos");
 
   // En modo simulación, cada sección solo se muestra si el operador la tiene
   // permitida. Fuera de simulación (admin), puedeVer() siempre devuelve true.
@@ -209,6 +210,23 @@ const SidebarContent = observer(() => {
               {puede("analitica") && <MenuItem icon={<PieChartIcon />} name="Analítica" path="/agendamiento/analitica" isActive={isActive} />}
               {sessionStore.isAdmin && (
                 <MenuItem icon={<GroupIcon />} name="Operadores" path="/agendamiento/operadores" isActive={isActive} />
+              )}
+            </ul>
+          </div>
+        )}
+
+        {/* PEDIDOS */}
+        {verPedidos && (
+          <div>
+            <MenuSectionHeader title="Pedidos" />
+            <ul className="flex flex-col gap-1">
+              {puede("inicio") && <MenuItem icon={<GridIcon />} name="Inicio" path="/pedidos/inicio" isActive={isActive} />}
+              {puede("tablero") && <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />}
+              {puede("crear") && <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />}
+              {puede("historial") && <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />}
+              {puede("configuracion") && <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />}
+              {sessionStore.isAdmin && (
+                <MenuItem icon={<GroupIcon />} name="Operadores" path="/pedidos/operadores" isActive={isActive} />
               )}
             </ul>
           </div>

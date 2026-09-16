@@ -5,8 +5,8 @@ import { operadoresStore, SECCIONES } from "@/stores/operadores.store";
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Los dos módulos del producto. */
-export type Modulo = "turnos" | "agendamiento";
+/** Los módulos del producto. */
+export type Modulo = "turnos" | "agendamiento" | "pedidos";
 
 /** Rol del usuario dentro del negocio (mock — sin Cognito por ahora). */
 export type Rol = "administrador" | "operador";
@@ -125,28 +125,36 @@ export class SessionStore {
 
   /** Etiqueta legible del conjunto de módulos seleccionados. */
   get modulosLabel() {
-    return this.modulos
-      .map((m) => (m === "turnos" ? "Turnos" : "Agendamiento"))
-      .join(" + ");
+    const label: Record<Modulo, string> = {
+      turnos: "Turnos",
+      agendamiento: "Agendamiento",
+      pedidos: "Pedidos",
+    };
+    return this.modulos.map((m) => label[m]).join(" + ");
   }
 
   /**
    * Módulo "principal" con el que arranca la app tras la selección.
-   * Regla acordada: si el usuario eligió ambos, entra por Turnos.
+   * Regla acordada: si el usuario eligió varios, la prioridad de entrada es
+   * Turnos → Agendamiento → Pedidos.
    */
   get moduloPrincipal(): Modulo | null {
     if (this.modulos.includes("turnos")) return "turnos";
     if (this.modulos.includes("agendamiento")) return "agendamiento";
+    if (this.modulos.includes("pedidos")) return "pedidos";
     return null;
   }
 
   /**
    * Ruta de entrada tras iniciar sesión / entrar al módulo.
-   * Siempre "Inicio" (/dashboard) tanto para admin como para operador.
+   * Es la sección "Inicio" del módulo principal (Turnos → /dashboard,
+   * Pedidos → /pedidos/inicio, etc.), tanto para admin como para operador.
    */
   get moduloEntryPath() {
-    if (this.moduloPrincipal === null) return "/seleccionar";
-    return "/dashboard";
+    const modulo = this.moduloPrincipal;
+    if (modulo === null) return "/seleccionar";
+    const inicio = SECCIONES[modulo].find((s) => s.id === "inicio");
+    return inicio?.path ?? "/dashboard";
   }
 
   // ── Estado del flujo ────────────────────────────────────────────────────
@@ -229,10 +237,14 @@ export class SessionStore {
   get homePathActual() {
     const op = this.operadorSimulado;
     if (op) {
-      // Preferimos Inicio (/dashboard) si lo tiene permitido; si no, su
-      // primera sección permitida (para no caer en una ruta bloqueada).
-      if (op.permisos.includes("inicio")) return "/dashboard";
-      const primera = SECCIONES[op.modulo].find((s) => op.permisos.includes(s.id));
+      const secciones = SECCIONES[op.modulo];
+      // Preferimos "Inicio" del módulo si lo tiene permitido; si no, su primera
+      // sección permitida (para no caer en una ruta bloqueada).
+      if (op.permisos.includes("inicio")) {
+        const inicio = secciones.find((s) => s.id === "inicio");
+        if (inicio) return inicio.path;
+      }
+      const primera = secciones.find((s) => op.permisos.includes(s.id));
       if (primera) return primera.path;
     }
     return this.moduloEntryPath;

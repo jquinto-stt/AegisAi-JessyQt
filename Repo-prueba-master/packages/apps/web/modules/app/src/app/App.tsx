@@ -11,10 +11,11 @@ import { SurveyPage } from "@/pages/survey";
 import { EncuestasPage, EncuestaCompartir } from "@/pages/encuestas";
 import { DisplayScreen } from "@/pages/display";
 import { AgendaPage, ProfesionalesPage, CalendarioPage, CitaDetallePage, CrearCitaPage, AnaliticaPage } from "@/pages/agendamiento";
+import { TableroPage, CrearPedidoPage, InicioPage as PedidosInicioPage, HistorialPage as PedidosHistorialPage, ConfigPage as PedidosConfigPage } from "@/pages/pedidos";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage, OperadorLoginPage } from "@/pages/operador";
-import { OperadoresTurnosPage, OperadoresAgendamientoPage } from "@/pages/operadores";
+import { OperadoresTurnosPage, OperadoresAgendamientoPage, OperadoresPedidosPage } from "@/pages/operadores";
 import { SeccionGuard } from "@/app/SeccionGuard";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import SignInForm from "@/pages/auth/sign-in";
@@ -139,10 +140,17 @@ export default function App() {
         <Route path="/agendamiento/detalles" element={<SeccionGuard seccion="agenda"><CitaDetallePage /></SeccionGuard>} />
         <Route path="/agendamiento/crear" element={<SeccionGuard seccion="crear"><CrearCitaPage /></SeccionGuard>} />
         <Route path="/agendamiento/analitica" element={<SeccionGuard seccion="analitica"><AnaliticaPage /></SeccionGuard>} />
+        {/* Pedidos — protegidas por SeccionGuard en modo simulación */}
+        <Route path="/pedidos/inicio" element={<SeccionGuard seccion="inicio"><PedidosInicioPage /></SeccionGuard>} />
+        <Route path="/pedidos" element={<SeccionGuard seccion="tablero"><TableroPage /></SeccionGuard>} />
+        <Route path="/pedidos/crear" element={<SeccionGuard seccion="crear"><CrearPedidoPage /></SeccionGuard>} />
+        <Route path="/pedidos/historial" element={<SeccionGuard seccion="historial"><PedidosHistorialPage /></SeccionGuard>} />
+        <Route path="/pedidos/config" element={<SeccionGuard seccion="configuracion"><PedidosConfigPage /></SeccionGuard>} />
         {/* Solo admin — un operador simulado nunca tiene esta "sección", así que
             SeccionGuard muestra el aviso de sin acceso si intenta entrar por URL */}
         <Route path="/turnos/operadores" element={<SeccionGuard seccion="__solo_admin__"><OperadoresTurnosPage /></SeccionGuard>} />
         <Route path="/agendamiento/operadores" element={<SeccionGuard seccion="__solo_admin__"><OperadoresAgendamientoPage /></SeccionGuard>} />
+        <Route path="/pedidos/operadores" element={<SeccionGuard seccion="__solo_admin__"><OperadoresPedidosPage /></SeccionGuard>} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuracion" />} />
         <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />
       </Route>

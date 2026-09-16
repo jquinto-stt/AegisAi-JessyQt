@@ -207,3 +207,7 @@
   border: none;
   color: black;
 }
+
+/* (El modal "Programar pedido" usa un grid mensual propio, sin flatpickr.) */
+
+

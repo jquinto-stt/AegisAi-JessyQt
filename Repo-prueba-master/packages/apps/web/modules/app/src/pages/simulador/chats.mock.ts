@@ -18,12 +18,28 @@ export interface ChatLink {
   to: string;
 }
 
+/**
+ * Payload de un pedido que el bot "captura" en la conversación. Al accionar el
+ * botón en la burbuja, se inyecta en pedidosStore como un pedido `nuevo`
+ * (origen: whatsapp), demostrando que los pedidos llegan por este canal.
+ */
+export interface ChatPedido {
+  label: string;
+  cliente: string;
+  telefono: string;
+  modalidad: "retiro" | "domicilio" | "en_sitio";
+  items: { nombre: string; cantidad: number; precio?: number }[];
+  notas?: string;
+}
+
 export interface ChatMensaje {
   autor: Autor;
   texto: string;
   hora: string;
   /** Link opcional (solo en mensajes del bot). */
   link?: ChatLink;
+  /** Acción opcional: inyectar el pedido descrito en el módulo de Pedidos. */
+  pedido?: ChatPedido;
 }
 
 export interface Chat {
@@ -38,7 +54,8 @@ export interface Chat {
 }
 
 /**
- * 3 conversaciones guionadas COMPLETAS de Turnos en una clínica (mock).
+ * Conversaciones guionadas (mock): 3 de Turnos en una clínica y 2 de Pedidos.
+ * Las de Pedidos incluyen una acción para inyectar el pedido en el módulo.
  */
 export const CHATS: Chat[] = [
   // ── 1. Paciente que crea el turno desde su celular (self-service) ───────────
@@ -121,6 +138,56 @@ export const CHATS: Chat[] = [
       { autor: "bot", texto: "🔔 Laura, tu turno *L-020* (Laboratorio) está próximo. Acércate a la ventanilla 2.", hora: "11:16" },
       { autor: "bot", texto: "🔔 Ahora tu turno *A-044* (Consulta general) está próximo. Pasa a la sala de espera del Consultorio 1.", hora: "11:45" },
       { autor: "bot", texto: "¡Gracias por tu visita, Laura! 💚 Cuéntanos cómo estuvo tu experiencia hoy:", hora: "12:20", link: { label: "Responder encuesta", to: "/s/demo" } },
+    ],
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PEDIDOS — el cliente arma un pedido por WhatsApp y el bot lo captura.
+  // El botón "Registrar pedido en NECTO" lo inyecta en el módulo de Pedidos.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── 4. Pedido a domicilio ───────────────────────────────────────────────────
+  {
+    id: "p1",
+    nombre: "Juan Carlos",
+    telefono: "+57 300 555 1122",
+    escenario: "Pedido a domicilio por WhatsApp",
+    mensajes: [
+      { autor: "cliente", texto: "Hola, quiero hacer un pedido para domicilio", hora: "12:30" },
+      { autor: "bot", texto: "¡Hola! 👋 Con gusto. Cuéntame qué te gustaría pedir.", hora: "12:30" },
+      { autor: "cliente", texto: "2 combos clásicos y 2 bebidas por favor", hora: "12:31" },
+      { autor: "bot", texto: "¡Perfecto! ¿A qué dirección lo enviamos?", hora: "12:31" },
+      { autor: "cliente", texto: "Calle 45 #12-30, apto 302. Sin cebolla en uno de los combos", hora: "12:32" },
+      { autor: "bot", texto: "Anotado 📝\n\n• 2× Combo clásico\n• 2× Bebida 350ml\n• Modalidad: Domicilio\n• Nota: sin cebolla en uno\n\nRegistrando tu pedido…", hora: "12:32", pedido: {
+        label: "Registrar pedido en NECTO",
+        cliente: "Juan Carlos",
+        telefono: "+57 300 555 1122",
+        modalidad: "domicilio",
+        items: [{ nombre: "Combo clásico", cantidad: 2, precio: 25000 }, { nombre: "Bebida 350ml", cantidad: 2, precio: 4000 }],
+        notas: "Sin cebolla en uno de los combos. Calle 45 #12-30, apto 302.",
+      } },
+      { autor: "bot", texto: "✅ ¡Listo! Tu pedido quedó registrado y ya está en preparación. Te avisamos cuando salga a domicilio. 🛵", hora: "12:33" },
+    ],
+  },
+
+  // ── 5. Pedido para retiro ───────────────────────────────────────────────────
+  {
+    id: "p2",
+    nombre: "María Fernanda",
+    telefono: "+57 301 777 3344",
+    escenario: "Pedido para retirar en tienda",
+    mensajes: [
+      { autor: "cliente", texto: "Buenas, quiero encargar un postre para pasarlo a recoger", hora: "15:10" },
+      { autor: "bot", texto: "¡Buenas! 🍰 Claro que sí. ¿Cuál postre y cuántos?", hora: "15:10" },
+      { autor: "cliente", texto: "Un postre del día", hora: "15:11" },
+      { autor: "bot", texto: "Perfecto. Lo dejamos para *retiro en tienda*.\n\n• 1× Postre del día\n• Modalidad: Retiro\n\nRegistrando…", hora: "15:11", pedido: {
+        label: "Registrar pedido en NECTO",
+        cliente: "María Fernanda",
+        telefono: "+57 301 777 3344",
+        modalidad: "retiro",
+        items: [{ nombre: "Postre del día", cantidad: 1, precio: 8000 }],
+      } },
+      { autor: "bot", texto: "✅ Pedido registrado. Te avisamos cuando esté listo para recoger. 🛍️", hora: "15:12" },
     ],
   },
 ];

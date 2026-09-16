@@ -23,6 +23,12 @@ const AgendaIcon = () => (
   </svg>
 );
 
+const PedidosIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-8 w-8">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+  </svg>
+);
+
 const AdminIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-7 w-7">
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
@@ -64,6 +70,12 @@ const MODULOS: ModuloOption[] = [
     titulo: "Agendamiento",
     descripcion: "Citas con profesionales: agenda por profesional, calendario y analítica de clientes.",
     icon: AgendaIcon,
+  },
+  {
+    id: "pedidos",
+    titulo: "Pedidos",
+    descripcion: "Flujo de pedidos que llegan por WhatsApp: tablero por estados, entrega e historial.",
+    icon: PedidosIcon,
   },
 ];
 
@@ -159,7 +171,8 @@ const StepDots = ({ step }: { step: 1 | 2 }) => (
 
 /** Etiqueta legible del conjunto de módulos elegidos, para el subtítulo. */
 const sessionModulosLabel = (modulos: Modulo[]) => {
-  const nombres = modulos.map((m) => (m === "turnos" ? "Turnos" : "Agendamiento"));
+  const label: Record<Modulo, string> = { turnos: "Turnos", agendamiento: "Agendamiento", pedidos: "Pedidos" };
+  const nombres = modulos.map((m) => label[m]);
   if (nombres.length === 0) return "tu módulo";
   if (nombres.length === 1) return `el módulo de ${nombres[0]}`;
   return `los módulos de ${nombres.join(" y ")}`;

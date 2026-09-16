@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { PageMeta } from "@/shell/meta";
+import { pedidosStore } from "@/stores";
 import { CHATS, type Chat, type ChatMensaje } from "./chats.mock";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -125,6 +126,21 @@ export const SimuladorWhatsApp = () => {
 const Burbuja = ({ m }: { m: ChatMensaje }) => {
   const navigate = useNavigate();
   const esCliente = m.autor === "cliente";
+  // Estado local: número del pedido inyectado (para confirmar y evitar duplicados).
+  const [pedidoNumero, setPedidoNumero] = useState<string | null>(null);
+
+  const registrarPedido = () => {
+    if (!m.pedido || pedidoNumero) return;
+    const p = pedidosStore.crearPedido({
+      cliente: m.pedido.cliente,
+      telefono: m.pedido.telefono,
+      modalidad: m.pedido.modalidad,
+      items: m.pedido.items,
+      notas: m.pedido.notas,
+      origen: "whatsapp",
+    });
+    setPedidoNumero(p.numero);
+  };
 
   return (
     <div className={`flex ${esCliente ? "justify-end" : "justify-start"}`}>
@@ -148,6 +164,31 @@ const Burbuja = ({ m }: { m: ChatMensaje }) => {
           </button>
         )}
 
+        {/* Acción de pedido: inyecta el pedido en el módulo de Pedidos */}
+        {m.pedido && (
+          pedidoNumero ? (
+            <div className="mt-2 flex flex-col gap-2 rounded-lg border border-success-200 bg-success-50 px-3 py-2 dark:border-success-500/30 dark:bg-success-500/10">
+              <span className="text-xs font-semibold text-success-700 dark:text-success-400">
+                ✅ Pedido {pedidoNumero} registrado
+              </span>
+              <button
+                onClick={() => navigate("/pedidos")}
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-white px-3 py-1.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-50 dark:border-brand-500/30 dark:bg-gray-900 dark:text-brand-400"
+              >
+                Ver en el tablero
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={registrarPedido}
+              className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-success-300 bg-success-50 px-3 py-2 text-xs font-semibold text-success-700 transition-colors hover:bg-success-100 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
+            >
+              <BagIcon />
+              {m.pedido.label}
+            </button>
+          )
+        )}
+
         <p className={`mt-1 text-right text-[10px] ${esCliente ? "text-gray-500 dark:text-white/50" : "text-gray-400"}`}>
           {m.hora}
         </p>
@@ -155,6 +196,12 @@ const Burbuja = ({ m }: { m: ChatMensaje }) => {
     </div>
   );
 };
+
+const BagIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12A2.25 2.25 0 0118.63 21.75H5.37a2.25 2.25 0 01-2.24-2.493l1.264-12A2.25 2.25 0 016.632 7.5h10.736a2.25 2.25 0 012.238 2.007z" />
+  </svg>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICONS

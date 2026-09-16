@@ -67,6 +67,16 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "crear", label: "Agendar cita", path: "/agendamiento/crear" },
     { id: "analitica", label: "Analítica", path: "/agendamiento/analitica" },
   ],
+  // Pedidos: flujo de pedidos que llegan por WhatsApp hasta la entrega.
+  // (La sección "Operadores" es solo-admin y no es un permiso togglable, igual
+  // que en Turnos/Agendamiento; por eso no aparece en este catálogo.)
+  pedidos: [
+    { id: "inicio", label: "Inicio", path: "/pedidos/inicio" },
+    { id: "tablero", label: "Tablero", path: "/pedidos" },
+    { id: "crear", label: "Crear pedido", path: "/pedidos/crear" },
+    { id: "historial", label: "Historial", path: "/pedidos/historial" },
+    { id: "configuracion", label: "Configuración", path: "/pedidos/config" },
+  ],
 };
 
 /** Todos los ids de sección de un módulo (útil para "seleccionar todo" y seeds). */
@@ -147,6 +157,10 @@ const SEED: Operador[] = [
   { id: "a1", nombre: "Sofía Márquez", email: "sofia.marquez@negocio.com", telefono: "+57 310 555 6677", estado: "activo", modulo: "agendamiento", permisos: todasLasSecciones("agendamiento"), profesionalIds: ["p1"], colaIds: [] },
   { id: "a2", nombre: "Diego Herrera", email: "diego.herrera@negocio.com", telefono: "+57 311 666 7788", estado: "activo", modulo: "agendamiento", permisos: ["agenda", "calendario", "crear"], profesionalIds: ["p2", "p3"], colaIds: [] },
   { id: "a3", nombre: "Valentina Ríos", email: "valentina.rios@negocio.com", telefono: "+57 312 777 8899", estado: "pendiente", modulo: "agendamiento", permisos: ["agenda", "calendario"], profesionalIds: ["p1", "p2"], colaIds: [] },
+  // ── Pedidos (solo permisos de sección, sin vínculo a colas/profesionales) ────
+  { id: "d1", nombre: "Camila Ortiz", email: "camila.ortiz@negocio.com", telefono: "+57 320 111 2233", estado: "activo", modulo: "pedidos", permisos: todasLasSecciones("pedidos"), profesionalIds: [], colaIds: [] },
+  { id: "d2", nombre: "Mateo Vargas", email: "mateo.vargas@negocio.com", telefono: "+57 321 222 3344", estado: "activo", modulo: "pedidos", permisos: ["inicio", "tablero", "crear"], profesionalIds: [], colaIds: [] },
+  { id: "d3", nombre: "Daniela Suárez", email: "daniela.suarez@negocio.com", telefono: "+57 322 333 4455", estado: "pendiente", modulo: "pedidos", permisos: ["inicio", "tablero"], profesionalIds: [], colaIds: [] },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
