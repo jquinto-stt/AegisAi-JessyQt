@@ -11,6 +11,7 @@ import {
   PerfilOperadorPage,
 } from "@/pages/pedidos";
 import { SeleccionarPage } from "@/pages/seleccionar";
+import { AsistentePage } from "@/pages/asistente";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
@@ -20,6 +21,11 @@ import SignInForm from "@/pages/auth/sign-in";
 import SignUpForm from "@/pages/auth/sign-up";
 import ResetPasswordForm from "@/pages/auth/reset-password";
 import { AuthPageLayout } from "@/layouts/auth";
+import { bootstrapAssistant } from "@/assistant/bootstrap";
+
+// Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
+// rutas, antes de la primera pregunta. `bootstrapAssistant` es idempotente.
+bootstrapAssistant();
 
 const RedireccionViendoComo = () => (
   <Navigate
@@ -41,6 +47,7 @@ export default function App() {
         <Route path="/pedidos/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/pedidos/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
         <Route path="/pedidos/operadores" element={<Navigate to="/pedidos/equipo" replace />} />
+        <Route path="/asistente" element={<CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
         <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />

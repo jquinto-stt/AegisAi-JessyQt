@@ -16,6 +16,7 @@ import {
   ArrowRightIcon,
   PlusIcon,
   GroupIcon,
+  AiIcon,
 } from "@/icons";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -63,7 +64,7 @@ const SidebarFooter = observer(() => {
   }`;
 
   return (
-    <div className="mt-auto border-t border-gray-200 dark:border-gray-800 pt-4 pb-6">
+    <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-6">
       <ul className="flex flex-col gap-1">
         <li>
           <Link to="/configuracion" className={rowClasses}>
@@ -177,7 +178,19 @@ const SidebarContent = observer(() => {
         </div>
       </div>
 
-      <SidebarFooter />
+      <div className="mt-auto">
+        {/* Módulo independiente: Asistente (Necto Intelligence), pegado al fondo
+            justo antes del separador del footer. */}
+        {sessionStore.hasPermission("assistant.use") && (
+          <div className="pt-6">
+            <MenuSectionHeader title="Inteligencia" />
+            <ul className="flex flex-col gap-1">
+              <MenuItem icon={<AiIcon />} name="NECTO AI" path="/asistente" isActive={isActive} />
+            </ul>
+          </div>
+        )}
+        <SidebarFooter />
+      </div>
     </nav>
   );
 });

@@ -21,7 +21,7 @@ describe("catálogo de capacidades", () => {
   it("C4: todas las capacidades nombran acciones, no pantallas", async () => {
     const { CAPACIDADES } = await freshRolesStore();
 
-    expect(CAPACIDADES).toHaveLength(16);
+    expect(CAPACIDADES).toHaveLength(17);
     for (const cap of CAPACIDADES) {
       // Formato `<dominio>.<accion>`.
       expect(cap).toMatch(/^[a-z]+\.[a-z]+$/);
@@ -39,6 +39,35 @@ describe("catálogo de capacidades", () => {
 
     const agrupadas = CAPACIDAD_GRUPOS.flatMap((g) => g.capacidades);
     expect(new Set(agrupadas)).toEqual(new Set(CAPACIDADES));
+  });
+});
+
+describe("capacidad assistant.use", () => {
+  it("está incluida en el catálogo de capacidades", async () => {
+    const { CAPACIDADES } = await freshRolesStore();
+
+    expect(CAPACIDADES).toContain("assistant.use");
+  });
+
+  it("tiene una etiqueta legible no vacía", async () => {
+    const { CAPACIDAD_LABEL } = await freshRolesStore();
+
+    expect(CAPACIDAD_LABEL["assistant.use"]).toBeTruthy();
+  });
+
+  it("pertenece al grupo 'asistente' (Asistente)", async () => {
+    const { CAPACIDAD_GRUPOS } = await freshRolesStore();
+
+    const grupo = CAPACIDAD_GRUPOS.find((g) => g.id === "asistente");
+    expect(grupo).toBeTruthy();
+    expect(grupo?.label).toBe("Asistente");
+    expect(grupo?.capacidades).toContain("assistant.use");
+  });
+
+  it("la incluye el rol admin_tienda", async () => {
+    const { rolesStore, ROL_ADMIN } = await freshRolesStore();
+
+    expect(rolesStore.porId(ROL_ADMIN)?.capacidades).toContain("assistant.use");
   });
 });
 

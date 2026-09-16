@@ -58,10 +58,12 @@ export type Capacidad =
   | "settings.manage"
   // Equipo
   | "team.read"
-  | "team.manage";
+  | "team.manage"
+  // Asistente IA
+  | "assistant.use";
 
 /**
- * Las 16 capacidades del dominio de pedidos.
+ * Catálogo completo de capacidades (dominio de pedidos + asistente IA).
  *
  * `orders.edit` y `orders.delete` están **reservadas**: no tienen UI hoy y no se
  * construye ninguna (contrato §9). Existen para que el catálogo sea completo
@@ -84,6 +86,7 @@ export const CAPACIDADES: Capacidad[] = [
   "settings.manage",
   "team.read",
   "team.manage",
+  "assistant.use",
 ];
 
 /** Etiqueta legible de cada capacidad (para el editor de roles y perfiles). */
@@ -104,6 +107,7 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
   "settings.manage": "Editar configuración",
   "team.read": "Ver equipo",
   "team.manage": "Gestionar equipo",
+  "assistant.use": "Usar asistente IA",
 };
 
 /**
@@ -124,6 +128,7 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
   { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.manage"] },
   { id: "ajustes", label: "Configuración", capacidades: ["settings.read", "settings.manage"] },
   { id: "equipo", label: "Equipo", capacidades: ["team.read", "team.manage"] },
+  { id: "asistente", label: "Asistente", capacidades: ["assistant.use"] },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

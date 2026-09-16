@@ -24,6 +24,9 @@ export type { Rol, Capacidad, CapacidadGrupo, PortadorDeRol } from '@/stores/rol
 export { operadoresStore, OperadoresStore, SECCIONES } from '@/stores/operadores.store';
 export type { Operador, OperadorEstado, Seccion, OperadorStats, EncuestaStats } from '@/stores/operadores.store';
 
+export { AssistantStore, assistantStore } from './assistant.store';
+export type { Conversacion, GrupoConversaciones } from './assistant.store';
+
 // Helpers de capacidad para las páginas (capa de conveniencia sobre hasPermission)
 export {
   puede,
