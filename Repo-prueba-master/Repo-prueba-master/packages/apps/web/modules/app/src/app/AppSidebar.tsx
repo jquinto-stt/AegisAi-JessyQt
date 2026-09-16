@@ -11,13 +11,10 @@ import {
   GridIcon,
   TaskIcon,
   ListIcon,
-  ShootingStarIcon,
+  PlusIcon,
   PlugInIcon,
   InfoIcon,
   ArrowRightIcon,
-  CalenderIcon,
-  PlusIcon,
-  PieChartIcon,
   GroupIcon,
 } from "@/icons";
 
@@ -26,7 +23,7 @@ import {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const Logo = () => (
-  <Link to="/dashboard" className="flex items-center">
+  <Link to="/pedidos/inicio" className="flex items-center">
     <img
       src="/images/logo/necto-full.svg"
       alt="NECTO"
@@ -37,7 +34,7 @@ const Logo = () => (
 
 const LogoCollapsed = () => (
   <Link
-    to="/dashboard"
+    to="/pedidos/inicio"
     className="flex items-center justify-center h-10 w-10 rounded-xl border-2 border-brand-500"
   >
     <img
@@ -57,7 +54,6 @@ const SidebarFooter = observer(() => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // TODO: integrate with Cognito sign-out
     navigate("/login");
   };
 
@@ -73,7 +69,7 @@ const SidebarFooter = observer(() => {
             <span className="menu-item-icon-size menu-item-icon-inactive">
               <PlugInIcon />
             </span>
-            {showExpanded && <span className="menu-item-text">Configuracion</span>}
+            {showExpanded && <span className="menu-item-text">Configuración</span>}
           </Link>
         </li>
         <li>
@@ -94,7 +90,7 @@ const SidebarFooter = observer(() => {
             <span className="menu-item-icon-size text-error-500">
               <ArrowRightIcon />
             </span>
-            {showExpanded && <span className="menu-item-text">Cerrar sesion</span>}
+            {showExpanded && <span className="menu-item-text">Cerrar sesión</span>}
           </button>
         </li>
       </ul>
@@ -103,56 +99,40 @@ const SidebarFooter = observer(() => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SIDEBAR CONTENT — Sistema de Turnos
+// SIDEBAR CONTENT — Módulo de Pedidos
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SidebarContent = observer(() => {
   const { pathname } = useLocation();
   const isActive = (path: string) => pathname === path;
-
-  // El menú se adapta a los módulos que el usuario eligió en /seleccionar.
-  // Si aún no hay selección (p. ej. entró por una URL directa), mostramos
-  // ambas secciones para no dejar el sidebar vacío.
-  const sinSeleccion = sessionStore.modulos.length === 0;
-  const verTurnos = sinSeleccion || sessionStore.hasModulo("turnos");
-  const verAgendamiento = sinSeleccion || sessionStore.hasModulo("agendamiento");
+  const puede = (seccionId: string) => sessionStore.puedeVer(seccionId);
 
   return (
     <nav className="flex flex-col flex-1">
       <div className="flex flex-col gap-6">
-        {/* TURNOS */}
-        {verTurnos && (
-          <div>
-            <MenuSectionHeader title="Turnos" />
-            <ul className="flex flex-col gap-1">
-              <MenuItem icon={<GridIcon />} name="Inicio" path="/dashboard" isActive={isActive} />
-              <MenuItem icon={<TaskIcon />} name="Mis Turnos" path="/turnos" isActive={isActive} />
-              <MenuItem icon={<PlusIcon />} name="Crear turno" path="/recepcion" isActive={isActive} />
-              <MenuItem icon={<ListIcon />} name="Colas" path="/colas" isActive={isActive} />
-              <MenuItem icon={<ShootingStarIcon />} name="Encuestas" path="/encuestas" isActive={isActive} />
-              {sessionStore.isAdmin && (
-                <MenuItem icon={<GroupIcon />} name="Operadores" path="/turnos/operadores" isActive={isActive} />
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* AGENDAMIENTO */}
-        {verAgendamiento && (
-          <div>
-            <MenuSectionHeader title="Agendamiento" />
-            <ul className="flex flex-col gap-1">
-              <MenuItem icon={<GroupIcon />} name="Profesionales" path="/agendamiento/profesionales" isActive={isActive} />
-              <MenuItem icon={<ListIcon />} name="Agenda" path="/agendamiento" isActive={isActive} />
-              <MenuItem icon={<CalenderIcon />} name="Calendario" path="/agendamiento/calendario" isActive={isActive} />
-              <MenuItem icon={<PlusIcon />} name="Agendar cita" path="/agendamiento/crear" isActive={isActive} />
-              <MenuItem icon={<PieChartIcon />} name="Analítica" path="/agendamiento/analitica" isActive={isActive} />
-              {sessionStore.isAdmin && (
-                <MenuItem icon={<GroupIcon />} name="Operadores" path="/agendamiento/operadores" isActive={isActive} />
-              )}
-            </ul>
-          </div>
-        )}
+        <div>
+          <MenuSectionHeader title="Pedidos" />
+          <ul className="flex flex-col gap-1">
+            {puede("inicio") && (
+              <MenuItem icon={<GridIcon />} name="Inicio" path="/pedidos/inicio" isActive={isActive} />
+            )}
+            {puede("tablero") && (
+              <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />
+            )}
+            {puede("crear") && (
+              <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />
+            )}
+            {puede("historial") && (
+              <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />
+            )}
+            {puede("configuracion") && (
+              <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />
+            )}
+            {sessionStore.isAdmin && (
+              <MenuItem icon={<GroupIcon />} name="Operadores" path="/pedidos/operadores" isActive={isActive} />
+            )}
+          </ul>
+        </div>
       </div>
 
       <SidebarFooter />
@@ -164,10 +144,6 @@ const SidebarContent = observer(() => {
 // MAIN EXPORT
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * AppSidebar — NECTO-branded navigation for the queue management system.
- * @kgId 8025fcb3eb97
- */
 export const AppSidebar = () => (
   <BaseAppSidebar logo={<Logo />} logoCollapsed={<LogoCollapsed />}>
     <SidebarContent />

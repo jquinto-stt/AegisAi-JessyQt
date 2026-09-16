@@ -1,41 +1,64 @@
 import { makeAutoObservable } from "mobx";
+import { operadoresStore } from "./operadores.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Los dos módulos del producto. */
-export type Modulo = "turnos" | "agendamiento";
-
-/** Rol del usuario dentro del negocio (mock — sin Cognito por ahora). */
+export type Modulo = "pedidos";
 export type Rol = "administrador" | "operador";
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SESSION STORE (mock)
-// ═══════════════════════════════════════════════════════════════════════════
+const STORAGE_KEY = "necto_session_v1";
 
-/**
- * SessionStore — fuente de verdad de la "configuración previa" del usuario:
- * qué módulos eligió trabajar (turnos y/o agendamiento) y con qué rol
- * (administrador | operador).
- *
- * Es 100% mock (no hay backend ni Cognito todavía). La vista de selección
- * (`/seleccionar`) escribe aquí, y el resto de la app lee de aquí para adaptar
- * lo que muestra según el rol.
- *
- * El usuario puede elegir uno o los dos módulos. Cuando exista auth real, `rol`
- * debería derivarse de los grupos de Cognito.
- */
+interface PersistedSession {
+  modulos: Modulo[];
+  rol: Rol | null;
+  operadorSimuladoId: string | null;
+}
+
+function loadSession(): PersistedSession {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { modulos: [], rol: null, operadorSimuladoId: null };
+    const parsed = JSON.parse(raw);
+    return {
+      modulos: parsed.modulos ?? [],
+      rol: parsed.rol ?? null,
+      operadorSimuladoId: parsed.operadorSimuladoId ?? null,
+    };
+  } catch {
+    return { modulos: [], rol: null, operadorSimuladoId: null };
+  }
+}
+
+function persistSession(data: PersistedSession) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Ignorar errores de quota en localStorage
+  }
+}
+
 export class SessionStore {
-  /** Módulos seleccionados por el usuario (puede ser uno o los dos). */
-  modulos: Modulo[] = ["turnos", "agendamiento"];
-  rol: Rol | null = "administrador";
+  modulos: Modulo[] = [];
+  rol: Rol | null = null;
+  operadorSimuladoId: string | null = null;
 
   constructor() {
+    const s = loadSession();
+    this.modulos = s.modulos;
+    this.rol = s.rol;
+    this.operadorSimuladoId = s.operadorSimuladoId;
     makeAutoObservable(this);
   }
 
-  // ── Getters de rol ──────────────────────────────────────────────────────
+  private persist() {
+    persistSession({
+      modulos: this.modulos,
+      rol: this.rol,
+      operadorSimuladoId: this.operadorSimuladoId,
+    });
+  }
 
   get isAdmin() {
     return this.rol === "administrador";
@@ -45,82 +68,92 @@ export class SessionStore {
     return this.rol === "operador";
   }
 
-  /** Etiqueta legible del rol actual. */
   get rolLabel() {
     if (this.rol === "administrador") return "Administrador";
     if (this.rol === "operador") return "Operador";
     return "";
   }
 
-  // ── Getters de módulos ──────────────────────────────────────────────────
-
-  /** true si el módulo dado está seleccionado. */
   hasModulo(modulo: Modulo) {
     return this.modulos.includes(modulo);
   }
 
-  /** Etiqueta legible del conjunto de módulos seleccionados. */
-  get modulosLabel() {
-    return this.modulos
-      .map((m) => (m === "turnos" ? "Turnos" : "Agendamiento"))
-      .join(" + ");
-  }
-
-  /**
-   * Módulo "principal" con el que arranca la app tras la selección.
-   * Regla acordada: si el usuario eligió ambos, entra por Turnos.
-   */
   get moduloPrincipal(): Modulo | null {
-    if (this.modulos.includes("turnos")) return "turnos";
-    if (this.modulos.includes("agendamiento")) return "agendamiento";
+    if (this.modulos.includes("pedidos")) return "pedidos";
     return null;
   }
 
-  /** Ruta funcional de entrada del módulo principal. */
   get moduloEntryPath() {
-    const m = this.moduloPrincipal;
-    if (m === "turnos") return "/turnos";
-    if (m === "agendamiento") return "/agendamiento";
-    return "/seleccionar";
+    return "/pedidos/inicio";
   }
 
-  // ── Estado del flujo ────────────────────────────────────────────────────
-
-  /** true cuando ya se eligió al menos un módulo y un rol. */
   get isReady() {
     return this.modulos.length > 0 && this.rol !== null;
   }
 
-  // ── Mutadores ───────────────────────────────────────────────────────────
-
-  /** Agrega o quita un módulo de la selección (toggle). */
-  toggleModulo(modulo: Modulo) {
-    if (this.modulos.includes(modulo)) {
-      this.modulos = this.modulos.filter((m) => m !== modulo);
-    } else {
-      this.modulos = [...this.modulos, modulo];
-    }
+  get isSimulando() {
+    return this.operadorSimuladoId !== null;
   }
 
-  /** Reemplaza la lista de módulos seleccionados. */
-  setModulos(modulos: Modulo[]) {
+  get operadorSimulado() {
+    if (!this.operadorSimuladoId) return null;
+    return operadoresStore.operadores.find((o) => o.id === this.operadorSimuladoId) ?? null;
+  }
+
+  get permisosActuales(): string[] | null {
+    if (this.isSimulando) return this.operadorSimulado?.permisos ?? [];
+    return null;
+  }
+
+  puedeVer(seccionId: string) {
+    const permisos = this.permisosActuales;
+    if (permisos === null) return true;
+    return permisos.includes(seccionId);
+  }
+
+  get homePathActual() {
+    const op = this.operadorSimulado;
+    if (op) {
+      if (op.permisos.includes("inicio")) return "/pedidos/inicio";
+      if (op.permisos.includes("tablero")) return "/pedidos";
+      if (op.permisos.includes("crear")) return "/pedidos/crear";
+      if (op.permisos.includes("historial")) return "/pedidos/historial";
+      if (op.permisos.includes("configuracion")) return "/pedidos/config";
+    }
+    return this.moduloEntryPath;
+  }
+
+  configurar(modulos: Modulo[], rol: Rol) {
     this.modulos = modulos;
+    this.rol = rol;
+    this.persist();
   }
 
   setRol(rol: Rol) {
     this.rol = rol;
+    this.persist();
   }
 
-  /** Aplica la selección completa de una sola vez. */
-  configurar(modulos: Modulo[], rol: Rol) {
-    this.modulos = modulos;
-    this.rol = rol;
+  simular(operadorId: string) {
+    const op = operadoresStore.operadores.find((o) => o.id === operadorId);
+    if (!op) return;
+    this.operadorSimuladoId = operadorId;
+    this.rol = "operador";
+    this.modulos = ["pedidos"];
+    this.persist();
   }
 
-  /** Limpia la sesión (ej. al cerrar sesión). */
+  salirSimulacion() {
+    this.operadorSimuladoId = null;
+    this.rol = "administrador";
+    this.persist();
+  }
+
   reset() {
     this.modulos = [];
     this.rol = null;
+    this.operadorSimuladoId = null;
+    this.persist();
   }
 }
 

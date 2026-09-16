@@ -11,15 +11,9 @@ import { sessionStore, type Modulo, type Rol } from "@/stores";
 // ICONS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const TurnosIcon = () => (
+const PedidosIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-8 w-8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-  </svg>
-);
-
-const AgendaIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-8 w-8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0V11.25A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
   </svg>
 );
 
@@ -54,16 +48,10 @@ interface ModuloOption {
 
 const MODULOS: ModuloOption[] = [
   {
-    id: "turnos",
-    titulo: "Turnos",
-    descripcion: "Gestiona la fila en vivo: colas, atención de turnos, display de sala y encuestas.",
-    icon: TurnosIcon,
-  },
-  {
-    id: "agendamiento",
-    titulo: "Agendamiento",
-    descripcion: "Citas con profesionales: agenda por profesional, calendario y analítica de clientes.",
-    icon: AgendaIcon,
+    id: "pedidos",
+    titulo: "Pedidos",
+    descripcion: "Flujo de pedidos que llegan por WhatsApp: tablero por estados, entrega e historial.",
+    icon: PedidosIcon,
   },
 ];
 
@@ -78,13 +66,13 @@ const ROLES: RolOption[] = [
   {
     id: "administrador",
     titulo: "Administrador",
-    descripcion: "Acceso completo: configuración, colas/profesionales, reportes y ajustes del negocio.",
+    descripcion: "Acceso completo a pedidos, tablero, configuración, historial y gestión de operadores.",
     icon: AdminIcon,
   },
   {
     id: "operador",
     titulo: "Operador",
-    descripcion: "Operación del día a día: atender turnos y gestionar citas, sin cambiar la configuración.",
+    descripcion: "Operación del día a día: gestionar pedidos y actualizar estados en el tablero.",
     icon: OperadorIcon,
   },
 ];
@@ -101,21 +89,12 @@ interface SelectCardProps {
   onSelect: () => void;
 }
 
-/**
- * SelectCard — tarjeta seleccionable del flujo Elements.
- *
- * Construida sobre el componente `Card` del catálogo Elements siguiendo el
- * blueprint IconCard (contenedor de ícono + CardTitle + CardDescription). Se
- * envuelve en un <button> para hacer toda la superficie clickeable y añade el
- * estado activo/hover + el check por encima. Sirve tanto para selección
- * múltiple (módulos, toggle) como exclusiva (rol).
- */
 const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: SelectCardProps) => (
   <button
     type="button"
     onClick={onSelect}
     aria-pressed={selected}
-    className="group relative rounded-xl text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+    className="group relative rounded-xl text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 w-full"
   >
     <Card
       className={`h-full transition-all ${
@@ -124,7 +103,6 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
           : "hover:border-brand-300 hover:shadow-sm dark:hover:border-brand-500/40"
       }`}
     >
-      {/* IconCard blueprint: contenedor de ícono h-14 max-w-14 rounded-[10.5px] */}
       <div
         className={`mb-5 flex h-14 max-w-14 items-center justify-center rounded-[10.5px] transition-colors ${
           selected
@@ -146,10 +124,6 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
   </button>
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// STEP INDICATOR
-// ═══════════════════════════════════════════════════════════════════════════
-
 const StepDots = ({ step }: { step: 1 | 2 }) => (
   <div className="flex items-center gap-2">
     <span className={`h-2 rounded-full transition-all ${step === 1 ? "w-6 bg-brand-500" : "w-2 bg-gray-300 dark:bg-gray-700"}`} />
@@ -157,32 +131,11 @@ const StepDots = ({ step }: { step: 1 | 2 }) => (
   </div>
 );
 
-/** Etiqueta legible del conjunto de módulos elegidos, para el subtítulo. */
-const sessionModulosLabel = (modulos: Modulo[]) => {
-  const nombres = modulos.map((m) => (m === "turnos" ? "Turnos" : "Agendamiento"));
-  if (nombres.length === 0) return "tu módulo";
-  if (nombres.length === 1) return `el módulo de ${nombres[0]}`;
-  return `los módulos de ${nombres.join(" y ")}`;
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PAGE
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * SeleccionarPage — pantalla de configuración previa post-login (mock).
- *
- * Paso 1: elegir módulo (Turnos | Agendamiento).
- * Paso 2: elegir rol (Administrador | Operador).
- * Al confirmar, guarda la selección en sessionStore y navega a la vista de
- * configuración del módulo elegido.
- */
 export const SeleccionarPage = observer(() => {
   const navigate = useNavigate();
   const [step, setStep] = useState<1 | 2>(1);
-  // Seleccion multiple: el usuario puede elegir uno o los dos modulos.
-  const [modulos, setModulos] = useState<Modulo[]>([...sessionStore.modulos]);
-  const [rol, setRol] = useState<Rol | null>(sessionStore.rol);
+  const [modulos, setModulos] = useState<Modulo[]>(["pedidos"]);
+  const [rol, setRol] = useState<Rol | null>(sessionStore.rol ?? "administrador");
 
   const toggleModulo = (m: Modulo) => {
     setModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
@@ -198,15 +151,10 @@ export const SeleccionarPage = observer(() => {
     sessionStore.configurar(modulos, rol);
 
     if (rol === "operador") {
-      // Un operador "sale de" un administrador: en vez de entrar al modulo,
-      // pasa por una pantalla para dejar sus datos, que (mock) le llegan como
-      // notificacion al administrador para darlo de alta.
       navigate("/operador/registro");
       return;
     }
 
-    // Administrador: entra directo al modulo funcional. Regla acordada: si
-    // eligio ambos modulos, entra por Turnos (navegable luego por el sidebar).
     navigate(sessionStore.moduloEntryPath);
   };
 
@@ -219,8 +167,7 @@ export const SeleccionarPage = observer(() => {
           <ThemeToggleButton variant="floating" />
         </div>
 
-        <div className="mx-auto flex w-full max-w-3xl flex-col">
-          {/* Marca */}
+        <div className="mx-auto flex w-full max-w-2xl flex-col">
           <div className="mb-8 flex flex-col items-center text-center">
             <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
@@ -228,15 +175,14 @@ export const SeleccionarPage = observer(() => {
             </h1>
             <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
               {step === 1
-                ? "Elige uno o los dos módulos con los que quieres trabajar. Podrás cambiarlo cuando quieras."
-                : `Vas a entrar a ${sessionModulosLabel(modulos)}. Elige tu rol para continuar.`}
+                ? "Selecciona el módulo con el que vas a trabajar."
+                : "Vas a entrar al módulo de Pedidos. Elige tu rol para continuar."}
             </p>
           </div>
 
-          {/* Paso 1: módulos */}
           {step === 1 && (
             <>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-5">
                 {MODULOS.map((m) => (
                   <SelectCard
                     key={m.id}
@@ -255,7 +201,6 @@ export const SeleccionarPage = observer(() => {
             </>
           )}
 
-          {/* Paso 2: rol */}
           {step === 2 && (
             <>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -274,6 +219,11 @@ export const SeleccionarPage = observer(() => {
                 <StepDots step={2} />
                 <div className="flex items-center gap-3">
                   <Button size="sm" variant="outline" onClick={() => setStep(1)}>Atrás</Button>
+                  {rol === "operador" && (
+                    <Button size="sm" variant="outline" onClick={() => navigate("/operador/login")}>
+                      Simular
+                    </Button>
+                  )}
                   <Button size="sm" disabled={!rol} onClick={confirmar}>Entrar</Button>
                 </div>
               </div>
