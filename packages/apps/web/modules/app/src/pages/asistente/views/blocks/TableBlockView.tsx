@@ -1,4 +1,5 @@
 import type { TableBlock } from "@/assistant";
+import { assistantStore } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -57,15 +58,33 @@ export const TableBlockView = ({ block }: { block: TableBlock }) => {
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      {(block.title || block.exportable) && (
-        <div className="mb-3 flex items-center justify-between gap-2">
-          {block.title ? (
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-              {block.title}
-            </h4>
-          ) : (
-            <span />
-          )}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        {block.title ? (
+          <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+            {block.title}
+          </h4>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              assistantStore.openArtifact({
+                id: `table-${Date.now()}`,
+                type: "spreadsheet",
+                title: block.title || "Hoja de Cálculo",
+                data: block,
+              })
+            }
+            className="flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M15 3v18" />
+            </svg>
+            <span>Ver en Canvas</span>
+          </button>
           {block.exportable && (
             <button
               type="button"
@@ -76,7 +95,7 @@ export const TableBlockView = ({ block }: { block: TableBlock }) => {
             </button>
           )}
         </div>
-      )}
+      </div>
 
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">

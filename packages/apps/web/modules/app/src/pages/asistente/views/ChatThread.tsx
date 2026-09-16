@@ -44,18 +44,16 @@ export const ChatThread = observer(
 // SUBCOMPONENTES
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Burbuja de asistente con un indicador de "Pensando…" mientras el engine responde. */
+/** Indicador de Thinking... con icono enmarcado y texto minimalista como en la captura */
 const IndicadorPensando = () => (
-  <div className="flex justify-start">
-    <div className="max-w-[80%] rounded-2xl rounded-bl-sm border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
-      <span className="inline-flex items-center gap-1">
-        Pensando
-        <span className="inline-flex gap-0.5">
-          <span className="h-1 w-1 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.3s]" />
-          <span className="h-1 w-1 animate-bounce rounded-full bg-gray-400 [animation-delay:-0.15s]" />
-          <span className="h-1 w-1 animate-bounce rounded-full bg-gray-400" />
-        </span>
+  <div className="flex justify-start my-2">
+    <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
+      <span className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xs">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse text-gray-600 dark:text-gray-300">
+          <circle cx="12" cy="12" r="3" />
+        </svg>
       </span>
+      <span>Thinking...</span>
     </div>
   </div>
 );

@@ -93,7 +93,18 @@ const REGLAS_INTENCION: ReadonlyArray<{
   },
   { keywords: ["canal", "origen", "whatsapp"], toolId: "pedidos.getCanalTop" },
   {
-    keywords: ["venta", "vendimos", "monto", "ingreso"],
+    keywords: [
+      "venta",
+      "vendimos",
+      "monto",
+      "ingreso",
+      "spreadsheet",
+      "excel",
+      "tabla",
+      "hoja de calculo",
+      "hoja de cálculo",
+      "top",
+    ],
     toolId: "pedidos.getVentasPeriodo",
   },
   {

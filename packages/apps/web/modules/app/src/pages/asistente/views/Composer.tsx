@@ -58,9 +58,9 @@ export const Composer = observer(
 
         {/* ── Fila inferior: etiqueta (izq) + botón circular (der) ── */}
         <div className="mt-1 flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
             <SparkleIcon />
-            Asistente IA
+            AI Assistant
           </span>
 
           <button
@@ -68,9 +68,13 @@ export const Composer = observer(
             onClick={enviar}
             disabled={deshabilitado}
             aria-label="Enviar"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-40 dark:disabled:opacity-30"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-100"
           >
-            {pensando ? <SpinnerIcon /> : <ArrowUpIcon />}
+            {pensando ? (
+              <span className="h-3 w-3 rounded-xs bg-current" />
+            ) : (
+              <ArrowUpIcon />
+            )}
           </button>
         </div>
       </div>

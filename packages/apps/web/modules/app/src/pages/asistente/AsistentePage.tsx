@@ -6,6 +6,7 @@ import { ChatThread } from "./views/ChatThread";
 import { Composer } from "./views/Composer";
 import { FactsPanel } from "./views/FactsPanel";
 import { ConversationsSidebar } from "./views/ConversationsSidebar";
+import { ArtifactCanvas } from "./views/canvas";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ASISTENTE PAGE
@@ -13,21 +14,17 @@ import { ConversationsSidebar } from "./views/ConversationsSidebar";
 
 /**
  * SUGERENCIAS — tarjetas del estado vacío.
- *
- * Cada tarjeta enlaza a una pregunta REAL que el `LocalRuleEngine` sabe
- * responder por keywords (hoy / canal líder / diagnóstico de desempeño). Al
- * hacer clic se envía la `pregunta` al store como si el usuario la escribiera.
  */
 const SUGERENCIAS: { titulo: string; descripcion: string; pregunta: string }[] = [
+  {
+    titulo: "Top 10 Productos",
+    descripcion: "Generar una hoja de cálculo con los productos de mayor rotación",
+    pregunta: "Genera una hoja de cálculo con el top 10 de productos",
+  },
   {
     titulo: "Resumen de hoy",
     descripcion: "¿Cuántos pedidos tuve hoy y cómo va el día?",
     pregunta: "¿Cuántos pedidos tuve hoy?",
-  },
-  {
-    titulo: "Canal líder",
-    descripcion: "¿Cuál fue el canal con más pedidos?",
-    pregunta: "¿Cuál fue el canal líder?",
   },
   {
     titulo: "Diagnóstico",
@@ -69,6 +66,8 @@ export const AsistentePage = observer(() => {
     .reverse()
     .find((m) => m.role === "assistant" && m.evidence)?.evidence;
 
+  const activeArtifact = assistantStore.activeArtifact;
+
   return (
     <>
       <PageMeta title="NECTO AI" description="Necto Intelligence — pregunta sobre tus pedidos" />
@@ -76,115 +75,139 @@ export const AsistentePage = observer(() => {
       {/* Altura grande y estable tipo chat: el shell no propaga altura fija,
           así que basamos la altura mínima en el viewport descontando
           header+footer+paddings del AppShell (~16rem). */}
-      <div className="flex min-h-[calc(100vh-16rem)] gap-4">
-        {/* ── Columna principal ── */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* Encabezado: título + pill estático "Necto" + botón Limpiar */}
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">NECTO AI</h1>
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
-                Necto
-              </span>
-              {/* Toggle de la barra de conversaciones (a la izquierda de "Limpiar") */}
-              <button
-                type="button"
-                onClick={() => setBarraAbierta((v) => !v)}
-                aria-label="Conversaciones"
-                aria-pressed={barraAbierta}
-                className={`flex items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors ${
-                  barraAbierta
-                    ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-300"
-                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-                }`}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="15" y1="3" x2="15" y2="21" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => assistantStore.limpiar()}
-                disabled={!hayMensajes}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
-              >
-                Limpiar
-              </button>
-            </div>
+      {/* Contenedor principal con fondo sutil que resalta la separación de ambas tarjetas */}
+      <div className="flex flex-col gap-4">
+        {/* Encabezado general de la pantalla */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">AI Assistant</h1>
+            <span className="rounded-full border border-gray-200 px-3 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
+              Necto
+            </span>
           </div>
 
-          {hayMensajes || pensando ? (
-            /* ── Con conversación: hilo scrollable arriba, composer fijo abajo ── */
-            <div className="flex min-h-0 flex-1 flex-col">
-              {/* Hilo de conversación scrollable que crece */}
-              <div className="min-h-0 flex-1 overflow-hidden">
-                <ChatThread mensajes={assistantStore.mensajes} pensando={pensando} />
-              </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Toggle de la barra de conversaciones */}
+            <button
+              type="button"
+              onClick={() => setBarraAbierta((v) => !v)}
+              aria-label="Conversaciones"
+              aria-pressed={barraAbierta}
+              className={`flex items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                barraAbierta
+                  ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-300"
+                  : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+              }`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="15" y1="3" x2="15" y2="21" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => assistantStore.limpiar()}
+              disabled={!hayMensajes}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Limpiar
+            </button>
+          </div>
+        </div>
 
-              {/* Zona inferior fija: aviso de error + composer */}
-              <div className="mx-auto w-full max-w-3xl py-3">
-                {/* Aviso de error discreto (requisito 14.x) */}
-                {assistantStore.error !== null && (
-                  <div className="mb-2 rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
-                    {assistantStore.error}
-                  </div>
-                )}
-
-                <Composer
-                  onEnviar={(t) => assistantStore.enviar(t)}
-                  pensando={pensando}
-                />
-              </div>
-            </div>
-          ) : (
-            /* ── Estado vacío: contenido centrado verticalmente ── */
-            <div className="flex flex-1 flex-col items-center justify-center gap-6">
-              <div className="mx-auto w-full max-w-3xl">
-                {/* Saludo grande centrado */}
-                <p className="mb-6 text-center text-xl font-semibold text-gray-700 md:text-2xl dark:text-gray-200">
-                  ¿En qué puedo ayudarte hoy?
-                </p>
-
-                {/* Tarjetas de sugerencia (responsive: apiladas en móvil) */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {SUGERENCIAS.map((s) => (
-                    <SuggestionCard
-                      key={s.titulo}
-                      titulo={s.titulo}
-                      descripcion={s.descripcion}
-                      onClick={() => assistantStore.enviar(s.pregunta)}
-                    />
-                  ))}
+        {/* ── Contenedor Split-Screen: dos tarjetas flotantes con separación (gap) limpia ── */}
+        <div className="flex min-h-[calc(100vh-14rem)] gap-5 sm:gap-6 items-stretch">
+          {/* ── Tarjeta Izquierda (Chat con contorno redondeado) ── */}
+          <div
+            className={`flex min-w-0 flex-col rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
+              activeArtifact
+                ? "w-full lg:w-1/2 xl:w-[48%]"
+                : "flex-1"
+            }`}
+          >
+            {hayMensajes || pensando ? (
+              /* ── Con conversación: hilo scrollable arriba, composer fijo abajo ── */
+              <div className="flex min-h-0 flex-1 flex-col">
+                {/* Hilo de conversación scrollable */}
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <ChatThread mensajes={assistantStore.mensajes} pensando={pensando} />
                 </div>
 
-                {/* Composer tipo tarjeta */}
-                <div className="mt-4">
+                {/* Zona inferior fija: aviso de error + composer */}
+                <div
+                  className={`w-full pt-3 ${
+                    activeArtifact ? "max-w-none" : "mx-auto max-w-2xl"
+                  }`}
+                >
+                  {assistantStore.error !== null && (
+                    <div className="mb-2 rounded-lg border border-error-200 bg-error-50 px-3 py-2 text-sm text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+                      {assistantStore.error}
+                    </div>
+                  )}
+
                   <Composer
                     onEnviar={(t) => assistantStore.enviar(t)}
                     pensando={pensando}
                   />
                 </div>
               </div>
-            </div>
+            ) : (
+              /* ── Estado vacío: contenido centrado verticalmente ── */
+              <div className="flex flex-1 flex-col items-center justify-center gap-6">
+                <div
+                  className={`w-full ${
+                    activeArtifact ? "max-w-none" : "mx-auto max-w-2xl"
+                  }`}
+                >
+                  {/* Saludo grande centrado */}
+                  <p className="mb-6 text-center text-xl font-semibold text-gray-700 md:text-2xl dark:text-gray-200">
+                    ¿En qué puedo ayudarte hoy?
+                  </p>
+
+                  {/* Tarjetas de sugerencia */}
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {SUGERENCIAS.map((s) => (
+                      <SuggestionCard
+                        key={s.titulo}
+                        titulo={s.titulo}
+                        descripcion={s.descripcion}
+                        onClick={() => assistantStore.enviar(s.pregunta)}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Composer tipo tarjeta */}
+                  <div className="mt-4">
+                    <Composer
+                      onEnviar={(t) => assistantStore.enviar(t)}
+                      pensando={pensando}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── Tarjeta Derecha (ArtifactCanvas) o Barra Lateral ── */}
+          {activeArtifact ? (
+            <aside className="flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900">
+              <ArtifactCanvas
+                artifact={activeArtifact}
+                onClose={() => assistantStore.closeArtifact()}
+                isLoading={pensando}
+              />
+            </aside>
+          ) : barraAbierta ? (
+            <ConversationsSidebar onClose={() => setBarraAbierta(false)} />
+          ) : (
+            hayMensajes &&
+            ultimaEvidencia && (
+              <aside className="hidden w-80 lg:w-96 shrink-0 flex-col overflow-y-auto rounded-3xl border border-gray-200/80 bg-white p-5 shadow-xs lg:flex dark:border-gray-800 dark:bg-gray-900">
+                <FactsPanel evidence={ultimaEvidencia} />
+              </aside>
+            )
           )}
         </div>
-
-        {/* ── Aside derecho ──
-            Coordinación: cuando la barra de conversaciones está abierta se
-            prioriza mostrarla (opción más limpia); el FactsPanel de evidencia
-            solo aparece cuando la barra está CERRADA. Así nunca compiten dos
-            asides por el espacio de la derecha. */}
-        {barraAbierta ? (
-          <ConversationsSidebar onClose={() => setBarraAbierta(false)} />
-        ) : (
-          hayMensajes &&
-          ultimaEvidencia && (
-            <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto rounded-2xl border border-gray-200 bg-white xl:flex dark:border-gray-800 dark:bg-gray-900">
-              <FactsPanel evidence={ultimaEvidencia} />
-            </aside>
-          )
-        )}
       </div>
     </>
   );

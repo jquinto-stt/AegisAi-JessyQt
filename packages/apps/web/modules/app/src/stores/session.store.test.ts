@@ -81,7 +81,7 @@ describe("administrador como rol normal (invariante C9)", () => {
     const ctx = sessionStore.accessContext;
     expect(ctx.autenticado).toBe(true);
     expect(ctx.rolId).toBe("admin_tienda");
-    expect(ctx.capacidades).toHaveLength(16);
+    expect(ctx.capacidades).toHaveLength(17);
     expect(ctx.operadorId).toBeNull();
 
     expect(sessionStore.hasPermission("settings.manage")).toBe(true);
@@ -90,7 +90,7 @@ describe("administrador como rol normal (invariante C9)", () => {
     expect(sessionStore.accesoTotal).toBe(true);
 
     // Se resuelve por rol, no por una lista especial del admin.
-    expect(rolesStore.porId("admin_tienda")?.capacidades).toHaveLength(16);
+    expect(rolesStore.porId("admin_tienda")?.capacidades).toHaveLength(17);
   });
 
   it("una sesión directa de tipo operador NO está autenticada", async () => {

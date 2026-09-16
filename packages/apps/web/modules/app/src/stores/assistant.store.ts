@@ -69,6 +69,17 @@ export interface GrupoConversaciones {
   items: Conversacion[];
 }
 
+/**
+ * Artefacto interactivo renderizable en el Canvas lateral (Spreadsheet / Chart / List).
+ */
+export interface AssistantArtifact {
+  id: string;
+  type: "spreadsheet" | "chart" | "list" | "comparison";
+  title: string;
+  data: any;
+  createdAt?: string;
+}
+
 /** Forma persistida en localStorage. */
 interface AssistantSnapshot {
   conversaciones: Conversacion[];
@@ -194,6 +205,19 @@ export class AssistantStore {
   /** Último error de procesamiento, o `null` si no hubo. */
   error: string | null = null;
 
+  /** Artefacto activo para visualizar en el Canvas lateral (tipo Excel, gráfico o lista). */
+  activeArtifact: AssistantArtifact | null = null;
+
+  /** Abre un artefacto en el Canvas interactivo lateral. */
+  openArtifact(artifact: AssistantArtifact): void {
+    this.activeArtifact = artifact;
+  }
+
+  /** Cierra el Canvas interactivo y devuelve el chat al ancho centrado. */
+  closeArtifact(): void {
+    this.activeArtifact = null;
+  }
+
   /**
    * @param engine implementación del motor a usar. Por defecto `LocalRuleEngine`
    *   (motor rule-based local del MVP). Inyectable para pruebas o para sustituir
@@ -304,21 +328,23 @@ export class AssistantStore {
 
   // ── Multi-conversación ────────────────────────────────────────────────────
 
-  /** Crea una conversación vacía, la agrega y la marca activa; limpia error. */
+  /** Crea una conversación vacía, la agrega y la marca activa; limpia error y cierra canvas. */
   nuevaConversacion(): void {
     const conv = crearConversacionVacia();
     this.conversaciones.push(conv);
     this.conversacionActivaId = conv.id;
     this.error = null;
+    this.activeArtifact = null;
     this.persist();
   }
 
-  /** Cambia la conversación activa si el id existe; limpia error. */
+  /** Cambia la conversación activa si el id existe; limpia error y cierra canvas. */
   seleccionarConversacion(id: string): void {
     const existe = this.conversaciones.some((c) => c.id === id);
     if (!existe) return;
     this.conversacionActivaId = id;
     this.error = null;
+    this.activeArtifact = null;
     this.persist();
   }
 
@@ -331,6 +357,7 @@ export class AssistantStore {
     this.conversaciones = this.conversaciones.filter((c) => c.id !== id);
 
     if (eraActiva) {
+      this.activeArtifact = null;
       if (this.conversaciones.length === 0) {
         const conv = crearConversacionVacia();
         this.conversaciones.push(conv);
@@ -361,7 +388,9 @@ export class AssistantStore {
    *     usuario a la conversación activa y se marca `pensando`.
    *   - Al agregar el PRIMER mensaje user de una conversación con título default,
    *     se deriva el título a partir del texto.
-   *   - Ante éxito, se agrega la respuesta del motor al hilo.
+   *   - Ante éxito, se agrega la respuesta del motor al hilo. Si la respuesta
+   *     trae bloques estructurados (tabla, métricas, lista), activa automáticamente
+   *     el Canvas interactivo lateral.
    *   - Ante fallo del motor/tool, se setea un `error` legible, se conserva el
    *     historial (el mensaje del usuario permanece) y NO se agrega ninguna
    *     respuesta con evidencia parcial (requisitos 14.1, 14.2, 14.4).
@@ -406,6 +435,46 @@ export class AssistantStore {
       runInAction(() => {
         conv.mensajes.push(respuesta);
         conv.updatedAt = new Date().toISOString();
+
+        // Auto-activación del Canvas si la respuesta trae bloques interactivos
+        const tableBlock = respuesta.evidence?.blocks?.find(
+          (b) => b.kind === "table",
+        );
+        if (tableBlock && tableBlock.kind === "table") {
+          this.activeArtifact = {
+            id: nuevoId(),
+            type: "spreadsheet",
+            title: tableBlock.title || "Hoja de Cálculo",
+            data: tableBlock,
+            createdAt: new Date().toISOString(),
+          };
+        } else {
+          const listBlock = respuesta.evidence?.blocks?.find(
+            (b) => b.kind === "list",
+          );
+          if (listBlock && listBlock.kind === "list") {
+            this.activeArtifact = {
+              id: nuevoId(),
+              type: "list",
+              title: listBlock.title || "Listado",
+              data: listBlock,
+              createdAt: new Date().toISOString(),
+            };
+          } else {
+            const metricsBlock = respuesta.evidence?.blocks?.find(
+              (b) => b.kind === "metrics",
+            );
+            if (metricsBlock && metricsBlock.kind === "metrics") {
+              this.activeArtifact = {
+                id: nuevoId(),
+                type: "chart",
+                title: metricsBlock.title || "Métricas de Desempeño",
+                data: metricsBlock,
+                createdAt: new Date().toISOString(),
+              };
+            }
+          }
+        }
       });
     } catch {
       // Fallo del motor/tool: error legible, sin agregar respuesta parcial ni
@@ -425,7 +494,7 @@ export class AssistantStore {
    * Vacía el hilo de la conversación ACTIVA y limpia el error (requisito 1.7).
    *
    * Mantiene la semántica observable original: tras `limpiar()`,
-   * `store.mensajes` queda en `[]`.
+   * `store.mensajes` queda en `[]` y el canvas se cierra.
    */
   limpiar(): void {
     const conv = this.conversacionActiva;
@@ -434,6 +503,7 @@ export class AssistantStore {
       conv.updatedAt = new Date().toISOString();
     }
     this.error = null;
+    this.activeArtifact = null;
     this.persist();
   }
 }

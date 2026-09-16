@@ -8,6 +8,7 @@ interface BaseAppShellProps {
   header: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
+  noCard?: boolean;
 }
 
 /**
@@ -18,6 +19,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
   header,
   footer,
   children,
+  noCard = false,
 }) => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 xl:flex">
@@ -33,11 +35,17 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
           {header}
         </div>
 
-        {/* Main content as a floating rounded panel */}
+        {/* Main content */}
         <main className="flex-1 px-4 py-4 md:px-6 md:py-6">
-          <div className="min-h-full rounded-3xl bg-white p-6 shadow-theme-sm dark:bg-gray-900">
-            {children}
-          </div>
+          {noCard ? (
+            <div className="min-h-full">
+              {children}
+            </div>
+          ) : (
+            <div className="min-h-full rounded-3xl bg-white p-6 shadow-theme-sm dark:bg-gray-900">
+              {children}
+            </div>
+          )}
         </main>
 
         {/* Footer */}

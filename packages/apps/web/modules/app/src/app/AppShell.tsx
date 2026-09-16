@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
 import { observer } from "mobx-react-lite";
 import { 
   BaseAppShell, 
@@ -107,11 +107,15 @@ const AppHeader = observer(() => (
  * @kgId 6886ae306c98
  */
 export const AppShell = () => {
+  const location = useLocation();
+  const isAssistant = location.pathname.startsWith("/asistente");
+
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
       footer={<AppFooter />}
+      noCard={isAssistant}
     >
       <Outlet />
     </BaseAppShell>
