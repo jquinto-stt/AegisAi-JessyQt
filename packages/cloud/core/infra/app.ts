@@ -1,56 +1,124 @@
-/// <reference path="../../cloud/core/.sst/platform/config.d.ts" />
+/// <reference path="../.sst/platform/config.d.ts" />
 
-import { Stack } from '@webiai/sdk.infra';
-import type { CloudCoreEnv } from './env.js';
-import { Auth, Params } from './factories/index.js';
+import { Env, Config } from '@webiai/sdk.core';
+import { Stack } from '@webiai/sdk.infra/util/stack';
+import { resources } from '@webiai/sdk.infra/util/resources';
+import { DataExport } from '@webiai/sdk.infra/util/data-export';
+import { SstContext } from '@webiai/sdk.infra/util/sst-context';
+import { cloudCoreEnvVisitor, type CloudCoreEnv } from './env.js';
+import { createVpc } from './factories/vpc.js';
+import { createCognito } from './factories/cognito.js';
 
 /**
- * CloudCore — Infrastructure Stack for Necto
+ * CloudCore — Shared Infrastructure Stack
  *
- * Provisions shared base infrastructure:
- * - VPC: Networking layer (Public and Private Subnets)
- * - Cognito User Pool + Client (Authentication)
- * - SSM Parameters (Cross-stack contracts)
+ * Provisions and registers shared resources consumed by all other stacks:
+ * - VPC (networking layer)
+ * - Cognito User Pool + Client (authentication)
+ *
+ * Other stacks (srv.api, app.web) restore these resources via SSM.
  */
 export class CloudCore extends Stack<CloudCoreEnv> {
-  readonly networking: {
-    vpc: sst.aws.Vpc;
-  } = {} as any;
+  // --- Resource Groups ---
+  readonly networking = resources<{ vpc: any }>();
+  readonly auth = resources<{ userPool: any; client: any }>();
 
-  readonly auth: {
-    userPool: sst.aws.CognitoUserPool;
-    client: Auth.ClientType;
-  } = {} as any;
+  constructor() {
+    super(() => ({
+      app: Env.var('SST_APP').string()!,
+      stack: Env.var('SST_STACK').optional.string(),
+      retain: Env.var('SST_RETAIN').optional.bool(),
+      home: 'aws',
+    }), cloudCoreEnvVisitor);
+  }
 
-  initNetworking(): this {
-    const vpc = new sst.aws.Vpc('NectoVpc', {
-      nat: 'ec2',
-      az: 2,
+  async run(): Promise<void> {
+    await super.run();
+
+    // Phase 1: Create networking resources
+    await this.initNetworking();
+
+    // Phase 2: Create authentication resources
+    await this.initAuth();
+
+    // Phase 3: Register all resources for cross-stack consumption
+    await this.initRegister();
+  }
+
+  /**
+   * Phase 1 — Networking
+   *
+   * Creates the project VPC with public/private subnets, NAT, and bastion.
+   * All services in the project share this VPC.
+   */
+  private async initNetworking(): Promise<void> {
+    const { name: app, stage } = SstContext.app;
+
+    this.networking.vpc = createVpc({
+      env: this.env.schema,
+      appName: app,
+      stageName: stage,
     });
-    Object.assign(this.networking, { vpc });
-    return this;
   }
 
-  initAuth(): this {
-    const userPool = new sst.aws.CognitoUserPool('Auth@UserPool', {
-      usernames: ['email'],
+  /**
+   * Phase 2 — Authentication
+   *
+   * Creates Cognito User Pool with groups (admin, usuario) and an App Client
+   * configured for Authorization Code + PKCE (SPA flow).
+   */
+  private async initAuth(): Promise<void> {
+    const cognito = createCognito({
+      region: this.env.schema.aws.region,
     });
-    const client = userPool.addClient('Auth@Client');
-    Object.assign(this.auth, { userPool, client });
-    return this;
+
+    this.auth.userPool = cognito.userPool;
+    this.auth.client = cognito.client;
   }
 
-  initParameters(): this {
-    Params.ProjectInfo(this);
-    Params.AuthConfig(this, this.auth.userPool, this.auth.client);
-    return this;
-  }
+  /**
+   * Phase 3 — Register
+   *
+   * Writes all shared resources to SSM so other stacks can restore them.
+   * Also creates a DataExport with auth config for the frontend.
+   */
+  private async initRegister(): Promise<void> {
+    // Register VPC for cross-stack consumption
+    this.networking.vpc.register(this);
 
-  async run() {
-    this.initNetworking();
-    this.initAuth();
-    this.initParameters();
+    // Register Cognito User Pool
+    this.auth.userPool.register(this);
+
+    // Register Cognito Client
+    this.auth.client.register(this);
+
+    // DataExport: Auth config that the frontend needs
+    const authConfig = new DataExport<{
+      userPoolId: string;
+      clientId: string;
+      region: string;
+    }>('AuthConfig', {
+      userPoolId: this.auth.userPool.id,
+      clientId: this.auth.client.clientId,
+      region: this.env.schema.aws.region,
+    }, {
+      shared: {
+        urnNamespace: ['stt', 'Core'],
+        resourceName: 'Config.Auth',
+        stack: 'CloudCore',
+      },
+    });
+    authConfig.register(this);
   }
 }
 
-export default () => new CloudCore();
+/**
+ * Factory function — entry point for sst.config.ts
+ */
+export default () => {
+  Config.set('settings.logger.timestamp', false);
+  Config.set('settings.logger.colorize', true);
+  Config.set('settings.logger.data.style', 'compact');
+
+  return new CloudCore();
+};

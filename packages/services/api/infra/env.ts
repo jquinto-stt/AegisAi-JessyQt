@@ -1,7 +1,9 @@
-import type { EnvVisitor } from '@webiai/sdk.core';
+import type { EnvVisitor } from '@webiai/sdk.infra/util/stack-env';
 
 /**
  * Environment schema for the SrvApi stack.
+ *
+ * Variables come from: process.env → app-level SSM → stack-level SSM.
  */
 export interface SrvApiEnv {
   local: boolean;
@@ -13,6 +15,9 @@ export interface SrvApiEnv {
   };
 }
 
+/**
+ * Visitor that transforms raw env vars into the typed schema.
+ */
 export const srvApiEnvVisitor: EnvVisitor<SrvApiEnv> = (env) => ({
   local: env.SST_LOCAL?.optional.bool() ?? false,
   aws: {

@@ -42,7 +42,7 @@ export default function NotificationDropdown() {
       <ShellDropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
+        className="absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-[361px] lg:right-0"
       >
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -141,7 +141,7 @@ export default function NotificationDropdown() {
         </ul>
         <Link
           to="/"
-          className="block px-4 py-2 mt-3 text-theme-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+          className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           View All Notifications
         </Link>

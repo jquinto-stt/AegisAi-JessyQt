@@ -6,11 +6,7 @@ interface MenuSubmenuItemProps {
   /** Item display name */
   name: string;
   /** Navigation path */
-  path?: string;
-  /** Action on click */
-  onClick?: () => void;
-  /** Explicit active override */
-  active?: boolean;
+  path: string;
   /** Show "NEW" badge */
   isNew?: boolean;
   /** Show "PRO" badge */
@@ -25,18 +21,17 @@ interface MenuSubmenuItemProps {
 export const MenuSubmenuItem: React.FC<MenuSubmenuItemProps> = ({
   name,
   path,
-  onClick,
-  active: explicitActive,
   isNew = false,
   isPro = false,
   isActive = () => false,
 }) => {
-  const active = explicitActive !== undefined ? explicitActive : (path ? isActive(path) : false);
+  const active = isActive(path);
   const itemRef = useRef<HTMLLIElement>(null);
 
   // Scroll into view on initial mount if active
   useEffect(() => {
     if (active && itemRef.current) {
+      // Small delay to ensure the submenu is expanded first
       const timer = setTimeout(() => {
         itemRef.current?.scrollIntoView({ 
           behavior: 'smooth', 
@@ -47,37 +42,15 @@ export const MenuSubmenuItem: React.FC<MenuSubmenuItemProps> = ({
     }
   }, []); // Only on mount
 
-  const itemClass = `menu-dropdown-item cursor-pointer w-full text-left ${
-    active ? 'menu-dropdown-item-active font-semibold' : 'menu-dropdown-item-inactive'
-  }`;
-
-  if (onClick || !path) {
-    return (
-      <li ref={itemRef}>
-        <button
-          type="button"
-          onClick={onClick}
-          className={itemClass}
-        >
-          <span>{name}</span>
-          {(isNew || isPro) && (
-            <span className="flex items-center gap-1 ml-auto">
-              {isNew && <MenuBadge variant="new" isActive={active} />}
-              {isPro && <MenuBadge variant="pro" isActive={active} />}
-            </span>
-          )}
-        </button>
-      </li>
-    );
-  }
-
   return (
     <li ref={itemRef}>
       <Link
         to={path}
-        className={itemClass}
+        className={`menu-dropdown-item ${
+          active ? 'menu-dropdown-item-active' : 'menu-dropdown-item-inactive'
+        }`}
       >
-        <span>{name}</span>
+        {name}
         {(isNew || isPro) && (
           <span className="flex items-center gap-1 ml-auto">
             {isNew && <MenuBadge variant="new" isActive={active} />}

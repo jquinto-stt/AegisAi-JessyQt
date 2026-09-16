@@ -1,11 +1,13 @@
 {
-  "name": "@stt/necto.services.api",
+  "name": "@stt/repo-prueba.srv.api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "modules/service"
+  ],
   "scripts": {
-    "dev": "sst dev",
-    "deploy": "sst deploy",
-    "remove": "sst remove"
+    "srv.api": "npm run webiai:dev",
+    "webiai:dev": "webiai infra dev"
   }
 }

@@ -1,12 +1,12 @@
 import type { Setup } from '../bootstrap.js';
+import { TurnosDAO } from './TurnosDAO.js';
 
 /**
  * Register business services (DAOs, models, etc.) in the ServiceManager.
  */
-export const services: Setup = async (_sm) => {
-  // Database clients
-  // Domain models
-  // Business logic
+export const services: Setup = async (sm) => {
+  // Data access — single-table DynamoDB DAO for queues + tickets
+  sm.register(TurnosDAO);
 };
 
 /**

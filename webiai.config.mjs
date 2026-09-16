@@ -1,14 +1,21 @@
 export default {
-  name: "necto",
-  scopes: ["@stt"],
-  artifacts: {
-    organization: "stt",
-    app: "necto",
-    context: "core",
+  scope: "stt",
+  name: "repo-prueba",
+  taxonomy: "project",
+
+  sst: {
+    app: "repo-prueba",
   },
+
+  sdk: {
+    version: "0.23.11",
+    packages: ["core", "aws", "infra-provider", "infra", "http", "ioc"],
+  },
+
   devlink: {
-    bundlePrefix: "apps",
-    bundleDefault: "web",
-    packagesDir: "packages",
+    modes: {
+      default: "dev",
+      dev: () => ({ manager: "store" }),
+    },
   },
 };

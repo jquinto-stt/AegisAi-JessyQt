@@ -1,9 +1,11 @@
 import Health from './Health.js';
-import Webhooks from './Webhooks.js';
+import Queues from './Queues.js';
+import Turnos from './Turnos.js';
 
 const controllers = [
   Health,
-  Webhooks,
+  Queues,
+  Turnos,
 ];
 
 export default controllers;

@@ -2,6 +2,8 @@ import type { EnvVisitor } from '@webiai/sdk.infra/util/stack-env';
 
 /**
  * Environment schema for the CloudCore stack.
+ *
+ * Variables come from: process.env → app-level SSM → stack-level SSM.
  */
 export interface CloudCoreEnv {
   local: boolean;
@@ -11,9 +13,7 @@ export interface CloudCoreEnv {
 }
 
 /**
- * Visitor that transforms raw env vars into typed schema.
- *
- * Receives merged variables from: process.env → app-level SSM → stack-level SSM.
+ * Visitor that transforms raw env vars into the typed schema.
  */
 export const cloudCoreEnvVisitor: EnvVisitor<CloudCoreEnv> = (env) => ({
   local: env.SST_LOCAL?.optional.bool() ?? false,

@@ -19,13 +19,6 @@ export interface UIPreferences {
 
 const STORAGE_KEY = 'webforge-ui-preferences';
 
-/**
- * Legacy key written by an older standalone ThemeToggle that bypassed this
- * store. It is no longer written anywhere; we only read it once to migrate an
- * existing preference, then delete it.
- */
-const LEGACY_THEME_KEY = 'theme';
-
 const DEFAULT_PREFERENCES: UIPreferences = {
   theme: 'light',
   sidebarExpanded: true,
@@ -78,9 +71,7 @@ class UIStore {
    * Effective sidebar expanded state considering mobile and hover
    */
   get isSidebarVisible(): boolean {
-    return this._isMobile
-      ? this.sidebarMobileOpen
-      : (this.sidebarExpanded || this.sidebarHovered);
+    return this.sidebarExpanded || this.sidebarHovered || this.sidebarMobileOpen;
   }
 
   /**
@@ -231,16 +222,13 @@ class UIStore {
   }
 
   private loadFromStorage(): void {
-    let hasStoredTheme = false;
-
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed: Partial<UIPreferences> = JSON.parse(saved);
-
+        
         if (parsed.theme === 'light' || parsed.theme === 'dark') {
           this.theme = parsed.theme;
-          hasStoredTheme = true;
         }
         if (typeof parsed.sidebarExpanded === 'boolean') {
           this.sidebarExpanded = parsed.sidebarExpanded;
@@ -248,30 +236,6 @@ class UIStore {
       }
     } catch {
       // Keep defaults
-    }
-
-    if (!hasStoredTheme) {
-      this.migrateLegacyThemeKey();
-    }
-  }
-
-  /**
-   * Adopt the value written by the old standalone ThemeToggle (if any), persist
-   * it under the canonical key and drop the legacy key. Runs at most once.
-   */
-  private migrateLegacyThemeKey(): void {
-    try {
-      const legacy = localStorage.getItem(LEGACY_THEME_KEY);
-
-      if (legacy === 'light' || legacy === 'dark') {
-        this.theme = legacy;
-        this.saveToStorage();
-      }
-      if (legacy !== null) {
-        localStorage.removeItem(LEGACY_THEME_KEY);
-      }
-    } catch {
-      // Ignore — storage may be unavailable (private mode, SSR, etc.)
     }
   }
 

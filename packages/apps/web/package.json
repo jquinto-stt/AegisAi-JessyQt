@@ -1,10 +1,11 @@
 {
-  "name": "@stt/necto.app.web",
+  "name": "@stt/repo-prueba.app.web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "workspaces": [],
   "scripts": {
-    "app.web": "npm run webiai:dev"
+    "app.web": "npm run webiai:dev",
+    "webiai:dev": "webiai infra dev"
   }
 }

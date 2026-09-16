@@ -1,3 +1,45 @@
 // Re-export from shell (canonical location)
 export { uiStore, UIStore } from '@/shell/stores';
 export type { Theme, UIPreferences } from '@/shell/stores';
+
+// Domain stores
+export { pedidosStore, PedidosStore } from '@/stores/pedidos.store';
+export type { Pedido, PedidoEstado, PedidoItem, PedidosConfig, CatalogoItem, PlantillasWhatsApp } from '@/stores/pedidos.store';
+export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
+
+export { sessionStore, SessionStore } from '@/stores/session.store';
+export type { Modulo, TipoSesion, AccessContext, DataScope } from '@/stores/session.store';
+
+export {
+  rolesStore,
+  RolesStore,
+  CAPACIDADES,
+  CAPACIDAD_LABEL,
+  CAPACIDAD_GRUPOS,
+  ROLES_SEED,
+  ROL_ADMIN,
+} from '@/stores/roles.store';
+export type { Rol, Capacidad, CapacidadGrupo, PortadorDeRol } from '@/stores/roles.store';
+
+export { operadoresStore, OperadoresStore, SECCIONES } from '@/stores/operadores.store';
+export type { Operador, OperadorEstado, Seccion, OperadorStats, EncuestaStats } from '@/stores/operadores.store';
+
+// Helpers de capacidad para las páginas (capa de conveniencia sobre hasPermission)
+export {
+  puede,
+  CAPACIDAD_POR_DESTINO,
+  puedeMoverA,
+  capacidadParaAvanzar,
+  puedeConfirmarPedido,
+  puedePrepararPedido,
+  puedeCancelarPedido,
+  puedeCrearPedido,
+  puedeVerProgramados,
+  puedeGestionarProgramados,
+  puedeEscribirCliente,
+  puedeEditarPlantillas,
+  puedeGuardarConfig,
+  puedeVerConfig,
+  puedeGestionarEquipo,
+  motivoSinPermiso,
+} from '@/stores/acceso.utils';

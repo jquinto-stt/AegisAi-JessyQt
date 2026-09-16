@@ -1,0 +1,58 @@
+/**
+ * Legacy CSS — Plain CSS rules pending migration to @utility or component encapsulation.
+ *
+ * These are traditional selector-based styles that predate the Tailwind CSS 4
+ * @utility system. They should eventually be:
+ * - Converted to @utility if reusable
+ * - Moved into the component .tsx via inline classes if one-off
+ * - Eliminated if no longer needed
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Scrollbar — Dark mode override (cannot use @apply inside pseudo-elements
+   with .dark ancestor selector)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #344054;
+}
+
+/* SimpleBar custom scrollbar styles */
+.simplebar-scrollbar::before {
+  @apply !bg-gray-200 !rounded-full dark:!bg-gray-700 !opacity-100;
+}
+.dark .simplebar-scrollbar::before {
+  @apply !bg-gray-700;
+}
+.simplebar-scrollbar.simplebar-visible:before {
+  @apply opacity-100;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Form Controls — Checkbox and Radio checked states
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.tableCheckbox:checked ~ span span {
+  @apply opacity-100;
+}
+.tableCheckbox:checked ~ span {
+  @apply border-brand-500 bg-brand-500;
+}
+
+.form-check-input:checked ~ span {
+  @apply border-[6px] border-brand-500 bg-brand-500 dark:border-brand-500;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Input Native Controls — Hide browser date/time spinners
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="time"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+  }
+}

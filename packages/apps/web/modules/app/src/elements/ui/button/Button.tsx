@@ -1,4 +1,4 @@
-import { ReactNode, HTMLAttributes } from "react";
+import { ReactNode } from "react";
 import { cn } from "@/utils";
 
 /**
@@ -25,25 +25,9 @@ export type ButtonVariant = "primary" | "outline" | "destructive" | "ghost";
 
 /**
  * Props for the **Button** component.
- *
- * Extiende `HTMLAttributes<HTMLButtonElement>` — extensión **local del
- * proyecto** sobre el `Button` canónico del catálogo, con el mismo patrón que
- * `Card` ya usa (`extends HTMLAttributes<HTMLDivElement>`).
- *
- * Motivo medido (lote 13): el `Button` del catálogo (MD5 `6be15781…`) **no
- * acepta `aria-*`** porque declara props nombradas sin `...rest`. El coste real
- * de ese hueco ya estaba en el producto: el trigger de la campana de
- * `NotificationBellDropdown` tuvo que **abandonar el `Button` del catálogo** y
- * usar un `<button>` nativo sólo para poder pasar `aria-label` y
- * `aria-expanded`. Con esta extensión el componente del catálogo vuelve a
- * servir para controles que necesitan nombre accesible.
- *
- * La extensión es **puramente aditiva**: no renombra ni cambia ninguna prop
- * existente, así que ningún consumidor actual puede romperse.
- *
  * @kgId 7a3e2210984c
  */
-export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps {
   /**
    * Button text or content rendered inside the `<button>` element.
    *
@@ -151,14 +135,15 @@ export interface ButtonProps extends HTMLAttributes<HTMLButtonElement> {
 
   /**
    * Additional CSS classes merged via `cn()` with `tailwind-merge`.
+   *
+   * Allows overriding padding, colors, width, or adding responsive variants.
+   *
+   * @example
+   * ```tsx
+   * <Button className="w-full">Full width</Button>
+   * ```
    */
   className?: string;
-
-  /** Native title attribute for tooltips */
-  title?: string;
-
-  /** Intent tag for telemetry / metadata */
-  intent?: string | string[];
 }
 
 /**
@@ -234,12 +219,9 @@ const Button: React.FC<ButtonProps> = ({
   endIcon,
   onClick,
   className,
-  title,
-  intent,
   disabled = false,
   loading = false,
   type = "button",
-  ...props
 }) => {
   const sizeClasses: Record<ButtonSize, string> = {
     sm: "h-9 px-3 py-2 text-sm",
@@ -286,12 +268,9 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      {...props}
       type={type}
-      title={title}
-      data-intent={Array.isArray(intent) ? intent.join(",") : intent}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
         sizeClasses[size],
         variantClasses[variant],
         isDisabled && "cursor-not-allowed opacity-50",

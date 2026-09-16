@@ -1,4 +1,3 @@
-import React from "react";
 import { cn } from "@/utils";
 
 /**
@@ -13,9 +12,9 @@ export type BadgeVariant = "light" | "solid";
 /**
  * Available sizes for the Badge component.
  *
- * - `"xs"` — Tiny: `text-theme-xs` `px-1.5` `py-0.5` — compact indicators, table cells
+ * - `"xs"` — Tiny: `text-[10px]` `px-1.5` `py-0.5` — compact indicators, table cells
  * - `"sm"` — Small: `text-theme-xs` `px-2` `py-0.5` — inline labels, tags
- * - `"md"` — Standard: `text-theme-sm` `px-2.5` `py-1` — default for most contexts *(default)*
+ * - `"md"` — Standard: `text-sm` `px-2.5` `py-1` — default for most contexts *(default)*
  * - `"lg"` — Large: `text-base` `px-3.5` `py-1.5` — prominent status, hero sections
  * @kgId 316444bbd12b
  */
@@ -91,12 +90,6 @@ export interface BadgeProps {
    * Useful for overriding padding, colors, or width in specific contexts.
    */
   className?: string;
-
-  /** Click callback if used interactively */
-  onClick?: (e: React.MouseEvent<HTMLSpanElement>) => void;
-
-  /** Intent tag for telemetry / metadata */
-  intent?: string | string[];
 }
 
 /**
@@ -158,17 +151,15 @@ const Badge: React.FC<BadgeProps> = ({
   endIcon,
   children,
   className,
-  onClick,
-  intent,
 }) => {
   const baseStyles =
     "inline-flex items-center justify-center gap-1 rounded-full font-medium";
 
   // Define size styles (font-size + padding progresivos)
   const sizeStyles = {
-    xs: "text-theme-xs px-1.5 py-0.5",
+    xs: "text-[10px] px-1.5 py-0.5",
     sm: "text-theme-xs px-2 py-0.5",
-    md: "text-theme-sm px-2.5 py-1",
+    md: "text-sm px-2.5 py-1",
     lg: "text-base px-3.5 py-1.5",
   };
 
@@ -199,16 +190,11 @@ const Badge: React.FC<BadgeProps> = ({
   };
 
   // Get styles based on size and color variant
-  const sizeClass = sizeStyles[size] || sizeStyles.md;
-  const variantGroup = variants[variant as keyof typeof variants] || variants.light;
-  const colorStyles = variantGroup[color as keyof typeof variantGroup] || variantGroup.primary;
+  const sizeClass = sizeStyles[size];
+  const colorStyles = variants[variant][color];
 
   return (
-    <span
-      onClick={onClick}
-      data-intent={Array.isArray(intent) ? intent.join(",") : intent}
-      className={cn(baseStyles, sizeClass, colorStyles, onClick && "cursor-pointer", className)}
-    >
+    <span className={cn(baseStyles, sizeClass, colorStyles, className)}>
       {startIcon && <span className="mr-1">{startIcon}</span>}
       {children}
       {endIcon && <span className="ml-1">{endIcon}</span>}

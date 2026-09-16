@@ -24,6 +24,18 @@
       ],
       "@webiai/sdk.infra/*": [
         "./.sst/webiai/dist/*"
+      ],
+      "@pulumi/pulumi": [
+        "./.sst/platform/node_modules/@pulumi/pulumi"
+      ],
+      "@pulumi/pulumi/*": [
+        "./.sst/platform/node_modules/@pulumi/pulumi/*"
+      ],
+      "@pulumi/aws": [
+        "./.sst/platform/node_modules/@pulumi/aws"
+      ],
+      "@pulumi/aws/*": [
+        "./.sst/platform/node_modules/@pulumi/aws/*"
       ]
     }
   },

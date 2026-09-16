@@ -59,14 +59,6 @@ export interface TextareaProps extends FormFieldProps {
    * Maps to the native HTML `maxLength` attribute.
    */
   maxLength?: number;
-
-  /**
-   * `id` of the underlying `<textarea>` element.
-   *
-   * Required to associate an external `<label htmlFor="…">` with the field:
-   * unlike the native element, the id is supplied by the caller.
-   */
-  id?: string;
 }
 
 /**
@@ -117,7 +109,6 @@ const TextArea: React.FC<TextareaProps> = ({
   required = false,
   readOnly = false,
   maxLength,
-  id,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy,
 }) => {
@@ -146,7 +137,6 @@ const TextArea: React.FC<TextareaProps> = ({
   return (
     <div className="relative">
       <textarea
-        id={id}
         placeholder={placeholder}
         rows={rows}
         value={value}
