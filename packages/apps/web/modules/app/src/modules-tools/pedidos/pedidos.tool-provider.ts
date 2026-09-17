@@ -57,6 +57,19 @@ const hoyLocalYmd = (): string => {
 };
 
 /**
+ * Convierte un ISO timestamp a formato "YYYY-MM-DD" en la fecha local,
+ * garantizando coherencia de calendario local independientemente de la hora del día.
+ */
+const aFechaLocalYmd = (iso: string): string => {
+  if (!iso) return "";
+  if (iso.length === 10 && !iso.includes("T")) return iso;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/**
  * Construye la fuente (`ToolSource`) de una tool de Pedidos con el detalle de
  * los getters consultados, para trazabilidad en el FactsPanel.
  */
@@ -182,7 +195,7 @@ export const getVentasPeriodo: AssistantTool = {
     let monto = 0;
     const enRango: Pedido[] = [];
     for (const p of pedidosStore.pedidos) {
-      const dia = p.createdAt.slice(0, 10);
+      const dia = aFechaLocalYmd(p.createdAt);
       if (dia >= desde && dia <= hasta) {
         volumen += 1;
         monto += pedidosStore.totalPedido(p);
@@ -204,7 +217,7 @@ export const getVentasPeriodo: AssistantTool = {
       .slice()
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .map((p): (string | number)[] => [
-        p.createdAt.slice(0, 10),
+        aFechaLocalYmd(p.createdAt),
         p.numero,
         p.cliente,
         pedidosStore.totalPedido(p),
@@ -598,7 +611,7 @@ export const getPendientes: AssistantTool = {
 const volumenDeDia = (ymd: string): number => {
   let total = 0;
   for (const p of pedidosStore.pedidos) {
-    if (p.createdAt.slice(0, 10) === ymd) total += 1;
+    if (aFechaLocalYmd(p.createdAt) === ymd) total += 1;
   }
   return total;
 };
@@ -804,7 +817,7 @@ export const compararSemanas: AssistantTool = {
     let pedidosPasada = 0;
 
     for (const p of pedidosStore.pedidos) {
-      const dia = p.createdAt.slice(0, 10);
+      const dia = aFechaLocalYmd(p.createdAt);
       if (dia >= inicioActual && dia <= finActual) {
         ventasActual += pedidosStore.totalPedido(p);
         pedidosActual += 1;
