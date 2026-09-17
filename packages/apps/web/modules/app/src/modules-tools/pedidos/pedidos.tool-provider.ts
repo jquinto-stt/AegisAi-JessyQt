@@ -246,6 +246,27 @@ export const getVentasPeriodo: AssistantTool = {
 
 /**
  * `pedidos.getTopProductos` — Hoja de cálculo de top 10 productos.
+ *
+ * ⚠️ DECLARADA PERO NO REGISTRADA. Esta tool existe en el módulo, pero no
+ * figura en `QUERY_TOOLS` ni en `ANALYZE_TOOLS`, así que
+ * `PedidosToolProvider.getTools()` no la devuelve y el `ToolRegistry` nunca la
+ * resuelve. `getTools()` documenta 10 tools y estas son esas 10.
+ *
+ * `REGLAS_INTENCION` respeta esa ausencia: ninguna de sus reglas apunta aquí.
+ * Las keywords "hoja de calculo", "excel", "tabla", "spreadsheet" y "top" van a
+ * `pedidos.getVentasPeriodo`, de modo que una frase de "hoja de cálculo" obtiene
+ * una tool registrada y no un hueco. Es inalcanzable a propósito.
+ *
+ * Consecuencia: nada debe prometer un ranking de productos al usuario. Hacerlo
+ * fue justo el defecto de la primera tarjeta del estado vacío del asistente
+ * ("Top 10 Productos — productos de mayor rotación"): la frase se enrutaba a
+ * `getVentasPeriodo` y devolvía el total de ventas del periodo. Corregido en
+ * `pages/asistente/sugerencias.ts`. Si algún día se registra esta tool, hay que
+ * añadir su regla en `REGLAS_INTENCION` y revisar además
+ * `configuracion.secciones.ts` y las tarjetas del estado vacío, con sus tests.
+ *
+ * El cálculo se mantiene honesto por si eso ocurre: ver el comentario en
+ * `run()` sobre los datos inventados que tenía antes.
  */
 export const getTopProductos: AssistantTool = {
   id: "pedidos.getTopProductos",
@@ -270,46 +291,38 @@ export const getTopProductos: AssistantTool = {
       }
     }
 
-    let filas: (string | number)[][] = [];
-    if (mapa.size > 0) {
-      const ordenados = [...mapa.entries()]
-        .sort((a, b) => b[1].cantidad - a[1].cantidad)
-        .slice(0, 10);
-
-      filas = ordenados.map(([nombre, stat]) => [
-        nombre,
-        "General",
-        stat.cantidad,
-        stat.pedidos,
-        0,
-      ]);
-    } else {
-      // Datos demo limpios y representativos (coincidentes con el mockup visual)
-      filas = [
-        ["Oversized T-Shirt", "T-Shirts", 150, 85, 12],
-        ["Classic Tote Bag", "Bags", 200, 120, 8],
-        ["Hooded Sweatshirt", "Shirts", 100, 73, 5],
-        ["Running Cap", "Accessories", 90, 64, 3],
-        ["Canvas Backpack", "Bags", 85, 58, 2],
-        ["Slim Denim Jeans", "Pants", 70, 45, 4],
-        ["Graphic Tee Alpha", "T-Shirts", 65, 40, 1],
-        ["Vintage Jacket", "Jackets", 50, 32, 2],
-        ["Cotton Socks (3pk)", "Accessories", 180, 95, 0],
-        ["Minimalist Wallet", "Accessories", 60, 42, 1],
-      ];
-    }
+    // Sin pedidos, la tabla va vacía: es la verdad.
+    //
+    // Antes había aquí un `else` con diez productos inventados en inglés
+    // ("Oversized T-Shirt", "Classic Tote Bag"…) descritos como "datos demo
+    // limpios y representativos (coincidentes con el mockup visual)". Una hoja
+    // de cálculo con datos falsos es peor que una hoja vacía: el usuario no
+    // tiene forma de saber que esos productos no son suyos.
+    //
+    // Solo columnas con dato real. `PedidoItem` es `{nombre, cantidad,
+    // precio?}`: no hay categoría ni devoluciones, así que "Category" (siempre
+    // la constante "General") y "Returns" (siempre 0) se van — eran constantes
+    // disfrazadas de dato. En su lugar va la venta real, que ya se agregaba en
+    // `monto` y no se estaba mostrando.
+    const filas: (string | number)[][] = [...mapa.entries()]
+      .sort((a, b) => b[1].cantidad - a[1].cantidad)
+      .slice(0, 10)
+      .map(([nombre, stat]) => [nombre, stat.cantidad, stat.pedidos, stat.monto]);
 
     const table: TableBlock = {
       kind: "table",
-      title: "Top 10 Products",
-      columns: ["Name", "Category", "Quantity", "Purchases", "Returns"],
+      title: "Top 10 productos",
+      columns: ["Producto", "Cantidad", "Pedidos", "Ventas"],
       rows: filas,
       exportable: true,
     };
 
     const facts: Fact[] = [
-      { label: "Total productos listados", value: filas.length },
-      { label: "Producto líder", value: String(filas[0]?.[0] ?? "N/A") },
+      { label: "Total de productos listados", value: filas.length },
+      {
+        label: "Producto líder",
+        value: filas.length > 0 ? String(filas[0][0]) : "Sin pedidos en el periodo",
+      },
     ];
 
     return { facts, blocks: [table], sources };

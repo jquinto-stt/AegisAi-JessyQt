@@ -28,6 +28,18 @@ const formatCell = (val: string | number | undefined | null): string => {
   return String(val);
 };
 
+/**
+ * Anchos (en % de la celda) de las barras del esqueleto de carga, en ciclo por
+ * columna.
+ *
+ * Que varíen es deliberado: una rejilla de barras todas del mismo largo se lee
+ * como una tabla de guiones y compite con el contenido real. Un ancho distinto
+ * por columna sugiere texto de longitud irregular, que es lo que el ojo espera
+ * encontrar cuando los datos lleguen. Los valores son fijos —y no aleatorios—
+ * para que el esqueleto sea determinista y no parpadee entre renders.
+ */
+const ANCHOS_ESQUELETO = [72, 88, 58, 80, 66];
+
 export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasViewProps) => {
   const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
 
@@ -99,19 +111,24 @@ export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasVie
                   {columnLetters.map((_, colIdx) => {
                     let cellValue = "";
                     let isBold = false;
-                    let isPlaceholder = false;
 
                     if (isHeaderRow) {
                       // Fila 1: Encabezados del set de datos
                       cellValue = baseColumns[colIdx] || "";
                       isBold = true;
-                      if (!cellValue && colIdx === 0 && isLoading) {
-                        cellValue = "Name";
-                        isPlaceholder = true;
-                      }
                     } else if (rowData && colIdx < rowData.length) {
                       cellValue = formatCell(rowData[colIdx]);
                     }
+
+                    // Esqueleto de carga: mientras `isLoading` está activo las
+                    // celdas de datos no muestran valor, muestran una barra
+                    // pulsante. Antes se pintaba un placeholder casi invisible
+                    // (`"Name"` en cursiva gris claro, solo en la primera
+                    // columna), que no comunicaba nada: la hoja parecía vacía y
+                    // rota en vez de en carga.
+                    const esEsqueletoDato = isLoading && !isHeaderRow;
+                    const esEsqueletoCabecera =
+                      isLoading && isHeaderRow && !baseColumns[colIdx];
 
                     const isSelected =
                       selectedCell?.r === rowNumber && selectedCell?.c === colIdx;
@@ -128,11 +145,21 @@ export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasVie
                           isBold
                             ? "font-semibold text-gray-900 dark:text-white"
                             : "text-gray-700 dark:text-gray-200"
-                        } ${isPlaceholder ? "italic text-gray-300 dark:text-gray-600" : ""}`}
+                        }`}
                       >
-                        <div className="truncate" title={cellValue}>
-                          {cellValue}
-                        </div>
+                        {esEsqueletoDato || esEsqueletoCabecera ? (
+                          <div
+                            aria-hidden="true"
+                            className="h-2.5 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700"
+                            style={{
+                              width: `${ANCHOS_ESQUELETO[colIdx % ANCHOS_ESQUELETO.length]}%`,
+                            }}
+                          />
+                        ) : (
+                          <div className="truncate" title={cellValue}>
+                            {cellValue}
+                          </div>
+                        )}
                       </td>
                     );
                   })}

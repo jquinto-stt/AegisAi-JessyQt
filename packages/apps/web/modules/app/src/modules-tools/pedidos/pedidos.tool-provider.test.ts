@@ -17,6 +17,7 @@ import {
   compararDias,
   diagnosticoDesempeno,
   compararSemanas,
+  getTopProductos,
 } from "./pedidos.tool-provider";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -631,5 +632,79 @@ describe("Property 4: Inferencias bien formadas y trazables", () => {
         assertInferenciasTrazables(res);
       }),
     );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// getTopProductos — tool DECLARADA pero NO registrada
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Esta tool no figura en `QUERY_TOOLS` ni en `ANALYZE_TOOLS`, así que el
+// registry no la resuelve y ninguna regla de `REGLAS_INTENCION` apunta a ella:
+// es inalcanzable por diseño. Precisamente por eso llevaba sin cobertura —y por
+// eso conservaba, escondida en un `else`, una tabla de diez productos inventados
+// en inglés ("Oversized T-Shirt", "Classic Tote Bag"…) que se habría mostrado al
+// usuario como si fueran suyos si alguien hubiera registrado la tool.
+//
+// Estos tests fijan que el cálculo dice la verdad: o refleja los items reales
+// del store, o va vacío. Nunca inventa.
+
+describe("getTopProductos — no inventa datos", () => {
+  it("no aparece en getTools(): es declarada, no registrada", () => {
+    const ids = new PedidosToolProvider().getTools().map((t) => t.id);
+    expect(ids).not.toContain("pedidos.getTopProductos");
+    expect(ids).toHaveLength(10);
+  });
+
+  it("con pedidos reales, cada fila sale de los items del store", async () => {
+    pedidosStore.pedidos = [
+      makePedido({ items: [{ nombre: "Combo clásico", cantidad: 3, precio: 25000 }] }),
+      makePedido({ items: [{ nombre: "Bebida 350ml", cantidad: 5, precio: 4000 }] }),
+    ];
+    const res = await getTopProductos.run({});
+    const table = res.blocks?.find((b) => b.kind === "table") as
+      | { columns: string[]; rows: (string | number)[][] }
+      | undefined;
+
+    const nombresReales = new Set(["Combo clásico", "Bebida 350ml"]);
+    const nombresEnTabla = (table?.rows ?? []).map((r) => String(r[0]));
+
+    expect(nombresEnTabla.length).toBeGreaterThan(0);
+    for (const n of nombresEnTabla) {
+      expect(nombresReales.has(n)).toBe(true);
+    }
+    // Ordenado por cantidad desc: "Bebida 350ml" (5) antes que "Combo clásico" (3).
+    expect(nombresEnTabla[0]).toBe("Bebida 350ml");
+  });
+
+  it("sin pedidos la tabla va vacía, no rellena con productos de ejemplo", async () => {
+    pedidosStore.pedidos = [];
+    const res = await getTopProductos.run({});
+    const table = res.blocks?.find((b) => b.kind === "table") as
+      | { rows: (string | number)[][] }
+      | undefined;
+
+    expect(table?.rows ?? []).toHaveLength(0);
+    // El Fact de líder lo dice en vez de inventar un producto.
+    const lider = res.facts.find((f) => f.label === "Producto líder")!;
+    expect(lider.value).toBe("Sin pedidos en el periodo");
+  });
+
+  it("las columnas describen solo campos que PedidoItem tiene, y en español", async () => {
+    pedidosStore.pedidos = [makePedido()];
+    const res = await getTopProductos.run({});
+    const table = res.blocks?.find((b) => b.kind === "table") as
+      | { title: string; columns: string[] }
+      | undefined;
+
+    // `PedidoItem` es {nombre, cantidad, precio?}: no hay categoría ni
+    // devoluciones. "Category" (siempre "General") y "Returns" (siempre 0) eran
+    // constantes disfrazadas de dato y se retiraron.
+    expect(table?.columns).toEqual(["Producto", "Cantidad", "Pedidos", "Ventas"]);
+    expect(table?.title).toBe("Top 10 productos");
+    const plano = JSON.stringify(res);
+    for (const prohibido of ["Oversized", "Tote Bag", "Category", "Returns", "Top 10 Products"]) {
+      expect(plano).not.toContain(prohibido);
+    }
   });
 });

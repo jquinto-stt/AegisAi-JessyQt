@@ -2,36 +2,17 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { assistantStore } from "@/stores";
+import { retardoEscalonado } from "@/utils";
 import { ChatThread } from "./views/ChatThread";
 import { Composer } from "./views/Composer";
 import { FactsPanel } from "./views/FactsPanel";
 import { ConversationsSidebar } from "./views/ConversationsSidebar";
 import { ArtifactCanvas } from "./views/canvas";
+import { SUGERENCIAS } from "./sugerencias";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ASISTENTE PAGE
 // ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * SUGERENCIAS — tarjetas del estado vacío.
- */
-const SUGERENCIAS: { titulo: string; descripcion: string; pregunta: string }[] = [
-  {
-    titulo: "Top 10 Productos",
-    descripcion: "Generar una hoja de cálculo con los productos de mayor rotación",
-    pregunta: "Genera una hoja de cálculo con el top 10 de productos",
-  },
-  {
-    titulo: "Resumen de hoy",
-    descripcion: "¿Cuántos pedidos tuve hoy y cómo va el día?",
-    pregunta: "¿Cuántos pedidos tuve hoy?",
-  },
-  {
-    titulo: "Diagnóstico",
-    descripcion: "¿Cómo estuvo el desempeño y qué observaciones hay?",
-    pregunta: "Dame un diagnóstico de desempeño",
-  },
-];
 
 /**
  * AsistentePage — pantalla del asistente "Necto Intelligence" con el concepto
@@ -116,7 +97,21 @@ export const AsistentePage = observer(() => {
         </div>
 
         {/* ── Contenedor Split-Screen: dos tarjetas flotantes con separación (gap) limpia ── */}
-        <div className="flex min-h-[calc(100vh-14rem)] gap-5 sm:gap-6 items-stretch">
+        {/*
+          `overflow-x-clip` no es decorativo: el paneo de entrada de la tarjeta
+          derecha la desplaza 32px hacia la derecha desde su posición de reposo,
+          que ya está pegada al borde. Medido en el navegador, eso desborda el
+          documento en 4px durante ~3 fotogramas y hace parpadear la barra de
+          scroll horizontal de la página — el artefacto exacto que el paneo
+          debía evitar.
+
+          Se usa `clip` y NO `hidden` a propósito: `hidden` crea un contenedor de
+          scroll (y con `overflow-y: visible` el navegador lo fuerza a `auto`),
+          lo que alteraría el layout del shell. `clip` recorta sin crear
+          contenedor de scroll y sin afectar al eje vertical, así que el hilo
+          del chat y el canvas siguen desplazándose con normalidad.
+        */}
+        <div className="flex min-h-[calc(100vh-14rem)] gap-5 sm:gap-6 items-stretch overflow-x-clip">
           {/* ── Tarjeta Izquierda (Chat con contorno redondeado) ── */}
           <div
             className={`flex min-w-0 flex-col rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
@@ -166,11 +161,13 @@ export const AsistentePage = observer(() => {
 
                   {/* Tarjetas de sugerencia */}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {SUGERENCIAS.map((s) => (
+                    {SUGERENCIAS.map((s, i) => (
                       <SuggestionCard
                         key={s.titulo}
+                        toolId={s.toolId}
                         titulo={s.titulo}
                         descripcion={s.descripcion}
+                        retardo={retardoEscalonado(i)}
                         onClick={() => assistantStore.enviar(s.pregunta)}
                       />
                     ))}
@@ -190,7 +187,19 @@ export const AsistentePage = observer(() => {
 
           {/* ── Tarjeta Derecha (ArtifactCanvas) o Barra Lateral ── */}
           {activeArtifact ? (
-            <aside className="flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-2xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900">
+            /*
+             * `key={activeArtifact.id}` NO es cosmético: es lo que hace que el
+             * paneo se reproduzca cada vez. Cada artefacto nace con un id nuevo
+             * (`nuevoId()` en el store), así que al pedir una segunda hoja de
+             * cálculo React DESMONTA la tarjeta anterior y monta una nueva. Sin
+             * la key reutilizaría el mismo nodo, la clase `paneo-entrada` no
+             * cambiaría y la animación no se volvería a disparar: la segunda
+             * tarjeta entraría de golpe, que es justo el defecto que se corrige.
+             */
+            <aside
+              key={activeArtifact.id}
+              className="paneo-entrada flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-2xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900"
+            >
               <ArtifactCanvas
                 artifact={activeArtifact}
                 onClose={() => assistantStore.closeArtifact()}
@@ -223,19 +232,33 @@ export const AsistentePage = observer(() => {
  * Muestra un `titulo` en negrita y una `descripcion` en gris; al hacer clic
  * dispara `onClick` (que envía una pregunta de ejemplo al asistente).
  */
+/**
+ * SuggestionCard — tarjeta del estado vacío.
+ *
+ * `toolId` no se pinta: es la promesa de la tarjeta ("pulsarme te lleva a esta
+ * herramienta") y queda como `data-sugerencia` para que un arnés pueda
+ * comprobarla contra la respuesta real en vez de contra el texto del botón.
+ */
 const SuggestionCard = ({
+  toolId,
   titulo,
   descripcion,
+  retardo,
   onClick,
 }: {
+  toolId: string;
   titulo: string;
   descripcion: string;
+  /** `animationDelay` ya formateado. Ver `retardoEscalonado` en `@/utils`. */
+  retardo?: string;
   onClick: () => void;
 }) => (
   <button
     type="button"
+    data-sugerencia={toolId}
     onClick={onClick}
-    className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-2xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
+    style={{ animationDelay: retardo }}
+    className="animate-entrada-lista cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-2xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
   >
     <p className="text-sm font-bold text-gray-800 dark:text-white/90">{titulo}</p>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>
