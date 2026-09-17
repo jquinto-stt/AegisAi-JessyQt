@@ -10,6 +10,7 @@ import { Button } from "@/elements/ui/button";
 import { DatePicker } from "@/elements/form/date-picker";
 import { LineChart } from "@/elements/ui/line-chart";
 import { PieChart } from "@/elements/ui/pie-chart";
+import { retardoEscalonado } from "@/utils";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import { Avatar } from "@/elements/ui/avatar";
 import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
@@ -27,6 +28,7 @@ import {
 import type { Pedido } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
+import { SinDatos } from "./SinDatos";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PALETA
@@ -224,6 +226,7 @@ const KpiCard = ({
   cambio,
   positivo = true,
   icon,
+  retardo,
   onClick,
 }: {
   titulo: string;
@@ -231,9 +234,17 @@ const KpiCard = ({
   cambio: string;
   positivo?: boolean;
   icon: React.ReactNode;
+  /** `animationDelay` ya formateado. Ver `retardoEscalonado` en `@/utils`. */
+  retardo?: string;
   onClick?: () => void;
 }) => (
-  <button type="button" onClick={onClick} className="block h-full w-full text-left" disabled={!onClick}>
+  <button
+    type="button"
+    onClick={onClick}
+    style={{ animationDelay: retardo }}
+    className="animate-entrada-lista block h-full w-full text-left"
+    disabled={!onClick}
+  >
     <Card className={"h-full " + (onClick ? "transition-all hover:border-brand-300 hover:shadow-2xs dark:hover:border-brand-700" : "")}>
       <div className="flex items-start justify-between">
         <p className="text-sm text-gray-500 dark:text-gray-400">{titulo}</p>
@@ -719,30 +730,23 @@ export const InicioPage = observer(() => {
     legend: { show: false },
     tooltip: { x: { show: true }, marker: { show: true } },
   };
-  // Demo: si el tramo elegido no tiene actividad real, muestra una curva de
-  // ejemplo del mismo tamaño para que el gráfico sea demostrativo (no un punto).
+  // Sin relleno: si el tramo elegido no tiene actividad, la serie son los ceros
+  // reales y la tarjeta enseña su estado vacío. Antes se dibujaba una onda
+  // inventada con `Math.sin` para que el gráfico "se viera", marcada con un
+  // distintivo "Demo" — pero en un panel de negocio nadie distingue de un
+  // vistazo una serie falsa de una real, y se decide con ella.
   const volReal = volPuntos.map((p) => p.total);
   const volVacio = volReal.every((n) => n === 0);
-  const demoCurva = (n: number) =>
-    Array.from({ length: n }, (_, i) => {
-      // Serie dentada estilo la referencia: onda base + "ruido" determinista
-      // (misma semilla en cada render, así no salta con la línea recta).
-      const x = (i / Math.max(1, n - 1)) * Math.PI * 2;
-      const base = 30 + 10 * Math.sin(x) + 4 * Math.sin(x * 2 + 1);
-      const ruido = 6 * Math.sin(i * 12.9898) + 4 * Math.sin(i * 4.1414 + 2);
-      return Math.max(4, Math.round(base + ruido));
-    });
-  const volSeries = [{ name: "Pedidos", data: volVacio ? demoCurva(volPuntos.length) : volReal }];
+  const volSeries = [{ name: "Pedidos", data: volReal }];
 
   // Donut: en curso vs entregados vs cancelados (colores oficiales NECTO).
   const entregadosTot = pedidosStore.historial.filter((p) => p.estado === "entregado").length;
   const enCursoTot = pedidosStore.totalEnCurso;
   const canceladosTot = pedidosStore.historial.filter((p) => p.estado === "cancelado").length;
   const donutReal = enCursoTot + entregadosTot + canceladosTot;
-  // Demo: si no hay nada, muestra un reparto de ejemplo.
   const donutVacio = donutReal === 0;
-  const donutSeries = donutVacio ? [5, 8, 2] : [enCursoTot, entregadosTot, canceladosTot];
-  const donutTotal = donutVacio ? 15 : donutReal;
+  const donutSeries = [enCursoTot, entregadosTot, canceladosTot];
+  const donutTotal = donutReal;
   const donutOptions: ApexOptions = {
     colors: [INDIGO, ORANGE, CELESTE],
     labels: ["En curso", "Entregados", "Cancelados"],
@@ -826,6 +830,7 @@ export const InicioPage = observer(() => {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           titulo="Recibidos hoy"
+          retardo={retardoEscalonado(0)}
           valor={String(recibidosHoy)}
           cambio={`${cambioRec >= 0 ? "+" : ""}${cambioRec}% vs ayer`}
           positivo={cambioRec >= 0}
@@ -834,6 +839,7 @@ export const InicioPage = observer(() => {
         />
         <KpiCard
           titulo="En curso"
+          retardo={retardoEscalonado(1)}
           valor={String(pedidosStore.totalEnCurso)}
           cambio={`${pedidosStore.urgentes.length} urgentes`}
           positivo={pedidosStore.urgentes.length === 0}
@@ -842,6 +848,7 @@ export const InicioPage = observer(() => {
         />
         <KpiCard
           titulo="Entregados hoy"
+          retardo={retardoEscalonado(2)}
           valor={String(pedidosStore.entregadosHoy)}
           cambio="ver historial"
           positivo
@@ -850,6 +857,7 @@ export const InicioPage = observer(() => {
         />
         <KpiCard
           titulo="Programados"
+          retardo={retardoEscalonado(3)}
           valor={String(pedidosStore.totalProgramados)}
           cambio="en cola"
           positivo
@@ -864,7 +872,6 @@ export const InicioPage = observer(() => {
           <div className="mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Volumen de pedidos</h3>
-              {volVacio && <span className="text-xs font-medium text-brand-500">Demo</span>}
             </div>
             {/* Chip de periodo dentro de la tarjeta → abre modal de calendario */}
             <button
@@ -885,7 +892,11 @@ export const InicioPage = observer(() => {
               </svg>
             </button>
           </div>
-          <LineChart series={volSeries} options={volOptions} height={300} />
+          {volVacio ? (
+            <SinDatos que="pedidos" alto={300} />
+          ) : (
+            <LineChart series={volSeries} options={volOptions} height={300} />
+          )}
           {rangoGrafico && (
             <button
               type="button"
@@ -998,10 +1009,15 @@ export const InicioPage = observer(() => {
         <Card>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Distribución</h3>
-            {donutVacio && <span className="text-xs font-medium text-brand-500">Demo</span>}
           </div>
           <div className="mt-2 flex justify-center">
-            <PieChart series={donutSeries} options={donutOptions} height={300} />
+            {donutVacio ? (
+              <div className="w-full">
+                <SinDatos que="pedidos" alto={300} />
+              </div>
+            ) : (
+              <PieChart series={donutSeries} options={donutOptions} height={300} />
+            )}
           </div>
         </Card>
       </div>

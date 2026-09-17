@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { ApexOptions } from "apexcharts";
 import { observer } from "mobx-react-lite";
@@ -15,14 +15,19 @@ import { Select } from "@/elements/form/select";
 import { DatePicker } from "@/elements/form/date-picker";
 import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, MoreDotIcon, CalenderIcon, AiIcon } from "@/icons";
 import { uiStore, pedidosStore } from "@/stores";
+import { puede } from "@/stores/acceso.utils";
+import { retardoEscalonado } from "@/utils";
 import type { PedidoEstado } from "@/stores";
+import { SinDatos } from "./SinDatos";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PALETA OFICIAL NECTO
+//
+// Solo el naranja de marca vive aquí: los colores por estado, canal, modalidad y
+// pago son catálogos y salen de `analitica.utils`, para que un gráfico y su
+// leyenda no puedan pintar lo mismo de dos colores distintos.
 // ═══════════════════════════════════════════════════════════════════════════
 const ORANGE = "#FF3F1A";
-const INDIGO = "#190088";
-const CELESTE = "#97D6DF";
 
 import {
   COLOR_ESTADO,
@@ -89,12 +94,6 @@ const PILLS_PERIODO: { id: Periodo; label: string }[] = [
 ];
 
 /** Estado vacío de un gráfico sin datos en el periodo. */
-const SinDatos = ({ que }: { que: string }) => (
-  <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 dark:border-gray-800 dark:text-gray-500">
-    Sin {que} en el periodo seleccionado.
-  </div>
-);
-
 /** Estado vacío de la vista lista. */
 const SIN_RESULTADOS = <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay pedidos que coincidan con los filtros.</p>;
 
@@ -109,10 +108,15 @@ interface KpiProps {
   value: string;
   /** Pie de tarjeta: contexto de qué mide, nunca una variación inventada. */
   subtitle: string;
+  /** Retardo de entrada escalonado, en ms (p. ej. `"80ms"`). */
+  retardo?: string;
 }
 
-const KpiCard = ({ title, value, subtitle }: KpiProps) => (
-  <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm dark:border-gray-800/80 dark:bg-gray-900">
+const KpiCard = ({ title, value, subtitle, retardo }: KpiProps) => (
+  <div
+    className="animate-entrada-lista flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm dark:border-gray-800/80 dark:bg-gray-900"
+    style={{ animationDelay: retardo }}
+  >
     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</span>
     <span className="my-3 text-2xl font-bold tracking-tight text-gray-900 sm:text-[28px] dark:text-white">
       {value}
@@ -227,9 +231,14 @@ export const AnaliticaPage = observer(() => {
     ? pedidosStore.seriePorEstadoEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta)
     : pedidosStore.seriePorEstado(diasVentana);
 
-  // Solo los estados que de verdad aparecen en el periodo: pintar las 8 series
-  // daría una leyenda llena de estados que en esta ventana no existen.
-  const estadosPresentes = ORDEN_ESTADO.filter((e) => conteoEstado[e] > 0);
+  // Solo los estados que de verdad aparecen en la VENTANA DIBUJADA: pintar las 8
+  // series daría una leyenda llena de estados que en este tramo no existen.
+  //
+  // Ojo con la fuente: se mira la serie, no el rango. En "todo el historial" el
+  // rango abarca todo pero el gráfico se acota a 30 días (igual que el de arriba),
+  // así que contar por rango mostraría estados con recuento y sin barra.
+  const estadosPresentes = ORDEN_ESTADO.filter((e) => serieEstado.some((d) => d.porEstado[e] > 0));
+  const totalEnVentana = (e: PedidoEstado) => serieEstado.reduce((s, d) => s + d.porEstado[e], 0);
 
   // Promedios: el divisor es la ventana real. Con "todo el historial" no hay
   // ventana fija, así que se usan los días que de verdad cubren los pedidos.
@@ -246,6 +255,13 @@ export const AnaliticaPage = observer(() => {
 
   /** Rango del periodo en texto corto, para los pies de tarjeta. */
   const etiquetaRango = rango ? `${diaCorto(rango.desde)} – ${diaCorto(rango.hasta)}` : "Todo el historial";
+
+  /**
+   * En "todo el historial" los KPIs abarcan todo pero los gráficos se acotan a 30
+   * días (`diasDeSerie`). Sin decirlo, la cabecera prometía un alcance que el
+   * gráfico no tenía.
+   */
+  const notaVentana = rango ? "" : " · gráficos: últimos 30 días";
 
   // ── Datos de la vista lista ──────────────────────────────────────────────
   const visibles = ordenarLista(filtrarLista(pedidosDelRango, filtros), orden);
@@ -302,135 +318,20 @@ export const AnaliticaPage = observer(() => {
     setPagina(1);
   };
 
-  // ── Opciones del gráfico ─────────────────────────────────────────────────
-  const chartOptions: ApexOptions = {
-    chart: {
-      type: "area",
-      fontFamily: "Inter, system-ui, sans-serif",
-      toolbar: { show: false },
-      zoom: { enabled: false },
-    },
-    colors: ["#10B981", "#F43F5E"],
-    stroke: { curve: "smooth", width: [2.5, 2] },
-    fill: {
-      type: ["gradient", "solid"],
-      gradient: { shadeIntensity: 1, opacityFrom: 0.22, opacityTo: 0.01, stops: [0, 90, 100] },
-      colors: ["#10B981", "transparent"],
-    },
-    markers: { size: [0, 0], hover: { size: 5 } },
-    xaxis: {
-      categories: serie.map((d) => diaCorto(d.fecha)),
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: { style: { colors: "#9CA3AF", fontSize: "12px", fontWeight: 400 } },
-    },
-    yaxis: {
-      min: 0,
-      tickAmount: 4,
-      labels: {
-        formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#9CA3AF", fontSize: "12px" },
-      },
-    },
-    grid: {
-      borderColor: isDark ? "#1F2937" : "#F3F4F6",
-      strokeDashArray: 0,
-      yaxis: { lines: { show: true } },
-      xaxis: { lines: { show: false } },
-    },
-    legend: { show: false },
-    tooltip: { theme: isDark ? "dark" : "light", shared: true, intersect: false },
-  };
+  // ── Gráficos: TODO lo que se pinta sale del store ────────────────────────
+  //
+  // Aquí vivían cuatro bloques con datos inventados de un panel web genérico:
+  // "Visitantes" (30 valores fijos que además se escalaban con `d.ventas * 50 +
+  // 75` para que la silueta quedara bonita), canales Direct/Referral/Organic
+  // Search/Social, sesiones Desktop/Mobile/Tablet y tablas con Google, Facebook
+  // y tailadmin.com. Ninguno medía un pedido, y el usuario leía esas cifras como
+  // si fueran de su negocio. Ahora cada serie es una agregación real del store, y
+  // el orden y el color salen del catálogo de `analitica.utils` para que un
+  // gráfico y su leyenda no puedan discrepar.
 
-  const chartSeries = [
-    { name: "Ventas", data: serie.map((d) => d.ventas) },
-    { name: "Cancelaciones", data: serie.map((d) => d.cancelados) },
-  ];
+  // Sparkline de la tarjeta "En curso": volumen real de los últimos 11 días.
+  const sparklineData = pedidosStore.volumenPorDia(11).map((d) => d.total);
 
-  // ── Configuraciones TailAdmin / Elements para el Dashboard ─────────────
-  const [periodoPill, setPeriodoPill] = useState<"12m" | "30d" | "7d" | "24h">("30d");
-
-  // Serie de 30 días para el gráfico de barras superior (TailAdmin BarChart)
-  const serie30Dias = useMemo(() => {
-    return pedidosStore.serieVentasYCancelaciones(30);
-  }, []);
-
-  const bar30Data = useMemo(() => {
-    if (rangoPersonalizado) {
-      const datos = pedidosStore.volumenEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta);
-      if (datos.length > 0) {
-        return datos.map((d) => Math.max(25, d.total * 60 + 50));
-      }
-    }
-    const baseVisual = [
-      160, 380, 195, 290, 180, 190, 285, 105, 210, 385,
-      275, 108, 118, 205, 260, 185, 305, 110, 88, 375,
-      108, 215, 285, 165, 285, 108, 112, 285, 375, 305,
-    ];
-    return serie30Dias.map((d, i) => {
-      if (d.ventas > 0) {
-        return Math.min(400, Math.max(85, d.ventas * 50 + 75));
-      }
-      return baseVisual[i % baseVisual.length];
-    });
-  }, [serie30Dias, rangoPersonalizado]);
-
-  const bar30Categorias = useMemo(() => {
-    if (rangoPersonalizado) {
-      const pts = pedidosStore.volumenEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta);
-      if (pts.length > 0) return pts.map((p) => diaCorto(p.fecha));
-    }
-    return Array.from({ length: 30 }, (_, i) => `${i + 1}`);
-  }, [rangoPersonalizado]);
-
-  const bar30Options: ApexOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "Outfit, Inter, system-ui, sans-serif",
-    },
-    colors: [ORANGE],
-    plotOptions: {
-      bar: {
-        columnWidth: "40%",
-        borderRadius: 4,
-        borderRadiusApplication: "end",
-      },
-    },
-    dataLabels: { enabled: false },
-    xaxis: {
-      categories: bar30Categorias,
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-      labels: {
-        style: { colors: "#9CA3AF", fontSize: "11px", fontWeight: 400 },
-      },
-    },
-    yaxis: {
-      min: 0,
-      max: 400,
-      tickAmount: 4,
-      labels: {
-        formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#9CA3AF", fontSize: "11px" },
-      },
-    },
-    grid: {
-      borderColor: isDark ? "#1F2937" : "#F3F4F6",
-      strokeDashArray: 0,
-      yaxis: { lines: { show: true } },
-      xaxis: { lines: { show: false } },
-    },
-    tooltip: {
-      theme: isDark ? "dark" : "light",
-      y: { formatter: (val) => `${val} pedidos / visitas` },
-    },
-  };
-
-  const bar30Series = [{ name: "Visitantes", data: bar30Data }];
-
-  // Gráfico Sparkline de Usuarios Activos
-  const sparklineData = [25, 20, 28, 24, 23, 15, 15, 35, 28, 22, 26];
   const sparklineOptions: ApexOptions = {
     chart: {
       type: "area",
@@ -441,52 +342,94 @@ export const AnaliticaPage = observer(() => {
     stroke: { curve: "smooth", width: 2.2 },
     fill: {
       type: "gradient",
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.35,
-        opacityTo: 0.02,
-        stops: [0, 95, 100],
-      },
+      gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 95, 100] },
     },
     tooltip: {
       theme: isDark ? "dark" : "light",
       fixed: { enabled: false },
       x: { show: false },
-      y: { title: { formatter: () => "Activos: " } },
+      y: { title: { formatter: () => "Pedidos: " } },
       marker: { show: false },
     },
   };
-  const sparklineSeries = [{ name: "Visitantes", data: sparklineData }];
+  const sparklineSeries = [{ name: "Pedidos", data: sparklineData }];
 
-  // Gráfico Stacked Bar de Canales de Adquisición
-  const stackedBarOptions: ApexOptions = {
+  // Barras del gráfico principal: pedidos por día de la ventana elegida.
+  const volumenOptions: ApexOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Outfit, Inter, system-ui, sans-serif",
+    },
+    colors: [ORANGE],
+    plotOptions: {
+      bar: { columnWidth: "40%", borderRadius: 4, borderRadiusApplication: "end" },
+    },
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: volumenDiario.map((d) => diaCorto(d.fecha)),
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: { style: { colors: "#9CA3AF", fontSize: "11px", fontWeight: 400 } },
+    },
+    yaxis: {
+      min: 0,
+      // Sin `max` fijo: el eje lo escala Apex según el día con más pedidos. El
+      // techo hardcodeado de 400 dejaba las barras aplastadas contra el suelo.
+      forceNiceScale: true,
+      tickAmount: 4,
+      labels: {
+        formatter: (v) => `${Math.round(v)}`,
+        style: { colors: "#9CA3AF", fontSize: "11px" },
+      },
+    },
+    grid: {
+      borderColor: isDark ? "#1F2937" : "#F3F4F6",
+      strokeDashArray: 0,
+      yaxis: { lines: { show: true } },
+      xaxis: { lines: { show: false } },
+    },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      y: { formatter: (val) => `${val} pedido${val === 1 ? "" : "s"}` },
+    },
+  };
+
+  const volumenSeries = [{ name: "Pedidos", data: volumenDiario.map((d) => d.total) }];
+
+  // ── Promedios de la tarjeta "En curso" ───────────────────────────────────
+  // La tasa diaria es real (total ÷ días de la ventana); semanal y mensual son
+  // esa misma tasa proyectada, y así se rotulan: "promedio", no "total".
+  const promediosFilas = [
+    { etiqueta: "Promedio diario", valor: promedio(promedios.diario) },
+    { etiqueta: "Promedio semanal", valor: num(promedios.semanal) },
+    { etiqueta: "Promedio mensual", valor: num(promedios.mensual) },
+  ];
+
+  // ── Barras apiladas: pedidos por estado a lo largo de la ventana ─────────
+  // Una serie por estado PRESENTE en el periodo, no cuatro categorías fijas.
+  const stackedOptions: ApexOptions = {
     chart: {
       type: "bar",
       stacked: true,
       toolbar: { show: false },
       fontFamily: "Outfit, Inter, system-ui, sans-serif",
     },
-    colors: [INDIGO, INDIGO_SOFT, ORANGE, CELESTE],
+    colors: estadosPresentes.map((e) => COLOR_ESTADO[e]),
     plotOptions: {
-      bar: {
-        columnWidth: "32%",
-        borderRadius: 3,
-        borderRadiusApplication: "end",
-      },
+      bar: { columnWidth: "32%", borderRadius: 3, borderRadiusApplication: "end" },
     },
     dataLabels: { enabled: false },
     xaxis: {
-      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+      categories: serieEstado.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: {
-        style: { colors: "#9CA3AF", fontSize: "11px" },
-      },
+      labels: { style: { colors: "#9CA3AF", fontSize: "11px" } },
     },
     yaxis: {
       min: 0,
-      max: 120,
-      tickAmount: 6,
+      forceNiceScale: true,
+      tickAmount: 5,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
         style: { colors: "#9CA3AF", fontSize: "11px" },
@@ -502,52 +445,44 @@ export const AnaliticaPage = observer(() => {
     tooltip: { theme: isDark ? "dark" : "light" },
   };
 
-  const stackedBarSeries = [
-    { name: "Direct", data: [44, 55, 41, 67, 22, 43, 21, 41] },
-    { name: "Referral", data: [13, 23, 20, 8, 13, 27, 33, 12] },
-    { name: "Organic Search", data: [11, 17, 15, 15, 21, 14, 15, 13] },
-    { name: "Social", data: [21, 7, 25, 13, 22, 8, 28, 16] },
-  ];
+  const stackedSeries = estadosPresentes.map((e) => ({
+    name: pedidosStore.estadoLabel(e),
+    data: serieEstado.map((d) => d.porEstado[e]),
+  }));
 
-  // Gráfico Donut de Sesiones por Dispositivo
+  // ── Donut: estado de pago de los pedidos del periodo ─────────────────────
   const donutOptions: ApexOptions = {
-    chart: {
-      type: "donut",
-      fontFamily: "Outfit, Inter, system-ui, sans-serif",
-    },
-    colors: [ORANGE, INDIGO, CELESTE],
-    labels: ["Desktop", "Mobile", "Tablet"],
-    plotOptions: {
-      pie: {
-        donut: {
-          size: "74%",
-        },
-      },
-    },
+    chart: { type: "donut", fontFamily: "Outfit, Inter, system-ui, sans-serif" },
+    colors: [COLOR_PAGO.pagado, COLOR_PAGO.pendiente],
+    labels: ["Pagado", "Pendiente"],
+    plotOptions: { pie: { donut: { size: "74%" } } },
     dataLabels: { enabled: false },
     stroke: { width: 0 },
     legend: { show: false },
     tooltip: {
       theme: isDark ? "dark" : "light",
-      y: { formatter: (val) => `${val}%` },
+      y: { formatter: (val) => `${val} pedido${val === 1 ? "" : "s"}` },
     },
   };
 
-  const donutSeries = [55, 30, 15];
+  const donutSeries = [porPago.pagado, porPago.pendiente];
 
-  // Tablas de Canales principales y Páginas principales
-  const canalesTable = [
-    { fuente: "Google", visitas: "4.7K" },
-    { fuente: "Facebook", visitas: "3.4K" },
-    { fuente: "Threads", visitas: "2.9K" },
-    { fuente: "Google", visitas: "1.5K" },
-  ];
-
-  const paginasTable = [
-    { fuente: "tailadmin.com", vistas: "4.7K" },
-    { fuente: "preview.tailadmin.com", vistas: "3.4K" },
-    { fuente: "docs.tailadmin.com", vistas: "2.9K" },
-    { fuente: "tailadmin.com/componetns", vistas: "1.5K" },
+  /** Leyenda del donut: cada porción con su recuento y su porcentaje real. */
+  const leyendaPago = [
+    {
+      clave: "pagado",
+      etiqueta: "Pagado",
+      color: COLOR_PAGO.pagado,
+      total: porPago.pagado,
+      cuota: cuotasPago[0] ?? 0,
+    },
+    {
+      clave: "pendiente",
+      etiqueta: "Pendiente",
+      color: COLOR_PAGO.pendiente,
+      total: porPago.pendiente,
+      cuota: cuotasPago[1] ?? 0,
+    },
   ];
 
   return (
@@ -642,28 +577,78 @@ export const AnaliticaPage = observer(() => {
               Descargar CSV
             </Button>
 
-            {/* Botón especial NECTO AI con acceso directo al chat */}
-            <button
-              type="button"
-              onClick={() => navigate("/asistente")}
-              className="relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#FF3F1A] via-[#7E57FF] to-[#190088] p-[1.5px] shadow-sm transition-all duration-300 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] group cursor-pointer"
-              title="Abrir Asistente Inteligente NECTO AI"
-            >
-              <span className="flex items-center gap-2 rounded-[10px] bg-white px-3.5 py-1.5 text-xs font-bold text-gray-900 transition-colors group-hover:bg-opacity-95 dark:bg-gray-950 dark:text-white">
-                <AiIcon className="h-4 w-4 text-[#FF3F1A] animate-pulse" />
-                <span className="bg-gradient-to-r from-[#FF3F1A] via-[#7E57FF] to-[#190088] bg-clip-text text-transparent font-extrabold tracking-wide dark:from-[#FF6647] dark:via-[#97D6DF] dark:to-white">
-                  NECTO AI
-                </span>
-                <span className="rounded-md bg-[#FF3F1A]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#FF3F1A] dark:bg-[#FF3F1A]/20">
-                  Chat
-                </span>
-              </span>
-            </button>
+            {/* Acceso directo a NECTO AI.
+                Es el único punto de entrada al asistente desde Analítica, así
+                que se distingue por **color de marca** (el naranja NECTO) y no
+                por peso visual: misma altura (`h-9`), misma tipografía y mismo
+                radio que el resto de la barra. Nada de degradados, de pulso ni
+                de escalado al pasar el ratón — el botón de al lado ya marca la
+                jerarquía y este no debe competir con ella.
+                Solo se ofrece a quien puede entrar: `/asistente` está guardada
+                por `assistant.use`, así que pintarlo sin la capacidad sería
+                ofrecer un callejón sin salida. */}
+            {puede("assistant.use") && (
+              <button
+                type="button"
+                onClick={() => navigate("/asistente")}
+                title="Abrir NECTO AI — asistente interno"
+                className="inline-flex h-9 shrink-0 items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/60 px-3.5 text-xs font-semibold text-brand-700 transition-colors hover:border-brand-300 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/20"
+              >
+                <AiIcon className="h-4 w-4 shrink-0" />
+                NECTO AI
+              </button>
+            )}
           </div>
         </div>
 
         {vista === "metricas" ? (
           <>
+            {/* ════════════════════════════════════════════════════════════
+                FILA DE KPIs — cifras reales del rango seleccionado
+                El subtítulo de la página promete "desempeño operativo y
+                financiero", así que el dinero tiene que estar a la vista: antes
+                se calculaban ingresos, ticket promedio y tasa de cancelación y
+                se descartaban sin pintarlos.
+            ════════════════════════════════════════════════════════════ */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+              <KpiCard
+                title="Pedidos del periodo"
+                value={num(totalPedidos)}
+                subtitle={`${etiquetaRango}${notaVentana}`}
+                retardo={retardoEscalonado(0)}
+              />
+              <KpiCard
+                title="Ingresos vendidos"
+                value={money(ingresosVendidos)}
+                subtitle={`${num(vendidos)} pedido${vendidos === 1 ? "" : "s"} vendido${vendidos === 1 ? "" : "s"}`}
+                retardo={retardoEscalonado(1)}
+              />
+              <KpiCard
+                title="Ticket promedio"
+                value={money(aov)}
+                subtitle="Por pedido vendido"
+                retardo={retardoEscalonado(2)}
+              />
+              <KpiCard
+                title="Tasa de cancelación"
+                value={pct(tasaCancelacion)}
+                subtitle={`${num(cancelados)} cancelado${cancelados === 1 ? "" : "s"} en el periodo`}
+                retardo={retardoEscalonado(3)}
+              />
+              <KpiCard
+                title="Tiempo de ciclo"
+                value={tiempoCiclo > 0 ? `${num(tiempoCiclo)} min` : "—"}
+                subtitle="De la creación a la entrega"
+                retardo={retardoEscalonado(4)}
+              />
+              <KpiCard
+                title="En curso ahora"
+                value={num(enCurso)}
+                subtitle={`${num(programados)} programado${programados === 1 ? "" : "s"} esperando`}
+                retardo={retardoEscalonado(5)}
+              />
+            </div>
+
             {/* ════════════════════════════════════════════════════════════
                 SECCIÓN SUPERIOR: Gráfico Principal de Columnas (Full Width)
             ════════════════════════════════════════════════════════════ */}
@@ -671,78 +656,44 @@ export const AnaliticaPage = observer(() => {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-                    Analítica
+                    Pedidos por día
                   </h3>
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {rangoPersonalizado
-                      ? `Visitantes en rango personalizado: ${diaCorto(rangoPersonalizado.desde)} al ${diaCorto(rangoPersonalizado.hasta)}`
-                      : "Analítica de visitantes de los últimos 30 días"}
+                    {etiquetaRango} · {num(totalPedidos)} pedido{totalPedidos === 1 ? "" : "s"} en el periodo
+                    {notaVentana}
                   </p>
                 </div>
 
-                {/* Filtro de periodos en píldora + botón de calendario libre */}
+                {/* Filtro de periodos en píldora + botón de calendario libre.
+                    Las píldoras salen de `PILLS_PERIODO`, que es el catálogo real
+                    de `Periodo`: antes había una cuarta píldora "24 horas" que por
+                    dentro seleccionaba la ventana de 7 días, y el estado activo
+                    vivía en una variable aparte que podía desincronizarse del
+                    periodo de verdad. */}
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRangoPersonalizado(null);
-                        setPeriodo("todo");
-                        setPeriodoPill("12m");
-                      }}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                        !rangoPersonalizado && periodoPill === "12m"
-                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}
-                    >
-                      12 meses
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRangoPersonalizado(null);
-                        setPeriodo("30d");
-                        setPeriodoPill("30d");
-                      }}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                        !rangoPersonalizado && periodoPill === "30d"
-                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}
-                    >
-                      30 días
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRangoPersonalizado(null);
-                        setPeriodo("7d");
-                        setPeriodoPill("7d");
-                      }}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                        !rangoPersonalizado && periodoPill === "7d"
-                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}
-                    >
-                      7 días
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRangoPersonalizado(null);
-                        setPeriodo("7d");
-                        setPeriodoPill("24h");
-                      }}
-                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                        !rangoPersonalizado && periodoPill === "24h"
-                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      }`}
-                    >
-                      24 horas
-                    </button>
+                    {PILLS_PERIODO.map(({ id, label }) => {
+                      const activo = !rangoPersonalizado && periodo === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={activo}
+                          onClick={() => {
+                            setRangoPersonalizado(null);
+                            setPeriodo(id);
+                            setPagina(1);
+                          }}
+                          className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                            activo
+                              ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Botón de Calendario libre */}
@@ -796,12 +747,10 @@ export const AnaliticaPage = observer(() => {
                               : [fechaDesde, fechaHasta]
                           }
                           onChange={(fechas) => {
-                            const arr = (fechas as Date[]).map((d) => {
-                              // Fecha LOCAL (no `toISOString`, que desplaza al UTC):
-                              // el rango se compara contra días de calendario local.
-                              const p = (n: number) => String(n).padStart(2, "0");
-                              return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-                            });
+                            // Fecha LOCAL vía `ymdLocal` (no `toISOString`, que
+                            // desplaza al UTC): el rango se compara contra días de
+                            // calendario local.
+                            const arr = (fechas as Date[]).map((d) => ymdLocal(d));
                             setFechaDesde(arr[0] ?? fechaDesde);
                             // Un solo clic en modo `range` devuelve 1 fecha: el
                             // "hasta" sigue a "desde" (un día suelto) en vez de
@@ -843,43 +792,45 @@ export const AnaliticaPage = observer(() => {
               </div>
 
               <div className="mt-4">
-                <Chart type="bar" series={bar30Series} options={bar30Options} height={280} />
+                {totalPedidos === 0 ? (
+                  <SinDatos que="pedidos" />
+                ) : (
+                  <Chart type="bar" series={volumenSeries} options={volumenOptions} height={280} />
+                )}
               </div>
             </div>
 
             {/* ════════════════════════════════════════════════════════════
-                SECCIÓN MEDIA: 3 Tarjetas en Fila (Canales, Páginas, Usuarios)
+                SECCIÓN MEDIA: canal + modalidad + ritmo de pedidos
+                Las tres tarjetas leen del store: reparto por canal de entrada,
+                reparto por modalidad de entrega y estado vivo del tablero.
             ════════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {/* Card 1: Canales principales */}
+              {/* Card 1: Pedidos por canal de entrada */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-                      Canales principales
-                    </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <MoreDotIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <CardTitle title="Pedidos por canal" hint={`WhatsApp y mostrador · ${etiquetaRango}`} />
 
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-100 text-[11px] text-gray-400 dark:border-gray-800 dark:text-gray-500">
-                          <th className="pb-3 font-normal">Fuente</th>
-                          <th className="pb-3 text-right font-normal">Visitantes</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-                        {canalesTable.map((item, idx) => (
-                          <tr key={`${item.fuente}-${idx}`} className="text-gray-700 dark:text-gray-300">
-                            <td className="py-3 font-medium text-gray-800 dark:text-gray-200">{item.fuente}</td>
-                            <td className="py-3 text-right font-semibold tabular-nums text-gray-600 dark:text-gray-400">{item.visitas}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="mt-4 space-y-3">
+                    {filasCanal.map((f) => (
+                      <div key={f.clave}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: f.color }} />
+                            {f.etiqueta}
+                          </span>
+                          <span className="tabular-nums text-gray-500 dark:text-gray-400">
+                            {num(f.total)} · {f.cuota}%
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${f.cuota}%`, backgroundColor: f.color }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -888,40 +839,36 @@ export const AnaliticaPage = observer(() => {
                   onClick={() => setVista("lista")}
                   className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
-                  <span>Informe de canales</span>
+                  <span>Ver los pedidos del periodo</span>
                   <span aria-hidden="true">→</span>
                 </button>
               </div>
 
-              {/* Card 2: Páginas principales */}
+              {/* Card 2: Pedidos por modalidad de entrega */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-                      Páginas principales
-                    </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <MoreDotIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <CardTitle title="Modalidades de entrega" hint={`Retiro, domicilio y en sitio · ${etiquetaRango}`} />
 
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-gray-100 text-[11px] text-gray-400 dark:border-gray-800 dark:text-gray-500">
-                          <th className="pb-3 font-normal">Fuente</th>
-                          <th className="pb-3 text-right font-normal">Páginas vistas</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-                        {paginasTable.map((item, idx) => (
-                          <tr key={`${item.fuente}-${idx}`} className="text-gray-700 dark:text-gray-300">
-                            <td className="py-3 font-medium text-gray-800 dark:text-gray-200">{item.fuente}</td>
-                            <td className="py-3 text-right font-semibold tabular-nums text-gray-600 dark:text-gray-400">{item.vistas}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="mt-4 space-y-3">
+                    {filasModalidad.map((f) => (
+                      <div key={f.clave}>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: f.color }} />
+                            {f.etiqueta}
+                          </span>
+                          <span className="tabular-nums text-gray-500 dark:text-gray-400">
+                            {num(f.total)} · {f.cuota}%
+                          </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                          <div
+                            className="h-full rounded-full"
+                            style={{ width: `${f.cuota}%`, backgroundColor: f.color }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -930,22 +877,18 @@ export const AnaliticaPage = observer(() => {
                   onClick={() => setVista("lista")}
                   className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
-                  <span>Informe de canales</span>
+                  <span>Ver los pedidos del periodo</span>
                   <span aria-hidden="true">→</span>
                 </button>
               </div>
 
-              {/* Card 3: Usuarios activos */}
+              {/* Card 3: Pedidos en curso (estado vivo del tablero) */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-                      Usuarios activos
-                    </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <MoreDotIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <CardTitle
+                    title="Pedidos en curso"
+                    hint={`En vivo ahora · promedios de ${etiquetaRango}`}
+                  />
 
                   <div className="mt-3 flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
@@ -953,107 +896,101 @@ export const AnaliticaPage = observer(() => {
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
                     </span>
                     <span className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
-                      {enCurso > 0 ? enCurso * 27 + 109 : 109}
+                      {num(enCurso)}
                     </span>
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                      Visitantes en vivo
-                    </span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">en curso</span>
                   </div>
+                  <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                    {num(programados)} programado{programados === 1 ? "" : "s"} esperando su hora
+                  </p>
 
                   <div className="my-2">
-                    <Chart type="area" series={sparklineSeries} options={sparklineOptions} height={110} />
+                    {sparklineData.some((n) => n > 0) ? (
+                      <Chart type="area" series={sparklineSeries} options={sparklineOptions} height={110} />
+                    ) : (
+                      <p className="flex h-[110px] items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">
+                        Sin pedidos en los últimos 11 días.
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 pt-3 text-center dark:divide-gray-800 dark:border-gray-800">
-                  <div>
-                    <p className="text-base font-bold text-gray-800 dark:text-white">224</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio diario</p>
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-gray-800 dark:text-white">1.4K</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio semanal</p>
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-gray-800 dark:text-white">22.1K</p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio mensual</p>
-                  </div>
+                  {promediosFilas.map((p) => (
+                    <div key={p.etiqueta}>
+                      <p className="text-base font-bold text-gray-800 dark:text-white">{p.valor}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">{p.etiqueta}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* ════════════════════════════════════════════════════════════
-                SECCIÓN INFERIOR: Canales de Adquisición + Sesiones por Dispositivo
+                SECCIÓN INFERIOR: pedidos por estado + estado de pago
             ════════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-              {/* Card 1: Canales de adquisición (Stacked Bars) */}
+              {/* Card 1: Pedidos por estado (barras apiladas por día) */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-7 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-                      Canales de adquisición
-                    </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <MoreDotIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <CardTitle
+                    title="Pedidos por estado"
+                    hint={`Un segmento por estado del pipeline · ${etiquetaRango}${notaVentana}`}
+                  />
 
-                  {/* Leyenda con puntitos circulares con colores NECTO */}
-                  <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-medium text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#190088]" />
-                      <span>Direct</span>
+                  {/* Leyenda derivada de los estados PRESENTES en la ventana, cada
+                      uno con su recuento real. Antes eran cuatro etiquetas fijas
+                      (Direct / Referral / Organic Search / Social). */}
+                  {estadosPresentes.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+                      {estadosPresentes.map((e) => (
+                        <div key={e} className="flex items-center gap-1.5">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: COLOR_ESTADO[e] }}
+                          />
+                          <span>{pedidosStore.estadoLabel(e)}</span>
+                          <span className="tabular-nums text-gray-400 dark:text-gray-500">
+                            ({num(totalEnVentana(e))})
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#7E57FF]" />
-                      <span>Referral</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
-                      <span>Organic Search</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#97D6DF]" />
-                      <span>Social</span>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="mt-4">
-                    <Chart type="bar" series={stackedBarSeries} options={stackedBarOptions} height={240} />
+                    {estadosPresentes.length > 0 ? (
+                      <Chart type="bar" series={stackedSeries} options={stackedOptions} height={240} />
+                    ) : (
+                      <SinDatos que="pedidos" />
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: Sesiones por dispositivo (Donut Chart) */}
+              {/* Card 2: Estado de pago (donut) */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-5 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-                      Sesiones por dispositivo
-                    </h3>
-                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                      <MoreDotIcon className="h-5 w-5" />
-                    </button>
-                  </div>
+                  <CardTitle title="Estado de pago" hint={`Pagado y pendiente · ${etiquetaRango}`} />
 
                   <div className="my-2 flex items-center justify-center">
-                    <Chart type="donut" series={donutSeries} options={donutOptions} height={240} />
+                    {totalPedidos > 0 ? (
+                      <Chart type="donut" series={donutSeries} options={donutOptions} height={240} />
+                    ) : (
+                      <SinDatos que="pedidos" />
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center gap-5 text-xs font-medium text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
-                    <span>Desktop</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#190088]" />
-                    <span>Mobile</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#97D6DF]" />
-                    <span>Tablet</span>
-                  </div>
+                <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  {leyendaPago.map((p) => (
+                    <div key={p.clave} className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                      <span>
+                        {p.etiqueta} · {num(p.total)} ({p.cuota}%)
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1212,17 +1149,3 @@ export const AnaliticaPage = observer(() => {
 });
 
 export default AnaliticaPage;
-
-/** Todos los estados del catálogo, para poblar el filtro aunque el rango esté vacío. */
-function conteoEstadoActual(_pedidos: unknown): Record<string, number> {
-  return {
-    programado: 0,
-    nuevo: 0,
-    confirmado: 0,
-    en_preparacion: 0,
-    listo: 0,
-    en_camino: 0,
-    entregado: 0,
-    cancelado: 0,
-  };
-}
