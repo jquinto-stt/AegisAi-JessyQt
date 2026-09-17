@@ -21,7 +21,15 @@ export const MessageBubble = ({ message }: { message: AssistantMessage }) => {
   };
 
   return (
-    <div className={`flex ${esUsuario ? "justify-end" : "justify-start"} mb-3`}>
+    // La entrada vive en la burbuja y NO en el hilo: así cada mensaje anima al
+    // montarse, tanto al cargar un hilo entero como al aparecer uno nuevo. Si se
+    // aplicara al contenedor del hilo, el hilo ya estaría montado y el mensaje
+    // recién llegado entraría de golpe.
+    //
+    // Sin retardo escalonado a propósito: en un chat los mensajes llegan en
+    // momentos distintos, así que una cascada por índice no describe nada — el
+    // orden de llegada ya es la secuencia.
+    <div className={`animate-entrada-lista flex ${esUsuario ? "justify-end" : "justify-start"} mb-3`}>
       <div className={`flex flex-col gap-1.5 ${tieneBlocks ? "w-full" : esUsuario ? "max-w-[85%]" : "w-full"}`}>
         {message.text &&
           (esUsuario ? (

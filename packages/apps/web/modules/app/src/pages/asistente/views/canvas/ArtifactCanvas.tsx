@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AssistantArtifact } from "@/stores/assistant.store";
 import { SpreadsheetCanvasView } from "./SpreadsheetCanvasView";
 import { ChartCanvasView } from "./ChartCanvasView";
@@ -7,6 +7,45 @@ import { ListCanvasView } from "./ListCanvasView";
 // ═══════════════════════════════════════════════════════════════════════════
 // ARTIFACT CANVAS (CONTENEDOR INSPECTOR POLIMÓRFICO)
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Duración del esqueleto de entrada, en ms. **Debe coincidir con la de
+ * `paneo-entrada` en `css/base.css`**: el esqueleto y el paneo son un solo
+ * gesto, y si divergen se ve el corte.
+ */
+const REVELADO_MS = 420;
+
+/**
+ * ¿Debe el esqueleto cubrir la ENTRADA de la tarjeta?
+ *
+ * ── Por qué esto NO es latencia simulada ───────────────────────────────────
+ *
+ * El esqueleto de `SpreadsheetCanvasView` está gobernado por `isLoading`, que la
+ * página alimenta con `assistantStore.pensando`. Se midió en el navegador que
+ * esa señal **nunca es observable** con el motor actual: `LocalRuleEngine.ask`
+ * resuelve sin ceder a una macrotarea, así que `pensando = true`, la respuesta y
+ * `pensando = false` se liquidan en la misma cadena de microtareas y MobX no
+ * llega a notificar un render intermedio. Muestreando 236 fotogramas con la
+ * tarjeta abierta y una petición en vuelo, el número de fotogramas con esqueleto
+ * fue **0**. Es decir: `isLoading` es correcto y hoy inalcanzable — lo será de
+ * verdad cuando el motor sea remoto (`RemoteLLMEngine`), que sí tiene latencia.
+ *
+ * Esperar esa latencia no es una opción, así que el esqueleto se ata a la ventana
+ * que SÍ existe y es determinista: la animación de entrada. Durante el paneo la
+ * tarjeta muestra su forma de carga, y al asentarse revela los datos. No se está
+ * fingiendo una espera — se está cubriendo una transición con la forma del
+ * contenido que va a aparecer, que es justo para lo que sirve un esqueleto.
+ *
+ * Con `prefers-reduced-motion` no hay paneo que cubrir, así que no hay esqueleto:
+ * se revela de inmediato. Animar y además retener el contenido sería lo peor de
+ * ambos mundos.
+ */
+function debeRevelar(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 interface ArtifactCanvasProps {
   artifact: AssistantArtifact;
@@ -21,6 +60,16 @@ export const ArtifactCanvas = ({
 }: ArtifactCanvasProps) => {
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+
+  // Arranca en `true` para que el primer render YA muestre el esqueleto: si se
+  // encendiera en un efecto, se vería un fotograma de tabla cruda antes.
+  const [revelando, setRevelando] = useState(debeRevelar);
+
+  useEffect(() => {
+    if (!revelando) return;
+    const t = setTimeout(() => setRevelando(false), REVELADO_MS);
+    return () => clearTimeout(t);
+  }, [revelando]);
 
   /** Copia los datos al portapapeles en formato TSV (para pegar en Excel/Sheets) o JSON */
   const handleCopy = () => {
@@ -164,7 +213,10 @@ export const ArtifactCanvas = ({
       {/* ── Cuerpo del Canvas (Polimórfico según artifact.type) ── */}
       <div className="min-h-0 flex-1 overflow-hidden">
         {artifact.type === "spreadsheet" && (
-          <SpreadsheetCanvasView table={artifact.data} isLoading={isLoading} />
+          <SpreadsheetCanvasView
+            table={artifact.data}
+            isLoading={Boolean(isLoading) || revelando}
+          />
         )}
         {artifact.type === "chart" && (
           <ChartCanvasView metrics={artifact.data} title={artifact.title} />

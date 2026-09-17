@@ -215,7 +215,16 @@ export const AsistenteConfigPage = observer(() => {
         </nav>
 
         {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/* El `key={seccion}` dispara el fundido: al cambiar de sección React
+            desmonta el panel y monta uno nuevo, que reproduce `animate-aparecer`.
+            Sin la key reutilizaría el mismo nodo y la sección se sustituiría de
+            golpe.
+
+            Fundido PURO, sin desplazamiento: el panel nuevo ocupa el sitio del
+            anterior, así que moverlo sugeriría que viene de algún lado. Cuando
+            dos contenidos comparten el mismo hueco, lo correcto es que uno se
+            apague y el otro se encienda. */}
+        <div key={seccion} className="animate-aparecer flex min-w-0 flex-1 flex-col">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
               {meta.label}
