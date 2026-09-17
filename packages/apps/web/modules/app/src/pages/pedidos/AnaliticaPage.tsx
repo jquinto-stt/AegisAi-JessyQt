@@ -141,104 +141,104 @@ const FunnelDetailDrawer = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-xs transition-opacity duration-300 p-2 sm:p-4">
-      {/* Contenedor flotante oscuro idéntico a la captura */}
-      <div className="relative flex h-full max-h-[96vh] w-full max-w-lg md:max-w-xl flex-col overflow-y-auto rounded-3xl border border-white/10 bg-[#161619] p-5 sm:p-6 text-white shadow-2xl transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-gray-900/30 backdrop-blur-xs transition-opacity duration-300 p-2 sm:p-4 dark:bg-black/60">
+      {/* Contenedor flotante en modo claro limpio y luminoso */}
+      <div className="relative flex h-full max-h-[96vh] w-full max-w-lg md:max-w-xl flex-col overflow-y-auto rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 text-gray-900 shadow-2xl transition-all duration-300 dark:border-white/10 dark:bg-[#161619] dark:text-white">
         {/* Cabecera del Drawer con Filtros y Botón de Cierre */}
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-gray-300 transition-colors hover:bg-white/20 hover:text-white"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
           >
             <CloseIcon />
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#222226] px-3 py-1.5 text-xs font-semibold text-gray-200">
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200/90 bg-gray-50/80 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs dark:border-white/10 dark:bg-[#222226] dark:text-gray-200">
               <CalendarIcon />
               <span>{periodo}</span>
               <ChevronDownIcon />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#222226] px-3 py-1.5 text-xs font-semibold text-gray-200">
+            <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200/90 bg-gray-50/80 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs dark:border-white/10 dark:bg-[#222226] dark:text-gray-200">
               <span>{marca}</span>
               <ChevronDownIcon />
             </div>
           </div>
         </div>
 
-        {/* Fila 1: 2 Tarjetas KPI en tema oscuro */}
+        {/* Fila 1: 2 Tarjetas KPI en modo claro */}
         <div className="mt-5 grid grid-cols-2 gap-3">
           {/* Tarjeta 1: Units Sold */}
-          <div className="rounded-2xl border border-white/5 bg-[#202024] p-4">
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 shadow-xs dark:border-white/5 dark:bg-[#202024]">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400">Units Sold</span>
-              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-rose-400">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Units Sold</span>
+              <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
                 -29%
               </span>
             </div>
             <div className="my-2 flex items-center gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-white">1,571</span>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-500/20 text-[10px] text-rose-400">
+              <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">1,571</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-100/70 text-[10px] text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
                 <ArrowDownIcon />
               </span>
             </div>
-            <p className="text-[11px] text-gray-500">Down 29% this week</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">Down 29% this week</p>
           </div>
 
           {/* Tarjeta 2: Cart Abandonment */}
-          <div className="rounded-2xl border border-white/5 bg-[#202024] p-4">
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 shadow-xs dark:border-white/5 dark:bg-[#202024]">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-400">Cart Abandonment</span>
-              <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Cart Abandonment</span>
+              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
                 -11%
               </span>
             </div>
             <div className="my-2 flex items-center gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-white">835</span>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] text-emerald-400">
+              <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">835</span>
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100/70 text-[10px] text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
                 <ArrowUpIcon />
               </span>
             </div>
-            <p className="text-[11px] text-gray-500">Up 11% this week</p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">Up 11% this week</p>
           </div>
         </div>
 
-        {/* Fila 2: Sales conversion (Embudo en tema oscuro) */}
-        <div className="mt-4 rounded-2xl border border-white/5 bg-[#202024] p-5">
+        {/* Fila 2: Sales conversion (Embudo en modo claro) */}
+        <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/70 p-5 shadow-xs dark:border-white/5 dark:bg-[#202024]">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-white">Sales conversion</h3>
-              <p className="mt-0.5 text-[11px] text-gray-400">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Sales conversion</h3>
+              <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
                 Conversion process from leads to deals
               </p>
             </div>
 
             <div className="text-right">
-              <p className="text-[10px] text-gray-400">Conversion rate</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">Conversion rate</p>
               <div className="mt-0.5 flex items-center justify-end gap-1">
-                <span className="text-xl font-bold text-white">10%</span>
-                <span className="rounded bg-white/10 px-1 py-0.5 text-[10px] font-semibold text-gray-300">-</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">10%</span>
+                <span className="rounded bg-gray-200/80 px-1 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">-</span>
               </div>
             </div>
           </div>
 
-          {/* Barras de ecualizador en tema oscuro */}
+          {/* Barras de ecualizador en modo claro */}
           <div className="mt-5 flex flex-col">
             <div className="flex h-36 items-end justify-between gap-1 px-1">
               {equalizerBars.map((bar, idx) => (
                 <div key={idx} className="flex h-full flex-1 flex-col items-center justify-end">
                   {bar.isMilestone && (
-                    <span className="mb-1 text-[10px] font-semibold text-gray-300">
+                    <span className="mb-1 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
                       {bar.pct}%
                     </span>
                   )}
                   <div
                     style={{ height: `${bar.pct}%` }}
                     className={`w-full max-w-[7px] rounded-full transition-all ${
-                      bar.isMilestone ? "bg-emerald-400" : "bg-[#34343D]"
+                      bar.isMilestone ? "bg-emerald-500" : "bg-gray-200 dark:bg-[#34343D]"
                     }`}
                   />
                 </div>
@@ -246,61 +246,61 @@ const FunnelDetailDrawer = ({
             </div>
 
             {/* Fila de 4 hitos inferiores */}
-            <div className="mt-3 grid grid-cols-4 border-t border-white/5 pt-2.5 text-center">
+            <div className="mt-3 grid grid-cols-4 border-t border-gray-200/70 pt-2.5 text-center dark:border-white/5">
               {funnelMilestones.map((m, idx) => (
                 <div key={idx} className="flex flex-col items-center">
-                  <span className="text-[11px] font-medium text-gray-400">{m.label}</span>
-                  <span className="text-xs font-bold text-white">{m.count}</span>
+                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{m.label}</span>
+                  <span className="text-xs font-bold text-gray-800 dark:text-white">{m.count}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Fila 3: Sales by Region (Tabla en tema oscuro) */}
-        <div className="mt-4 rounded-2xl border border-white/5 bg-[#202024] p-5">
-          <h3 className="text-sm font-semibold text-white">Sales by Region</h3>
+        {/* Fila 3: Sales by Region (Tabla en modo claro) */}
+        <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/70 p-5 shadow-xs dark:border-white/5 dark:bg-[#202024]">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Sales by Region</h3>
 
-          <div className="mt-3 flex items-center justify-between border-b border-white/5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+          <div className="mt-3 flex items-center justify-between border-b border-gray-200/70 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:border-white/5 dark:text-gray-500">
             <span className="w-1/3">Region</span>
             <span className="w-1/3 text-center">Orders</span>
             <span className="w-1/3 text-right">Net Revenue</span>
           </div>
 
-          <div className="divide-y divide-white/5 text-xs">
+          <div className="divide-y divide-gray-100 text-xs dark:divide-white/5">
             <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-300">Spain</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-white">
+              <span className="w-1/3 text-gray-700 dark:text-gray-300">Spain</span>
+              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
                 <span>129</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
               </div>
-              <span className="w-1/3 text-right font-medium text-white">€24,063.90</span>
+              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€24,063.90</span>
             </div>
 
             <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-300">Rest of the world</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-white">
+              <span className="w-1/3 text-gray-700 dark:text-gray-300">Rest of the world</span>
+              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
                 <span>7</span>
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               </div>
-              <span className="w-1/3 text-right font-medium text-white">€3,575.09</span>
+              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€3,575.09</span>
             </div>
 
             <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-300">Europa</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-white">
+              <span className="w-1/3 text-gray-700 dark:text-gray-300">Europa</span>
+              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
                 <span>128</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-gray-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
               </div>
-              <span className="w-1/3 text-right font-medium text-white">€23,864.11</span>
+              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€23,864.11</span>
             </div>
 
             <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-300">Mexico</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-white">
+              <span className="w-1/3 text-gray-700 dark:text-gray-300">Mexico</span>
+              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
                 <span>0</span>
               </div>
-              <span className="w-1/3 text-right font-medium text-white">€40.06</span>
+              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€40.06</span>
             </div>
           </div>
         </div>
