@@ -12,8 +12,8 @@ import {
   PerfilOperadorPage,
 } from "@/pages/pedidos";
 import { SeleccionarPage } from "@/pages/seleccionar";
-import { AsistentePage } from "@/pages/asistente";
-import { ConversacionesPage } from "@/pages/conversaciones";
+import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
+import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
@@ -51,7 +51,24 @@ export default function App() {
         <Route path="/pedidos/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
         <Route path="/pedidos/operadores" element={<Navigate to="/pedidos/equipo" replace />} />
         <Route path="/asistente" element={<CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard>} />
+        <Route path="/asistente/config" element={<CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard>} />
         <Route path="/conversaciones" element={<CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard>} />
+        {/*
+          Historial de atención: misma capacidad `channels.read` que la consola.
+          El diseño del módulo define esa capacidad como "Ver la bandeja,
+          consultar historiales, entrar a la sección", así que consultar el
+          histórico es exactamente lo que habilita — no requiere una capacidad
+          nueva ni un permiso más fino.
+        */}
+        <Route path="/conversaciones/historial" element={<CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard>} />
+        {/*
+          Configuración del canal: exige `channels.manage`, no `channels.read`.
+          Ver la bandeja y editar cómo se comporta el canal son permisos
+          distintos: un operador que solo responde (`channels.respond`) no
+          debería poder cambiar las plantillas ni el horario de todo el equipo.
+          La propia página vuelve a comprobar la capacidad antes de persistir.
+        */}
+        <Route path="/conversaciones/config" element={<CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
         <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />

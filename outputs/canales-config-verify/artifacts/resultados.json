@@ -1,0 +1,157 @@
+[
+  {
+    "nombre": "se sembró la sesión de administrador en el almacén",
+    "ok": true,
+    "detalle": "{\"modulos\":[\"pedidos\"],\"tipoSesion\":\"administrador\",\"operadorSimuladoId\":null,\"preSimulaci"
+  },
+  {
+    "nombre": "hay sesión activa para entrar a la app",
+    "ok": true,
+    "detalle": "/pedidos/inicio"
+  },
+  {
+    "nombre": "la barra lateral muestra la sección «Canales»",
+    "ok": true,
+    "detalle": "CANALES\nConversaciones\nHistorial de atención\nConfiguración\nINTELIGENCIA\nNECTO AI\nPEDIDOS\nInicio\nTablero\nCrear pedido\nHistorial\nAnalítica\nConfiguración\nEquipo\nConfiguración\nAyuda\nCerrar sesión"
+  },
+  {
+    "nombre": "«Configuración» aparece dentro de Canales (no en Pedidos)",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "existe un enlace a /conversaciones/config",
+    "ok": true,
+    "detalle": "texto=\"Configuración\""
+  },
+  {
+    "nombre": "la ruta /conversaciones/config carga",
+    "ok": true,
+    "detalle": "/conversaciones/config"
+  },
+  {
+    "nombre": "el título de la página es «Configuración del canal»",
+    "ok": true,
+    "detalle": "Configuración del canal"
+  },
+  {
+    "nombre": "existe la navegación vertical de secciones",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la navegación tiene 7 secciones",
+    "ok": true,
+    "detalle": "encontradas 7"
+  },
+  {
+    "nombre": "los grupos son CANAL / MENSAJERÍA / PREFERENCIAS, en orden",
+    "ok": true,
+    "detalle": "CANAL · MENSAJERÍA · PREFERENCIAS"
+  },
+  {
+    "nombre": "las 7 secciones son las del diseño, en orden",
+    "ok": true,
+    "detalle": "Perfil del canal | Plantillas de mensaje | Horario de atención | Automatización y escalado | Aviso de pausa | Alertas | Apariencia"
+  },
+  {
+    "nombre": "arranca en «Perfil del canal» sin montar la sección de plantillas",
+    "ok": true,
+    "detalle": "h2: Canales | Inteligencia | Pedidos | Perfil del canal | Identidad del canal | Pausa del canal"
+  },
+  {
+    "nombre": "pulsar «Plantillas de mensaje» cambia el panel visible",
+    "ok": true,
+    "detalle": "inputs de plantilla: 7"
+  },
+  {
+    "nombre": "la sección de plantillas monta las 7 transiciones del pipeline",
+    "ok": true,
+    "detalle": "encontradas 7"
+  },
+  {
+    "nombre": "el pie muestra «Guardar cambios» y «Descartar cambios»",
+    "ok": true,
+    "detalle": "{\"guardar\":1,\"descartar\":1}"
+  },
+  {
+    "nombre": "el input refleja la edición (el borrador es reactivo)",
+    "ok": true,
+    "detalle": "TEXTO EDITADO POR LA PRUEBA"
+  },
+  {
+    "nombre": "editar el borrador NO escribe en el almacén antes de guardar",
+    "ok": true,
+    "detalle": "sin cambios persistidos"
+  },
+  {
+    "nombre": "pulsar Guardar persiste el valor editado",
+    "ok": true,
+    "detalle": "TEXTO EDITADO POR LA PRUEBA"
+  },
+  {
+    "nombre": "aparece el acuse «Guardado» tras guardar",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Descartar cambios» revierte el borrador al valor confirmado",
+    "ok": true,
+    "detalle": "antes=\"CAMBIO QUE VOY A DESCARTAR\" después=\"TEXTO EDITADO POR LA PRUEBA\""
+  },
+  {
+    "nombre": "la sección «Horario de atención» monta su tarjeta",
+    "ok": true,
+    "detalle": "Canales | Inteligencia | Pedidos | Horario de atención | Horario de atención"
+  },
+  {
+    "nombre": "con el horario desactivado no se montan los campos de hora",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "al activar el horario aparecen apertura, cierre y los 7 días",
+    "ok": true,
+    "detalle": "{\"apertura\":true,\"cierre\":true,\"dias\":7}"
+  },
+  {
+    "nombre": "una franja horaria inválida bloquea el guardado y muestra el error",
+    "ok": true,
+    "detalle": "{\"deshabilitado\":true,\"hayError\":true}"
+  },
+  {
+    "nombre": "la sección de automatización explica el invariante de handoff",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Apariencia» ofrece tema (claro/oscuro/sistema) y densidad (compacta/cómoda)",
+    "ok": true,
+    "detalle": "{\"tieneClaro\":true,\"tieneOscuro\":true,\"tieneSistema\":true,\"tieneCompacta\":true,\"tieneComoda\":true}"
+  },
+  {
+    "nombre": "la página no inventa secciones propias de un backend inexistente",
+    "ok": true,
+    "detalle": "ninguna"
+  },
+  {
+    "nombre": "la sección activa queda marcada con aria-current",
+    "ok": true,
+    "detalle": "Apariencia"
+  },
+  {
+    "nombre": "sin `channels.manage` la configuración del canal NO se monta",
+    "ok": true,
+    "detalle": "ruta=/conversaciones/config navInterna=false"
+  },
+  {
+    "nombre": "sin `channels.manage` se muestra la pantalla de acceso denegado",
+    "ok": true,
+    "detalle": "No tienes acceso a esta sección"
+  },
+  {
+    "nombre": "la entrada «Configuración» de Canales se OCULTA para ese rol",
+    "ok": true,
+    "detalle": "enlace a /conversaciones/config: false | nav: VIENDO COMO |  | Mateo Vargas |  | Salir de vista | CANALES | Conversaciones | Historial de atención | PEDIDOS | Inicio"
+  }
+]

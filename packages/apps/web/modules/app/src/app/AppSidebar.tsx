@@ -66,7 +66,7 @@ const SidebarFooter = observer(() => {
   }`;
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-800 pt-4 pb-6">
+    <div className="border-t border-gray-200/70 dark:border-white/5 pt-4 pb-6">
       <ul className="flex flex-col gap-1">
         <li>
           <Link to="/configuracion" className={rowClasses}>
@@ -165,13 +165,24 @@ const SidebarContent = observer(() => {
       <SimulacionBanner />
 
       <div className="flex flex-col gap-6">
-        {/* Canales (Conversaciones) — capa transversal de comunicaciones, lo más
-            importante, va ARRIBA del todo. Gobernada por channels.read. */}
+        {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones */}
         {sessionStore.hasPermission("channels.read") && (
           <div>
             <MenuSectionHeader title="Canales" />
             <ul className="flex flex-col gap-1">
               <MenuItem icon={<ChatIcon />} name="Conversaciones" path="/conversaciones" isActive={isActive} />
+              <MenuItem icon={<TaskIcon />} name="Historial de atención" path="/conversaciones/historial" isActive={isActive} />
+              {/*
+                Configuración del canal — exige `channels.manage` (editar el
+                canal), no `channels.read` (verlo). Se oculta, no se deshabilita:
+                quien no puede gestionar el canal no gana nada viendo la entrada,
+                y el guard de la ruta la bloquearía igualmente. Es el mismo
+                criterio de "ocultar lo que no se puede ejecutar" que usa el
+                resto de la barra.
+              */}
+              {sessionStore.hasPermission("channels.manage") && (
+                <MenuItem icon={<PlugInIcon />} name="Configuración" path="/conversaciones/config" isActive={isActive} />
+              )}
             </ul>
           </div>
         )}
@@ -182,6 +193,10 @@ const SidebarContent = observer(() => {
             <MenuSectionHeader title="Inteligencia" />
             <ul className="flex flex-col gap-1">
               <MenuItem icon={<AiIcon />} name="NECTO AI" path="/asistente" isActive={isActive} />
+              {/* Configuración del asistente interno. Es el mismo patrón que el
+                  ítem «Configuración» de Canales: se apoya en la capacidad que
+                  protege la ruta, sin un booleano nuevo. */}
+              <MenuItem icon={<PlugInIcon />} name="Configuración" path="/asistente/config" isActive={isActive} />
             </ul>
           </div>
         )}

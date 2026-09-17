@@ -112,7 +112,7 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
       className={`h-full transition-all ${
         selected
           ? "border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/30 dark:border-brand-400 dark:bg-brand-500/10"
-          : "hover:border-brand-300 hover:shadow-sm dark:hover:border-brand-500/40"
+          : "hover:border-brand-300 hover:shadow-2xs dark:hover:border-brand-500/40"
       }`}
     >
       {/* IconCard blueprint: contenedor de ícono h-14 max-w-14 rounded-[10.5px] */}

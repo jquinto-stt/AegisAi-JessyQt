@@ -12,7 +12,7 @@ interface TableRowProps {
  */
 const TableRow: React.FC<TableRowProps> = ({ children, className = "", onClick }) => {
   return (
-    <tr className={`border-b border-gray-200 dark:border-gray-800 ${className}`} onClick={onClick}>
+    <tr className={`border-b border-gray-200/70 dark:border-white/5 ${className}`} onClick={onClick}>
       {children}
     </tr>
   );

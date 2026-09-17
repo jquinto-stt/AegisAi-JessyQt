@@ -39,7 +39,7 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
   return (
     <SidebarProvider collapsed={collapsed}>
       <aside
-        className={`flex flex-col px-5 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out rounded-3xl shadow-theme-lg 
+        className={`flex flex-col px-5 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 transition-all duration-300 ease-in-out rounded-2xl shadow-theme-lg 
           ${positionClasses}
           ${showExpanded ? "w-[274px]" : "w-[78px]"}`}
         onMouseEnter={() => collapsed === undefined && !uiStore.isDesktopSidebarExpanded && uiStore.setSidebarHovered(true)}

@@ -131,7 +131,10 @@ const Card: React.FC<CardProps> = ({ children, className, layout = "vertical" })
 
   return (
     <div className={cn(
-      "rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]",
+      // Contenedor canónico: radio 2xl, borde susurro (claro 200/70, oscuro
+      // white/5) y sombra casi imperceptible. Unificar aquí propaga el token a
+      // todas las superficies que usan Card en lugar de un div propio.
+      "rounded-2xl border border-gray-200/70 bg-white shadow-2xs dark:border-white/5 dark:bg-white/[0.03]",
       isHorizontal
         ? "flex flex-col gap-5 p-4 sm:flex-row sm:items-center sm:gap-6"
         : "p-5 sm:p-6",

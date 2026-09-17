@@ -235,7 +235,7 @@ export const ConfigPage = observer(() => {
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Activa o desactiva los estados opcionales. "En camino" solo aplica a pedidos a domicilio.
           </p>
-          <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+          <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-white/5 dark:border-gray-800">
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">Confirmado</p>
@@ -259,7 +259,7 @@ export const ConfigPage = observer(() => {
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Las modalidades disponibles al crear un pedido. Debe quedar al menos una.
           </p>
-          <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+          <div className="mt-4 divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-white/5 dark:border-gray-800">
             {TODAS_MODALIDADES.map((m) => (
               <div key={m} className="flex items-center justify-between px-4 py-3">
                 <span className="text-sm text-gray-700 dark:text-gray-300">{pedidosStore.modalidadLabel(m)}</span>

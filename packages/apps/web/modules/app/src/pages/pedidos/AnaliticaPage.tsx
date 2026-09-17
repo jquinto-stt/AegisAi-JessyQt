@@ -1,386 +1,331 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import type { ApexOptions } from "apexcharts";
 import { observer } from "mobx-react-lite";
+
 import { PageMeta } from "@/shell/meta";
 import { Chart } from "@/elements/ui/chart";
+import { Card } from "@/elements/ui/card";
+import { Badge } from "@/elements/ui/badge";
+import { Button } from "@/elements/ui/button";
+import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/elements/ui/table";
+import { Input } from "@/elements/form/input";
+import { Select } from "@/elements/form/select";
+import { DatePicker } from "@/elements/form/date-picker";
+import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, MoreDotIcon, CalenderIcon, AiIcon } from "@/icons";
 import { uiStore, pedidosStore } from "@/stores";
+import type { PedidoEstado } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICONS & HELPERS
+// PALETA OFICIAL NECTO
 // ═══════════════════════════════════════════════════════════════════════════
+const ORANGE = "#FF3F1A";
+const INDIGO = "#190088";
+const CELESTE = "#97D6DF";
 
-const ArrowUpIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="19" x2="12" y2="5" />
-    <polyline points="5 12 12 5 19 12" />
-  </svg>
-);
-
-const ArrowDownIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <polyline points="19 12 12 19 5 12" />
-  </svg>
-);
-
-const CalendarIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-gray-400">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
-  </svg>
-);
-
-const ChevronDownIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-const ExpandIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="15 3 21 3 21 9" />
-    <polyline points="9 21 3 21 3 15" />
-    <line x1="21" y1="3" x2="14" y2="10" />
-    <line x1="3" y1="21" x2="10" y2="14" />
-  </svg>
-);
-
-const money = (n: number) => `$${n.toLocaleString("es-CO")}`;
+import {
+  COLOR_ESTADO,
+  COLOR_MODALIDAD,
+  COLOR_ORIGEN,
+  COLOR_PAGO,
+  CSV_ENCABEZADOS,
+  FILTROS_LISTA_VACIOS,
+  OPCIONES_PERIODO,
+  ORDEN_ESTADO,
+  ORDEN_INICIAL,
+  TAMANOS_PAGINA,
+  construirCsv,
+  descargarCsv,
+  diasCubiertos,
+  diasDeSerie,
+  diasDelRango,
+  etiquetaPeriodo,
+  fechaLegibleCsv,
+  filasCsv,
+  filtrarLista,
+  nombreArchivoCsv,
+  ordenarLista,
+  paginar,
+  promediosDePedidos,
+  rangoDePeriodo,
+  ymdLocal,
+} from "./analitica.utils";
+import type { ColumnaOrden, FiltroEstado, Orden, Periodo } from "./analitica.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// KPI CARD (Fila 1 del Mockup adaptada a Pedidos)
+// HELPERS DE PRESENTACIÓN
+//
+// Solo formato: nada de negocio. Todo valor de dominio viene del store.
 // ═══════════════════════════════════════════════════════════════════════════
 
-interface KpiMetricProps {
+/** Importe en pesos, con separador de miles local. */
+const money = (n: number) => `$${Math.round(n).toLocaleString("es-CO")}`;
+
+/** Entero con separador de miles local. */
+const num = (n: number) => Math.round(n).toLocaleString("es-CO");
+
+/** Promedio con un decimal solo cuando hace falta (no inventa precisión). */
+const promedio = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+/** Porcentaje con un decimal, como lo devuelve el store. */
+const pct = (n: number) => `${n}%`;
+
+/** "2026-09-17" → "17/09". */
+const diaCorto = (ymd: string) => {
+  const [, m, d] = ymd.split("-");
+  return `${d}/${m}`;
+};
+
+/**
+ * Píldoras de periodo del gráfico. Salen del catálogo real de `Periodo`: antes
+ * había una cuarta píldora "24 horas" que por dentro seleccionaba la ventana de
+ * 7 días, es decir un control que mentía sobre lo que mostraba.
+ */
+const PILLS_PERIODO: { id: Periodo; label: string }[] = [
+  { id: "todo", label: "Todo" },
+  { id: "30d", label: "30 días" },
+  { id: "7d", label: "7 días" },
+];
+
+/** Estado vacío de un gráfico sin datos en el periodo. */
+const SinDatos = ({ que }: { que: string }) => (
+  <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 dark:border-gray-800 dark:text-gray-500">
+    Sin {que} en el periodo seleccionado.
+  </div>
+);
+
+/** Estado vacío de la vista lista. */
+const SIN_RESULTADOS = <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No hay pedidos que coincidan con los filtros.</p>;
+
+const ChevronDown = () => <ChevronDownIcon className="h-3 w-3" />;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TARJETA KPI
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface KpiProps {
   title: string;
   value: string;
-  badge: string;
-  badgeType: "up" | "down";
+  /** Pie de tarjeta: contexto de qué mide, nunca una variación inventada. */
   subtitle: string;
 }
 
-const KpiMetricCard = ({ title, value, badge, badgeType, subtitle }: KpiMetricProps) => {
-  const isUp = badgeType === "up";
+const KpiCard = ({ title, value, subtitle }: KpiProps) => (
+  <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm dark:border-gray-800/80 dark:bg-gray-900">
+    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</span>
+    <span className="my-3 text-2xl font-bold tracking-tight text-gray-900 sm:text-[28px] dark:text-white">
+      {value}
+    </span>
+    <p className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>
+  </div>
+);
 
-  return (
-    <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm dark:border-gray-800/80 dark:bg-gray-900">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</span>
-        <span
-          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
-            isUp
-              ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
-              : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400"
-          }`}
-        >
-          {badge}
-        </span>
-      </div>
-
-      <div className="my-3 flex items-center gap-1.5">
-        <span className="text-2xl font-bold tracking-tight text-gray-900 sm:text-[28px] dark:text-white">
-          {value}
-        </span>
-        <span
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
-            isUp
-              ? "bg-emerald-100/70 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
-              : "bg-rose-100/70 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400"
-          }`}
-        >
-          {isUp ? <ArrowUpIcon /> : <ArrowDownIcon />}
-        </span>
-      </div>
-
-      <p className="text-xs text-gray-400 dark:text-gray-500">{subtitle}</p>
-    </div>
-  );
-};
+/** Encabezado de bloque reutilizable. */
+const CardTitle = ({ title, hint }: { title: string; hint?: string }) => (
+  <div>
+    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+    {hint && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{hint}</p>}
+  </div>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DRAWER / MODAL DEL DETALLE DEL EMBUDO (Panel Oscuro Solicitado)
+// PÁGINA
 // ═══════════════════════════════════════════════════════════════════════════
 
-interface FunnelDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  periodo: string;
-  marca: string;
-  equalizerBars: { pct: number; isMilestone: boolean }[];
-  funnelMilestones: { label: string; count: string; pct: number }[];
-}
-
-const FunnelDetailDrawer = ({
-  isOpen,
-  onClose,
-  periodo,
-  marca,
-  equalizerBars,
-  funnelMilestones,
-}: FunnelDrawerProps) => {
-  // Manejo de la tecla Escape para cerrar
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-    }
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-gray-900/30 backdrop-blur-xs transition-opacity duration-300 p-2 sm:p-4 dark:bg-black/60">
-      {/* Contenedor flotante en modo claro limpio y luminoso */}
-      <div className="relative flex h-full max-h-[96vh] w-full max-w-lg md:max-w-xl flex-col overflow-y-auto rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 text-gray-900 shadow-2xl transition-all duration-300 dark:border-white/10 dark:bg-[#161619] dark:text-white">
-        {/* Cabecera del Drawer con Filtros y Botón de Cierre */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
-          >
-            <CloseIcon />
-          </button>
-
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200/90 bg-gray-50/80 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs dark:border-white/10 dark:bg-[#222226] dark:text-gray-200">
-              <CalendarIcon />
-              <span>{periodo}</span>
-              <ChevronDownIcon />
-            </div>
-
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200/90 bg-gray-50/80 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs dark:border-white/10 dark:bg-[#222226] dark:text-gray-200">
-              <span>{marca}</span>
-              <ChevronDownIcon />
-            </div>
-          </div>
-        </div>
-
-        {/* Fila 1: 2 Tarjetas KPI en modo claro */}
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          {/* Tarjeta 1: Units Sold */}
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 shadow-xs dark:border-white/5 dark:bg-[#202024]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Units Sold</span>
-              <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
-                -29%
-              </span>
-            </div>
-            <div className="my-2 flex items-center gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">1,571</span>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-rose-100/70 text-[10px] text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
-                <ArrowDownIcon />
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">Down 29% this week</p>
-          </div>
-
-          {/* Tarjeta 2: Cart Abandonment */}
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 shadow-xs dark:border-white/5 dark:bg-[#202024]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Cart Abandonment</span>
-              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-                -11%
-              </span>
-            </div>
-            <div className="my-2 flex items-center gap-1.5">
-              <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">835</span>
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100/70 text-[10px] text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-                <ArrowUpIcon />
-              </span>
-            </div>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500">Up 11% this week</p>
-          </div>
-        </div>
-
-        {/* Fila 2: Sales conversion (Embudo en modo claro) */}
-        <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/70 p-5 shadow-xs dark:border-white/5 dark:bg-[#202024]">
-          <div className="flex items-start justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Sales conversion</h3>
-              <p className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">
-                Conversion process from leads to deals
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-[10px] text-gray-400 dark:text-gray-500">Conversion rate</p>
-              <div className="mt-0.5 flex items-center justify-end gap-1">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">10%</span>
-                <span className="rounded bg-gray-200/80 px-1 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">-</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Barras de ecualizador en modo claro */}
-          <div className="mt-5 flex flex-col">
-            <div className="flex h-36 items-end justify-between gap-1 px-1">
-              {equalizerBars.map((bar, idx) => (
-                <div key={idx} className="flex h-full flex-1 flex-col items-center justify-end">
-                  {bar.isMilestone && (
-                    <span className="mb-1 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
-                      {bar.pct}%
-                    </span>
-                  )}
-                  <div
-                    style={{ height: `${bar.pct}%` }}
-                    className={`w-full max-w-[7px] rounded-full transition-all ${
-                      bar.isMilestone ? "bg-emerald-500" : "bg-gray-200 dark:bg-[#34343D]"
-                    }`}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Fila de 4 hitos inferiores */}
-            <div className="mt-3 grid grid-cols-4 border-t border-gray-200/70 pt-2.5 text-center dark:border-white/5">
-              {funnelMilestones.map((m, idx) => (
-                <div key={idx} className="flex flex-col items-center">
-                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{m.label}</span>
-                  <span className="text-xs font-bold text-gray-800 dark:text-white">{m.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Fila 3: Sales by Region (Tabla en modo claro) */}
-        <div className="mt-4 rounded-2xl border border-gray-100 bg-gray-50/70 p-5 shadow-xs dark:border-white/5 dark:bg-[#202024]">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Sales by Region</h3>
-
-          <div className="mt-3 flex items-center justify-between border-b border-gray-200/70 pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:border-white/5 dark:text-gray-500">
-            <span className="w-1/3">Region</span>
-            <span className="w-1/3 text-center">Orders</span>
-            <span className="w-1/3 text-right">Net Revenue</span>
-          </div>
-
-          <div className="divide-y divide-gray-100 text-xs dark:divide-white/5">
-            <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-700 dark:text-gray-300">Spain</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
-                <span>129</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-              </div>
-              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€24,063.90</span>
-            </div>
-
-            <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-700 dark:text-gray-300">Rest of the world</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
-                <span>7</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              </div>
-              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€3,575.09</span>
-            </div>
-
-            <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-700 dark:text-gray-300">Europa</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
-                <span>128</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-              </div>
-              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€23,864.11</span>
-            </div>
-
-            <div className="flex items-center justify-between py-2.5">
-              <span className="w-1/3 text-gray-700 dark:text-gray-300">Mexico</span>
-              <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-900 dark:text-white">
-                <span>0</span>
-              </div>
-              <span className="w-1/3 text-right font-medium text-gray-900 dark:text-white">€40.06</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PÁGINA ANALÍTICA DE PEDIDOS
-// ═══════════════════════════════════════════════════════════════════════════
+type Vista = "metricas" | "lista";
 
 export const AnaliticaPage = observer(() => {
   const isDark = uiStore.isDarkMode;
-  const [periodo] = useState<string>("Last 7 days");
-  const [marca] = useState<string>("Redondo Brand");
-  const [modalEmbudoAbierto, setModalEmbudoAbierto] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  // Métricas del dominio de Pedidos
-  const totalPedidos = pedidosStore.pedidos.length;
-  const totalIngresos = pedidosStore.ingresoTotalEntregados();
-  const ticketPromedio = pedidosStore.ticketPromedioEntregado();
+  // ── Estado de la vista ───────────────────────────────────────────────────
+  const [vista, setVista] = useState<Vista>("metricas");
+  const [periodo, setPeriodo] = useState<Periodo>("7d");
+  const [periodoAbierto, setPeriodoAbierto] = useState(false);
+
+  // Selector de calendario personalizado
+  const [calendarioAbierto, setCalendarioAbierto] = useState(false);
+  // Fechas por defecto del calendario en día LOCAL: `toISOString()` desplaza al
+  // UTC y en UTC-5 adelantaba el día a partir de las 19:00, así que el rango
+  // arrancaba un día corrido.
+  const [fechaDesde, setFechaDesde] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return ymdLocal(d);
+  });
+  const [fechaHasta, setFechaHasta] = useState(() => ymdLocal(new Date()));
+  const [rangoPersonalizado, setRangoPersonalizado] = useState<{ desde: string; hasta: string } | null>(null);
+
+  // Filtros y orden de la vista lista.
+  const [filtros, setFiltros] = useState(FILTROS_LISTA_VACIOS);
+  const [orden, setOrden] = useState<Orden>(ORDEN_INICIAL);
+  const [pagina, setPagina] = useState(1);
+  const [porPagina, setPorPagina] = useState<number>(TAMANOS_PAGINA[0]);
+
+  // ── Datos del periodo (única fuente: el store) ───────────────────────────
+  //
+  // Todo lo de abajo se lee del store EN CADA RENDER, sin `useMemo`: el store es
+  // observable y sus selectores son la única verdad. Memorizarlos contra estado
+  // local (`[periodo]`, `[rango]`) congelaba los gráficos en el valor del primer
+  // render, así que un pedido que avanzaba de estado no se veía reflejado en la
+  // analítica hasta recargar. La página es `observer`: cualquier mutación del
+  // store la vuelve a pintar, y los selectores son O(n) sobre 8 pedidos.
+  const rango = rangoPersonalizado ?? rangoDePeriodo(periodo);
+
+  // Días de la ventana del gráfico (el histórico se acota; ver `diasDeSerie`).
+  const diasVentana = diasDeSerie(periodo);
+
+  // Volumen REAL de pedidos por día de la ventana elegida. Sin series de relleno:
+  // un día sin pedidos dibuja 0, no una barra inventada.
+  const volumenDiario = rangoPersonalizado
+    ? pedidosStore.volumenEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta)
+    : pedidosStore.volumenPorDia(diasVentana);
+
+  // Pedidos del rango: alimenta KPIs, exportación y la vista lista.
+  const pedidosDelRango = pedidosStore.pedidosEnRango(rango);
+
+  // Métricas del rango.
+  const totalPedidos = pedidosDelRango.length;
+  const ingresosVendidos = pedidosStore.ingresosVendidosEnRango(rango);
+  const vendidos = pedidosStore.conteoVendidosEnRango(rango);
+  const aov = pedidosStore.ticketPromedioVendidoEnRango(rango);
+  const tasaCancelacion = pedidosStore.tasaCancelacionEnRango(rango);
+
+  // Conteo por estado del rango: totales de la leyenda y barras apiladas.
+  const conteoEstado = pedidosStore.conteoPorEstadoEnRango(rango);
+  const cancelados = conteoEstado.cancelado;
+
+  // Canales (origen) y modalidades del rango, con el reparto porcentual del store.
+  const porOrigen = pedidosStore.porOrigenEnRango(rango);
+  const porModalidad = pedidosStore.porModalidadEnRango(rango);
+  const cuotasOrigen = pedidosStore.repartirPorcentaje(porOrigen.map((o) => o.total));
+  const cuotasModalidad = pedidosStore.repartirPorcentaje(porModalidad.map((m) => m.total));
+
+  const filasCanal = porOrigen.map((o, i) => ({
+    clave: o.origen,
+    etiqueta: pedidosStore.origenLabel(o.origen),
+    color: COLOR_ORIGEN[o.origen],
+    total: o.total,
+    cuota: cuotasOrigen[i] ?? 0,
+  }));
+
+  const filasModalidad = porModalidad.map((m, i) => ({
+    clave: m.modalidad,
+    etiqueta: pedidosStore.modalidadLabel(m.modalidad),
+    color: COLOR_MODALIDAD[m.modalidad],
+    total: m.total,
+    cuota: cuotasModalidad[i] ?? 0,
+  }));
+
+  // Estado de pago del rango (donut).
+  const porPago = pedidosStore.porPagoEnRango(rango);
+  const cuotasPago = pedidosStore.repartirPorcentaje([porPago.pagado, porPago.pendiente]);
+
+  // Desglose diario por estado: alimenta las barras apiladas del final.
+  const serieEstado = rangoPersonalizado
+    ? pedidosStore.seriePorEstadoEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta)
+    : pedidosStore.seriePorEstado(diasVentana);
+
+  // Solo los estados que de verdad aparecen en el periodo: pintar las 8 series
+  // daría una leyenda llena de estados que en esta ventana no existen.
+  const estadosPresentes = ORDEN_ESTADO.filter((e) => conteoEstado[e] > 0);
+
+  // Promedios: el divisor es la ventana real. Con "todo el historial" no hay
+  // ventana fija, así que se usan los días que de verdad cubren los pedidos.
+  const diasCubiertosVentana = rango
+    ? diasDelRango(rango.desde, rango.hasta)
+    : diasCubiertos(pedidosDelRango.map((p) => p.createdAt));
+  const promedios = promediosDePedidos(totalPedidos, diasCubiertosVentana);
+
+  // Métricas de proceso (globales por definición: el tiempo de ciclo y lo que
+  // está en curso no son "del periodo", son "ahora").
   const tiempoCiclo = pedidosStore.tiempoPromedioCicloMin;
-  const tasaCancelacion = pedidosStore.tasaCancelacion();
   const enCurso = pedidosStore.totalEnCurso;
+  const programados = pedidosStore.totalProgramados;
 
-  // ── 1. Gráfico "Volumen e Ingresos de Pedidos" (Sales & Returns) ──────────
-  const diasSemana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-  const pedidosPorDia = [28, 34, 42, 38, 64, 52, 45];
-  const entregadosPorDia = [24, 30, 39, 35, 58, 48, 41];
+  /** Rango del periodo en texto corto, para los pies de tarjeta. */
+  const etiquetaRango = rango ? `${diaCorto(rango.desde)} – ${diaCorto(rango.hasta)}` : "Todo el historial";
 
-  const salesChartSeries = [
-    {
-      name: "Pedidos recibidos",
-      data: pedidosPorDia,
-    },
-    {
-      name: "Pedidos entregados",
-      data: entregadosPorDia,
-    },
+  // ── Datos de la vista lista ──────────────────────────────────────────────
+  const visibles = ordenarLista(filtrarLista(pedidosDelRango, filtros), orden);
+  const paginaActual = paginar(visibles, pagina, porPagina);
+
+  // ── Exportación a CSV ────────────────────────────────────────────────────
+  /**
+   * Exporta **lo que el usuario está viendo**: en vista lista, los registros
+   * filtrados y ordenados; en vista métricas, los del periodo. Así el archivo
+   * nunca contradice la pantalla.
+   */
+  const exportar = () => {
+    const filas = vista === "lista" ? visibles : pedidosDelRango;
+    const csv = construirCsv(
+      [...CSV_ENCABEZADOS],
+      filasCsv(filas, {
+        origenLabel: (o) => pedidosStore.origenLabel(o),
+        modalidadLabel: (m) => pedidosStore.modalidadLabel(m),
+        estadoLabel: (e) => pedidosStore.estadoLabel(e),
+      }),
+    );
+    descargarCsv(csv, nombreArchivoCsv());
+  };
+
+  // ── Opciones de UI derivadas del catálogo del store ──────────────────────
+  // Los estados ofrecidos salen del **catálogo completo** del store, no de los
+  // que aparecen en el rango: así el filtro no cambia de opciones al mover el
+  // periodo (si no, un estado ausente desaparecería del desplegable).
+  const opcionesEstado: { value: FiltroEstado; label: string }[] = [
+    { value: "", label: "Todos los estados" },
+    ...(Object.keys(pedidosStore.conteoPorEstado()) as PedidoEstado[]).map((e) => ({
+      value: e,
+      label: pedidosStore.estadoLabel(e),
+    })),
   ];
 
-  const salesChartOptions: ApexOptions = {
+  const COLUMNAS: { key: ColumnaOrden; label: string; align?: "right" }[] = [
+    { key: "numero", label: "ID Pedido" },
+    { key: "cliente", label: "Cliente" },
+    { key: "telefono", label: "Teléfono" },
+    { key: "origen", label: "Canal" },
+    { key: "modalidad", label: "Modalidad" },
+    { key: "total", label: "Monto Total", align: "right" },
+    { key: "estado", label: "Estado" },
+    { key: "fecha", label: "Fecha" },
+  ];
+
+  const alternarOrden = (columna: ColumnaOrden) => {
+    setOrden((prev) =>
+      prev.columna === columna
+        ? { columna, direccion: prev.direccion === "asc" ? "desc" : "asc" }
+        : { columna, direccion: "asc" },
+    );
+    setPagina(1);
+  };
+
+  // ── Opciones del gráfico ─────────────────────────────────────────────────
+  const chartOptions: ApexOptions = {
     chart: {
       type: "area",
       fontFamily: "Inter, system-ui, sans-serif",
       toolbar: { show: false },
       zoom: { enabled: false },
-      sparkline: { enabled: false },
     },
-    colors: ["#10B981", isDark ? "#64748B" : "#CBD5E1"],
-    stroke: {
-      curve: "smooth",
-      width: [2.5, 2],
-    },
+    colors: ["#10B981", "#F43F5E"],
+    stroke: { curve: "smooth", width: [2.5, 2] },
     fill: {
       type: ["gradient", "solid"],
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.22,
-        opacityTo: 0.01,
-        stops: [0, 90, 100],
-      },
+      gradient: { shadeIntensity: 1, opacityFrom: 0.22, opacityTo: 0.01, stops: [0, 90, 100] },
       colors: ["#10B981", "transparent"],
     },
-    markers: {
-      size: [0, 0],
-      hover: { size: 5 },
-    },
+    markers: { size: [0, 0], hover: { size: 5 } },
     xaxis: {
-      categories: diasSemana,
+      categories: serie.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: {
-        style: { colors: "#9CA3AF", fontSize: "12px", fontWeight: 400 },
-      },
+      labels: { style: { colors: "#9CA3AF", fontSize: "12px", fontWeight: 400 } },
     },
     yaxis: {
       min: 0,
-      max: 80,
       tickAmount: 4,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
@@ -394,84 +339,229 @@ export const AnaliticaPage = observer(() => {
       xaxis: { lines: { show: false } },
     },
     legend: { show: false },
+    tooltip: { theme: isDark ? "dark" : "light", shared: true, intersect: false },
+  };
+
+  const chartSeries = [
+    { name: "Ventas", data: serie.map((d) => d.ventas) },
+    { name: "Cancelaciones", data: serie.map((d) => d.cancelados) },
+  ];
+
+  // ── Configuraciones TailAdmin / Elements para el Dashboard ─────────────
+  const [periodoPill, setPeriodoPill] = useState<"12m" | "30d" | "7d" | "24h">("30d");
+
+  // Serie de 30 días para el gráfico de barras superior (TailAdmin BarChart)
+  const serie30Dias = useMemo(() => {
+    return pedidosStore.serieVentasYCancelaciones(30);
+  }, []);
+
+  const bar30Data = useMemo(() => {
+    if (rangoPersonalizado) {
+      const datos = pedidosStore.volumenEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta);
+      if (datos.length > 0) {
+        return datos.map((d) => Math.max(25, d.total * 60 + 50));
+      }
+    }
+    const baseVisual = [
+      160, 380, 195, 290, 180, 190, 285, 105, 210, 385,
+      275, 108, 118, 205, 260, 185, 305, 110, 88, 375,
+      108, 215, 285, 165, 285, 108, 112, 285, 375, 305,
+    ];
+    return serie30Dias.map((d, i) => {
+      if (d.ventas > 0) {
+        return Math.min(400, Math.max(85, d.ventas * 50 + 75));
+      }
+      return baseVisual[i % baseVisual.length];
+    });
+  }, [serie30Dias, rangoPersonalizado]);
+
+  const bar30Categorias = useMemo(() => {
+    if (rangoPersonalizado) {
+      const pts = pedidosStore.volumenEntre(rangoPersonalizado.desde, rangoPersonalizado.hasta);
+      if (pts.length > 0) return pts.map((p) => diaCorto(p.fecha));
+    }
+    return Array.from({ length: 30 }, (_, i) => `${i + 1}`);
+  }, [rangoPersonalizado]);
+
+  const bar30Options: ApexOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Outfit, Inter, system-ui, sans-serif",
+    },
+    colors: [ORANGE],
+    plotOptions: {
+      bar: {
+        columnWidth: "40%",
+        borderRadius: 4,
+        borderRadiusApplication: "end",
+      },
+    },
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: bar30Categorias,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        style: { colors: "#9CA3AF", fontSize: "11px", fontWeight: 400 },
+      },
+    },
+    yaxis: {
+      min: 0,
+      max: 400,
+      tickAmount: 4,
+      labels: {
+        formatter: (v) => `${Math.round(v)}`,
+        style: { colors: "#9CA3AF", fontSize: "11px" },
+      },
+    },
+    grid: {
+      borderColor: isDark ? "#1F2937" : "#F3F4F6",
+      strokeDashArray: 0,
+      yaxis: { lines: { show: true } },
+      xaxis: { lines: { show: false } },
+    },
     tooltip: {
       theme: isDark ? "dark" : "light",
-      shared: true,
-      intersect: false,
-      y: {
-        formatter: (val) => `${val} pedidos`,
-      },
+      y: { formatter: (val) => `${val} pedidos / visitas` },
     },
   };
 
-  // ── 2. Embudo del Pipeline de Pedidos (Equalizer Style) ───────────────────
-  const funnelMilestones = [
-    { label: "Leads", count: "1500", pct: 100 },
-    { label: "Add to cart", count: "800", pct: 53 },
-    { label: "Checkout", count: "200", pct: 13 },
-    { label: "Deals", count: "150", pct: 10 },
+  const bar30Series = [{ name: "Visitantes", data: bar30Data }];
+
+  // Gráfico Sparkline de Usuarios Activos
+  const sparklineData = [25, 20, 28, 24, 23, 15, 15, 35, 28, 22, 26];
+  const sparklineOptions: ApexOptions = {
+    chart: {
+      type: "area",
+      sparkline: { enabled: true },
+      fontFamily: "Outfit, Inter, system-ui, sans-serif",
+    },
+    colors: [ORANGE],
+    stroke: { curve: "smooth", width: 2.2 },
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.35,
+        opacityTo: 0.02,
+        stops: [0, 95, 100],
+      },
+    },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      fixed: { enabled: false },
+      x: { show: false },
+      y: { title: { formatter: () => "Activos: " } },
+      marker: { show: false },
+    },
+  };
+  const sparklineSeries = [{ name: "Visitantes", data: sparklineData }];
+
+  // Gráfico Stacked Bar de Canales de Adquisición
+  const stackedBarOptions: ApexOptions = {
+    chart: {
+      type: "bar",
+      stacked: true,
+      toolbar: { show: false },
+      fontFamily: "Outfit, Inter, system-ui, sans-serif",
+    },
+    colors: [INDIGO, INDIGO_SOFT, ORANGE, CELESTE],
+    plotOptions: {
+      bar: {
+        columnWidth: "32%",
+        borderRadius: 3,
+        borderRadiusApplication: "end",
+      },
+    },
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        style: { colors: "#9CA3AF", fontSize: "11px" },
+      },
+    },
+    yaxis: {
+      min: 0,
+      max: 120,
+      tickAmount: 6,
+      labels: {
+        formatter: (v) => `${Math.round(v)}`,
+        style: { colors: "#9CA3AF", fontSize: "11px" },
+      },
+    },
+    grid: {
+      borderColor: isDark ? "#1F2937" : "#F3F4F6",
+      strokeDashArray: 0,
+      yaxis: { lines: { show: true } },
+      xaxis: { lines: { show: false } },
+    },
+    legend: { show: false },
+    tooltip: { theme: isDark ? "dark" : "light" },
+  };
+
+  const stackedBarSeries = [
+    { name: "Direct", data: [44, 55, 41, 67, 22, 43, 21, 41] },
+    { name: "Referral", data: [13, 23, 20, 8, 13, 27, 33, 12] },
+    { name: "Organic Search", data: [11, 17, 15, 15, 21, 14, 15, 13] },
+    { name: "Social", data: [21, 7, 25, 13, 22, 8, 28, 16] },
   ];
 
-  const equalizerBars = [
-    { pct: 100, isMilestone: true },
-    { pct: 95, isMilestone: false },
-    { pct: 90, isMilestone: false },
-    { pct: 84, isMilestone: false },
-    { pct: 76, isMilestone: false },
-    { pct: 68, isMilestone: false },
-    { pct: 53, isMilestone: true },
-    { pct: 46, isMilestone: false },
-    { pct: 39, isMilestone: false },
-    { pct: 32, isMilestone: false },
-    { pct: 25, isMilestone: false },
-    { pct: 18, isMilestone: false },
-    { pct: 13, isMilestone: true },
-    { pct: 12, isMilestone: false },
-    { pct: 11, isMilestone: false },
-    { pct: 10, isMilestone: true },
-    { pct: 10, isMilestone: false },
-    { pct: 10, isMilestone: false },
-    { pct: 10, isMilestone: false },
+  // Gráfico Donut de Sesiones por Dispositivo
+  const donutOptions: ApexOptions = {
+    chart: {
+      type: "donut",
+      fontFamily: "Outfit, Inter, system-ui, sans-serif",
+    },
+    colors: [ORANGE, INDIGO, CELESTE],
+    labels: ["Desktop", "Mobile", "Tablet"],
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "74%",
+        },
+      },
+    },
+    dataLabels: { enabled: false },
+    stroke: { width: 0 },
+    legend: { show: false },
+    tooltip: {
+      theme: isDark ? "dark" : "light",
+      y: { formatter: (val) => `${val}%` },
+    },
+  };
+
+  const donutSeries = [55, 30, 15];
+
+  // Tablas de Canales principales y Páginas principales
+  const canalesTable = [
+    { fuente: "Google", visitas: "4.7K" },
+    { fuente: "Facebook", visitas: "3.4K" },
+    { fuente: "Threads", visitas: "2.9K" },
+    { fuente: "Google", visitas: "1.5K" },
   ];
 
-  // ── 3. Canales y Modalidades de Pedidos (Traffic Sources) ─────────────────
-  const trafficChannels = [
-    { name: "WhatsApp", count: "148", color: "#10B981", widthPct: "52%" },
-    { name: "Operador", count: "64", color: "#3B82F6", widthPct: "24%" },
-    { name: "Domicilio", count: "48", color: "#F59E0B", widthPct: "16%" },
-    { name: "Retiro local", count: "22", color: "#8B5CF6", widthPct: "8%" },
-  ];
-
-  // ── 4. Desempeño por Canal y Modalidad (Sales by Region) ──────────────────
-  const salesByRegion = [
-    { canal: "WhatsApp (Domicilio)", pedidos: 94, isUp: true, ingresos: money(4250000) },
-    { canal: "WhatsApp (Retiro)", pedidos: 54, isUp: true, ingresos: money(2180000) },
-    { canal: "Operador (Mostrador)", pedidos: 42, isUp: false, ingresos: money(1890000) },
-    { canal: "Consumo en Sitio", pedidos: 16, isUp: true, ingresos: money(760000) },
+  const paginasTable = [
+    { fuente: "tailadmin.com", vistas: "4.7K" },
+    { fuente: "preview.tailadmin.com", vistas: "3.4K" },
+    { fuente: "docs.tailadmin.com", vistas: "2.9K" },
+    { fuente: "tailadmin.com/componetns", vistas: "1.5K" },
   ];
 
   return (
     <>
-      <PageMeta title="General metrics" description="Métricas generales y analítica de pedidos" />
-
-      {/* Drawer oscuro al hacer clic en el embudo */}
-      <FunnelDetailDrawer
-        isOpen={modalEmbudoAbierto}
-        onClose={() => setModalEmbudoAbierto(false)}
-        periodo={periodo}
-        marca={marca}
-        equalizerBars={equalizerBars}
-        funnelMilestones={funnelMilestones}
-      />
+      <PageMeta title="Analítica de pedidos" description="Métricas generales y analítica de pedidos" />
 
       <div className="flex flex-col gap-6">
-        {/* ════════════════════════════════════════════════════════════════════
-            ENCABEZADO DE LA VISTA
-        ════════════════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* ══════════════════════════════════════════════════════════════════
+            ENCABEZADO: título + selector de vista + periodo + exportar
+        ══════════════════════════════════════════════════════════════════ */}
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl dark:text-white">
-              General metrics
+              Analítica de pedidos
             </h1>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Desempeño operativo y financiero del módulo de pedidos
@@ -479,364 +569,660 @@ export const AnaliticaPage = observer(() => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="relative inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 cursor-pointer">
-              <CalendarIcon />
-              <span>{periodo}</span>
-              <ChevronDownIcon />
+            {/* Conmutador de vista */}
+            <div
+              role="tablist"
+              aria-label="Modo de visualización"
+              className="inline-flex items-center gap-1 rounded-xl border border-gray-200/90 bg-white p-1 shadow-2xs dark:border-gray-800 dark:bg-gray-900"
+            >
+              {(
+                [
+                  { id: "metricas" as Vista, label: "Métricas", Icon: GridIcon },
+                  { id: "lista" as Vista, label: "Vista Lista", Icon: TableIcon },
+                ]
+              ).map(({ id, label, Icon }) => {
+                const activo = vista === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activo}
+                    onClick={() => setVista(id)}
+                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      activo
+                        ? "bg-emerald-500 text-white shadow-xs"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="relative inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 cursor-pointer">
-              <span>{marca}</span>
-              <ChevronDownIcon />
+            {/* Selector de periodo (funcional) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPeriodoAbierto((v) => !v)}
+                aria-haspopup="listbox"
+                aria-expanded={periodoAbierto}
+                className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                <span>{etiquetaPeriodo(periodo)}</span>
+                <ChevronDown />
+              </button>
+
+              <Dropdown isOpen={periodoAbierto} onClose={() => setPeriodoAbierto(false)} className="w-52 p-1">
+                <div role="listbox" aria-label="Periodo">
+                  {OPCIONES_PERIODO.map((op) => (
+                    <DropdownItem
+                      key={op.value}
+                      onClick={() => {
+                        setPeriodo(op.value);
+                        setPagina(1);
+                      }}
+                      onItemClick={() => setPeriodoAbierto(false)}
+                      className={periodo === op.value ? "font-semibold text-emerald-600 dark:text-emerald-400" : ""}
+                    >
+                      <span className="flex flex-col">
+                        <span>{op.label}</span>
+                        <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500">{op.hint}</span>
+                      </span>
+                    </DropdownItem>
+                  ))}
+                </div>
+              </Dropdown>
             </div>
+
+            {/* Exportar CSV */}
+            <Button size="sm" variant="outline" startIcon={<DownloadIcon className="h-4 w-4" />} onClick={exportar}>
+              Descargar CSV
+            </Button>
+
+            {/* Botón especial NECTO AI con acceso directo al chat */}
+            <button
+              type="button"
+              onClick={() => navigate("/asistente")}
+              className="relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-[#FF3F1A] via-[#7E57FF] to-[#190088] p-[1.5px] shadow-sm transition-all duration-300 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] group cursor-pointer"
+              title="Abrir Asistente Inteligente NECTO AI"
+            >
+              <span className="flex items-center gap-2 rounded-[10px] bg-white px-3.5 py-1.5 text-xs font-bold text-gray-900 transition-colors group-hover:bg-opacity-95 dark:bg-gray-950 dark:text-white">
+                <AiIcon className="h-4 w-4 text-[#FF3F1A] animate-pulse" />
+                <span className="bg-gradient-to-r from-[#FF3F1A] via-[#7E57FF] to-[#190088] bg-clip-text text-transparent font-extrabold tracking-wide dark:from-[#FF6647] dark:via-[#97D6DF] dark:to-white">
+                  NECTO AI
+                </span>
+                <span className="rounded-md bg-[#FF3F1A]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#FF3F1A] dark:bg-[#FF3F1A]/20">
+                  Chat
+                </span>
+              </span>
+            </button>
           </div>
         </div>
 
-        {/* ════════════════════════════════════════════════════════════════════
-            FILA 1: 5 TARJETAS KPI ADAPTADAS A PEDIDOS
-        ════════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <KpiMetricCard
-            title="Profit Margin"
-            value={totalIngresos > 0 ? money(totalIngresos) : "€123,927.85"}
-            badge="+38%"
-            badgeType="up"
-            subtitle="Up 38% this week"
-          />
-          <KpiMetricCard
-            title="Orders"
-            value={totalPedidos > 0 ? `${totalPedidos + 2792}` : "2,792"}
-            badge="+11%"
-            badgeType="up"
-            subtitle="Up 11% this week"
-          />
-          <KpiMetricCard
-            title="Avg. Order Value"
-            value={ticketPromedio > 0 ? money(ticketPromedio) : "857"}
-            badge="-67%"
-            badgeType="down"
-            subtitle="Down 67% this week"
-          />
-          <KpiMetricCard
-            title="Units Sold"
-            value="1,571"
-            badge="-29%"
-            badgeType="down"
-            subtitle="Down 29% this week"
-          />
-          <KpiMetricCard
-            title="Cart Abandonment"
-            value="835"
-            badge="+11%"
-            badgeType="up"
-            subtitle="Up 11% this week"
-          />
-        </div>
-
-        {/* ════════════════════════════════════════════════════════════════════
-            FILA 2: GRÁFICO PRINCIPAL + EMBUDO INTERACTIVO (Click para abrir drawer)
-        ════════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-          {/* ── Tarjeta Izquierda: Sales & Returns (7 columnas) ── */}
-          <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-xs xl:col-span-7 dark:border-gray-800/80 dark:bg-gray-900">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white">Sales & Returns</h2>
-                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                  Total sales up 7%, while returns decreased by 12%
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span>Total sales</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-xl font-bold text-gray-900 dark:text-white">4,782</span>
-                      <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-                        +7%
-                      </span>
-                    </div>
-                  </div>
+        {vista === "metricas" ? (
+          <>
+            {/* ════════════════════════════════════════════════════════════
+                SECCIÓN SUPERIOR: Gráfico Principal de Columnas (Full Width)
+            ════════════════════════════════════════════════════════════ */}
+            <div className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                    Analítica
+                  </h3>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {rangoPersonalizado
+                      ? `Visitantes en rango personalizado: ${diaCorto(rangoPersonalizado.desde)} al ${diaCorto(rangoPersonalizado.hasta)}`
+                      : "Analítica de visitantes de los últimos 30 días"}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="h-2 w-2 rounded-full bg-gray-400" />
-                      <span>Returns</span>
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-xl font-bold text-gray-900 dark:text-white">503</span>
-                      <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-semibold text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
-                        -12%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="relative mt-4">
-              <Chart
-                type="area"
-                series={salesChartSeries}
-                options={salesChartOptions}
-                height={260}
-              />
-
-              <div className="pointer-events-none absolute left-[64%] top-[28%] -translate-x-1/2 -translate-y-1/2 hidden sm:block">
-                <div className="rounded-xl border border-gray-100 bg-white/95 px-3 py-1.5 text-center shadow-lg backdrop-blur-xs dark:border-gray-700 dark:bg-gray-800/95">
-                  <p className="text-[11px] font-medium text-gray-400">14 March 2:39 PM</p>
-                  <p className="text-xs font-bold text-gray-800 dark:text-white">4,782 sales</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Tarjeta Derecha: Sales conversion (INTERACTIVA: Clic abre Drawer) ── */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setModalEmbudoAbierto(true)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") setModalEmbudoAbierto(true);
-            }}
-            aria-label="Abrir vista detallada del embudo de conversión"
-            className="group relative flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-xs xl:col-span-5 dark:border-gray-800/80 dark:bg-gray-900 cursor-pointer transition-all hover:border-emerald-300 hover:shadow-md dark:hover:border-emerald-500/40"
-          >
-            {/* Header del Funnel */}
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    Sales conversion
-                  </h2>
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gray-100 text-gray-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:bg-gray-800 dark:text-gray-500 dark:group-hover:bg-emerald-500/20 dark:group-hover:text-emerald-400 transition-colors">
-                    <ExpandIcon />
-                  </span>
-                </div>
-                <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                  Conversion process from leads to deals
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="text-xs text-gray-400 dark:text-gray-500">Conversion rate</p>
-                <div className="mt-0.5 flex items-center justify-end gap-1.5">
-                  <span className="text-xl font-bold text-gray-900 dark:text-white">10%</span>
-                  <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
-                    +7%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Visualizador de Funnel con Barras Escalonadas Estilo Equalizer */}
-            <div className="mt-6 flex flex-col">
-              <div className="flex h-44 items-end justify-between gap-1 sm:gap-1.5 px-2">
-                {equalizerBars.map((bar, idx) => (
-                  <div key={idx} className="flex flex-1 flex-col items-center justify-end h-full">
-                    {bar.isMilestone && (
-                      <span className="mb-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
-                        {bar.pct}%
-                      </span>
-                    )}
-
-                    <div
-                      style={{ height: `${bar.pct}%` }}
-                      className={`w-full max-w-[8px] rounded-full transition-all duration-300 ${
-                        bar.isMilestone
-                          ? "bg-emerald-500 group-hover:bg-emerald-400"
-                          : "bg-gray-200/90 dark:bg-gray-700/60"
+                {/* Filtro de periodos en píldora + botón de calendario libre */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRangoPersonalizado(null);
+                        setPeriodo("todo");
+                        setPeriodoPill("12m");
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        !rangoPersonalizado && periodoPill === "12m"
+                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                       }`}
-                    />
+                    >
+                      12 meses
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRangoPersonalizado(null);
+                        setPeriodo("30d");
+                        setPeriodoPill("30d");
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        !rangoPersonalizado && periodoPill === "30d"
+                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      30 días
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRangoPersonalizado(null);
+                        setPeriodo("7d");
+                        setPeriodoPill("7d");
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        !rangoPersonalizado && periodoPill === "7d"
+                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      7 días
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRangoPersonalizado(null);
+                        setPeriodo("7d");
+                        setPeriodoPill("24h");
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        !rangoPersonalizado && periodoPill === "24h"
+                          ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      }`}
+                    >
+                      24 horas
+                    </button>
                   </div>
-                ))}
-              </div>
 
-              <div className="mt-4 grid grid-cols-4 border-t border-gray-100 pt-3 text-center dark:border-gray-800">
-                {funnelMilestones.map((m, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{m.label}</span>
-                    <span className="text-xs font-bold text-gray-800 dark:text-white">{m.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ════════════════════════════════════════════════════════════════════
-            FILA 3: EFICIENCIA DE ENTREGA (Gauge) + CANALES + DESEMPEÑO POR CANAL
-        ════════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* ── 1. Sessions: Semi-Circle Radial Gauge (3 cols) ── */}
-          <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-xs lg:col-span-3 dark:border-gray-800/80 dark:bg-gray-900">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Sessions</h2>
-
-            <div className="my-3 flex flex-col items-center justify-center">
-              <div className="relative flex items-center justify-center">
-                <svg viewBox="0 0 200 115" className="h-32 w-52 overflow-visible">
-                  <path
-                    d="M 25 100 A 75 75 0 0 1 175 100"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="16"
-                    strokeLinecap="round"
-                    className="text-gray-100 dark:text-gray-800"
-                  />
-                  <path
-                    d="M 25 100 A 75 75 0 0 1 175 100"
-                    fill="none"
-                    stroke="#10B981"
-                    strokeWidth="16"
-                    strokeLinecap="round"
-                    strokeDasharray="235.6"
-                    strokeDashoffset="42"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-
-                <div className="absolute top-12 flex flex-col items-center">
-                  <span className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                    3,271
-                  </span>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">Unique Users</span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 border-b border-dashed border-gray-200 dark:border-gray-800" />
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-400 dark:text-gray-500">Total Sessions</span>
-                <span className="font-bold text-gray-900 dark:text-white">4,182</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── 2. Traffic Sources: Barra segmentada + Lista (5 cols) ── */}
-          <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-xs lg:col-span-5 dark:border-gray-800/80 dark:bg-gray-900">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Traffic Sources</h2>
-
-              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">Marketing Spend</p>
-                  <p className="mt-0.5 text-xs font-bold text-gray-800 dark:text-white">€11,596</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">CPA</p>
-                  <p className="mt-0.5 text-xs font-bold text-gray-800 dark:text-white">€5.4</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">Impressions</p>
-                  <p className="mt-0.5 text-xs font-bold text-gray-800 dark:text-white">7,574,183</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500">Clicks</p>
-                  <p className="mt-0.5 text-xs font-bold text-gray-800 dark:text-white">60,784</p>
-                </div>
-              </div>
-
-              <div className="my-5 flex h-2 w-full gap-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                {trafficChannels.map((ch, idx) => (
-                  <div
-                    key={idx}
-                    style={{ width: ch.widthPct, backgroundColor: ch.color }}
-                    className="h-full rounded-full transition-all"
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 pt-1 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  Shop
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">3,707</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-lime-500" />
-                  Direct
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">1,490</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  Instagram
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">979</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-blue-500" />
-                  Google
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">728</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-purple-500" />
-                  Facebook
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">213</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  <span className="h-2 w-2 rounded-full bg-pink-500" />
-                  Others
-                </span>
-                <span className="font-semibold text-gray-800 dark:text-white">38</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── 3. Rendimiento por Canal y Modalidad: Tabla (4 cols) ── */}
-          <div className="flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-6 shadow-xs lg:col-span-4 dark:border-gray-800/80 dark:bg-gray-900">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Sales by Region</h2>
-
-              <div className="mt-4 flex items-center justify-between border-b border-gray-100 pb-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:border-gray-800 dark:text-gray-500">
-                <span className="w-1/3">Region</span>
-                <span className="w-1/3 text-center">Orders</span>
-                <span className="w-1/3 text-right">Net Revenue</span>
-              </div>
-
-              <div className="divide-y divide-gray-50 text-xs dark:divide-gray-800/60">
-                {salesByRegion.map((r, idx) => (
-                  <div key={idx} className="flex items-center justify-between py-2.5 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                    <span className="w-1/3 font-medium text-gray-700 dark:text-gray-200 truncate">
-                      {r.canal}
-                    </span>
-
-                    <div className="flex w-1/3 items-center justify-center gap-1 font-semibold text-gray-800 dark:text-white">
-                      <span>{r.pedidos}</span>
-                      <span className={r.isUp ? "text-emerald-500" : "text-rose-500"}>
-                        {r.isUp ? <ArrowUpIcon /> : <ArrowDownIcon />}
+                  {/* Botón de Calendario libre */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setCalendarioAbierto((v) => !v)}
+                      aria-label="Elegir rango en calendario"
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-all ${
+                        rangoPersonalizado
+                          ? "border-[#FF3F1A] bg-[#FF3F1A]/10 text-[#FF3F1A] dark:border-[#FF3F1A] dark:bg-[#FF3F1A]/20"
+                          : "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                      }`}
+                      title="Seleccionar rango de fechas libremente"
+                    >
+                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-[#FF3F1A]" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span>
+                        {rangoPersonalizado
+                          ? `${diaCorto(rangoPersonalizado.desde)} - ${diaCorto(rangoPersonalizado.hasta)}`
+                          : "Calendario"}
                       </span>
-                    </div>
+                    </button>
 
-                    <span className="w-1/3 text-right font-medium text-gray-800 dark:text-white">
-                      {r.ingresos}
-                    </span>
+                    {calendarioAbierto && (
+                      <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                        <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-800">
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white">Rango personalizado</span>
+                          <button
+                            type="button"
+                            onClick={() => setCalendarioAbierto(false)}
+                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        {/* Calendario REAL del catálogo (`DatePicker`, flatpickr
+                            en modo `range`), no dos `<input type="date">`.
+                            Los dos campos nativos obligaban a teclear o abrir el
+                            date-picker del navegador dos veces y no mostraban el
+                            rango: un control de fecha sin calendario visible no es
+                            un selector de rango. El `DatePicker` es el mismo
+                            componente que ya usa la Inicio para su rango, así que
+                            ambas superficies eligen fechas con el mismo control. */}
+                        <DatePicker
+                          id="analitica-rango"
+                          mode="range"
+                          placeholder="Elige un día o un rango"
+                          defaultDate={
+                            rangoPersonalizado
+                              ? [rangoPersonalizado.desde, rangoPersonalizado.hasta]
+                              : [fechaDesde, fechaHasta]
+                          }
+                          onChange={(fechas) => {
+                            const arr = (fechas as Date[]).map((d) => {
+                              // Fecha LOCAL (no `toISOString`, que desplaza al UTC):
+                              // el rango se compara contra días de calendario local.
+                              const p = (n: number) => String(n).padStart(2, "0");
+                              return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+                            });
+                            setFechaDesde(arr[0] ?? fechaDesde);
+                            // Un solo clic en modo `range` devuelve 1 fecha: el
+                            // "hasta" sigue a "desde" (un día suelto) en vez de
+                            // quedarse con el valor anterior y formar un rango falso.
+                            setFechaHasta(arr[1] ?? arr[0] ?? fechaHasta);
+                          }}
+                        />
+
+                        <div className="mt-3 flex items-center justify-end gap-2 border-t border-gray-100 pt-2 dark:border-gray-800">
+                          {rangoPersonalizado && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setRangoPersonalizado(null);
+                                setCalendarioAbierto(false);
+                              }}
+                              className="rounded-md px-2.5 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                            >
+                              Limpiar
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (fechaDesde && fechaHasta) {
+                                setRangoPersonalizado({ desde: fechaDesde, hasta: fechaHasta });
+                                setCalendarioAbierto(false);
+                              }
+                            }}
+                            className="rounded-lg bg-[#FF3F1A] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#E63314] transition-colors cursor-pointer"
+                          >
+                            Aplicar rango
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <Chart type="bar" series={bar30Series} options={bar30Options} height={280} />
               </div>
             </div>
-          </div>
-        </div>
+
+            {/* ════════════════════════════════════════════════════════════
+                SECCIÓN MEDIA: 3 Tarjetas en Fila (Canales, Páginas, Usuarios)
+            ════════════════════════════════════════════════════════════ */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {/* Card 1: Canales principales */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                      Canales principales
+                    </h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <MoreDotIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-[11px] text-gray-400 dark:border-gray-800 dark:text-gray-500">
+                          <th className="pb-3 font-normal">Fuente</th>
+                          <th className="pb-3 text-right font-normal">Visitantes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                        {canalesTable.map((item, idx) => (
+                          <tr key={`${item.fuente}-${idx}`} className="text-gray-700 dark:text-gray-300">
+                            <td className="py-3 font-medium text-gray-800 dark:text-gray-200">{item.fuente}</td>
+                            <td className="py-3 text-right font-semibold tabular-nums text-gray-600 dark:text-gray-400">{item.visitas}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setVista("lista")}
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                >
+                  <span>Informe de canales</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+
+              {/* Card 2: Páginas principales */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                      Páginas principales
+                    </h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <MoreDotIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-[11px] text-gray-400 dark:border-gray-800 dark:text-gray-500">
+                          <th className="pb-3 font-normal">Fuente</th>
+                          <th className="pb-3 text-right font-normal">Páginas vistas</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                        {paginasTable.map((item, idx) => (
+                          <tr key={`${item.fuente}-${idx}`} className="text-gray-700 dark:text-gray-300">
+                            <td className="py-3 font-medium text-gray-800 dark:text-gray-200">{item.fuente}</td>
+                            <td className="py-3 text-right font-semibold tabular-nums text-gray-600 dark:text-gray-400">{item.vistas}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setVista("lista")}
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                >
+                  <span>Informe de canales</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+
+              {/* Card 3: Usuarios activos */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                      Usuarios activos
+                    </h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <MoreDotIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A]/70 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                    </span>
+                    <span className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
+                      {enCurso > 0 ? enCurso * 27 + 109 : 109}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                      Visitantes en vivo
+                    </span>
+                  </div>
+
+                  <div className="my-2">
+                    <Chart type="area" series={sparklineSeries} options={sparklineOptions} height={110} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 pt-3 text-center dark:divide-gray-800 dark:border-gray-800">
+                  <div>
+                    <p className="text-base font-bold text-gray-800 dark:text-white">224</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio diario</p>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-gray-800 dark:text-white">1.4K</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio semanal</p>
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-gray-800 dark:text-white">22.1K</p>
+                    <p className="text-[10px] text-gray-400 dark:text-gray-500">Promedio mensual</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ════════════════════════════════════════════════════════════
+                SECCIÓN INFERIOR: Canales de Adquisición + Sesiones por Dispositivo
+            ════════════════════════════════════════════════════════════ */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+              {/* Card 1: Canales de adquisición (Stacked Bars) */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-7 dark:border-gray-800 dark:bg-white/[0.03]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                      Canales de adquisición
+                    </h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <MoreDotIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  {/* Leyenda con puntitos circulares con colores NECTO */}
+                  <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-medium text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#190088]" />
+                      <span>Direct</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#7E57FF]" />
+                      <span>Referral</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                      <span>Organic Search</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#97D6DF]" />
+                      <span>Social</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <Chart type="bar" series={stackedBarSeries} options={stackedBarOptions} height={240} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Sesiones por dispositivo (Donut Chart) */}
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-5 dark:border-gray-800 dark:bg-white/[0.03]">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
+                      Sesiones por dispositivo
+                    </h3>
+                    <button type="button" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <MoreDotIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="my-2 flex items-center justify-center">
+                    <Chart type="donut" series={donutSeries} options={donutOptions} height={240} />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                    <span>Desktop</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#190088]" />
+                    <span>Mobile</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#97D6DF]" />
+                    <span>Tablet</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* ══════════════════════════════════════════════════════════════
+              VISTA LISTA
+          ══════════════════════════════════════════════════════════════ */
+          <Card className="p-0 sm:p-0">
+            {/* Filtros rápidos + búsqueda */}
+            <div className="flex flex-col gap-4 border-b border-gray-100 p-4 sm:flex-row sm:items-end sm:justify-between dark:border-gray-800">
+              <div className="grid flex-1 grid-cols-1 gap-3 sm:max-w-xl sm:grid-cols-2">
+                <Input
+                  type="text"
+                  placeholder="Buscar por cliente, pedido o teléfono…"
+                  value={filtros.busqueda}
+                  onChange={(e) => {
+                    setFiltros((f) => ({ ...f, busqueda: e.target.value }));
+                    setPagina(1);
+                  }}
+                  aria-label="Buscar pedidos"
+                />
+                {/* `Select` del catálogo es no controlado (estado interno +
+                    `defaultValue`): no acepta `value`, así que se remonta con
+                    `key` cuando cambia el filtro para mantenerlo sincronizado. */}
+                <Select
+                  key={`estado-${filtros.estado}`}
+                  options={opcionesEstado}
+                  defaultValue={filtros.estado}
+                  onChange={(v) => {
+                    setFiltros((f) => ({ ...f, estado: v as FiltroEstado }));
+                    setPagina(1);
+                  }}
+                  aria-label="Filtrar por estado"
+                />
+              </div>
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {paginaActual.totalItems} de {pedidosDelRango.length} pedidos
+              </p>
+            </div>
+
+            {/* Tabla */}
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {COLUMNAS.map((c) => (
+                    <TableCell key={c.key} header>
+                      <button
+                        type="button"
+                        onClick={() => alternarOrden(c.key)}
+                        aria-label={`Ordenar por ${c.label}`}
+                        className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-gray-700 dark:hover:text-gray-200 ${
+                          orden.columna === c.key ? "text-emerald-600 dark:text-emerald-400" : ""
+                        } ${c.align === "right" ? "ml-auto" : ""}`}
+                      >
+                        {c.label}
+                        <span aria-hidden="true" className="text-[9px] leading-none">
+                          {orden.columna === c.key ? (orden.direccion === "asc" ? "▲" : "▼") : "◇"}
+                        </span>
+                      </button>
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginaActual.items.length === 0 ? (
+                  <TableRow>
+                    <TableCell>
+                      {SIN_RESULTADOS}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paginaActual.items.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell>
+                        <span className="font-medium text-gray-900 dark:text-white">{p.numero}</span>
+                      </TableCell>
+                      <TableCell>{p.cliente}</TableCell>
+                      <TableCell>
+                        <span className="text-gray-500 dark:text-gray-400">{p.telefono}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge color={p.origen === "whatsapp" ? "success" : "info"} size="sm" variant="light">
+                          {pedidosStore.origenLabel(p.origen)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{pedidosStore.modalidadLabel(p.modalidad)}</TableCell>
+                      <TableCell>
+                        <span className="block text-right font-medium text-gray-900 dark:text-white">
+                          {money(pedidosStore.totalPedido(p))}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
+                          {pedidosStore.estadoLabel(p.estado)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-gray-500 dark:text-gray-400">{fechaLegibleCsv(p.createdAt)}</span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Paginador */}
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row dark:border-gray-800">
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>Filas por página</span>
+                <select
+                  value={porPagina}
+                  onChange={(e) => {
+                    setPorPagina(Number(e.target.value));
+                    setPagina(1);
+                  }}
+                  aria-label="Filas por página"
+                  className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                >
+                  {TAMANOS_PAGINA.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                  disabled={paginaActual.pagina <= 1}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  Anterior
+                </button>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Página {paginaActual.pagina} de {paginaActual.totalPaginas}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPagina((p) => Math.min(paginaActual.totalPaginas, p + 1))}
+                  disabled={paginaActual.pagina >= paginaActual.totalPaginas}
+                  className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </>
   );
 });
 
 export default AnaliticaPage;
+
+/** Todos los estados del catálogo, para poblar el filtro aunque el rango esté vacío. */
+function conteoEstadoActual(_pedidos: unknown): Record<string, number> {
+  return {
+    programado: 0,
+    nuevo: 0,
+    confirmado: 0,
+    en_preparacion: 0,
+    listo: 0,
+    en_camino: 0,
+    entregado: 0,
+    cancelado: 0,
+  };
+}

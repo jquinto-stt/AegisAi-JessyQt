@@ -42,7 +42,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
               {children}
             </div>
           ) : (
-            <div className="min-h-full rounded-3xl bg-white p-6 shadow-theme-sm dark:bg-gray-900">
+            <div className="min-h-full rounded-2xl bg-white p-6 shadow-2xs dark:bg-gray-900">
               {children}
             </div>
           )}

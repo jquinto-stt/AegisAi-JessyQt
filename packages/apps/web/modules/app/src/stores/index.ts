@@ -4,7 +4,16 @@ export type { Theme, UIPreferences } from '@/shell/stores';
 
 // Domain stores
 export { pedidosStore, PedidosStore } from '@/stores/pedidos.store';
-export type { Pedido, PedidoEstado, PedidoItem, PedidosConfig, CatalogoItem, PlantillasWhatsApp } from '@/stores/pedidos.store';
+export type {
+  Pedido,
+  PedidoEstado,
+  PedidoItem,
+  PedidosConfig,
+  CatalogoItem,
+  PlantillasWhatsApp,
+  DireccionEntrega,
+  MetodoPago,
+} from '@/stores/pedidos.store';
 export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
 
 export { sessionStore, SessionStore } from '@/stores/session.store';
@@ -24,6 +33,25 @@ export type { Rol, Capacidad, CapacidadGrupo, PortadorDeRol } from '@/stores/rol
 export { operadoresStore, OperadoresStore, SECCIONES } from '@/stores/operadores.store';
 export type { Operador, OperadorEstado, Seccion, OperadorStats, EncuestaStats } from '@/stores/operadores.store';
 
+export {
+  conversacionesStore,
+  ConversacionesStore,
+  normalizarTelefono,
+  ESTADO_CONVERSACION_LABEL,
+  ESTADO_CONVERSACION_BADGE,
+  ATENCION_LABEL,
+  ATENCION_BADGE,
+} from '@/stores/conversaciones.store';
+export type {
+  Conversacion as ConversacionCanal,
+  EstadoConversacion,
+  ModoAtencion,
+  Mensaje as MensajeCanal,
+  EventoSistema,
+  ItemLineaTiempo,
+  FiltroBandeja,
+} from '@/stores/conversaciones.types';
+
 export { AssistantStore, assistantStore } from './assistant.store';
 export type { Conversacion, GrupoConversaciones } from './assistant.store';
 
@@ -41,6 +69,8 @@ export {
   puedeGestionarProgramados,
   puedeEscribirCliente,
   puedeEditarPlantillas,
+  puedeVerConversaciones,
+  puedeResponderConversacion,
   puedeGuardarConfig,
   puedeVerConfig,
   puedeGestionarEquipo,

@@ -203,7 +203,7 @@ export default function Tab({
 
   if (variant === "underline") {
     return (
-      <div className="border-b border-gray-200 dark:border-gray-800">
+      <div className="border-b border-gray-200/70 dark:border-white/5">
         <nav className={cn(
           "-mb-px flex space-x-2 overflow-x-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-200 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5",
           className

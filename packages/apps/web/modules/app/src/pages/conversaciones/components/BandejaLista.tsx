@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
+import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { pedidosStore } from "@/stores/pedidos.store";
 import type { FiltroBandeja } from "@/stores/conversaciones.types";
 import {
   AVATAR_MAP,
@@ -20,7 +22,12 @@ const FILTROS: ReadonlyArray<{ valor: FiltroBandeja; etiqueta: string }> = [
   { valor: "cerradas", etiqueta: "Cerradas" },
 ];
 
-export const BandejaLista = observer(() => {
+interface BandejaListaProps {
+  onToggle?: () => void;
+  bandejaExpandida?: boolean;
+}
+
+export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: BandejaListaProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const bandeja = conversacionesStore.bandeja;
   const filtroActivo = conversacionesStore.filtro;
@@ -28,7 +35,7 @@ export const BandejaLista = observer(() => {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {/* Cabecera: Título "Chats" + Menú de 3 puntos */}
+      {/* Cabecera: Título "Chats" + Botón colapsar + Menú de 3 puntos */}
       <div className="p-4 sm:p-5 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -42,15 +49,42 @@ export const BandejaLista = observer(() => {
             )}
           </div>
 
-          <div className="relative inline-block">
-            <button
-              type="button"
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              aria-label="Opciones de chat"
-            >
-              <MoreDotIcon className="h-5 w-5" />
-            </button>
+          <div className="flex items-center gap-1">
+            {onToggle && (
+              <button
+                type="button"
+                onClick={onToggle}
+                title="Colapsar lista de chats"
+                aria-label="Colapsar lista de chats"
+                className="group flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="transition-transform group-hover:-translate-x-0.5"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M9 3v18" />
+                  <path d="M14 9l-3 3 3 3" />
+                </svg>
+              </button>
+            )}
+
+            <div className="relative inline-block">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                aria-label="Opciones de chat"
+              >
+                <MoreDotIcon className="h-5 w-5" />
+              </button>
             <Dropdown
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
@@ -86,6 +120,7 @@ export const BandejaLista = observer(() => {
             </Dropdown>
           </div>
         </div>
+      </div>
 
         {/* Buscador: Search... */}
         <div className="relative mt-3.5">
@@ -145,6 +180,15 @@ export const BandejaLista = observer(() => {
               const avatarSrc = AVATAR_MAP[conv.id] || "";
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
 
+              // Pedido ACTIVO del contacto. Se resuelve con el selector canónico
+              // del store de Pedidos (`pedidoActivoDe`), que cruza por teléfono
+              // normalizado y descarta los terminales. Esta vista NO deriva el
+              // filtro por su cuenta: si lo hiciera, "activo" significaría aquí
+              // algo distinto que en el panel de contexto del chat.
+              // El cruce cruza la frontera Pedidos→Conversaciones en la capa de
+              // UI, nunca dentro de un store (invariante D2).
+              const pedidoActivo = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
+
               return (
                 <div
                   key={conv.id}
@@ -167,9 +211,35 @@ export const BandejaLista = observer(() => {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-1">
-                      <h5 className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {conv.contacto.nombre}
-                      </h5>
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <h5 className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
+                          {conv.contacto.nombre}
+                        </h5>
+                        {conversacionesStore.requiereAtencionHumana(conv) && (
+                          <span className="flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" title="Requiere atención humana">
+                            ⚠️ Asesor
+                          </span>
+                        )}
+                        {/* Badge del pedido activo: #PED-XXX + su estado actual.
+                            Etiqueta y color SIEMPRE del store de Pedidos — este
+                            módulo no tiene vocabulario propio de estados de pedido. */}
+                        {pedidoActivo && (
+                          <span
+                            className="flex shrink-0 items-center gap-1"
+                            title={`Pedido ${pedidoActivo.numero} · ${pedidosStore.estadoLabel(pedidoActivo.estado)}`}
+                          >
+                            <Badge size="xs" color="light" className="tabular-nums">
+                              {pedidoActivo.numero}
+                            </Badge>
+                            <Badge
+                              size="xs"
+                              color={pedidosStore.estadoBadgeColor(pedidoActivo.estado)}
+                            >
+                              {pedidosStore.estadoLabel(pedidoActivo.estado)}
+                            </Badge>
+                          </span>
+                        )}
+                      </div>
                       <span className="shrink-0 text-[11px] text-gray-400 dark:text-gray-500">
                         {tiempoRelativo(conv.ultimaActividad)}
                       </span>

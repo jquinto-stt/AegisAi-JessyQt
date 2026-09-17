@@ -1,0 +1,75 @@
+=== Analítica · verificación de UI ===
+
+  ruta actual: /pedidos/analitica
+
+── Fase 1 · KPIs desde el store ──
+
+── Fase 2 · filtro de periodo funcional ──
+
+── Fase 3 · vista lista + tabla ──
+
+── Fase 4 · búsqueda y filtro ──
+
+── Fase 5 · exportación CSV ──
+
+── Fase 6 · nombre del archivo ──
+
+── Fase 7 · volver a métricas ──
+
+=== RESULTADOS ===
+  OK   estoy en /pedidos/analitica
+  OK   se renderizan 4 tarjetas KPI
+  OK   aparece 'Total Pedidos'
+  OK   aparece 'Ticket Promedio'
+  OK   aparece 'Tasa de Cancelación' (reemplaza Cart Abandonment)
+  OK   NO aparece 'Cart Abandonment'
+  OK   NO aparece 'Profit Margin'
+  OK   NO aparece 'Units Sold'
+  OK   NO aparece 'Sales by Region'
+  OK   NO aparece 'Traffic Sources'
+  OK   NO aparece 'Sessions'
+  OK   NO aparece 'Marketing Spend'
+  OK   NO aparece 'Redondo Brand' (marca inventada)
+  OK   NO aparece 'Last 7 days' (pill inerte)
+  OK   [Fase 1] renderiza sin lanzar excepciones
+  OK   el trigger dice 'Últimos 7 días'
+  OK   el desplegable se abre con 3 opciones
+  OK   las opciones son 7d / 30d / todo
+  OK   el trigger pasa a 'Todo el historial'
+  OK   cambiar el periodo no rompe 'Total Pedidos'
+  OK   'Total Pedidos' con todo el historial = 7 (el seed)
+  OK   la serie del gráfico en 7d tiene 7 puntos
+  OK   la serie del gráfico en 30d tiene 30 puntos
+  OK   el filtro de periodo RECALCULA el gráfico (7d=7 ≠ 30d=30)
+  OK   el eje del gráfico se reetiqueta con el periodo elegido
+  OK   [Fase 2] sin excepciones
+  OK   se renderiza una tabla
+  OK   la tabla tiene las 8 columnas pedidas
+  OK   la tabla muestra las 7 filas del seed
+  OK   la columna Canal usa etiquetas del store
+  OK   la columna Monto Total trae importes reales
+  OK   [Fase 3] sin excepciones
+  OK   la búsqueda filtra la tabla
+  OK   con 0 resultados muestra el estado vacío
+  OK   al limpiar la búsqueda vuelven las 7 filas
+  OK   al pulsar 'Cliente' la tabla se ordena
+  OK   [Fase 4] sin excepciones
+  OK   existe el botón 'Descargar CSV'
+  OK   el botón está habilitado
+  OK   la exportación produce contenido CSV
+  OK   el CSV arranca con el encabezado de 8 columnas
+  OK   el separador de línea es CRLF
+  OK   el CSV tiene 7 filas de datos + encabezado
+  OK   cada fila del CSV tiene 8 campos
+  OK   el CSV incluye un canal del catálogo (WhatsApp)
+  OK   la utilidad real entrecomilla y duplica comillas internas
+  OK   una fila con comas internas sigue siendo UNA sola fila
+  OK   [Fase 5] sin excepciones
+  OK   el archivo se llama stockflow-analitica-YYYY-MM-DD.csv
+  OK   el nombre usa la fecha local de hoy
+  OK   al volver a Métricas desaparece la tabla
+  OK   en Métricas se renderiza el gráfico
+  OK   [Fase 7] sin excepciones
+
+PASSED: 53   FAILED: 0
+RUNTIME ERRORS: (none)

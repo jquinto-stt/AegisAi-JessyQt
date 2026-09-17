@@ -23,7 +23,7 @@ export const ListBlockView = ({ block }: { block: ListBlock }) => {
       {sinItems ? (
         <p className="py-2 text-center text-sm text-gray-400 dark:text-gray-500">Sin elementos</p>
       ) : (
-        <ul className="divide-y divide-gray-100 dark:divide-gray-800">
+        <ul className="divide-y divide-gray-100 dark:divide-white/5">
           {block.items.map((item, i) => (
             <li
               key={`${item.primary}-${i}`}

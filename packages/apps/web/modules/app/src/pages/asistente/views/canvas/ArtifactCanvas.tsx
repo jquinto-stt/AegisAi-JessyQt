@@ -66,7 +66,7 @@ export const ArtifactCanvas = ({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
       {/* ── Cabecera del Canvas (Idéntica a capturas: [x] Título + Botones de acción) ── */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         {/* Lado izquierdo: Botón cerrar + Título */}

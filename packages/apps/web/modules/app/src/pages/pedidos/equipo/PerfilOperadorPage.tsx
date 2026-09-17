@@ -346,7 +346,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
         {/* Columna derecha: capacidades estructuradas como tabla con categorías */}
         <Card className="lg:col-span-2 p-0 overflow-hidden">
-          <div className="p-5 pb-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="p-5 pb-4 border-b border-gray-100 dark:border-white/5">
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -393,7 +393,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-gray-800 dark:bg-white/[0.02]">
+              <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
                 <TableRow>
                   <TableCell header className="py-3 pl-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
                     Categoría

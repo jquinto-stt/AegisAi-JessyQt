@@ -35,7 +35,34 @@ const hoyYmd = (): string => {
 const minutesAgoIso = (mins: number): string =>
   new Date(Date.now() - mins * 60000).toISOString();
 
-/** Construye un Pedido mínimo válido con overrides. */
+/** "YYYY-MM-DD" local de un instante ISO dado. */
+const ymdDeIso = (iso: string): string => {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/**
+ * Rango `desde..hasta` que cubre un conjunto de instantes ISO.
+ *
+ * Los fixtures se construyen con `minutesAgoIso(...)`, así que su día local
+ * depende de la hora a la que corre la suite: a las 00:30, un pedido de hace
+ * 60 minutos cae en el día ANTERIOR y un rango anclado a "hoy" solo encuentra
+ * parte de los pedidos. Derivar el rango de los propios fixtures hace el test
+ * determinista a cualquier hora y no cambia lo que el test verifica.
+ */
+const rangoDe = (isos: string[]): { desde: string; hasta: string } => {
+  const dias = isos.map(ymdDeIso).sort();
+  return { desde: dias[0]!, hasta: dias[dias.length - 1]! };
+};
+
+/**
+ * Construye un Pedido mínimo válido con overrides.
+ *
+ * `minutesAgoIso(n)` es "n minutos atrás": si la suite corre a las 00:30, ese
+ * instante cae en el día local ANTERIOR. Por eso los tests de rango derivan
+ * `desde..hasta` de los propios fixtures (`rangoDe`) en lugar de asumir que
+ * todo cae "hoy".
+ */
 let seqCounter = 0;
 function makePedido(overrides: Partial<Pedido> = {}): Pedido {
   seqCounter += 1;
@@ -116,18 +143,21 @@ describe("getVentasPeriodo", () => {
   });
 
   it("con rango válido devuelve Volumen y Monto con period", async () => {
-    const hoy = hoyYmd();
+    const a = minutesAgoIso(30);
+    const b = minutesAgoIso(60);
     pedidosStore.pedidos = [
-      makePedido({ createdAt: minutesAgoIso(30), items: [{ nombre: "A", cantidad: 2, precio: 1000 }] }),
-      makePedido({ createdAt: minutesAgoIso(60), items: [{ nombre: "B", cantidad: 1, precio: 5000 }] }),
+      makePedido({ createdAt: a, items: [{ nombre: "A", cantidad: 2, precio: 1000 }] }),
+      makePedido({ createdAt: b, items: [{ nombre: "B", cantidad: 1, precio: 5000 }] }),
     ];
-    const res = await getVentasPeriodo.run({ desde: hoy, hasta: hoy });
+    const { desde, hasta } = rangoDe([a, b]);
+    const period = `${desde}..${hasta}`;
+    const res = await getVentasPeriodo.run({ desde, hasta });
     const vol = res.facts.find((f) => f.label === "Volumen")!;
     const monto = res.facts.find((f) => f.label === "Monto")!;
     expect(vol.value).toBe(2);
-    expect(vol.period).toBe(`${hoy}..${hoy}`);
+    expect(vol.period).toBe(period);
     expect(monto.value).toBe(2 * 1000 + 5000);
-    expect(monto.period).toBe(`${hoy}..${hoy}`);
+    expect(monto.period).toBe(period);
   });
 
   it("con rango sin pedidos devuelve volumen 0 y monto 0", async () => {
@@ -140,12 +170,14 @@ describe("getVentasPeriodo", () => {
   });
 
   it("con rango válido incluye un block metrics y un block table exportable con columnas correctas", async () => {
-    const hoy = hoyYmd();
+    const a = minutesAgoIso(30);
+    const b = minutesAgoIso(60);
     pedidosStore.pedidos = [
-      makePedido({ createdAt: minutesAgoIso(30), items: [{ nombre: "A", cantidad: 2, precio: 1000 }] }),
-      makePedido({ createdAt: minutesAgoIso(60), items: [{ nombre: "B", cantidad: 1, precio: 5000 }] }),
+      makePedido({ createdAt: a, items: [{ nombre: "A", cantidad: 2, precio: 1000 }] }),
+      makePedido({ createdAt: b, items: [{ nombre: "B", cantidad: 1, precio: 5000 }] }),
     ];
-    const res = await getVentasPeriodo.run({ desde: hoy, hasta: hoy });
+    const { desde, hasta } = rangoDe([a, b]);
+    const res = await getVentasPeriodo.run({ desde, hasta });
 
     const metrics = res.blocks?.find((b) => b.kind === "metrics");
     expect(metrics).toBeDefined();

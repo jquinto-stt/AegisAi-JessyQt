@@ -2,7 +2,7 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
-import { CallIcon, VideoIcon, MoreDotIcon } from "@/icons";
+import { MoreDotIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { BotonHandoff } from "./BotonHandoff";
 import {
@@ -16,9 +16,29 @@ interface ChatViewProps {
   convId: string;
   onTogglePanel?: () => void;
   panelExpandido?: boolean;
+  onToggleBandeja?: () => void;
+  bandejaExpandida?: boolean;
+  /**
+   * Oculta la cabecera propia del chat.
+   *
+   * Es una opción de PRESENTACIÓN, no un cambio de contrato: la consola completa
+   * la necesita (es la única cabecera de la superficie), pero dentro del
+   * `ChatDrawer` ya existe una cabecera con la identidad del cliente y el nº de
+   * pedido. Sin esta prop el drawer mostraría DOS avatares y DOS nombres para el
+   * mismo contacto — una identidad duplicada, que es justo el defecto de
+   * arquitectura de información que hay que evitar.
+   */
+  sinCabecera?: boolean;
 }
 
-export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: ChatViewProps) => {
+export const ChatView = observer(({
+  convId,
+  onTogglePanel,
+  panelExpandido,
+  onToggleBandeja,
+  bandejaExpandida = true,
+  sinCabecera = false,
+}: ChatViewProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const conv = conversacionesStore.getConversacion(convId);
   const items = conversacionesStore.lineaDeTiempo(convId);
@@ -35,9 +55,45 @@ export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: Cha
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* ── Cabecera del Chat (Estilo Webi.AI Elements / TailAdmin) ── */}
+      {/* ── Cabecera del Chat (Estilo Webi.AI Elements / TailAdmin) ──
+          Se omite cuando el chat se embebe en el drawer, que ya aporta su propia
+          cabecera con la identidad del cliente y el nº de pedido. */}
+      {!sinCabecera && (
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-transparent xl:px-6">
         <div className="flex items-center gap-3">
+          {onToggleBandeja && (
+            <button
+              type="button"
+              onClick={onToggleBandeja}
+              title={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
+              aria-label={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
+                !bandejaExpandida
+                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-2xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+              }`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M9 3v18" />
+                {bandejaExpandida ? (
+                  <path d="M14 9l-3 3 3 3" />
+                ) : (
+                  <path d="M12 9l3 3-3 3" />
+                )}
+              </svg>
+            </button>
+          )}
+
           <Avatar
             src={avatarSrc}
             alt={conv.contacto.nombre}
@@ -55,44 +111,27 @@ export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: Cha
           </div>
         </div>
 
-        {/* Acciones superiores: Handoff, Llamada, Video, Contexto y Menú */}
+        {/* Acciones superiores: Handoff, Alternar información y Menú */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Botón Tomar / Devolver en estilo índigo / sutil (no rojo) */}
           <BotonHandoff convId={conv.id} />
 
-          {/* Icono de Llamada */}
-          <button
-            type="button"
-            title="Llamada"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-          >
-            <CallIcon className="h-5 w-5 stroke-current" />
-          </button>
-
-          {/* Icono de Videollamada */}
-          <button
-            type="button"
-            title="Videollamada"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-          >
-            <VideoIcon className="h-5 w-5 fill-current" />
-          </button>
-
-          {/* Alternar panel de contexto */}
+          {/* Alternar panel de información del usuario */}
           {onTogglePanel && (
             <button
               type="button"
               onClick={onTogglePanel}
-              title={panelExpandido ? "Cerrar detalles" : "Ver detalles"}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+              title={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
+              aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
+              className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-all ${
                 panelExpandido
-                  ? "border-indigo-300 bg-indigo-50 text-indigo-600 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-400"
-                  : "border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-2xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -101,8 +140,14 @@ export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: Cha
                 strokeLinejoin="round"
               >
                 <rect x="3" y="3" width="18" height="18" rx="2" />
-                <line x1="15" y1="3" x2="15" y2="21" />
+                <path d="M15 3v18" />
+                {panelExpandido ? (
+                  <path d="M10 9l-3 3 3 3" />
+                ) : (
+                  <path d="M8 9l3 3-3 3" />
+                )}
               </svg>
+              <span className="hidden sm:inline">Info</span>
             </button>
           )}
 
@@ -140,6 +185,7 @@ export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: Cha
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Interior del Chat (Diálogo de 2 vías: Cliente a la izquierda, Respuestas a la derecha) ── */}
       <div className="flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6">

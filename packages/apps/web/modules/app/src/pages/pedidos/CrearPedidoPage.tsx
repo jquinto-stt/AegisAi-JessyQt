@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Input } from "@/elements/form/input";
@@ -9,7 +9,7 @@ import { Switch } from "@/elements/form/switch";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { pedidosStore, puedeCrearPedido, puedeGestionarProgramados, motivoSinPermiso } from "@/stores";
-import type { Modalidad, PedidoItem } from "@/stores/pedidos.store";
+import type { Modalidad, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
 import { ProgramarModal } from "./ProgramarModal";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -35,6 +35,8 @@ interface CreatedInfo {
   modalidadLabel: string;
   /** ISO programado, si el pedido se creó como programado. */
   programadoPara?: string;
+  direccion?: string;
+  total?: number;
 }
 
 const money = (n: number) => `$${n.toLocaleString("es-CO")}`;
@@ -86,24 +88,9 @@ const ModalidadIcon = ({ m }: { m: Modalidad }) => {
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
-/**
- * CrearPedidoPage — alta manual de un pedido (mismo contrato que usa el bot de
- * WhatsApp). Layout de dos columnas: formulario por pasos a la izquierda y un
- * resumen en vivo (sticky) a la derecha que refleja lo que se va capturando.
- * Cliente y teléfono son obligatorios; la modalidad se elige entre las
- * habilitadas en la config; los items son una lista dinámica (con catálogo
- * opcional). Se puede programar para más tarde (calendario en ProgramarModal).
- *
- * **Autorización (Fase 2).** La ruta ya exige `orders.create`. Además:
- *   - El submit re-comprueba `orders.create` (defensa en profundidad: la ruta
- *     protege la entrada, no la acción).
- *   - Programar para más tarde exige `scheduled.manage`: crear un pedido que
- *     entra al pipeline más tarde es una acción de programación, no de alta.
- *     Sin ella, el bloque de programación no se dibuja y el pedido siempre se
- *     crea activo (`nuevo`).
- */
 export const CrearPedidoPage = observer(() => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const modalidadesDisponibles = pedidosStore.config.modalidades;
   const catalogo = pedidosStore.config.catalogo;
@@ -113,8 +100,8 @@ export const CrearPedidoPage = observer(() => {
   const puedeCrear = puedeCrearPedido();
   const puedeProgramar = puedeGestionarProgramados();
 
-  const [cliente, setCliente] = useState("");
-  const [telefono, setTelefono] = useState("");
+  const [cliente, setCliente] = useState(() => searchParams.get("cliente") ?? "");
+  const [telefono, setTelefono] = useState(() => searchParams.get("telefono") ?? "");
   const [modalidad, setModalidad] = useState<Modalidad>(modalidadesDisponibles[0] ?? "retiro");
   const [notas, setNotas] = useState("");
   const [items, setItems] = useState<ItemFila[]>([{ nombre: "", cantidad: 1 }]);
@@ -124,6 +111,16 @@ export const CrearPedidoPage = observer(() => {
   const [showProgramar, setShowProgramar] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<CreatedInfo | null>(null);
+
+  // ── Logística, dirección y pago ──
+  const [calle, setCalle] = useState("");
+  const [barrio, setBarrio] = useState("");
+  const [referencia, setReferencia] = useState("");
+  const [indicaciones, setIndicaciones] = useState("");
+  const [costoEnvio, setCostoEnvio] = useState<number>(5000);
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
+  const [pagaCon, setPagaCon] = useState<string>("");
+  const [repartidor, setRepartidor] = useState<string>("");
 
   // ── Item handlers ──
   const setItem = (idx: number, patch: Partial<ItemFila>) =>
@@ -146,6 +143,14 @@ export const CrearPedidoPage = observer(() => {
     setItems([{ nombre: "", cantidad: 1 }]);
     setProgramar(false);
     setProgramadoISO(null);
+    setCalle("");
+    setBarrio("");
+    setReferencia("");
+    setIndicaciones("");
+    setCostoEnvio(5000);
+    setMetodoPago("efectivo");
+    setPagaCon("");
+    setRepartidor("");
     setErrors({});
   };
 
@@ -155,6 +160,9 @@ export const CrearPedidoPage = observer(() => {
     const phone = telefono.replace(/[^\d+]/g, "");
     if (!telefono.trim()) e.telefono = "El teléfono es obligatorio";
     else if (phone.length < 7) e.telefono = "Teléfono no válido";
+    if (modalidad === "domicilio" && !calle.trim()) {
+      e.calle = "La dirección de entrega es obligatoria para domicilios";
+    }
     if (programar) {
       if (!programadoISO) e.programado = "Elige una fecha y hora";
       else if (new Date(programadoISO).getTime() <= Date.now())
@@ -166,7 +174,10 @@ export const CrearPedidoPage = observer(() => {
 
   // ── Derivados para el resumen en vivo ──
   const itemsValidos = items.filter((it) => it.nombre.trim() !== "");
-  const totalPedido = itemsValidos.reduce((s, it) => s + (it.precio ?? 0) * Math.max(1, it.cantidad), 0);
+  const subtotalItems = itemsValidos.reduce((s, it) => s + (it.precio ?? 0) * Math.max(1, it.cantidad), 0);
+  const costoEnvioEfectivo = modalidad === "domicilio" ? Math.max(0, Number(costoEnvio) || 0) : 0;
+  const totalPedido = subtotalItems + costoEnvioEfectivo;
+  const direccionesGuardadas = pedidosStore.direccionesDe(telefono);
 
   const handleCreate = () => {
     // Defensa en profundidad (C5): la ruta exige `orders.create`, pero la
@@ -185,6 +196,21 @@ export const CrearPedidoPage = observer(() => {
     // activo aunque el estado local hubiera quedado en `true`.
     const programadoPara = programar && puedeProgramar && programadoISO ? programadoISO : undefined;
 
+    const direccionEntrega: DireccionEntrega | undefined =
+      modalidad === "domicilio" && calle.trim()
+        ? {
+            calle: calle.trim(),
+            barrio: barrio.trim() || undefined,
+            referencia: referencia.trim() || undefined,
+            indicaciones: indicaciones.trim() || undefined,
+          }
+        : undefined;
+
+    const pagaConNum =
+      (metodoPago === "efectivo" || metodoPago === "contra_entrega") && Number(pagaCon) > 0
+        ? Number(pagaCon)
+        : undefined;
+
     const pedido = pedidosStore.crearPedido({
       cliente: cliente.trim(),
       telefono: telefono.trim(),
@@ -193,6 +219,11 @@ export const CrearPedidoPage = observer(() => {
       notas: notas.trim() || undefined,
       origen: "operador",
       programadoPara,
+      direccionEntrega,
+      costoEnvio: modalidad === "domicilio" ? costoEnvioEfectivo : undefined,
+      metodoPago,
+      pagaCon: pagaConNum,
+      repartidor: repartidor.trim() || undefined,
     });
 
     setCreated({
@@ -200,6 +231,10 @@ export const CrearPedidoPage = observer(() => {
       cliente: pedido.cliente,
       modalidadLabel: pedidosStore.modalidadLabel(pedido.modalidad),
       programadoPara: pedido.programadoPara,
+      direccion: direccionEntrega
+        ? `${direccionEntrega.calle}${direccionEntrega.referencia ? ` (${direccionEntrega.referencia})` : ""}`
+        : undefined,
+      total: pedidosStore.totalPedido(pedido),
     });
     resetForm();
   };
@@ -210,7 +245,7 @@ export const CrearPedidoPage = observer(() => {
       <>
         <PageMeta title="Pedido creado" description="Pedido creado con éxito" />
         <div className="mx-auto max-w-lg">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex flex-col items-center gap-3 bg-success-50 px-8 py-8 text-center dark:bg-success-500/10">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-500 text-white">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-7 w-7">
@@ -229,10 +264,24 @@ export const CrearPedidoPage = observer(() => {
                   <span className="text-gray-500">Cliente</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">{created.cliente}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
                   <span className="text-gray-500">Modalidad</span>
                   <span className="font-medium text-gray-800 dark:text-white/90">{created.modalidadLabel}</span>
                 </div>
+                {created.direccion && (
+                  <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
+                    <span className="text-gray-500">Dirección</span>
+                    <span className="max-w-[170px] truncate text-right font-medium text-gray-800 dark:text-white/90">
+                      {created.direccion}
+                    </span>
+                  </div>
+                )}
+                {created.total !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Total a cobrar</span>
+                    <span className="font-bold text-brand-600 dark:text-brand-400">{money(created.total)}</span>
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex items-start gap-2 rounded-xl bg-brand-50 p-3 text-left dark:bg-brand-500/10">
@@ -247,7 +296,7 @@ export const CrearPedidoPage = observer(() => {
                   </p>
                 ) : (
                   <p className="text-xs text-brand-700 dark:text-brand-300">
-                    El pedido entró como <strong>Nuevo</strong> y ya aparece en el tablero.
+                    El pedido entró como <strong>Nuevo</strong> y ya aparece en el tablero con su logística de entrega.
                   </p>
                 )}
               </div>
@@ -302,7 +351,7 @@ export const CrearPedidoPage = observer(() => {
         {/* ══ Columna izquierda: formulario por pasos ══ */}
         <div className="space-y-6">
           {/* Paso 1 · Cliente */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge n={1} />
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Datos del cliente</h2>
@@ -334,7 +383,7 @@ export const CrearPedidoPage = observer(() => {
           </section>
 
           {/* Paso 2 · Modalidad (tarjetas seleccionables) */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge n={2} />
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Modalidad de entrega</h2>
@@ -364,11 +413,106 @@ export const CrearPedidoPage = observer(() => {
             </div>
           </section>
 
-          {/* Paso 3 · Items */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          {/* Paso 3 (Condicional) · Dirección de entrega (si es domicilio) */}
+          {modalidad === "domicilio" && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-4 flex items-center gap-2">
+                <StepBadge n={3} />
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Dirección y despacho</h2>
+              </div>
+
+              {direccionesGuardadas.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 p-2.5 dark:bg-gray-800/50">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Direcciones frecuentes:
+                  </span>
+                  {direccionesGuardadas.map((dir, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setCalle(dir.calle);
+                        if (dir.barrio) setBarrio(dir.barrio);
+                        if (dir.referencia) setReferencia(dir.referencia);
+                        if (dir.indicaciones) setIndicaciones(dir.indicaciones);
+                      }}
+                      className="rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-gray-800 dark:text-brand-300"
+                    >
+                      📍 {dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <Label htmlFor="calle">Dirección / Calle y número <RequiredMark /></Label>
+                  <Input
+                    id="calle"
+                    placeholder="Ej: Cra 45 # 12-34"
+                    value={calle}
+                    onChange={(e) => setCalle(e.target.value)}
+                    error={!!errors.calle}
+                    hint={errors.calle}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="barrio">Barrio o sector</Label>
+                  <Input
+                    id="barrio"
+                    placeholder="Ej: El Poblado / Laureles"
+                    value={barrio}
+                    onChange={(e) => setBarrio(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="referencia">Apto, casa o referencia</Label>
+                  <Input
+                    id="referencia"
+                    placeholder="Ej: Torre 2, Apto 501"
+                    value={referencia}
+                    onChange={(e) => setReferencia(e.target.value)}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="indicaciones">Indicaciones para el repartidor</Label>
+                  <Input
+                    id="indicaciones"
+                    placeholder="Ej: Timbre dañado, llamar al llegar"
+                    value={indicaciones}
+                    onChange={(e) => setIndicaciones(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="costoEnvio">Costo de envío ($)</Label>
+                  <Input
+                    id="costoEnvio"
+                    type="number"
+                    min="0"
+                    step="500"
+                    placeholder="5000"
+                    value={costoEnvio}
+                    onChange={(e) => setCostoEnvio(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="repartidor">Repartidor / Mensajero (opcional)</Label>
+                  <Input
+                    id="repartidor"
+                    placeholder="Ej: Javier Moto 04"
+                    value={repartidor}
+                    onChange={(e) => setRepartidor(e.target.value)}
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Paso · Items */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <StepBadge n={3} />
+                <StepBadge n={modalidad === "domicilio" ? 4 : 3} />
                 <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Items del pedido</h2>
               </div>
               <button
@@ -432,10 +576,73 @@ export const CrearPedidoPage = observer(() => {
             </p>
           </section>
 
-          {/* Paso 4 · Notas + programación */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          {/* Paso · Método de pago */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
-              <StepBadge n={4} />
+              <StepBadge n={modalidad === "domicilio" ? 5 : 4} />
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Método de pago</h2>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { id: "efectivo", label: "Efectivo", icon: "💵" },
+                { id: "transferencia", label: "Transferencia", icon: "📱" },
+                { id: "tarjeta", label: "Tarjeta", icon: "💳" },
+                { id: "contra_entrega", label: "Contra entrega", icon: "🤝" },
+              ].map((mp) => {
+                const activo = metodoPago === mp.id;
+                return (
+                  <button
+                    key={mp.id}
+                    type="button"
+                    onClick={() => setMetodoPago(mp.id as MetodoPago)}
+                    className={
+                      "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors " +
+                      (activo
+                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                        : "border-gray-200 text-gray-600 hover:border-brand-300 dark:border-gray-700 dark:text-gray-300")
+                    }
+                  >
+                    <span className="text-xl">{mp.icon}</span>
+                    <span className="text-xs font-semibold">{mp.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && (
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="pagaCon">¿Con cuánto abona el cliente?</Label>
+                  <Input
+                    id="pagaCon"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    placeholder={`Ej: ${totalPedido > 0 ? Math.ceil(totalPedido / 10000) * 10000 : 50000}`}
+                    value={pagaCon}
+                    onChange={(e) => setPagaCon(e.target.value)}
+                  />
+                </div>
+                {Number(pagaCon) > 0 && (
+                  <div className="flex flex-col justify-end">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-700 dark:bg-gray-800">
+                      <p className="text-gray-500 dark:text-gray-400">Cambio a entregar por el repartidor:</p>
+                      <p className="text-base font-bold text-success-600 dark:text-success-400">
+                        {Number(pagaCon) >= totalPedido
+                          ? money(Number(pagaCon) - totalPedido)
+                          : `Faltan ${money(totalPedido - Number(pagaCon))}`}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Paso · Notas + programación */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+            <div className="mb-4 flex items-center gap-2">
+              <StepBadge n={modalidad === "domicilio" ? 6 : 5} />
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Detalles finales</h2>
             </div>
 
@@ -505,7 +712,7 @@ export const CrearPedidoPage = observer(() => {
 
         {/* ══ Columna derecha: resumen en vivo (sticky) ══ */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Resumen del pedido</h2>
             </div>
@@ -535,6 +742,24 @@ export const CrearPedidoPage = observer(() => {
                 <span className="inline-flex items-center gap-1.5 font-medium text-gray-800 dark:text-white/90">
                   <span className="text-brand-500"><ModalidadIcon m={modalidad} /></span>
                   {pedidosStore.modalidadLabel(modalidad)}
+                </span>
+              </div>
+
+              {/* Dirección si es domicilio */}
+              {modalidad === "domicilio" && calle.trim() && (
+                <div className="flex items-start justify-between gap-3 text-sm">
+                  <span className="text-gray-500">Entrega</span>
+                  <span className="max-w-[170px] text-right font-medium text-gray-800 dark:text-white/90 truncate">
+                    {calle}{referencia ? `, ${referencia}` : ""}
+                  </span>
+                </div>
+              )}
+
+              {/* Método de pago */}
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-gray-500">Pago</span>
+                <span className="font-medium capitalize text-gray-800 dark:text-white/90">
+                  {metodoPago.replace("_", " ")}
                 </span>
               </div>
 
@@ -571,11 +796,43 @@ export const CrearPedidoPage = observer(() => {
                 )}
               </div>
 
+              {/* Desglose Subtotal + Envío */}
+              <div className="border-t border-dashed border-gray-200 pt-3 text-xs space-y-1 dark:border-gray-700">
+                <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                  <span>Subtotal productos</span>
+                  <span>{money(subtotalItems)}</span>
+                </div>
+                {modalidad === "domicilio" && (
+                  <div className="flex justify-between text-gray-500 dark:text-gray-400">
+                    <span>Costo de envío</span>
+                    <span>{costoEnvioEfectivo > 0 ? money(costoEnvioEfectivo) : "Gratis"}</span>
+                  </div>
+                )}
+              </div>
+
               {/* Total */}
               {totalPedido > 0 && (
-                <div className="flex items-center justify-between border-t border-gray-200 pt-4 text-base font-semibold dark:border-gray-800">
+                <div className="flex items-center justify-between border-t border-gray-200 pt-3 text-base font-semibold dark:border-gray-800">
                   <span className="text-gray-800 dark:text-white/90">Total</span>
                   <span className="text-gray-800 dark:text-white/90">{money(totalPedido)}</span>
+                </div>
+              )}
+
+              {/* Vuelto / Cambio */}
+              {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && Number(pagaCon) > 0 && (
+                <div className="rounded-xl bg-success-50 p-2.5 text-xs dark:bg-success-500/10">
+                  <div className="flex justify-between text-success-700 dark:text-success-300">
+                    <span>Abona con:</span>
+                    <span>{money(Number(pagaCon))}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-success-800 dark:text-success-200 mt-0.5">
+                    <span>Cambio:</span>
+                    <span>
+                      {Number(pagaCon) >= totalPedido
+                        ? money(Number(pagaCon) - totalPedido)
+                        : `Faltan ${money(totalPedido - Number(pagaCon))}`}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

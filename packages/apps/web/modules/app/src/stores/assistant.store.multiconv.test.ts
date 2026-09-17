@@ -189,12 +189,18 @@ describe("AssistantStore.conversacionesAgrupadas", () => {
   it("agrupa por fecha local de updatedAt en secciones y omite las vacías", () => {
     const store = new AssistantStore(engineOk());
 
+    // Anclado a la medianoche LOCAL de hoy en vez de a `now - N días`. Las
+    // fronteras reales del agrupador son `inicioDelDia`, `-24h` y `-7d`, todas
+    // relativas a esa medianoche; partir de `now` desplazaba cada bucket un
+    // poco y "Ayer" podía caer dentro de "Hoy" (o al revés) según la hora.
     const ahora = new Date();
-    const iso = (offsetDias: number) => {
-      const d = new Date(ahora);
-      d.setDate(d.getDate() - offsetDias);
-      return d.toISOString();
-    };
+    const inicioHoy = new Date(
+      ahora.getFullYear(),
+      ahora.getMonth(),
+      ahora.getDate(),
+    ).getTime();
+    const iso = (offsetDias: number) =>
+      new Date(inicioHoy - offsetDias * 24 * 60 * 60 * 1000).toISOString();
 
     // Sembramos conversaciones directamente con distintas fechas de updatedAt.
     store.conversaciones = [
@@ -217,21 +223,31 @@ describe("AssistantStore.conversacionesAgrupadas", () => {
 
   it("ordena cada grupo por updatedAt descendente", () => {
     const store = new AssistantStore(engineOk());
+    // Frontera inferior de "Hoy": `conversacionesAgrupadas` usa `t >= inicioDelDia`,
+    // que es una medianoche LOCAL, no `now - 24h`. Restar horas desde `now`
+    // cruzaba esa frontera cuando la suite corría de madrugada (p. ej. a las
+    // 00:30, "3 horas atrás" ya era el día anterior) y el grupo "Hoy" quedaba
+    // vacío. Estos tres instantes se construyen desde el inicio del día hacia
+    // ADENTRO, así que nunca salen de "Hoy" y el orden sigue siendo inequívoco.
     const base = new Date();
-    const iso = (h: number) => {
-      const d = new Date(base);
-      d.setHours(d.getHours() - h);
-      return d.toISOString();
-    };
+    const inicioHoy = new Date(
+      base.getFullYear(),
+      base.getMonth(),
+      base.getDate(),
+    ).getTime();
+    const iso = (minutos: number) =>
+      new Date(inicioHoy + minutos * 60 * 1000).toISOString();
 
     store.conversaciones = [
-      { id: "a", titulo: "A", mensajes: [], createdAt: iso(3), updatedAt: iso(3) },
-      { id: "b", titulo: "B", mensajes: [], createdAt: iso(1), updatedAt: iso(1) },
-      { id: "c", titulo: "C", mensajes: [], createdAt: iso(2), updatedAt: iso(2) },
+      { id: "a", titulo: "A", mensajes: [], createdAt: iso(60), updatedAt: iso(60) },
+      { id: "b", titulo: "B", mensajes: [], createdAt: iso(180), updatedAt: iso(180) },
+      { id: "c", titulo: "C", mensajes: [], createdAt: iso(120), updatedAt: iso(120) },
     ];
     store.conversacionActivaId = "a";
 
-    const hoy = store.conversacionesAgrupadas.find((g) => g.label === "Hoy");
-    expect(hoy?.items.map((c) => c.id)).toEqual(["b", "c", "a"]);
+    const grupos = store.conversacionesAgrupadas;
+    expect(grupos.map((g) => g.label)).toEqual(["Hoy"]);
+    // Descendente por updatedAt: 180 (b) → 120 (c) → 60 (a).
+    expect(grupos[0].items.map((c) => c.id)).toEqual(["b", "c", "a"]);
   });
 });

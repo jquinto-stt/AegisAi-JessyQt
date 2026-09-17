@@ -12,10 +12,25 @@ const LIMITE_TEXTO = 4096;
 export const Composer = observer(({ convId }: { convId: string }) => {
   const [texto, setTexto] = useState("");
 
+  const conv = conversacionesStore.getConversacion(convId);
+
+  /**
+   * Modo de atención del hilo. En modo `bot` el operador NO escribe: la
+   * conversación la lleva el bot y cualquier texto escrito aquí se persistiría
+   * con autor `"negocio"` (ver `enviarComoNegocio`), rotulándose en el hilo como
+   * "Asesor Humano" aunque el hilo esté devuelto al bot. Es el defecto de
+   * arquitectura de información que este bloqueo evita: la barra debe reflejar
+   * quién atiende, no solo qué permisos tiene quien mira.
+   *
+   * La lectura es reactiva (el componente es `observer`), así que pulsar
+   * "Tomar chat" / "Devolver al bot" habilita y bloquea el campo sin recargar.
+   */
+  const esModoBot = conv?.atencion === "bot";
+
   const puedeResponder = puedeResponderConversacion();
   const excedido = texto.length > LIMITE_TEXTO;
   const vacio = texto.trim() === "";
-  const puedeEnviar = puedeResponder && !vacio && !excedido;
+  const puedeEnviar = puedeResponder && !esModoBot && !vacio && !excedido;
 
   const enviar = () => {
     if (!puedeEnviar) return;
@@ -58,14 +73,16 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           {/* Campo de texto plano sin bordes invasivos */}
           <input
             type="text"
-            disabled={!puedeResponder}
+            disabled={!puedeResponder || esModoBot}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             onKeyDown={onKeyDown}
             placeholder={
-              puedeResponder
-                ? "Type a message"
-                : "No puedes responder en esta conversación"
+              !puedeResponder
+                ? "No puedes responder en esta conversación"
+                : esModoBot
+                  ? "El bot está atendiendo esta conversación"
+                  : "Type a message"
             }
             className="w-full bg-transparent border-0 outline-hidden h-9 text-sm text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
@@ -114,6 +131,16 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       {!puedeResponder && (
         <p className="mt-1 text-xs text-warning-600 dark:text-warning-400">
           {motivoSinPermiso("channels.respond")}
+        </p>
+      )}
+
+      {/* Bloqueo por modo: NO es falta de permiso. No se reutiliza el mensaje de
+          `motivoSinPermiso` porque diría algo falso —quien mira sí tiene
+          `channels.respond`— y mandaría al operador a revisar permisos que no
+          son el problema. El camino para recuperar el teclado es "Tomar chat". */}
+      {puedeResponder && esModoBot && (
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+          La atención la lleva el bot. Pulsa «Tomar chat» para responder tú.
         </p>
       )}
     </div>

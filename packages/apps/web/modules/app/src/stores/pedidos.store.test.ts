@@ -525,10 +525,13 @@ describe("PedidosStore — analítica sobre el seed", () => {
 
   it("ingresosEntre acumula el total de entregados por día (finishedAt)", () => {
     const store = new PedidosStore();
-    // pd6 (único entregado) tiene finishedAt ~50 min atrás → hoy (local).
-    const hoy = ymdLocal(new Date());
-    const serie = store.ingresosEntre(hoy, hoy);
-    expect(serie).toEqual([{ fecha: hoy, total: 25000 }]);
+    // pd6 (único entregado) tiene finishedAt ~50 min atrás. Si la suite corre a
+    // las 00:30 ese instante cae en el día anterior, así que el día esperado se
+    // deriva de la propia marca temporal en lugar de asumir "hoy".
+    const pd6 = store.pedidos.find((p) => p.id === "pd6")!;
+    const dia = ymdLocal(new Date(pd6.finishedAt!));
+    const serie = store.ingresosEntre(dia, dia);
+    expect(serie).toEqual([{ fecha: dia, total: 25000 }]);
   });
 });
 
@@ -662,5 +665,418 @@ describe("PedidosStore — horario de atención (A)", () => {
     expect(store.estaAbierto(new Date("2026-09-15T10:00:00"))).toBe(true);  // dentro
     expect(store.estaAbierto(new Date("2026-09-15T21:00:00"))).toBe(false); // fuera de hora
     expect(store.estaAbierto(new Date("2026-09-13T10:00:00"))).toBe(false); // domingo (no laboral)
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Analítica por rango (filtro de periodo de la página de Analítica)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** "YYYY-MM-DD" local de una fecha. */
+const ymdRef = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** ISO de hace `dias` días a la misma hora local. */
+function isoHaceDias(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return d.toISOString();
+}
+
+/** Pedido mínimo con overrides, para armar datasets acotados. */
+function pedidoRango(overrides: Partial<Pedido> & { id: string }): Pedido {
+  const created = overrides.createdAt ?? new Date().toISOString();
+  return {
+    numero: `P-${overrides.id.toUpperCase()}`,
+    cliente: overrides.id.toUpperCase(),
+    telefono: "+573000000000",
+    modalidad: "retiro",
+    items: [{ nombre: "Item", cantidad: 1, precio: 1000 }],
+    estado: "nuevo",
+    origen: "whatsapp",
+    createdAt: created,
+    estadoDesde: created,
+    ...overrides,
+  };
+}
+
+describe("PedidosStore — analítica por rango", () => {
+  it("pedidosEnRango(null) devuelve todo el histórico, ordenado desc por createdAt", () => {
+    const store = new PedidosStore();
+    const out = store.pedidosEnRango(null);
+    expect(out).toHaveLength(7);
+    for (let i = 1; i < out.length; i++) {
+      expect(out[i - 1]!.createdAt >= out[i]!.createdAt).toBe(true);
+    }
+  });
+
+  it("pedidosEnRango filtra por día local inclusive en ambos extremos", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    const hace3 = ymdRef(new Date(Date.now() - 3 * 86400000));
+    store.pedidos = [
+      pedidoRango({ id: "a", createdAt: new Date().toISOString() }),
+      pedidoRango({ id: "b", createdAt: isoHaceDias(3) }),
+      pedidoRango({ id: "c", createdAt: isoHaceDias(10) }),
+    ];
+    expect(store.pedidosEnRango({ desde: hoy, hasta: hoy }).map((p) => p.id)).toEqual(["a"]);
+    expect(store.pedidosEnRango({ desde: hace3, hasta: hoy }).map((p) => p.id)).toEqual(["a", "b"]);
+  });
+
+  it("pedidosEnRango(null) no muta la lista original", () => {
+    const store = new PedidosStore();
+    const antes = store.pedidos.map((p) => p.id);
+    store.pedidosEnRango(null);
+    expect(store.pedidos.map((p) => p.id)).toEqual(antes);
+  });
+
+  it("conteoPorEstadoEnRango tiene las 8 claves y suma lo del rango", () => {
+    const store = new PedidosStore();
+    const conteo = store.conteoPorEstadoEnRango(null);
+    expect(Object.keys(conteo)).toHaveLength(8);
+    expect(Object.values(conteo).reduce((s, v) => s + v, 0)).toBe(store.pedidos.length);
+  });
+
+  it("conteoPorEstadoEnRango cuenta solo el rango pedido", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    store.pedidos = [pedidoRango({ id: "x" })];
+    expect(store.conteoPorEstadoEnRango({ desde: hoy, hasta: hoy }).nuevo).toBe(1);
+    expect(store.conteoPorEstadoEnRango({ desde: "2000-01-01", hasta: "2000-01-02" }).nuevo).toBe(0);
+  });
+
+  it("porOrigenEnRango devuelve el orden canónico whatsapp→operador e incluye ceros", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    store.pedidos = [pedidoRango({ id: "w", origen: "whatsapp" })];
+    expect(store.porOrigenEnRango({ desde: hoy, hasta: hoy })).toEqual([
+      { origen: "whatsapp", total: 1 },
+      { origen: "operador", total: 0 },
+    ]);
+  });
+
+  it("porModalidadEnRango devuelve el orden canónico retiro→domicilio→en_sitio", () => {
+    const store = new PedidosStore();
+    expect(store.porModalidadEnRango(null).map((m) => m.modalidad)).toEqual([
+      "retiro",
+      "domicilio",
+      "en_sitio",
+    ]);
+  });
+
+  it("tasaCancelacionEnRango es 0 con rango vacío y coincide con la global sin rango", () => {
+    const store = new PedidosStore();
+    expect(store.tasaCancelacionEnRango({ desde: "2000-01-01", hasta: "2000-01-02" })).toBe(0);
+    expect(store.tasaCancelacionEnRango(null)).toBe(store.tasaCancelacion());
+  });
+
+  it("ingresosVendidosEnRango excluye nuevo, programado y cancelado", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    store.pedidos = [
+      pedidoRango({ id: "n", estado: "nuevo" }),
+      pedidoRango({ id: "c", estado: "confirmado" }),
+      pedidoRango({ id: "e", estado: "entregado", finishedAt: new Date().toISOString() }),
+      pedidoRango({ id: "k", estado: "cancelado" }),
+      pedidoRango({ id: "p", estado: "programado", programadoPara: new Date().toISOString() }),
+    ];
+    const rango = { desde: hoy, hasta: hoy };
+    // confirmado + entregado = 2000; nuevo, cancelado y programado quedan fuera.
+    expect(store.ingresosVendidosEnRango(rango)).toBe(2000);
+    expect(store.conteoVendidosEnRango(rango)).toBe(2);
+    expect(store.ticketPromedioVendidoEnRango(rango)).toBe(1000);
+  });
+
+  it("ingresosVendidosEnRango suma precio x cantidad", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    store.pedidos = [
+      pedidoRango({
+        id: "z",
+        estado: "confirmado",
+        items: [
+          { nombre: "A", cantidad: 3, precio: 25000 },
+          { nombre: "B", cantidad: 2, precio: 4000 },
+        ],
+      }),
+    ];
+    expect(store.ingresosVendidosEnRango({ desde: hoy, hasta: hoy })).toBe(83000);
+  });
+
+  it("ticketPromedioVendidoEnRango es 0 sin ventas", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    expect(store.ticketPromedioVendidoEnRango(null)).toBe(0);
+  });
+
+  it("serieVentasYCancelaciones devuelve un punto por día, sin huecos", () => {
+    const store = new PedidosStore();
+    const serie = store.serieVentasYCancelaciones(7);
+    expect(serie).toHaveLength(7);
+    expect(serie.every((d) => typeof d.ventas === "number" && typeof d.cancelados === "number")).toBe(true);
+    for (let i = 1; i < serie.length; i++) {
+      expect(serie[i - 1]!.fecha < serie[i]!.fecha).toBe(true);
+    }
+    expect(serie[serie.length - 1]!.fecha).toBe(ymdRef(new Date()));
+  });
+
+  it("serieVentasYCancelaciones separa ventas de cancelados del seed", () => {
+    const store = new PedidosStore();
+    // El seed crea sus pedidos con `minutesAgoIso(n)` RELATIVO al arranque, así
+    // que cuántos caen en la ventana de "hoy" depende de la hora a la que corra
+    // el test (a las 00:10 casi todos son de hoy; a las 23:50 casi todos son de
+    // ayer). Afirmar un número fijo aquí reintroduce exactamente la
+    // fragilidad hora-dependiente que ya rompió esta suite una vez.
+    //
+    // En su lugar se comprueba la SEPARACIÓN, que es lo que el selector promete:
+    // los cancelados del seed cuentan como cancelados y ninguno cuenta dos veces.
+    const canceladosEsperados = store.pedidos.filter((p) => p.estado === "cancelado").length;
+    const serie = store.serieVentasYCancelaciones(2);
+
+    const totalCancelados = serie.reduce((s, d) => s + d.cancelados, 0);
+    expect(totalCancelados).toBe(canceladosEsperados);
+    expect(canceladosEsperados).toBe(1); // el seed tiene exactamente 1 cancelado
+
+    // Ninguna venta puede ser también cancelada: las dos series son disjuntas.
+    for (const dia of serie) {
+      expect(dia.ventas).toBeGreaterThanOrEqual(0);
+      expect(dia.cancelados).toBeGreaterThanOrEqual(0);
+    }
+
+    // Y la suma de ventas de la ventana nunca supera los pedidos no cancelados.
+    const noCancelados = store.pedidos.filter((p) => p.estado !== "cancelado").length;
+    const totalVentas = serie.reduce((s, d) => s + d.ventas, 0);
+    expect(totalVentas).toBeLessThanOrEqual(noCancelados);
+    expect(totalVentas).toBeGreaterThan(0);
+  });
+
+  it("repartirPorcentaje suma 100 y da 0 con total 0", () => {
+    const store = new PedidosStore();
+    expect(store.repartirPorcentaje([1, 1, 1]).reduce((s, v) => s + v, 0)).toBe(100);
+    expect(store.repartirPorcentaje([148, 64, 48, 22]).reduce((s, v) => s + v, 0)).toBe(100);
+    expect(store.repartirPorcentaje([0, 0])).toEqual([0, 0]);
+    expect(store.repartirPorcentaje([])).toEqual([]);
+  });
+
+  it("repartirPorcentaje no pierde unidades por redondeo (regla del mayor resto)", () => {
+    const store = new PedidosStore();
+    const out = store.repartirPorcentaje([1, 1, 1]);
+    expect(out.reduce((s, v) => s + v, 0)).toBe(100);
+    expect(Math.max(...out) - Math.min(...out)).toBeLessThanOrEqual(1);
+  });
+
+  it("origenLabel traduce el vocabulario de dominio del canal", () => {
+    const store = new PedidosStore();
+    expect(store.origenLabel("whatsapp")).toBe("WhatsApp");
+    expect(store.origenLabel("operador")).toBe("Mostrador");
+  });
+
+  it("los selectores de rango son puros (no mutan this.pedidos)", () => {
+    const store = new PedidosStore();
+    const antes = store.pedidos.map((p) => p.id);
+    store.pedidosEnRango(null);
+    store.conteoPorEstadoEnRango(null);
+    store.porOrigenEnRango(null);
+    store.porModalidadEnRango(null);
+    store.tasaCancelacionEnRango(null);
+    store.ingresosVendidosEnRango(null);
+    store.serieVentasYCancelaciones(7);
+    store.seriePorEstado(7);
+    store.porPagoEnRango(null);
+    expect(store.pedidos.map((p) => p.id)).toEqual(antes);
+  });
+});
+
+describe("PedidosStore — serie por estado (desglose diario)", () => {
+  it("devuelve un punto por día, con las 8 claves de estado a 0 donde no hubo", () => {
+    const store = new PedidosStore();
+    const serie = store.seriePorEstado(7);
+    expect(serie).toHaveLength(7);
+    for (const dia of serie) expect(Object.keys(dia.porEstado)).toHaveLength(8);
+    for (let i = 1; i < serie.length; i++) {
+      expect(serie[i - 1]!.fecha < serie[i]!.fecha).toBe(true);
+    }
+    expect(serie[serie.length - 1]!.fecha).toBe(ymdRef(new Date()));
+  });
+
+  it("coloca cada pedido en su día y en su estado", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    const ayer = ymdRef(new Date(Date.now() - 86400000));
+    store.pedidos = [
+      pedidoRango({ id: "a", estado: "nuevo", createdAt: new Date().toISOString() }),
+      pedidoRango({ id: "b", estado: "nuevo", createdAt: new Date().toISOString() }),
+      pedidoRango({ id: "c", estado: "cancelado", createdAt: isoHaceDias(1) }),
+    ];
+    const serie = store.seriePorEstado(2);
+    expect(serie[0]!.fecha).toBe(ayer);
+    expect(serie[0]!.porEstado.cancelado).toBe(1);
+    expect(serie[0]!.porEstado.nuevo).toBe(0);
+    expect(serie[1]!.fecha).toBe(hoy);
+    expect(serie[1]!.porEstado.nuevo).toBe(2);
+  });
+
+  it("seriePorEstadoEntre suma exactamente los pedidos del mismo rango", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    const hace5 = ymdRef(new Date(Date.now() - 5 * 86400000));
+    const serie = store.seriePorEstadoEntre(hace5, hoy);
+    expect(serie).toHaveLength(6); // ambos extremos inclusive
+    const totalSerie = serie.reduce(
+      (s, d) => s + Object.values(d.porEstado).reduce((x, y) => x + y, 0),
+      0,
+    );
+    expect(totalSerie).toBe(store.pedidosEnRango({ desde: hace5, hasta: hoy }).length);
+  });
+
+  it("seriePorEstadoEntre devuelve [] con un rango inválido", () => {
+    const store = new PedidosStore();
+    expect(store.seriePorEstadoEntre("2026-09-17", "2026-09-10")).toEqual([]);
+  });
+
+  it("cada día trae su propio acumulador (mutar uno no contagia a los demás)", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    const serie = store.seriePorEstado(3);
+    serie[0]!.porEstado.nuevo = 99;
+    expect(serie[1]!.porEstado.nuevo).toBe(0);
+    expect(serie[2]!.porEstado.nuevo).toBe(0);
+  });
+});
+
+describe("PedidosStore — estado de pago por rango", () => {
+  it("reparte pagados y pendientes; sin dato de pago cuenta como pendiente", () => {
+    const store = new PedidosStore();
+    store.pedidos = [
+      pedidoRango({ id: "p1", pagado: true }),
+      pedidoRango({ id: "p2", pagado: false }),
+      pedidoRango({ id: "p3" }), // `pagado` undefined → pendiente
+    ];
+    expect(store.porPagoEnRango(null)).toEqual({ pagado: 1, pendiente: 2 });
+  });
+
+  it("ambos números siempre suman el total del rango (y 0/0 fuera de él)", () => {
+    const store = new PedidosStore();
+    const hoy = ymdRef(new Date());
+    store.pedidos = [
+      pedidoRango({ id: "p1", pagado: true }),
+      pedidoRango({ id: "p2", pagado: true }),
+      pedidoRango({ id: "p3" }),
+    ];
+    const dentro = store.porPagoEnRango({ desde: hoy, hasta: hoy });
+    expect(dentro.pagado + dentro.pendiente).toBe(3);
+    expect(store.porPagoEnRango({ desde: "2000-01-01", hasta: "2000-01-02" })).toEqual({
+      pagado: 0,
+      pendiente: 0,
+    });
+  });
+});
+
+describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", () => {
+  it("crea pedido a domicilio con dirección completa, costo de envío y método de pago", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    const p = store.crearPedido({
+      cliente: "Mariana Restrepo",
+      telefono: "+57 311 999 8888",
+      modalidad: "domicilio",
+      items: [{ nombre: "Bowl Vegano", cantidad: 2, precio: 15000 }],
+      direccionEntrega: {
+        calle: "Carrera 43A # 1-50",
+        barrio: "El Poblado",
+        referencia: "Torre 2 Apto 804",
+        indicaciones: "Timbre 804, dejar en recepción si no responde",
+      },
+      costoEnvio: 5000,
+      metodoPago: "efectivo",
+      pagaCon: 50000,
+      repartidor: "Carlos Moto",
+    });
+
+    expect(p.modalidad).toBe("domicilio");
+    expect(p.direccionEntrega?.calle).toBe("Carrera 43A # 1-50");
+    expect(p.direccionEntrega?.barrio).toBe("El Poblado");
+    expect(p.costoEnvio).toBe(5000);
+    expect(p.metodoPago).toBe("efectivo");
+    expect(p.pagaCon).toBe(50000);
+    expect(p.repartidor).toBe("Carlos Moto");
+
+    // Verificación de cálculos financieros
+    expect(store.subtotalItems(p)).toBe(30000);
+    expect(store.totalPedido(p)).toBe(35000); // 30000 + 5000
+    expect(store.cambioRequerido(p)).toBe(15000); // 50000 - 35000
+  });
+
+  it("guarda y recupera direcciones en la memoria CRM por número de teléfono", () => {
+    const store = new PedidosStore();
+    const tel = "+57 300 123 4567";
+
+    // Al crear un pedido a domicilio se auto-guarda en memoria CRM
+    store.crearPedido({
+      cliente: "Andrés",
+      telefono: tel,
+      modalidad: "domicilio",
+      items: [{ nombre: "Combo", cantidad: 1, precio: 20000 }],
+      direccionEntrega: {
+        calle: "Calle 10 # 40-20",
+        barrio: "Laureles",
+      },
+    });
+
+    const guardadas = store.direccionesDe(tel);
+    expect(guardadas.length).toBeGreaterThanOrEqual(1);
+    expect(guardadas[0].calle).toBe("Calle 10 # 40-20");
+    expect(guardadas[0].barrio).toBe("Laureles");
+    expect(store.ultimaDireccionDe(tel)?.calle).toBe("Calle 10 # 40-20");
+
+    // Guardar una nueva dirección la sitúa al inicio (más reciente)
+    store.guardarDireccionCliente(tel, {
+      calle: "Transversal 39 # 70-10",
+      barrio: "Conquistadores",
+    });
+
+    const actualizadas = store.direccionesDe(tel);
+    expect(actualizadas[0].calle).toBe("Transversal 39 # 70-10");
+    expect(store.ultimaDireccionDe(tel)?.calle).toBe("Transversal 39 # 70-10");
+  });
+
+  it("permite asignar y reasignar repartidor a un pedido", () => {
+    const store = new PedidosStore();
+    const p = store.crearPedido({
+      cliente: "Laura",
+      telefono: "+573001112233",
+      modalidad: "domicilio",
+      items: [],
+    });
+
+    expect(p.repartidor).toBeUndefined();
+    store.asignarRepartidor(p.id, "Mensajería Express");
+    expect(p.repartidor).toBe("Mensajería Express");
+
+    store.asignarRepartidor(p.id, "Juan Pablo");
+    expect(p.repartidor).toBe("Juan Pablo");
+  });
+
+  it("cambioRequerido devuelve 0 si no es efectivo o no paga de más", () => {
+    const store = new PedidosStore();
+    const pTransf = store.crearPedido({
+      cliente: "Pedro",
+      telefono: "+1",
+      modalidad: "retiro",
+      items: [{ nombre: "Item", cantidad: 1, precio: 10000 }],
+      metodoPago: "transferencia",
+      pagaCon: 20000,
+    });
+    expect(store.cambioRequerido(pTransf)).toBe(0);
+
+    const pExacto = store.crearPedido({
+      cliente: "Pedro",
+      telefono: "+1",
+      modalidad: "retiro",
+      items: [{ nombre: "Item", cantidad: 1, precio: 10000 }],
+      metodoPago: "efectivo",
+      pagaCon: 10000,
+    });
+    expect(store.cambioRequerido(pExacto)).toBe(0);
   });
 });

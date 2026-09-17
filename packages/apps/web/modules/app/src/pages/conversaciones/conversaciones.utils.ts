@@ -28,16 +28,16 @@ export const statusDe = (estado: string): "online" | "busy" | "offline" => {
   return "offline";
 };
 
-/** Formatea una fecha ISO a tiempo relativo legible tipo chat ("15 mins", "2 hours", etc.) */
+/** Formatea una fecha ISO a tiempo relativo legible tipo chat ("ahora", "15 min", "2 h", "1 d") */
 export const tiempoRelativo = (iso: string): string => {
-  const diff = Date.now() - new Date(iso).getTime();
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "ahora";
-  if (mins < 60) return `${mins} mins`;
+  if (mins < 60) return `${mins} min`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  if (hours < 24) return `${hours} h`;
   const days = Math.floor(hours / 24);
-  return `${days} ${days === 1 ? "day" : "days"}`;
+  return `${days} d`;
 };
 
 /** Formatea una fecha ISO a HH:MM */
@@ -47,9 +47,16 @@ export const horaDe = (iso: string): string => {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-/** Extrae el último texto del hilo para el preview en la lista */
+/** Extrae el último texto del hilo para el preview en la lista (prioriza mensajes humanos sobre eventos técnicos) */
 export const ultimoTexto = (convId: string): string => {
   const items = conversacionesStore.lineaDeTiempo(convId);
+  // Buscar el último mensaje real del chat
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i];
+    if (it.clase === "mensaje" && it.data.contenido.texto) {
+      return it.data.contenido.texto.replace(/\n/g, " ");
+    }
+  }
   const last = items[items.length - 1];
   if (!last) return "";
   const t = last.clase === "mensaje" ? last.data.contenido.texto : last.data.texto;

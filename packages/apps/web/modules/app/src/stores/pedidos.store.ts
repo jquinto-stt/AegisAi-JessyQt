@@ -38,17 +38,51 @@ export interface PedidoItem {
   precio?: number;
 }
 
+/**
+ * Por dónde entró el pedido. Dimensión independiente de `Modalidad` (cómo se
+ * entrega) y de `PedidoEstado` (en qué punto del pipeline está): un pedido de
+ * WhatsApp puede ser a domicilio o para retirar.
+ */
+export type Origen = "whatsapp" | "operador";
+
+/**
+ * Rango de días de calendario LOCAL, ambos inclusive, en formato "YYYY-MM-DD".
+ * Es la entrada de todos los selectores `*EnRango` de la analítica.
+ */
+export interface RangoFechas {
+  desde: string;
+  hasta: string;
+}
+
+/** Dirección estructurada de entrega para pedidos con modalidad domicilio. */
+export interface DireccionEntrega {
+  calle: string;            // Ej: "Cra 45 # 12-34"
+  barrio?: string;          // Ej: "El Poblado"
+  referencia?: string;      // Ej: "Edificio Santillana, Apto 501"
+  indicaciones?: string;    // Ej: "Timbre dañado, llamar al llegar"
+}
+
+/** Métodos de pago disponibles para el pedido. */
+export type MetodoPago = "efectivo" | "transferencia" | "tarjeta" | "contra_entrega";
+
 /** Un pedido que recorre el pipeline. Llega por WhatsApp (bot) o lo crea un operador. */
 export interface Pedido {
   id: string;
   numero: string;            // legible, ej. "P-014"
   cliente: string;
-  telefono: string;          // usado para abrir WhatsApp (wa.me)
+  /**
+   * Teléfono del cliente en formato E.164 (ej. "+573001112233"). Es la CLAVE DE
+   * CRUCE con el módulo Conversaciones: `Contacto.telefono` guarda el mismo
+   * valor, y `porTelefono` / `pedidoActivoDe` lo usan para enlazar el pedido con
+   * su hilo de WhatsApp. La escritura al cliente ya NO ocurre aquí: se resuelve
+   * en la capa de UI navegando a la conversación dentro del sistema.
+   */
+  telefono: string;
   modalidad: Modalidad;
   items: PedidoItem[];
   notas?: string;
   estado: PedidoEstado;
-  origen: "whatsapp" | "operador";
+  origen: Origen;
   /** ¿El pedido ya fue pagado? (mock, para el segmento "Pago pendiente"). */
   pagado?: boolean;
   createdAt: string;         // ISO
@@ -61,6 +95,13 @@ export interface Pedido {
    * pasa a `nuevo` y este campo queda como referencia histórica opcional.
    */
   programadoPara?: string;   // ISO
+
+  /** Datos logísticos y de entrega */
+  direccionEntrega?: DireccionEntrega;
+  costoEnvio?: number;
+  metodoPago?: MetodoPago;
+  pagaCon?: number;          // Monto con el que abona para calcular el vuelto/cambio
+  repartidor?: string;       // Nombre o alias del mensajero/repartidor asignado
 }
 
 /** Un item del catálogo simple opcional (para autocompletar en Crear pedido). */
@@ -174,6 +215,27 @@ const MODALIDAD_LABEL: Record<Modalidad, string> = {
   en_sitio: "En sitio",
 };
 
+/**
+ * Origen del pedido: por dónde entró. Es vocabulario de dominio propio, distinto
+ * de la modalidad (cómo se entrega) y del estado (en qué punto del pipeline
+ * está). La analítica agrupa por esta dimensión para separar el canal de
+ * autoservicio (WhatsApp) del canal asistido (Operador).
+ */
+const ORIGEN_LABEL: Record<Origen, string> = {
+  whatsapp: "WhatsApp",
+  operador: "Mostrador",
+};
+
+/** Orden canónico de orígenes: estable en gráficos aunque falte uno. */
+const ORIGEN_ORDEN: Origen[] = ["whatsapp", "operador"];
+
+/**
+ * Estados cuyo importe cuenta como **venta** en la analítica: el pedido fue
+ * confirmado por el negocio y sigue vivo en el pipeline (o se entregó). Es la
+ * definición que usa el AOV y la serie "Sales".
+ */
+const ESTADOS_VENTA: PedidoEstado[] = ["confirmado", "en_preparacion", "listo", "en_camino", "entregado"];
+
 const DEFAULT_CONFIG: PedidosConfig = {
   usarConfirmado: true,
   usarEnCamino: true,
@@ -253,52 +315,227 @@ const nowIso = () => new Date().toISOString();
 const minutesSince = (iso: string) => Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
 const minutesAgoIso = (mins: number) => new Date(Date.now() - mins * 60000).toISOString();
 
+/**
+ * Reduce un teléfono a sus dígitos, para comparar por identidad y no por
+ * formato de presentación.
+ *
+ * Motivo: el mismo cliente se escribe de dos maneras en el mock. Este store
+ * guarda E.164 compacto (`+573001112233`) y `conversaciones.seed` guarda el
+ * mismo número agrupado con espacios (`+57 300 111 2233`), así que comparar las
+ * cadenas crudas hacía que `porTelefono` no encontrara NADA. La normalización
+ * vive aquí, en el punto de comparación, y no en los seeds: así un contacto
+ * nuevo no depende de que quien lo escriba recuerde el formato.
+ */
+const soloDigitos = (telefono: string): string => telefono.replace(/\D/g, "");
+
+/**
+ * Convierte un instante a su día de calendario **LOCAL** en formato
+ * "YYYY-MM-DD".
+ *
+ * Contrato de bucketing del store: **todo** índice por día usa la fecha local
+ * del navegador, nunca el día UTC. `toISOString().slice(0, 10)` NO sirve para
+ * esto — en zonas con offset negativo (p. ej. America/Bogota, UTC−5) el día UTC
+ * se adelanta a partir de las 19:00 locales, así que un pedido de las 20:00 del
+ * día 17 se indexaría bajo el día 18. Ese desfase hacía que `volumenEntre`,
+ * `volumenPorDia`, `volumenPorHora` y `entregadosEnDia` discrepasen de
+ * `ingresosEntre` (que ya usaba componentes locales) durante la franja
+ * 19:00–23:59, y rompía los gráficos por día y los filtros de rango.
+ *
+ * Acepta un ISO completo o un "YYYY-MM-DD" ya normalizado. Devuelve "" si el
+ * instante es inválido.
+ */
+const ymdLocal = (iso: string): string => {
+  if (!iso) return "";
+  // Ya viene como día calendario: no reinterpretarlo (evita corrimientos por
+  // parsear "YYYY-MM-DD" como UTC).
+  if (iso.length === 10 && !iso.includes("T")) return iso;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/** Día de calendario local "YYYY-MM-DD" de un `Date`. */
+const ymdDeDate = (d: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/**
+ * Recorre inclusive el rango de días locales [desde, hasta] y proyecta cada día
+ * con `valor`. Comparte el guard de 400 iteraciones que evita un bucle infinito
+ * si llegasen fechas corruptas. Devuelve [] si el rango es inválido.
+ */
+const recorrerDias = <T>(
+  desde: string,
+  hasta: string,
+  proyectar: (fecha: string) => T,
+): T[] => {
+  if (!desde || !hasta || desde > hasta) return [];
+  const out: T[] = [];
+  const cur = new Date(`${desde}T00:00:00`);
+  const fin = new Date(`${hasta}T00:00:00`);
+  let guard = 0;
+  while (cur.getTime() <= fin.getTime() && guard < 400) {
+    out.push(proyectar(ymdDeDate(cur)));
+    cur.setDate(cur.getDate() + 1);
+    guard++;
+  }
+  return out;
+};
+
+/**
+ * Registro de conteo por estado con las **8 claves** de `PedidoEstado` a 0.
+ * Devuelve un objeto NUEVO en cada llamada, para que nadie comparta un acumulador
+ * por accidente. Existe para que los tres métodos que cuentan por estado
+ * (`conteoPorEstado`, `conteoPorEstadoEnRango`, `seriePorEstado*`) declaren la
+ * misma forma una sola vez: si mañana se añade un estado al pipeline, hay un
+ * único sitio donde añadirlo.
+ */
+const conteoPorEstadoVacio = (): Record<PedidoEstado, number> => ({
+  programado: 0,
+  nuevo: 0,
+  confirmado: 0,
+  en_preparacion: 0,
+  listo: 0,
+  en_camino: 0,
+  entregado: 0,
+  cancelado: 0,
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MEMORIA CRM DE DIRECCIONES (por teléfono normalizado)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CRM_DIRECCIONES_KEY = "necto.crm.direcciones";
+
+const DEFAULT_DIRECCIONES_CRM: Record<string, DireccionEntrega[]> = {
+  "573001112233": [
+    {
+      calle: "Cra 43A # 18 Sur-135",
+      barrio: "El Poblado",
+      referencia: "Edificio Santillana, Apto 402",
+      indicaciones: "Dejar en portería o tocar timbre 402",
+    },
+  ],
+  "573004445566": [
+    {
+      calle: "Calle 10 # 36-24",
+      barrio: "Laureles",
+      referencia: "Casa de dos pisos reja blanca",
+      indicaciones: "Timbre funciona bien",
+    },
+  ],
+  "573005556677": [
+    {
+      calle: "Av. Las Vegas # 7-45",
+      barrio: "Envigado",
+      referencia: "Local 102, frente al parque",
+      indicaciones: "Preguntar por Andrés",
+    },
+  ],
+};
+
+function loadDireccionesCRM(): Record<string, DireccionEntrega[]> {
+  try {
+    const raw = localStorage.getItem(CRM_DIRECCIONES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_DIRECCIONES_CRM, ...parsed };
+    }
+  } catch {}
+  return { ...DEFAULT_DIRECCIONES_CRM };
+}
+
+function persistDireccionesCRM(data: Record<string, DireccionEntrega[]>): void {
+  try {
+    localStorage.setItem(CRM_DIRECCIONES_KEY, JSON.stringify(data));
+  } catch {}
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // SEED
 // ═══════════════════════════════════════════════════════════════════════════
 
 const seed = (): Pedido[] => [
   {
-    id: "pd1", numero: "P-001", cliente: "Juan Carlos", telefono: "+573001112233", modalidad: "domicilio",
+    id: "pd1", numero: "P-001", cliente: "Ana Silva", telefono: "+573001112233", modalidad: "domicilio",
     items: [{ nombre: "Combo clásico", cantidad: 2, precio: 25000 }, { nombre: "Bebida 350ml", cantidad: 2, precio: 4000 }],
     notas: "Sin cebolla en uno.", estado: "nuevo", origen: "whatsapp", pagado: false,
-    createdAt: minutesAgoIso(4), estadoDesde: minutesAgoIso(4),
+    createdAt: minutesAgoIso(39), estadoDesde: minutesAgoIso(39),
+    direccionEntrega: {
+      calle: "Cra 43A # 18 Sur-135",
+      barrio: "El Poblado",
+      referencia: "Edificio Santillana, Apto 402",
+      indicaciones: "Dejar en portería o tocar timbre 402",
+    },
+    costoEnvio: 5000,
+    metodoPago: "efectivo",
+    pagaCon: 70000,
   },
   {
     id: "pd2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "retiro",
     items: [{ nombre: "Postre del día", cantidad: 1, precio: 8000 }],
     estado: "confirmado", origen: "whatsapp", pagado: true,
+    metodoPago: "transferencia",
     createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(6),
   },
   {
     id: "pd3", numero: "P-003", cliente: "Pedro Ramírez", telefono: "+573003334455", modalidad: "en_sitio",
     items: [{ nombre: "Combo clásico", cantidad: 1, precio: 25000 }],
     notas: "Mesa 5.", estado: "en_preparacion", origen: "operador", pagado: false,
+    metodoPago: "tarjeta",
     createdAt: minutesAgoIso(20), estadoDesde: minutesAgoIso(18),
   },
   {
     id: "pd4", numero: "P-004", cliente: "Lucía Torres", telefono: "+573004445566", modalidad: "domicilio",
     items: [{ nombre: "Combo clásico", cantidad: 3, precio: 25000 }, { nombre: "Postre del día", cantidad: 2, precio: 8000 }],
     estado: "listo", origen: "whatsapp", pagado: true,
-    createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(3),
+    createdAt: minutesAgoIso(140), estadoDesde: minutesAgoIso(12),
+    direccionEntrega: {
+      calle: "Calle 10 # 36-24",
+      barrio: "Laureles",
+      referencia: "Casa de dos pisos reja blanca",
+      indicaciones: "Timbre funciona bien",
+    },
+    costoEnvio: 4500,
+    metodoPago: "transferencia",
+    repartidor: "Carlos Mensajería",
   },
   {
     id: "pd5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
     items: [{ nombre: "Bebida 350ml", cantidad: 4, precio: 4000 }],
     estado: "en_camino", origen: "whatsapp", pagado: false,
-    createdAt: minutesAgoIso(40), estadoDesde: minutesAgoIso(8),
+    createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(15),
+    direccionEntrega: {
+      calle: "Av. Las Vegas # 7-45",
+      barrio: "Envigado",
+      referencia: "Local 102, frente al parque",
+      indicaciones: "Preguntar por Andrés",
+    },
+    costoEnvio: 4000,
+    metodoPago: "contra_entrega",
+    pagaCon: 30000,
+    repartidor: "Javier Moto 04",
   },
   {
-    id: "pd6", numero: "P-006", cliente: "Sofía Díaz", telefono: "+573006667788", modalidad: "retiro",
+    id: "pd6", numero: "P-006", cliente: "Sofía Díaz", telefono: "+573017773344", modalidad: "retiro",
     items: [{ nombre: "Combo clásico", cantidad: 1, precio: 25000 }],
-    estado: "entregado", origen: "whatsapp",
-    createdAt: minutesAgoIso(90), estadoDesde: minutesAgoIso(50), finishedAt: minutesAgoIso(50),
+    estado: "entregado", origen: "whatsapp", pagado: true,
+    metodoPago: "transferencia",
+    createdAt: minutesAgoIso(1_500), estadoDesde: minutesAgoIso(1_400), finishedAt: minutesAgoIso(1_400),
   },
   {
-    id: "pd7", numero: "P-007", cliente: "Valentina Ríos", telefono: "+573007778899", modalidad: "domicilio",
+    id: "pd7", numero: "P-007", cliente: "Valentina Ríos", telefono: "+573018889900", modalidad: "domicilio",
     items: [{ nombre: "Postre del día", cantidad: 2, precio: 8000 }],
     notas: "Cliente no respondió.", estado: "cancelado", origen: "whatsapp",
-    createdAt: minutesAgoIso(120), estadoDesde: minutesAgoIso(70), finishedAt: minutesAgoIso(70),
+    createdAt: minutesAgoIso(300), estadoDesde: minutesAgoIso(260), finishedAt: minutesAgoIso(260),
+    direccionEntrega: {
+      calle: "Transversal 39 # 74-12",
+      barrio: "Conquistadores",
+    },
+    costoEnvio: 4000,
+    metodoPago: "contra_entrega",
   },
 ];
 
@@ -317,6 +554,7 @@ const seed = (): Pedido[] => [
  */
 export class PedidosStore {
   pedidos: Pedido[] = seed();
+  crmDirecciones: Record<string, DireccionEntrega[]> = loadDireccionesCRM();
 
   /** Configuración del módulo (persistida en localStorage). */
   config: PedidosConfig = loadConfig();
@@ -437,11 +675,45 @@ export class PedidosStore {
    * Es la puerta pública para que otros módulos (p. ej. Conversaciones) crucen
    * un contacto con sus pedidos SIN leer el array `pedidos` directamente. No
    * muta `pedidos`: `filter` ya devuelve un array nuevo sobre el que opera `sort`.
+   *
+   * La comparación es por DÍGITOS, no por cadena: los dos seeds del proyecto no
+   * comparten formato — este store guarda E.164 compacto (`+573001112233`) y
+   * `conversaciones.seed` guarda el mismo número agrupado con espacios
+   * (`+57 300 111 2233`). Comparar crudo daba 0 cruces SIEMPRE, así que el
+   * panel de contexto del chat nunca encontraba los pedidos del contacto.
+   * Se normaliza en el punto de comparación para no tener que reescribir seeds
+   * ni depender de que un contacto nuevo se guarde con el formato "correcto".
    */
   porTelefono(telefono: string): Pedido[] {
+    const buscado = soloDigitos(telefono);
+    if (buscado === "") return [];
     return this.pedidos
-      .filter((p) => p.telefono === telefono)
+      .filter((p) => soloDigitos(p.telefono) === buscado)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  /**
+   * Pedido ACTIVO de un contacto: el más reciente que NO está en estado terminal.
+   *
+   * Es el único selector que responde "¿en qué pedido está trabajando ahora este
+   * contacto?", pregunta que necesitan las superficies del canal (la bandeja de
+   * Conversaciones y el panel de contexto del chat). Existe para que ese filtro
+   * viva en UN sitio: antes cada consumidor tendría que encadenar
+   * `porTelefono(...)` con `esTerminal(...)`, y dos filtros copiados acaban
+   * divergiendo (p. ej. uno incluiría `programado` y el otro no).
+   *
+   * Criterio de "activo": ni `entregado` ni `cancelado` (ver `TERMINALES`). A
+   * diferencia de `enCurso`, SÍ cuenta `programado`: un pedido agendado para más
+   * tarde sigue siendo el pedido vivo de ese contacto y el operador debe verlo
+   * desde el chat — que "no esté en curso" es una distinción de cocina, no de
+   * atención al cliente.
+   *
+   * Devuelve `undefined` si el contacto no tiene pedidos o si todos son
+   * terminales. `porTelefono` ya ordena por createdAt desc, así que el primero
+   * que pase el filtro es el más reciente.
+   */
+  pedidoActivoDe(telefono: string): Pedido | undefined {
+    return this.porTelefono(telefono).find((p) => !this.esTerminal(p.estado));
   }
 
   /** Pedidos en un estado dado (para las columnas del tablero). */
@@ -523,18 +795,18 @@ export class PedidosStore {
     return this.porEstado("listo").length;
   }
 
-  /** Pedidos entregados hoy (por finishedAt). */
+  /** Pedidos entregados hoy (por finishedAt, día de calendario local). */
   get entregadosHoy(): number {
-    const hoy = new Date().toDateString();
+    const hoy = ymdDeDate(new Date());
     return this.pedidos.filter(
-      (p) => p.estado === "entregado" && p.finishedAt && new Date(p.finishedAt).toDateString() === hoy,
+      (p) => p.estado === "entregado" && p.finishedAt && ymdLocal(p.finishedAt) === hoy,
     ).length;
   }
 
   /** Pedidos entregados en un día concreto ("YYYY-MM-DD" local, por finishedAt). */
   entregadosEnDia(ymd: string): number {
     return this.pedidos.filter(
-      (p) => p.estado === "entregado" && p.finishedAt && p.finishedAt.slice(0, 10) === ymd,
+      (p) => p.estado === "entregado" && p.finishedAt && ymdLocal(p.finishedAt) === ymd,
     ).length;
   }
 
@@ -566,11 +838,9 @@ export class PedidosStore {
    * gráfico "volumen del día" de la Inicio.
    */
   volumenPorDia(dias = 7): { fecha: string; total: number }[] {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const conteo = new Map<string, number>();
     for (const p of this.pedidos) {
-      const dia = p.createdAt.slice(0, 10);
+      const dia = ymdLocal(p.createdAt);
       conteo.set(dia, (conteo.get(dia) ?? 0) + 1);
     }
     const out: { fecha: string; total: number }[] = [];
@@ -578,7 +848,7 @@ export class PedidosStore {
     for (let i = dias - 1; i >= 0; i--) {
       const d = new Date(hoy);
       d.setDate(hoy.getDate() - i);
-      const fecha = ymd(d);
+      const fecha = ymdDeDate(d);
       out.push({ fecha, total: conteo.get(fecha) ?? 0 });
     }
     return out;
@@ -591,7 +861,7 @@ export class PedidosStore {
   volumenPorHora(ymd: string, desdeHora = 0, hastaHora = 23): { etiqueta: string; total: number }[] {
     const conteo = new Array(24).fill(0);
     for (const p of this.pedidos) {
-      if (p.createdAt.slice(0, 10) !== ymd) continue;
+      if (ymdLocal(p.createdAt) !== ymd) continue;
       const h = new Date(p.createdAt).getHours();
       conteo[h] += 1;
     }
@@ -610,25 +880,12 @@ export class PedidosStore {
    * de la Inicio con rango elegido en el calendario.
    */
   volumenEntre(desde: string, hasta: string): { fecha: string; total: number }[] {
-    if (!desde || !hasta || desde > hasta) return [];
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const conteo = new Map<string, number>();
     for (const p of this.pedidos) {
-      const dia = p.createdAt.slice(0, 10);
+      const dia = ymdLocal(p.createdAt);
       conteo.set(dia, (conteo.get(dia) ?? 0) + 1);
     }
-    const out: { fecha: string; total: number }[] = [];
-    const cur = new Date(`${desde}T00:00:00`);
-    const fin = new Date(`${hasta}T00:00:00`);
-    let guard = 0;
-    while (cur.getTime() <= fin.getTime() && guard < 400) {
-      const fecha = ymd(cur);
-      out.push({ fecha, total: conteo.get(fecha) ?? 0 });
-      cur.setDate(cur.getDate() + 1);
-      guard++;
-    }
-    return out;
+    return recorrerDias(desde, hasta, (fecha) => ({ fecha, total: conteo.get(fecha) ?? 0 }));
   }
 
   /**
@@ -701,27 +958,13 @@ export class PedidosStore {
    * recorrido de fechas que `volumenEntre`. Puro: no muta `this.pedidos`.
    */
   ingresosEntre(desde: string, hasta: string): { fecha: string; total: number }[] {
-    if (!desde || !hasta || desde > hasta) return [];
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const conteo = new Map<string, number>();
     for (const p of this.pedidos) {
       if (p.estado !== "entregado" || !p.finishedAt) continue;
-      const d = new Date(p.finishedAt);
-      const dia = ymd(d);
+      const dia = ymdLocal(p.finishedAt);
       conteo.set(dia, (conteo.get(dia) ?? 0) + this.totalPedido(p));
     }
-    const out: { fecha: string; total: number }[] = [];
-    const cur = new Date(`${desde}T00:00:00`);
-    const fin = new Date(`${hasta}T00:00:00`);
-    let guard = 0;
-    while (cur.getTime() <= fin.getTime() && guard < 400) {
-      const fecha = ymd(cur);
-      out.push({ fecha, total: conteo.get(fecha) ?? 0 });
-      cur.setDate(cur.getDate() + 1);
-      guard++;
-    }
-    return out;
+    return recorrerDias(desde, hasta, (fecha) => ({ fecha, total: conteo.get(fecha) ?? 0 }));
   }
 
   /**
@@ -754,6 +997,225 @@ export class PedidosStore {
     const entregados = this.pedidos.filter((p) => p.estado === "entregado").length;
     if (entregados === 0) return 0;
     return Math.round(this.ingresoTotalEntregados() / entregados);
+  }
+
+  // ── Analítica por rango (para el filtro de periodo) ────────────────────────
+  //
+  // Un "rango" es `{ desde, hasta }` en días de calendario LOCAL "YYYY-MM-DD",
+  // ambos inclusive. `null` significa "sin filtro" = todo el histórico. Todo el
+  // cálculo de rango vive aquí: las páginas NUNCA filtran `pedidos` ni derivan
+  // métricas por su cuenta (si lo hicieran habría dos verdades que pueden
+  // divergir). Los métodos son puros: no mutan `this.pedidos`.
+
+  /**
+   * Pedidos cuyo día de creación cae dentro del rango (inclusive), ordenados
+   * por `createdAt` descendente. Con rango `null` devuelve todo el histórico en
+   * el mismo orden. Puro: no muta `this.pedidos`.
+   */
+  pedidosEnRango(rango: RangoFechas | null): Pedido[] {
+    const base = rango
+      ? this.pedidos.filter((p) => {
+          const dia = ymdLocal(p.createdAt);
+          return dia >= rango.desde && dia <= rango.hasta;
+        })
+      : [...this.pedidos];
+    return base.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  /**
+   * Conteo por estado limitado al rango. Mismas 8 claves que `conteoPorEstado`
+   * (0 si no hay ninguno) para que los gráficos sean estables al cambiar de
+   * periodo. Puro.
+   */
+  conteoPorEstadoEnRango(rango: RangoFechas | null): Record<PedidoEstado, number> {
+    return this.pedidosEnRango(rango).reduce((acc, p) => {
+      acc[p.estado] += 1;
+      return acc;
+    }, conteoPorEstadoVacio());
+  }
+
+  /**
+   * Conteo por origen limitado al rango, en orden canónico. Incluye ambos
+   * orígenes (con 0 si no hay ninguno). Puro.
+   */
+  porOrigenEnRango(rango: RangoFechas | null): { origen: Origen; total: number }[] {
+    const enRango = this.pedidosEnRango(rango);
+    return ORIGEN_ORDEN.map((origen) => ({
+      origen,
+      total: enRango.filter((p) => p.origen === origen).length,
+    }));
+  }
+
+  /**
+   * Conteo por modalidad limitado al rango, en orden canónico. Incluye todas las
+   * modalidades (con 0 si no hay ninguna). Puro.
+   */
+  porModalidadEnRango(rango: RangoFechas | null): { modalidad: Modalidad; total: number }[] {
+    const enRango = this.pedidosEnRango(rango);
+    const orden: Modalidad[] = ["retiro", "domicilio", "en_sitio"];
+    return orden.map((modalidad) => ({
+      modalidad,
+      total: enRango.filter((p) => p.modalidad === modalidad).length,
+    }));
+  }
+
+  /**
+   * Porcentaje (0..100) de cancelados sobre el total del rango, redondeado a
+   * 1 decimal. 0 si el rango está vacío. Puro.
+   */
+  tasaCancelacionEnRango(rango: RangoFechas | null): number {
+    const enRango = this.pedidosEnRango(rango);
+    if (enRango.length === 0) return 0;
+    const cancelados = enRango.filter((p) => p.estado === "cancelado").length;
+    return Math.round((cancelados / enRango.length) * 1000) / 10;
+  }
+
+  /**
+   * Importe total de los pedidos **vendidos** del rango, entendiendo por vendido
+   * los estados de `ESTADOS_VENTA` (confirmado o posterior, incluido entregado).
+   * Excluye `nuevo` (aún sin confirmar), `programado` (aún no activo) y
+   * `cancelado`. Es la base del AOV pedido para la analítica. Puro.
+   */
+  ingresosVendidosEnRango(rango: RangoFechas | null): number {
+    return this.pedidosEnRango(rango)
+      .filter((p) => ESTADOS_VENTA.includes(p.estado))
+      .reduce((s, p) => s + this.totalPedido(p), 0);
+  }
+
+  /** Nº de pedidos vendidos del rango (ver `ESTADOS_VENTA`). Puro. */
+  conteoVendidosEnRango(rango: RangoFechas | null): number {
+    return this.pedidosEnRango(rango).filter((p) => ESTADOS_VENTA.includes(p.estado)).length;
+  }
+
+  /**
+   * Ticket promedio (AOV) del rango: `ingresosVendidosEnRango` /
+   * `conteoVendidosEnRango`, redondeado a entero. 0 si no hay ventas.
+   *
+   * Definición acordada para la analítica: se divide entre los pedidos
+   * **confirmados o posteriores**, no solo los entregados. Es distinta de
+   * `ticketPromedioEntregado()` (que solo mira entregados) a propósito: miden
+   * cosas distintas y ninguna sustituye a la otra. Puro.
+   */
+  ticketPromedioVendidoEnRango(rango: RangoFechas | null): number {
+    const conteo = this.conteoVendidosEnRango(rango);
+    if (conteo === 0) return 0;
+    return Math.round(this.ingresosVendidosEnRango(rango) / conteo);
+  }
+
+  /**
+   * Serie diaria para el gráfico "Ventas y cancelaciones" sobre los últimos
+   * `dias` días naturales (incluye hoy), del más antiguo al más reciente.
+   *
+   * - `fecha`  — día local "YYYY-MM-DD" (eje X).
+   * - `ventas` — pedidos con estado de `ESTADOS_VENTA` creados ese día.
+   * - `cancelados` — pedidos cancelados creados ese día.
+   *
+   * Cuenta por `createdAt` (cuándo se recibió el pedido), no por `finishedAt`:
+   * el eje representa la demanda de cada día. Devuelve una entrada por día,
+   * con 0 donde no hubo nada, para que la serie no tenga huecos. Puro.
+   */
+  serieVentasYCancelaciones(dias: number): { fecha: string; ventas: number; cancelados: number }[] {
+    const ventas = new Map<string, number>();
+    const cancelados = new Map<string, number>();
+    for (const p of this.pedidos) {
+      const dia = ymdLocal(p.createdAt);
+      if (ESTADOS_VENTA.includes(p.estado)) {
+        ventas.set(dia, (ventas.get(dia) ?? 0) + 1);
+      }
+      if (p.estado === "cancelado") {
+        cancelados.set(dia, (cancelados.get(dia) ?? 0) + 1);
+      }
+    }
+    const out: { fecha: string; ventas: number; cancelados: number }[] = [];
+    const hoy = new Date();
+    for (let i = dias - 1; i >= 0; i--) {
+      const d = new Date(hoy);
+      d.setDate(hoy.getDate() - i);
+      const fecha = ymdDeDate(d);
+      out.push({
+        fecha,
+        ventas: ventas.get(fecha) ?? 0,
+        cancelados: cancelados.get(fecha) ?? 0,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * Serie diaria de pedidos **desglosada por estado** sobre los últimos `dias`
+   * días naturales (incluye hoy), del más antiguo al más reciente.
+   *
+   * - `fecha`     — día local "YYYY-MM-DD" (eje X).
+   * - `porEstado` — cuántos pedidos CREADOS ese día están hoy en cada estado,
+   *   con las 8 claves de `PedidoEstado` (0 donde no hubo ninguno).
+   *
+   * Cuenta por `createdAt`, igual que `serieVentasYCancelaciones`: el eje mide la
+   * demanda de cada día. Devuelve una entrada por día con TODOS los estados
+   * presentes, para que las series apiladas conserven la misma longitud al mover
+   * el periodo y no aparezcan huecos. Es el único desglose por día y estado del
+   * store; la página no lo recompone por su cuenta. Puro.
+   */
+  seriePorEstado(dias: number): { fecha: string; porEstado: Record<PedidoEstado, number> }[] {
+    const hoy = new Date();
+    const desde = new Date(hoy);
+    desde.setDate(hoy.getDate() - (Math.max(1, dias) - 1));
+    return this.seriePorEstadoEntre(ymdDeDate(desde), ymdDeDate(hoy));
+  }
+
+  /**
+   * Variante de `seriePorEstado` con rango explícito [desde, hasta] inclusive
+   * ("YYYY-MM-DD" local), para cuando el usuario elige fechas en el calendario.
+   * Puro.
+   */
+  seriePorEstadoEntre(desde: string, hasta: string): { fecha: string; porEstado: Record<PedidoEstado, number> }[] {
+    const conteo = new Map<string, Record<PedidoEstado, number>>();
+    for (const p of this.pedidos) {
+      const dia = ymdLocal(p.createdAt);
+      const bucket = conteo.get(dia) ?? conteoPorEstadoVacio();
+      bucket[p.estado] += 1;
+      conteo.set(dia, bucket);
+    }
+    return recorrerDias(desde, hasta, (fecha) => ({
+      fecha,
+      porEstado: conteo.get(fecha) ?? conteoPorEstadoVacio(),
+    }));
+  }
+
+  /**
+   * Reparto de los pedidos del rango según su **estado de pago** (`Pedido.pagado`).
+   * `pendiente` agrupa todo lo que no está marcado como pagado (incluido el
+   * `undefined` de los pedidos creados sin ese dato), de modo que ambos números
+   * siempre suman el total del rango. Con rango `null`, todo el histórico. Puro.
+   */
+  porPagoEnRango(rango: RangoFechas | null): { pagado: number; pendiente: number } {
+    const enRango = this.pedidosEnRango(rango);
+    const pagado = enRango.filter((p) => p.pagado === true).length;
+    return { pagado, pendiente: enRango.length - pagado };
+  }
+
+  /**
+   * Reparto de un mismo total entre claves, en porcentaje entero que suma 100.
+   * Sirve para las barras segmentadas (canales, modalidades) sin que cada
+   * consumidor reimplemente el redondeo. Con total 0 todas las cuotas son 0.
+   * Puro.
+   */
+  repartirPorcentaje(valores: number[]): number[] {
+    const total = valores.reduce((s, v) => s + v, 0);
+    if (total <= 0) return valores.map(() => 0);
+    const crudos = valores.map((v) => (v / total) * 100);
+    // Redondeo por mayor resto: garantiza que la suma de los enteros sea 100.
+    const pisos = crudos.map((v) => Math.floor(v));
+    let resto = 100 - pisos.reduce((s, v) => s + v, 0);
+    const orden = crudos
+      .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+      .sort((a, b) => b.frac - a.frac);
+    const out = [...pisos];
+    for (const { i } of orden) {
+      if (resto <= 0) break;
+      out[i] += 1;
+      resto -= 1;
+    }
+    return out;
   }
 
   /** El pedido en curso más reciente (para el hero del dashboard). */
@@ -790,14 +1252,57 @@ export class PedidosStore {
     return this.minutosEnEstado(p) >= this.objetivoDe(p.estado);
   }
 
-  /** Total monetario del pedido (si los items tienen precio). */
-  totalPedido(p: Pedido): number {
+  /** Subtotal monetario de los items del pedido (sin envío). */
+  subtotalItems(p: Pedido): number {
     return p.items.reduce((s, it) => s + (it.precio ?? 0) * it.cantidad, 0);
+  }
+
+  /** Total monetario del pedido (subtotal items + costo de envío si aplica). */
+  totalPedido(p: Pedido): number {
+    return this.subtotalItems(p) + (p.costoEnvio ?? 0);
+  }
+
+  /** Monto a devolver si el cliente paga en efectivo con un billete mayor. */
+  cambioRequerido(p: Pedido): number {
+    if (p.metodoPago && p.metodoPago !== "efectivo") return 0;
+    if (!p.pagaCon) return 0;
+    return Math.max(0, p.pagaCon - this.totalPedido(p));
   }
 
   /** Resumen legible de items, ej. "2× Combo, 1× Postre". */
   resumenItems(p: Pedido): string {
     return p.items.map((it) => `${it.cantidad}× ${it.nombre}`).join(", ");
+  }
+
+  /** Asigna o actualiza el mensajero/repartidor responsable de la entrega. */
+  asignarRepartidor(id: string, repartidor: string): boolean {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    p.repartidor = repartidor.trim() || undefined;
+    return true;
+  }
+
+  /** Direcciones registradas para un cliente en la memoria CRM. */
+  direccionesDe(telefono: string): DireccionEntrega[] {
+    const digitos = soloDigitos(telefono);
+    return this.crmDirecciones[digitos] ?? [];
+  }
+
+  /** Última dirección registrada para un cliente. */
+  ultimaDireccionDe(telefono: string): DireccionEntrega | undefined {
+    return this.direccionesDe(telefono)[0];
+  }
+
+  /** Guarda o actualiza una dirección en el historial del cliente (memoria CRM). */
+  guardarDireccionCliente(telefono: string, dir: DireccionEntrega): void {
+    const digitos = soloDigitos(telefono);
+    if (!digitos || !dir.calle.trim()) return;
+    const prev = this.crmDirecciones[digitos] ?? [];
+    const filtered = prev.filter(
+      (d) => d.calle.trim().toLowerCase() !== dir.calle.trim().toLowerCase()
+    );
+    this.crmDirecciones[digitos] = [dir, ...filtered].slice(0, 5);
+    persistDireccionesCRM(this.crmDirecciones);
   }
 
   // ── Acciones ────────────────────────────────────────────────────────────
@@ -816,6 +1321,11 @@ export class PedidosStore {
     origen?: "whatsapp" | "operador";
     /** ISO opcional; si es futuro, el pedido nace `programado`. */
     programadoPara?: string;
+    direccionEntrega?: DireccionEntrega;
+    costoEnvio?: number;
+    metodoPago?: MetodoPago;
+    pagaCon?: number;
+    repartidor?: string;
   }): Pedido {
     this.seq += 1;
     const now = nowIso();
@@ -833,9 +1343,20 @@ export class PedidosStore {
       createdAt: now,
       estadoDesde: now,
       programadoPara: esFuturo ? data.programadoPara : undefined,
+      direccionEntrega: data.direccionEntrega,
+      costoEnvio: data.costoEnvio,
+      metodoPago: data.metodoPago,
+      pagaCon: data.pagaCon,
+      repartidor: data.repartidor,
     };
     this.pedidos.push(pedido);
-    return pedido;
+
+    // Auto-registrar en memoria CRM si se especificó dirección
+    if (data.direccionEntrega && data.direccionEntrega.calle.trim()) {
+      this.guardarDireccionCliente(data.telefono, data.direccionEntrega);
+    }
+
+    return this.getPedido(pedido.id) ?? pedido;
   }
 
   /**
@@ -946,6 +1467,14 @@ export class PedidosStore {
   modalidadLabel(m: Modalidad): string {
     const alias = this.config.aliasModalidades[m];
     return alias && alias.trim() ? alias.trim() : MODALIDAD_LABEL[m];
+  }
+
+  /**
+   * Etiqueta de origen (canal de entrada). Sin alias configurable: el origen es
+   * una dimensión de sistema, no una etiqueta de negocio renombrable.
+   */
+  origenLabel(o: Origen): string {
+    return ORIGEN_LABEL[o];
   }
 
   /**

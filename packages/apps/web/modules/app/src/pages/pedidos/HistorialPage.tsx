@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Card } from "@/elements/ui/card";
@@ -11,7 +12,9 @@ import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { DatePicker } from "@/elements/form/date-picker";
 import { pedidosStore, puedeEscribirCliente } from "@/stores";
+import { conversacionesStore } from "@/stores/conversaciones.store";
 import type { Pedido } from "@/stores/pedidos.store";
+import { abrirConversacionDe } from "@/pages/conversaciones/conversaciones.navegacion";
 import {
   filtrarHistorial,
   FILTROS_VACIOS,
@@ -34,12 +37,6 @@ const fechaLegible = (iso?: string) => {
   return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 
-/** Abre WhatsApp del cliente en una pestaña nueva (wa.me, solo dígitos). */
-const abrirWhatsApp = (telefono: string) => {
-  const numero = telefono.replace(/[^\d]/g, "");
-  window.open(`https://wa.me/${numero}`, "_blank", "noopener,noreferrer");
-};
-
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
     <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z" />
@@ -53,6 +50,7 @@ const WhatsAppIcon = () => (
 const AccionesMenu = observer(
   ({ pedido, onDetalle }: { pedido: Pedido; onDetalle: (id: string) => void }) => {
     const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
       if (!open) return;
@@ -92,17 +90,35 @@ const AccionesMenu = observer(
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1 1 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178a1 1 0 010 .644C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               Ver detalle
             </button>
-            {/* Escribir al cliente es una acción de canal: `channels.read`. */}
-            {puedeEscribirCliente() && (
-              <button
-                type="button"
-                onClick={run(() => abrirWhatsApp(pedido.telefono))}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#17b363] hover:bg-[#17b363]/10"
-              >
-                <WhatsAppIcon />
-                Abrir WhatsApp
-              </button>
-            )}
+            {/* Escribir al cliente es una acción de canal: `channels.read`.
+                Abre el hilo DENTRO del sistema (no wa.me): ver
+                `conversaciones.navegacion.ts`. Si el contacto no tiene hilo,
+                no se navega y el ítem se deshabilita — crear una conversación
+                vacía no es un efecto colateral aceptable de este botón. */}
+            {puedeEscribirCliente() &&
+              (() => {
+                const tieneHilo = conversacionesStore.tieneConversacion(
+                  pedido.telefono,
+                );
+                return (
+                  <button
+                    type="button"
+                    disabled={!tieneHilo}
+                    title={
+                      tieneHilo
+                        ? "Abrir la conversación de este cliente"
+                        : "Este cliente no tiene conversación abierta"
+                    }
+                    onClick={run(() =>
+                      abrirConversacionDe(pedido.telefono, navigate),
+                    )}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#17b363] hover:bg-[#17b363]/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                  >
+                    <WhatsAppIcon />
+                    Abrir conversación
+                  </button>
+                );
+              })()}
           </div>
         )}
       </div>
@@ -573,7 +589,19 @@ export const HistorialPage = observer(() => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: () => void }) => {
+  const subtotal = pedidosStore.subtotalItems(pedido);
   const total = pedidosStore.totalPedido(pedido);
+  const cambio = pedidosStore.cambioRequerido(pedido);
+
+  const queryMaps = [
+    pedido.direccionEntrega?.calle,
+    pedido.direccionEntrega?.barrio,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryMaps)}`;
+
   return (
     <Modal isOpen onClose={onClose} className="max-w-lg p-6 sm:p-8">
       {/* Encabezado: título + estado debajo. pr-12 reserva espacio para la X. */}
@@ -598,10 +626,61 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
         </div>
       </div>
 
+      {/* Logística de Entrega (Domicilio) */}
+      {pedido.modalidad === "domicilio" && (
+        <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-800 dark:text-white/90">
+              🛵 Dirección de entrega
+            </span>
+            {pedido.direccionEntrega?.calle && (
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+              >
+                🗺️ Abrir en Google Maps
+              </a>
+            )}
+          </div>
+
+          {pedido.direccionEntrega ? (
+            <div className="mt-2 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {pedido.direccionEntrega.calle}
+              </p>
+              {(pedido.direccionEntrega.barrio || pedido.direccionEntrega.referencia) && (
+                <p className="text-gray-500 dark:text-gray-400">
+                  {[pedido.direccionEntrega.barrio, pedido.direccionEntrega.referencia].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              {pedido.direccionEntrega.indicaciones && (
+                <p className="italic text-gray-500 dark:text-gray-400">
+                  "{pedido.direccionEntrega.indicaciones}"
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+              ⚠️ Sin dirección registrada.
+            </p>
+          )}
+
+          {pedido.repartidor && (
+            <div className="mt-2.5 border-t border-gray-200/60 pt-2 text-xs text-gray-600 dark:border-gray-800 dark:text-gray-400">
+              <span>Repartidor: </span>
+              <span className="font-semibold text-gray-800 dark:text-white">{pedido.repartidor}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Items */}
       {pedido.items.length > 0 && (
         <div className="mb-4">
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Items</p>
-          <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+          <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-white/5 dark:border-gray-800">
             {pedido.items.map((it, i) => (
               <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
                 <span className="text-gray-700 dark:text-gray-300">{it.cantidad}× {it.nombre}</span>
@@ -610,6 +689,20 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
                 )}
               </div>
             ))}
+
+            {pedido.modalidad === "domicilio" && (pedido.costoEnvio ?? 0) > 0 && (
+              <>
+                <div className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <span>Subtotal items</span>
+                  <span>${subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <span>Costo de envío</span>
+                  <span>${(pedido.costoEnvio ?? 0).toLocaleString()}</span>
+                </div>
+              </>
+            )}
+
             {total > 0 && (
               <div className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
                 <span className="text-gray-800 dark:text-white/90">Total</span>
@@ -619,6 +712,30 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
           </div>
         </div>
       )}
+
+      {/* Pago */}
+      <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-xs dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-gray-400">Método de pago: </span>
+            <span className="font-medium text-gray-700 capitalize dark:text-gray-300">
+              {pedido.metodoPago ? pedido.metodoPago.replace("_", " ") : "No especificado"}
+            </span>
+          </div>
+          <div>
+            <span className="text-gray-400">Estado: </span>
+            <span className={pedido.pagado ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+              {pedido.pagado ? "Pagado" : "Pendiente"}
+            </span>
+          </div>
+        </div>
+        {pedido.metodoPago === "efectivo" && pedido.pagaCon !== undefined && (
+          <div className="mt-2 flex items-center justify-between border-t border-gray-200/60 pt-2 text-gray-600 dark:border-gray-800 dark:text-gray-400">
+            <span>Abonó con: ${pedido.pagaCon.toLocaleString()}</span>
+            {cambio > 0 && <span className="font-semibold text-emerald-600">Cambio: ${cambio.toLocaleString()}</span>}
+          </div>
+        )}
+      </div>
 
       {pedido.notas && (
         <div className="mb-4">

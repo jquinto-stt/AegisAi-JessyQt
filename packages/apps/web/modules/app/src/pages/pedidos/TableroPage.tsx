@@ -16,6 +16,11 @@ import {
 } from "@/stores";
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
 import { ProgramarModal } from "./ProgramarModal";
+import {
+  avanzarPedido,
+  cancelarPedido,
+} from "./pedidos.notificaciones";
+import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTORIZACIÓN DE ACCIONES (contrato §1.4 / §2)
@@ -60,12 +65,6 @@ const saveVista = (v: VistaTablero) => {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Abre WhatsApp del cliente en una pestaña nueva (wa.me, solo dígitos). */
-const abrirWhatsApp = (telefono: string) => {
-  const numero = telefono.replace(/[^\d]/g, "");
-  window.open(`https://wa.me/${numero}`, "_blank", "noopener,noreferrer");
-};
-
 /** Opciones del filtro de modalidad (según la config del módulo). */
 const FILTRO_TODAS = "__todas__";
 
@@ -99,6 +98,7 @@ const PedidoCard = observer(
     onDetalle,
     onCancelar,
     onConfirmarEntrega,
+    onChat,
   }: {
     pedido: Pedido;
     onDetalle: () => void;
@@ -106,6 +106,8 @@ const PedidoCard = observer(
     onCancelar: () => void;
     /** Solicita confirmación del paso final →Entregado (modal en el padre). */
     onConfirmarEntrega: () => void;
+    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
+    onChat: () => void;
   }) => {
     const urgente = pedidosStore.esUrgente(pedido);
     const siguiente = pedidosStore.siguienteEstado(pedido);
@@ -124,7 +126,9 @@ const PedidoCard = observer(
     // pasos son reversibles de facto (siguen en curso) y avanzan directo.
     const handleAvanzar = () => {
       if (siguiente === "entregado") onConfirmarEntrega();
-      else pedidosStore.avanzar(pedido.id);
+      // `avanzarPedido` (no `pedidosStore.avanzar`) para que el avance publique
+      // además la plantilla de WhatsApp del nuevo estado en el hilo del cliente.
+      else avanzarPedido(pedido.id);
     };
 
     // Evita que un click en la zona de acciones abra el detalle.
@@ -141,10 +145,10 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`cursor-pointer rounded-xl border bg-white p-4 shadow-theme-sm transition-colors hover:border-brand-300 hover:shadow-theme-md dark:bg-white/[0.03] dark:hover:border-brand-700 ${
+        className={`cursor-pointer rounded-xl border bg-white p-4 shadow-2xs transition-colors hover:border-brand-300 hover:shadow-theme-md dark:bg-white/[0.03] dark:hover:border-brand-700 ${
           urgente
             ? "border-error-200 dark:border-error-500/30"
-            : "border-gray-200 dark:border-gray-800"
+            : "border-gray-200/70 dark:border-white/5"
         }`}
       >
         {/* Encabezado: número + modalidad */}
@@ -156,12 +160,42 @@ const PedidoCard = observer(
           <Badge color="light" size="sm">{pedidosStore.modalidadLabel(pedido.modalidad)}</Badge>
         </div>
 
+        {/* Dirección si es domicilio */}
+        {pedido.modalidad === "domicilio" && pedido.direccionEntrega && (
+          <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-300">
+            <span className="text-brand-500 shrink-0">🛵</span>
+            <span className="truncate font-medium">{pedido.direccionEntrega.calle}</span>
+            {pedido.direccionEntrega.barrio && (
+              <span className="text-gray-400 shrink-0">({pedido.direccionEntrega.barrio})</span>
+            )}
+          </div>
+        )}
+
         {/* Items resumidos */}
         {pedido.items.length > 0 && (
           <p className="mb-2 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
             {pedidosStore.resumenItems(pedido)}
           </p>
         )}
+
+        {/* Total, Método de pago y Repartidor */}
+        <div className="mb-2 flex items-center justify-between text-xs">
+          <span className="font-bold text-gray-800 dark:text-white">
+            ${pedidosStore.totalPedido(pedido).toLocaleString()}
+          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            {pedido.metodoPago && (
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 capitalize dark:bg-gray-800 dark:text-gray-300">
+                {pedido.metodoPago.replace("_", " ")}
+              </span>
+            )}
+            {pedido.repartidor && (
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                🚴 {pedido.repartidor}
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Tiempo en estado + urgencia */}
         <div className="mb-3 flex items-center gap-2">
@@ -184,7 +218,7 @@ const PedidoCard = observer(
                 size="sm"
                 variant="ghost"
                 startIcon={<WhatsAppIcon />}
-                onClick={() => abrirWhatsApp(pedido.telefono)}
+                onClick={onChat}
                 className="!text-[#17b363] hover:!bg-[#17b363]/10"
               >
                 WhatsApp
@@ -214,75 +248,222 @@ const PedidoCard = observer(
 // DETALLE (modal)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: () => void }) => {
-  const total = pedidosStore.totalPedido(pedido);
-  return (
-    <Modal isOpen onClose={onClose} className="max-w-lg p-6 sm:p-8">
-      {/* Encabezado: título + estado debajo. pr-12 reserva espacio para la X. */}
-      <div className="mb-5 pr-12">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">{pedido.numero}</h2>
-          <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
-            {pedidosStore.estadoLabel(pedido.estado)}
-          </Badge>
-        </div>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{pedido.cliente} · {pedido.telefono}</p>
-      </div>
+const DetalleModal = observer(
+  ({
+    pedido,
+    onClose,
+    onChat,
+  }: {
+    pedido: Pedido;
+    onClose: () => void;
+    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
+    onChat: () => void;
+  }) => {
+    const subtotal = pedidosStore.subtotalItems(pedido);
+    const total = pedidosStore.totalPedido(pedido);
+    const cambio = pedidosStore.cambioRequerido(pedido);
+    const [repartidorInput, setRepartidorInput] = useState(pedido.repartidor ?? "");
 
-      <div className="mb-4 grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Modalidad</p>
-          <p className="mt-1 text-sm text-gray-800 dark:text-white/90">{pedidosStore.modalidadLabel(pedido.modalidad)}</p>
-        </div>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Origen</p>
-          <p className="mt-1 text-sm text-gray-800 dark:text-white/90">{pedido.origen === "whatsapp" ? "WhatsApp" : "Operador"}</p>
-        </div>
-      </div>
+    const queryMaps = [
+      pedido.direccionEntrega?.calle,
+      pedido.direccionEntrega?.barrio,
+    ]
+      .filter(Boolean)
+      .join(", ");
 
-      {/* Items */}
-      <div className="mb-4">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Items</p>
-        {pedido.items.length === 0 ? (
-          <p className="text-sm text-gray-400">Sin items detallados.</p>
-        ) : (
-          <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
-            {pedido.items.map((it, i) => (
-              <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
-                <span className="text-gray-700 dark:text-gray-300">{it.cantidad}× {it.nombre}</span>
-                {it.precio !== undefined && (
-                  <span className="text-gray-500 dark:text-gray-400">${(it.precio * it.cantidad).toLocaleString()}</span>
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryMaps)}`;
+
+    return (
+      <Modal isOpen onClose={onClose} className="max-w-lg p-6 sm:p-8">
+        {/* Encabezado: título + estado debajo. pr-12 reserva espacio para la X. */}
+        <div className="mb-5 pr-12">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">{pedido.numero}</h2>
+            <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
+              {pedidosStore.estadoLabel(pedido.estado)}
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{pedido.cliente} · {pedido.telefono}</p>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Modalidad</p>
+            <p className="mt-1 text-sm text-gray-800 dark:text-white/90">{pedidosStore.modalidadLabel(pedido.modalidad)}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Origen</p>
+            <p className="mt-1 text-sm text-gray-800 dark:text-white/90">{pedido.origen === "whatsapp" ? "WhatsApp" : "Operador"}</p>
+          </div>
+        </div>
+
+        {/* Logística de Entrega (Domicilio) */}
+        {pedido.modalidad === "domicilio" && (
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-800 dark:text-white/90">
+                🛵 Dirección de entrega
+              </span>
+              {pedido.direccionEntrega?.calle && (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                >
+                  🗺️ Abrir en Google Maps
+                </a>
+              )}
+            </div>
+
+            {pedido.direccionEntrega ? (
+              <div className="mt-2 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+                <p className="font-semibold text-gray-800 dark:text-white">
+                  {pedido.direccionEntrega.calle}
+                </p>
+                {(pedido.direccionEntrega.barrio || pedido.direccionEntrega.referencia) && (
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {[pedido.direccionEntrega.barrio, pedido.direccionEntrega.referencia].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {pedido.direccionEntrega.indicaciones && (
+                  <p className="italic text-gray-500 dark:text-gray-400">
+                    "{pedido.direccionEntrega.indicaciones}"
+                  </p>
                 )}
               </div>
-            ))}
-            {total > 0 && (
-              <div className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
-                <span className="text-gray-800 dark:text-white/90">Total</span>
-                <span className="text-gray-800 dark:text-white/90">${total.toLocaleString()}</span>
-              </div>
+            ) : (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                ⚠️ Sin dirección registrada para este domicilio.
+              </p>
             )}
+
+            {/* Asignación de Repartidor */}
+            <div className="mt-3 flex items-center justify-between border-t border-gray-200/60 pt-2.5 dark:border-gray-800">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                Repartidor asignado:
+              </span>
+              <input
+                type="text"
+                placeholder="Nombre o empresa de mensajería"
+                value={repartidorInput}
+                onChange={(e) => {
+                  setRepartidorInput(e.target.value);
+                  pedidosStore.asignarRepartidor(pedido.id, e.target.value);
+                }}
+                className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
           </div>
         )}
-      </div>
 
-      {pedido.notas && (
+        {/* Items */}
         <div className="mb-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Notas</p>
-          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{pedido.notas}</p>
-        </div>
-      )}
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Items y valores</p>
+          {pedido.items.length === 0 ? (
+            <p className="text-sm text-gray-400">Sin items detallados.</p>
+          ) : (
+            <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 dark:divide-white/5 dark:border-gray-800">
+              {pedido.items.map((it, i) => (
+                <div key={i} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <span className="text-gray-700 dark:text-gray-300">{it.cantidad}× {it.nombre}</span>
+                  {it.precio !== undefined && (
+                    <span className="text-gray-500 dark:text-gray-400">${(it.precio * it.cantidad).toLocaleString()}</span>
+                  )}
+                </div>
+              ))}
 
-      <div className="flex items-center justify-end gap-3">
-        {puedeEscribirCliente() && (
-          <Button size="sm" variant="ghost" startIcon={<WhatsAppIcon />} onClick={() => abrirWhatsApp(pedido.telefono)} className="!text-[#17b363] hover:!bg-[#17b363]/10">
-            WhatsApp
-          </Button>
+              {/* Desglose de Subtotal y Envío */}
+              {pedido.modalidad === "domicilio" && (pedido.costoEnvio ?? 0) > 0 && (
+                <>
+                  <div className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Subtotal items</span>
+                    <span>${subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Costo de envío (delivery)</span>
+                    <span>${(pedido.costoEnvio ?? 0).toLocaleString()}</span>
+                  </div>
+                </>
+              )}
+
+              {total > 0 && (
+                <div className="flex items-center justify-between px-3 py-2 text-sm font-semibold">
+                  <span className="text-gray-800 dark:text-white/90">Total a pagar</span>
+                  <span className="text-gray-800 dark:text-white/90">${total.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Pago y Cambio */}
+        <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/50 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+              Información de Pago
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                pedido.pagado = !pedido.pagado;
+              }}
+              className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+            >
+              {pedido.pagado ? "✓ Marcar como Pendiente" : "Marcar como Pagado"}
+            </button>
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-400">Método: </span>
+              <span className="font-medium text-gray-700 capitalize dark:text-gray-300">
+                {pedido.metodoPago ? pedido.metodoPago.replace("_", " ") : "No especificado"}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-400">Estado: </span>
+              <span className={pedido.pagado ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+                {pedido.pagado ? "Pagado" : "Pendiente de pago"}
+              </span>
+            </div>
+          </div>
+
+          {pedido.metodoPago === "efectivo" && pedido.pagaCon !== undefined && (
+            <div className="mt-2 border-t border-gray-200/60 pt-2 text-xs dark:border-gray-800">
+              <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
+                <span>Paga en efectivo con:</span>
+                <span className="font-semibold text-gray-800 dark:text-white">
+                  ${pedido.pagaCon.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between font-semibold text-emerald-600 dark:text-emerald-400">
+                <span>Cambio / Vuelto a entregar:</span>
+                <span>${cambio.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {pedido.notas && (
+          <div className="mb-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Notas</p>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{pedido.notas}</p>
+          </div>
         )}
-        <Button size="sm" variant="outline" onClick={onClose}>Cerrar</Button>
-      </div>
-    </Modal>
-  );
-});
+
+        <div className="flex items-center justify-end gap-3">
+          {puedeEscribirCliente() && (
+            <Button size="sm" variant="ghost" startIcon={<WhatsAppIcon />} onClick={onChat} className="!text-[#17b363] hover:!bg-[#17b363]/10">
+              WhatsApp
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onClose}>Cerrar</Button>
+        </div>
+      </Modal>
+    );
+  },
+);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MODAL: CONFIRMAR CANCELACIÓN (con motivo opcional)
@@ -307,7 +488,8 @@ const CancelarModal = observer(
           ? `${pedido.notas}\nCancelado: ${notaMotivo}`
           : `Cancelado: ${notaMotivo}`;
       }
-      pedidosStore.cancelar(pedido.id);
+      // `cancelarPedido` publica además la plantilla de cancelación en el hilo.
+      cancelarPedido(pedido.id);
       onClose();
     };
 
@@ -359,7 +541,8 @@ const EntregaModal = observer(
     const confirmar = () => {
       // Entregar es el último paso de preparación: `preparation.manage`.
       if (!puedeMoverA("entregado")) return;
-      pedidosStore.avanzar(pedido.id);
+      // Envoltorio: además publica la plantilla de "entregado" en el hilo.
+      avanzarPedido(pedido.id);
       onClose();
     };
     return (
@@ -514,7 +697,7 @@ const ProgramadosSection = observer(
     const restantes = programados.length - visibles.length;
 
     return (
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-gray-400">
@@ -654,10 +837,13 @@ const AccionesMenu = observer(
     pedido,
     onAvanzar,
     onCancelar,
+    onChat,
   }: {
     pedido: Pedido;
     onAvanzar: (p: Pedido) => void;
     onCancelar: (id: string) => void;
+    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
+    onChat: (id: string) => void;
   }) => {
     const [open, setOpen] = useState(false);
     const siguiente = pedidosStore.siguienteEstado(pedido);
@@ -717,7 +903,7 @@ const AccionesMenu = observer(
             {puedeEscribir && (
               <button
                 type="button"
-                onClick={run(() => abrirWhatsApp(pedido.telefono))}
+                onClick={run(() => onChat(pedido.id))}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#17b363] hover:bg-[#17b363]/10"
               >
                 <WhatsAppIcon />
@@ -726,7 +912,7 @@ const AccionesMenu = observer(
             )}
             {puedeCancelar && (
               <>
-                <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                <div className="my-1 border-t border-gray-100 dark:border-white/5" />
                 <button
                   type="button"
                   onClick={run(() => onCancelar(pedido.id))}
@@ -750,11 +936,14 @@ const ListaView = observer(
     onDetalle,
     onCancelar,
     onConfirmarEntrega,
+    onChat,
   }: {
     pedidos: Pedido[];
     onDetalle: (id: string) => void;
     onCancelar: (id: string) => void;
     onConfirmarEntrega: (id: string) => void;
+    /** Abre el chat rápido (slide-over) con el cliente del pedido. */
+    onChat: (id: string) => void;
   }) => {
     if (pedidos.length === 0) {
       return (
@@ -766,7 +955,7 @@ const ListaView = observer(
 
     const handleAvanzar = (p: Pedido) => {
       if (pedidosStore.siguienteEstado(p) === "entregado") onConfirmarEntrega(p.id);
-      else pedidosStore.avanzar(p.id);
+      else avanzarPedido(p.id);
     };
 
     return (
@@ -816,7 +1005,7 @@ const ListaView = observer(
 
                     {/* Acciones agrupadas en menú de 3 puntos */}
                     <TableCell className="text-right">
-                      <AccionesMenu pedido={p} onAvanzar={handleAvanzar} onCancelar={onCancelar} />
+                      <AccionesMenu pedido={p} onAvanzar={handleAvanzar} onCancelar={onCancelar} onChat={onChat} />
                     </TableCell>
                   </TableRow>
                 );
@@ -912,6 +1101,10 @@ export const TableroPage = observer(() => {
   const [filtro, setFiltro] = useState<Modalidad | typeof FILTRO_TODAS>(FILTRO_TODAS);
   const [focusId, setFocusId] = useState<string | null>(null);
   const [vista, setVista] = useState<VistaTablero>(loadVista);
+  // Chat rápido (slide-over). Guarda el ID del pedido, no el teléfono: así el
+  // drawer resuelve el hilo con el resolutor canónico del store y no se duplica
+  // la regla de normalización de teléfono en el call site.
+  const [chatDrawerPedidoId, setChatDrawerPedidoId] = useState<string | null>(null);
 
   const cambiarVista = (v: VistaTablero) => {
     setVista(v);
@@ -1079,6 +1272,7 @@ export const TableroPage = observer(() => {
                       onDetalle={() => setDetalleId(p.id)}
                       onCancelar={() => abrirCancelar(p.id)}
                       onConfirmarEntrega={() => abrirEntrega(p.id)}
+                      onChat={() => setChatDrawerPedidoId(p.id)}
                     />
                   ))}
                   {items.length === 0 && (
@@ -1097,10 +1291,22 @@ export const TableroPage = observer(() => {
           onDetalle={(id) => setDetalleId(id)}
           onCancelar={abrirCancelar}
           onConfirmarEntrega={abrirEntrega}
+          onChat={(id) => setChatDrawerPedidoId(id)}
         />
       )}
 
-      {detalle && <DetalleModal pedido={detalle} onClose={() => setDetalleId(null)} />}
+      {detalle && (
+        <DetalleModal
+          pedido={detalle}
+          onClose={() => setDetalleId(null)}
+          onChat={() => {
+            // Cierra el detalle para que el drawer quede como única superficie
+            // modal visible (evita dos capas compitiendo por el foco).
+            setDetalleId(null);
+            setChatDrawerPedidoId(detalle.id);
+          }}
+        />
+      )}
       {verTodosProgramados && verProgramados && (
         <ProgramadosModal
           onClose={() => setVerTodosProgramados(false)}
@@ -1137,6 +1343,15 @@ export const TableroPage = observer(() => {
           }}
         />
       )}
+
+      {/* Chat rápido (slide-over). Una sola instancia para todo el tablero: el
+          hilo se resuelve dentro del drawer con el resolutor canónico del store.
+          Es `pointer-events: none` fuera del panel, así que no bloquea el
+          arrastre de tarjetas del Kanban. */}
+      <ChatDrawer
+        pedido={chatDrawerPedidoId ? pedidosStore.getPedido(chatDrawerPedidoId) ?? null : null}
+        onClose={() => setChatDrawerPedidoId(null)}
+      />
     </>
   );
 });

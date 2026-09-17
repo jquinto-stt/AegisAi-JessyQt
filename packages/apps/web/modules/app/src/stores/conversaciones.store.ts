@@ -1,6 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import type { AssistantMessage } from "@/assistant";
+import type { BadgeColor } from "@/elements/ui/badge";
 // Adaptador delgado al AssistantEngine. Import DIRECTO del singleton sin riesgo
 // de ciclo (invariante D3/D4): el adaptador importa de `@/assistant`,
 // `@/assistant/bootstrap`, `@/assistant/engine/local-rule-engine` y
@@ -14,10 +15,12 @@ import {
 } from "@/stores/conversaciones.seed";
 import type {
   Conversacion,
+  EstadoConversacion,
   EventoSistema,
   FiltroBandeja,
   ItemLineaTiempo,
   Mensaje,
+  ModoAtencion,
   ModuloDestino,
 } from "@/stores/conversaciones.types";
 
@@ -29,8 +32,8 @@ import type {
 // PERSISTENCIA
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Clave propia del módulo en `localStorage` (Req 9.1). */
-const STORAGE_KEY = "necto.conversaciones";
+/** Clave propia del módulo en `localStorage` (Req 9.1). Versionada para invalidar mocks viejos. */
+const STORAGE_KEY = "necto.conversaciones_v3";
 
 /**
  * Límite de caracteres del mensaje del cliente en `/wa` (Req 6.2/6.3): se
@@ -46,6 +49,91 @@ const LIMITE_TEXTO_NEGOCIO = 4096;
 
 /** Timestamp ISO 8601 del momento actual (mismo patrón que `pedidos.store`). */
 const nowIso = () => new Date().toISOString();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CATÁLOGO DE PRESENTACIÓN DEL ESTADO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Etiqueta legible de un estado de conversación, para el badge del historial.
+ *
+ * Es el vocabulario de presentación del estado y vive AQUÍ, junto al tipo que lo
+ * define, para que ninguna superficie escriba la etiqueta como literal. Dos
+ * pantallas que rotulan el mismo estado con cadenas distintas escritas a mano es
+ * un defecto de vocabulario, no una variación estilística.
+ *
+ * Por qué "In progress" y no "Open" para `atendida`: el diseño canónico muestra
+ * tres categorías —resuelto, pendiente y en curso—, y `atendida` es el único
+ * estado en el que hay un operador trabajándolo (`atendida ⟹ humano ∧ operador≠null`).
+ * `abierta` es el ticket que lleva el bot y nadie ha reclamado: eso es "Open".
+ */
+export const ESTADO_CONVERSACION_LABEL: Record<EstadoConversacion, string> = {
+  abierta: "Open",
+  en_espera: "Pending",
+  atendida: "In progress",
+  cerrada: "Solved",
+};
+
+/**
+ * Color de badge (vocabulario de `Badge`) para cada estado de conversación.
+ *
+ * `success` = resuelto, `warning` = esperando a un humano, `info` = en curso con
+ * un operador, `primary` = el bot lo lleva. El tipo se ancla a `BadgeColor` vía
+ * el `Record`, de modo que añadir un color inexistente es un error de compilación
+ * y no una clase que Tailwind descarta en silencio.
+ */
+export const ESTADO_CONVERSACION_BADGE: Record<EstadoConversacion, BadgeColor> = {
+  abierta: "primary",
+  en_espera: "warning",
+  atendida: "info",
+  cerrada: "success",
+};
+
+/**
+ * Etiqueta de ATENCIÓN de una conversación: QUIÉN la lleva ahora mismo.
+ *
+ * Es un eje DISTINTO del estado y no debe confundirse con él. El estado dice en
+ * qué punto del ciclo está el ticket (`abierta`/`en_espera`/`atendida`/`cerrada`);
+ * la atención dice quién responde (`bot` o un operador). Un hilo `abierta` lo
+ * lleva el bot y un hilo `atendida` lo lleva un humano, pero eso es una
+ * correlación de las transiciones actuales, no una identidad: por eso cada eje
+ * tiene su propio catálogo y ninguna superficie debe derivar uno del otro.
+ */
+export const ATENCION_LABEL: Record<ModoAtencion, string> = {
+  bot: "Atendido por el bot",
+  humano: "Atendido por un asesor",
+};
+
+/**
+ * Color de badge para el eje de atención. El bot es un actor automático
+ * (`primary`, el mismo tono con el que se le identifica en el hilo) y el asesor
+ * humano un actor activo (`info`). NO reutiliza `success`/`warning`: esos
+ * pertenecen al eje de estado y mezclarlos haría que dos ejes distintos
+ * compartieran vocabulario cromático.
+ */
+export const ATENCION_BADGE: Record<ModoAtencion, BadgeColor> = {
+  bot: "primary",
+  humano: "info",
+};
+
+/**
+ * Normaliza un teléfono a su forma canónica COMPARABLE: solo dígitos.
+ *
+ * Motivación (defecto real de datos, no de estilo): el mismo cliente se escribe
+ * de dos maneras en el mock. `pedidos.seed` guarda `"+573001112233"` (plano) y
+ * `conversaciones.seed` guarda `"+57 300 555 1122"` (con espacios). Comparar las
+ * cadenas crudas con `===` hace que ninguna conversación resuelva contra su
+ * pedido — el botón de WhatsApp de las tarjetas nunca encontraba hilo.
+ *
+ * La normalización vive AQUÍ, en un único sitio, para que resolver por teléfono
+ * sea una sola derivación y no una regla re-implementada en cada consumidor.
+ * Conserva el `+` de prefijo internacional si está presente, para no colapsar
+ * números de países distintos con la misma parte numérica.
+ */
+export function normalizarTelefono(telefono: string): string {
+  const digitos = telefono.replace(/\D/g, "");
+  return digitos === "" ? "" : `+${digitos}`;
+}
 
 /** Id único para mensajes/eventos (mismo generador que `pedidos.store`). */
 const generarId = () => crypto.randomUUID();
@@ -198,6 +286,108 @@ export class ConversacionesStore {
     return this.conversaciones.find((c) => c.id === id);
   }
 
+  /**
+   * Conversación de un teléfono, o `undefined` si no existe hilo para ese
+   * número. Compara en forma normalizada (`normalizarTelefono`), de modo que
+   * `"+57 300 555 1122"` y `"+573001112233"` son el mismo contacto.
+   *
+   * Derivación canónica ÚNICA para "buscar el hilo de un cliente": cualquier
+   * superficie que necesite el hilo de un pedido lee este selector en lugar de
+   * recorrer `conversaciones` por su cuenta. Dos barridos distintos con la misma
+   * intención son una contradicción latente, no una implementación válida.
+   *
+   * Si por un dato inconsistente hubiera más de una conversación con el mismo
+   * teléfono, gana la de `ultimaActividad` más reciente (el hilo vivo).
+   *
+   * ATENCIÓN (invariante D2 / Req 10.5): este selector NO importa ni consulta
+   * `pedidos.store`; solo lee el estado propio del módulo. El cruce con Pedidos
+   * sigue ocurriendo desde la capa de UI.
+   *
+   * NO CREA CONVERSACIONES. Un pedido no es dueño de un hilo: el hilo nace del
+   * dispositivo del cliente. La ausencia se representa como ausencia.
+   */
+  porTelefono(telefono: string): Conversacion | undefined {
+    const buscado = normalizarTelefono(telefono);
+    if (buscado === "") return undefined;
+
+    return this.conversaciones
+      .filter((c) => normalizarTelefono(c.contacto.telefono) === buscado)
+      .slice()
+      .sort((a, b) => b.ultimaActividad.localeCompare(a.ultimaActividad))[0];
+  }
+
+  /**
+   * ¿Existe un hilo para este teléfono? Atajo booleano de `porTelefono`, para
+   * los consumidores que solo necesitan decidir entre estado poblado y vacío.
+   */
+  tieneConversacion(telefono: string): boolean {
+    return this.porTelefono(telefono) !== undefined;
+  }
+
+  // ── Selectores de "requiere atención" (eje de ATENCIÓN, no de pedido) ───────
+
+  /**
+   * ¿El cliente está esperando a un asesor humano AHORA?
+   *
+   * Es la ÚNICA definición de "requiere atención" en el eje de conversación, y
+   * significa exactamente una cosa: el cliente pidió un humano y aún nadie ha
+   * tomado el hilo. Se corresponde con `estado === "en_espera"`, que es lo que
+   * fija `solicitarHumano()` al registrar el evento `handoff_solicitado`.
+   *
+   * NO se deriva de `noLeidos` ni de la antigüedad del último mensaje: son
+   * señales de actividad, no de petición. Un hilo con mensajes sin leer que
+   * lleva el bot NO requiere un humano, y tratarlo como tal produciría una
+   * bandeja de urgencias falsa.
+   */
+  requiereAtencionHumana(conv: Conversacion): boolean {
+    return conv.estado === "en_espera";
+  }
+
+  /**
+   * ¿La lleva el bot en este momento? Atajo de lectura sobre el eje de atención,
+   * para los consumidores que solo necesitan esa decisión booleana.
+   */
+  laLlevaElBot(conv: Conversacion): boolean {
+    return conv.atencion === "bot";
+  }
+
+  /**
+   * Conversaciones que requieren atención humana, las más urgentes primero.
+   *
+   * Ordena por `ultimaActividad` ASCENDENTE: quien lleva MÁS tiempo esperando va
+   * primero. Es el orden correcto para una cola de atención —al revés dejaría
+   * al cliente más desatendido al final de la lista— y es deliberadamente
+   * distinto del orden de la bandeja, que es descendente por ser un feed de
+   * actividad reciente.
+   *
+   * No muta el array observable: ordena sobre una copia.
+   */
+  get requierenAtencion(): Conversacion[] {
+    return this.conversaciones
+      .filter((c) => this.requiereAtencionHumana(c))
+      .slice()
+      .sort((a, b) => a.ultimaActividad.localeCompare(b.ultimaActividad));
+  }
+
+  /** Cuántas conversaciones están esperando a un asesor humano ahora mismo. */
+  get totalRequierenAtencion(): number {
+    return this.requierenAtencion.length;
+  }
+
+  /**
+   * Minutos que lleva la conversación esperando desde su última actividad.
+   *
+   * Para un hilo `en_espera`, `ultimaActividad` es el instante en que el cliente
+   * pidió el humano (lo fija `solicitarHumano()`), así que esto mide la espera
+   * real. El cálculo vive AQUÍ y no en la vista para que las dos superficies que
+   * muestran la espera —la tarjeta de Inicio y la bandeja— no puedan discrepar.
+   */
+  minutosEsperando(conv: Conversacion): number {
+    const ms = Date.now() - new Date(conv.ultimaActividad).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return 0;
+    return Math.floor(ms / 60000);
+  }
+
   // ── Bandeja / filtros / no leídos (tarea 3.8) ────────────────────────────────
 
   /**
@@ -250,15 +440,104 @@ export class ConversacionesStore {
       });
   }
 
-  /** Conversaciones que requieren atención (estado === "en_espera"). */
-  get requierenAtencion(): Conversacion[] {
-    return this.conversaciones.filter((c) => c.estado === "en_espera");
-  }
-
   /** Nº total de no leídos, sumando `noLeidos` de todas las conversaciones. */
   get totalNoLeidos(): number {
     return this.conversaciones.reduce((total, c) => total + c.noLeidos, 0);
   }
+
+  // ── Historial de atención: métricas y lectura de tickets ─────────────────────
+
+  /**
+   * Nº total de tickets del historial: todas las conversaciones, sin filtro ni
+   * búsqueda. Derivación canónica ÚNICA de la tarjeta "Total Tickets" — ninguna
+   * superficie cuenta `conversaciones.length` por su cuenta (dos barridos con la
+   * misma intención son una contradicción latente, no una implementación válida).
+   */
+  get totalTickets(): number {
+    return this.conversaciones.length;
+  }
+
+  /**
+   * ¿Está esta conversación resuelta? Predicado canónico del estado terminal.
+   *
+   * Existe como método y no como `estado === "cerrada"` repetido para que el
+   * vocabulario del estado terminal viva en un único sitio. Si el dominio
+   * añadiera otro estado terminal, se cambia aquí y no en cada consumidor.
+   */
+  estaResuelta(conv: Conversacion): boolean {
+    return conv.estado === "cerrada";
+  }
+
+  /**
+   * ¿Está esta conversación pendiente de resolución? Predicado canónico de
+   * "pendiente" para el historial: `abierta` (la atiende el bot, nadie la ha
+   * resuelto) o `en_espera` (el cliente pidió un asesor y sigue esperando).
+   *
+   * `atendida` NO es pendiente: hay un operador trabajándola. Esos tickets no se
+   * cuentan en "Pending" ni en "Solved" — aparecen en la tabla como "In Progress".
+   * Y `cerrada` es el único estado resuelto.
+   *
+   * Los tres predicados (`estaResuelta`, `estaPendiente`, `estaEnProgreso`) son
+   * exhaustivos y mutuamente excluyentes sobre `EstadoConversacion`: cada
+   * conversación cae en exactamente uno.
+   */
+  estaPendiente(conv: Conversacion): boolean {
+    return conv.estado === "abierta" || conv.estado === "en_espera";
+  }
+
+  /**
+   * ¿Está esta conversación en curso con un operador? `atendida` es el único
+   * estado no terminal con un humano asignado (`atendida ⟹ humano ∧ operador≠null`,
+   * Property 2 / Req 4.9). Es el eje que el diseño canónico llama "In Progress".
+   */
+  estaEnProgreso(conv: Conversacion): boolean {
+    return conv.estado === "atendida";
+  }
+
+  /** Nº de tickets resueltos (estado terminal `cerrada`). Tarjeta "Solved". */
+  get ticketsResueltos(): number {
+    return this.conversaciones.filter((c) => this.estaResuelta(c)).length;
+  }
+
+  /**
+   * Nº de tickets pendientes (ni resueltos ni en curso). Tarjeta "Pending".
+   *
+   * Es el complemento exacto de `ticketsResueltos`: `pendientes + resueltos +
+   * enProgreso === totalTickets`. La tabla del historial muestra las tres
+   * categorías, por lo que mostrar solo dos tarjetas haría que sus números no
+   * cuadraran con el total — de ahí que las tres se deriven de los mismos
+   * predicados y no de conteos independientes.
+   */
+  get ticketsPendientes(): number {
+    return this.conversaciones.filter((c) => this.estaPendiente(c)).length;
+  }
+
+  /** Nº de tickets en curso con un operador (`atendida`). Tarjeta "In Progress". */
+  get ticketsEnProgreso(): number {
+    return this.conversaciones.filter((c) => this.estaEnProgreso(c)).length;
+  }
+
+  /**
+   * Asunto de un ticket: el texto del PRIMER mensaje del CLIENTE del hilo, con
+   * los saltos de línea colapsados a un espacio para que quepa en una celda.
+   *
+   * El dominio NO tiene un campo `asunto` (ver `conversaciones.types.ts`): el
+   * "asunto" de un ticket es una derivación de presentación, y por eso se deriva
+   * aquí, en el dueño del estado, y no en la celda de la tabla. Devuelve `""`
+   * cuando el hilo no tiene ningún mensaje del cliente — la ausencia se
+   * representa como ausencia, nunca con un texto de relleno.
+   *
+   * Se busca el primer mensaje del cliente y no el primero del hilo porque el bot
+   * suele abrir la conversación: el primer mensaje del hilo no es lo que el
+   * cliente pidió, y usarlo como asunto describiría mal el ticket.
+   */
+  asuntoDe(convId: string): string {
+    const mensajes = this.mensajesPorConv.get(convId) ?? [];
+    const primeroCliente = mensajes.find((m) => m.autor === "cliente");
+    if (!primeroCliente) return "";
+    return primeroCliente.contenido.texto.replace(/\s+/g, " ").trim();
+  }
+
 
   // ── Módulos tocados por una conversación (filtro transversal) ────────────────
 
@@ -402,10 +681,19 @@ export class ConversacionesStore {
    * incrementar `noLeidos` (Req 3.6). Rechaza sin mutar estado si la
    * conversación no existe, si el texto es vacío/solo espacios (Req 3.4) o si
    * excede los 4096 caracteres (Req 3.5). El gating de capacidad vive en la UI.
+   *
+   * Guarda de MODO DE ATENCIÓN: no-op si la conversación la lleva el bot. Es la
+   * simétrica de la guarda `atencion !== "bot"` de `simularRespuestaBot`, y
+   * existe por la misma razón: el autor del mensaje debe corresponder con quién
+   * atiende el hilo. Sin ella, escribir estando el hilo devuelto al bot persiste
+   * un `autor:"negocio"` que el hilo rotula como "Asesor Humano" — dos fuentes
+   * de verdad sobre quién habla. La UI ya bloquea el campo; esta guarda es la
+   * defensa en profundidad para cualquier otro llamador.
    */
   enviarComoNegocio(convId: string, texto: string): void {
     const conv = this.getConversacion(convId);
     if (!conv) return;
+    if (conv.atencion !== "humano") return; // el bot lleva el hilo: no hay emisor humano
     if (texto.trim() === "") return; // vacío / solo espacios: no-op (Req 3.4)
     if (texto.length > LIMITE_TEXTO_NEGOCIO) return; // excede límite (Req 3.5)
 
@@ -644,11 +932,19 @@ export class ConversacionesStore {
    *
    * Guarda de alcance (Req 10.4): no-op si la conversación no existe o si su
    * canal no es `"whatsapp"`.
+   *
+   * `moduloContexto` es OPCIONAL y aditivo (retrocompatible con las llamadas de
+   * 3 argumentos): etiqueta el mensaje con el dominio que lo originó, que es lo
+   * que `modulosDe` lee para el filtro transversal. Sin él, un aviso automático
+   * de Pedidos no marcaría el hilo como tocado por Pedidos. La clave se OMITE
+   * cuando no se pasa —en vez de escribir `undefined`— para no alterar la forma
+   * serializada de los mensajes ya existentes.
    */
   agregarMensajeBot(
     convId: string,
     texto: string,
     payload?: Mensaje["payload"],
+    moduloContexto?: ModuloDestino,
   ): void {
     const conv = this.getConversacion(convId);
     if (!conv) return;
@@ -661,6 +957,7 @@ export class ConversacionesStore {
       autor: "bot",
       contenido: { tipo: "texto", texto },
       timestamp: nowIso(),
+      ...(moduloContexto !== undefined ? { moduloContexto } : {}),
       ...(payload !== undefined ? { payload } : {}),
     };
 

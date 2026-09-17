@@ -63,7 +63,7 @@ export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasVie
       <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse border-spacing-0 font-sans text-xs sm:text-sm">
           {/* Cabecera de letras de columnas (A, B, C, D, E...) */}
-          <thead className="sticky top-0 z-20 bg-gray-50 text-gray-500 shadow-sm dark:bg-gray-800/80 dark:text-gray-400">
+          <thead className="sticky top-0 z-20 bg-gray-50 text-gray-500 shadow-2xs dark:bg-gray-800/80 dark:text-gray-400">
             <tr>
               {/* Celda de esquina (esquina superior izquierda de números de fila) */}
               <th className="sticky left-0 z-30 w-10 min-w-[2.5rem] border-b border-r border-gray-200 bg-gray-100 p-0 text-center font-normal dark:border-gray-750 dark:bg-gray-800" />

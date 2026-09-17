@@ -272,6 +272,22 @@ export class AssistantStore {
   }
 
   /**
+   * Identificador del motor activo, tal como lo declara la implementación
+   * inyectada (`AssistantEngine.kind`): `"local-rule"` para `LocalRuleEngine`,
+   * `"remote-llm"` para `RemoteLLMEngine`.
+   *
+   * Es un getter de SOLO LECTURA sobre el motor ya inyectado: no permite
+   * sustituirlo, no participa en la persistencia y no altera ningún
+   * comportamiento existente. Existe porque la pantalla de configuración del
+   * asistente debe poder decir CON QUÉ motor se está razonando en vez de
+   * afirmarlo con un literal — el día que se inyecte otro motor, la pantalla lo
+   * refleja sola (invariante A3/A5).
+   */
+  get motor(): string {
+    return this.engine.kind;
+  }
+
+  /**
    * Conversaciones agrupadas por antigüedad para el historial:
    * "Hoy" / "Ayer" / "Últimos 7 días" / "Anteriores".
    *

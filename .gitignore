@@ -1,5 +1,12 @@
 node_modules/
 dist
+dist-verify
+dist-verify2
+dist-v3
+dist-v4
+dist-v5
+dist-canales
+dist-canales2
 .sst
 .devlink/
 *.tsbuildinfo

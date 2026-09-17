@@ -119,7 +119,7 @@ export const AsistentePage = observer(() => {
         <div className="flex min-h-[calc(100vh-14rem)] gap-5 sm:gap-6 items-stretch">
           {/* ── Tarjeta Izquierda (Chat con contorno redondeado) ── */}
           <div
-            className={`flex min-w-0 flex-col rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
+            className={`flex min-w-0 flex-col rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
               activeArtifact
                 ? "w-full lg:w-1/2 xl:w-[48%]"
                 : "flex-1"
@@ -190,7 +190,7 @@ export const AsistentePage = observer(() => {
 
           {/* ── Tarjeta Derecha (ArtifactCanvas) o Barra Lateral ── */}
           {activeArtifact ? (
-            <aside className="flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-3xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900">
+            <aside className="flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-2xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900">
               <ArtifactCanvas
                 artifact={activeArtifact}
                 onClose={() => assistantStore.closeArtifact()}
@@ -202,7 +202,7 @@ export const AsistentePage = observer(() => {
           ) : (
             hayMensajes &&
             ultimaEvidencia && (
-              <aside className="hidden w-80 lg:w-96 shrink-0 flex-col overflow-y-auto rounded-3xl border border-gray-200/80 bg-white p-5 shadow-xs lg:flex dark:border-gray-800 dark:bg-gray-900">
+              <aside className="hidden w-80 lg:w-96 shrink-0 flex-col overflow-y-auto rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs lg:flex dark:border-gray-800 dark:bg-gray-900">
                 <FactsPanel evidence={ultimaEvidencia} />
               </aside>
             )
@@ -235,7 +235,7 @@ const SuggestionCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
+    className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-2xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
   >
     <p className="text-sm font-bold text-gray-800 dark:text-white/90">{titulo}</p>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>

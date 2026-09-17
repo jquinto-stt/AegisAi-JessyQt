@@ -258,7 +258,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
 
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
           <Table>
-            <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-gray-800 dark:bg-white/[0.02]">
+            <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
               <TableRow>
                 <TableCell header className="py-3 pl-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
                   Categoría
@@ -278,7 +278,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
                 return (
                   <Fragment key={grupo.id}>
                     {/* Encabezado de grupo de categoría con botón para activar/desactivar todo */}
-                    <tr className="bg-gray-50/60 dark:bg-white/[0.015] border-t border-b border-gray-100 dark:border-gray-800">
+                    <tr className="bg-gray-50/60 dark:bg-white/[0.015] border-t border-b border-gray-100 dark:border-white/5">
                       <td colSpan={3} className="px-5 py-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">

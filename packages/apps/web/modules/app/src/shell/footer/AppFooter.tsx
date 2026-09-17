@@ -57,7 +57,7 @@ const XIcon = () => (
 
 export const AppFooter = () => {
   return (
-    <footer className="mt-6 overflow-hidden rounded-3xl bg-brand-500 text-white">
+    <footer className="mt-6 overflow-hidden rounded-2xl bg-brand-500 text-white">
       {/* Main band */}
       <div className="grid grid-cols-1 gap-8 px-8 py-10 md:grid-cols-4">
         {/* Brand */}

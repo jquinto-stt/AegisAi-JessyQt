@@ -41,8 +41,13 @@ export interface DatePickerProps {
 
   /**
    * Pre-selected date(s) when the picker initializes.
+   *
+   * En modo `range` admite DOS fechas (desde, hasta); en `single`/`time`, una.
+   * flatpickr ya acepta `DateOption | DateOption[]` (`options.d.ts:27`); el
+   * array se declara aquí para no obligar a cada consumidor de un rango a
+   * castear el valor a `unknown`.
    */
-  defaultDate?: DateOption;
+  defaultDate?: DateOption | DateOption[];
 
   /**
    * Optional label text displayed above the input.

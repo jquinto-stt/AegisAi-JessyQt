@@ -44,7 +44,7 @@ export const Composer = observer(
     const deshabilitado = Boolean(pensando) || texto.trim().length === 0;
 
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
         {/* ── Textarea (sin borde propio, fondo transparente) ── */}
         <textarea
           rows={2}

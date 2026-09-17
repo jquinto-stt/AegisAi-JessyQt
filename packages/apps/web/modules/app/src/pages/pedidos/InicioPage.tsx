@@ -11,8 +11,22 @@ import { DatePicker } from "@/elements/form/date-picker";
 import { LineChart } from "@/elements/ui/line-chart";
 import { PieChart } from "@/elements/ui/pie-chart";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
-import { pedidosStore, sessionStore, puedeGuardarConfig, puedeEscribirCliente, motivoSinPermiso } from "@/stores";
+import { Avatar } from "@/elements/ui/avatar";
+import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
+import {
+  pedidosStore,
+  sessionStore,
+  conversacionesStore,
+  normalizarTelefono,
+  ESTADO_CONVERSACION_LABEL,
+  ATENCION_LABEL,
+  puedeGuardarConfig,
+  puedeEscribirCliente,
+  motivoSinPermiso,
+} from "@/stores";
 import type { Pedido } from "@/stores/pedidos.store";
+import type { ConversacionCanal } from "@/stores";
+import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PALETA
@@ -25,12 +39,6 @@ const CELESTE = "#97D6DF";
 const money = (n: number) => `$${n.toLocaleString("es-CO")}`;
 
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-
-/** Abre WhatsApp del cliente en una pestaña nueva (wa.me, solo dígitos). */
-const abrirWhatsApp = (telefono: string) => {
-  const numero = telefono.replace(/[^\d]/g, "");
-  if (numero) window.open(`https://wa.me/${numero}`, "_blank", "noopener,noreferrer");
-};
 
 const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -226,13 +234,15 @@ const KpiCard = ({
   onClick?: () => void;
 }) => (
   <button type="button" onClick={onClick} className="block h-full w-full text-left" disabled={!onClick}>
-    <Card className={"h-full " + (onClick ? "transition-all hover:border-brand-300 hover:shadow-theme-sm dark:hover:border-brand-700" : "")}>
+    <Card className={"h-full " + (onClick ? "transition-all hover:border-brand-300 hover:shadow-2xs dark:hover:border-brand-700" : "")}>
       <div className="flex items-start justify-between">
         <p className="text-sm text-gray-500 dark:text-gray-400">{titulo}</p>
         <span className="text-gray-300 dark:text-gray-600">{icon}</span>
       </div>
-      <p className="mt-3 text-3xl font-bold text-gray-800 dark:text-white/90">{valor}</p>
-      <p className={`mt-1 flex items-center gap-1 text-xs font-medium ${positivo ? "text-success-600" : "text-error-500"}`}>
+      <p className="mt-3 text-3xl font-semibold tracking-tight text-gray-800 dark:text-white/90">{valor}</p>
+      {/* Delta en neutro: con 4 KPIs seguidos, verde/rojo saturado era ruido.
+          La dirección la dan la flecha y el signo (+/-). */}
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-normal text-gray-500 dark:text-gray-400">
         {cambio}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
           {positivo ? (
@@ -249,50 +259,76 @@ const KpiCard = ({
 // ═══════════════════════════════════════════════════════════════════════════
 // CLIENTES — tarjeta (lista tipo chats) + modal con buscador y segmentos
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// FUENTE DE VERDAD: `conversacionesStore`, NO `pedidosStore`.
+//
+// Una fila de esta tarjeta es un CLIENTE-EN-UN-CANAL, y esa entidad vive en el
+// módulo Conversaciones. Antes se construía desde `pedidosStore.enCurso()`, lo
+// que producía dos defectos encadenados: (1) el cliente que de verdad estaba
+// esperando a un asesor no aparecía, porque su pedido podía no estar en curso, y
+// (2) los rótulos de estado hablaban de pedidos ("En preparación · En sitio") en
+// una tarjeta titulada "Clientes". Leer el hilo es leer la entidad correcta.
+//
+// El cruce con Pedidos se hace por teléfono normalizado vía `porTelefono`, y es
+// SOLO de lectura: sirve para mostrar el pedido vivo del contacto y para ofrecer
+// el atajo al Tablero. Conversaciones no conoce a Pedidos (invariante D2).
 
-type Segmento = "todos" | "atencion" | "pago" | "bot";
+/** Identidad de una fila: el hilo + el pedido vivo de ese contacto, si lo hay. */
+interface ClienteFila {
+  conv: ConversacionCanal;
+  /** Pedido activo del mismo teléfono (solo lectura). `undefined` si no hay. */
+  pedido?: Pedido;
+}
+
+type Segmento = "todos" | "atencion" | "bot" | "humano";
 
 const SEGMENTOS: { id: Segmento; label: string }[] = [
   { id: "todos", label: "Todos" },
   { id: "atencion", label: "Requieren atención" },
-  { id: "pago", label: "Pago pendiente" },
-  { id: "bot", label: "Por WhatsApp (bot)" },
+  { id: "bot", label: "Atendidos por el bot" },
+  { id: "humano", label: "Con asesor" },
 ];
 
-/** Inicial(es) para el avatar a partir del nombre. */
-const iniciales = (nombre: string) =>
-  nombre.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
-
-/** Colores de avatar deterministas por nombre (fallback si la imagen falla). */
-const avatarColor = (nombre: string) => {
-  const colores = ["bg-brand-500", "bg-blue-light-500", "bg-success-500", "bg-warning-500", "bg-orange-500"];
-  let h = 0;
-  for (let i = 0; i < nombre.length; i++) h = (h * 31 + nombre.charCodeAt(i)) >>> 0;
-  return colores[h % colores.length];
-};
-
 /**
- * URL de avatar generado (mock): DiceBear crea una ilustración consistente por
- * nombre. Como los clientes no tienen foto real, esto da una "foto" estable.
+ * URL de avatar generado (fallback): DiceBear crea una ilustración si no hay foto en el mapa.
  */
 const avatarUrl = (nombre: string) =>
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
-/** Aplica el segmento sobre los pedidos en curso. */
-const filtrarSegmento = (pedidos: Pedido[], seg: Segmento): Pedido[] => {
+/**
+ * Filas de la tarjeta: todos los hilos con su pedido vivo resuelto.
+ *
+ * El pedido se busca por teléfono normalizado con el resolutor canónico de
+ * Pedidos (`pedidoActivoDe`), que ya ignora los terminales. Un hilo sin pedido
+ * es un caso legítimo y frecuente (el cliente escribe sin haber pedido), así que
+ * `pedido` es opcional y la fila se adapta; NO se inventa un pedido ni se oculta
+ * al cliente por no tenerlo.
+ */
+function filasDeClientes(): ClienteFila[] {
+  return conversacionesStore.conversaciones.map((conv) => ({
+    conv,
+    pedido: pedidosStore.pedidoActivoDe(conv.contacto.telefono),
+  }));
+}
+
+/** Aplica el segmento sobre las filas. Todos los ejes salen del hilo. */
+const filtrarSegmento = (filas: ClienteFila[], seg: Segmento): ClienteFila[] => {
   switch (seg) {
     case "atencion":
-      return pedidos.filter((p) => pedidosStore.esUrgente(p));
-    case "pago":
-      return pedidos.filter((p) => p.pagado === false);
+      return filas.filter((f) => conversacionesStore.requiereAtencionHumana(f.conv));
     case "bot":
-      return pedidos.filter((p) => p.origen === "whatsapp");
+      return filas.filter((f) => conversacionesStore.laLlevaElBot(f.conv));
+    case "humano":
+      return filas.filter((f) => !conversacionesStore.laLlevaElBot(f.conv));
     default:
-      return pedidos;
+      return filas;
   }
 };
 
-/** Tiempo relativo legible: "15 min", "2 h", "3 d". */
+/**
+ * Tiempo relativo legible: "15 min", "2 h", "3 d".
+ * Acepta minutos ya calculados por el store (nunca deriva por su cuenta).
+ */
 const relativo = (min: number) => {
   if (min < 60) return `${min} min`;
   const h = Math.round(min / 60);
@@ -300,67 +336,83 @@ const relativo = (min: number) => {
   return `${Math.round(h / 24)} d`;
 };
 
-/** Subtítulo/rol del cliente = estado + modalidad (estilo "Project Manager" de la ref). */
-const clienteRol = (p: Pedido) => `${pedidosStore.estadoLabel(p.estado)} · ${pedidosStore.modalidadLabel(p.modalidad)}`;
+/**
+ * Estado de atención de la fila, en orden de prioridad. Es la etiqueta que
+ * responde a la pregunta del negocio: "¿este cliente necesita algo de mí?".
+ *
+ * Tres casos, mutuamente excluyentes y exhaustivos:
+ *  1. `en_espera` → el cliente PIDIÓ un asesor y nadie lo ha tomado. Es la
+ *     urgencia real y la única que se colorea.
+ *  2. lo lleva un asesor → ya hay alguien atendiéndolo.
+ *  3. lo lleva el bot → nadie tiene que intervenir.
+ *
+ * El caso 1 NO se infiere de `noLeidos` ni de la antigüedad: solo de haber
+ * pedido el humano. Ver `ConversacionesStore.requiereAtencionHumana`.
+ */
+type EstadoAtencionFila = "pide_asesor" | "con_asesor" | "con_bot";
+
+function estadoAtencionDe(conv: ConversacionCanal): EstadoAtencionFila {
+  if (conversacionesStore.requiereAtencionHumana(conv)) return "pide_asesor";
+  return conversacionesStore.laLlevaElBot(conv) ? "con_bot" : "con_asesor";
+}
 
 /**
  * Fila de cliente estilo "Chats" (referencia): avatar redondo con punto de
- * estado, nombre en negrita, rol tenue debajo, y tiempo a la derecha.
+ * estado, nombre en negrita, subtítulo con el pedido vivo (si lo hay), y a la
+ * derecha el estado de ATENCIÓN con su tiempo de espera.
  */
 const ClienteRow = observer(
-  ({ p, onClick, showWhatsApp = false }: { p: Pedido; onClick: () => void; showWhatsApp?: boolean }) => {
-  const urgente = pedidosStore.esUrgente(p);
+  ({ fila, onClick, showWhatsApp = false }: { fila: ClienteFila; onClick: () => void; showWhatsApp?: boolean }) => {
+  const { conv, pedido } = fila;
+  const atencion = estadoAtencionDe(conv);
+
+  // El subtítulo describe el PEDIDO cuando existe (es el contexto útil para
+  // atender) y cae al estado del hilo cuando no. Nunca mezcla los dos: un
+  // "Nuevo · Domicilio" pegado a un hilo cerrado sería una contradicción.
+  const subtitulo = pedido
+    ? `${pedidosStore.estadoLabel(pedido.estado)} · ${pedidosStore.modalidadLabel(pedido.modalidad)}`
+    : `${ESTADO_CONVERSACION_LABEL[conv.estado]} · ${ATENCION_LABEL[conv.atencion]}`;
+
   return (
     <button
       onClick={onClick}
       className="flex w-full items-center gap-3.5 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.04]"
     >
-      <span className="relative shrink-0">
-        <img
-          src={avatarUrl(p.cliente)}
-          alt={p.cliente}
-          loading="lazy"
-          onError={(e) => {
-            // Fallback a iniciales si la imagen no carga.
-            const el = e.currentTarget;
-            el.style.display = "none";
-            el.nextElementSibling?.classList.remove("hidden");
-          }}
-          className="h-11 w-11 rounded-full bg-gray-100 object-cover dark:bg-gray-800"
+      <div className="relative shrink-0">
+        <Avatar
+          src={AVATAR_MAP[conv.id] || avatarUrl(conv.contacto.nombre)}
+          alt={conv.contacto.nombre}
+          initials={inicialesDe(conv.contacto.nombre)}
+          size="large"
+          status={atencion === "pide_asesor" ? "busy" : "online"}
         />
-        <span className={`hidden h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white [&:not(.hidden)]:inline-flex ${avatarColor(p.cliente)}`}>
-          {iniciales(p.cliente)}
-        </span>
-        <span
-          className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-gray-900 ${urgente ? "bg-orange-500" : "bg-success-500"}`}
-        />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold text-gray-800 dark:text-white/90">{p.cliente}</p>
-        <p className="truncate text-[13px] text-gray-400 dark:text-gray-500">{clienteRol(p)}</p>
       </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[15px] font-semibold text-gray-800 dark:text-white/90">{conv.contacto.nombre}</p>
+        <p className="truncate text-[13px] text-gray-400 dark:text-gray-500">{subtitulo}</p>
+      </div>
+      {/* Una sola etiqueta de ESTADO DE ATENCIÓN; el resto pasa a texto muted.
+          Solo "pide asesor" se colorea: es la única que exige una acción. */}
       <div className="flex shrink-0 flex-col items-end gap-1">
-        {/* Etiqueta distintiva: atención (rojo) tiene prioridad sobre pago (naranja) */}
-        {urgente ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-error-50 px-2 py-0.5 text-[11px] font-medium text-error-600 dark:bg-error-500/10 dark:text-error-400">
+        {atencion === "pide_asesor" ? (
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-error-600 dark:text-error-400">
             <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
             Requiere atención
           </span>
-        ) : p.pagado === false ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-[11px] font-medium text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-warning-500" />
-            Pendiente de pago
-          </span>
         ) : (
-          <span className="text-[11px] font-medium text-success-600 dark:text-success-400">Al día</span>
+          <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500">
+            {ATENCION_LABEL[conv.atencion]}
+          </span>
         )}
         {showWhatsApp ? (
-          <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[#17b363]">
+          <span className="inline-flex items-center gap-1 text-[12px] font-normal text-gray-400 dark:text-gray-500">
             <WhatsAppIcon className="h-3.5 w-3.5" />
             Escribir
           </span>
         ) : (
-          <span className="text-[13px] text-gray-400">{relativo(pedidosStore.minutosEnEstado(p))}</span>
+          <span className="text-[13px] font-normal text-gray-400 dark:text-gray-500">
+            {relativo(conversacionesStore.minutosEsperando(conv))}
+          </span>
         )}
       </div>
     </button>
@@ -368,14 +420,21 @@ const ClienteRow = observer(
   },
 );
 
-const ClientesModal = observer(({ onClose }: { onClose: () => void }) => {
+const ClientesModal = observer(
+  ({ onClose, onChat }: { onClose: () => void; onChat: (convId: string) => void }) => {
   const [seg, setSeg] = useState<Segmento>("todos");
   const [q, setQ] = useState("");
 
-  const base = pedidosStore.enCurso();
+  const base = filasDeClientes();
   const query = q.trim().toLowerCase();
   const lista = filtrarSegmento(base, seg).filter(
-    (p) => !query || p.cliente.toLowerCase().includes(query) || p.numero.toLowerCase().includes(query),
+    (f) =>
+      !query ||
+      f.conv.contacto.nombre.toLowerCase().includes(query) ||
+      // El teléfono se busca sobre el valor normalizado Y el crudo: el usuario
+      // teclea con espacios ("300 555 1122") tanto como sin ellos.
+      f.conv.contacto.telefono.toLowerCase().includes(query) ||
+      normalizarTelefono(f.conv.contacto.telefono).includes(query),
   );
 
   const countSeg = (s: Segmento) => filtrarSegmento(base, s).length;
@@ -402,7 +461,7 @@ const ClientesModal = observer(({ onClose }: { onClose: () => void }) => {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar cliente o número…"
+          placeholder="Buscar cliente o teléfono…"
           className="h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-10 pr-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
         />
       </div>
@@ -433,11 +492,11 @@ const ClientesModal = observer(({ onClose }: { onClose: () => void }) => {
         {lista.length === 0 ? (
           <p className="py-10 text-center text-sm text-gray-400">Sin clientes en este filtro.</p>
         ) : (
-          lista.map((p) => (
+          lista.map((f) => (
             <ClienteRow
-              key={p.id}
-              p={p}
-              onClick={() => abrirWhatsApp(p.telefono)}
+              key={f.conv.id}
+              fila={f}
+              onClick={() => onChat(f.conv.id)}
               // Escribir al cliente es una acción de canal: `channels.read`.
               showWhatsApp={puedeEscribirCliente()}
             />
@@ -449,13 +508,22 @@ const ClientesModal = observer(({ onClose }: { onClose: () => void }) => {
 });
 
 const ClientesCard = observer(({ onAbrir }: { onAbrir: () => void }) => {
-  const items = [...pedidosStore.enCurso()]
-    .sort((a, b) => pedidosStore.minutosEnEstado(b) - pedidosStore.minutosEnEstado(a))
-    .slice(0, 5);
+  // Orden: primero quien espera un asesor (más tiempo esperando, arriba),
+  // después el resto por actividad reciente. Así la tarjeta abre por lo urgente
+  // en lugar de depender del orden de inserción del seed.
+  const filas = filasDeClientes();
+  const urgentes = filas
+    .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
+    .sort((a, b) => a.conv.ultimaActividad.localeCompare(b.conv.ultimaActividad));
+  const resto = filas
+    .filter((f) => estadoAtencionDe(f.conv) !== "pide_asesor")
+    .sort((a, b) => b.conv.ultimaActividad.localeCompare(a.conv.ultimaActividad));
+  const items = [...urgentes, ...resto].slice(0, 5);
+
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-lg font-bold text-gray-800 dark:text-white/90">Clientes</h3>
+        <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">Clientes</h3>
         <div className="flex items-center gap-1">
           {/* Campanita animada: llama la atención y abre el modal al pulsarla */}
           <CampanitaAtencion onClick={onAbrir} />
@@ -473,10 +541,10 @@ const ClientesCard = observer(({ onAbrir }: { onAbrir: () => void }) => {
         </div>
       </div>
       {items.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-400">Sin clientes en curso.</p>
+        <p className="py-10 text-center text-sm text-gray-400">Sin conversaciones todavía.</p>
       ) : (
         <div className="space-y-1">
-          {items.map((p) => <ClienteRow key={p.id} p={p} onClick={onAbrir} />)}
+          {items.map((f) => <ClienteRow key={f.conv.id} fila={f} onClick={onAbrir} />)}
         </div>
       )}
     </Card>
@@ -574,6 +642,11 @@ export const InicioPage = observer(() => {
   const [periodo, setPeriodo] = useState("Hoy");
   const [periodoOpen, setPeriodoOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
+  // Chat rápido (slide-over). Guarda el id de la CONVERSACIÓN, no el del pedido:
+  // la tarjeta "Clientes" lista clientes-en-un-canal, así que un cliente sin
+  // pedido también puede abrirse. `ChatDrawer` sigue aceptando un `pedido` para
+  // las demás superficies, pero aquí la fila ya ES un hilo.
+  const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
   const PERIODOS = ["Hoy", "Esta semana", "Semana pasada", "Este mes", "Últimos 3 meses"];
 
   // ── Alerta sonora recurrente: campanita mientras haya clientes que
@@ -845,26 +918,29 @@ export const InicioPage = observer(() => {
                 <button
                   key={p.id}
                   onClick={() => navigate("/pedidos")}
-                  className="flex flex-col rounded-xl border border-gray-200 p-4 text-left transition-all hover:border-brand-300 hover:shadow-theme-sm dark:border-gray-800"
+                  // Interior de una tarjeta: borde susurro en vez del gris
+                  // completo (box-in-a-box) y sin sombra propia.
+                  className="flex flex-col gap-3 rounded-xl border border-gray-200/70 bg-gray-50/40 p-4 text-left transition-colors hover:border-brand-300/70 dark:border-white/5 dark:bg-white/[0.02]"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${pedidosStore.estadoDotClass(p.estado)}`} />
-                      <span className="text-sm font-semibold text-gray-800 dark:text-white/90">{p.cliente}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${pedidosStore.estadoDotClass(p.estado)}`} />
+                      <span className="truncate text-sm font-medium text-gray-800 dark:text-white/90">{p.cliente}</span>
                     </div>
-                    <span className="flex items-center gap-1 text-xs text-error-500">
-                      <span className="h-2 w-2 rounded-full bg-error-500" />
+                    {/* Único indicador crítico de la tarjeta; el resto es muted. */}
+                    <span className="flex shrink-0 items-center gap-1.5 text-xs font-normal text-error-600 dark:text-error-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-error-500" />
                       Urgente
                     </span>
                   </div>
-                  <div className="mt-3 flex items-end justify-between">
+                  <div className="flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-2xl font-bold text-gray-800 dark:text-white/90">{pedidosStore.minutosEnEstado(p)}m</p>
-                      <p className="text-xs text-gray-400">en {pedidosStore.estadoLabel(p.estado).toLowerCase()}</p>
+                      <p className="text-xl font-semibold tracking-tight text-gray-800 dark:text-white/90">{pedidosStore.minutosEnEstado(p)}m</p>
+                      <p className="mt-0.5 text-xs font-normal text-gray-400">en {pedidosStore.estadoLabel(p.estado).toLowerCase()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-semibold text-brand-600 dark:text-brand-400">{p.numero}</p>
-                      <p className="text-xs text-gray-400">{pedidosStore.modalidadLabel(p.modalidad)}</p>
+                      <p className="text-sm font-normal text-gray-500 dark:text-gray-400">{p.numero}</p>
+                      <p className="mt-0.5 text-xs font-normal text-gray-400">{pedidosStore.modalidadLabel(p.modalidad)}</p>
                     </div>
                   </div>
                 </button>
@@ -931,7 +1007,15 @@ export const InicioPage = observer(() => {
       </div>
 
       {clientesOpen && (
-        <ClientesModal onClose={() => setClientesOpen(false)} />
+        <ClientesModal
+          onClose={() => setClientesOpen(false)}
+          onChat={(id) => {
+            // Cierra la lista para que el drawer quede como única superficie
+            // modal visible, y abre el hilo del cliente elegido.
+            setClientesOpen(false);
+            setChatDrawerConvId(id);
+          }}
+        />
       )}
 
       {calendarioOpen && (
@@ -943,6 +1027,17 @@ export const InicioPage = observer(() => {
           }}
         />
       )}
+
+      {/* Chat rápido (slide-over). Misma instancia y mismo resolutor canónico de
+          hilo que usa el tablero, para que ambas superficies no puedan
+          discrepar sobre la misma conversación. */}
+      <ChatDrawer
+        // Aquí la fila YA es un hilo (tarjeta "Clientes"), así que se abre por
+        // `convId`, que tiene prioridad sobre `pedido`. Un cliente sin pedido
+        // puede abrirse igual: la ausencia de pedido se representa como ausencia.
+        convId={chatDrawerConvId}
+        onClose={() => setChatDrawerConvId(null)}
+      />
     </>
   );
 });

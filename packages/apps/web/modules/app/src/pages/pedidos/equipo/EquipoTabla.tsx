@@ -94,10 +94,10 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
   const gruposVisibles = grupos.filter((g) => g.operadores.length > 0);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-gray-800 dark:bg-white/[0.02]">
+          <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
             <TableRow>
               <TableCell header className="font-semibold text-gray-700 dark:text-gray-300 pl-6 py-3.5">
                 Nombre y Cargo
@@ -175,7 +175,7 @@ const GrupoSection = observer(
                 className={`h-px flex-1 border-b border-dashed ${
                   grupo.esPendiente
                     ? "border-warning-300 dark:border-warning-500/30"
-                    : "border-gray-200 dark:border-gray-800"
+                    : "border-gray-200/70 dark:border-white/5"
                 }`}
               />
             </div>
@@ -442,7 +442,7 @@ const FilaEquipo = observer(
               <Dropdown
                 isOpen={isMenuOpen}
                 onClose={onCloseMenu}
-                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-lg border border-gray-100 dark:border-gray-800"
+                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
               >
                 <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
                   <span className="flex items-center gap-2">
@@ -468,7 +468,7 @@ const FilaEquipo = observer(
                   </span>
                 </DropdownItem>
 
-                <hr className="my-1 border-gray-100 dark:border-gray-800" />
+                <hr className="my-1 border-gray-100 dark:border-white/5" />
 
                 {op.estado === "pendiente" && (
                   <>

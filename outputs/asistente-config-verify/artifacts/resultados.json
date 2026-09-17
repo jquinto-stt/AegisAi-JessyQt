@@ -1,0 +1,157 @@
+[
+  {
+    "nombre": "se sembró la sesión de administrador",
+    "ok": true,
+    "detalle": "{\"modulos\":[\"pedidos\"],\"tipoSesion\":\"administrador\",\"operadorSimuladoId\":null,\"p"
+  },
+  {
+    "nombre": "hay sesión activa",
+    "ok": true,
+    "detalle": "/pedidos/inicio"
+  },
+  {
+    "nombre": "existe un enlace a /asistente/config",
+    "ok": true,
+    "detalle": "texto=\"Configuración\""
+  },
+  {
+    "nombre": "el enlace se llama «Configuración»",
+    "ok": true,
+    "detalle": "Configuración"
+  },
+  {
+    "nombre": "la barra lateral muestra la sección «Inteligencia»",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la barra lateral muestra «NECTO AI»",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la ruta /asistente/config carga",
+    "ok": true,
+    "detalle": "/asistente/config"
+  },
+  {
+    "nombre": "el título de la página es «Configuración de NECTO AI»",
+    "ok": true,
+    "detalle": "Configuración de NECTO AI"
+  },
+  {
+    "nombre": "la página declara explícitamente que NO es el bot de WhatsApp",
+    "ok": true,
+    "detalle": "{\"aviso\":true,\"apuntaACanales\":true,\"propietarioCliente\":true,\"equipo\":true}"
+  },
+  {
+    "nombre": "el aviso remite a la configuración del canal en Canales",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "existe la navegación vertical de secciones",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la navegación tiene 6 secciones",
+    "ok": true,
+    "detalle": "encontradas 6"
+  },
+  {
+    "nombre": "los grupos son ASISTENTE / CAPACIDADES / PREFERENCIAS, en orden",
+    "ok": true,
+    "detalle": "ASISTENTE · CAPACIDADES · PREFERENCIAS"
+  },
+  {
+    "nombre": "las 6 secciones son las del catálogo, en orden",
+    "ok": true,
+    "detalle": "Perfil del asistente | Motor de razonamiento | Herramientas | Conversaciones | Alcance y límites | Apariencia"
+  },
+  {
+    "nombre": "arranca en «Perfil del asistente» sin montar Herramientas",
+    "ok": true,
+    "detalle": "h2: Canales | Inteligencia | Pedidos | Perfil del asistente"
+  },
+  {
+    "nombre": "«Motor de razonamiento» monta su tarjeta",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la página muestra el motor local activo",
+    "ok": true,
+    "detalle": "{\"local\":true,\"remotoStub\":true}"
+  },
+  {
+    "nombre": "la página declara que el motor remoto no está implementado",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Herramientas» monta la tarjeta de alcance",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "la página muestra un recuento «N de M herramientas»",
+    "ok": true,
+    "detalle": "{\"disponibles\":10,\"totales\":10}"
+  },
+  {
+    "nombre": "con admin, disponibles === totales (el admin tiene todas las capacidades)",
+    "ok": true,
+    "detalle": "{\"disponibles\":10,\"totales\":10}"
+  },
+  {
+    "nombre": "«Herramientas» explica los niveles de herramienta",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "ninguna sección ofrece un control de backend inventado (los términos solo aparecen negados)",
+    "ok": true,
+    "detalle": "solo apariciones negadas"
+  },
+  {
+    "nombre": "no existe ningún campo editable de API/modelo/temperatura/tokens",
+    "ok": true,
+    "detalle": "ninguno"
+  },
+  {
+    "nombre": "«Alcance y límites» monta su tarjeta y declara límites reales (servidor y causas)",
+    "ok": true,
+    "detalle": "{\"seccionPresente\":true,\"servidor\":true,\"causas\":true,\"soloLectura\":true}"
+  },
+  {
+    "nombre": "«Apariencia» ofrece densidad (cómoda/compacta) y longitud (completa/resumida)",
+    "ok": true,
+    "detalle": "{\"comoda\":true,\"compacta\":true,\"completa\":true,\"resumida\":true}"
+  },
+  {
+    "nombre": "la página NO tiene un pie «Guardar/Descartar» decorativo",
+    "ok": true,
+    "detalle": "{\"guardar\":0,\"descartar\":0}"
+  },
+  {
+    "nombre": "la sección activa queda marcada con aria-current",
+    "ok": true,
+    "detalle": "Apariencia"
+  },
+  {
+    "nombre": "sin `assistant.use` la configuración NO se monta",
+    "ok": true,
+    "detalle": "ruta=/asistente/config hayNav=false"
+  },
+  {
+    "nombre": "sin `assistant.use` se muestra la pantalla de acceso denegado",
+    "ok": true,
+    "detalle": "No tienes acceso a esta sección"
+  },
+  {
+    "nombre": "la entrada «Configuración» de NECTO AI se OCULTA para ese rol",
+    "ok": true,
+    "detalle": "VIENDO COMO |  | Camila Ortiz |  | Salir de vista | CANALES | Conversaciones | Historial de atención | Configuración | PEDIDOS | Inicio | Tablero"
+  }
+]

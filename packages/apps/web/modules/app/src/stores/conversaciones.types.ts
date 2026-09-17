@@ -111,13 +111,58 @@ export interface Conversacion {
   operadorAsignadoId: string | null;
   noLeidos: number;
   ultimaActividad: string; // ISO 8601
-  /** Referencias de dominio activas (solo ids; encapsulamiento). */
+  /**
+   * @deprecated NO USAR. Campo declarado y nunca poblado (el seed lo deja
+   * `undefined`), porque sería una SEGUNDA FUENTE DE VERDAD frente a
+   * `pedidosStore`: guardar aquí el id del pedido activo obliga a mantenerlo
+   * sincronizado a mano y se queda obsoleto en cuanto el pedido cambia de
+   * estado o se cierra. Se conserva solo por compatibilidad del tipo.
+   *
+   * La verdad se DERIVA en la capa de UI desde el teléfono del contacto:
+   * `pedidosStore.pedidoActivoDe(conv.contacto.telefono)`. Es una lectura
+   * reactiva (MobX) y siempre fresca; no puede desincronizarse.
+   */
   pedidoActivoId?: string;
+  /** @deprecated Mismo motivo que `pedidoActivoId`: el módulo Turnos no está activo. */
   turnoActivoId?: string;
 }
 
 /** Filtros de la bandeja. `requieren_atencion` == estado "en_espera". */
 export type FiltroBandeja = "todas" | "no_leidas" | "requieren_atencion" | "cerradas";
+
+/**
+ * Intención de una conversación: QUÉ QUIERE EL CLIENTE.
+ *
+ * Es un eje DISTINTO del dominio (`ModuloDestino`) y del estado de atención
+ * (`EstadoConversacion`), y no debe confundirse con ninguno de los dos:
+ *
+ *   - Dominio   ¿de qué negocio se habla?   pedidos | inventario | general
+ *   - Intención ¿qué quiere el cliente?     consultar | comprar | seguir_pedido | reclamar
+ *   - Atención  ¿quién lo atiende?          abierta | en_espera | atendida | cerrada
+ *
+ * Contraejemplo que obliga a separarlos: un hilo sobre un pedido ya entregado
+ * es dominio `pedidos` pero intención `seguir_pedido` (no `comprar`); y una
+ * pregunta de existencias es dominio `inventario` con intención `consultar`.
+ * Con un solo eje, uno de los dos casos se rotularía mal.
+ *
+ * NO se persiste: se DERIVA de los efectos observables del hilo (ver
+ * `intencionDe` en `pages/conversaciones/conversaciones.clasificacion.ts`).
+ * Guardarla como campo de `Conversacion` sería una segunda fuente de verdad que
+ * habría que mantener sincronizada a mano — el mismo antipatrón por el que
+ * `Conversacion.pedidoActivoId` está deprecado.
+ */
+export type IntencionConversacion =
+  /** Información pura: catálogo, horarios, disponibilidad. Sin pedido. */
+  | "consultar"
+  /** El pedido NACIÓ en este hilo (el cliente pidió y confirmó aquí). */
+  | "comprar"
+  /** Postventa: el cliente pregunta por un pedido que ya existía. */
+  | "seguir_pedido"
+  /** Problema o escalamiento: requiere criterio humano. */
+  | "reclamar";
+
+/** Filtro por intención de la bandeja. Eje INDEPENDIENTE de `FiltroBandeja`. */
+export type FiltroIntencion = "todas" | IntencionConversacion;
 
 /** Item de la línea de tiempo unificada que consume el ChatView. */
 export type ItemLineaTiempo =
