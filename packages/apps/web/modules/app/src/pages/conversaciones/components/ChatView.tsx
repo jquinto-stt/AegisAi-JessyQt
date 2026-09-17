@@ -54,7 +54,7 @@ export const ChatView = observer(({
   const avatarSrc = AVATAR_MAP[conv.id] || "";
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="animate-aparecer flex flex-1 flex-col overflow-hidden">
       {/* ── Cabecera del Chat (Estilo Webi.AI Elements / TailAdmin) ──
           Se omite cuando el chat se embebe en el drawer, que ya aporta su propia
           cabecera con la identidad del cliente y el nº de pedido. */}
@@ -197,10 +197,18 @@ export const ChatView = observer(({
           </div>
         ) : (
           items.map((item) => {
+            // Cada ítem entra con `animate-entrada-lista` (fundido + 6 px de subida).
+            // Sin escalonado a propósito: en un chat los mensajes no llegan juntos, y
+            // retrasarlos por índice haría que el último en llegar esperase medio segundo
+            // solo por tener un índice alto. El escalonado es para listas que se pintan
+            // de golpe (tablas, grids), no para un hilo cronológico.
             // Eventos del sistema: sutiles y centrados
             if (item.clase === "evento") {
               return (
-                <div key={item.data.id} className="my-3 flex justify-center">
+                <div
+                  key={item.data.id}
+                  className="animate-entrada-lista my-3 flex justify-center"
+                >
                   <span className="rounded-full bg-gray-100/90 px-3.5 py-1 text-center text-[11px] text-gray-500 dark:bg-white/[0.05] dark:text-gray-400">
                     • {item.data.texto}
                   </span>
@@ -215,7 +223,7 @@ export const ChatView = observer(({
             // ── 1. CLIENTE: SIEMPRE a la IZQUIERDA con Avatar y burbuja gris suave ──
             if (esCliente) {
               return (
-                <div key={m.id} className="flex items-start gap-3 sm:gap-4">
+                <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-4">
                   <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
                     <Avatar
                       src={avatarSrc}
@@ -238,7 +246,7 @@ export const ChatView = observer(({
             // ── 2. BOT DE NUESTRA TIENDA: A la DERECHA con distintivo Bot / IA ──
             if (esBot) {
               return (
-                <div key={m.id} className="flex justify-end">
+                <div key={m.id} className="animate-entrada-lista flex justify-end">
                   <div className="max-w-[80%] sm:max-w-md text-right">
                     <div className="rounded-2xl rounded-tr-sm bg-[#3a44c7] px-4 py-3 text-left text-sm text-white shadow-xs dark:bg-[#343cae]">
                       {/* Distintivo claro de Bot para diferenciarlo del asesor */}
@@ -258,7 +266,7 @@ export const ChatView = observer(({
 
             // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo vibrante #465fff ──
             return (
-              <div key={m.id} className="flex justify-end">
+              <div key={m.id} className="animate-entrada-lista flex justify-end">
                 <div className="max-w-[80%] sm:max-w-md text-right">
                   <div className="rounded-2xl rounded-tr-sm bg-[#465fff] px-4 py-3 text-left text-sm text-white shadow-xs">
                     {/* Distintivo claro de Asesor Humano */}

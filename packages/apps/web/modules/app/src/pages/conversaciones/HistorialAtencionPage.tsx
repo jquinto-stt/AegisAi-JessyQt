@@ -37,6 +37,7 @@ import {
   inicialesDe,
   statusDe,
 } from "@/pages/conversaciones/conversaciones.utils";
+import { retardoEscalonado } from "@/utils";
 import {
   ETAPAS_CRM,
   type EtapaCrmCliente,
@@ -508,7 +509,7 @@ export const HistorialAtencionPage = observer(() => {
             </TableHeader>
 
             <TableBody>
-              {filasPagina.map((conv) => {
+              {filasPagina.map((conv, i) => {
                 const asunto = conversacionesStore.asuntoDe(conv.id);
                 const seleccionada = seleccionados.has(conv.id);
                 const resuelta = conversacionesStore.estaResuelta(conv);
@@ -516,7 +517,11 @@ export const HistorialAtencionPage = observer(() => {
                 return (
                   <TableRow
                     key={conv.id}
-                    className="hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                    // El escalonado se calcula sobre el índice DENTRO DE LA PÁGINA, no sobre
+                    // el ticket global: la tabla está paginada, y usar el índice absoluto
+                    // dejaría la página 3 arrancando en 1,2 s de retardo.
+                    style={{ animationDelay: retardoEscalonado(i) }}
+                    className="animate-entrada-lista hover:bg-gray-50 dark:hover:bg-white/[0.02]"
                   >
                     <TableCell>
                       <Checkbox

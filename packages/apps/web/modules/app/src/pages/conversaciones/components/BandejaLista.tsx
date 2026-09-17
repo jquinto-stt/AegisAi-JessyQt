@@ -4,6 +4,7 @@ import { Avatar } from "@/elements/ui/avatar";
 import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon } from "@/icons";
+import { retardoEscalonado } from "@/utils";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import type { FiltroBandeja } from "@/stores/conversaciones.types";
@@ -175,7 +176,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
           </div>
         ) : (
           <div className="space-y-1">
-            {bandeja.map((conv) => {
+            {bandeja.map((conv, i) => {
               const seleccionada = seleccionadaId === conv.id;
               const avatarSrc = AVATAR_MAP[conv.id] || "";
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
@@ -193,7 +194,13 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 <div
                   key={conv.id}
                   onClick={() => conversacionesStore.seleccionar(conv.id)}
-                  className={`group flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors ${
+                  // La entrada describe «esta fila acaba de hacerse visible», no
+                  // «acaba de crearse». Como las filas llevan `key` estable, al
+                  // filtrar o buscar las que ya estaban NO se re-animan: solo
+                  // entran las que vuelven a coincidir, que es justo lo que el
+                  // usuario necesita ver aparecer.
+                  style={{ animationDelay: retardoEscalonado(i) }}
+                  className={`animate-entrada-lista group flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors ${
                     seleccionada
                       ? "bg-gray-100/90 dark:bg-white/[0.08]"
                       : "hover:bg-gray-50 dark:hover:bg-white/[0.03]"
