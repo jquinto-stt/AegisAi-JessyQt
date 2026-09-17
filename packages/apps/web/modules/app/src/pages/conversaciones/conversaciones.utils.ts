@@ -1,4 +1,12 @@
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { inicialesDe } from "@/utils";
+
+/**
+ * Se reexporta desde `@/utils` para no romper a quien ya la importaba de aquí
+ * (ChatDrawer, PanelContexto, InicioPage). La implementación es una sola en toda
+ * la app: antes había tres copias y dos ni siquiera coincidían.
+ */
+export { inicialesDe };
 
 /**
  * Mapeo de fotos de perfil para la demo visual inspirada en TailAdmin / Webi.AI Elements.
@@ -13,12 +21,6 @@ export const AVATAR_MAP: Record<string, string> = {
   "conv-6": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=128&h=128&fit=crop&crop=faces",
   "conv-7": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=128&h=128&fit=crop&crop=faces",
   "conv-8": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=128&h=128&fit=crop&crop=faces",
-};
-
-/** Extrae las iniciales del nombre de contacto */
-export const inicialesDe = (nombre: string): string => {
-  const p = nombre.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? "") + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
 };
 
 /** Mapea el estado de conversación a la presencia del Avatar */

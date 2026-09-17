@@ -117,6 +117,43 @@ export const ATENCION_BADGE: Record<ModoAtencion, BadgeColor> = {
 };
 
 /**
+ * Catálogo de presentación del DOMINIO de una conversación: DE QUÉ NEGOCIO SE
+ * HABLA. Tercer eje, independiente de estado y atención.
+ *
+ * Existe por el mismo motivo que los otros dos catálogos: sin él, la primera
+ * superficie que rotule un dominio escribirá `"Inventario"` como literal y el
+ * segundo escribirá `"inventario"`, y el vocabulario divergirá sin que nadie lo
+ * note. El `Record<ModuloDestino, …>` obliga a que todo valor del tipo tenga
+ * etiqueta: añadir un módulo sin rotularlo es un error de compilación.
+ *
+ * `disponible` NO es decorativo y es la parte importante del catálogo:
+ *
+ *  - `true`  ⟹ el dominio tiene provider, datos y, por tanto, puede ofrecerse
+ *    como filtro o como destino de navegación.
+ *  - `false` ⟹ el dominio está DECLARADO en el tipo pero todavía no existe como
+ *    capacidad. La UI puede nombrarlo (es la procedencia de un mensaje que ya se
+ *    envió) pero **no** debe ofrecer navegación ni filtros hacia él: prometer un
+ *    módulo sin datos es el defecto que el test de consistencia del asistente ya
+ *    previene con `MODULOS_CONOCIDOS`.
+ *
+ * Hoy solo `pedidos` está implementado (`modules-tools/` contiene únicamente ese
+ * provider). `inventario` aparece en el seed como declaración de intención hacia
+ * el futuro, no como capacidad: por eso queda `false` hasta que exista su
+ * provider. El día que se implemente, este catálogo es el ÚNICO sitio que hay
+ * que tocar: la bandeja mostrará el badge sola porque lee de aquí.
+ */
+export const MODULO_DESTINO_LABEL: Record<
+  ModuloDestino,
+  { etiqueta: string; disponible: boolean }
+> = {
+  pedidos: { etiqueta: "Pedidos", disponible: true },
+  inventario: { etiqueta: "Inventario", disponible: false },
+  turnos: { etiqueta: "Turnos", disponible: false },
+  agendamiento: { etiqueta: "Agendamiento", disponible: false },
+  general: { etiqueta: "General", disponible: true },
+};
+
+/**
  * Normaliza un teléfono a su forma canónica COMPARABLE: solo dígitos.
  *
  * Motivación (defecto real de datos, no de estilo): el mismo cliente se escribe
@@ -559,6 +596,36 @@ export class ConversacionesStore {
     return [...set];
   }
 
+  /**
+   * Dominio PRINCIPAL de una conversación: el del ÚLTIMO mensaje etiquetado.
+   *
+   * Es la simétrica "de un solo valor" de `modulosDe`: aquella responde "¿qué
+   * módulos tocó el hilo?" (lista, para el filtro transversal) y esta responde
+   * "¿de qué se está hablando AHORA?" (uno, para el badge de la fila). Se
+   * necesita porque un hilo es transversal —puede tocar Pedidos e Inventario—
+   * y la fila de la bandeja no puede apilar un badge por cada módulo tocado.
+   *
+   * Criterio: el último, no el primero. Un hilo que empieza preguntando por
+   * existencias y termina en un pedido debe leerse como `pedidos`, y eso solo lo
+   * da el orden temporal. Al derivarse en cada lectura (MobX re-evalúa), el
+   * dominio principal cambia solo cuando el hilo avanza: no hay campo que
+   * sincronizar ni máquina de estados que mantener.
+   *
+   * Fallback `"general"`: un hilo sin ningún mensaje etiquetado no tiene
+   * dominio, y `"general"` es el valor del tipo que lo expresa. NO se devuelve
+   * `undefined` para que el consumidor no tenga que distinguir "sin dominio" de
+   * "no existe la conversación" — el llamador decide si oculta el badge
+   * comparando contra `"general"`.
+   */
+  moduloPrincipalDe(convId: string): ModuloDestino {
+    const mensajes = this.mensajesPorConv.get(convId) ?? [];
+    for (let i = mensajes.length - 1; i >= 0; i -= 1) {
+      const modulo = mensajes[i]?.moduloContexto;
+      if (modulo && modulo !== "general") return modulo;
+    }
+    return "general";
+  }
+
 
   // ── Línea de tiempo unificada derivada (tarea 3.10) ──────────────────────────
 
@@ -689,15 +756,27 @@ export class ConversacionesStore {
    * un `autor:"negocio"` que el hilo rotula como "Asesor Humano" — dos fuentes
    * de verdad sobre quién habla. La UI ya bloquea el campo; esta guarda es la
    * defensa en profundidad para cualquier otro llamador.
+   *
+   * `moduloContexto` es OPCIONAL y aditivo (retrocompatible con las llamadas de
+   * 2 argumentos). Existe por SIMETRÍA con `agregarMensajeBot`, no para que la UI
+   * etiquete a mano: el dominio de un mensaje del bot lo declara la tool que
+   * respondió, y el de un mensaje del operador no lo declara nadie. Etiquetar
+   * desde la UI sería triage manual disfrazado, que es justo lo que el diseño
+   * descarta por quedar obsoleto en cuanto el hilo evoluciona. Se deja la puerta
+   * abierta sin abrirla.
    */
-  enviarComoNegocio(convId: string, texto: string): void {
+  enviarComoNegocio(
+    convId: string,
+    texto: string,
+    moduloContexto?: ModuloDestino,
+  ): void {
     const conv = this.getConversacion(convId);
     if (!conv) return;
     if (conv.atencion !== "humano") return; // el bot lleva el hilo: no hay emisor humano
     if (texto.trim() === "") return; // vacío / solo espacios: no-op (Req 3.4)
     if (texto.length > LIMITE_TEXTO_NEGOCIO) return; // excede límite (Req 3.5)
 
-    this.agregarMensaje(convId, "negocio", texto);
+    this.agregarMensaje(convId, "negocio", texto, moduloContexto);
     conv.ultimaActividad = nowIso();
     this.persistir();
   }
@@ -716,6 +795,7 @@ export class ConversacionesStore {
     convId: string,
     autor: Mensaje["autor"],
     texto: string,
+    moduloContexto?: ModuloDestino,
   ): void {
     const conv = this.getConversacion(convId);
     if (!conv) return;
@@ -730,6 +810,9 @@ export class ConversacionesStore {
       autor,
       contenido,
       timestamp: nowIso(),
+      // La clave se OMITE cuando no hay módulo —en vez de escribir `undefined`—
+      // para no alterar la forma serializada de los mensajes existentes.
+      ...(moduloContexto !== undefined ? { moduloContexto } : {}),
     };
 
     const grupo = this.mensajesPorConv.get(convId);
@@ -917,7 +1000,12 @@ export class ConversacionesStore {
       history,
     });
 
-    this.agregarMensajeBot(convId, resultado.texto, resultado.payload);
+    this.agregarMensajeBot(
+      convId,
+      resultado.texto,
+      resultado.payload,
+      resultado.modulo,
+    );
   }
 
   /**

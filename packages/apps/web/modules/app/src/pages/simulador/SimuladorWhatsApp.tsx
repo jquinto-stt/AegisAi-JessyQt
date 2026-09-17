@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
+import { inicialesDe } from "@/utils";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import type {
   Conversacion,
@@ -23,11 +24,6 @@ const LIMITE_TEXTO = 2000;
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
-
-const inicialesDe = (nombre: string) => {
-  const p = nombre.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? "") + (p.length > 1 ? p[p.length - 1][0] : "")).toUpperCase();
-};
 
 /** Hora HH:MM a partir de un timestamp ISO, para la burbuja estilo WhatsApp. */
 const horaDe = (iso: string) => {
