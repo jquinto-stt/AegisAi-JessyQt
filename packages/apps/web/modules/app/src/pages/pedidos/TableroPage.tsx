@@ -15,6 +15,7 @@ import {
   puedeGestionarProgramados,
 } from "@/stores";
 import type { Pedido, PedidoEstado, Modalidad } from "@/stores/pedidos.store";
+import { retardoEscalonado } from "@/utils";
 import { ProgramarModal } from "./ProgramarModal";
 import {
   avanzarPedido,
@@ -972,14 +973,15 @@ const ListaView = observer(
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pedidos.map((p) => {
+              {pedidos.map((p, i) => {
                 const urgente = pedidosStore.esUrgente(p);
                 return (
                   // Fila entera clicable → abre el detalle (patrón DropdownTable).
                   <TableRow
                     key={p.id}
                     onClick={() => onDetalle(p.id)}
-                    className="cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                    style={{ animationDelay: retardoEscalonado(i) }}
+                    className="animate-entrada-lista cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                   >
                     <TableCell>
                       <span className="block font-semibold text-gray-800 dark:text-white/90">{p.numero}</span>
@@ -1245,8 +1247,15 @@ export const TableroPage = observer(() => {
         />
       )}
 
-      {/* Tablero — vista Kanban o Lista según preferencia */}
-      {vista === "kanban" ? (
+      {/* Tablero — vista Kanban o Lista según preferencia.
+          El envoltorio lleva `key={vista}`: sin ella React reutilizaría el mismo
+          nodo al conmutar y el fundido solo se vería la primera vez. Es un fundido
+          PURO, sin desplazamiento, porque las dos vistas ocupan el mismo hueco:
+          desplazar una sugeriría un movimiento entre dos sitios que no existen.
+          El envoltorio es un bloque normal, así que la rejilla de dentro conserva
+          su ancho y el número de hijos de la página no cambia. */}
+      <div key={vista} className="animate-aparecer">
+        {vista === "kanban" ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
           {columnas.map((estado) => {
             const items = pedidosDeColumna(estado);
@@ -1265,15 +1274,29 @@ export const TableroPage = observer(() => {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  {items.map((p) => (
-                    <PedidoCard
+                  {items.map((p, i) => (
+                    // El envoltorio existe para animar sin tocar `PedidoCard`.
+                    // Al ser un hijo flex más, la columna lo estira al ancho
+                    // completo igual que antes y `gap-3` sigue rigiendo la
+                    // separación: el layout no cambia, solo aparece.
+                    //
+                    // La entrada describe «esta tarjeta acaba de hacerse visible
+                    // en esta columna», que es exactamente lo que ocurre cuando un
+                    // pedido avanza de estado: se desmonta de una columna y se
+                    // monta en la siguiente, y el usuario lo ve llegar.
+                    <div
                       key={p.id}
-                      pedido={p}
-                      onDetalle={() => setDetalleId(p.id)}
-                      onCancelar={() => abrirCancelar(p.id)}
-                      onConfirmarEntrega={() => abrirEntrega(p.id)}
-                      onChat={() => setChatDrawerPedidoId(p.id)}
-                    />
+                      className="animate-entrada-lista"
+                      style={{ animationDelay: retardoEscalonado(i) }}
+                    >
+                      <PedidoCard
+                        pedido={p}
+                        onDetalle={() => setDetalleId(p.id)}
+                        onCancelar={() => abrirCancelar(p.id)}
+                        onConfirmarEntrega={() => abrirEntrega(p.id)}
+                        onChat={() => setChatDrawerPedidoId(p.id)}
+                      />
+                    </div>
                   ))}
                   {items.length === 0 && (
                     <p className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-xs text-gray-400 dark:border-gray-800">

@@ -94,7 +94,18 @@ export const ConversacionesPage = observer(() => {
         <section className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
           {seleccionadaId !== null ? (
             <>
+              {/* La `key` es lo que hace VISIBLE el cambio de conversación. Sin ella React
+                  reutiliza la MISMA instancia de `ChatView` y solo le cambia las props, así
+                  que la clase de entrada nunca se vuelve a disparar y el hilo nuevo aparece
+                  de golpe. Con la `key`, cada conversación es un montaje nuevo y entra con
+                  un fundido de 200 ms.
+                  Consecuencia asumida: al remontar, el contenedor de mensajes vuelve a
+                  `scrollTop = 0`. Es el mismo punto de partida que ya tenía la primera
+                  conversación que se abría, así que el comportamiento queda CONSISTENTE
+                  entre el primer hilo y los siguientes. Aterrizar en el último mensaje es
+                  otra tarea (exige gestión de scroll) y no se aborda aquí. */}
               <ChatView
+                key={seleccionadaId}
                 convId={seleccionadaId}
                 onTogglePanel={handleTogglePanel}
                 panelExpandido={panelExpandido}
