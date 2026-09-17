@@ -286,3 +286,121 @@ describe("consistencia con rolesStore.capacidadesEfectivas", () => {
     expect(esEfectiva(conPreparacion, "preparation.manage", base)).toBe(true);
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// APLICAR UN CONJUNTO COMPLETO (asistente de tareas)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `aplicarPreset` deja a la persona con EXACTAMENTE las capacidades pedidas.
+// Es lo que hay detrás del selector "¿qué hace esta persona?" del perfil: el
+// admin elige un oficio y el sistema traduce eso a excepciones mínimas.
+//
+// El riesgo que cubren estos tests es que el atajo por lote se desvíe de la
+// regla del toggle individual y acabe guardando excepciones que no cambian
+// nada — las "zombis" que `normalizar` existe para evitar.
+
+describe("aplicarPreset", () => {
+  it("desde un rol vacío, todo lo pedido se guarda como extra", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const objetivo: Capacidad[] = ["orders.read", "orders.confirm"];
+
+    const r = aplicarPreset(portador(), objetivo, []);
+    expect(r.capacidadesExtra.sort()).toEqual(["orders.confirm", "orders.read"]);
+    expect(r.capacidadesRemovidas).toEqual([]);
+  });
+
+  it("lo que el rol ya da no se duplica como extra", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    // El rol ya da orders.read; se pide read + create.
+    const r = aplicarPreset(portador(), ["orders.read", "orders.create"], ["orders.read"]);
+
+    expect(r.capacidadesExtra).toEqual(["orders.create"]);
+    expect(r.capacidadesRemovidas).toEqual([]);
+  });
+
+  it("lo que el rol da y no se pide se revoca a mano", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const r = aplicarPreset(portador(), ["orders.read"], ["orders.read", "orders.cancel"]);
+
+    expect(r.capacidadesRemovidas).toEqual(["orders.cancel"]);
+    expect(r.capacidadesExtra).toEqual([]);
+  });
+
+  it("pedir el conjunto vacío revoca todo lo que daba el rol", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const r = aplicarPreset(portador(), [], ROL_COMPLETO);
+
+    expect(r.capacidadesExtra).toEqual([]);
+    expect(r.capacidadesRemovidas.sort()).toEqual([...ROL_COMPLETO].sort());
+  });
+
+  it("es idempotente: aplicarlo dos veces da el mismo resultado", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const objetivo: Capacidad[] = ["orders.read", "preparation.manage"];
+
+    const primera = aplicarPreset(portador(), objetivo, ROL_SOLO_LECTURA);
+    const segunda = aplicarPreset(portador(primera), objetivo, ROL_SOLO_LECTURA);
+
+    expect(segunda).toEqual(primera);
+  });
+
+  it("mantiene el conjunto de excepciones mínimo", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const objetivo: Capacidad[] = ["orders.read", "orders.create", "preparation.manage"];
+
+    const r = aplicarPreset(portador(), objetivo, ROL_SOLO_LECTURA);
+
+    // Ningún extra puede estar ya en el rol (no aportaría nada)…
+    for (const cap of r.capacidadesExtra) {
+      expect(ROL_SOLO_LECTURA).not.toContain(cap);
+    }
+    // …y ninguna revocación puede estar fuera del rol (no quitaría nada).
+    for (const cap of r.capacidadesRemovidas) {
+      expect(ROL_SOLO_LECTURA).toContain(cap);
+    }
+    // Y una capacidad nunca es extra y revocada a la vez.
+    const extra = new Set(r.capacidadesExtra);
+    for (const cap of r.capacidadesRemovidas) {
+      expect(extra.has(cap)).toBe(false);
+    }
+  });
+
+  it("parte de las excepciones que ya había y solo toca la diferencia", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const inicial = portador({ capacidadesExtra: ["team.manage"] });
+
+    // Se pide un conjunto que conserva team.manage y añade orders.create.
+    const r = aplicarPreset(inicial, ["team.manage", "orders.create"], []);
+
+    expect(r.capacidadesExtra.sort()).toEqual(["orders.create", "team.manage"]);
+    expect(r.capacidadesRemovidas).toEqual([]);
+  });
+
+  it("el resultado efectivo es exactamente el objetivo pedido", async () => {
+    vi.resetModules();
+    const roles = await import("@/stores/roles.store");
+    const { aplicarPreset } = await import("./excepciones");
+    const { PERFILES_TAREA } = await import("./equipo.presentacion");
+
+    // Con cada perfil de tarea, sobre cada rol del catálogo, el resultado tiene
+    // que ser el conjunto del perfil. Es la garantía de que el atajo no miente.
+    for (const rol of roles.rolesStore.roles) {
+      for (const perfil of PERFILES_TAREA) {
+        const excepciones = aplicarPreset(portador({ rolId: rol.id }), perfil.capacidades, rol.capacidades);
+        const efectivas = roles.rolesStore.capacidadesEfectivas({
+          rolId: rol.id,
+          ...excepciones,
+        });
+        expect([...efectivas].sort()).toEqual([...perfil.capacidades].sort());
+      }
+    }
+  });
+
+  it("sobre un rol inexistente se comporta como rol vacío (fail-closed)", async () => {
+    const { aplicarPreset } = await import("./excepciones");
+    const r = aplicarPreset(portador({ rolId: "no_existe" }), ["orders.read"], []);
+
+    expect(r.capacidadesExtra).toEqual(["orders.read"]);
+    expect(r.capacidadesRemovidas).toEqual([]);
+  });
+});

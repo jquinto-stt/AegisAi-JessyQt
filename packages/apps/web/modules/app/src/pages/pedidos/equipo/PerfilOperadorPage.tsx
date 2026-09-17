@@ -1,15 +1,16 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
+import { Avatar } from "@/elements/ui/avatar";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
+import { ChevronDownIcon } from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
@@ -19,33 +20,66 @@ import {
   type Capacidad,
   type Operador,
 } from "@/stores";
-import { ESTADO_META, CATEGORIA_COLORES } from "./equipo.constants";
-import { aplicarToggle, normalizar, procedenciaDe, type Procedencia } from "./excepciones";
+import { ESTADO_META, CATEGORIA_COLORES, NIVEL_COLOR } from "./equipo.constants";
+import { aplicarPreset, aplicarToggle, normalizar, procedenciaDe } from "./excepciones";
+import {
+  NIVEL_LABEL,
+  PERFILES_TAREA,
+  PROCEDENCIA_HUMANA,
+  ajustesDe,
+  areasCompletas,
+  fraseDeAcceso,
+  inicialesDe,
+  perfilQueEncaja,
+  resumenDeAreas,
+  unirConY,
+  type ResumenArea,
+} from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PERFIL DE UNA PERSONA DEL EQUIPO — /pedidos/equipo/:id
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Es una RUTA, no un modal (decisión del contrato / propuesta): el editor de rol
-// más 16 capacidades con su procedencia no cabe en un diálogo, y una ruta se
-// puede compartir, recargar y enlazar.
+// Es una RUTA, no un modal (decisión del contrato / propuesta): se puede
+// compartir, recargar y enlazar.
 //
-// Lo que esta pantalla hace visible y que el modelo anterior no podía:
+// CÓMO ESTÁ ORDENADA, Y POR QUÉ
 //
-//   Cada capacidad muestra de DÓNDE viene —heredada del rol, concedida a mano,
-//   o revocada a mano— en vez de un simple interruptor. Así el admin ve el
-//   paquete del rol y las desviaciones de esta persona por separado, que es
-//   justo la diferencia entre "rol" y "excepción".
+// Antes esta pantalla era una tabla de 18 filas —categoría, capacidad, código
+// técnico, procedencia— con un interruptor por fila, más 8 píldoras de filtro.
+// Responder "¿qué puede hacer Camila?" exigía leer las 18 filas y, de paso,
+// entender `preparation.manage` y la diferencia entre heredar y conceder.
+//
+// Ahora la pantalla va de lo general a lo concreto, en cuatro capas:
+//
+//   1. QUIÉN ES. Nombre, rol y una frase que resume su acceso entero.
+//   2. QUÉ PUEDE HACER. Siete áreas de negocio con un chip Sí / Parcial / No.
+//      Cuando un área es parcial se dice **qué falta**, que es lo accionable.
+//   3. QUÉ SE DESVÍA DEL ROL. Solo los ajustes a mano, si los hay.
+//   4. LOS 18 INTERRUPTORES. Detrás de "Ajustar permisos uno por uno", cerrado
+//      por defecto. Nada se pierde: la precisión sigue disponible para quien
+//      la necesita, pero deja de ser lo primero que se ve.
+//
+// Regla que se respeta en todo el archivo: **la pantalla no decide nada**. Los
+// conjuntos se calculan con `rolesStore.capacidadesEfectivas` y las escrituras
+// pasan por `aplicarToggle` / `aplicarPreset`, que son los que mantienen las
+// excepciones mínimas. Aquí solo se elige cómo contarlo.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Texto y color de cada procedencia, para la etiqueta de la derecha. */
-const PROCEDENCIA_META: Record<Procedencia, { label: string; color: "light" | "info" | "warning" }> = {
-  rol: { label: "Heredado del rol", color: "light" },
-  concedida: { label: "Concedido a mano", color: "info" },
-  removida: { label: "Revocado a mano", color: "warning" },
-  ninguna: { label: "No concedido", color: "light" },
-};
+/**
+ * Segunda línea de una fila de área.
+ *
+ * El caso `parcial` es el único que necesita explicación —"sí" y "no" se
+ * entienden solos—, así que es el único que enumera capacidades. Se listan las
+ * que **faltan**, no las que tiene: si alguien cubre 5 de 6, lo que hay que
+ * revisar es la que falta.
+ */
+function detalleDeArea(area: ResumenArea): string {
+  if (area.nivel === "no") return "Sin acceso a esta área.";
+  if (area.nivel === "parcial") return `Le falta: ${unirConY(area.faltantes)}.`;
+  return area.resumen;
+}
 
 /**
  * Envoltorio de ruta. Resuelve la persona y, si existe, delega en `PerfilContent`
@@ -101,17 +135,52 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   const [telefono, setTelefono] = useState(op.telefono);
   const [datosGuardados, setDatosGuardados] = useState(false);
 
+  // Divulgación progresiva: las dos zonas que empiezan cerradas.
+  const [contactoAbierto, setContactoAbierto] = useState(false);
+  const [permisosAbiertos, setPermisosAbiertos] = useState(false);
+
   const estado = ESTADO_META[op.estado];
   const rol = rolesStore.porId(op.rolId);
   const capacidadesDelRol = rol?.capacidades ?? [];
   const efectivas = rolesStore.capacidadesEfectivas(op);
 
   const rolesAsignables = rolesStore.roles.filter((r) => r.id !== "admin_tienda");
-  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
 
-  const gruposFiltrados = categoriaFiltro === "todas"
-    ? CAPACIDAD_GRUPOS
-    : CAPACIDAD_GRUPOS.filter((g) => g.id === categoriaFiltro);
+  // Todo lo que se pinta sale de aquí y se recalcula en cada render: al mover un
+  // interruptor, el resumen de arriba tiene que cambiar en el mismo frame.
+  const areas = resumenDeAreas(efectivas);
+  const completas = areasCompletas(areas);
+  const ajustes = ajustesDe(op);
+  const perfilActual = perfilQueEncaja(efectivas);
+
+  // ── Escrituras ────────────────────────────────────────────────────────────
+  //
+  // Un único camino para todo cambio de permisos, en bloque o de uno en uno.
+  // `aplicarPreset` ya sabe calcular la diferencia contra lo que hay, así que
+  // no hace falta que la UI lleve la cuenta.
+
+  const aplicarObjetivo = (objetivo: Capacidad[]) => {
+    const siguiente = aplicarPreset(op, objetivo, capacidadesDelRol);
+    operadoresStore.setCapacidadesExtra(op.id, siguiente.capacidadesExtra);
+    operadoresStore.setCapacidadesRemovidas(op.id, siguiente.capacidadesRemovidas);
+  };
+
+  const toggleCapacidad = (cap: Capacidad) => {
+    const activar = !efectivas.includes(cap);
+    const siguiente = aplicarToggle(op, cap, capacidadesDelRol, activar);
+    operadoresStore.setCapacidadesExtra(op.id, siguiente.capacidadesExtra);
+    operadoresStore.setCapacidadesRemovidas(op.id, siguiente.capacidadesRemovidas);
+  };
+
+  /** Enciende el área entera si le falta algo, y la apaga si ya la tiene completa. */
+  const alternarArea = (grupo: (typeof CAPACIDAD_GRUPOS)[number]) => {
+    const tiene = new Set(efectivas);
+    const completa = grupo.capacidades.every((c) => tiene.has(c));
+    const objetivo = completa
+      ? efectivas.filter((c) => !grupo.capacidades.includes(c))
+      : [...new Set([...efectivas, ...grupo.capacidades])];
+    aplicarObjetivo(objetivo);
+  };
 
   // ── Cambio de rol ─────────────────────────────────────────────────────────
   const cambiarRol = (nuevoRolId: string) => {
@@ -125,14 +194,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
     operadoresStore.setRol(op.id, nuevoRolId);
   };
 
-  // ── Excepciones ───────────────────────────────────────────────────────────
-  const toggleCapacidad = (cap: Capacidad) => {
-    const activar = !efectivas.includes(cap);
-    const siguiente = aplicarToggle(op, cap, capacidadesDelRol, activar);
-    operadoresStore.setCapacidadesExtra(op.id, siguiente.capacidadesExtra);
-    operadoresStore.setCapacidadesRemovidas(op.id, siguiente.capacidadesRemovidas);
-  };
-
+  // ── Datos de contacto y acceso ────────────────────────────────────────────
   const guardarDatos = () => {
     operadoresStore.actualizarDatos(op.id, {
       nombre: nombre.trim() || op.nombre,
@@ -154,11 +216,9 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
     navigate(sessionStore.homePathActual);
   };
 
-  const excepcionesCount = (op.capacidadesExtra?.length ?? 0) + (op.capacidadesRemovidas?.length ?? 0);
-
   return (
     <>
-      <PageMeta title={`${op.nombre} · Equipo`} description="Perfil, rol y capacidades de la persona" />
+      <PageMeta title={`${op.nombre} · Equipo`} description="Perfil, rol y permisos de la persona" />
 
       {/* Volver */}
       <Link
@@ -171,60 +231,68 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         Equipo
       </Link>
 
-      {/* Encabezado */}
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">{op.nombre}</h1>
-            <Badge color={estado.color} size="sm">{estado.label}</Badge>
+      {/* ── 1. Quién es ─────────────────────────────────────────────────────── */}
+      <Card className="mb-6">
+        <div className="flex flex-wrap items-start gap-4">
+          <Avatar
+            src={op.avatarUrl || ""}
+            initials={inicialesDe(op.nombre)}
+            size="large"
+            status={op.estado === "pendiente" ? "busy" : op.estado === "activo" ? "online" : "none"}
+            alt={op.nombre}
+            className="flex-shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">{op.nombre}</h1>
+              <Badge color={estado.color} size="sm">
+                {estado.label}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {op.cargo || "Sin cargo"} ·{" "}
+              {rol ? (
+                <>
+                  rol <span className="font-medium text-gray-700 dark:text-gray-300">{rol.nombre}</span>
+                </>
+              ) : (
+                <span className="text-warning-600 dark:text-warning-400">sin rol asignado</span>
+              )}
+            </p>
+            <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">
+              {fraseDeAcceso(areas)}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {rol ? `Rol: ${rol.nombre}` : "Sin rol asignado"}
-            {excepcionesCount > 0 && ` · ${excepcionesCount} ajuste${excepcionesCount === 1 ? "" : "s"} a mano`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* El `title` va en un envoltorio: `ButtonProps` no lo acepta, y un
-              botón deshabilitado no siempre emite eventos de ratón. */}
-          <span title={puedeVerComo ? `Entrar como ${op.nombre}` : "Solo se puede ver como una persona activa"}>
+          <span
+            className="flex-shrink-0"
+            title={puedeVerComo ? `Entrar como ${op.nombre}` : "Solo se puede ver como una persona activa"}
+          >
             <Button size="sm" variant="outline" disabled={!puedeVerComo} onClick={verComo}>
               Ver como
             </Button>
           </span>
-          {op.estado === "pendiente" && (
-            <>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-error-600 hover:bg-error-50 border-error-200 dark:border-error-800"
-                onClick={rechazar}
-              >
-                Rechazar
-              </Button>
-              <Button size="sm" onClick={() => operadoresStore.aprobar(op.id)}>
-                Aprobar
-              </Button>
-            </>
-          )}
         </div>
-      </div>
+      </Card>
 
+      {/* Solicitud pendiente: aquí viven las acciones, y solo aquí. */}
       {op.estado === "pendiente" && (
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-warning-200 bg-warning-50 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-warning-200 bg-warning-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-warning-500/30 dark:bg-warning-500/10">
           <div>
-            <p className="text-sm font-medium text-warning-700 dark:text-warning-300">Solicitud pendiente</p>
+            <p className="text-sm font-medium text-warning-700 dark:text-warning-300">
+              Solicitó acceso
+            </p>
             <p className="mt-0.5 text-xs text-warning-600 dark:text-warning-400">
-              Asigna un rol y pulsa «Aprobar» para darle acceso, o «Rechazar» para descartar la solicitud.
+              Elige su rol abajo y pulsa «Aprobar». Hasta entonces no puede entrar.
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               size="sm"
               variant="outline"
-              className="text-error-600 hover:bg-error-50 border-error-200 dark:border-error-800"
+              className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-800"
               onClick={rechazar}
             >
-              Rechazar solicitud
+              Rechazar
             </Button>
             <Button size="sm" onClick={() => operadoresStore.aprobar(op.id)}>
               Aprobar
@@ -233,65 +301,30 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         </div>
       )}
 
-      {/* Grid: datos a la izquierda, capacidades a la derecha */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Columna izquierda: datos + rol */}
-        <div className="space-y-6">
-          <Card>
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Datos de contacto</h2>
-            <div className="mt-4 space-y-4">
-              <div>
-                <Label htmlFor="pf-nombre">Nombre completo</Label>
-                <Input
-                  id="pf-nombre"
-                  value={nombre}
-                  onChange={(e) => {
-                    setNombre(e.target.value);
-                    setDatosGuardados(false);
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="pf-email">Correo electrónico</Label>
-                <Input
-                  id="pf-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setDatosGuardados(false);
-                  }}
-                />
-              </div>
-              <div>
-                <Label htmlFor="pf-tel">Teléfono</Label>
-                <Input
-                  id="pf-tel"
-                  type="tel"
-                  value={telefono}
-                  onChange={(e) => {
-                    setTelefono(e.target.value);
-                    setDatosGuardados(false);
-                  }}
-                />
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-              {datosGuardados && <span className="text-xs text-success-600 dark:text-success-500">Guardado ✓</span>}
-              <Button size="sm" variant="outline" onClick={guardarDatos}>Guardar datos</Button>
-            </div>
-          </Card>
+      {/* ── 2. Qué puede hacer ──────────────────────────────────────────────── */}
+      <Card className="mb-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+            Qué puede hacer
+          </h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {completas} de {areas.length} áreas completas
+          </p>
+        </div>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Siete áreas de negocio en vez de dieciocho permisos sueltos.
+        </p>
 
-          <Card>
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Rol y Acceso</h2>
-              <Badge color={estado.color} size="xs">{estado.label}</Badge>
+        {/* Rol: la base de la que sale todo lo de abajo. */}
+        <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <Label htmlFor="pf-rol">Su rol</Label>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                El rol es el paquete de permisos que hereda. Cambiarlo reajusta lo de abajo.
+              </p>
             </div>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              El rol es el paquete de capacidades que esta persona hereda. Cambiarlo reexpresa sus ajustes a
-              mano contra el rol nuevo.
-            </p>
-            <div className="mt-4">
+            <div className="w-full sm:w-56 sm:flex-shrink-0">
               <Select
                 options={rolesAsignables.map((r) => ({ value: r.id, label: r.nombre }))}
                 defaultValue={op.rolId ?? ""}
@@ -299,162 +332,337 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 placeholder="Sin rol"
               />
             </div>
-            {rol ? (
-              <p className="mt-2 text-xs text-gray-400">{rol.descripcion}</p>
-            ) : (
-              <p className="mt-2 text-xs text-warning-600 dark:text-warning-400">
-                Sin rol no tiene ninguna capacidad (fail-closed).
-              </p>
-            )}
-
-            {/* Gestión del acceso: botón de Suspender / Reactivar */}
-            {op.estado !== "pendiente" && (
-              <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-                <div>
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    {op.estado === "activo" ? "Acceso habilitado" : "Acceso suspendido"}
-                  </p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    {op.estado === "activo"
-                      ? "Puede entrar y operar según su rol."
-                      : "No puede entrar al sistema."}
-                  </p>
-                </div>
-                {op.estado === "activo" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-warning-700 border-warning-300 hover:bg-warning-50 hover:text-warning-800 dark:text-warning-400 dark:border-warning-800 dark:hover:bg-warning-950/30 cursor-pointer"
-                    onClick={() => operadoresStore.desactivar(op.id)}
-                  >
-                    Suspender
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-success-700 border-success-300 hover:bg-success-50 hover:text-success-800 dark:text-success-400 dark:border-success-800 dark:hover:bg-success-950/30 cursor-pointer"
-                    onClick={() => operadoresStore.activar(op.id)}
-                  >
-                    Reactivar
-                  </Button>
-                )}
-              </div>
-            )}
-          </Card>
+          </div>
+          {!rol && (
+            <p className="mt-2 text-xs text-warning-600 dark:text-warning-400">
+              Sin rol no hereda ningún permiso: todo lo que tenga sería añadido a mano.
+            </p>
+          )}
         </div>
 
-        {/* Columna derecha: capacidades estructuradas como tabla con categorías */}
-        <Card className="lg:col-span-2 p-0 overflow-hidden">
-          <div className="p-5 pb-4 border-b border-gray-100 dark:border-white/5">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Capacidades y Permisos</h2>
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {efectivas.length} de 18 capacidades activas. Organizadas por categorías de negocio.
-                  </p>
-                </div>
+        {/* Las siete áreas. */}
+        <div className="mt-2">
+          {areas.map((area) => (
+            <div
+              key={area.id}
+              data-area={area.id}
+              data-nivel={area.nivel}
+              data-activas={area.activas}
+              data-total={area.total}
+              className={`flex items-start justify-between gap-4 border-t border-gray-100 py-3 dark:border-white/5 ${
+                area.nivel === "no" ? "opacity-60" : ""
+              }`}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800 dark:text-white/90">{area.label}</p>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {detalleDeArea(area)}
+                </p>
               </div>
-
-              {/* Filtros rápidos por categoría */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setCategoriaFiltro("todas")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                    categoriaFiltro === "todas"
-                      ? "bg-brand-500 text-white shadow-2xs"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  Todas ({efectivas.length}/18)
-                </button>
-                {CAPACIDAD_GRUPOS.map((g) => {
-                  const activas = g.capacidades.filter((c) => efectivas.includes(c)).length;
-                  return (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setCategoriaFiltro(g.id)}
-                      className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                        categoriaFiltro === g.id
-                          ? "bg-brand-500 text-white shadow-2xs"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                      }`}
-                    >
-                      {g.label} ({activas}/{g.capacidades.length})
-                    </button>
-                  );
-                })}
+              <div className="flex flex-shrink-0 items-center gap-2">
+                <span className="text-[11px] tabular-nums text-gray-400">
+                  {area.activas}/{area.total}
+                </span>
+                <Badge color={NIVEL_COLOR[area.nivel]} size="xs">
+                  {NIVEL_LABEL[area.nivel]}
+                </Badge>
               </div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
-                <TableRow>
-                  <TableCell header className="py-3 pl-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Categoría
-                  </TableCell>
-                  <TableCell header className="py-3 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Capacidad / Acción
-                  </TableCell>
-                  <TableCell header className="py-3 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Origen
-                  </TableCell>
-                  <TableCell header className="py-3 text-right pr-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Acceso
-                  </TableCell>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {gruposFiltrados.map((grupo) => (
-                  <Fragment key={grupo.id}>
+        {/* Ajustes a mano: solo existen si hay algo que contar. */}
+        {ajustes.length > 0 && (
+          <div className="mt-4 rounded-xl border border-blue-light-200 bg-blue-light-50/60 p-3 dark:border-blue-light-500/30 dark:bg-blue-light-500/10">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                {ajustes.length} ajuste{ajustes.length === 1 ? "" : "s"} solo para {op.nombre.split(" ")[0]}
+              </p>
+              <button
+                type="button"
+                onClick={() => aplicarObjetivo(capacidadesDelRol)}
+                className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              >
+                Dejar solo su rol
+              </button>
+            </div>
+            <ul className="mt-2 space-y-1">
+              {ajustes.map((ajuste) => (
+                <li key={`${ajuste.tipo}-${ajuste.capacidad}`} className="text-xs text-gray-600 dark:text-gray-300">
+                  <span
+                    className={
+                      ajuste.tipo === "mas"
+                        ? "font-semibold text-success-600 dark:text-success-400"
+                        : "font-semibold text-warning-600 dark:text-warning-400"
+                    }
+                  >
+                    {ajuste.tipo === "mas" ? "＋" : "－"}
+                  </span>{" "}
+                  {ajuste.label}
+                  <span className="text-gray-400">
+                    {" "}
+                    — {PROCEDENCIA_HUMANA[ajuste.tipo === "mas" ? "concedida" : "removida"].label.toLowerCase()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Asistente de tareas: para quien no quiere pensar en permisos. */}
+        <div className="mt-5 border-t border-gray-100 pt-4 dark:border-white/5">
+          <p className="text-sm font-medium text-gray-800 dark:text-white/90">¿Qué hace esta persona?</p>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            Elige un oficio y dejamos los permisos listos. Reemplaza los de ahora; después puedes retocarlos.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {PERFILES_TAREA.map((perfil) => {
+              const objetivo = new Set(perfil.capacidades);
+              const actuales = new Set(efectivas);
+              const da = perfil.capacidades.filter((c) => !actuales.has(c)).length;
+              const quita = efectivas.filter((c) => !objetivo.has(c)).length;
+              const esActual = perfilActual?.id === perfil.id;
+
+              return (
+                <button
+                  key={perfil.id}
+                  type="button"
+                  data-perfil={perfil.id}
+                  onClick={() => aplicarObjetivo(perfil.capacidades)}
+                  title={perfil.descripcion}
+                  className={`cursor-pointer rounded-xl border px-3 py-2 text-left transition-colors ${
+                    esActual
+                      ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
+                      : "border-gray-200 bg-white hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-700"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs font-medium text-gray-800 dark:text-white/90">
+                      {perfil.nombre}
+                    </span>
+                    {esActual && (
+                      <Badge color="primary" size="xs">
+                        Actual
+                      </Badge>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-gray-500 dark:text-gray-400">
+                    {perfil.descripcion}
+                  </span>
+                  {/* El delta va en su propia línea, nunca en lugar de la
+                      descripción: cuando más falta hace entender qué hace el
+                      perfil es justo cuando más permisos cambia. */}
+                  {(da > 0 || quita > 0) && (
+                    <span className="mt-1 block text-[11px] text-gray-400 dark:text-gray-500">
+                      {[da > 0 && `suma ${da}`, quita > 0 && `quita ${quita}`].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
+
+      {/* ── 4. Los 18 interruptores, detrás de una divulgación ──────────────── */}
+      <Card className="mb-6 p-0">
+        <button
+          type="button"
+          onClick={() => setPermisosAbiertos((v) => !v)}
+          aria-expanded={permisosAbiertos}
+          className="flex w-full cursor-pointer items-center justify-between gap-4 p-5 text-left"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-gray-800 dark:text-white/90">
+              Ajustar permisos uno por uno
+            </span>
+            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+              {efectivas.length} de 18 activos. Para quien necesita el detalle exacto.
+            </span>
+          </span>
+          <ChevronDownIcon
+            className={`h-5 w-5 flex-shrink-0 text-gray-400 transition-transform ${
+              permisosAbiertos ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {permisosAbiertos && (
+          <div className="border-t border-gray-100 px-5 pb-5 dark:border-white/5">
+            {CAPACIDAD_GRUPOS.map((grupo) => {
+              const tiene = new Set(efectivas);
+              const activasEnGrupo = grupo.capacidades.filter((c) => tiene.has(c)).length;
+              const completa = activasEnGrupo === grupo.capacidades.length;
+
+              return (
+                <div key={grupo.id} className="mt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
+                        {grupo.label}
+                      </Badge>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {activasEnGrupo} de {grupo.capacidades.length}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => alternarArea(grupo)}
+                      className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                    >
+                      {completa ? "Quitar todo" : "Dar todo"}
+                    </button>
+                  </div>
+
+                  <div className="mt-1">
                     {grupo.capacidades.map((cap) => {
                       const proc = procedenciaDe(op, cap, capacidadesDelRol);
-                      const meta = PROCEDENCIA_META[proc];
+                      const meta = PROCEDENCIA_HUMANA[proc];
                       const activa = proc === "rol" || proc === "concedida";
+
                       return (
-                        <TableRow key={cap} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                          <TableCell className="py-3 pl-5 whitespace-nowrap">
-                            <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs" className="font-semibold">
-                              {grupo.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-3">
-                            <div>
-                              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                                {CAPACIDAD_LABEL[cap]}
-                              </p>
-                              <p className="font-mono text-[11px] text-gray-400">{cap}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-3 whitespace-nowrap">
-                            <Badge color={meta.color} size="xs">{meta.label}</Badge>
-                          </TableCell>
-                          <TableCell className="py-3 text-right pr-5 whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2.5">
-                              <span className={`text-xs font-medium ${activa ? "text-success-600 dark:text-success-400" : "text-gray-400"}`}>
-                                {activa ? "Habilitada" : "Deshabilitada"}
-                              </span>
-                              <Switch
-                                checked={activa}
-                                onChange={() => toggleCapacidad(cap)}
-                                aria-label={CAPACIDAD_LABEL[cap]}
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                        <div
+                          key={cap}
+                          className="flex items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-white/5"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            {/* El código técnico va en el `title`: sigue accesible
+                                para quien depura, pero no compite con la etiqueta. */}
+                            <span
+                              title={cap}
+                              className="truncate text-sm text-gray-700 dark:text-gray-300"
+                            >
+                              {CAPACIDAD_LABEL[cap]}
+                            </span>
+                            {meta.tono !== "neutro" && (
+                              <Badge
+                                color={meta.tono === "mas" ? "success" : "warning"}
+                                size="xs"
+                              >
+                                {meta.label}
+                              </Badge>
+                            )}
+                          </div>
+                          <Switch
+                            checked={activa}
+                            onChange={() => toggleCapacidad(cap)}
+                            aria-label={CAPACIDAD_LABEL[cap]}
+                          />
+                        </div>
                       );
                     })}
-                  </Fragment>
-                ))}
-              </TableBody>
-            </Table>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        )}
+      </Card>
+
+      {/* ── Contacto y acceso: lo administrativo, al final ──────────────────── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                Datos de contacto
+              </h2>
+              <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                {op.email} · {op.telefono}
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => setContactoAbierto((v) => !v)}>
+              {contactoAbierto ? "Cerrar" : "Editar"}
+            </Button>
+          </div>
+
+          {contactoAbierto && (
+            <>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <Label htmlFor="pf-nombre">Nombre completo</Label>
+                  <Input
+                    id="pf-nombre"
+                    value={nombre}
+                    onChange={(e) => {
+                      setNombre(e.target.value);
+                      setDatosGuardados(false);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pf-email">Correo electrónico</Label>
+                  <Input
+                    id="pf-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setDatosGuardados(false);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pf-tel">Teléfono</Label>
+                  <Input
+                    id="pf-tel"
+                    type="tel"
+                    value={telefono}
+                    onChange={(e) => {
+                      setTelefono(e.target.value);
+                      setDatosGuardados(false);
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+                {datosGuardados && (
+                  <span className="text-xs text-success-600 dark:text-success-500">Guardado</span>
+                )}
+                <Button size="sm" variant="outline" onClick={guardarDatos}>
+                  Guardar datos
+                </Button>
+              </div>
+            </>
+          )}
         </Card>
+
+        {op.estado !== "pendiente" && (
+          <Card>
+            <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Acceso al sistema</h2>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  {op.estado === "activo" ? "Puede entrar" : "No puede entrar"}
+                </p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  {op.estado === "activo"
+                    ? "Su acceso está habilitado según los permisos de arriba."
+                    : "Su cuenta sigue aquí, pero no puede iniciar sesión."}
+                </p>
+              </div>
+              {op.estado === "activo" ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-shrink-0 cursor-pointer border-warning-300 text-warning-700 hover:bg-warning-50 hover:text-warning-800 dark:border-warning-800 dark:text-warning-400 dark:hover:bg-warning-950/30"
+                  onClick={() => operadoresStore.desactivar(op.id)}
+                >
+                  Suspender
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-shrink-0 cursor-pointer border-success-300 text-success-700 hover:bg-success-50 hover:text-success-800 dark:border-success-800 dark:text-success-400 dark:hover:bg-success-950/30"
+                  onClick={() => operadoresStore.activar(op.id)}
+                >
+                  Reactivar
+                </Button>
+              )}
+            </div>
+          </Card>
+        )}
       </div>
     </>
   );

@@ -1,6 +1,6 @@
 import type { BadgeColor } from "@/elements/ui/badge";
-import { CAPACIDAD_GRUPOS, type Capacidad } from "@/stores/roles.store";
 import type { OperadorEstado } from "@/stores/operadores.store";
+import type { NivelArea } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTES DE LA PANTALLA "EQUIPO" (pedidos)
@@ -66,20 +66,17 @@ export const CATEGORIA_COLORES: Record<string, BadgeColor> = {
 };
 
 /**
- * Resume las capacidades efectivas como nombres de grupo ("Órdenes",
- * "Preparación", …) para la columna "Capacidades" de la tabla.
+ * Color del chip de nivel de un área (`Sí` / `Parcial` / `No`).
  *
- * Se resumen **grupos**, no las 18 capacidades una a una: en una celda de tabla
- * la lista completa es ilegible. El detalle vive en el perfil de la persona,
- * donde cada capacidad se ve con su interruptor y su procedencia.
- *
- * Devuelve `[]` cuando no hay ninguna capacidad — el llamador decide qué
- * mostrar (un guion, no una lista vacía).
+ * Vive aquí, y no en cada pantalla, para que el perfil de una persona y el
+ * editor de roles pinten el mismo nivel con el mismo color: si "Parcial" es
+ * naranja en un sitio, tiene que serlo en el otro.
  */
-export function resumenGrupos(capacidades: Capacidad[]): string[] {
-  const set = new Set(capacidades);
-  return CAPACIDAD_GRUPOS.filter((g) => g.capacidades.some((c) => set.has(c))).map((g) => g.label);
-}
+export const NIVEL_COLOR: Record<NivelArea, BadgeColor> = {
+  si: "success",
+  parcial: "warning",
+  no: "light",
+};
 
 /**
  * Genera un correo de ejemplo a partir del nombre, para el alta rápida.

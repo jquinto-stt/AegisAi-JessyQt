@@ -98,6 +98,61 @@ export function aplicarToggle(
 }
 
 /**
+ * Calcula las excepciones necesarias para que la persona acabe teniendo
+ * **exactamente** el conjunto `objetivo` de capacidades.
+ *
+ * Es el hermano por lote de `aplicarToggle`: sirve para el asistente de tareas,
+ * donde el admin elige un perfil ("Atiende el mostrador") y el sistema tiene que
+ * dejar el conjunto de capacidades igual a ese perfil de una sola vez, sin
+ * obligarle a encender y apagar dieciocho interruptores.
+ *
+ * Se apoya en `aplicarToggle` capacidad por capacidad en vez de escribir los
+ * conjuntos a mano, para que la minimalidad siga teniendo **una sola
+ * definición**: una concesión que el rol ya da no se guarda como extra, y una
+ * revocación de algo que el rol no da no se guarda como removida. Así el
+ * asistente no puede introducir excepciones zombis que el editor manual no
+ * crearía.
+ *
+ * `aplicarToggle` solo toca la capacidad que recibe, así que aplicar los toggles
+ * en cualquier orden da el mismo resultado.
+ *
+ * @param objetivo Capacidades que la persona debe acabar teniendo.
+ */
+export function aplicarPreset(
+  p: PortadorDeRol,
+  objetivo: Capacidad[],
+  capacidadesDelRol: Capacidad[],
+): { capacidadesExtra: Capacidad[]; capacidadesRemovidas: Capacidad[] } {
+  const deseadas = new Set<Capacidad>(objetivo);
+
+  // Punto de partida: lo que la persona tiene HOY (rol ∪ extras \ removidas).
+  const actuales = new Set<Capacidad>([...capacidadesDelRol, ...(p.capacidadesExtra ?? [])]);
+  for (const cap of p.capacidadesRemovidas ?? []) actuales.delete(cap);
+
+  // Solo hay que tocar la diferencia simétrica: lo que tiene y no quiere, más lo
+  // que quiere y no tiene. El resto se deja intacto.
+  const aTocar = new Set<Capacidad>([...actuales, ...deseadas]);
+
+  let capacidadesExtra = [...(p.capacidadesExtra ?? [])];
+  let capacidadesRemovidas = [...(p.capacidadesRemovidas ?? [])];
+
+  for (const cap of aTocar) {
+    const quiere = deseadas.has(cap);
+    if (quiere === actuales.has(cap)) continue;
+    const siguiente = aplicarToggle(
+      { capacidadesExtra, capacidadesRemovidas },
+      cap,
+      capacidadesDelRol,
+      quiere,
+    );
+    capacidadesExtra = siguiente.capacidadesExtra;
+    capacidadesRemovidas = siguiente.capacidadesRemovidas;
+  }
+
+  return { capacidadesExtra, capacidadesRemovidas };
+}
+
+/**
  * Reexpresa las excepciones contra un rol nuevo, descartando las que no aportan
  * nada.
  *

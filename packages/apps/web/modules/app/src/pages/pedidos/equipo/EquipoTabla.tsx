@@ -10,8 +10,9 @@ import {
   PencilIcon,
   UserCircleIcon,
 } from "@/icons";
-import { operadoresStore, rolesStore, sessionStore, type Operador } from "@/stores";
-import { resumenGrupos, ESTADO_META } from "./equipo.constants";
+import { operadoresStore, rolesStore, sessionStore, CAPACIDADES, type Operador } from "@/stores";
+import { ESTADO_META } from "./equipo.constants";
+import { inicialesDe, resumenDeAreas } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TABLA DEL EQUIPO (Elements UI)
@@ -20,14 +21,6 @@ import { resumenGrupos, ESTADO_META } from "./equipo.constants";
 /** true si la persona tiene excepciones sobre las capacidades de su rol. */
 function tieneAjustes(op: Operador): boolean {
   return (op.capacidadesExtra?.length ?? 0) > 0 || (op.capacidadesRemovidas?.length ?? 0) > 0;
-}
-
-/** Obtiene las iniciales de 1 o 2 letras para el fallback del avatar. */
-function obtenerIniciales(nombre: string): string {
-  const parts = nombre.trim().split(/\s+/);
-  if (parts.length === 0) return "U";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
 interface GrupoEquipo {
@@ -103,7 +96,7 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
                 Nombre y Cargo
               </TableCell>
               <TableCell header className="font-semibold text-gray-700 dark:text-gray-300">
-                Capacidades
+                Qué puede hacer
               </TableCell>
               <TableCell header className="font-semibold text-gray-700 dark:text-gray-300">
                 Rol y Acceso
@@ -221,7 +214,10 @@ const FilaEquipo = observer(
     const navigate = useNavigate();
     const rol = rolesStore.porId(op.rolId);
     const capacidades = rolesStore.capacidadesEfectivas(op);
-    const grupos = resumenGrupos(capacidades);
+    // Nombres de área en lenguaje de negocio ("Conversaciones", no "Canales"), y
+    // solo las que la persona tiene: en una celda, listar lo que NO puede hacer
+    // sería ruido. El detalle vive en su perfil.
+    const areas = resumenDeAreas(capacidades).filter((a) => a.nivel !== "no");
     const ajustes = tieneAjustes(op);
     const esPendiente = op.estado === "pendiente";
     const puedeVerComo = op.estado === "activo";
@@ -267,7 +263,9 @@ const FilaEquipo = observer(
     };
 
     if (!esPendiente) {
-      if (op.rolId === "admin_tienda" || capacidades.length >= 18) {
+      // El "acceso total" se mide contra el catálogo, no contra un 18 escrito a
+      // mano: si mañana se añade una capacidad, el badge sigue diciendo la verdad.
+      if (op.rolId === "admin_tienda" || capacidades.length >= CAPACIDADES.length) {
         accessBadge = {
           label: "Acceso Total",
           color: "primary", // Necto Brand Tint
@@ -282,7 +280,11 @@ const FilaEquipo = observer(
 
     return (
       <TableRow
-        className={`transition-colors ${
+        // Sin retardo escalonado a propósito: las filas van agrupadas por rol
+        // (`grupo.operadores.map`), así que un índice por grupo reiniciaría la
+        // cascada en cada cabecera y se leería como varias listas sueltas. Aquí
+        // el grupo entra como una unidad.
+        className={`animate-entrada-lista transition-colors ${
           esPendiente
             ? "bg-warning-50/20 dark:bg-warning-500/10 hover:bg-warning-50/40"
             : "hover:bg-gray-50/60 dark:hover:bg-white/[0.02]"
@@ -293,7 +295,7 @@ const FilaEquipo = observer(
           <div className="flex items-center gap-3 cursor-pointer" onClick={onAbrir}>
             <Avatar
               src={op.avatarUrl || ""}
-              initials={obtenerIniciales(op.nombre)}
+              initials={inicialesDe(op.nombre)}
               size="medium"
               status={esPendiente ? "busy" : op.estado === "activo" ? "online" : "none"}
               alt={op.nombre}
@@ -319,29 +321,29 @@ const FilaEquipo = observer(
           </div>
         </TableCell>
 
-        {/* Columna 2: Capacidades */}
+        {/* Columna 2: Qué puede hacer */}
         <TableCell className="py-4">
           <div className="flex flex-wrap items-center gap-1.5 cursor-pointer" onClick={onAbrir}>
             {esPendiente ? (
               <span className="text-xs italic text-warning-700 dark:text-warning-400">
                 Se habilitarán al aprobar la solicitud
               </span>
-            ) : grupos.length > 0 ? (
+            ) : areas.length > 0 ? (
               <>
-                {grupos.map((g) => (
+                {areas.map((area) => (
                   <Badge
-                    key={g}
+                    key={area.id}
                     color="info"
                     size="sm"
                     className="font-medium"
                   >
-                    {g}
+                    {area.label}
                   </Badge>
                 ))}
                 {ajustes && (
-                  <span title="Tiene capacidades ajustadas a mano respecto a su rol">
+                  <span title="Tiene permisos ajustados a mano respecto a su rol">
                     <Badge color="warning" size="sm" className="font-medium">
-                      Ajustes
+                      Con ajustes
                     </Badge>
                   </span>
                 )}

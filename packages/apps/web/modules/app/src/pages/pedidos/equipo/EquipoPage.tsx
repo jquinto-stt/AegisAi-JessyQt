@@ -133,7 +133,7 @@ export const EquipoPage = observer(() => {
           </div>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {vista === "roles"
-              ? "Configuración de los paquetes de capacidades para cada rol de usuario."
+              ? "Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
               : "Cada persona tiene un rol, y el rol define qué puede hacer. Haz clic en una persona para ver su perfil."}
           </p>
         </div>
@@ -206,7 +206,8 @@ export const EquipoPage = observer(() => {
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} className="max-w-md p-6">
         <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">Invitar miembro</h2>
         <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-          Se enviará una invitación a su correo electrónico. La persona aparecerá como pendiente hasta confirmar su registro.
+          Se añadirá al equipo como <span className="font-medium">pendiente</span>, con el rol que elijas.
+          Cuando quieras darle acceso, apruébala desde su perfil.
         </p>
 
         <div className="space-y-4">
@@ -271,14 +272,14 @@ export const EquipoPage = observer(() => {
               placeholder="Elige un rol"
             />
             <p className="mt-1.5 text-xs text-gray-400">
-              El rol determina qué puede hacer. Podrás ajustar excepciones en su perfil.
+              El rol determina qué puede hacer. Después podrás ajustar sus permisos desde su perfil.
             </p>
           </div>
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-3">
           <Button size="sm" variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
-          <Button size="sm" disabled={!datosOk} onClick={guardar}>Enviar invitación</Button>
+          <Button size="sm" disabled={!datosOk} onClick={guardar}>Añadir al equipo</Button>
         </div>
       </Modal>
     </>

@@ -1,15 +1,15 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Switch } from "@/elements/form/switch";
 import { TrashBinIcon } from "@/icons";
 import { CAPACIDAD_GRUPOS, CAPACIDAD_LABEL, rolesStore, type Capacidad, type Rol } from "@/stores";
-import { CATEGORIA_COLORES } from "./equipo.constants";
+import { CATEGORIA_COLORES, NIVEL_COLOR } from "./equipo.constants";
+import { NIVEL_LABEL, areasCompletas, fraseDeAcceso, resumenDeAreas } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PESTAÑA "ROLES"
@@ -24,6 +24,21 @@ import { CATEGORIA_COLORES } from "./equipo.constants";
 //   - El ROL define el paquete base de capacidades.
 //   - Las EXCEPCIONES por persona (extras/removidas) se editan en el perfil,
 //     no aquí. Un rol limpio es un rol reutilizable.
+//
+// CÓMO SE PRESENTA
+//
+// Antes el editor era una tabla de cuatro columnas con el código técnico de
+// cada capacidad en monoespaciado, un badge de categoría repetido en cada fila
+// y ocho píldoras de filtro con fracciones. Aquí:
+//
+//   - Se quita la columna de categoría: el encabezado del bloque ya la dice.
+//   - Se quitan las píldoras de filtro: con los siete bloques visibles y
+//     agrupados, filtrar era trabajo extra para esconder información que cabía.
+//   - El código técnico (`orders.confirm`) pasa al `title`, accesible al pasar
+//     el ratón pero fuera del camino de lectura.
+//   - Se añade arriba un resumen en lenguaje de negocio que se recalcula
+//     mientras se marcan interruptores: así se ve el efecto de cada cambio sin
+//     tener que interpretar la tabla.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -47,45 +62,56 @@ export const RolesTab = observer(() => {
           <Button size="sm" variant="outline" onClick={nuevoRol}>Nuevo rol</Button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {rolesStore.roles.map((rol) => (
-            <div
-              key={rol.id}
-              onClick={() => setSeleccionadoId(rol.id)}
-              className={`group relative flex items-center justify-between w-full rounded-xl border p-3 text-left transition-colors cursor-pointer ${
-                rol.id === seleccionadoId
-                  ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
-                  : "border-gray-200 bg-white hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-700"
-              }`}
-            >
-              <div className="min-w-0 flex-1 pr-2">
-                <div className="flex items-center gap-2">
-                  <span className="truncate text-sm font-medium text-gray-800 dark:text-white/90">{rol.nombre}</span>
-                  {rol.sistema && <Badge color="light" size="xs">Sistema</Badge>}
-                </div>
-                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  {rol.capacidades.length} de 18 capacidades
-                </p>
-              </div>
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+          Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas.
+        </p>
 
-              {!rol.sistema && (
-                <button
-                  type="button"
-                  title="Eliminar este rol"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    rolesStore.eliminar(rol.id);
-                    if (seleccionadoId === rol.id) {
-                      setSeleccionadoId(rolesStore.roles[0]?.id ?? null);
-                    }
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-950/30 rounded-lg opacity-80 group-hover:opacity-100 transition-all"
-                >
-                  <TrashBinIcon className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="flex flex-col gap-2">
+          {rolesStore.roles.map((rol) => {
+            const areas = resumenDeAreas(rol.capacidades);
+            const completas = areasCompletas(areas);
+
+            return (
+              <div
+                key={rol.id}
+                onClick={() => setSeleccionadoId(rol.id)}
+                className={`group relative flex items-center justify-between w-full rounded-xl border p-3 text-left transition-colors cursor-pointer ${
+                  rol.id === seleccionadoId
+                    ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-700"
+                }`}
+              >
+                <div className="min-w-0 flex-1 pr-2">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate text-sm font-medium text-gray-800 dark:text-white/90">{rol.nombre}</span>
+                    {rol.sistema && <Badge color="light" size="xs">Sistema</Badge>}
+                  </div>
+                  {/* Se cuenta por áreas, no por permisos: "cubre 4 de 7 áreas"
+                      dice mucho más que "13 de 18 capacidades". */}
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    Cubre {completas} de {areas.length} áreas
+                  </p>
+                </div>
+
+                {!rol.sistema && (
+                  <button
+                    type="button"
+                    title="Eliminar este rol"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      rolesStore.eliminar(rol.id);
+                      if (seleccionadoId === rol.id) {
+                        setSeleccionadoId(rolesStore.roles[0]?.id ?? null);
+                      }
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-950/30 rounded-lg opacity-80 group-hover:opacity-100 transition-all"
+                  >
+                    <TrashBinIcon className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -115,20 +141,20 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
   const [descripcion, setDescripcion] = useState(rol.descripcion);
   const [capacidades, setCapacidades] = useState<Capacidad[]>([...rol.capacidades]);
   const [guardado, setGuardado] = useState(false);
-  const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
-
-  const gruposFiltrados = categoriaFiltro === "todas"
-    ? CAPACIDAD_GRUPOS
-    : CAPACIDAD_GRUPOS.filter((g) => g.id === categoriaFiltro);
 
   const tiene = (c: Capacidad) => capacidades.includes(c);
+
+  // Se recalcula en cada render, así que el resumen de abajo refleja el borrador
+  // al instante: marcar un interruptor mueve el chip del área en el mismo frame.
+  const areas = resumenDeAreas(capacidades);
+  const completas = areasCompletas(areas);
 
   const toggle = (c: Capacidad) => {
     setCapacidades((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
     setGuardado(false);
   };
 
-  /** Enciende o apaga todas las capacidades de un grupo de una vez. */
+  /** Enciende o apaga todas las capacidades de un área de una vez. */
   const toggleGrupo = (grupo: Capacidad[]) => {
     const todas = grupo.every((c) => capacidades.includes(c));
     setCapacidades((prev) => {
@@ -174,7 +200,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {guardado && <span className="text-xs text-success-600 dark:text-success-500">Guardado ✓</span>}
+          {guardado && <span className="text-xs text-success-600 dark:text-success-500">Guardado</span>}
           <Button size="sm" variant="ghost" onClick={duplicar}>Duplicar</Button>
           {/* El `title` va en un envoltorio: `ButtonProps` no lo acepta, y un
               botón deshabilitado no siempre emite eventos de ratón. */}
@@ -214,124 +240,91 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
         </div>
       </div>
 
-      {/* Tabla de capacidades estructurada por categorías */}
-      <div className="mt-6">
-        <div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Capacidades del rol</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {capacidades.length} de 18 capacidades activas. Organizadas por categorías de negocio.
-            </p>
-          </div>
-          {/* Filtros rápidos por categoría */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setCategoriaFiltro("todas")}
-              className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                categoriaFiltro === "todas"
-                  ? "bg-brand-500 text-white shadow-2xs"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              }`}
-            >
-              Todas ({capacidades.length}/18)
-            </button>
-            {CAPACIDAD_GRUPOS.map((g) => {
-              const activas = g.capacidades.filter(tiene).length;
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => setCategoriaFiltro(g.id)}
-                  className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
-                    categoriaFiltro === g.id
-                      ? "bg-brand-500 text-white shadow-2xs"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  {g.label} ({activas}/{g.capacidades.length})
-                </button>
-              );
-            })}
-          </div>
+      {/* Resumen en lenguaje de negocio, vivo mientras se edita. */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+            Qué puede hacer este rol
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {capacidades.length} de 18 permisos · cubre {completas} de {areas.length} áreas
+          </p>
         </div>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{fraseDeAcceso(areas)}</p>
 
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]">
-          <Table>
-            <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
-              <TableRow>
-                <TableCell header className="py-3 pl-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Categoría
-                </TableCell>
-                <TableCell header className="py-3 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Capacidad / Acción
-                </TableCell>
-                <TableCell header className="py-3 text-right pr-5 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Estado
-                </TableCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {gruposFiltrados.map((grupo) => {
-                const activasEnGrupo = grupo.capacidades.filter(tiene).length;
-                const todas = activasEnGrupo === grupo.capacidades.length;
-                return (
-                  <Fragment key={grupo.id}>
-                    {/* Encabezado de grupo de categoría con botón para activar/desactivar todo */}
-                    <tr className="bg-gray-50/60 dark:bg-white/[0.015] border-t border-b border-gray-100 dark:border-white/5">
-                      <td colSpan={3} className="px-5 py-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs" className="font-semibold">
-                              {grupo.label}
-                            </Badge>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {activasEnGrupo} de {grupo.capacidades.length} activas
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleGrupo(grupo.capacidades)}
-                            className="text-xs font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 cursor-pointer"
-                          >
-                            {todas ? "Quitar todo" : "Activar todo"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {grupo.capacidades.map((cap) => {
-                      const activa = tiene(cap);
-                      return (
-                        <TableRow key={cap} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01] transition-colors">
-                          <TableCell className="py-2.5 pl-5 whitespace-nowrap">
-                            <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
-                              {grupo.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <div>
-                              <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                                {CAPACIDAD_LABEL[cap]}
-                              </p>
-                              <p className="font-mono text-[11px] text-gray-400">{cap}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2.5 text-right pr-5 whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2.5">
-                              <span className={`text-xs font-medium ${activa ? "text-success-600 dark:text-success-400" : "text-gray-400"}`}>
-                                {activa ? "Habilitada" : "Deshabilitada"}
-                              </span>
-                              <Switch checked={activa} onChange={() => toggle(cap)} aria-label={cap} />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </Fragment>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {areas.map((area) => (
+            <Badge
+              key={area.id}
+              color={NIVEL_COLOR[area.nivel]}
+              size="sm"
+              endIcon={<span className="tabular-nums opacity-70">{area.activas}/{area.total}</span>}
+            >
+              {area.label}: {NIVEL_LABEL[area.nivel]}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* Los siete bloques de área, sin columnas redundantes ni filtros. */}
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Permisos del rol</h3>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+          Agrupados por área de negocio. Pasa el ratón por encima de un permiso para ver su nombre técnico.
+        </p>
+
+        <div className="mt-3">
+          {CAPACIDAD_GRUPOS.map((grupo) => {
+            const activasEnGrupo = grupo.capacidades.filter(tiene).length;
+            const todas = activasEnGrupo === grupo.capacidades.length;
+
+            return (
+              <div
+                key={grupo.id}
+                className="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
+                      {grupo.label}
+                    </Badge>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {activasEnGrupo} de {grupo.capacidades.length}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleGrupo(grupo.capacidades)}
+                    className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                  >
+                    {todas ? "Quitar todo" : "Dar todo"}
+                  </button>
+                </div>
+
+                <div className="mt-2">
+                  {grupo.capacidades.map((cap) => {
+                    const activa = tiene(cap);
+                    return (
+                      <div
+                        key={cap}
+                        className="flex items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-white/5"
+                      >
+                        <span
+                          title={cap}
+                          className={`truncate text-sm ${
+                            activa ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"
+                          }`}
+                        >
+                          {CAPACIDAD_LABEL[cap]}
+                        </span>
+                        <Switch checked={activa} onChange={() => toggle(cap)} aria-label={CAPACIDAD_LABEL[cap]} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
