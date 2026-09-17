@@ -352,7 +352,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 <div>
                   <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Capacidades y Permisos</h2>
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {efectivas.length} de 16 capacidades activas. Organizadas por categorías de negocio.
+                    {efectivas.length} de 18 capacidades activas. Organizadas por categorías de negocio.
                   </p>
                 </div>
               </div>
@@ -368,7 +368,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                   }`}
                 >
-                  Todas ({efectivas.length}/16)
+                  Todas ({efectivas.length}/18)
                 </button>
                 {CAPACIDAD_GRUPOS.map((g) => {
                   const activas = g.capacidades.filter((c) => efectivas.includes(c)).length;

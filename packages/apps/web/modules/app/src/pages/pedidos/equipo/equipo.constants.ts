@@ -69,7 +69,7 @@ export const CATEGORIA_COLORES: Record<string, BadgeColor> = {
  * Resume las capacidades efectivas como nombres de grupo ("Órdenes",
  * "Preparación", …) para la columna "Capacidades" de la tabla.
  *
- * Se resumen **grupos**, no las 16 capacidades una a una: en una celda de tabla
+ * Se resumen **grupos**, no las 18 capacidades una a una: en una celda de tabla
  * la lista completa es ilegible. El detalle vive en el perfil de la persona,
  * donde cada capacidad se ve con su interruptor y su procedencia.
  *

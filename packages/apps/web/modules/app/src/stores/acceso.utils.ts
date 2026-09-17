@@ -137,6 +137,16 @@ export function puedeEscribirCliente(): boolean {
   return puede("channels.read");
 }
 
+/** Ver la consola de conversaciones (bandeja y lectura de canales). */
+export function puedeVerConversaciones(): boolean {
+  return puede("channels.read");
+}
+
+/** Responder en una conversación (tomar/devolver y enviar como negocio). */
+export function puedeResponderConversacion(): boolean {
+  return puede("channels.respond");
+}
+
 /** Editar las plantillas de mensaje del canal. */
 export function puedeEditarPlantillas(): boolean {
   return puede("channels.manage");

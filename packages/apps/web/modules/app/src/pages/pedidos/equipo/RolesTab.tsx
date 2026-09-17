@@ -64,7 +64,7 @@ export const RolesTab = observer(() => {
                   {rol.sistema && <Badge color="light" size="xs">Sistema</Badge>}
                 </div>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  {rol.capacidades.length} de 16 capacidades
+                  {rol.capacidades.length} de 18 capacidades
                 </p>
               </div>
 
@@ -220,7 +220,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
           <div>
             <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Capacidades del rol</h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {capacidades.length} de 16 capacidades activas. Organizadas por categorías de negocio.
+              {capacidades.length} de 18 capacidades activas. Organizadas por categorías de negocio.
             </p>
           </div>
           {/* Filtros rápidos por categoría */}
@@ -234,7 +234,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
               }`}
             >
-              Todas ({capacidades.length}/16)
+              Todas ({capacidades.length}/18)
             </button>
             {CAPACIDAD_GRUPOS.map((g) => {
               const activas = g.capacidades.filter(tiene).length;

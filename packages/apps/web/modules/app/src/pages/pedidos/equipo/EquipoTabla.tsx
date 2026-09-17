@@ -267,7 +267,7 @@ const FilaEquipo = observer(
     };
 
     if (!esPendiente) {
-      if (op.rolId === "admin_tienda" || capacidades.length >= 16) {
+      if (op.rolId === "admin_tienda" || capacidades.length >= 18) {
         accessBadge = {
           label: "Acceso Total",
           color: "primary", // Necto Brand Tint

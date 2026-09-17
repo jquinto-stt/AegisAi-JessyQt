@@ -17,6 +17,8 @@ import {
   PlusIcon,
   GroupIcon,
   AiIcon,
+  ChatIcon,
+  PieChartIcon,
 } from "@/icons";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -163,6 +165,28 @@ const SidebarContent = observer(() => {
       <SimulacionBanner />
 
       <div className="flex flex-col gap-6">
+        {/* Canales (Conversaciones) — capa transversal de comunicaciones, lo más
+            importante, va ARRIBA del todo. Gobernada por channels.read. */}
+        {sessionStore.hasPermission("channels.read") && (
+          <div>
+            <MenuSectionHeader title="Canales" />
+            <ul className="flex flex-col gap-1">
+              <MenuItem icon={<ChatIcon />} name="Conversaciones" path="/conversaciones" isActive={isActive} />
+            </ul>
+          </div>
+        )}
+
+        {/* Inteligencia (Necto Intelligence) — justo debajo de Canales. */}
+        {sessionStore.hasPermission("assistant.use") && (
+          <div>
+            <MenuSectionHeader title="Inteligencia" />
+            <ul className="flex flex-col gap-1">
+              <MenuItem icon={<AiIcon />} name="NECTO AI" path="/asistente" isActive={isActive} />
+            </ul>
+          </div>
+        )}
+
+        {/* Módulos de negocio (Pedidos y, más adelante, Inventario, etc.). */}
         <div>
           <MenuSectionHeader title="Pedidos" />
           <ul className="flex flex-col gap-1">
@@ -170,6 +194,7 @@ const SidebarContent = observer(() => {
             {puedePedidos("tablero") && <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />}
             {puedePedidos("crear") && <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />}
             {puedePedidos("historial") && <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />}
+            {puedePedidos("analitica") && <MenuItem icon={<PieChartIcon />} name="Analítica" path="/pedidos/analitica" isActive={isActive} />}
             {puedePedidos("configuracion") && <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />}
             {puedeGestionarEquipo && (
               <MenuItem icon={<GroupIcon />} name="Equipo" path="/pedidos/equipo" isActive={esRutaConHijas} />
@@ -179,16 +204,6 @@ const SidebarContent = observer(() => {
       </div>
 
       <div className="mt-auto">
-        {/* Módulo independiente: Asistente (Necto Intelligence), pegado al fondo
-            justo antes del separador del footer. */}
-        {sessionStore.hasPermission("assistant.use") && (
-          <div className="pt-6">
-            <MenuSectionHeader title="Inteligencia" />
-            <ul className="flex flex-col gap-1">
-              <MenuItem icon={<AiIcon />} name="NECTO AI" path="/asistente" isActive={isActive} />
-            </ul>
-          </div>
-        )}
         <SidebarFooter />
       </div>
     </nav>

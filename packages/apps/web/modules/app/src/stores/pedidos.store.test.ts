@@ -451,6 +451,172 @@ describe("PedidosStore — pedidos programados", () => {
 // CONFIG AVANZADA: alias, tiempos objetivo, horario
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ANALÍTICA — distribuciones e ingresos (getters/métodos puros)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("PedidosStore — analítica sobre el seed", () => {
+  /** ymd local de un Date (mismo formato que usan los métodos del store). */
+  const ymdLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  it("conteoPorEstado cuenta cada estado y suma al total de pedidos", () => {
+    const store = new PedidosStore();
+    const conteo = store.conteoPorEstado();
+    // El seed tiene exactamente uno en cada uno de estos 7 estados y ninguno programado.
+    expect(conteo).toEqual({
+      programado: 0,
+      nuevo: 1,
+      confirmado: 1,
+      en_preparacion: 1,
+      listo: 1,
+      en_camino: 1,
+      entregado: 1,
+      cancelado: 1,
+    });
+    const suma = Object.values(conteo).reduce((s, n) => s + n, 0);
+    expect(suma).toBe(store.pedidos.length);
+  });
+
+  it("porModalidad respeta el orden canónico y suma al total", () => {
+    const store = new PedidosStore();
+    const dist = store.porModalidad();
+    expect(dist.map((d) => d.modalidad)).toEqual(["retiro", "domicilio", "en_sitio"]);
+    // Seed: retiro (pd2, pd6) = 2, domicilio (pd1, pd4, pd5, pd7) = 4, en_sitio (pd3) = 1.
+    expect(dist).toEqual([
+      { modalidad: "retiro", total: 2 },
+      { modalidad: "domicilio", total: 4 },
+      { modalidad: "en_sitio", total: 1 },
+    ]);
+    const suma = dist.reduce((s, d) => s + d.total, 0);
+    expect(suma).toBe(store.pedidos.length);
+  });
+
+  it("porOrigen cuenta whatsapp/operador y suma al total", () => {
+    const store = new PedidosStore();
+    const dist = store.porOrigen();
+    expect(dist.map((d) => d.origen)).toEqual(["whatsapp", "operador"]);
+    // Seed: whatsapp = 6, operador = 1 (pd3).
+    expect(dist).toEqual([
+      { origen: "whatsapp", total: 6 },
+      { origen: "operador", total: 1 },
+    ]);
+    const suma = dist.reduce((s, d) => s + d.total, 0);
+    expect(suma).toBe(store.pedidos.length);
+  });
+
+  it("ingresoTotalEntregados suma el total de los pedidos entregados", () => {
+    const store = new PedidosStore();
+    // En el seed solo pd6 está entregado: 1× Combo (25000).
+    expect(store.ingresoTotalEntregados()).toBe(25000);
+  });
+
+  it("tasaCancelacion es el % de cancelados sobre el total (1 decimal)", () => {
+    const store = new PedidosStore();
+    // Seed: 1 cancelado (pd7) de 7 → 1/7 = 14.285… → 14.3
+    expect(store.tasaCancelacion()).toBe(14.3);
+  });
+
+  it("ticketPromedioEntregado es el ingreso medio por entregado (redondeado)", () => {
+    const store = new PedidosStore();
+    // Un solo entregado con total 25000 → promedio 25000.
+    expect(store.ticketPromedioEntregado()).toBe(25000);
+  });
+
+  it("ingresosEntre acumula el total de entregados por día (finishedAt)", () => {
+    const store = new PedidosStore();
+    // pd6 (único entregado) tiene finishedAt ~50 min atrás → hoy (local).
+    const hoy = ymdLocal(new Date());
+    const serie = store.ingresosEntre(hoy, hoy);
+    expect(serie).toEqual([{ fecha: hoy, total: 25000 }]);
+  });
+});
+
+describe("PedidosStore — analítica: casos borde y pureza", () => {
+  const ymdLocal = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  it("con lista vacía, las distribuciones son 0 y los KPIs neutros", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    expect(store.conteoPorEstado()).toEqual({
+      programado: 0, nuevo: 0, confirmado: 0, en_preparacion: 0,
+      listo: 0, en_camino: 0, entregado: 0, cancelado: 0,
+    });
+    expect(store.porModalidad()).toEqual([
+      { modalidad: "retiro", total: 0 },
+      { modalidad: "domicilio", total: 0 },
+      { modalidad: "en_sitio", total: 0 },
+    ]);
+    expect(store.porOrigen()).toEqual([
+      { origen: "whatsapp", total: 0 },
+      { origen: "operador", total: 0 },
+    ]);
+    expect(store.ingresoTotalEntregados()).toBe(0);
+    expect(store.tasaCancelacion()).toBe(0);
+    expect(store.ticketPromedioEntregado()).toBe(0);
+  });
+
+  it("ingresosEntre devuelve [] con rango inválido (desde > hasta o vacío)", () => {
+    const store = new PedidosStore();
+    expect(store.ingresosEntre("2026-01-10", "2026-01-01")).toEqual([]);
+    expect(store.ingresosEntre("", "2026-01-01")).toEqual([]);
+    expect(store.ingresosEntre("2026-01-01", "")).toEqual([]);
+  });
+
+  it("ingresosEntre rellena con 0 los días sin ingresos y respeta el rango inclusive", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    // Un entregado hoy con total conocido.
+    const p = store.crearPedido({
+      cliente: "A", telefono: "+1", modalidad: "retiro",
+      items: [{ nombre: "X", cantidad: 2, precio: 1000 }],
+    });
+    for (let i = 0; i < 4; i++) store.avanzar(p.id); // retiro → entregado
+    expect(store.getPedido(p.id)!.estado).toBe("entregado");
+
+    const hoy = new Date();
+    const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+    const serie = store.ingresosEntre(ymdLocal(ayer), ymdLocal(hoy));
+    expect(serie).toHaveLength(2);
+    expect(serie[0]).toEqual({ fecha: ymdLocal(ayer), total: 0 });
+    expect(serie[1]).toEqual({ fecha: ymdLocal(hoy), total: 2000 });
+  });
+
+  it("los métodos de analítica son puros (no mutan this.pedidos)", () => {
+    const store = new PedidosStore();
+    const antes = store.pedidos.map((p) => ({ id: p.id, estado: p.estado }));
+    store.conteoPorEstado();
+    store.porModalidad();
+    store.porOrigen();
+    store.ingresoTotalEntregados();
+    store.tasaCancelacion();
+    store.ticketPromedioEntregado();
+    store.ingresosEntre(ymdLocal(new Date()), ymdLocal(new Date()));
+    const despues = store.pedidos.map((p) => ({ id: p.id, estado: p.estado }));
+    expect(despues).toEqual(antes);
+    expect(store.pedidos).toHaveLength(7);
+  });
+
+  it("tasaCancelacion y ticketPromedioEntregado con varios pedidos", () => {
+    const store = new PedidosStore();
+    store.pedidos = [];
+    // 2 entregados (1000 y 3000) + 2 cancelados de 4 pedidos totales.
+    const e1 = store.crearPedido({ cliente: "A", telefono: "+1", modalidad: "retiro", items: [{ nombre: "X", cantidad: 1, precio: 1000 }] });
+    const e2 = store.crearPedido({ cliente: "B", telefono: "+2", modalidad: "retiro", items: [{ nombre: "Y", cantidad: 3, precio: 1000 }] });
+    const c1 = store.crearPedido({ cliente: "C", telefono: "+3", modalidad: "retiro", items: [] });
+    const c2 = store.crearPedido({ cliente: "D", telefono: "+4", modalidad: "retiro", items: [] });
+    for (let i = 0; i < 4; i++) store.avanzar(e1.id);
+    for (let i = 0; i < 4; i++) store.avanzar(e2.id);
+    store.cancelar(c1.id);
+    store.cancelar(c2.id);
+
+    expect(store.ingresoTotalEntregados()).toBe(4000);
+    expect(store.ticketPromedioEntregado()).toBe(2000); // 4000 / 2
+    expect(store.tasaCancelacion()).toBe(50); // 2/4 → 50.0
+  });
+});
+
 describe("PedidosStore — alias de estados y modalidades (C)", () => {
   it("estadoLabel/modalidadLabel usan el alias si existe", () => {
     const store = new PedidosStore();

@@ -52,6 +52,7 @@ export type Capacidad =
   | "scheduled.manage"
   // Canales (WhatsApp, etc.)
   | "channels.read"
+  | "channels.respond"
   | "channels.manage"
   // Ajustes del módulo
   | "settings.read"
@@ -81,6 +82,7 @@ export const CAPACIDADES: Capacidad[] = [
   "scheduled.read",
   "scheduled.manage",
   "channels.read",
+  "channels.respond",
   "channels.manage",
   "settings.read",
   "settings.manage",
@@ -102,6 +104,7 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
   "scheduled.read": "Ver programados",
   "scheduled.manage": "Gestionar programados",
   "channels.read": "Ver canales",
+  "channels.respond": "Responder en canales",
   "channels.manage": "Gestionar canales",
   "settings.read": "Ver configuración",
   "settings.manage": "Editar configuración",
@@ -125,7 +128,7 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
   { id: "ordenes", label: "Órdenes", capacidades: ["orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit", "orders.delete"] },
   { id: "preparacion", label: "Preparación", capacidades: ["preparation.read", "preparation.manage"] },
   { id: "programados", label: "Programados", capacidades: ["scheduled.read", "scheduled.manage"] },
-  { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.manage"] },
+  { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.respond", "channels.manage"] },
   { id: "ajustes", label: "Configuración", capacidades: ["settings.read", "settings.manage"] },
   { id: "equipo", label: "Equipo", capacidades: ["team.read", "team.manage"] },
   { id: "asistente", label: "Asistente", capacidades: ["assistant.use"] },
@@ -177,7 +180,7 @@ export const ROLES_SEED: Rol[] = [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit", "orders.delete",
       "preparation.read", "preparation.manage",
       "scheduled.read", "scheduled.manage",
-      "channels.read", "channels.manage",
+      "channels.read", "channels.respond", "channels.manage",
       "settings.read",
       "team.read",
     ],
@@ -190,7 +193,7 @@ export const ROLES_SEED: Rol[] = [
     capacidades: [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit",
       "scheduled.read", "scheduled.manage",
-      "channels.read",
+      "channels.read", "channels.respond",
     ],
     sistema: true,
   },

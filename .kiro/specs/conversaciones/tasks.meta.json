@@ -1,0 +1,520 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Extender `roles.store.ts` con `channels.respond`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608659347
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608725846
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608861532
+      }
+    ],
+    "1.2 Mapear `channels.respond` a los roles en `ROLES_SEED`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608662037
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608877605
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608990130
+      }
+    ],
+    "1.4 Añadir helpers de acceso en `acceso.utils.ts`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608664117
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609012373
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609190441
+      }
+    ],
+    "1.6 Registrar la sección \"Conversaciones\" en `operadores.store.ts`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608666149
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609014326
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609192080
+      }
+    ],
+    "2.1 Crear `conversaciones.types.ts` con las enumeraciones e interfaces": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608668225
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608878962
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608991587
+      }
+    ],
+    "3.1 Crear el seed inicial `conversaciones.seed.ts`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608670280
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609015762
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609194451
+      }
+    ],
+    "3.2 Crear el esqueleto del store con estado observable y persistencia": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608672501
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609201712
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609394927
+      }
+    ],
+    "3.4 Implementar acciones de mensajería del cliente y del negocio": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608674662
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609565043
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609702446
+      }
+    ],
+    "3.6 Implementar la máquina de estados de handoff": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608676736
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609703679
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609818486
+      }
+    ],
+    "3.8 Implementar getters de bandeja, no leídos y selección": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608678779
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609817232
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609921167
+      }
+    ],
+    "3.10 Implementar la línea de tiempo unificada derivada": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608680837
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609922507
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610043338
+      }
+    ],
+    "3.12 Implementar el enganche de atención automática (delegación al adaptador)": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608682855
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610044600
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610191817
+      }
+    ],
+    "4.1 Implementar `porTelefono(telefono)` en `pedidos.store.ts`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608684979
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608880268
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608992704
+      }
+    ],
+    "5.1 Crear el adaptador delgado en el módulo de conversaciones": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608687046
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609202982
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609563707
+      }
+    ],
+    "6.1 Crear `ConversacionesPage` con layout de 2 columnas + panel colapsable": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608689199
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610192950
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610415153
+      }
+    ],
+    "6.2 Implementar `BandejaLista` (filtros, buscador, badges, no leídos)": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608691286
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610427349
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610613422
+      }
+    ],
+    "6.3 Implementar `ChatView` (línea de tiempo unificada + eventos)": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608693387
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610614638
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610769563
+      }
+    ],
+    "6.4 Implementar `Composer` con gating `channels.respond`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608695430
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610772238
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610937912
+      }
+    ],
+    "6.5 Implementar el botón Tomar / Devolver": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608697528
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610942116
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611105462
+      }
+    ],
+    "6.6 Implementar `PanelContexto` con `TabPedidos` y `TabTurnos`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608699788
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611104141
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611302851
+      }
+    ],
+    "7.1 Registrar la ruta `/conversaciones` con `CapabilityGuard`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608702518
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610940790
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611301149
+      }
+    ],
+    "7.2 Añadir el ítem \"Conversaciones\" en `AppSidebar`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608704845
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610773360
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610939465
+      }
+    ],
+    "8.1 Conectar `SimuladorWhatsApp` al `conversacionesStore` bidireccional": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608707089
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610194171
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610416285
+      }
+    ],
+    "8.2 Añadir el comando rápido \"Hablar con un asesor\"": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608709113
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610428972
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610611763
+      }
+    ],
+    "8.3 Deprecar `chats.mock.ts`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608711245
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610615864
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610771011
+      }
+    ],
+    "10.1 Actualizar el test de conteo de capacidades afectado": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608713343
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609017189
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609193299
+      }
+    ],
+    "10.2 Ejecutar la suite de los archivos nuevos y afectados": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608715616
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611313814
+      },
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611497449
+      }
+    ],
+    "2. Definir los tipos y contratos del dominio de Conversaciones": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608993941
+      }
+    ],
+    "4. Añadir la puerta pública `pedidosStore.porTelefono`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789608995377
+      }
+    ],
+    "5. Implementar el adaptador `conversacionesBotAdapter` al AssistantEngine": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789609566350
+      }
+    ],
+    "3. Implementar `conversacionesStore` (dueño único del estado)": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610195504
+      }
+    ],
+    "8. Refactorizar el simulador `/wa` como vista del cliente": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789610774477
+      }
+    ],
+    "7. Cablear la ruta y la navegación": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611304408
+      }
+    ],
+    "6. Construir la consola del operador `/conversaciones`": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611305652
+      }
+    ],
+    "10. Verificación final y ajuste de conteo de capacidades": [
+      {
+        "executionId": "c051cec1-192f-4b0a-bd49-4373f40d13e6",
+        "chatSessionId": "sess_2f8b4bb4-3062-4927-88af-0c4e2ab27c0f",
+        "timestamp": 1789611500401
+      }
+    ]
+  }
+}

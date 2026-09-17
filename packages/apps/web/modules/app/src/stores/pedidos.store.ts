@@ -432,6 +432,18 @@ export class PedidosStore {
     return this.pedidos.find((p) => p.id === id);
   }
 
+  /**
+   * Pedidos asociados a un teléfono de contacto, ordenados por createdAt desc.
+   * Es la puerta pública para que otros módulos (p. ej. Conversaciones) crucen
+   * un contacto con sus pedidos SIN leer el array `pedidos` directamente. No
+   * muta `pedidos`: `filter` ya devuelve un array nuevo sobre el que opera `sort`.
+   */
+  porTelefono(telefono: string): Pedido[] {
+    return this.pedidos
+      .filter((p) => p.telefono === telefono)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
   /** Pedidos en un estado dado (para las columnas del tablero). */
   porEstado(estado: PedidoEstado): Pedido[] {
     return this.pedidos
@@ -631,6 +643,117 @@ export class PedidosStore {
       0,
     );
     return Math.round(total / entregados.length);
+  }
+
+  // ── Analítica (distribuciones e ingresos) ──────────────────────────────────
+
+  /**
+   * Conteo de pedidos por estado sobre TODOS los pedidos (incluye terminales).
+   * Devuelve un registro con las 8 claves de `PedidoEstado` (0 si no hay
+   * ninguno). Puro: no muta `this.pedidos`. Útil para donut/barras por estado.
+   */
+  conteoPorEstado(): Record<PedidoEstado, number> {
+    const base: Record<PedidoEstado, number> = {
+      programado: 0,
+      nuevo: 0,
+      confirmado: 0,
+      en_preparacion: 0,
+      listo: 0,
+      en_camino: 0,
+      entregado: 0,
+      cancelado: 0,
+    };
+    return this.pedidos.reduce((acc, p) => {
+      acc[p.estado] += 1;
+      return acc;
+    }, base);
+  }
+
+  /**
+   * Conteo de pedidos por modalidad, en orden canónico
+   * ["retiro","domicilio","en_sitio"]. Incluye TODAS las modalidades (con 0 si
+   * no hay ninguna) para que el gráfico sea estable. Puro: no muta `this.pedidos`.
+   */
+  porModalidad(): { modalidad: Modalidad; total: number }[] {
+    const orden: Modalidad[] = ["retiro", "domicilio", "en_sitio"];
+    return orden.map((modalidad) => ({
+      modalidad,
+      total: this.pedidos.filter((p) => p.modalidad === modalidad).length,
+    }));
+  }
+
+  /**
+   * Conteo de pedidos por origen ("whatsapp" | "operador"), en orden canónico.
+   * Incluye ambos orígenes (con 0 si no hay ninguno). Puro: no muta `this.pedidos`.
+   */
+  porOrigen(): { origen: "whatsapp" | "operador"; total: number }[] {
+    const orden: Array<"whatsapp" | "operador"> = ["whatsapp", "operador"];
+    return orden.map((origen) => ({
+      origen,
+      total: this.pedidos.filter((p) => p.origen === origen).length,
+    }));
+  }
+
+  /**
+   * Ingresos ESTIMADOS por día entre dos fechas "YYYY-MM-DD" inclusive (del más
+   * antiguo al más reciente). Suma `totalPedido(p)` de los pedidos ENTREGADOS
+   * por su `finishedAt` (día local). Días sin ingresos → 0. Mismo patrón de
+   * recorrido de fechas que `volumenEntre`. Puro: no muta `this.pedidos`.
+   */
+  ingresosEntre(desde: string, hasta: string): { fecha: string; total: number }[] {
+    if (!desde || !hasta || desde > hasta) return [];
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const conteo = new Map<string, number>();
+    for (const p of this.pedidos) {
+      if (p.estado !== "entregado" || !p.finishedAt) continue;
+      const d = new Date(p.finishedAt);
+      const dia = ymd(d);
+      conteo.set(dia, (conteo.get(dia) ?? 0) + this.totalPedido(p));
+    }
+    const out: { fecha: string; total: number }[] = [];
+    const cur = new Date(`${desde}T00:00:00`);
+    const fin = new Date(`${hasta}T00:00:00`);
+    let guard = 0;
+    while (cur.getTime() <= fin.getTime() && guard < 400) {
+      const fecha = ymd(cur);
+      out.push({ fecha, total: conteo.get(fecha) ?? 0 });
+      cur.setDate(cur.getDate() + 1);
+      guard++;
+    }
+    return out;
+  }
+
+  /**
+   * Suma de `totalPedido` de todos los pedidos entregados (ingresos acumulados
+   * del histórico mock). Puro: no muta `this.pedidos`.
+   */
+  ingresoTotalEntregados(): number {
+    return this.pedidos
+      .filter((p) => p.estado === "entregado")
+      .reduce((s, p) => s + this.totalPedido(p), 0);
+  }
+
+  /**
+   * Porcentaje (0..100) de pedidos cancelados sobre el total de pedidos,
+   * redondeado a 1 decimal. 0 si no hay pedidos. Puro: no muta `this.pedidos`.
+   */
+  tasaCancelacion(): number {
+    const total = this.pedidos.length;
+    if (total === 0) return 0;
+    const cancelados = this.pedidos.filter((p) => p.estado === "cancelado").length;
+    return Math.round((cancelados / total) * 1000) / 10;
+  }
+
+  /**
+   * Ticket (ingreso) promedio por pedido entregado:
+   * ingresoTotalEntregados / nº entregados, redondeado a entero. 0 si no hay
+   * entregados. Puro: no muta `this.pedidos`.
+   */
+  ticketPromedioEntregado(): number {
+    const entregados = this.pedidos.filter((p) => p.estado === "entregado").length;
+    if (entregados === 0) return 0;
+    return Math.round(this.ingresoTotalEntregados() / entregados);
   }
 
   /** El pedido en curso más reciente (para el hero del dashboard). */

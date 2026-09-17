@@ -21,7 +21,7 @@ describe("catálogo de capacidades", () => {
   it("C4: todas las capacidades nombran acciones, no pantallas", async () => {
     const { CAPACIDADES } = await freshRolesStore();
 
-    expect(CAPACIDADES).toHaveLength(17);
+    expect(CAPACIDADES).toHaveLength(18);
     for (const cap of CAPACIDADES) {
       // Formato `<dominio>.<accion>`.
       expect(cap).toMatch(/^[a-z]+\.[a-z]+$/);
@@ -72,7 +72,7 @@ describe("capacidad assistant.use", () => {
 });
 
 describe("catálogo de roles", () => {
-  it("incluye el rol de administrador con las 16 capacidades", async () => {
+  it("incluye el rol de administrador con las 18 capacidades", async () => {
     const { rolesStore, CAPACIDADES, ROL_ADMIN } = await freshRolesStore();
 
     const admin = rolesStore.porId(ROL_ADMIN);

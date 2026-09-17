@@ -6,12 +6,14 @@ import {
   CrearPedidoPage,
   InicioPage as PedidosInicioPage,
   HistorialPage as PedidosHistorialPage,
+  AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
   EquipoPage,
   PerfilOperadorPage,
 } from "@/pages/pedidos";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage } from "@/pages/asistente";
+import { ConversacionesPage } from "@/pages/conversaciones";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
@@ -43,11 +45,13 @@ export default function App() {
         <Route path="/pedidos" element={<CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard>} />
         <Route path="/pedidos/crear" element={<CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard>} />
         <Route path="/pedidos/historial" element={<CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard>} />
+        <Route path="/pedidos/analitica" element={<CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard>} />
         <Route path="/pedidos/config" element={<CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard>} />
         <Route path="/pedidos/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/pedidos/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
         <Route path="/pedidos/operadores" element={<Navigate to="/pedidos/equipo" replace />} />
         <Route path="/asistente" element={<CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard>} />
+        <Route path="/conversaciones" element={<CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
         <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />
