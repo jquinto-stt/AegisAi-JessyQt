@@ -12,11 +12,12 @@ import {
   AiIcon,
   BoltIcon,
   EyeIcon,
+  GridIcon,
   LockIcon,
   PlugInIcon,
   TimeIcon,
 } from "@/icons";
-import { assistantStore, uiStore } from "@/stores";
+import { assistantStore, integracionesStore, uiStore } from "@/stores";
 import type { Modulo } from "@/stores/session.store";
 import { buildAccessContext } from "@/assistant/bootstrap";
 import { toolRegistry } from "@/assistant";
@@ -24,6 +25,9 @@ import {
   CONFIANZA_BADGE,
   CONFIANZA_LABEL,
   EJEMPLOS_PREGUNTA,
+  ESTADO_INTEGRACION_BADGE,
+  ESTADO_INTEGRACION_LABEL,
+  FLUJO_INTEGRACION,
   GRUPO_SECCION_LABEL,
   INFERENCIA_TIPO_LABEL,
   LIMITES_ASISTENTE,
@@ -44,6 +48,7 @@ import {
   seccionesPorGrupo,
   type ConfianzaInferencia,
   type DensidadAsistente,
+  type EstadoIntegracion,
   type IconoSeccion,
   type LongitudRespuesta,
   type NivelTool,
@@ -96,6 +101,7 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
   AiIcon,
   BoltIcon,
   PlugInIcon,
+  GridIcon,
   TimeIcon,
   LockIcon,
   EyeIcon,
@@ -330,7 +336,11 @@ export const AsistenteConfigPage = observer(() => {
                   <Alert
                     variant="warning"
                     title="El asistente no tiene ninguna herramienta disponible"
-                    message="Con tus permisos actuales no puede responder nada. Esto es intencionado: el filtro es fail-closed. Revisa Herramientas para ver exactamente qué falta."
+                    message={
+                      integracionesStore.modulosHabilitados.length === 0
+                        ? "No hay ningún módulo conectado al asistente, así que no tiene nada que ejecutar. Conéctalo desde Módulos integrados."
+                        : "Con tus permisos actuales no puede responder nada. Esto es intencionado: el filtro es fail-closed. Revisa Herramientas para ver exactamente qué falta."
+                    }
                   />
                 )}
               </>
@@ -533,8 +543,8 @@ export const AsistenteConfigPage = observer(() => {
                 <Card>
                   <CardHead>Tu alcance sobre las herramientas</CardHead>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Una herramienta solo llega al asistente si su módulo está habilitado
-                    y tú tienes todos los permisos que exige. El filtro es fail-closed:
+                    Una herramienta solo llega al asistente si su módulo está conectado en Módulos
+                    integrados y tú tienes todos los permisos que exige. El filtro es fail-closed:
                     ante la duda, no se expone.
                   </p>
 
@@ -546,6 +556,16 @@ export const AsistenteConfigPage = observer(() => {
                       de {totales} herramientas disponibles para tu rol
                     </span>
                   </div>
+
+                  {integracionesStore.modulosHabilitados.length === 0 && (
+                    <div className="mt-4">
+                      <Alert
+                        variant="warning"
+                        title="Ningún módulo conectado"
+                        message="Sin módulos conectados el asistente no puede ejecutar nada, aunque tus permisos sean amplios. Es la consecuencia directa de Módulos integrados, no un problema de permisos."
+                      />
+                    </div>
+                  )}
                 </Card>
 
                 <Card>
@@ -615,6 +635,178 @@ export const AsistenteConfigPage = observer(() => {
                     Los niveles «Recomendación» y «Ejecución» están definidos en el
                     contrato pero no implementados. Si alguna vez se activaran, el
                     asistente dejaría de ser de solo lectura — por eso se muestran aquí.
+                  </p>
+                </Card>
+              </>
+            )}
+
+            {/* ───────────── MÓDULOS INTEGRADOS ───────────── */}
+            {seccion === "modulos" && (
+              <>
+                <Card>
+                  <CardHead>Módulos conectados al asistente</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Conectar un módulo habilita para el asistente las capacidades de las que ese
+                    módulo ya es dueño; desconectarlo las retira. No son conectores a servicios
+                    externos: son los módulos que ya viven dentro de Necto.
+                  </p>
+
+                  <div className="mt-4 space-y-3">
+                    {integracionesStore.entradas.map(({ id, entrada }) => {
+                      const conectado = integracionesStore.estaConectado(id);
+
+                      // El estado se deriva de dos hechos independientes: si el
+                      // módulo existe (catálogo) y si está conectado (store). La
+                      // pantalla no decide nada por su cuenta.
+                      const estado: EstadoIntegracion = !entrada.disponible
+                        ? "no_disponible"
+                        : conectado
+                          ? "conectado"
+                          : "desconectado";
+
+                      return (
+                        <div
+                          key={id}
+                          className="rounded-xl border border-gray-200 p-4 dark:border-gray-800"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                                  {entrada.label}
+                                </span>
+                                <Badge
+                                  color={ESTADO_INTEGRACION_BADGE[estado]}
+                                  size="sm"
+                                >
+                                  {ESTADO_INTEGRACION_LABEL[estado]}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {entrada.descripcion}
+                              </p>
+                            </div>
+
+                            {/* El interruptor es el ÚNICO control de esta pantalla
+                                que cambia el comportamiento del asistente, y lo
+                                cambia de verdad: el filtro de módulos del
+                                `toolRegistry` lee esta conexión. */}
+                            <Switch
+                              color={SWITCH_COLOR}
+                              checked={conectado}
+                              disabled={!entrada.disponible}
+                              onChange={() => integracionesStore.alternar(id)}
+                              aria-label={`Conectar ${entrada.label} al asistente`}
+                            />
+                          </div>
+
+                          <ul className="mt-3 flex flex-wrap gap-1.5">
+                            {entrada.ejemplos.map((ejemplo) => (
+                              <li
+                                key={ejemplo}
+                                className="rounded-md border border-dashed border-gray-300 px-2 py-0.5 text-[11px] text-gray-500 dark:border-gray-700 dark:text-gray-400"
+                              >
+                                {ejemplo}
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Un módulo declarado que todavía no existe se explica;
+                              no se disfraza de módulo apagado. */}
+                          {!entrada.disponible && (
+                            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                              Este módulo está declarado en el catálogo, pero todavía no aporta
+                              capacidades al asistente porque no tiene proveedor de herramientas. El
+                              control queda deshabilitado hasta que exista: no se puede conectar algo
+                              que aún no hay.
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                <Card>
+                  <CardHead>Efecto de las conexiones ahora mismo</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    La conexión no es decorativa: el asistente filtra sus herramientas por los
+                    módulos conectados. Esto es lo que queda con la configuración actual.
+                  </p>
+
+                  <div className="mt-4">
+                    <div className={filaBase}>
+                      <Label2
+                        titulo="Módulos conectados"
+                        descripcion="Los que aportan capacidades al asistente en este momento."
+                      />
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        {integracionesStore.modulosHabilitados.length}
+                      </span>
+                    </div>
+
+                    <div className={filaBase}>
+                      <Label2
+                        titulo="Herramientas habilitadas"
+                        descripcion="Las que el asistente puede ejecutar con tus permisos y estas conexiones."
+                      />
+                      <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        {disponibles.length} de {totales}
+                      </span>
+                    </div>
+
+                    <div className={filaBase}>
+                      <Label2
+                        titulo="Contexto en WhatsApp"
+                        descripcion="Pestañas que aparecerán en cada conversación del canal."
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {integracionesStore.modulosHabilitados.length === 0
+                          ? "Solo la conversación"
+                          : `Conversación + ${integracionesStore.modulosHabilitados.length}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  {integracionesStore.modulosHabilitados.length === 0 && (
+                    <div className="mt-4">
+                      <Alert
+                        variant="warning"
+                        title="El asistente no tiene ningún módulo conectado"
+                        message="Sin módulos conectados no puede ejecutar ninguna herramienta: no es un fallo, es el resultado de esta configuración. Conecta un módulo para devolverle capacidades."
+                      />
+                    </div>
+                  )}
+                </Card>
+
+                <Card>
+                  <CardHead>Cómo se encadena la configuración</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    La conexión se decide en un solo sitio. El chat no configura nada: solo refleja
+                    lo que hay conectado.
+                  </p>
+
+                  <ol className="mt-4 space-y-3">
+                    {FLUJO_INTEGRACION.map((paso, i) => (
+                      <li key={paso.titulo} className="flex gap-3">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 dark:bg-white/[0.06] dark:text-gray-300">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                            {paso.titulo}
+                          </p>
+                          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                            {paso.detalle}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+
+                  <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                    Cada módulo sigue siendo dueño de sus propias capacidades: aquí solo se decide si
+                    el asistente las tiene a mano.
                   </p>
                 </Card>
               </>

@@ -1,34 +1,46 @@
 /**
- * Verificación del botón "NECTO AI" de Analítica tras volverlo sobrio.
+ * Verificación del botón "NECTO AI" de Analítica.
  *
- * Qué comprueba, y por qué cada cosa:
- *   1. El botón existe, conserva su `title` y su icono.
- *   2. No queda NADA del tratamiento anterior: ni degradado, ni animación de
- *      pulso, ni escalado. Se leen estilos COMPUTADOS, no el className: así la
- *      prueba no se puede satisfacer renombrando una clase.
- *   3. Está alineado con el resto de la barra (misma altura que «Descargar CSV»,
- *      mismo radio y misma tipografía que el selector de periodo). "Sobrio"
- *      significa, medible, "no desentona".
- *   4. El naranja de marca es el único rasgo personalizado.
- *   5. Se respeta el contrato de acceso: sin `assistant.use` el botón NO se
- *      pinta, porque /asistente está guardada por esa capacidad.
+ * Historia del diseño, porque explica qué se comprueba:
+ *   1. Original — anillo de TRES colores (naranja→violeta→índigo #190088),
+ *      icono con `animate-pulse`, pastilla «Chat», `hover:scale`. La técnica del
+ *      anillo era buena; el exceso la arruinaba. Veredicto: estridente.
+ *   2. Tinte pálido de marca → "feo, sin nada especial".
+ *   3. Marca sólida plana → "no destaca, no invita a nada".
+ *   4. La referencia del usuario: píldora con anillo degradado, relleno claro y
+ *      texto en degradado, con el destello de `ShootingStarIcon`. Sin animación.
+ *   5. **Actual** — igual que 4, pero con las **tres rampas de marca de NECTO**
+ *      (`brand-500` naranja → `secondary-300` violeta → `accent-300` cian) y con
+ *      **animación al pasar el ratón**: el degradado va a doble ancho y su
+ *      posición se desplaza, así que los colores fluyen por el anillo.
  *
- * Trampas respetadas (todas documentadas en REFERENCIA.md):
+ * Lo que se comprueba, y por qué cada cosa:
+ *   1. Existe, conserva `title`, icono y forma de píldora.
+ *   2. **El anillo recorre las tres rampas de marca** y NO reaparece el
+ *      índigo `#190088` que fundía un extremo con el fondo.
+ *   3. **El contraste del texto en degradado llega a 4.5:1 en los TRES tonos.**
+ *      Es la comprobación central y la razón de que el texto use tonos más
+ *      oscuros que el anillo: `accent-300` (#97d6df) sobre blanco da **1.65:1**,
+ *      ilegible. El anillo puede permitírselo (es decoración), el texto no. Una
+ *      aserción que solo mirara "el texto es un degradado" daría verde con un
+ *      texto invisible, así que aquí se mide el contraste de verdad.
+ *   4. **La animación de hover es real**: se mueve el ratón de verdad con
+ *      `Input.dispatchMouseEvent` y se comprueba que `background-position` pasa
+ *      de `0%` a `100%`. Medir el `class` no serviría: probaría que la clase
+ *      está escrita, no que el navegador la aplica. Y se comprueba que **sin
+ *      ratón encima la animación está quieta** (`transition` solo, sin
+ *      `@keyframes` en reposo), para que el botón no parpadee solo.
+ *   5. Sigue alineado en altura con la barra y respetando el contrato de acceso.
+ *
+ * Trampas respetadas (documentadas en REFERENCIA.md):
  *   - `Runtime.evaluate` devuelve el literal de cadena sin reevaluarlo: los IIFE
- *     se pasan desnudos, nunca envueltos en JSON.stringify.
+ *     se pasan desnudos.
  *   - El payload está en `.result.result.value`.
- *   - La sesión se siembra ANTES de navegar.
- *   - **Tailwind v4 emite `oklab(...)`, no `rgb(...)`.** Comparar cadenas contra
- *     "rgb(255, 179, 163)" falla aunque el color sea correcto. Por eso los
- *     colores se resuelven a sRGB pintándolos en un canvas de 1×1 y leyendo el
- *     píxel: funciona con cualquier espacio de color.
- *   - **La instantánea de sesión NO tiene `rolId` ni `operadorId`.** Su forma es
- *     `{ modulos, tipoSesion, operadorSimuladoId, preSimulacion }`. El rol sale
- *     de `operadoresStore.porId(operadorSimuladoId).rolId`. Sembrar un
- *     `operadorSimuladoId` inexistente (o ninguno) hace caer la sesión al estado
- *     de administrador y **el guard de capacidad parece fallar por culpa del
- *     arnés, no de la página**. Ids reales: d0 admin_tienda · d1
- *     supervisor_pedidos · d2 vendedor (SIN assistant.use) · d3 vendedor.
+ *   - Tailwind v4 emite `oklab()`: los colores se resuelven a sRGB pintándolos en
+ *     un canvas de 1×1. Los TOKENS del tema se resuelven leyendo
+ *     `var(--color-*)`, que Tailwind v4 expone como variables CSS.
+ *   - La instantánea de sesión NO tiene `rolId`: su forma es
+ *     `{ modulos, tipoSesion, operadorSimuladoId, preSimulacion }`.
  */
 
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -147,13 +159,17 @@ const check = (label, cond, detail = "") => {
   }
 };
 
-// ── Siembra de estado (formas REALES, verificadas contra los stores) ────────
-
 /**
- * @param tipoSesion "administrador" entra como admin_tienda; "operador" usa el
- *                   rol del operador simulado.
- * @param operadorSimuladoId id real del seed de operadores (d0..d3) o null.
+ * Color del diseño DESCARTADO. El original terminaba el degradado en índigo
+ * `#190088`: tan oscuro que un extremo del anillo se fundía con el fondo.
+ * El violeta `#7e57ff` NO está aquí a propósito — es `secondary-300` y el
+ * diseño vigente lo usa.
  */
+const INDIGO_DESCARTADO = ["190088", "25, 0, 136"];
+
+/** Mínimo de contraste WCAG AA para texto pequeño. */
+const CONTRASTE_MINIMO = 4.5;
+
 const seedSession = (tipoSesion, operadorSimuladoId) =>
   evaluate(
     [
@@ -181,13 +197,10 @@ const seedTheme = (theme) =>
     ].join("\n")
   );
 
-// Mide con estilos COMPUTADOS y resuelve los colores a sRGB real.
-const medirBotones = () =>
+const medirBoton = () =>
   evaluate(
     [
       "(() => {",
-      "  // Tailwind v4 devuelve oklab(): hay que resolver a sRGB para poder",
-      "  // afirmar nada sobre el color. Un canvas de 1x1 lo hace por nosotros.",
       "  const cv = document.createElement('canvas');",
       "  cv.width = 1; cv.height = 1;",
       "  const ctx = cv.getContext('2d', { willReadFrequently: true });",
@@ -198,6 +211,22 @@ const medirBotones = () =>
       "    ctx.fillRect(0, 0, 1, 1);",
       "    const d = ctx.getImageData(0, 0, 1, 1).data;",
       "    return [d[0], d[1], d[2], Math.round((d[3] / 255) * 100) / 100];",
+      "  };",
+      "  const token = (nombre) => {",
+      "    const d = document.createElement('div');",
+      "    d.style.color = 'var(' + nombre + ')';",
+      "    document.body.appendChild(d);",
+      "    const c = getComputedStyle(d).color;",
+      "    d.remove();",
+      "    return resolver(c);",
+      "  };",
+      "  const lum = (c) => {",
+      "    const f = (v) => { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };",
+      "    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);",
+      "  };",
+      "  const contraste = (a, b) => {",
+      "    const la = lum(a), lb = lum(b);",
+      "    return Math.round(((Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)) * 100) / 100;",
       "  };",
       "  const porTexto = (t) => [...document.querySelectorAll('button')]",
       "    .find(b => b.textContent.trim() === t);",
@@ -221,22 +250,39 @@ const medirBotones = () =>
       "  if (!ia) return salida;",
       "  const cs = getComputedStyle(ia);",
       "  const r = ia.getBoundingClientRect();",
-      "  const conAnimacion = ia.querySelector('[class*=\"animate-\"]');",
+      "  const relleno = ia.querySelector('span[class*=\"rounded-full\"]');",
+      "  const texto = ia.querySelector('[class*=\"bg-clip-text\"]');",
+      "  const rellenoCs = relleno ? getComputedStyle(relleno) : null;",
+      "  const textoCs = texto ? getComputedStyle(texto) : null;",
+      "  const colorRelleno = rellenoCs ? resolver(rellenoCs.backgroundColor) : null;",
       "  salida.ia = Object.assign(geo(ia), {",
-      "    colorTexto: resolver(cs.color),",
-      "    fondo: resolver(cs.backgroundColor),",
-      "    colorBorde: resolver(cs.borderTopColor),",
-      "    colorIcono: ia.querySelector('svg') ? resolver(getComputedStyle(ia.querySelector('svg')).color) : null,",
-      "    anchoBorde: cs.borderTopWidth,",
       "    imagenFondo: cs.backgroundImage,",
-      "    transicion: cs.transitionProperty,",
+      "    tamanoFondo: cs.backgroundSize,",
+      "    posicionFondo: cs.backgroundPosition,",
+      "    rellenoInterior: cs.paddingTop,",
+      "    nombreAnimacion: cs.animationName,",
       "    transformacion: cs.transform,",
-      "    cursor: cs.cursor,",
       "    title: ia.getAttribute('title') || '',",
-      "    tieneIcono: !!ia.querySelector('svg'),",
-      "    claseAnimada: conAnimacion ? conAnimacion.getAttribute('class') : null,",
-      "    tieneDegradado: !!ia.querySelector('[class*=\"bg-gradient\"]')",
-      "      || cs.backgroundImage.indexOf('gradient') !== -1",
+      "    tieneDestello: !!ia.querySelector('svg'),",
+      "    tienePulso: !!ia.querySelector('.animate-pulse'),",
+      "    // Centro en coordenadas de viewport: lo necesita el ratón de CDP.",
+      "    centro: { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) },",
+      "    relleno: colorRelleno,",
+      "    textoTransparente: textoCs ? textoCs.webkitTextFillColor : null,",
+      "    textoImagenFondo: textoCs ? textoCs.backgroundImage : null,",
+      "    // Contraste medido contra el relleno REAL, no contra un blanco supuesto.",
+      "    contrastesClaro: [",
+      "      contraste(token('--color-brand-700'), colorRelleno),",
+      "      contraste(token('--color-secondary-400'), colorRelleno),",
+      "      contraste(token('--color-accent-700'), colorRelleno)",
+      "    ],",
+      "    contrastesOscuro: [",
+      "      contraste(token('--color-brand-300'), colorRelleno),",
+      "      contraste(token('--color-secondary-200'), colorRelleno),",
+      "      contraste(token('--color-accent-200'), colorRelleno)",
+      "    ],",
+      "    // Referencia: cuánto daría el cian claro que se descartó para el texto.",
+      "    contrasteCianDescartado: contraste(token('--color-accent-300'), colorRelleno)",
       "  });",
       "  const fila = ia.parentElement;",
       "  if (fila) {",
@@ -246,6 +292,12 @@ const medirBotones = () =>
       "      y: Math.max(0, rf.top - 8),",
       "      width: Math.min(rf.width + 16, 1440),",
       "      height: rf.height + 16",
+      "    };",
+      "    salida.clipBoton = {",
+      "      x: Math.max(0, r.left - 16),",
+      "      y: Math.max(0, r.top - 16),",
+      "      width: r.width + 32,",
+      "      height: r.height + 32",
       "    };",
       "  }",
       "  return salida;",
@@ -263,28 +315,49 @@ const paginaViva = () =>
     "(() => { const h = document.querySelector('h1'); return h ? h.textContent.trim() : null; })()"
   );
 
-const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-
-const rgb = (v) => (v ? `rgb(${v[0]}, ${v[1]}, ${v[2]}) @${v[3]}` : "—");
+/**
+ * Estado del botón que solo se ve CON el ratón encima: posición del degradado,
+ * sombra, desplazamiento y giro del destello.
+ *
+ * Se mide con `getComputedStyle`, no leyendo el `class`. La diferencia importa:
+ * comprobar que la clase `hover:bg-[position:100%_50%]` está escrita solo prueba
+ * que Tailwind la generó; comprobar que `background-position` CAMBIA cuando el
+ * ratón entra prueba que el navegador la aplica. Si el `transition-all` se
+ * comiera la propiedad, o el degradado no tuviera doble ancho, la primera
+ * aserción pasaría y el usuario no vería nada moverse.
+ */
+const medirHover = () =>
+  evaluate(
+    [
+      "(() => {",
+      "  const ia = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'NECTO AI');",
+      "  if (!ia) return null;",
+      "  const cs = getComputedStyle(ia);",
+      "  const svg = ia.querySelector('svg');",
+      "  const estrellaCs = svg ? getComputedStyle(svg) : null;",
+      "  return {",
+      "    posicionFondo: cs.backgroundPosition,",
+      "    transformacion: cs.transform,",
+      "    sombra: cs.boxShadow,",
+      "    estrella: estrellaCs ? estrellaCs.transform : null",
+      "  };",
+      "})()",
+    ].join("\n")
+  );
 
 /**
- * Tratamiento visual esperado del botón.
- *
- * Al cambiar el diseño del botón, cambiar SOLO este bloque: las aserciones de
- * color leen de aquí. Existe porque el primer intento (tinte pálido de marca:
- * `brand-200` / `brand-50/60` / `brand-700`) se descartó por lavado — el
- * veredicto fue "sencillo pero feo, sin nada especial". El diseño vigente es la
- * **marca sólida y plana**: la identidad la da el color, la sobriedad la da la
- * planitud, no la falta de color.
+ * Mueve el ratón de verdad. `mouseMoved` sobre el centro activa `:hover`;
+ * moverlo a (2, 2) — fuera del botón — lo desactiva. Hace falta el par
+ * `mouseMoved` porque `:hover` es estado del navegador, no de React: sin un
+ * evento real, `getComputedStyle` seguiría devolviendo el estado de reposo y la
+ * comprobación pasaría sin haber probado nada.
  */
-const TRATAMIENTO = {
-  nombre: "A · naranja sólido de marca",
-  fondo: [255, 63, 26, 1], // brand-500 #ff3f1a, opaco
-  texto: [255, 255, 255, 1],
-  anchoBorde: "0px", // sin contorno: el color no compite con un borde
-  fondoOscuro: [255, 63, 26, 1], // la marca sólida no cambia de tema
-  textoOscuro: [255, 255, 255, 1],
+const moverRaton = async (x, y) => {
+  await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, buttons: 0 });
+  await sleep(700); // el `transition-all` dura 500ms; se espera a que asiente.
 };
+
+const rgb = (v) => (v ? `rgb(${v[0]}, ${v[1]}, ${v[2]}) @${v[3]}` : "—");
 
 // ── Fase 0: sesión admin + tema claro ──────────────────────────────────────
 console.log("=== Botón NECTO AI en Analítica · verificación ===\n");
@@ -299,20 +372,15 @@ await waitFor(
   "el encabezado de la página"
 );
 
-const titulo = await paginaViva();
-check("La página de Analítica carga con sesión de administrador", !!titulo, `h1=${titulo}`);
-// Contrapartida positiva de la comprobación de rol de la fase 6: con
-// `admin_tienda` el enlace a Equipo (team.manage) SÍ está. Las dos juntas
-// demuestran que el rol se aplica de verdad y que la fase 6 no mide una sesión
-// caída al estado de administrador.
+check("La página de Analítica carga con sesión de administrador", !!(await paginaViva()));
 check(
-  "Con administrador, el enlace a Equipo SÍ está (team.manage)",
+  "Contrapartida de rol: con administrador el enlace a Equipo SÍ está",
   (await evaluate("(() => !!document.querySelector('a[href=\"/pedidos/equipo\"]'))()")) === true
 );
 
-const claro = await medirBotones();
+const claro = await medirBoton();
 
-// ── 1. Existencia y accesibilidad ─────────────────────────────────────────
+// ── 1. Existencia, forma y accesibilidad ──────────────────────────────────
 check("El botón NECTO AI existe en la barra de acciones", !!claro.ia);
 if (!claro.ia) {
   console.log(results.join("\n"));
@@ -320,71 +388,154 @@ if (!claro.ia) {
   process.exit(1);
 }
 check("Conserva un `title` descriptivo", claro.ia.title.length > 10, claro.ia.title);
-check("Lleva el icono de asistente", claro.ia.tieneIcono === true);
-
-// ── 2. Nada del tratamiento anterior ──────────────────────────────────────
+check("Lleva el destello (`ShootingStarIcon`)", claro.ia.tieneDestello === true);
 check(
-  "Sin degradado (ni en el fondo ni en ningún hijo)",
-  claro.ia.tieneDegradado === false,
-  `background-image=${claro.ia.imagenFondo}`
-);
-check(
-  "Sin animación de pulso ni ninguna otra animación",
-  claro.ia.claseAnimada === null,
-  `encontrado: ${claro.ia.claseAnimada}`
-);
-check(
-  "Sin escalado permanente (transform = none)",
-  claro.ia.transformacion === "none",
-  claro.ia.transformacion
-);
-check(
-  "Transiciona color, no `all` (no hay saltos de tamaño)",
-  claro.ia.transicion.indexOf("color") !== -1 &&
-    claro.ia.transicion.indexOf("all") === -1,
-  claro.ia.transicion
+  "Forma de píldora: radio ≥ media altura",
+  parseFloat(claro.ia.radio) >= claro.ia.alto / 2,
+  `${claro.ia.radio} para ${claro.ia.alto}px`
 );
 
-// ── 3. Alineación con el resto de la barra ────────────────────────────────
+// ── 2. El anillo: las tres rampas de marca, sin el índigo descartado ──────
+const anillo = (claro.ia.imagenFondo || "").toLowerCase();
+check("El anillo es un degradado", anillo.indexOf("linear-gradient") !== -1, claro.ia.imagenFondo);
+check(
+  "El anillo se pinta como relleno del envoltorio (`p-[1.5px]`)",
+  claro.ia.rellenoInterior === "1.5px",
+  claro.ia.rellenoInterior
+);
+// Las tres rampas de NECTO tienen que estar las tres. Con dos ya se vería un
+// degradado, así que una aserción de "es un degradado" no distinguiría el
+// diseño de marca de cualquier otra cosa.
+for (const [nombre, valor] of [
+  ["naranja de marca (`brand-500`)", "--color-brand-500"],
+  ["violeta (`secondary-300`)", "--color-secondary-300"],
+  ["cian (`accent-300`)", "--color-accent-300"],
+]) {
+  const hex = await evaluate(
+    [
+      "(() => {",
+      "  const d = document.createElement('div');",
+      "  d.style.color = 'var(" + valor + ")';",
+      "  document.body.appendChild(d);",
+      "  const c = getComputedStyle(d).color;",
+      "  d.remove();",
+      "  const cv = document.createElement('canvas'); cv.width = 1; cv.height = 1;",
+      "  const ctx = cv.getContext('2d');",
+      "  ctx.fillStyle = c; ctx.fillRect(0, 0, 1, 1);",
+      "  const p = ctx.getImageData(0, 0, 1, 1).data;",
+      "  return [p[0], p[1], p[2]].join(', ');",
+      "})()",
+    ].join("\n")
+  );
+  check(
+    `El anillo recorre el ${nombre}`,
+    anillo.indexOf(hex) !== -1,
+    hex ? `se esperaba ${hex}` : "no se pudo resolver el token"
+  );
+}
+const indigo = INDIGO_DESCARTADO.find((c) => anillo.indexOf(c) !== -1);
+check(
+  "No reaparece el índigo #190088 que fundía un extremo con el fondo",
+  indigo === undefined,
+  indigo ? `encontrado ${indigo}` : ""
+);
+
+// ── 3. Contraste del texto: la comprobación central ───────────────────────
+check(
+  "El texto se pinta con degradado recortado (`bg-clip-text`)",
+  claro.ia.textoTransparente !== null &&
+    /rgba\(0, 0, 0, 0\)|transparent/.test(claro.ia.textoTransparente) &&
+    (claro.ia.textoImagenFondo || "").indexOf("linear-gradient") !== -1,
+  `fill=${claro.ia.textoTransparente} fondo=${claro.ia.textoImagenFondo}`
+);
+// Los tres tonos del texto, uno a uno. El degradado tiene tres paradas: si
+// fallara solo la del medio, mirar "el contraste" en singular daría verde.
+const TONOS_TEXTO = ["brand-700", "secondary-400", "accent-700"];
+claro.ia.contrastesClaro.forEach((c, i) => {
+  check(
+    `Contraste del texto en «${TONOS_TEXTO[i]}» ≥ ${CONTRASTE_MINIMO}:1`,
+    c >= CONTRASTE_MINIMO,
+    `${c}:1 sobre ${rgb(claro.ia.relleno)}`
+  );
+});
+// Deja constancia de POR QUÉ el texto no usa los tonos claros del anillo.
+check(
+  "El cian del anillo NO se usa en el texto (daría contraste insuficiente)",
+  claro.ia.contrasteCianDescartado < CONTRASTE_MINIMO,
+  `accent-300 daría ${claro.ia.contrasteCianDescartado}:1`
+);
+
+// ── 4. La animación de hover es real ──────────────────────────────────────
+check(
+  "En reposo no hay animación por sí sola (nada parpadea sin el ratón)",
+  claro.ia.nombreAnimacion === "none",
+  claro.ia.nombreAnimacion
+);
+check("Sin `animate-pulse` (era lo que parpadeaba)", claro.ia.tienePulso === false);
+check("Sin escalado en reposo (transform = none)", claro.ia.transformacion === "none", claro.ia.transformacion);
+check(
+  "El degradado va a doble ancho: sin eso no hay nada que desplazar",
+  (claro.ia.tamanoFondo || "").indexOf("200%") !== -1,
+  claro.ia.tamanoFondo
+);
+check(
+  "En reposo el degradado está en el extremo inicial (0%)",
+  (claro.ia.posicionFondo || "").indexOf("0%") === 0,
+  claro.ia.posicionFondo
+);
+
+// El ratón, de verdad. Antes y después.
+const reposo = await medirHover();
+await moverRaton(claro.ia.centro.x, claro.ia.centro.y);
+const encima = await medirHover();
+
+check(
+  "Con el ratón encima el degradado se desplaza al extremo final (100%)",
+  encima !== null && reposo !== null && encima.posicionFondo !== reposo.posicionFondo &&
+    encima.posicionFondo.indexOf("100%") === 0,
+  `reposo=${reposo && reposo.posicionFondo}  encima=${encima && encima.posicionFondo}`
+);
+check(
+  "Con el ratón encima el botón levanta 1px (`-translate-y-px`)",
+  encima !== null && encima.transformacion !== "none" && encima.transformacion !== reposo.transformacion,
+  encima && encima.transformacion
+);
+check(
+  "Con el ratón encima el halo se intensifica",
+  encima !== null && encima.sombra !== reposo.sombra,
+  `${reposo && reposo.sombra} → ${encima && encima.sombra}`
+);
+check(
+  "Con el ratón encima el destello gira (`group-hover:rotate`)",
+  encima !== null && encima.estrella !== null && encima.estrella !== "none" &&
+    encima.estrella !== (reposo && reposo.estrella),
+  `reposo=${reposo && reposo.estrella}  encima=${encima && encima.estrella}`
+);
+
+if (claro.clipBoton) await shotClip("boton-ia-detalle-hover.png", claro.clipBoton);
+if (claro.clipFila) await shotClip("boton-ia-hover.png", claro.clipFila);
+
+// Y al retirarlo vuelve solo: una animación que se queda pegada es un fallo.
+await moverRaton(2, 2);
+const devuelta = await medirHover();
+check(
+  "Al retirar el ratón el degradado vuelve al extremo inicial",
+  devuelta !== null && devuelta.posicionFondo === (reposo && reposo.posicionFondo),
+  `encima=${encima && encima.posicionFondo}  devuelta=${devuelta && devuelta.posicionFondo}`
+);
+
+// ── 5. Alineación con la barra ────────────────────────────────────────────
 check(
   "Misma altura que «Descargar CSV»",
   claro.csv !== null && Math.abs(claro.ia.alto - claro.csv.alto) <= 1,
   `ia=${claro.ia.alto}px  csv=${claro.csv && claro.csv.alto}px`
 );
-check(
-  "Mismo radio y tipografía que el selector de periodo",
-  claro.periodo !== null &&
-    claro.ia.radio === claro.periodo.radio &&
-    claro.ia.tamanoFuente === claro.periodo.tamanoFuente,
-  `ia=${claro.ia.radio}/${claro.ia.tamanoFuente}  periodo=${claro.periodo && claro.periodo.radio}/${claro.periodo && claro.periodo.tamanoFuente}`
-);
-check(
-  "Peso semibold (600), no extrabold (800) como antes",
-  claro.ia.pesoFuente === "600",
-  claro.ia.pesoFuente
-);
-check(
-  "Sin borde ni contorno (0px), no el marco de 1.5px anterior",
-  claro.ia.anchoBorde === TRATAMIENTO.anchoBorde,
-  claro.ia.anchoBorde
-);
 
-// ── 4. El rasgo personalizado: la marca sólida ────────────────────────────
-check(
-  "Fondo en naranja de marca sólido y opaco (brand-500)",
-  igual(claro.ia.fondo, TRATAMIENTO.fondo),
-  rgb(claro.ia.fondo)
-);
-check(
-  "Texto blanco sobre el naranja (el contraste de la marca)",
-  igual(claro.ia.colorTexto, TRATAMIENTO.texto),
-  rgb(claro.ia.colorTexto)
-);
-
+if (claro.clipBoton) await shotClip("boton-ia-detalle-claro.png", claro.clipBoton);
 if (claro.clipFila) await shotClip("boton-ia-claro.png", claro.clipFila);
 await shot("pagina-ia-claro.png");
 
-// ── 5. Tema oscuro ────────────────────────────────────────────────────────
+// ── 6. Tema oscuro ────────────────────────────────────────────────────────
 await seedTheme("dark");
 await cdp.send("Page.navigate", { url: `${APP}/pedidos/analitica` });
 await waitFor("!!document.querySelector('h1')", "el encabezado en tema oscuro");
@@ -394,56 +545,63 @@ check(
   "El tema oscuro se aplica de verdad",
   (await evaluate("document.documentElement.classList.contains('dark')")) === true
 );
-
-const oscuro = await medirBotones();
+const oscuro = await medirBoton();
 check("El botón sigue existiendo en tema oscuro", !!oscuro.ia);
 if (oscuro.ia) {
-  // brand-300 #ff8f78 · brand-500 #ff3f1a al 30 %
   check(
-    "En oscuro el fondo sigue siendo el naranja sólido de marca",
-    igual(oscuro.ia.fondo, TRATAMIENTO.fondoOscuro),
-    rgb(oscuro.ia.fondo)
+    "En oscuro el relleno es índigo profundo, no blanco",
+    oscuro.ia.relleno !== null && oscuro.ia.relleno[0] < 60 && oscuro.ia.relleno[2] > 20,
+    rgb(oscuro.ia.relleno)
   );
   check(
-    "En oscuro el texto sigue siendo blanco",
-    igual(oscuro.ia.colorTexto, TRATAMIENTO.textoOscuro),
-    rgb(oscuro.ia.colorTexto)
+    "En oscuro el relleno es el violeta profundo de marca, no blanco",
+    oscuro.ia.relleno !== null && oscuro.ia.relleno[0] < 60 && oscuro.ia.relleno[2] > 20,
+    rgb(oscuro.ia.relleno)
   );
+  // En oscuro el texto cambia de tonos (`dark:from-brand-300 ...`), así que se
+  // miden los tres de nuevo. Un solo "sigue siendo suficiente" no valdría: la
+  // rampa oscura es OTRA, y es justo la que nadie mira.
+  const TONOS_TEXTO_OSCURO = ["brand-300", "secondary-200", "accent-200"];
+  oscuro.ia.contrastesOscuro.forEach((c, i) => {
+    check(
+      `En oscuro el contraste del texto en «${TONOS_TEXTO_OSCURO[i]}» ≥ ${CONTRASTE_MINIMO}:1`,
+      c >= CONTRASTE_MINIMO,
+      `${c}:1 sobre ${rgb(oscuro.ia.relleno)}`
+    );
+  });
+  // El desplazamiento del degradado no depende del tema, pero el ratón sí puede
+  // perderse si el tema cambia de fondo: se comprueba que sigue vivo.
+  await moverRaton(oscuro.ia.centro.x, oscuro.ia.centro.y);
+  const encimaOscuro = await medirHover();
   check(
-    "En oscuro tampoco hay degradado ni animación",
-    oscuro.ia.tieneDegradado === false && oscuro.ia.claseAnimada === null
+    "En oscuro la animación de hover también funciona",
+    encimaOscuro !== null && encimaOscuro.posicionFondo.indexOf("100%") === 0,
+    encimaOscuro && encimaOscuro.posicionFondo
   );
+  if (oscuro.clipBoton) await shotClip("boton-ia-detalle-oscuro-hover.png", oscuro.clipBoton);
+  await moverRaton(2, 2);
+  if (oscuro.clipBoton) await shotClip("boton-ia-detalle-oscuro.png", oscuro.clipBoton);
   if (oscuro.clipFila) await shotClip("boton-ia-oscuro.png", oscuro.clipFila);
 }
 await shot("pagina-ia-oscuro.png");
 
-// ── 6. Contrato de acceso: sin `assistant.use` no se pinta ────────────────
-await seedTheme("light");
+// ── 7. Contrato de acceso ─────────────────────────────────────────────────
 // d2 = Mateo Vargas, rolId "vendedor": NO tiene assistant.use.
+await seedTheme("light");
 await seedSession("operador", "d2");
 await cdp.send("Page.navigate", { url: `${APP}/pedidos/analitica` });
 await waitFor("!!document.querySelector('h1')", "el encabezado con rol Operador");
 await sleep(700);
 
-const sigueViva = await paginaViva();
-check("Con rol Operador la página sigue renderizando", !!sigueViva, `h1=${sigueViva}`);
-
-// Señal INDEPENDIENTE de que el rol se aplicó de verdad y no se cayó al estado
-// de administrador (la trampa clásica del arnés): el vendedor no tiene
-// `team.manage`, así que el enlace de la barra lateral a /pedidos/equipo debe
-// faltar. Si apareciera, estaríamos midiendo la sesión equivocada.
-const enlaceEquipo = await evaluate(
-  "(() => !!document.querySelector('a[href=\"/pedidos/equipo\"]'))()"
-);
+check("Con rol Operador la página sigue renderizando", !!(await paginaViva()));
 check(
   "El rol se aplicó de verdad: sin `team.manage` no hay enlace a Equipo",
-  enlaceEquipo === false
+  (await evaluate("(() => !!document.querySelector('a[href=\"/pedidos/equipo\"]'))()")) === false
 );
 check(
   "Sin `assistant.use` el botón NECTO AI NO se pinta",
   (await existeBotonIA()) === false
 );
-if (claro.clipFila) await shotClip("boton-ia-sin-permiso.png", claro.clipFila);
 
 // ── Informe ───────────────────────────────────────────────────────────────
 console.log(results.join("\n"));

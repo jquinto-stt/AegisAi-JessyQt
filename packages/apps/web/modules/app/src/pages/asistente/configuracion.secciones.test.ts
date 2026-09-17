@@ -109,11 +109,17 @@ describe("catálogo de secciones — agrupación", () => {
     }
   });
 
-  it("la página tiene exactamente las 6 secciones del diseño", () => {
+  it("la página tiene exactamente las 7 secciones del diseño", () => {
+    // `modulos` (Módulos integrados) se añadió DESPUÉS de `herramientas` y
+    // antes de `historial`: va en el grupo CAPACIDADES y justo detrás de la
+    // lista de herramientas, porque es la sección que explica POR QUÉ hay las
+    // que hay. La aserción se mantiene exhaustiva a propósito: una sección
+    // nueva sin decisión de dónde va es exactamente lo que esta prueba frena.
     expect(ORDEN_SECCIONES).toEqual([
       "perfil",
       "motor",
       "herramientas",
+      "modulos",
       "historial",
       "alcance",
       "apariencia",

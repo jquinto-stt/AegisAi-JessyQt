@@ -95,6 +95,12 @@
    `--animate-*` en `css/theme.css`, añadirlo también aquí.** Los nombres son
    los mismos que genera Tailwind (`.animate-<nombre>`).
 
+   Dónde cae cada animación nueva, en una pregunta: **¿si la quito, el usuario
+   pierde información o solo pierde adorno?**
+
+     · Pierde información → NO va en esta lista (los tres casos de arriba).
+     · Pierde adorno       → va en esta lista.
+
    Nota: `paneo-entrada` va aparte porque no es un token de tema sino una clase
    propia, y ya estaba cubierta desde antes.
  */

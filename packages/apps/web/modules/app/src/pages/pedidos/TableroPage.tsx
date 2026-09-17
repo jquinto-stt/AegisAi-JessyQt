@@ -948,7 +948,7 @@ const ListaView = observer(
   }) => {
     if (pedidos.length === 0) {
       return (
-        <div className="rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-gray-800">
+        <div className="animate-aparecer rounded-2xl border border-dashed border-gray-200 py-16 text-center text-sm text-gray-400 dark:border-gray-800">
           No hay pedidos en curso.
         </div>
       );
@@ -960,7 +960,11 @@ const ListaView = observer(
     };
 
     return (
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+      // La clase de entrada va aquí y no se recibe por prop: `ListaView` solo existe
+      // en la rama `lista`, así que se monta exactamente al conmutar de vista y el
+      // fundido se dispara justo cuando debe. Añadir una prop `className` para esto
+      // sería ceremonia sin lector.
+      <div className="animate-aparecer overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1248,15 +1252,16 @@ export const TableroPage = observer(() => {
       )}
 
       {/* Tablero — vista Kanban o Lista según preferencia.
-          El envoltorio lleva `key={vista}`: sin ella React reutilizaría el mismo
-          nodo al conmutar y el fundido solo se vería la primera vez. Es un fundido
-          PURO, sin desplazamiento, porque las dos vistas ocupan el mismo hueco:
-          desplazar una sugeriría un movimiento entre dos sitios que no existen.
-          El envoltorio es un bloque normal, así que la rejilla de dentro conserva
-          su ancho y el número de hijos de la página no cambia. */}
-      <div key={vista} className="animate-aparecer">
-        {vista === "kanban" ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
+          El fundido de entrada de cada vista vive en la raíz de cada rama, no en un
+          envoltorio: React ya desmonta y vuelve a montar al conmutar, porque `div` y
+          `ListaView` son tipos de elemento distintos en la misma posición. Eso hace
+          que la clase se vuelva a disparar en cada cambio de vista sin necesidad de
+          `key`, y sin añadir un nodo al árbol.
+          Es un fundido PURO, sin desplazamiento: las dos vistas ocupan el mismo
+          hueco, así que desplazarlas sugeriría un movimiento entre dos sitios que
+          no existen. */}
+      {vista === "kanban" ? (
+        <div className="animate-aparecer grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
           {columnas.map((estado) => {
             const items = pedidosDeColumna(estado);
             return (

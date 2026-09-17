@@ -1,0 +1,65 @@
+=== Módulos integrados · verificación de UI ===
+
+  ruta: /asistente/config
+
+── Fase 1 · Módulos integrados: estado real ──
+
+── Fase 2 · Desconectar Pedidos ──
+
+── Fase 3 · WhatsApp sin módulos conectados ──
+
+── Fase 4 · Reconectar Pedidos desde IA ──
+
+── Fase 5 · Pestaña de contexto en el chat ──
+
+── Fase 6 · Persistencia entre recargas ──
+
+── Fase 7 · Consola ──
+
+  OK   estoy en /asistente/config
+  OK   la navegación tiene la entrada «Módulos integrados»
+  OK   el panel es «Módulos conectados al asistente»
+  OK   hay exactamente 2 módulos ofrecidos (Pedidos e Inventario)
+  OK   Pedidos existe con su control
+  OK   Pedidos está CONECTADO (control encendido)
+  OK   el control de Pedidos es operable
+  OK   Pedidos se rotula «Conectado»
+  OK   Inventario existe con su tarjeta
+  OK   Inventario está DESCONECTADO
+  OK   el control de Inventario está DESHABILITADO (no se puede conectar lo que no existe)
+  OK   Inventario se rotula «No disponible»
+  OK   Inventario explica por qué no se puede conectar
+  OK   fila «Módulos conectados» = 1
+  OK   fila «Herramientas habilitadas» = N de M con N > 0
+  OK   fila «Contexto en WhatsApp» = «Conversación + 1»
+  OK   no aparece el aviso de «ningún módulo conectado»
+  OK   el control queda apagado
+  OK   Pedidos se rotula «Desconectado»
+  OK   las herramientas habilitadas caen a 0 (el interruptor NO es decorativo)
+  OK   fila «Módulos conectados» = 0
+  OK   fila «Contexto en WhatsApp» = «Solo la conversación»
+  OK   avisa de que el asistente se quedó sin módulos
+  OK   la desconexión se persiste
+  OK   solo hay la pestaña «Conversación»
+  OK   NO hay pestaña de Pedidos
+  OK   el hilo de la conversación está montado
+  OK   el control vuelve a estar encendido
+  OK   Pedidos se rotula «Conectado»
+  OK   fila «Módulos conectados» = 1
+  OK   las herramientas se recuperan
+  OK   aparecen «Conversación» y «Pedidos»
+  OK   la vista por defecto sigue siendo la conversación
+  OK   se puede pulsar la pestaña «Pedidos»
+  OK   «Pedidos» queda como pestaña activa
+  OK   el panel del módulo se rotula «Pedidos»
+  OK   el hilo de la conversación se SUSTITUYE (no se apila debajo)
+  OK   el módulo aporta el contexto de la conversación (rotulado con el contacto)
+  OK   hay al menos una conversación con pedidos y el encabezado cuadra con las filas
+  OK   el encabezado declara 1 pedido(s) y se pintan 1 fila(s)
+  OK   cada fila es un pedido real (lleva su número)
+  OK   volver a «Conversación» restaura el hilo
+  OK   tras recargar sigue estando la pestaña «Pedidos»
+  OK   no hay excepciones de runtime nuevas
+
+=== 44 OK · 0 FAIL ===
+exit=0

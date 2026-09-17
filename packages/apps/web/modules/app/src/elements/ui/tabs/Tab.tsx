@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/utils";
 
 /**
@@ -117,11 +117,26 @@ export interface TabProps {
  * - Any variant can include `icon` per tab item to reinforce
  *   the label visually, improving scan-ability in dense UIs.
  *
+ * **Animation:**
+ * - In the `"underline"` variant the active marker **slides** to the newly
+ *   selected tab (200 ms) instead of jumping. The marker is measured with
+ *   `offsetLeft`/`offsetWidth` in a layout effect, so it is repositioned
+ *   before paint and re-measured on resize via `ResizeObserver`.
+ * - `"default"` and `"vertical"` keep an instant state change on purpose:
+ *   their active state is a background painted by the button itself, and
+ *   neither variant has a consumer today.
+ * - Respects `prefers-reduced-motion` (`motion-reduce:transition-none`).
+ *
  * **Limitations:**
  * - `badge` only renders in `"underline"` variant.
  * - No lazy rendering of tab content — parent must handle
  *   conditional rendering based on `activeTab`.
  * - No keyboard navigation (arrow keys between tabs).
+ * - The sliding marker needs a real layout engine. Under jsdom (tests)
+ *   `offsetWidth` is `0`, so the marker simply renders nothing — assert on
+ *   the buttons, never on the marker.
+ * - If no tab matches `activeTab`, no marker is drawn at all (fail-closed):
+ *   a marker on the wrong tab would lie about which section is active.
  *
  * @example Basic pill tabs
  * ```tsx
@@ -176,6 +191,62 @@ export default function Tab({
   className = "",
   itemClassName = "",
 }: TabProps) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INDICADOR DESLIZANTE (solo variante "underline")
+  // ═══════════════════════════════════════════════════════════════════════════
+  // El subrayado del tab activo deja de ser un `border-b-2` del propio botón
+  // (que aparecía y desaparecía de golpe al cambiar de pestaña) y pasa a ser un
+  // elemento aparte que se DESPLAZA hasta el botón activo. Para eso hay que medir
+  // el botón: no existe ninguna clase de Tailwind que exprese "ponte donde está
+  // el hermano activo", así que la posición se calcula en un efecto de layout
+  // (antes del pintado, para que no se vea un fotograma en la posición anterior).
+  //
+  // Las otras dos variantes NO lo llevan, y es deliberado:
+  // · "default" y "vertical" marcan el activo con un FONDO en el propio botón.
+  //   Deslizarlo obligaría a extraer ese fondo a un elemento posicionado y a
+  //   reescribir el estilo de las tres variantes para que el botón activo
+  //   dejase de pintarse a sí mismo.
+  // · Ninguna de las dos tiene hoy un solo consumidor (la única pantalla que usa
+  //   `Tab` es `EquipoPage`, con `variant="underline"`). Sería código que nadie
+  //   ejecuta y que nadie puede verificar.
+  const navRef = useRef<HTMLElement | null>(null);
+  const [indicador, setIndicador] = useState<{ x: number; w: number } | null>(null);
+  // Proyección ESTABLE de `items`: una cadena que solo cambia si cambian las claves
+  // o su orden. Es lo que puede usarse como dependencia sin provocar un bucle.
+  const claves = items.map((i) => i.key).join("|");
+
+  useLayoutEffect(() => {
+    if (variant !== "underline") return;
+
+    const medir = () => {
+      // Se consulta el DOM vivo en lugar de guardar refs por índice: así la medida
+      // nunca queda obsoleta si el consumidor reordena o sustituye `items`.
+      const activo = navRef.current?.querySelector<HTMLElement>('[data-activo="true"]');
+      if (!activo) {
+        setIndicador(null);
+        return;
+      }
+      const x = activo.offsetLeft;
+      const w = activo.offsetWidth;
+      // Devolver `prev` cuando la medida no ha cambiado evita un render de más. Es
+      // también lo que hace imposible un bucle: los consumidores pasan `items` como
+      // literal (`items={[{…},{…}]}`), así que su identidad cambia en cada render.
+      setIndicador((prev) => (prev && prev.x === x && prev.w === w ? prev : { x, w }));
+    };
+
+    medir();
+
+    // Re-medir cuando cambie el tamaño de un botón: al cargar la tipografía, al
+    // cambiar el ancho de la ventana, o al cambiar el número de un `badge` (que
+    // ensancha su pestaña). Sin esto el subrayado quedaría desalineado.
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(medir);
+    navRef.current?.querySelectorAll("button").forEach((b) => ro.observe(b));
+    return () => ro.disconnect();
+    // `items` se omite a propósito (ver arriba): es un literal nuevo en cada render.
+    // Lo que de verdad importa de él —qué pestañas hay y en qué orden— está en `claves`.
+  }, [variant, activeTab, claves]);
+
   if (variant === "vertical") {
     return (
       <div className="overflow-x-auto pb-2 sm:w-[200px] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-100 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 [&::-webkit-scrollbar-track]:bg-white dark:[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
@@ -204,19 +275,27 @@ export default function Tab({
   if (variant === "underline") {
     return (
       <div className="border-b border-gray-200/70 dark:border-white/5">
-        <nav className={cn(
-          "-mb-px flex space-x-2 overflow-x-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-200 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5",
-          className
-        )}>
+        <nav
+          ref={navRef}
+          className={cn(
+            // `relative` es el contexto de posicionamiento del indicador.
+            "relative -mb-px flex space-x-2 overflow-x-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-200 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:[&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5",
+            className
+          )}
+        >
           {items.map((item) => (
             <button
               key={item.key}
+              data-activo={activeTab === item.key ? "true" : undefined}
               onClick={() => onTabChange(item.key)}
               className={cn(
-                "inline-flex items-center gap-2 border-b-2 px-2.5 py-2 text-sm font-medium transition-colors duration-200 ease-in-out",
+                // El borde inferior se mantiene TRANSPARENTE en todos los botones: ya no
+                // es el marcador, solo reserva los 2 px de alto para que al cambiar de
+                // pestaña nada salte de sitio. El marcador lo dibuja el indicador.
+                "inline-flex items-center gap-2 border-b-2 border-transparent px-2.5 py-2 text-sm font-medium transition-colors duration-200 ease-in-out",
                 activeTab === item.key
-                  ? "text-brand-500 dark:text-brand-400 border-brand-500 dark:border-brand-400"
-                  : "bg-transparent text-gray-500 border-transparent hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                  ? "text-brand-500 dark:text-brand-400"
+                  : "bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
                 itemClassName
               )}
             >
@@ -229,6 +308,21 @@ export default function Tab({
               )}
             </button>
           ))}
+
+          {/* Marcador deslizante. `h-0.5` = 2 px, exactamente el alto del `border-b-2`
+              que antes llevaba el botón, y `bottom-0` cae sobre esa misma línea.
+              No se pinta hasta tener medida: sin medición preferimos ningún subrayado
+              antes que uno mal colocado. */}
+          {indicador && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-0 left-0 h-0.5 bg-brand-500 transition-transform duration-200 ease-out motion-reduce:transition-none dark:bg-brand-400"
+              style={{
+                width: `${indicador.w}px`,
+                transform: `translateX(${indicador.x}px)`,
+              }}
+            />
+          )}
         </nav>
       </div>
     );

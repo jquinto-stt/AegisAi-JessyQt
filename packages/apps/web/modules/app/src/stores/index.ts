@@ -55,6 +55,21 @@ export type {
 export { AssistantStore, assistantStore } from './assistant.store';
 export type { Conversacion, GrupoConversaciones } from './assistant.store';
 
+// Módulos integrados: qué módulos tiene conectados el Asistente de Necto.
+export {
+  integracionesStore,
+  IntegracionesStore,
+  MODULOS_INTEGRABLES,
+  ORDEN_MODULOS_INTEGRABLES,
+  IDS_MODULOS_INTEGRABLES,
+} from './integraciones.store';
+export type {
+  ModuloIntegrable,
+  EntradaModuloIntegrable,
+  EntradaDisponible,
+  EntradaDeclarada,
+} from './integraciones.store';
+
 // Helpers de capacidad para las páginas (capa de conveniencia sobre hasPermission)
 export {
   puede,

@@ -64,16 +64,30 @@
 // ALCANCE (lo que esta página NO es):
 //   La app es un mock 100 % frontend sin backend. NO existen —y por tanto NO se
 //   muestran— claves de API, modelos, temperatura, tokens, memoria del asistente,
-//   conectores, facturación, créditos ni control de datos. Cada sección de abajo
-//   se apoya en un valor REAL del núcleo (`toolRegistry`, `assistantStore`,
-//   `sessionStore`) o se declara explícitamente como preferencia local de
+//   facturación, créditos ni control de datos. Cada sección de abajo se apoya en
+//   un valor REAL del núcleo (`toolRegistry`, `assistantStore`, `sessionStore`,
+//   `integracionesStore`) o se declara explícitamente como preferencia local de
 //   interfaz. Inventar una perilla de LLM para llenar una tarjeta sería un
 //   defecto, no una funcionalidad.
+//
+//   ⚠️ MATIZ IMPORTANTE sobre «Módulos integrados» (sección `modulos`):
+//   la sección SÍ existe, pero **no** es un catálogo de conectores externos. No
+//   hay OAuth, ni tokens, ni servidores de terceros: lo que se conecta son los
+//   MÓDULOS QUE YA VIVEN DENTRO DE NECTO, y cada uno aporta al asistente las
+//   capacidades de las que ya es dueño. Un módulo sin proveedor de herramientas
+//   no se puede conectar (su control se pinta deshabilitado y se explica por
+//   qué): un interruptor que se pulsa pero no conecta nada sería un control que
+//   miente, que es el defecto más grave posible en esta pantalla.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
 import type { BadgeColor } from "@/elements/ui/badge";
 import type { SwitchColor } from "@/elements/form/switch";
+import {
+  MODULOS_INTEGRABLES,
+  ORDEN_MODULOS_INTEGRABLES,
+  type EntradaModuloIntegrable,
+} from "@/stores/integraciones.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECCIONES
@@ -88,6 +102,7 @@ export type SeccionAsistente =
   | "perfil"
   | "motor"
   | "herramientas"
+  | "modulos"
   | "historial"
   | "alcance"
   | "apariencia";
@@ -117,6 +132,7 @@ export const GRUPO_DE_SECCION: Record<SeccionAsistente, GrupoSeccionAsistente> =
   perfil: "asistente",
   motor: "asistente",
   herramientas: "capacidades",
+  modulos: "capacidades",
   historial: "capacidades",
   alcance: "capacidades",
   apariencia: "preferencias",
@@ -127,6 +143,7 @@ export type IconoSeccion =
   | "AiIcon"
   | "BoltIcon"
   | "PlugInIcon"
+  | "GridIcon"
   | "TimeIcon"
   | "LockIcon"
   | "EyeIcon";
@@ -142,7 +159,7 @@ export interface MetaSeccion {
 }
 
 /**
- * Metadatos de las 6 secciones. `Record` sobre la unión ⇒ exhaustivo por
+ * Metadatos de las 7 secciones. `Record` sobre la unión ⇒ exhaustivo por
  * construcción: no se puede añadir una sección sin etiquetarla.
  */
 export const META_SECCION: Record<SeccionAsistente, MetaSeccion> = {
@@ -160,6 +177,11 @@ export const META_SECCION: Record<SeccionAsistente, MetaSeccion> = {
     label: "Herramientas",
     hint: "Las consultas que el asistente puede ejecutar, y las que tu rol no alcanza.",
     icono: "PlugInIcon",
+  },
+  modulos: {
+    label: "Módulos integrados",
+    hint: "Los módulos conectados al asistente, y el contexto que eso habilita en WhatsApp.",
+    icono: "GridIcon",
   },
   historial: {
     label: "Conversaciones",
@@ -183,6 +205,7 @@ export const ORDEN_SECCIONES: SeccionAsistente[] = [
   "perfil",
   "motor",
   "herramientas",
+  "modulos",
   "historial",
   "alcance",
   "apariencia",
@@ -438,8 +461,90 @@ export const SWITCH_COLOR: SwitchColor = "blue";
  * bootstrap registra `PedidosToolProvider`, cuyo módulo es `"pedidos"`). Se usa
  * solo para responder a la pregunta "¿cuántas herramientas existen?", nunca para
  * conceder acceso: el filtro real lo sigue aplicando el registry.
+ *
+ * ── Por qué se DERIVA del catálogo de módulos integrables ──────────────────
+ * Antes era un literal `["pedidos"]` que había que acordarse de actualizar a
+ * mano. Ahora sale de `MODULOS_INTEGRABLES`: un módulo solo cuenta como conocido
+ * si el catálogo lo marca `disponible`, y el catálogo solo puede marcarlo así si
+ * tiene `modulo` (o sea, si existe como módulo de sesión). Eso encadena las tres
+ * afirmaciones —«tiene proveedor», «es conectable», «el asistente lo conoce»— de
+ * modo que no pueden divergir. El test de consistencia lo verifica contra el
+ * provider real.
  */
-export const MODULOS_CONOCIDOS = ["pedidos"] as const;
+export const MODULOS_CONOCIDOS = ORDEN_MODULOS_INTEGRABLES.map(
+  (id) => MODULOS_INTEGRABLES[id],
+)
+  .filter(
+    (e): e is Extract<EntradaModuloIntegrable, { disponible: true }> => e.disponible,
+  )
+  .map((e) => e.modulo);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MÓDULOS INTEGRADOS — vocabulario propio de esta pantalla
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// El vocabulario de los MÓDULOS en sí —nombre, descripción, ejemplos,
+// disponibilidad, capacidad— NO vive aquí: vive en
+// `stores/integraciones.store.ts`, porque el chat también necesita nombrarlos
+// para sus pestañas de contexto y dos superficies no pueden escribir la misma
+// etiqueta por separado (mismo motivo que `ESTADO_CONVERSACION_LABEL`).
+//
+// Lo que vive AQUÍ es el vocabulario PROPIO de esta pantalla: cómo se llama cada
+// ESTADO DE CONEXIÓN, con qué color se pinta y cómo se explica el encadenado del
+// producto. Ninguna superficie escribe «Conectado» como literal.
+
+/** Estado de conexión de un módulo, tal como lo pinta su tarjeta. */
+export type EstadoIntegracion = "conectado" | "desconectado" | "no_disponible";
+
+/** Etiqueta del estado de conexión. */
+export const ESTADO_INTEGRACION_LABEL: Record<EstadoIntegracion, string> = {
+  conectado: "Conectado",
+  desconectado: "Desconectado",
+  no_disponible: "No disponible",
+};
+
+/**
+ * Badge por estado de conexión.
+ *
+ * `no_disponible` es `warning` y NO `light`: no es un estado más de la misma
+ * escala —como «desconectado»— sino una carencia que el administrador debe
+ * entender (el módulo está declarado pero todavía no aporta nada). Pintarlo
+ * igual que «desconectado» invitaría a intentar conectarlo.
+ */
+export const ESTADO_INTEGRACION_BADGE: Record<EstadoIntegracion, BadgeColor> = {
+  conectado: "success",
+  desconectado: "light",
+  no_disponible: "warning",
+};
+
+/**
+ * La relación del producto, en cuatro pasos encadenados.
+ *
+ * Se declara como datos —y no como texto suelto en el JSX— para que la pantalla
+ * pueda pintarla como una cadena y para que un test pueda comprobar que sigue
+ * siendo la misma afirmación: **el asistente configura qué puede usar, WhatsApp
+ * muestra ese contexto, y cada módulo sigue siendo dueño de sus capacidades.**
+ */
+export const FLUJO_INTEGRACION: { titulo: string; detalle: string }[] = [
+  {
+    titulo: "Configuración IA",
+    detalle: "Aquí, en Módulos integrados, se decide con qué módulos trabaja el asistente.",
+  },
+  {
+    titulo: "Módulos integrados",
+    detalle: "Cada módulo conectado aporta al asistente las capacidades de las que ya es dueño.",
+  },
+  {
+    titulo: "Capacidades disponibles",
+    detalle:
+      "El asistente solo puede ejecutar lo que su módulo aporta y tu rol alcanza. Si desconectas un módulo, sus herramientas desaparecen de Herramientas.",
+  },
+  {
+    titulo: "Contexto visible en WhatsApp",
+    detalle:
+      "Cada conversación muestra una pestaña por módulo conectado. La conexión NO se cambia desde el chat: allí solo se refleja.",
+  },
+];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PREGUNTAS DE EJEMPLO

@@ -4,7 +4,11 @@ import { Avatar } from "@/elements/ui/avatar";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { integracionesStore } from "@/stores/integraciones.store";
+import type { ModuloIntegrable } from "@/stores/integraciones.store";
+import { puede } from "@/stores/acceso.utils";
 import { BotonHandoff } from "./BotonHandoff";
+import { ContextoModulo } from "./ContextoModulo";
 import {
   AVATAR_MAP,
   inicialesDe,
@@ -31,6 +35,16 @@ interface ChatViewProps {
   sinCabecera?: boolean;
 }
 
+/**
+ * Vista activa del panel del chat.
+ *
+ * `"conversacion"` es el hilo de mensajes —la vista por defecto y la única que
+ * existe siempre— y cualquier otro valor es el id de un módulo conectado al
+ * asistente. Se declara como unión sobre `ModuloIntegrable` y no como `string`
+ * para que añadir un módulo al catálogo siga siendo un cambio tipado.
+ */
+type VistaChat = "conversacion" | ModuloIntegrable;
+
 export const ChatView = observer(({
   convId,
   onTogglePanel,
@@ -40,8 +54,42 @@ export const ChatView = observer(({
   sinCabecera = false,
 }: ChatViewProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Vista activa del panel del chat: la conversación, o el contexto de uno de
+  // los módulos conectados al asistente.
+  const [vista, setVista] = useState<VistaChat>("conversacion");
+
   const conv = conversacionesStore.getConversacion(convId);
   const items = conversacionesStore.lineaDeTiempo(convId);
+
+  // ── Pestañas de contexto ─────────────────────────────────────────────────
+  //
+  // Cada módulo CONECTADO al asistente (IA → Módulos integrados) aporta una
+  // pestaña que muestra lo que ese módulo sabe de ESTE contacto. Son dos
+  // condiciones distintas y hacen falta las dos:
+  //
+  //   1. El asistente está conectado al módulo. Lo decide el administrador en
+  //      `/asistente/config`; aquí solo se LEE. El chat no configura nada.
+  //   2. El rol puede leer ese módulo. Sin esto, la pestaña enseñaría el
+  //      contexto de un módulo que el operador no alcanza — una fuga de alcance.
+  //
+  // El filtro sale de `modulosConContexto`, que ya resuelve el catálogo y la
+  // disponibilidad. Aquí no se pregunta «¿es Pedidos?» en ningún sitio.
+  const modulosContexto = integracionesStore.modulosConContexto.filter((m) =>
+    puede(m.capacidad),
+  );
+
+  // Si la pestaña activa deja de existir —el administrador desconectó el módulo
+  // mientras el operador tenía el chat abierto— se vuelve a la conversación. Se
+  // DERIVA en el render en vez de corregirse con un efecto: un efecto daría un
+  // render de más y, durante ese frame, una pestaña fantasma ya inexistente.
+  const vistaActiva: VistaChat = modulosContexto.some((m) => m.id === vista)
+    ? vista
+    : "conversacion";
+
+  // Entrada del catálogo del módulo activo, para poder rotular su panel. Es la
+  // misma lista que pinta las pestañas, así que la etiqueta no puede divergir.
+  const moduloActivo = modulosContexto.find((m) => m.id === vistaActiva) ?? null;
 
   if (!conv) {
     return (
@@ -187,8 +235,45 @@ export const ChatView = observer(({
       </div>
       )}
 
-      {/* ── Interior del Chat (Diálogo de 2 vías: Cliente a la izquierda, Respuestas a la derecha) ── */}
-      <div className="flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6">
+      {/* ── Pestañas de contexto ──────────────────────────────────────────
+          La barra SIEMPRE está: con «Conversación» sola cuando no hay ningún
+          módulo conectado. Esconderla en ese caso dejaría al operador sin saber
+          si el chat no tiene módulos o si la función no existe.
+
+          Estas pestañas NO son módulos dentro de WhatsApp ni un sitio para
+          configurar nada: son vistas del contexto que los módulos conectados al
+          asistente aportan a esta conversación. La conexión se decide en
+          IA → Módulos integrados; aquí solo se refleja. */}
+      <div
+        role="tablist"
+        aria-label="Vistas de la conversación"
+        className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-gray-200 px-3 py-2 sm:px-5 dark:border-gray-800"
+      >
+        <TabContexto
+          activo={vistaActiva === "conversacion"}
+          onClick={() => setVista("conversacion")}
+        >
+          Conversación
+        </TabContexto>
+
+        {modulosContexto.map((m) => (
+          <TabContexto
+            key={m.id}
+            activo={vistaActiva === m.id}
+            onClick={() => setVista(m.id)}
+          >
+            {m.label}
+          </TabContexto>
+        ))}
+      </div>
+
+      {vistaActiva === "conversacion" ? (
+      /* ── Interior del Chat (Diálogo de 2 vías: Cliente a la izquierda, Respuestas a la derecha) ── */
+      <div
+        role="tabpanel"
+        aria-label="Conversación"
+        className="flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6"
+      >
         {items.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <p className="rounded-full bg-gray-100 px-4 py-2 text-center text-xs text-gray-400 dark:bg-white/5 dark:text-gray-500">
@@ -285,8 +370,62 @@ export const ChatView = observer(({
           })
         )}
       </div>
+      ) : (
+        /* Cuerpo de la pestaña de un módulo. El módulo LEE su propio dominio:
+           este componente no consulta ningún store de negocio, solo monta la
+           vista que el módulo declara para sí mismo. */
+        <div
+          role="tabpanel"
+          aria-label={moduloActivo?.label ?? "Contexto del módulo"}
+          className="min-h-0 flex-1 overflow-hidden"
+        >
+          <ContextoModulo convId={convId} modulo={vistaActiva} />
+        </div>
+      )}
     </div>
   );
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUBCOMPONENTES LOCALES
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * TabContexto — pestaña de la barra de vistas del chat.
+ *
+ * Se compone a mano con el estilo de píldora ya usado en el proyecto en vez de
+ * usar `ButtonsGroup`: ese elemento fija `min-w-[393px]`/`min-w-[309px]` y
+ * rompería el ancho del panel del chat (hallazgo ya documentado en la
+ * configuración del asistente y del canal).
+ *
+ * `role="tab"` + `aria-selected` para que la vista activa sea anunciable: la
+ * pestaña cambia el contenido del panel, así que no es un simple botón.
+ */
+function TabContexto({
+  activo,
+  onClick,
+  children,
+}: {
+  activo: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={activo}
+      onClick={onClick}
+      className={
+        "shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors " +
+        (activo
+          ? "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-white"
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200")
+      }
+    >
+      {children}
+    </button>
+  );
+}
 
 export default ChatView;

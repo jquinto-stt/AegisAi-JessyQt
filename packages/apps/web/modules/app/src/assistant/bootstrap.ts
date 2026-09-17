@@ -22,7 +22,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { sessionStore } from "@/stores";
+import { integracionesStore, sessionStore } from "@/stores";
 import { PedidosToolProvider } from "@/modules-tools/pedidos/pedidos.tool-provider";
 import { toolRegistry } from "./registry/tool-registry";
 import type { AssistantAccessContext } from "./registry/tool-registry";
@@ -33,6 +33,22 @@ import type { AssistantAccessContext } from "./registry/tool-registry";
  * Adaptador delgado que traduce `sessionStore.accessContext` al contrato que el
  * núcleo entiende: expone los módulos habilitados y una verificación de
  * capacidades que delega en `sessionStore.hasPermission`.
+ *
+ * ── Los dos filtros de módulo, y por qué son dos ──────────────────────────
+ * Un módulo llega al asistente solo si pasa DOS puertas independientes:
+ *
+ *   1. **La sesión lo tiene** (`accessContext.modulos`): es la puerta del
+ *      producto — el usuario trabaja en Pedidos o no.
+ *   2. **El asistente está conectado a él** (`integracionesStore`): es la puerta
+ *      del asistente, la que el administrador abre y cierra desde
+ *      «Módulos integrados» en `/asistente/config`.
+ *
+ * Se INTERSECAN, nunca se unen. Este adaptador es el único sitio donde eso
+ * ocurre, y por eso desconectar un módulo en la configuración retira de verdad
+ * sus herramientas del registry: el interruptor no es decorativo.
+ *
+ * La intersección solo puede QUITAR alcance. Ninguna de las dos puertas concede
+ * por sí sola: las capacidades siguen filtrando por encima.
  *
  * Robustez / fail-closed (requisito 15.7): si no hay sesión utilizable —es
  * decir, `sessionStore.accessContext` no está disponible o `autenticado` es
@@ -51,8 +67,13 @@ export function buildAccessContext(): AssistantAccessContext {
     };
   }
 
+  // Intersección sesión ∩ módulos conectados al asistente (ver arriba).
+  const conectados = new Set(integracionesStore.modulosHabilitados);
+
   return {
-    enabledModules: sessionStore.accessContext.modulos,
+    enabledModules: sessionStore.accessContext.modulos.filter((m) =>
+      conectados.has(m),
+    ),
     hasCapability: (cap) => sessionStore.hasPermission(cap),
   };
 }

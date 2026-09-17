@@ -1,0 +1,16 @@
+src/pages/operador/OperadorLoginPage.tsx(18,3): error TS2353: Object literal may only specify known properties, and 'turnos' does not exist in type 'Record<"pedidos", string>'.
+src/pages/operador/OperadorRegistroPage.tsx(56,5): error TS2322: Type '"turnos"' is not assignable to type '"pedidos"'.
+src/pages/operador/OperadorRegistroPage.tsx(57,5): error TS2322: Type '"agendamiento"' is not assignable to type '"pedidos"'.
+src/pages/pedidos/CrearPedidoPage.tsx(12,15): error TS2305: Module '"@/stores"' has no exported member 'Modalidad'.
+src/pages/pedidos/CrearPedidoPage.tsx(492,21): error TS2322: Type 'string' is not assignable to type 'number'.
+src/pages/pedidos/CrearPedidoPage.tsx(620,21): error TS2322: Type 'string' is not assignable to type 'number'.
+src/pages/seleccionar/SeleccionarPage.tsx(153,43): error TS2353: Object literal may only specify known properties, and 'turnos' does not exist in type 'Record<"pedidos", string>'.
+src/stores/assistant.store.test.ts(85,30): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+src/stores/operadores.store.test.ts(75,57): error TS2345: Argument of type '"turnos"' is not assignable to parameter of type '"pedidos"'.
+src/stores/operadores.store.test.ts(76,63): error TS2345: Argument of type '"agendamiento"' is not assignable to parameter of type '"pedidos"'.
+src/stores/operadores.store.test.ts(82,44): error TS2345: Argument of type '"turnos"' is not assignable to parameter of type '"pedidos"'.
+src/stores/operadores.store.test.ts(83,44): error TS2345: Argument of type '"agendamiento"' is not assignable to parameter of type '"pedidos"'.
+src/stores/operadores.store.ts(364,23): error TS2367: This comparison appears to be unintentional because the types '"pedidos"' and '"agendamiento"' have no overlap.
+src/stores/operadores.store.ts(366,16): error TS2367: This comparison appears to be unintentional because the types '"pedidos"' and '"turnos"' have no overlap.
+src/stores/session.store.test.ts(199,30): error TS2322: Type '"turnos"' is not assignable to type '"pedidos"'.
+exit=2

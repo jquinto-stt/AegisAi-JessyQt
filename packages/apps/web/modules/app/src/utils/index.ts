@@ -91,6 +91,51 @@ export function inicialesDe(nombre: string): string {
 }
 
 /**
+ * Formatea un importe en pesos colombianos con separador de miles y `$`.
+ *
+ *   45000  → "$45.000"
+ *   1234.6 → "$1.235"   (redondea: no se muestran centavos)
+ *
+ * ## Por qué vive aquí
+ *
+ * Había **cuatro copias** del mismo formato repartidas por las pantallas de
+ * pedidos y conversaciones (`money` en `PanelContexto`, `CrearPedidoPage`,
+ * `InicioPage` y `AnaliticaPage`). Es el mismo caso que `inicialesDe`: un
+ * formato que el usuario ve en varias pantallas no puede decidirse en cada una,
+ * porque basta con que una cambie para que el mismo importe se lea distinto
+ * según dónde se mire.
+ *
+ * ## Las cuatro copias NO son equivalentes (medido el 17/09)
+ *
+ * Solo `AnaliticaPage` coincide con esta función **para todo valor**:
+ *
+ *   AnaliticaPage   `$${Math.round(n).toLocaleString("es-CO")}`  ← idéntica
+ *   PanelContexto   `$${n.toLocaleString("es-CO")}`              ← sin redondeo
+ *   CrearPedidoPage `$${n.toLocaleString("es-CO")}`              ← sin redondeo
+ *   InicioPage      `$${n.toLocaleString("es-CO")}`              ← sin redondeo
+ *
+ * Las tres sin `Math.round` coinciden con esta **solo sobre enteros**. Con un
+ * valor fraccionario imprimen centavos (`$1.234,6`) donde esta redondea
+ * (`$1.235`). Hoy no se nota: `precio` y `costoEnvio` son enteros y todos los
+ * puntos de llamada suman o multiplican enteros, así que el resultado es
+ * idéntico en las cuatro pantallas.
+ *
+ * La excepción teórica es `money(Number(pagaCon))` en `CrearPedidoPage`: ahí el
+ * valor lo teclea el usuario y el input lleva `step="1000"`, pero `step` no
+ * impide escribir un decimal. Redondear es lo correcto en COP (no hay centavos)
+ * y es lo que ya hacen `AnaliticaPage` y el código nuevo — pero es un cambio
+ * visible en ese caso, no un no-op.
+ *
+ * Por eso la migración sigue pendiente y es una decisión, no una limpieza:
+ * unificar las tres sin `Math.round` exige aceptar ese redondeo. Además
+ * `AnaliticaPage.tsx` tenía cambios **sin commitear de otra sesión** en vuelo
+ * cuando se midió esto (mtime 13:27): no tocar ese archivo hasta que aterricen.
+ */
+export function formatoMoneda(valor: number): string {
+  return `$${Math.round(valor).toLocaleString("es-CO")}`;
+}
+
+/**
  * Retardo de entrada para el elemento `indice` de una lista escalonada.
  *
  * Devuelve un valor listo para `animationDelay`:
