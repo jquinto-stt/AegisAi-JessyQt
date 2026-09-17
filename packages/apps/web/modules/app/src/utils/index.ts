@@ -70,3 +70,94 @@ const twMerge = extendTailwindMerge({
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(...inputs));
 }
+
+/**
+ * Iniciales de 1 o 2 letras para el respaldo de un avatar.
+ *
+ *   "Camila Ortiz"    → "CO"
+ *   "Camila"          → "CA"   (nombre de una sola palabra: dos letras, no una)
+ *   "  "              → "?"    (nunca una cadena vacía: dejaría el avatar en blanco)
+ *
+ * Vive aquí, y no en cada pantalla, porque había **tres copias** de esta función
+ * (conversaciones, equipo y el simulador de WhatsApp) y dos de ellas ni siquiera
+ * coincidían: la de conversaciones devolvía una sola letra para un nombre de una
+ * palabra. Una persona con el mismo nombre tiene que verse igual en toda la app.
+ */
+export function inicialesDe(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "?";
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
+
+/**
+ * Retardo de entrada para el elemento `indice` de una lista escalonada.
+ *
+ * Devuelve un valor listo para `animationDelay`:
+ *
+ * ```tsx
+ * {filas.map((f, i) => (
+ *   <tr
+ *     key={f.id}
+ *     className="animate-entrada-lista"
+ *     style={{ animationDelay: retardoEscalonado(i) }}
+ *   >
+ * ))}
+ * ```
+ *
+ * ## Por qué 40 ms
+ *
+ * Por debajo de ~30 ms los elementos entran tan juntos que el ojo los lee como
+ * un bloque: se paga el coste de la animación sin ganar la sensación de
+ * secuencia. Por encima de ~60 ms la lista se siente lenta en cuanto pasa de
+ * seis o siete filas, que aquí es el caso normal.
+ *
+ * ## Por qué hay un tope
+ *
+ * Sin tope, el elemento 20 de una tabla entraría a los 800 ms: la lista se ve
+ * vacía y luego se rellena sola, lo que se lee como un fallo de carga. Con el
+ * tope, a partir del séptimo todos entran a la vez — el ritmo de los primeros se
+ * conserva y la lista nunca parece rota.
+ *
+ * ## Interacción con `prefers-reduced-motion`
+ *
+ * No hace falta comprobarlo aquí. La guarda de `css/base.css` pone
+ * `animation: none` sobre `.animate-entrada-lista`, y sin animación el retardo
+ * no tiene nada que retrasar: el elemento se pinta de inmediato. Devolver `0`
+ * daría el mismo resultado, pero solo si cada consumidor se acordara de pedirlo.
+ *
+ * Vive aquí, y no en cada lista, porque el ritmo y el tope son **una sola
+ * decisión**: si cada pantalla eligiera su paso, el escalonado se sentiría
+ * distinto en cada sitio y dejaría de leerse como un sistema.
+ */
+export function retardoEscalonado(indice: number, pasoMs = 40, tope = 6): string {
+  return `${Math.min(Math.max(indice, 0), tope) * pasoMs}ms`;
+}
+
+/**
+ * ¿El sistema pidió menos movimiento?
+ *
+ * El CSS ya neutraliza por su cuenta las animaciones declaradas en
+ * `css/theme.css` (ver la guarda en `css/base.css`). Esta consulta existe para
+ * los casos en que **no basta con el CSS**, porque lo que hay que decidir no es
+ * qué se pinta sino **cuánto se espera** o si una librería externa debe animar:
+ *
+ * - `useMontajeAnimado` la usa para colapsar a cero la ventana de salida. Sin
+ *   esto, el nodo se quedaría montado y visible durante el retardo aunque su
+ *   animación estuviera neutralizada: un panel congelado 120 ms y luego
+ *   desaparecido de golpe.
+ * - `Chart` la usa para pasarle `animation.enabled: false` a ApexCharts, que
+ *   anima por defecto y no entiende de Tailwind ni de media queries.
+ *
+ * **No es reactiva**: refleja la preferencia en el momento de la llamada. Si el
+ * usuario la cambia con la app abierta, el CSS reacciona al instante pero lo que
+ * se haya decidido con esta función no se recalcula hasta el siguiente montaje.
+ * Es un desfase acotado a un caso de borde, y el precio de evitarlo (un
+ * `matchMedia` con listener y estado en cada consumidor) no lo justifica.
+ */
+export function prefiereMenosMovimiento(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}

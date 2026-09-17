@@ -34,3 +34,77 @@
   60% { transform: rotate(6deg); }
   75% { transform: rotate(-3deg); }
 }
+
+/* ── PANEO DE ENTRADA DEL CANVAS DE ARTEFACTOS ────────────────────────────────
+ *
+ * La tarjeta del Canvas (hoja de cálculo, gráfico, listado) aparece al enviar un
+ * mensaje. Sin animación entra de golpe, y como su aparición además ESTRECHA el
+ * chat a la mitad, el ojo lee dos cambios bruscos a la vez: un salto de layout y
+ * un bloque nuevo. El paneo convierte ambos en un solo movimiento continuo — la
+ * tarjeta "llega" en vez de "aparecer".
+ *
+ * El desplazamiento es horizontal y desde la derecha porque es el lado por el que
+ * el Canvas entra: el movimiento continúa la dirección del layout en lugar de
+ * contradecirla. El asentamiento de escala (0.985 → 1) es deliberadamente
+ * pequeño: da profundidad sin que se lea como un zoom.
+ *
+ * `backwards` y NO `both`: `both` dejaría aplicado para siempre el
+ * `translate3d(0,0,0)` final, que aunque sea un no-op visual convierte la tarjeta
+ * en bloque contenedor de sus descendientes. Los encabezados `sticky` de la
+ * hoja de cálculo viven dentro de su propio contenedor de scroll, así que no se
+ * romperían, pero no hay razón para dejar un transform vivo cuando el estado
+ * final ya es el natural.
+ */
+@keyframes paneo-entrada {
+  from {
+    opacity: 0;
+    transform: translate3d(32px, 0, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.paneo-entrada {
+  animation: paneo-entrada 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ACCESIBILIDAD — `prefers-reduced-motion`
+   ══════════════════════════════════════════════════════════════════════════
+
+   Quien pidió menos movimiento no recibe ninguno. No basta con acortar la
+   duración — el desplazamiento es lo que molesta.
+
+   ── Por qué se enumeran las clases y NO se usa un `* { animation: none }` ───
+
+   La receta habitual es un selector universal con `!important`. Aquí sería un
+   error, porque el proyecto tiene animaciones que **comunican estado** y no
+   solo decoran:
+
+     · `animate-spin`  → «esto está cargando» (Button, Composer del asistente)
+     · `animate-ping`  → «esto está en vivo» (punto del canvas, campana)
+     · `animate-pulse` → «el bot está escribiendo» / «carga en curso»
+
+   Neutralizarlas no reduce el movimiento: **elimina información**. Un spinner
+   que no gira no es un spinner quieto, es una interfaz que parece colgada. Por
+   eso el universal queda descartado y la lista es explícita.
+
+   El precio de enumerar es que hay que mantenerla: **al añadir un token
+   `--animate-*` en `css/theme.css`, añadirlo también aquí.** Los nombres son
+   los mismos que genera Tailwind (`.animate-<nombre>`).
+
+   Nota: `paneo-entrada` va aparte porque no es un token de tema sino una clase
+   propia, y ya estaba cubierta desde antes.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .paneo-entrada,
+  .animate-aparecer,
+  .animate-entrada-panel,
+  .animate-entrada-menu,
+  .animate-salida-menu,
+  .animate-entrada-lista {
+    animation: none;
+  }
+}

@@ -103,8 +103,24 @@ export interface ModalProps {
  * - No backdrop, no rounded corners, fills entire viewport.
  * - Backdrop click is disabled — only close button or `Escape` works.
  *
+ * **Animation (enter only):**
+ * - The scrim fades in (`animate-aparecer`, 200 ms) and the panel settles with
+ *   a fade, an 8 px rise and a 0.97 → 1 scale (`animate-entrada-panel`,
+ *   200 ms). Fullscreen modals fade only — a viewport-sized element that scales
+ *   reads as a slide zoom rather than as a layer landing on the content.
+ * - Both are declared as `--animate-*` tokens in `css/theme.css` and are
+ *   neutralised under `prefers-reduced-motion` in `css/base.css`.
+ * - **There is no exit animation, and that is deliberate.** Six of the eight
+ *   consumers pass a bare `isOpen` (`isOpen`, which evaluates to `true`) and
+ *   unmount the modal from the parent. By the time the state flips there is no
+ *   node left to animate, so an exit would play in 2 screens out of 8 and
+ *   silently not play in the other 6 — worse than having none, because it reads
+ *   as an intermittent bug. Adding one for real means converting those six call
+ *   sites to the controlled pattern first, at which point
+ *   `useMontajeAnimado` supplies the exit window.
+ *
  * **Limitations:**
- * - No animation/transition on open/close.
+ * - No exit animation — see above; the entrance is the animated half.
  * - No `size` prop — width controlled via `className`.
  * - Does not trap focus — Tab can escape the modal.
  *
@@ -187,17 +203,39 @@ export const Modal: React.FC<ModalProps> = ({
     ? "w-full h-full"
     : "relative w-full rounded-2xl bg-white  dark:bg-gray-900";
 
+  // Pantalla completa solo se funde: aplicarle el asentamiento de escala de
+  // `entrada-panel` haría encogerse un elemento que ocupa todo el viewport, que
+  // se lee como un zoom de diapositiva y no como una capa que se asienta.
+  const animacionPanel = isFullscreen ? "animate-aparecer" : "animate-entrada-panel";
+
   return (
     <div className="fixed inset-0 flex items-center justify-center overflow-y-auto modal z-99999">
+      {/* Solo ENTRADA, y es una decisión, no un olvido: seis de los ocho
+          consumidores pasan `isOpen` como booleano suelto (`isOpen`, que es
+          `true`) y desmontan el modal desde el padre. Cuando el estado cambia no
+          queda nodo al que animar, así que una salida aquí no se vería en 6 de
+          8 pantallas y sí en 2 — peor que no tener ninguna, porque se leería
+          como un fallo intermitente. Hacerla de verdad exige migrar esos seis
+          call sites al patrón controlado primero.
+
+          Por lo mismo no se usa `useMontajeAnimado`: pedir una ventana de
+          salida que no se va a animar solo retrasaría el desmontaje.
+
+          Sobre el desenfoque: el scrim anima `opacity` sobre un elemento con
+          `backdrop-blur`. Es seguro porque `opacity` se compone en GPU y el
+          resultado del desenfoque no cambia mientras dura el fundido — el fondo
+          está quieto. Si algún día el scrim se animara con un `transform` que
+          alterase el muestreo, ahí sí habría que recalcular el desenfoque en
+          cada fotograma. */}
       {!isFullscreen && (
         <div
-          className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px]"
+          className="fixed inset-0 h-full w-full bg-gray-400/50 backdrop-blur-[32px] animate-aparecer"
           onClick={onClose}
         ></div>
       )}
       <div
         ref={modalRef}
-        className={cn(contentClasses, className)}
+        className={cn(contentClasses, animacionPanel, className)}
         onClick={(e) => e.stopPropagation()}
       >
         {showCloseButton && (

@@ -45,13 +45,29 @@ export const BaseAppSidebar: React.FC<BaseAppSidebarProps> = observer(({
         onMouseEnter={() => collapsed === undefined && !uiStore.isDesktopSidebarExpanded && uiStore.setSidebarHovered(true)}
         onMouseLeave={() => collapsed === undefined && uiStore.setSidebarHovered(false)}
       >
-        {/* Logo section */}
+        {/* Logo section.
+            El `key` es lo que dispara el fundido: al cambiar `showExpanded`,
+            React desmonta el bloque y monta uno nuevo, y el nuevo reproduce
+            `animate-aparecer`. Sin el `key` reutilizaría el mismo nodo, la clase
+            no cambiaría y el logo se sustituiría de golpe — que es justo el
+            defecto que se corrige.
+
+            Es un fundido de ENTRADA, no un crossfade, y la diferencia es
+            deliberada: un crossfade de verdad exige tener los dos logos montados
+            a la vez, y no miden lo mismo (`logo` es un wordmark de `h-5`, 
+            `logoCollapsed` un cuadrado de `h-10` con borde). Superponerlos haría
+            que el bloque midiera lo que el más grande y la barra daría un salto
+            vertical justo cuando se está contrayendo. Con el `key`, la estructura
+            del DOM es idéntica a la de antes: un solo hijo, el alto lo sigue
+            marcando el logo que toca, y el que llega aparece fundido. */}
         <div
           className={`py-8 flex ${
             !showExpanded ? "xl:justify-center" : "justify-start"
           }`}
         >
-          {showExpanded ? logo : logoCollapsed}
+          <div key={showExpanded ? "expandido" : "colapsado"} className="animate-aparecer">
+            {showExpanded ? logo : logoCollapsed}
+          </div>
         </div>
 
         {/* Content section */}

@@ -190,6 +190,121 @@
   --z-index-9999: 9999;
   --z-index-99999: 99999;
   --z-index-999999: 999999;
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     MOVIMIENTO
+     ══════════════════════════════════════════════════════════════════════════
+
+     Tailwind v4 declara las animaciones como tokens `--animate-<nombre>`, y el
+     nombre genera la utilidad `.animate-<nombre>`. Antes de esto el tema tenía
+     `--color-*`, `--text-*`, `--shadow-*`, `--breakpoint-*` y `--z-index-*`
+     pero **ni un solo `--animate-*`**: cada animación del proyecto quedaba como
+     valor arbitrario de un solo uso (`animate-[wiggle_1.2s_...]`), sin
+     vocabulario compartido y sin forma de neutralizarlas todas juntas.
+
+     ── Por qué estas duraciones y no otras ──────────────────────────────────
+
+     Tres duraciones, cada una atada a cuánto ocupa el elemento en pantalla:
+
+       · 140 ms — responde a un clic y es pequeño (menú desplegable). Por encima
+         de ~150 ms un menú se siente lento, porque el ojo ya está esperándolo.
+       · 200 ms — ocupa la pantalla y hay que seguirlo (panel, modal). El
+         desplazamiento es corto, así que la duración solo cubre el asentamiento.
+       · 240 ms — entra dentro de una lista. Algo más lento que un panel porque
+         compite con sus hermanos escalonados.
+
+     ── Por qué estas curvas ─────────────────────────────────────────────────
+
+     La entrada reusa la curva de `paneo-entrada` (`base.css`): arranque rápido,
+     frenada larga. Que dos animaciones distintas del mismo producto compartan
+     curva es lo que hace que el movimiento se lea como un solo sistema y no
+     como decisiones sueltas.
+
+     La salida es `ease-in` a propósito, y NO la misma curva: entrar debe
+     asentarse (frena al final), salir debe despejar (acelera al final). Usar la
+     curva de entrada también para la salida hace que cerrar se sienta perezoso.
+
+     ── Fill mode ────────────────────────────────────────────────────────────
+
+     Las de entrada usan `backwards`, nunca `both`: `both` dejaría aplicado para
+     siempre el `transform` final, que aunque sea un no-op visual convierte el
+     elemento en bloque contenedor de sus descendientes. Es la misma razón por
+     la que `paneo-entrada` ya usa `backwards`.
+
+     La de salida usa `forwards` y no `backwards`: mientras el componente espera
+     a desmontarse, el estado final (invisible) tiene que seguir aplicado. Con
+     `backwards` el panel reaparecería durante la ventana de desmontaje.
+  */
+  --animate-aparecer: aparecer 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-entrada-panel: entrada-panel 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-entrada-menu: entrada-menu 140ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  --animate-salida-menu: salida-menu 120ms ease-in forwards;
+  --animate-entrada-lista: entrada-lista 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+
+  /* Fundido puro. Para capas que ya se mueven por otro medio (el scrim de un
+     panel) donde añadir desplazamiento sería movimiento por duplicado. */
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Panel que ocupa la pantalla. El desplazamiento es de 8px y la escala de
+     0.97: deliberadamente pequeños. Un modal que entra desde muy lejos o
+     encogido al 0.9 se lee como un zoom de diapositiva, no como una capa que
+     se asienta sobre el contenido. */
+  @keyframes entrada-panel {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 8px, 0) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  /* Menú desplegable. Sube desde -4px porque el panel cuelga de un disparador
+     que está POR ENCIMA: el movimiento continúa la dirección del layout en
+     lugar de contradecirla (mismo criterio que el paneo horizontal del canvas
+     del asistente). */
+  @keyframes entrada-menu {
+    from {
+      opacity: 0;
+      transform: translate3d(0, -4px, 0) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes salida-menu {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(0, -4px, 0) scale(0.98);
+    }
+  }
+
+  /* Elemento de lista. Sin escala: en una fila, un `scale` mueve los bordes
+     respecto a sus vecinas y el conjunto vibra. Solo desplazamiento vertical. */
+  @keyframes entrada-lista {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 6px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
 }
 
 @custom-variant dark (&:is(.dark *));

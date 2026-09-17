@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { cn } from "@/utils";
+import { useMontajeAnimado } from "@/hooks/useMontajeAnimado";
 
 /**
  * Props for the **Dropdown** component.
@@ -92,11 +93,28 @@ export interface DropdownProps {
  * - Positioned `absolute` to the right of its parent (`right-0`).
  * - Uses `cn()` for class merging.
  *
+ * **Animation:**
+ * - Enters with a fade, a 4 px drop and a 0.98 → 1 scale
+ *   (`animate-entrada-menu`, 140 ms) from the top-right origin.
+ * - **Exits**, unlike `Modal`: the panel stays mounted for
+ *   `DURACION_SALIDA_MS` after closing so the reverse animation can play.
+ *   This works because the component itself is always mounted — the six
+ *   consumers render `<Dropdown isOpen={…}>` and only the prop changes — so
+ *   there is a node to animate. During that window the panel is
+ *   `pointer-events-none` and `aria-hidden`, so an invisible menu cannot
+ *   swallow a click or be announced.
+ * - Both animations are `--animate-*` tokens in `css/theme.css`, neutralised
+ *   under `prefers-reduced-motion` in `css/base.css`. When motion is reduced
+ *   the exit window collapses to zero instead of holding a frozen panel.
+ *
  * **Limitations:**
  * - No `position` prop — always renders below-right.
  * - No keyboard navigation (arrow keys, Enter, Escape to close).
  * - Trigger element must have class `dropdown-toggle` for click-outside
  *   detection to work correctly.
+ * - The exit window means the panel is in the DOM for `DURACION_SALIDA_MS`
+ *   after closing. Do not assert its absence synchronously after changing
+ *   `isOpen` — wait at least that long.
  *
  * @example Profile dropdown
  * ```tsx
@@ -127,6 +145,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // A diferencia de `Modal`, aquí SÍ se puede animar la salida: el panel no lo
+  // monta y desmonta el padre. Los seis consumidores renderizan
+  // `<Dropdown isOpen={…}>` siempre —el componente está montado desde el
+  // principio y lo que cambia es la prop—, así que hay nodo al que animar.
+  const { montado, saliendo } = useMontajeAnimado(isOpen);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -144,15 +168,26 @@ export const Dropdown: React.FC<DropdownProps> = ({
     };
   }, [onClose]);
 
-  if (!isOpen) return null;
+  if (!montado) return null;
 
   return (
     <div
       ref={dropdownRef}
+      // `origin-top-right` no es cosmético: el panel cuelga del disparador por
+      // su esquina superior derecha (`right-0 mt-2`), así que la escala de la
+      // animación tiene que crecer DESDE ese ancla. Con el origen por defecto
+      // (centro) el panel parece despegarse del botón al que pertenece.
       className={cn(
         "absolute z-40 right-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark",
+        "origin-top-right",
+        saliendo ? "animate-salida-menu pointer-events-none" : "animate-entrada-menu",
         className
       )}
+      // Durante los 120 ms de salida el panel ya es invisible pero seguiría en
+      // el DOM y en el árbol de accesibilidad. Sin esto, un clic justo después
+      // de cerrar aterrizaría en un menú que el usuario ya no ve, y un lector de
+      // pantalla seguiría anunciando sus opciones.
+      aria-hidden={saliendo || undefined}
     >
       {children}
     </div>

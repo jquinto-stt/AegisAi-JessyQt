@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { uiStore } from "@/stores";
+import { prefiereMenosMovimiento } from "@/utils";
 
 import type { ApexOptions } from "apexcharts";
 import ReactApexChart from "react-apexcharts";
@@ -83,11 +84,29 @@ export interface ChartProps {
  * - `apexcharts ^4.1.0`
  * - `react-apexcharts ^1.7.0`
  *
+ * **Animation:**
+ * - Configured centrally in `chartComun`: `speed` 600, gradual series stagger
+ *   and `dynamicAnimation` on data updates. Consumer `options.chart` still
+ *   wins, so a caller can opt out per chart.
+ * - `animation.enabled` is driven by `prefiereMenosMovimiento()`. ApexCharts
+ *   animates by default and knows nothing about media queries, so the
+ *   preference has to be handed to it explicitly — the `css/base.css` guard
+ *   cannot reach inside the canvas.
+ * - The option is `chart.animations` (**plural**) and the duration key is
+ *   `speed`, not `duration`. ApexCharts silently ignores unknown keys, so a
+ *   typo here produces no error, no warning and no animation — only a chart
+ *   that looks exactly like it did before. Verified against the installed
+ *   `apexcharts@4.7.0`: the runtime reads `.animations` 42 times and
+ *   `.animation` zero times, and never reads `.animations.easing`.
+ *
  * **Limitations:**
  * - Deep merge is limited for complex nested options.
  *   See `TECH_DEBT.md` (Chart wrapper - Deep merge limitado).
  * - No `onEvent` callbacks exposed (dataPointSelection, etc.).
  * - Coupled to MobX `uiStore` for theme detection.
+ * - `prefiereMenosMovimiento()` is read once inside the `useMemo`, so a change
+ *   to the system preference only reaches ApexCharts on the next recompute
+ *   (theme switch or new `options`), not live.
  *
  * @example Line chart
  * ```tsx
@@ -123,9 +142,52 @@ export const Chart = observer(function Chart({
   const isDark = uiStore.isDarkMode;
 
   const mergedOptions = useMemo<ApexOptions>(() => {
+    // ── Animación ────────────────────────────────────────────────────────────
+    //
+    // No depende del tema, así que se define UNA vez y se reusa en las dos
+    // ramas. Duplicarla en cada una sería una segunda definición de la misma
+    // decisión, que es exactamente lo que este archivo evita en `grid`, `xaxis`
+    // o `tooltip`.
+    //
+    // Hasta ahora este componente hacía deep-merge de todo eso pero **nunca
+    // tocaba `chart.animation`**. ApexCharts anima por defecto (~800 ms,
+    // `easein`), así que el único sitio del proyecto que animaba era el único
+    // que nadie había configurado: no respetaba `prefers-reduced-motion` ni
+    // compartía las curvas del resto de la app.
+    //
+    // 600 ms y no los 800 por defecto: estos gráficos acompañan a una decisión
+    // del usuario (cambiar el periodo), y una espera de casi un segundo entre la
+    // pulsación y el dato se lee como lentitud, no como elegancia.
+    const chartComun: NonNullable<ApexOptions["chart"]> = {
+      background: "transparent",
+      // El nombre es `animations`, en PLURAL. La documentación de ApexCharts
+      // circula con las dos formas, pero en la 4.7.0 instalada el runtime lee
+      // `.animations` 42 veces y `.animation` **ninguna**: en singular la
+      // configuración se ignora en silencio, sin aviso ni error.
+      animations: {
+        // ApexCharts no entiende de Tailwind ni de media queries: la
+        // preferencia hay que pasársela explícitamente o ignora que existe.
+        enabled: !prefiereMenosMovimiento(),
+        // `speed`, no `duration`. La clave `duration` no existe en esta versión
+        // y también se ignoraría sin decir nada.
+        speed: 600,
+        // No se fija `easing` a propósito: la 4.7.0 no lee `animations.easing`
+        // (0 accesos en el runtime, y no está en sus tipos), así que ponerlo
+        // sería una línea muerta que aparenta configurar algo que no configura.
+        //
+        // Escalonado de series. Sin esto, en las barras apiladas las tres series
+        // crecen a la vez y no se distingue cuál es cuál.
+        animateGradually: { enabled: true, delay: 80 },
+        // Animación al ACTUALIZAR, que aquí es el caso frecuente: al cambiar el
+        // rango del periodo se recalculan las series. Sin esto las barras
+        // saltarían al valor nuevo en lugar de transicionar hasta él.
+        dynamicAnimation: { enabled: true, speed: 350 },
+      },
+    };
+
     const themeDefaults: ApexOptions = isDark
       ? {
-          chart: { background: "transparent" },
+          chart: chartComun,
           grid: { borderColor: "#1a2332" },
           xaxis: {
             labels: { style: { colors: "#9CA3AF" } },
@@ -136,7 +198,7 @@ export const Chart = observer(function Chart({
           tooltip: { theme: "dark" },
         }
       : {
-          chart: { background: "transparent" },
+          chart: chartComun,
           grid: { borderColor: "#F2F4F7" },
           xaxis: {
             labels: { style: { colors: "#344054" } },
