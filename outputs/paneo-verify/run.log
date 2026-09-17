@@ -1,0 +1,40 @@
+
+── Fase 1 · arranque ──
+  OK   la ruta /asistente monta el composer
+  OK   estoy en /asistente (no redirigido)  → /asistente
+
+── Fase 2 · pregunta 1: entrada de la tarjeta ──
+  OK   la tarjeta del Canvas aparece al enviar la pregunta
+  OK   la tarjeta entra MOSTRANDO el esqueleto de carga
+  durante la entrada: {"anim":"paneo-entrada","dur":"0.42s","fill":"backwards","barras":66,"alturas":[10,10,10,10],"anchos":[62,68,83,54],"barraAnim":"pulse","barraBg":"rgb(228, 231, 236)","conTexto":18}
+  OK   el paneo de entrada está aplicado  → paneo-entrada
+  OK   la duración del paneo es 0.42s  → 0.42s
+  OK   el fill-mode es backwards (no deja transform vivo)  → backwards
+  OK   hay varias barras de esqueleto (no una)  → 66 barras
+  OK   las barras pulsan de verdad (animationName=pulse)  → pulse
+  OK   las barras tienen tamaño real (no 0x0)  → {"alturas":[10,10,10,10],"anchos":[62,68,83,54]}
+  tras revelar: {"anim":"paneo-entrada","dur":"0.42s","fill":"backwards","barras":0,"alturas":[],"anchos":[],"barraAnim":null,"barraBg":null,"conTexto":46}
+  OK   tras el paneo no queda ningún esqueleto
+  OK   la hoja revela celdas con contenido  → 46 celdas con texto
+  OK   la ventana del esqueleto es visible (>200 ms)  → 413 ms de 41 fotogramas
+  OK   el paneo NO desborda la página (sin parpadeo de scroll horizontal)  → 0 fotogramas con desborde, pico 0px de 41
+
+── Fase 3 · pregunta 2: el efecto se repite ──
+  OK   se marcó la tarjeta anterior para detectar el remontaje
+  OK   la segunda pregunta vuelve a mostrar el esqueleto
+  OK   la tarjeta se REMONTA (nodo nuevo), no se reutiliza  → sonda ausente ⟹ nodo nuevo
+  OK   la segunda tarjeta vuelve a animar el paneo  → paneo-entrada
+  OK   la ventana del esqueleto se repite  → 407 ms
+  OK   la segunda entrada tampoco desborda la página  → 0 fotogramas con desborde, pico 0px
+
+── Fase 4 · prefers-reduced-motion: reduce ──
+  OK   el navegador reporta reduced-motion
+  en modo reducido: {"anim":"none","dur":"0s","fill":"none","barras":0,"alturas":[],"anchos":[],"barraAnim":null,"barraBg":null,"conTexto":46}
+  OK   con reduced-motion la tarjeta NO anima  → none
+  OK   con reduced-motion NO se retiene el contenido (sin esqueleto)  → 0 barras
+  OK   con reduced-motion los datos están presentes igualmente  → 46 celdas con texto
+  OK   no hay excepciones de runtime nuevas  → 0 → 0
+
+══════════════════════════════════════════════
+VEREDICTO: TODO OK
+══════════════════════════════════════════════

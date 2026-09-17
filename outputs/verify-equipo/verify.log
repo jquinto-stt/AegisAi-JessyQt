@@ -1,0 +1,73 @@
+
+=== A. Perfil /pedidos/equipo/d1 — resumen en lenguaje llano ===
+  OK   hay exactamente 7 áreas de negocio  -> ordenes, preparacion, programados, canales, ajustes, equipo, asistente
+  OK   área ordenes = si (6/6)  -> si (6/6)
+  OK   área preparacion = si (2/2)  -> si (2/2)
+  OK   área programados = si (2/2)  -> si (2/2)
+  OK   área canales = si (3/3)  -> si (3/3)
+  OK   área ajustes = parcial (1/2)  -> parcial (1/2)
+  OK   área equipo = parcial (1/2)  -> parcial (1/2)
+  OK   área asistente = no (0/1)  -> no (0/1)
+  OK   la suma de áreas cubre las 18 capacidades  -> suma total = 18
+  OK   las áreas activas coinciden con el contador de permisos  -> áreas = 15, contador = 15
+  OK   el contador de áreas completas coincide con los chips  -> cabecera = 4, chips = 4
+  OK   la frase de cabecera existe  -> Cubre 4 de 7 áreas. Le faltan cosas en Configuración y Equipo. No tiene acceso a Asistente IA.
+  OK   la frase va en oraciones separadas por punto  -> Cubre 4 de 7 áreas. Le faltan cosas en Configuración y Equipo. No tiene acceso a Asistente IA.
+
+=== B. Lenguaje: sin jerga técnica en la vista por defecto ===
+  OK   ningún código técnico visible  -> ninguno
+  OK   ninguna etiqueta de procedencia en crudo  -> ninguna
+  OK   no aparece la palabra «capacidad» en la vista principal  -> 
+  OK   se habla de «áreas»  -> 
+  OK   se habla de «permisos»  -> 
+
+=== C. Divulgación progresiva de los 18 interruptores ===
+  OK   cerrado por defecto: 0 interruptores  -> encontrados = 0
+  OK   el desplegable está anunciado  -> 
+  OK   abierto: exactamente 18 interruptores  -> encontrados = 18
+  OK   al abrir, el código técnico sigue sin mostrarse  -> 
+  OK   al abrir, las procedencias solo aparecen si hay desviación  -> 
+
+=== D. La pantalla reacciona en vivo ===
+  OK   antes: Pedidos está completo  -> 
+  OK   se pulsa «Quitar todo» en la primera área  -> 
+  OK   Pedidos pasa a «no» (0/6)  -> no (0/6)
+  OK   el contador de áreas completas baja en 1  -> 4 -> 3
+  OK   aparece el bloque de ajustes a mano  -> 
+  OK   los ajustes se cuentan como «se le quitó»  -> 
+  OK   se ofrece deshacer con «Dejar solo su rol»  -> 
+  OK   se pulsa «Dejar solo su rol»  -> 
+  OK   deshacer restaura las 7 áreas del rol  -> completas = 4
+  OK   y el bloque de ajustes desaparece  -> 
+
+=== E. Asistente de tareas: «Solo consulta» ===
+  OK   existe el chip del perfil  -> 
+  OK   el chip describe el oficio  -> Solo consulta | Puede mirar los pedidos, sin cambiarlos. | quita 12
+  OK   el chip avisa del delta de permisos  -> Solo consulta | Puede mirar los pedidos, sin cambiarlos. | quita 12
+  OK   perfil aplicado: ordenes = parcial (1/6)  -> parcial (1/6)
+  OK   perfil aplicado: preparacion = parcial (1/2)  -> parcial (1/2)
+  OK   perfil aplicado: programados = parcial (1/2)  -> parcial (1/2)
+  OK   perfil aplicado: canales = no (0/3)  -> no (0/3)
+  OK   perfil aplicado: ajustes = no (0/2)  -> no (0/2)
+  OK   perfil aplicado: equipo = no (0/2)  -> no (0/2)
+  OK   perfil aplicado: asistente = no (0/1)  -> no (0/1)
+  OK   «Solo consulta» no completa ninguna área  -> completas = 0
+  OK   control cruzado: áreas = contador de permisos  -> áreas = 3, contador = 3
+  OK   el chip activo se marca como «Actual»  -> 
+
+=== F. Lista de equipo y editor de roles ===
+  OK   la columna se llama «Qué puede hacer»  -> 
+  OK   los badges de área usan el nombre de negocio  -> 
+  OK   ya no se usa «Canales» como nombre de área  -> 
+  OK   la vista de equipo explica el modelo en lenguaje llano  -> 
+  OK   se puede abrir la pestaña de roles  -> 
+  OK   los roles se cuentan por áreas  -> 
+  OK   la vista de roles explica qué es un rol en lenguaje llano  -> 
+  OK   el editor muestra el resumen por áreas  -> 
+  OK   sin códigos técnicos en roles  -> 
+  OK   el editor no usa píldoras de filtro con fracciones  -> 
+
+=== G. Runtime ===
+  OK   ninguna excepción de runtime  -> excepciones = 0
+
+TODO OK

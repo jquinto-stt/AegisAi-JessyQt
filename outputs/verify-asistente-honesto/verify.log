@@ -1,0 +1,48 @@
+
+=== A. Barra lateral — idioma y control real ===
+  OK   se puede abrir la barra de conversaciones  -> 
+  OK   «Volver» está en español  -> 
+  OK   «Nueva conversación» está en español  -> 
+  OK   «Eliminar conversación» está presente  -> 
+  OK   no queda «Update Model»  -> 
+  OK   no queda «New chat»  -> 
+  OK   no queda «Back» como rótulo suelto  -> 
+  OK   las tres acciones declaradas son volver / nueva / eliminar  -> volver, nueva, eliminar
+
+=== B. Estado vacío — las tarjetas prometen lo que cumplen ===
+  OK   hay exactamente 3 tarjetas  -> n = 3
+  OK   cada tarjeta declara a qué herramienta lleva  -> pedidos.getResumenHoy, pedidos.getPendientes, pedidos.diagnosticoDesempeno
+  OK   ninguna tarjeta promete un «Top 10»  -> Resumen de hoy | Cuántos pedidos entraron hoy y cómo va el día. | Pedidos pendientes | Qué pedidos siguen sin resolverse. | Diagnóstico | Cómo estuvo el desempeño y qué observaciones hay.
+  OK   ninguna tarjeta promete «productos de mayor rotación»  -> 
+  OK   ninguna tarjeta lleva texto en inglés  -> 
+
+=== C. Pulsar una tarjeta produce una respuesta real ===
+  OK   existe la tarjeta de pedidos pendientes  -> Pedidos pendientes | Qué pedidos siguen sin resolverse.
+  OK   se puede pulsar la tarjeta  -> 
+  OK   la pregunta de la tarjeta se envió tal cual  -> 
+  OK   llegó una respuesta con hechos («Hechos:»)  -> 
+  OK   el hecho es el de getPendientes (label «Pendientes»)  -> Pendientes: 5
+  OK   no aparece un ranking de productos inventado  -> 
+  OK   el hecho «Pendientes» trae un número  -> Pendientes = 5
+  OK   el artefacto se renderizó con su tabla  -> registros = 5
+  OK   el conteo del hecho y las filas del artefacto coinciden  -> hecho = 5, filas = 5
+
+=== D. Eliminar conversación — confirmación en dos pasos ===
+  OK   se puede cerrar el canvas del artefacto  -> 
+  OK   la barra de conversaciones está disponible  -> ya estaba abierta
+  OK   hay conversaciones en el historial  -> n = 7
+  OK   con una conversación con contenido, borrar está habilitado  -> disabled = false
+  OK   se puede armar el borrado  -> 
+  OK   aparece la confirmación en dos pasos  -> 
+  OK   la confirmación dice qué se va a borrar y que es irreversible  -> 
+  OK   se puede cancelar  -> 
+  OK   cancelar no borra nada  -> 7 -> 7
+  OK   tras cancelar vuelven las acciones normales  -> 
+  OK   confirmar borra exactamente una conversación  -> 7 -> 6
+  OK   la conversación borrada ya no está en el historial  -> borrada = 6929221c «¿Cuáles son los pedidos pendientes?»
+  OK   sigue habiendo exactamente una activa  -> activas = 1
+
+=== E. Runtime ===
+  OK   ninguna excepción de runtime  -> excepciones = 0
+
+TODO OK

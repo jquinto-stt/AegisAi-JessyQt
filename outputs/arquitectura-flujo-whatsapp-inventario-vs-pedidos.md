@@ -4,7 +4,8 @@
 **Fecha:** 2026-09-17
 **Rol:** Arquitecto de Software / Diseñador de Sistemas Senior
 **Ámbito:** `packages/apps/web/modules/app/src` (árbol git-tracked, autoritativo)
-**Estado del entrega:** Análisis y propuesta. **No se ha modificado código.**
+**Estado del entrega:** Análisis y propuesta. **Fases 0, 1 y 2 YA IMPLANTADAS** (ver §10 al
+final). Fases 3-5 y las superficies de UI: pendientes.
 
 ---
 
@@ -523,3 +524,65 @@ Todos los badges son texto del catálogo. El «⚠️ Asesor» actual (H6) se mi
 - No deducir intención de la posición en el array ni de la antigüedad del último mensaje.
 - No agrupar la bandeja por intención (rompe el orden cronológico protegido por test).
 - No introducir IA ni backend: el proyecto es un mock frontend por decisión explícita.
+
+## 10. Estado de implantación (actualizado 2026-09-17)
+
+Lo que sigue ya está en el código. Nada de esto cambia `Conversacion`: no se añadió ningún
+campo persistido, que era la propiedad central del diseño.
+
+| Fase | Estado | Dónde |
+|---|---|---|
+| **0** — Cerrar H3/H4 | ✅ Hecha | `extraerModulo()` en `bot/conversaciones-bot.adapter.ts` (simétrico de `extraerPayload`), `RespuestaBot.modulo`, 4.º argumento en `simularRespuestaBot`, 3.er parámetro opcional en `enviarComoNegocio` |
+| **1** — Catálogos | ✅ Hecha | `MODULO_DESTINO_LABEL` en `conversaciones.store.ts` (junto a `ESTADO_CONVERSACION_*`); `INTENCION_LABEL` / `INTENCION_BADGE` en el archivo de clasificación |
+| **2** — Selectores | ✅ Hecha | `moduloPrincipalDe()` en el store; `intencionDe()` en `pages/conversaciones/conversaciones.clasificacion.ts` |
+| **3** — Bandeja | ⬜ Pendiente | — |
+| **4** — Panel de contexto | ⬜ Pendiente | — |
+| **5** — H8 (seed conv-2) y H6 (badge hardcodeado) | ⬜ Pendiente | — |
+| Futura — Inventario | ⬜ Pendiente | — |
+
+### 10.1 Desviaciones respecto al §6, y por qué
+
+1. **`intencionDe` vive en `pages/` y no en el store.** El §6.3 lo situaba en
+   `conversaciones.store.ts`, pero derivar la intención exige cruzar Pedidos con
+   Conversaciones, y ese cruce pertenece a la capa de UI (**invariante D2**): el
+   `conversacionesStore` no importa `pedidosStore` y no debe empezar a hacerlo. El store
+   expone hechos de su propio dominio (`modulosDe`, `lineaDeTiempo`); la interpretación que
+   combina dos dominios se hace encima de los dos. El `types.ts` ya apuntaba a esa ruta.
+2. **`intencionDe(convId)` en vez de `intencionDe(conv)`.** Coherencia con `modulosDe` y
+   `moduloPrincipalDe`: el llamador no resuelve la entidad antes de preguntar y no puede
+   pasar por accidente una copia obsoleta.
+3. **`MODULO_DESTINO_BADGE` NO se creó.** El §7.1 muestra dos badges con color distinto,
+   pero el catálogo de dominio del §6.2 solo define `{etiqueta, disponible}`. Inventar
+   ahora una escala cromática para el dominio sería inventar semántica antes de decidir la
+   superficie. Se añadirá (si hace falta) al pintar la bandeja, no antes.
+4. **`intencionesDe` (fase 3, opcional) NO se implementó.** `modulosDe` sigue siendo un
+   export huérfano (H2); añadir otro export sin consumidor repetiría el defecto que este
+   análisis denuncia. Se añadirá cuando exista su superficie.
+
+### 10.2 Precedencia de `intencionDe` — es contrato, no detalle
+
+**`reclamar` → `comprar` → `seguir_pedido` → `consultar`.**
+
+El §4.1 enumeraba las reglas sin fijar el orden, y el orden importa. La fila del dataset que
+lo decide es **conv-5**: tiene a la vez `pd4` (creado 140 min atrás, anterior al primer
+mensaje del hilo, 13 min) y un escalamiento (`en_espera` + evento `handoff_solicitado`). Con
+la regla del pedido sola daría `seguir_pedido`; el diseño dice `reclamar`. Lo único que
+exige criterio humano no puede quedar enmascarado por nada.
+
+### 10.3 Verificación
+
+`547 tests / 30 archivos` en verde (base: 499/27). `tsc` sin delta en los archivos tocados
+(la línea base del proyecto son 15 errores preexistentes en 8 archivos, ajenos a esto).
+`vite build` OK. Los tests nuevos blindan: la tabla de los 8 hilos, la precedencia de
+conv-5, la transición consulta→venta sin intervención, el fail-closed sin fuente y —el
+criterio de aceptación de la fase 0— que **un mensaje de bot escrito en runtime queda
+etiquetado** por la cadena real `sesión → engine → registry → provider → ToolSource.module`.
+
+### 10.4 Lo que sigue bloqueado
+
+**H8 bloquea el chip de dominio en el chat.** El seed de conv-2 afirma «tenemos 6 porciones
+… 8.000 c/u» sin ningún store que lo respalde. Etiquetar ese mensaje con «Inventario» lo
+presenta como dato verificado, que es peor que no etiquetarlo: convierte un dato fabricado
+en un dato con procedencia. **H8 se arregla antes o a la vez, no después.** Las preguntas 1
+y 2 del §9 (de quién es el catálogo, si la reserva de conv-2 es inventario o pedidos)
+siguen abiertas y las decide el negocio, no el código.

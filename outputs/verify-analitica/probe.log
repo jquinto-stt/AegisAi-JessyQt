@@ -1,0 +1,47 @@
+{
+  "path": "/pedidos/analitica",
+  "h1": "Analítica de pedidos",
+  "subtitulo": "Desempeño operativo y financiero del módulo de pedidos",
+  "titulosTarjeta": [
+    "Pedidos por canal",
+    "Modalidades de entrega",
+    "Pedidos en curso",
+    "Pedidos por estado",
+    "Estado de pago"
+  ],
+  "canvas": 4,
+  "barras": 56,
+  "etiquetasX": [
+    "11/0911/09",
+    "12/0912/09",
+    "13/0913/09",
+    "14/0914/09",
+    "15/0915/09",
+    "16/0916/09",
+    "17/0917/09",
+    "11/0911/09",
+    "12/0912/09",
+    "13/0913/09",
+    "14/0914/09",
+    "15/0915/09",
+    "16/0916/09",
+    "17/0917/09"
+  ],
+  "etiquetasY": [
+    "88",
+    "66",
+    "44",
+    "22",
+    "00",
+    "1010",
+    "88",
+    "66",
+    "44",
+    "22",
+    "00"
+  ],
+  "leyendas": [],
+  "falso": false,
+  "texto": "Analítica de pedidos\n\nDesempeño operativo y financiero del módulo de pedidos\n\nMétricas\nVista Lista\nÚltimos 7 días\nDescargar CSV\nNECTO AI\nChat\nPedidos del periodo\n7\n\n11/09 – 17/09\n\nIngresos vendidos\n$173.500\n\n5 pedidos vendidos\n\nTicket promedio\n$34.700\n\nPor pedido vendido\n\nTasa de cancelación\n14.3%\n\n1 cancelado en el periodo\n\nTiempo de ciclo\n100 min\n\nDe la creación a la entrega\n\nEn curso ahora\n5\n\n0 programados esperando\n\nPedidos por día\n\n11/09 – 17/09 · 7 pedidos en el periodo\n\nTodo\n30 días\n7 días\nCalendario\n8\n6\n4\n2\n0\n11/09\n12/09\n13/09\n14/09\n15/09\n16/09\n17/09\nPedidos por canal\n\nWhatsApp y mostrador · 11/09 – 17/09\n\nWhatsApp\n6 · 86%\nMostrador\n1 · 14%\nVer los pedidos del periodo\n→\nModalidades de entrega\n\nRetiro, domicilio y en sitio · 11/09 – 17/09\n\nRetiro\n2 · 29%\nDomicilio\n4 · 57%\nEn sitio\n1 · 14%\nVer los pedidos del periodo\n→\nPedidos en curso\n\nEn vivo ahora · promedios de 11/09 – 17/09\n\n5\nen curso\n\n0 programados esperando su hora\n\n1\n\nPromedio diario\n\n7\n\nPromedio semanal\n\n30\n\nPromedio mensual\n\nPedidos por estado\n\nUn segmento por estado del pipeline · 11/09 – 17/09\n\nNuevo\n(1)\nConfirmado\n(1)\nEn preparación\n(1)\nListo\n(1)\nEn camino\n(1)\nEntregado\n(1)\nCancelado\n(1)\n10\n8\n6\n4\n2\n0\n11/09\n12/09\n13/09\n14/09\n15/09\n16/09\n17/09\nEstado de pago\n\nPagado y pendiente · 11/09 – 17/09\n\nPagado · 3 (43%)\nPendiente · 4 (57%)"
+}
+RUNTIME ERRORS: (none)

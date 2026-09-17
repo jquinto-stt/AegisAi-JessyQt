@@ -1,0 +1,38 @@
+── Fase 0 · sesión y ruta ──────────────────────────────────────────
+  OK   estoy en /pedidos/analitica
+
+── Fase 1 · ausencia de datos simulados ───────────────────────────
+  OK   el DOM no contiene ninguna cifra del panel genérico  -> encontrado=false
+  OK   las 5 tarjetas de bloque llevan títulos del dominio de pedidos  -> ["Pedidos por canal","Modalidades de entrega","Pedidos en curso","Pedidos por estado","Estado de pago"]
+
+── Fase 2 · periodo 7 días ────────────────────────────────────────
+  OK   el KPI 'Pedidos del periodo' es un número positivo  -> {"valor":"7"}
+  OK   el gráfico de volumen dibuja 7 columnas (una por día)  -> [7,49]
+  OK   el gráfico apilado dibuja 7 días x estados presentes  -> [7,49]
+  OK   los canales suman el total del periodo  -> 7 vs 7
+  OK   las cuotas de canal suman 100%  -> [{"etiqueta":"WhatsApp","total":6,"cuota":86},{"etiqueta":"Mostrador","total":1,"cuota":14}]
+  OK   las modalidades suman el total del periodo  -> 7 vs 7
+  OK   los estados del gráfico apilado suman el total del periodo  -> 7 vs 7
+  OK   pagado + pendiente suman el total del periodo  -> 7 vs 7
+  OK   las cuotas de pago suman 100%  -> [{"etiqueta":"Pagado","total":3,"cuota":43},{"etiqueta":"Pendiente","total":4,"cuota":57}]
+  OK   en un periodo con ventana no se añade la nota de acotado  -> nota=false
+  OK   la fase no lanzó excepciones  -> excepciones=0
+
+── Fase 3 · el periodo manda (7 → 30 días → todo) ─────────────────
+  OK   pulso la píldora '30 días'
+  OK   con 30 días el gráfico de volumen dibuja 30 columnas  -> [30,210]
+  OK   las columnas cambian respecto a 7 días  -> 7 -> 30
+  OK   pulso la píldora 'Todo'
+  OK   con 'Todo' se declara que los gráficos se acotan a 30 días  -> nota=true
+  OK   con 'Todo' el KPI abarca más que la ventana de 30 días o la iguala  -> {"valor":"7"}
+  OK   la fase no lanzó excepciones  -> excepciones=0
+
+── Fase 4 · control cruzado con la vista lista ────────────────────
+  OK   pulso 'Vista Lista'
+  OK   la tabla muestra tantas filas como pedidos declara el resumen  -> {"mostrados":7,"total":7,"filas":7}
+  OK   la vista lista y el KPI del periodo cuentan lo mismo  -> {"mostrados":7,"total":7,"filas":7} vs KPI 7
+  OK   la fase no lanzó excepciones  -> excepciones=0
+
+── Resultado ──────────────────────────────────────────────────────
+TODO OK (0 fallos)
+RUNTIME ERRORS (total): 0

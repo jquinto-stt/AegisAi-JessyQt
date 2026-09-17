@@ -1,0 +1,25 @@
+
+=== A. Inicio /pedidos/inicio — sin relleno ===
+  OK   no queda ningún distintivo «Demo»  -> 
+  OK   el gráfico de volumen tiene 7 puntos (la semana real)  -> puntos = 7
+  OK   el gráfico de volumen dibuja marcadores reales  -> marcadores = true
+
+=== B. Asistente /asistente — historial real ===
+  OK   se puede abrir la barra de conversaciones  -> 
+  OK   la marca de la maqueta desapareció  -> 
+  OK   la barra lleva la marca del producto  -> 
+  OK   no quedan títulos de ejemplo en inglés  -> 
+  OK   los grupos están en español  -> 
+  OK   hay al menos una conversación en el historial  -> n = 1
+  OK   exactamente una está marcada como activa  -> activas = 1
+  OK   se puede pulsar «New chat»  -> 
+  OK   «New chat» añade una conversación al historial  -> 1 -> 2
+  OK   la nueva queda como activa  -> ★·
+  OK   se puede pulsar otra conversación del historial  -> 
+  OK   pulsar otra conversación cambia la activa de verdad  -> activa = de4cd076, esperada = de4cd076
+  OK   y sigue habiendo exactamente una activa  -> activas = 1
+
+=== C. Runtime ===
+  OK   ninguna excepción de runtime  -> excepciones = 0
+
+TODO OK

@@ -1,0 +1,30 @@
+
+── Fase 1 · arranque ──
+  OK   la ruta /asistente monta el composer
+  OK   estoy en /asistente (no redirigido)  → /asistente
+
+── Fase 2 · pregunta 1: entrada de la tarjeta ──
+  OK   la tarjeta del Canvas aparece al enviar la pregunta
+  OK   la tarjeta contiene la hoja de cálculo
+  OK   el paneo de entrada está aplicado  → {"name":"paneo-entrada","dur":"0.42s","timing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"backwards"}
+  OK   la duración es la declarada (0.42s)  → 0.42s
+  OK   el fill-mode es backwards (no deja transform vivo)  → backwards
+  OK   la tarjeta nace SIN esqueleto (los datos ya llegaron)  → {"pulsos":0}
+  OK   la hoja muestra celdas con contenido  → 46 celdas con texto
+
+── Fase 3 · pregunta 2: esqueleto de carga ──
+  muestreo: {"visto":false,"desde":null,"hasta":null,"muestras":236,"conPulse":0,"alturas":[]}
+ FAIL  el esqueleto aparece durante la carga
+ FAIL  el esqueleto tiene una ventana visible > 0 ms  → 0 ms
+ FAIL  las barras del esqueleto tienen altura real (no son 0x0)  → []
+  OK   tras la carga no queda ningún esqueleto
+  OK   tras la carga la hoja tiene datos  → 46 celdas con texto
+
+── Fase 4 · prefers-reduced-motion: reduce ──
+  OK   el navegador reporta reduced-motion
+  OK   con reduced-motion la tarjeta NO anima  → none
+  OK   no hay excepciones de runtime nuevas  → 0 → 0
+
+══════════════════════════════════════════════
+VEREDICTO: 3 FALLOS
+══════════════════════════════════════════════
