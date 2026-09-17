@@ -1,141 +1,226 @@
+import { useState } from "react";
 import { observer } from "mobx-react-lite";
-
+import { Avatar } from "@/elements/ui/avatar";
+import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
+import { CallIcon, VideoIcon, MoreDotIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
-import type { EventoSistema, Mensaje } from "@/stores/conversaciones.types";
+import { BotonHandoff } from "./BotonHandoff";
+import {
+  AVATAR_MAP,
+  inicialesDe,
+  statusDe,
+  horaDe,
+} from "../conversaciones.utils";
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CHAT VIEW — línea de tiempo unificada (consola del operador)
-// ═══════════════════════════════════════════════════════════════════════════
+interface ChatViewProps {
+  convId: string;
+  onTogglePanel?: () => void;
+  panelExpandido?: boolean;
+}
 
-/**
- * `ChatView` — columna central de `/conversaciones` (tarea 6.3).
- *
- * Consume `conversacionesStore.lineaDeTiempo(convId)` y la renderiza como un
- * hilo de chat desde la perspectiva del OPERADOR:
- *
- * - Mensajes y eventos ya vienen intercalados por timestamp ascendente desde el
- *   store (getter derivado), preservando el orden de inserción ante timestamps
- *   idénticos (Req 2.1).
- * - Mensajes con autor `cliente` → alineados a la DERECHA con etiqueta de
- *   autoría visible (Req 2.2).
- * - Mensajes con autor `negocio` o `bot` → alineados a la IZQUIERDA con etiqueta
- *   de autoría visible que DISTINGUE `negocio` (asesor) de `bot` (asistente)
- *   (Req 2.3).
- * - Eventos de sistema → anotación centrada, visualmente diferenciada de las
- *   burbujas de cliente/negocio/bot (Req 2.4).
- * - Conversación sin mensajes ni eventos → indicador de conversación vacía
- *   (Req 2.5).
- *
- * Reutiliza el patrón visual del simulador (`Burbuja` / `LineaSistema`) para
- * consistencia, adaptado a la vista del operador (aquí el `cliente` va a la
- * derecha y el propio negocio/bot a la izquierda).
- *
- * Es `observer` para reaccionar en vivo a mensajes nuevos (cliente/negocio/bot)
- * y a los eventos de handoff por reactividad MobX.
- *
- * Requisitos: 2.1, 2.2, 2.3, 2.4, 2.5.
- */
-export const ChatView = observer(({ convId }: { convId: string }) => {
+export const ChatView = observer(({ convId, onTogglePanel, panelExpandido }: ChatViewProps) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const conv = conversacionesStore.getConversacion(convId);
   const items = conversacionesStore.lineaDeTiempo(convId);
 
-  // Indicador de conversación vacía (Req 2.5): ni mensajes ni eventos.
-  if (items.length === 0) {
+  if (!conv) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="rounded-full bg-gray-50 px-4 py-2 text-center text-sm text-gray-400 dark:bg-white/[0.03] dark:text-gray-500">
-          Esta conversación aún no tiene mensajes.
-        </p>
+      <div className="flex h-full flex-col items-center justify-center p-6 text-center text-gray-400">
+        <p className="text-sm">Selecciona una conversación para comenzar</p>
       </div>
     );
   }
 
+  const avatarSrc = AVATAR_MAP[conv.id] || "";
+  const estadoLabel =
+    conv.estado === "abierta"
+      ? "En línea"
+      : conv.estado === "en_espera"
+        ? "Esperando asesor"
+        : conv.estado === "atendida"
+          ? "En atención"
+          : "Cerrada";
+
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-2">
-      {items.map((item) =>
-        item.clase === "mensaje" ? (
-          <Burbuja key={item.data.id} m={item.data} />
+    <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Cabecera del Chat (ChatBoxHeader) */}
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent xl:px-6">
+        <div className="flex items-center gap-3">
+          <Avatar
+            src={avatarSrc}
+            alt={conv.contacto.nombre}
+            initials={inicialesDe(conv.contacto.nombre)}
+            size="large"
+            status={statusDe(conv.estado)}
+          />
+          <div>
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              {conv.contacto.nombre}
+            </h4>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+              <span>{estadoLabel}</span>
+              <span>•</span>
+              <span>{conv.contacto.telefono}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Acciones de la cabecera */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Botón Tomar / Devolver Handoff */}
+          <BotonHandoff convId={conv.id} />
+
+          {/* Llamada */}
+          <button
+            type="button"
+            title="Llamada"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+          >
+            <CallIcon className="h-5 w-5 stroke-current" />
+          </button>
+
+          {/* Video */}
+          <button
+            type="button"
+            title="Videollamada"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+          >
+            <VideoIcon className="h-5 w-5 fill-current" />
+          </button>
+
+          {/* Alternar panel de contexto */}
+          {onTogglePanel && (
+            <button
+              type="button"
+              onClick={onTogglePanel}
+              title={panelExpandido ? "Cerrar panel de contexto" : "Ver información de contacto"}
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-colors ${
+                panelExpandido
+                  ? "border-brand-300 bg-brand-50 text-brand-600 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+              }`}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="15" y1="3" x2="15" y2="21" />
+              </svg>
+            </button>
+          )}
+
+          {/* Dropdown 3 dots */}
+          <div className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
+              aria-label="Más opciones"
+            >
+              <MoreDotIcon className="h-5 w-5" />
+            </button>
+            <Dropdown
+              isOpen={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              className="w-48 p-1.5"
+            >
+              {conv.estado !== "cerrada" ? (
+                <DropdownItem
+                  onItemClick={() => {
+                    conversacionesStore.cerrar(conv.id);
+                    setMenuOpen(false);
+                  }}
+                  className="text-xs text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                >
+                  Cerrar conversación
+                </DropdownItem>
+              ) : (
+                <div className="px-3 py-1.5 text-xs text-gray-400">
+                  Conversación cerrada
+                </div>
+              )}
+            </Dropdown>
+          </div>
+        </div>
+      </div>
+
+      {/* Cuerpo del Chat (ChatBoxBody) */}
+      <div className="flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6">
+        {items.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="rounded-full bg-gray-100 px-4 py-2 text-center text-xs text-gray-400 dark:bg-white/5 dark:text-gray-500">
+              Esta conversación aún no tiene mensajes.
+            </p>
+          </div>
         ) : (
-          <LineaSistema key={item.data.id} e={item.data} />
-        ),
-      )}
-    </div>
-  );
-});
+          items.map((item) => {
+            if (item.clase === "evento") {
+              return (
+                <div key={item.data.id} className="flex justify-center my-3">
+                  <span className="rounded-full bg-gray-100 px-3 py-1 text-center text-[11px] text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                    • {item.data.texto}
+                  </span>
+                </div>
+              );
+            }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// BURBUJA / LÍNEA DE SISTEMA
-// ═══════════════════════════════════════════════════════════════════════════
+            const m = item.data;
+            const esCliente = m.autor === "cliente";
+            const esBot = m.autor === "bot";
 
-/**
- * Una burbuja de mensaje desde la vista del OPERADOR:
- * - `cliente` → derecha, con etiqueta "Cliente" (Req 2.2).
- * - `negocio`/`bot` → izquierda, con etiqueta que distingue "Asesor" (negocio,
- *   el propio equipo) de "Asistente" (bot) (Req 2.3).
- */
-const Burbuja = ({ m }: { m: Mensaje }) => {
-  const esCliente = m.autor === "cliente";
-  const etiqueta =
-    m.autor === "cliente"
-      ? "👤 Cliente"
-      : m.autor === "bot"
-        ? "🤖 Asistente"
-        : "🧑‍💼 Asesor";
+            // Mensajes del Asesor / Negocio (operador) -> Alineados a la DERECHA con color azul/brand
+            if (!esCliente && !esBot) {
+              return (
+                <div key={m.id} className="flex justify-end">
+                  <div className="max-w-[80%] sm:max-w-md text-right">
+                    <div className="rounded-2xl rounded-tr-xs bg-brand-500 px-4 py-2.5 text-left text-sm text-white shadow-2xs dark:bg-brand-500">
+                      <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+                    </div>
+                    <p className="mt-1 text-right text-[11px] text-gray-400 dark:text-gray-500">
+                      {horaDe(m.timestamp)}
+                    </p>
+                  </div>
+                </div>
+              );
+            }
 
-  return (
-    <div className={`flex ${esCliente ? "justify-end" : "justify-start"}`}>
-      <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-sm ${
-          esCliente
-            ? "rounded-br-sm bg-brand-500 text-white dark:bg-brand-500/80"
-            : m.autor === "bot"
-              ? "rounded-bl-sm bg-blue-50 text-gray-800 dark:bg-blue-500/10 dark:text-white/90"
-              : "rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-white/90"
-        }`}
-      >
-        <p
-          className={`mb-0.5 text-[11px] font-semibold ${
-            esCliente
-              ? "text-white/80"
-              : m.autor === "bot"
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400"
-          }`}
-        >
-          {etiqueta}
-        </p>
-        <p className="whitespace-pre-line text-sm leading-relaxed">{m.contenido.texto}</p>
-        <p
-          className={`mt-1 text-right text-[10px] ${
-            esCliente ? "text-white/60" : "text-gray-400"
-          }`}
-        >
-          {horaDe(m.timestamp)}
-        </p>
+            // Mensajes del Cliente o del Bot -> Alineados a la IZQUIERDA con Avatar
+            return (
+              <div key={m.id} className="flex items-start gap-3">
+                <Avatar
+                  src={esBot ? "" : avatarSrc}
+                  initials={esBot ? "AI" : inicialesDe(conv.contacto.nombre)}
+                  size="small"
+                  className="mt-0.5 shrink-0"
+                />
+                <div className="max-w-[80%] sm:max-w-md">
+                  <div
+                    className={`rounded-2xl rounded-tl-xs px-4 py-2.5 text-sm ${
+                      esBot
+                        ? "border border-blue-100 bg-blue-50/80 text-blue-950 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200"
+                        : "bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-white/90"
+                    }`}
+                  >
+                    <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+                  </div>
+                  <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+                    {esBot ? "Asistente Bot" : conv.contacto.nombre}, {horaDe(m.timestamp)}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
-};
-
-/**
- * Evento de sistema: anotación centrada, visualmente diferenciada de las
- * burbujas de cliente/negocio/bot (Req 2.4).
- */
-const LineaSistema = ({ e }: { e: EventoSistema }) => (
-  <p className="mx-auto my-1 max-w-[90%] rounded-full border border-gray-200/70 bg-gray-50 px-3 py-1 text-center text-xs text-gray-500 dark:border-gray-700/70 dark:bg-white/[0.03] dark:text-gray-400">
-    <span aria-hidden className="mr-1">•</span>
-    {e.texto}
-  </p>
-);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Hora HH:MM a partir de un timestamp ISO, para la burbuja estilo chat. */
-const horaDe = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-};
+});
 
 export default ChatView;
