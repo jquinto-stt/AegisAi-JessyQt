@@ -10,6 +10,7 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
+import { ChevronDownIcon } from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
@@ -137,6 +138,25 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
     if (!puedeVerComo) return;
     sessionStore.simular(op.id);
     navigate(sessionStore.homePathActual);
+  };
+
+  // ── Control de colapso de categorías por tarjetas ─────────────────────────
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
+
+  const toggleColapso = (grupoId: string) => {
+    setColapsados((prev) => ({ ...prev, [grupoId]: !prev[grupoId] }));
+  };
+
+  const expandirTodos = () => {
+    setColapsados({});
+  };
+
+  const colapsarTodos = () => {
+    const todos: Record<string, boolean> = {};
+    for (const g of CAPACIDAD_GRUPOS) {
+      todos[g.id] = true;
+    }
+    setColapsados(todos);
   };
 
   return (
@@ -322,91 +342,143 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         )}
       </Card>
 
-      {/* ── 3. REGLAS Y PERMISOS DE ACCESO (TOTALMENTE VISIBLES, SIN COLAPSO) ─ */}
+      {/* ── 3. REGLAS Y PERMISOS DE ACCESO ─────────────────────────────────── */}
       <Card className="p-6">
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-bold text-gray-900 dark:text-white">
               Permisos y Reglas de Acceso
             </h2>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Capacidades visibles por área. Activa o desactiva interruptores para conceder o revocar permisos específicos.
+              Capacidades por área. Activa o desactiva interruptores para conceder o revocar permisos específicos.
             </p>
           </div>
 
-          <span className="text-xs font-medium text-gray-400">
-            {efectivas.length} de 18 capacidades activas
-          </span>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {efectivas.length} de 18 activas
+            </span>
+            <span className="text-gray-300 dark:text-gray-700">·</span>
+            <button
+              type="button"
+              onClick={expandirTodos}
+              className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+            >
+              Expandir todas
+            </button>
+            <span className="text-gray-300 dark:text-gray-700">·</span>
+            <button
+              type="button"
+              onClick={colapsarTodos}
+              className="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 cursor-pointer"
+            >
+              Contraer todas
+            </button>
+          </div>
         </div>
 
-        {/* Grid de 2 columnas con todas las categorías desplegadas */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Grid de 2 columnas con tarjetas de categorías colapsables */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {CAPACIDAD_GRUPOS.map((grupo) => {
             const tiene = new Set(efectivas);
             const puede = grupo.capacidades.filter((c) => tiene.has(c));
             const completa = puede.length === grupo.capacidades.length;
+            const estaColapsado = !!colapsados[grupo.id];
 
             return (
               <div
                 key={grupo.id}
-                className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900"
+                className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow dark:border-gray-800 dark:bg-gray-900"
               >
-                {/* Cabecera del Grupo */}
-                <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
-                  <div className="flex items-center gap-2">
+                {/* Cabecera de la Tarjeta con botón de colapso */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleColapso(grupo.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleColapso(grupo.id);
+                    }
+                  }}
+                  className={`flex cursor-pointer select-none items-center justify-between p-4 transition-colors hover:bg-gray-50/75 dark:hover:bg-white/[0.02] ${
+                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
                     <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
                       {grupo.label}
                     </Badge>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {puede.length} de {grupo.capacidades.length}
                     </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => alternarGrupo(grupo)}
-                    className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
-                  >
-                    {completa ? "Quitar todo" : "Dar todo"}
-                  </button>
-                </div>
-
-                {/* Lista limpia de capacidades del grupo con switch directo */}
-                <div className="space-y-2.5">
-                  {grupo.capacidades.map((cap) => {
-                    const activa = efectivas.includes(cap);
-                    const proc = procedenciaDe(op, cap, capacidadesDelRol);
-                    const meta = PROCEDENCIA_HUMANA[proc];
-
-                    return (
-                      <div
-                        key={cap}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {!estaColapsado && (
+                      <button
+                        type="button"
+                        onClick={() => alternarGrupo(grupo)}
+                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
                       >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
-                            {CAPACIDAD_LABEL[cap]}
-                          </span>
+                        {completa ? "Quitar todo" : "Dar todo"}
+                      </button>
+                    )}
 
-                          {meta.tono !== "neutro" && (
-                            <Badge
-                              color={meta.tono === "mas" ? "success" : "warning"}
-                              size="xs"
-                            >
-                              {meta.label}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <Switch
-                          checked={activa}
-                          onChange={() => toggleCapacidad(cap)}
-                          label=""
-                        />
-                      </div>
-                    );
-                  })}
+                    <button
+                      type="button"
+                      onClick={() => toggleColapso(grupo.id)}
+                      aria-label={estaColapsado ? `Expandir ${grupo.label}` : `Contraer ${grupo.label}`}
+                      title={estaColapsado ? "Expandir" : "Contraer"}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                    >
+                      <ChevronDownIcon
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          estaColapsado ? "-rotate-90" : "rotate-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
+
+                {/* Lista de capacidades si la tarjeta está expandida */}
+                {!estaColapsado && (
+                  <div className="p-4 space-y-2.5">
+                    {grupo.capacidades.map((cap) => {
+                      const activa = efectivas.includes(cap);
+                      const proc = procedenciaDe(op, cap, capacidadesDelRol);
+                      const meta = PROCEDENCIA_HUMANA[proc];
+
+                      return (
+                        <div
+                          key={cap}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
+                              {CAPACIDAD_LABEL[cap]}
+                            </span>
+
+                            {meta.tono !== "neutro" && (
+                              <Badge
+                                color={meta.tono === "mas" ? "success" : "warning"}
+                                size="xs"
+                              >
+                                {meta.label}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <Switch
+                            checked={activa}
+                            onChange={() => toggleCapacidad(cap)}
+                            label=""
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
