@@ -10,7 +10,7 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
-import { ChevronDownIcon, EyeIcon, PencilIcon } from "@/icons";
+import { CheckCircleIcon, ChevronDownIcon, EyeIcon, PencilIcon } from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
@@ -366,26 +366,39 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {efectivas.length} de 18 activas
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300">
+              <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+              <span>{efectivas.length} de 18 activas</span>
             </span>
-            <span className="text-gray-300 dark:text-gray-700">·</span>
-            <button
-              type="button"
-              onClick={expandirTodos}
-              className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
-            >
-              Expandir todas
-            </button>
-            <span className="text-gray-300 dark:text-gray-700">·</span>
-            <button
-              type="button"
-              onClick={colapsarTodos}
-              className="text-xs font-semibold text-gray-500 hover:text-gray-700 dark:text-gray-400 cursor-pointer"
-            >
-              Contraer todas
-            </button>
+
+            <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-800 dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={expandirTodos}
+                title="Expandir todas las categorías"
+                aria-label="Expandir todas las categorías"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                  <path d="M5 6l5 5 5-5" />
+                  <path d="M5 11l5 5 5-5" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={colapsarTodos}
+                title="Contraer todas las categorías"
+                aria-label="Contraer todas las categorías"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                  <path d="M5 9l5-5 5 5" />
+                  <path d="M5 14l5-5 5 5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
