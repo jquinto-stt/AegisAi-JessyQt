@@ -246,13 +246,11 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                           {INTENCION_LABEL[intencion]}
                         </Badge>
                         {conversacionesStore.requiereAtencionHumana(conv) && (
-                          <Badge
-                            size="xs"
-                            color="warning"
-                            title="Requiere atención humana"
-                          >
-                            Asesor
-                          </Badge>
+                          <span title="Requiere atención humana">
+                            <Badge size="xs" color="warning">
+                              Asesor
+                            </Badge>
+                          </span>
                         )}
                         {/* Badge del pedido activo: #PED-XXX + su estado actual.
                             Etiqueta y color SIEMPRE del store de Pedidos — este

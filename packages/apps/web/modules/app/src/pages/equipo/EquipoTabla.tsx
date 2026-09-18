@@ -11,6 +11,7 @@ import {
   MoreDotIcon,
   PencilIcon,
   UserCircleIcon,
+  UserIcon,
 } from "@/icons";
 import { operadoresStore, rolesStore, sessionStore, CAPACIDADES, type Operador } from "@/stores";
 import { ESTADO_META } from "./equipo.constants";

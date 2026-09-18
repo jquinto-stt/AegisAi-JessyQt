@@ -100,7 +100,7 @@ const ModuloCard = observer(({ item, activo, onToggle }: ModuloCardProps) => {
               </h3>
               <div className="mt-0.5 flex items-center gap-2">
                 <Badge
-                  color={item.categoria === "negocio" ? "brand" : "info"}
+                  color={item.categoria === "negocio" ? "primary" : "info"}
                   size="sm"
                 >
                   {item.categoria === "negocio" ? "Negocio Core" : "Plugin / Add-on"}
@@ -175,7 +175,7 @@ export const ModulosPage = observer(() => {
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Módulos e Integraciones
             </h1>
-            <Badge color="brand" size="sm">
+            <Badge color="primary" size="sm">
               {cantidadActivos} de {total} activos
             </Badge>
           </div>
