@@ -116,7 +116,7 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
                 grupo={grupo}
                 menuAbiertoId={menuAbiertoId}
                 onSetMenuAbiertoId={setMenuAbiertoId}
-                onAbrir={(id) => navigate(`/pedidos/equipo/${id}`)}
+                onAbrir={(id) => navigate(`/equipo/${id}`)}
               />
             ))}
           </TableBody>

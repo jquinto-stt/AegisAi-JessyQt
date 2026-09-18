@@ -26,8 +26,8 @@ import {
  *      el admin no puede revisar.
  *
  * Referencias:
- *   src/pages/pedidos/equipo/equipo.presentacion.ts
- *   src/pages/pedidos/equipo/excepciones.ts
+ *   src/pages/equipo/equipo.presentacion.ts
+ *   src/pages/equipo/excepciones.ts
  */
 
 // Roles de juguete, para no depender del seed.

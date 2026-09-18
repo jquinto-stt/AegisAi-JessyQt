@@ -38,7 +38,7 @@ import {
 } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PERFIL DE UNA PERSONA DEL EQUIPO — /pedidos/equipo/:id
+// PERFIL DE UNA PERSONA DEL EQUIPO — /equipo/:id
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Es una RUTA, no un modal (decisión del contrato / propuesta): se puede
@@ -86,8 +86,8 @@ function detalleDeArea(area: ResumenArea): string {
  * Envoltorio de ruta. Resuelve la persona y, si existe, delega en `PerfilContent`
  * con `key={op.id}`.
  *
- * La `key` no es decorativa: al pasar de `/pedidos/equipo/d1` a `.../d2` React
- * Router **reutiliza** la misma instancia del componente, así que sin remontar
+ * La `key` no es decorativa: al pasar de `/equipo/d1` a `.../d2` React
+ * remonta el componente y resetea el estado local del formulario. Sin la `key`, así que sin remontar
  * el borrador de "Datos de contacto" seguiría mostrando el nombre de la persona
  * anterior. Remontar por id lo resetea sin necesidad de sincronizar a mano.
  */
@@ -108,7 +108,7 @@ export const PerfilOperadorPage = observer(() => {
               Puede que se haya eliminado desde otra pestaña.
             </p>
             <Link
-              to="/pedidos/equipo"
+              to="/equipo"
               className="mt-4 inline-block text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
             >
               Volver al equipo
@@ -236,7 +236,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
   const rechazar = () => {
     operadoresStore.rechazar(op.id);
-    navigate("/pedidos/equipo");
+    navigate("/equipo");
   };
 
   const puedeVerComo = op.estado === "activo";
@@ -252,7 +252,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
       {/* Volver */}
       <Link
-        to="/pedidos/equipo"
+        to="/equipo"
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">

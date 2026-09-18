@@ -8,7 +8,7 @@ import type { Capacidad, PortadorDeRol } from "@/stores/roles.store";
  * tiene realmente una persona cuando su rol y sus ajustes a mano discrepan.
  *
  * Referencias:
- *   src/pages/pedidos/equipo/excepciones.ts
+ *   src/pages/equipo/excepciones.ts
  *   outputs/contrato-arquitectura-acceso-necto.md §2
  *
  * Invariantes relevantes:

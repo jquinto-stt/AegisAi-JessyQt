@@ -276,7 +276,7 @@ const SidebarContent = observer(() => {
               }`}
             >
               <ul className="flex flex-col gap-1">
-                <MenuItem icon={<GroupIcon />} name="Equipo" path="/pedidos/equipo" isActive={esRutaConHijas} />
+                <MenuItem icon={<GroupIcon />} name="Equipo" path="/equipo" isActive={esRutaConHijas} />
               </ul>
             </div>
           </div>

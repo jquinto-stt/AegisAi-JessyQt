@@ -1,9 +1,7 @@
 /**
- * Pantalla "Equipo" del módulo Pedidos.
+ * Módulo transversal "Equipo y Roles" (Organización).
  *
- * Sustituye a la pantalla legacy de Operadores **solo para pedidos**: gestiona
- * personas con un rol (y sus excepciones) en vez de personas con secciones
- * marcadas a mano. Turnos y Agendamiento siguen usando `pages/operadores`.
+ * Gestiona personas con un rol (y sus excepciones) con capacidades atómicas.
  */
 export { EquipoPage } from "./EquipoPage";
 export { PerfilOperadorPage } from "./PerfilOperadorPage";

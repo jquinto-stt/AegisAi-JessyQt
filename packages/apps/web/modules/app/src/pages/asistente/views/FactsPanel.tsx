@@ -67,7 +67,7 @@ function getLinkForSource(source: ToolSource): { label: string; to: string } {
     return { label: "Ir a Configuración", to: "/pedidos/config" };
   }
   if (tid.includes("equipo") || tid.includes("operador")) {
-    return { label: "Ir a Equipo", to: "/pedidos/equipo" };
+    return { label: "Ir a Equipo", to: "/equipo" };
   }
   if (tid.includes("diagnostico") || tid.includes("resumen") || tid.includes("top") || tid.includes("pico")) {
     return { label: "Ir a Métricas de Inicio", to: "/pedidos/inicio" };

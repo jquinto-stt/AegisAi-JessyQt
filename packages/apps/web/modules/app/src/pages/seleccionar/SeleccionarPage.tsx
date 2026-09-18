@@ -171,7 +171,7 @@ const sessionModulosLabel = (modulos: Modulo[]) => {
  * - **Administrador** → guarda la selección y entra al módulo elegido.
  * - **Operador** → guarda la selección y va a `/operador/registro` a **solicitar
  *   acceso**. No entra: un operador no existe hasta que el admin aprueba su
- *   solicitud y le asigna un rol (ver `pages/pedidos/equipo`).
+ *   solicitud y le asigna un rol (ver `pages/equipo`).
  *
  * Aquí ya NO hay botón "Simular": la impersonación ("Viendo como") es una
  * herramienta de administrador y vive en Equipo, donde está guardada por

@@ -20,21 +20,16 @@ import {
 } from "./equipo.constants";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PÁGINA "EQUIPO" (pedidos)
+// PÁGINA "EQUIPO" (Organización / Transversal)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Sustituye a la pantalla legacy de "Operadores" **solo para pedidos**. Los
-// otros módulos siguen usando `OperadoresPage` con su modelo de secciones.
+// Módulo transversal de gestión de equipo y roles con capacidades atómicas.
 //
-// Lo que cambia frente a la pantalla legacy:
-//   1. Se gestiona un EQUIPO (personas con un rol), no "operadores con
-//      secciones marcadas".
-//   2. Hay una pestaña de ROLES: los paquetes de capacidades se definen una vez
-//      y se reutilizan, en vez de marcar casillas persona por persona.
-//   3. El perfil de cada persona es una RUTA (`/pedidos/equipo/:id`), no un
-//      modal: el editor de rol + 16 capacidades + excepciones no cabe bien en
-//      un diálogo.
-//   4. "Ver como" (impersonación) vive aquí, no en el login.
+// Características principales:
+//   1. Se gestiona un EQUIPO (personas con un rol), desacoplado de módulos específicos.
+//   2. Pestaña de ROLES: los paquetes de capacidades se definen una vez y se reutilizan.
+//   3. El perfil de cada persona es una RUTA (`/equipo/:id`).
+//   4. "Ver como" (impersonación) vive aquí.
 //
 // La página entera está detrás de `team.manage` (ver `App.tsx`).
 //

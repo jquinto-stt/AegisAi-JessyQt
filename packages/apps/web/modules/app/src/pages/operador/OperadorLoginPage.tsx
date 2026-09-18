@@ -37,7 +37,7 @@ const MODULO_LABEL: Record<Modulo, string> = {
  *    `RequireSession` y sin ningún guard, así que bastaba escribir la URL para
  *    impersonar a cualquier operador activo sin tener `team.manage`.
  * 2. **Duplicaba la impersonación.** Esa capacidad ya vive en Equipo
- *    (`/pedidos/equipo` → acción "Ver como"), que sí está guardada. Dos puertas
+ *    (`/equipo` → acción "Ver como"), que sí está guardada. Dos puertas
  *    para la misma acción es justo lo que el contrato (§4) evita.
  *
  * Contrato §1.7: la simulación es una herramienta administrativa, NO

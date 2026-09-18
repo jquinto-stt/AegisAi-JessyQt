@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route, Navigate, useParams } from "react-router";
 import { sessionStore } from "@/stores";
 import { AppShell } from "@/app/AppShell";
 import {
@@ -8,9 +8,8 @@ import {
   HistorialPage as PedidosHistorialPage,
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
-  EquipoPage,
-  PerfilOperadorPage,
 } from "@/pages/pedidos";
+import { EquipoPage, PerfilOperadorPage } from "@/pages/equipo";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
@@ -31,10 +30,15 @@ bootstrapAssistant();
 
 const RedireccionViendoComo = () => (
   <Navigate
-    to={sessionStore.hasPermission("team.manage") ? "/pedidos/equipo" : "/seleccionar"}
+    to={sessionStore.hasPermission("team.manage") ? "/equipo" : "/seleccionar"}
     replace
   />
 );
+
+const LegacyEquipoIdRedirect = () => {
+  const { id } = useParams();
+  return <Navigate to={id ? `/equipo/${id}` : "/equipo"} replace />;
+};
 
 export default function App() {
   return (
@@ -47,9 +51,13 @@ export default function App() {
         <Route path="/pedidos/historial" element={<CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard>} />
         <Route path="/pedidos/analitica" element={<CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard>} />
         <Route path="/pedidos/config" element={<CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard>} />
-        <Route path="/pedidos/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
-        <Route path="/pedidos/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
-        <Route path="/pedidos/operadores" element={<Navigate to="/pedidos/equipo" replace />} />
+        {/* Organización / Equipo y Roles (Transversal) */}
+        <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
+        <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
+        {/* Redirecciones legacy para compatibilidad */}
+        <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />
+        <Route path="/pedidos/equipo/:id" element={<LegacyEquipoIdRedirect />} />
+        <Route path="/pedidos/operadores" element={<Navigate to="/equipo" replace />} />
         <Route path="/asistente" element={<CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard>} />
         <Route path="/asistente/config" element={<CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard>} />
         <Route path="/conversaciones" element={<CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard>} />
