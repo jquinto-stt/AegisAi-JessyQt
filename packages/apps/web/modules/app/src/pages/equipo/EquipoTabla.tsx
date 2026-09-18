@@ -8,11 +8,9 @@ import { Card } from "@/elements/ui/card";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import {
-  EyeIcon,
   MoreDotIcon,
   PencilIcon,
   UserCircleIcon,
-  UserIcon,
 } from "@/icons";
 import { operadoresStore, rolesStore, sessionStore, CAPACIDADES, type Operador } from "@/stores";
 import { ESTADO_META } from "./equipo.constants";
@@ -386,22 +384,21 @@ const FilaEquipo = observer(
         {/* Columna 4: Acciones */}
         <TableCell className="py-4 text-right pr-6">
           <div className="flex items-center justify-end gap-1.5 relative">
-            {/* Botón de acción directa si está pendiente */}
+            {/* Botón Aprobar si está pendiente (color positivo esmeralda) */}
             {esPendiente && (
-              <Button
-                size="sm"
-                variant="primary"
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   operadoresStore.aprobar(op.id);
                 }}
-                className="h-8 px-3 text-xs"
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
               >
                 Aprobar
-              </Button>
+              </button>
             )}
 
-            {/* Botón Lapicito: Editar Capacidades / Perfil */}
+            {/* Botón Lapicito: Editar Rol y Capacidades */}
             <button
               type="button"
               onClick={(e) => {
@@ -409,27 +406,13 @@ const FilaEquipo = observer(
                 onAbrir();
               }}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-              title="Editar rol y capacidades"
-              aria-label="Editar rol y capacidades"
+              title="Editar capacidades y rol"
+              aria-label="Editar"
             >
               <PencilIcon className="h-4 w-4" />
             </button>
 
-            {/* Botón Ojo: Ver perfil */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAbrir();
-              }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-              title="Ver perfil completo"
-              aria-label="Ver perfil"
-            >
-              <EyeIcon className="h-4 w-4" />
-            </button>
-
-            {/* Menú contextual de opciones adicionales (...) */}
+            {/* Menú contextual de opciones administrativas (...) */}
             <div className="relative">
               <button
                 type="button"
@@ -444,26 +427,12 @@ const FilaEquipo = observer(
                 <MoreDotIcon className="h-4 w-4" />
               </button>
 
-              {/* Elements Dropdown Menu */}
+              {/* Dropdown Menu */}
               <Dropdown
                 isOpen={isMenuOpen}
                 onClose={onCloseMenu}
-                className="right-0 top-full mt-1 w-52 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
+                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
               >
-                <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
-                  <span className="flex items-center gap-2">
-                    <UserIcon className="h-4 w-4 text-gray-400" />
-                    <span>Ver perfil completo</span>
-                  </span>
-                </DropdownItem>
-
-                <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
-                  <span className="flex items-center gap-2">
-                    <PencilIcon className="h-4 w-4 text-gray-400" />
-                    <span>Editar capacidades y rol</span>
-                  </span>
-                </DropdownItem>
-
                 <DropdownItem
                   onClick={verComo}
                   className={!puedeVerComo ? "opacity-50 pointer-events-none" : ""}
@@ -474,27 +443,15 @@ const FilaEquipo = observer(
                   </span>
                 </DropdownItem>
 
-                <hr className="my-1 border-gray-100 dark:border-white/5" />
-
                 {op.estado === "pendiente" && (
-                  <>
-                    <DropdownItem
-                      onClick={() => {
-                        operadoresStore.aprobar(op.id);
-                        onCloseMenu();
-                      }}
-                    >
-                      <span className="text-success-600 font-medium">Aprobar operador</span>
-                    </DropdownItem>
-                    <DropdownItem
-                      onClick={() => {
-                        operadoresStore.rechazar(op.id);
-                        onCloseMenu();
-                      }}
-                    >
-                      <span className="text-error-600 font-medium">Rechazar solicitud</span>
-                    </DropdownItem>
-                  </>
+                  <DropdownItem
+                    onClick={() => {
+                      operadoresStore.rechazar(op.id);
+                      onCloseMenu();
+                    }}
+                  >
+                    <span className="text-error-600 font-medium">Rechazar solicitud</span>
+                  </DropdownItem>
                 )}
 
                 {op.estado === "activo" && (
@@ -504,7 +461,18 @@ const FilaEquipo = observer(
                       onCloseMenu();
                     }}
                   >
-                    <span className="text-warning-600 font-medium">Suspender</span>
+                    <span className="text-warning-600 font-medium">Suspender operador</span>
+                  </DropdownItem>
+                )}
+
+                {op.estado === "inactivo" && (
+                  <DropdownItem
+                    onClick={() => {
+                      operadoresStore.activar(op.id);
+                      onCloseMenu();
+                    }}
+                  >
+                    <span className="text-success-600 font-medium">Reactivar operador</span>
                   </DropdownItem>
                 )}
 
