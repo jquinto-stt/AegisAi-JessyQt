@@ -175,7 +175,7 @@ const SubIntegrationCard = observer(({
 
   return (
     <div
-      className={`relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
+      className={`w-full sm:w-[325px] shrink-0 relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
         parentActivo
           ? "border-gray-200 hover:border-gray-300 hover:shadow-xs dark:border-gray-800 dark:hover:border-gray-700"
           : "border-gray-200/60 bg-gray-50/50 opacity-60 dark:border-gray-800/60 dark:bg-gray-900/40"
@@ -465,8 +465,8 @@ const ModuloMaestroCard = observer(({
           </span>
         </div>
 
-        {/* Grid de las tarjetas de integración estilo Mailchimp / Google Meet */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Tarjetas de integración con ancho natural estilo Mailchimp / Google Meet */}
+        <div className="flex flex-wrap gap-4">
           {integraciones.map((it) => (
             <SubIntegrationCard
               key={it.id}
