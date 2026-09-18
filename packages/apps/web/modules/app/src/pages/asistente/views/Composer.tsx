@@ -60,7 +60,7 @@ export const Composer = observer(
         <div className="mt-1 flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
             <SparkleIcon />
-            AI Assistant
+            Asistente IA
           </span>
 
           <button

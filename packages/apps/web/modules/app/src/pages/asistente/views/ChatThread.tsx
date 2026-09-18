@@ -53,7 +53,7 @@ const IndicadorPensando = () => (
           <circle cx="12" cy="12" r="3" />
         </svg>
       </span>
-      <span>Thinking...</span>
+      <span>Pensando...</span>
     </div>
   </div>
 );

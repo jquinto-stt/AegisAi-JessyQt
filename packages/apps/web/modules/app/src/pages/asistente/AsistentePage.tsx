@@ -61,7 +61,7 @@ export const AsistentePage = observer(() => {
         {/* Encabezado general de la pantalla */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">AI Assistant</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Asistente IA</h1>
             <span className="rounded-full border border-gray-200 px-3 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
               Necto
             </span>

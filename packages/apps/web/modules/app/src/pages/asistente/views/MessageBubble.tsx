@@ -20,6 +20,16 @@ export const MessageBubble = ({ message }: { message: AssistantMessage }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleRegenerar = () => {
+    const mensajes = assistantStore.mensajes;
+    const idx = mensajes.findIndex((m) => m.id === message.id);
+    const sub = idx >= 0 ? mensajes.slice(0, idx) : mensajes;
+    const previoUsuario = [...sub].reverse().find((m) => m.role === "user");
+    if (previoUsuario?.text) {
+      assistantStore.enviar(previoUsuario.text);
+    }
+  };
+
   return (
     // La entrada vive en la burbuja y NO en el hilo: así cada mensaje anima al
     // montarse, tanto al cargar un hilo entero como al aparecer uno nuevo. Si se
@@ -91,7 +101,7 @@ export const MessageBubble = ({ message }: { message: AssistantMessage }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => assistantStore.enviar("Dame más detalles sobre esto")}
+                  onClick={handleRegenerar}
                   title="Regenerar"
                   className="rounded p-1 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                 >
