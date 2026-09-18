@@ -2,8 +2,9 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
-import { MoreDotIcon } from "@/icons";
+import { MoreDotIcon, EyeIcon, ArrowRightIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import type { Mensaje } from "@/stores/conversaciones.types";
 import { integracionesStore } from "@/stores/integraciones.store";
 import type { ModuloIntegrable } from "@/stores/integraciones.store";
 import { puede } from "@/stores/acceso.utils";
@@ -308,42 +309,121 @@ export const ChatView = observer(({
             // ── 1. CLIENTE: SIEMPRE a la IZQUIERDA con Avatar y burbuja gris suave ──
             if (esCliente) {
               return (
-                <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-4">
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full">
+                <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
+                  <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full sm:h-10 sm:w-10">
                     <Avatar
                       src={avatarSrc}
                       initials={inicialesDe(conv.contacto.nombre)}
                       size="large"
                     />
                   </div>
-                  <div className="max-w-[80%] sm:max-w-md">
+                  <div className="max-w-[85%] sm:max-w-md">
                     <div className="rounded-2xl rounded-tl-sm bg-[#f4f5f7] px-4 py-3 text-sm text-gray-800 shadow-2xs dark:bg-white/[0.07] dark:text-white/90">
+                      <p className="mb-1 text-xs font-semibold text-gray-900 dark:text-white">
+                        {conv.contacto.nombre}
+                      </p>
                       <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
                     </div>
-                    <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                      {conv.contacto.nombre}, {horaDe(m.timestamp)}
-                    </p>
+                    <div className="mt-1 flex items-center gap-1.5 pl-1 text-[11px] text-gray-400 dark:text-gray-500">
+                      <EyeIcon className="h-3 w-3" />
+                      <span>{horaDe(m.timestamp)}</span>
+                    </div>
                   </div>
                 </div>
               );
             }
 
-            // ── 2. BOT DE NUESTRA TIENDA: A la DERECHA con distintivo Bot / IA ──
+            // ── 2. BOT CON TRAZABILIDAD VISUAL IA: Avatar Robot + Caja Punteada de Intención + Conector + Burbuja Lavanda ──
             if (esBot) {
+              const traza = getBotTrazabilidad(m, conv.estado);
+              const puedeIrModulo =
+                traza.modulo && modulosContexto.some((mod) => mod.id === traza.modulo);
+
               return (
-                <div key={m.id} className="animate-entrada-lista flex justify-end">
-                  <div className="max-w-[80%] sm:max-w-md text-right">
-                    <div className="rounded-2xl rounded-tr-sm bg-[#3a44c7] px-4 py-3 text-left text-sm text-white shadow-xs dark:bg-[#343cae]">
-                      {/* Distintivo claro de Bot para diferenciarlo del asesor */}
-                      <div className="mb-1 flex items-center justify-end gap-1.5 text-[11px] font-semibold text-indigo-200">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                        <span>Bot Necto (IA)</span>
+                <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
+                  <BotAvatar />
+
+                  <div className="max-w-[85%] flex-1 sm:max-w-lg">
+                    {/* Tarjeta de Trazabilidad / Intención IA */}
+                    <div className="rounded-xl border border-dashed border-violet-300/80 bg-violet-50/40 p-3 shadow-2xs dark:border-violet-700/60 dark:bg-violet-950/20">
+                      {/* Cabecera de la traza: Nombre del bot + Ojo con hora */}
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-violet-900 dark:text-violet-200">
+                            {traza.nombreBot}
+                          </span>
+                          <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
+                            IA
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
+                          <EyeIcon className="h-3 w-3" />
+                          <span>{horaDe(m.timestamp)}</span>
+                        </div>
                       </div>
-                      <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+
+                      {/* Línea de intención / flujo de ejecución */}
+                      <p className="text-xs font-medium leading-snug text-gray-700 dark:text-gray-300">
+                        {traza.flujo}
+                      </p>
+
+                      {/* Pill de categoría / módulo */}
+                      <div className="mt-2 flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold ${traza.tagClass}`}
+                        >
+                          {traza.tag}
+                        </span>
+                      </div>
                     </div>
-                    <p className="mt-1.5 text-right text-xs text-gray-400 dark:text-gray-500">
-                      Bot Necto, {horaDe(m.timestamp)}
-                    </p>
+
+                    {/* Conector punteado tipo codo hacia la burbuja */}
+                    <div className="flex items-center py-0.5 pl-4 text-violet-400 dark:text-violet-600">
+                      <svg
+                        className="h-3.5 w-3.5 overflow-visible"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M4 0v8a4 4 0 0 0 4 4h8"
+                          stroke="currentColor"
+                          strokeWidth="1.75"
+                          strokeDasharray="2 2"
+                        />
+                      </svg>
+                    </div>
+
+                    {/* Burbuja de respuesta del bot: lavanda suave */}
+                    <div className="rounded-2xl rounded-tl-sm border border-violet-200/70 bg-[#f4f2ff] px-4 py-3 text-sm text-gray-800 shadow-2xs dark:border-violet-800/40 dark:bg-violet-950/30 dark:text-violet-100">
+                      <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+
+                      {/* Acción interactiva si hay módulo conectado o pedido */}
+                      {traza.accion ? (
+                        <div className="mt-3 flex items-center justify-between border-t border-violet-200/60 pt-2.5 dark:border-violet-800/40">
+                          {puedeIrModulo ? (
+                            <button
+                              type="button"
+                              onClick={() => setVista(traza.modulo!)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-white px-2.5 py-1 text-xs font-semibold text-violet-700 shadow-2xs transition-colors hover:bg-violet-50 dark:border-violet-700 dark:bg-violet-900/60 dark:text-violet-200 dark:hover:bg-violet-800/60"
+                            >
+                              <span>{traza.accion}</span>
+                              <ArrowRightIcon className="h-3 w-3" />
+                            </button>
+                          ) : (
+                            <span className="text-xs font-medium text-violet-600 dark:text-violet-300">
+                              {traza.accion}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-violet-400 dark:text-violet-400/80">
+                            {horaDe(m.timestamp)}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="mt-1 text-right text-[11px] text-violet-400 dark:text-violet-400/80">
+                          {horaDe(m.timestamp)}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -425,6 +505,112 @@ function TabContexto({
     >
       {children}
     </button>
+  );
+}
+
+interface BotTrazabilidad {
+  nombreBot: string;
+  flujo: string;
+  tag: string;
+  tagClass: string;
+  modulo?: ModuloIntegrable;
+  accion?: string;
+}
+
+function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
+  // 1. Pedidos
+  if (m.moduloContexto === "pedidos" || m.payload?.pedidoId) {
+    return {
+      nombreBot: "Chatbot Necto",
+      flujo: "Verificación de menú + [Catálogo de pedidos] + Validación operativa",
+      tag: "+Pedidos",
+      tagClass:
+        "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40",
+      modulo: "pedidos",
+      accion: m.payload?.pedidoId ? `Ver pedido #${m.payload.pedidoId}` : "Ver catálogo de pedidos",
+    };
+  }
+
+  // 2. Inventario
+  if (m.moduloContexto === "inventario") {
+    return {
+      nombreBot: "Chatbot Necto",
+      flujo: "Consulta de existencias + [Stock en tiempo real] + Validación de almacén",
+      tag: "+Inventario",
+      tagClass:
+        "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40",
+      modulo: "inventario",
+      accion: "Consultar en Inventario",
+    };
+  }
+
+  // 3. Handoff / derivación
+  if (
+    estadoConv === "handoff_solicitado" ||
+    m.contenido.texto.toLowerCase().includes("asesor") ||
+    m.contenido.texto.toLowerCase().includes("humano")
+  ) {
+    return {
+      nombreBot: "Chatbot Necto",
+      flujo: "Derivación asistida + [Mesa de ayuda] + Solicitud de handoff",
+      tag: "+Handoff",
+      tagClass:
+        "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40",
+    };
+  }
+
+  // 4. Base de conocimiento / Asistente general
+  return {
+    nombreBot: "Chatbot Necto",
+    flujo: "Atención inteligente + [Base de conocimiento] + Respuesta conversacional",
+    tag: "+FAQ",
+    tagClass:
+      "bg-violet-50 text-violet-700 border-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/40",
+  };
+}
+
+/**
+ * BotAvatar — Avatar distintivo de robot con indicador IA en la esquina inferior.
+ */
+function BotAvatar() {
+  return (
+    <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-violet-100 to-indigo-100 text-violet-700 shadow-2xs ring-1 ring-violet-200 dark:from-violet-950/60 dark:to-indigo-950/60 dark:text-violet-300 dark:ring-violet-800/50">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="11" width="18" height="10" rx="3" />
+          <circle cx="12" cy="5" r="2" />
+          <path d="M12 7v4" />
+          <line x1="8" y1="16" x2="8.01" y2="16" strokeWidth="2.5" />
+          <line x1="16" y1="16" x2="16.01" y2="16" strokeWidth="2.5" />
+        </svg>
+      </div>
+      <div
+        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-white shadow-xs ring-2 ring-white dark:ring-gray-900"
+        title="Agente IA de atención"
+      >
+        <svg
+          className="h-2.5 w-2.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="7" />
+          <path d="m21 21-4.3-4.3" />
+        </svg>
+      </div>
+    </div>
   );
 }
 
