@@ -85,8 +85,8 @@ export const AREA_COPY: Record<string, { label: string; resumen: string }> = {
     resumen: "Pedidos agendados para más adelante en vez de para ahora.",
   },
   canales: {
-    label: "Conversaciones",
-    resumen: "Los mensajes de WhatsApp con los clientes.",
+    label: "Canal WhatsApp",
+    resumen: "Atención externa y bot de WhatsApp para clientes.",
   },
   ajustes: {
     label: "Configuración",
@@ -97,8 +97,8 @@ export const AREA_COPY: Record<string, { label: string; resumen: string }> = {
     resumen: "Las personas que trabajan en el negocio.",
   },
   asistente: {
-    label: "Asistente IA",
-    resumen: "El asistente interno que consulta datos de pedidos.",
+    label: "NECTO AI (Interno)",
+    resumen: "Copiloto interno de IA para consultas del equipo (sin interacción con clientes).",
   },
 };
 

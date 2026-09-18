@@ -27,6 +27,7 @@ export default defineConfig({
   ],
   server: {
     port: 6020,
+    allowedHosts: true,
     proxy: {
       // Proxy API calls to the local backend microservice (avoids CORS in dev).
       "/api": {

@@ -1,0 +1,39 @@
+=== Puente «Contexto en WhatsApp» · verificación de UI ===
+
+  ruta: /conversaciones/config
+
+── Fase 1 · Etiquetas de la barra lateral ──
+  nota: quedan 2 entrada(s) con la etiqueta exacta «Configuración» (pie → /configuracion)
+
+── Fase 2 · Tarjeta «Contexto en WhatsApp» ──
+
+── Fase 3 · El enlace navega ──
+
+── Fase 4 · Desconectar en IA cambia lo que dice el canal ──
+
+── Fase 5 · Consola ──
+
+  OK   estoy en /conversaciones/config
+  OK   el enlace a /conversaciones/config se rotula «Configuración del canal»
+  OK   el enlace a /asistente/config se rotula «Configuración de la IA»
+  OK   las dos entradas ya NO comparten etiqueta
+  OK   la navegación tiene «Perfil del canal»
+  OK   existe la tarjeta «Contexto en WhatsApp» en Perfil del canal
+  OK   la tarjeta refleja «Conversación + 1» (Pedidos conectado)
+  OK   declara que la conexión NO se configura aquí
+  OK   ofrece el enlace a Módulos integrados de NECTO AI
+  OK   la tarjeta NO ofrece ningún interruptor (es de solo lectura)
+  OK   NO avisa de «sin módulos» cuando hay uno conectado
+  OK   el botón existe y se pulsa
+  OK   el botón lleva a /asistente/config
+  OK   Pedidos está conectado antes de la prueba
+  OK   el interruptor queda apagado
+  OK   la tarjeta sigue existiendo con 0 módulos
+  OK   la fila pasa a «Solo la conversación»
+  OK   avisa de que el asistente no tiene módulos conectados
+  OK   y aclara que no es un fallo del canal
+  OK   sigue sin ofrecer ningún interruptor
+  OK   se restaura Pedidos conectado al terminar
+  OK   no hay excepciones de runtime nuevas
+
+=== 22 OK · 0 FAIL ===

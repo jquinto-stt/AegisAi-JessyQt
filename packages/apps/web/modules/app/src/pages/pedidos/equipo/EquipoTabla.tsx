@@ -3,10 +3,12 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
 import { Badge } from "@/elements/ui/badge";
+import { Button } from "@/elements/ui/button";
+import { Card } from "@/elements/ui/card";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import {
-  UserIcon,
+  MoreDotIcon,
   PencilIcon,
   UserCircleIcon,
 } from "@/icons";
@@ -87,21 +89,21 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
   const gruposVisibles = grupos.filter((g) => g.operadores.length > 0);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+    <Card className="p-0 sm:p-0 overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-gray-50/70 border-b border-gray-100 dark:border-white/5 dark:bg-white/[0.02]">
+          <TableHeader>
             <TableRow>
-              <TableCell header className="font-semibold text-gray-700 dark:text-gray-300 pl-6 py-3.5">
+              <TableCell header className="pl-6">
                 Nombre y Cargo
               </TableCell>
-              <TableCell header className="font-semibold text-gray-700 dark:text-gray-300">
+              <TableCell header>
                 Qué puede hacer
               </TableCell>
-              <TableCell header className="font-semibold text-gray-700 dark:text-gray-300">
+              <TableCell header>
                 Rol y Acceso
               </TableCell>
-              <TableCell header className="text-right font-semibold text-gray-700 dark:text-gray-300 pr-6">
+              <TableCell header className="text-right pr-6">
                 Acciones
               </TableCell>
             </TableRow>
@@ -120,7 +122,7 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
           </TableBody>
         </Table>
       </div>
-    </div>
+    </Card>
   );
 });
 
@@ -142,35 +144,28 @@ const GrupoSection = observer(
   }) => {
     return (
       <>
-        {/* Encabezado de grupo con separador punteado */}
+        {/* Encabezado de grupo acorde a los tokens de Necto */}
         <tr
           className={
             grupo.esPendiente
-              ? "bg-warning-50/30 dark:bg-warning-500/10"
-              : "bg-gray-50/40 dark:bg-white/[0.01]"
+              ? "bg-warning-50/15 dark:bg-warning-500/5 border-y border-warning-100 dark:border-warning-500/10"
+              : "bg-gray-50/50 dark:bg-white/[0.015] border-y border-gray-100 dark:border-white/5"
           }
         >
-          <td colSpan={4} className="px-6 py-3">
+          <td colSpan={4} className="px-6 py-2.5">
             <div className="flex items-center gap-3">
               <span
-                className={`text-xs font-bold uppercase tracking-wider flex items-center gap-2 ${
+                className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-2 ${
                   grupo.esPendiente
-                    ? "text-warning-700 dark:text-warning-400"
+                    ? "text-warning-600 dark:text-warning-400"
                     : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 {grupo.esPendiente && (
-                  <span className="inline-block h-2 w-2 rounded-full bg-warning-500 animate-pulse" />
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning-500" />
                 )}
                 {grupo.titulo} ({grupo.operadores.length})
               </span>
-              <div
-                className={`h-px flex-1 border-b border-dashed ${
-                  grupo.esPendiente
-                    ? "border-warning-300 dark:border-warning-500/30"
-                    : "border-gray-200/70 dark:border-white/5"
-                }`}
-              />
             </div>
           </td>
         </tr>
@@ -333,7 +328,8 @@ const FilaEquipo = observer(
                 {areas.map((area) => (
                   <Badge
                     key={area.id}
-                    color="info"
+                    variant="light"
+                    color="light"
                     size="sm"
                     className="font-medium"
                   >
@@ -342,7 +338,7 @@ const FilaEquipo = observer(
                 ))}
                 {ajustes && (
                   <span title="Tiene permisos ajustados a mano respecto a su rol">
-                    <Badge color="warning" size="sm" className="font-medium">
+                    <Badge variant="light" color="warning" size="sm" className="font-medium">
                       Con ajustes
                     </Badge>
                   </span>
@@ -356,40 +352,29 @@ const FilaEquipo = observer(
 
         {/* Columna 3: Rol y Acceso */}
         <TableCell className="py-4">
-          <div className="flex items-center gap-2">
-            {/* Botón rectangular de Rol (Admin sin lápiz, Supervisor y Operador con lápiz) */}
-            {op.rolId === "admin_tienda" ? (
-              <button
-                type="button"
-                onClick={onAbrir}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold bg-brand-500 text-white hover:bg-brand-600 shadow-2xs transition-colors cursor-pointer"
-                title="Ver perfil de Administrador"
-              >
-                <UserIcon className="h-3.5 w-3.5 stroke-current" />
-                <span>Admin</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onAbrir}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold shadow-2xs transition-all cursor-pointer group ${
-                  op.rolId === "supervisor_pedidos"
-                    ? "bg-gray-800 text-white hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600"
-                    : "bg-gray-600 text-white hover:bg-gray-700 dark:bg-gray-600 dark:hover:bg-gray-500"
-                }`}
-                title={`Cambiar rol (${userTypeConfig.label}) en el perfil`}
-              >
-                <UserIcon className="h-3.5 w-3.5 stroke-current" />
-                <span>{userTypeConfig.label}</span>
-                <PencilIcon className="h-3 w-3 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all ml-0.5" />
-              </button>
-            )}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={onAbrir}>
+            {/* Rol de la persona con badge del sistema */}
+            <Badge
+              variant={op.rolId === "admin_tienda" ? "solid" : "light"}
+              color={
+                op.rolId === "admin_tienda"
+                  ? "primary"
+                  : op.rolId === "supervisor_pedidos"
+                  ? "dark"
+                  : "light"
+              }
+              size="sm"
+              className="font-medium"
+            >
+              {rol?.nombre || "Operador"}
+            </Badge>
 
-            {/* Acceso Badge */}
+            {/* Acceso */}
             <Badge
               variant="light"
               color={accessBadge.color}
               size="sm"
+              className="font-medium"
             >
               {accessBadge.label}
             </Badge>
@@ -401,16 +386,16 @@ const FilaEquipo = observer(
           <div className="flex items-center justify-end gap-3 relative">
             {/* Botón de acción directa si está pendiente */}
             {esPendiente && (
-              <button
-                type="button"
+              <Button
+                size="sm"
+                variant="primary"
                 onClick={() => operadoresStore.aprobar(op.id)}
-                className="px-3 py-1 text-xs font-semibold rounded-lg bg-success-500 text-white hover:bg-success-600 shadow-xs transition-colors cursor-pointer"
               >
                 Aprobar
-              </button>
+              </Button>
             )}
 
-            {/* Menú contextual de opciones rápidas (3x3 grid) */}
+            {/* Menú contextual de opciones rápidas */}
             <div className="relative">
               <button
                 type="button"
@@ -418,26 +403,11 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   onToggleMenu();
                 }}
-                className="p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors cursor-pointer"
                 title="Opciones rápidas"
                 aria-label="Opciones rápidas"
               >
-                <svg
-                  className="h-4.5 w-4.5"
-                  viewBox="0 0 16 16"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <circle cx="3" cy="3" r="1.35" />
-                  <circle cx="8" cy="3" r="1.35" />
-                  <circle cx="13" cy="3" r="1.35" />
-                  <circle cx="3" cy="8" r="1.35" />
-                  <circle cx="8" cy="8" r="1.35" />
-                  <circle cx="13" cy="8" r="1.35" />
-                  <circle cx="3" cy="13" r="1.35" />
-                  <circle cx="8" cy="13" r="1.35" />
-                  <circle cx="13" cy="13" r="1.35" />
-                </svg>
+                <MoreDotIcon className="h-5 w-5" />
               </button>
 
               {/* Elements Dropdown Menu */}

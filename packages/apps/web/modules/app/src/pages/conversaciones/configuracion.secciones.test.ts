@@ -65,9 +65,10 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 7 secciones del diseño", () => {
+  it("la página tiene exactamente las 8 secciones del diseño", () => {
     expect(ORDEN_SECCIONES).toEqual([
       "perfil",
+      "modulos",
       "plantillas",
       "horario",
       "automatizacion",
@@ -168,3 +169,16 @@ describe("Estado del canal", () => {
     expect(ESTADO_CANAL_BADGE.conectado).not.toBe(ESTADO_CANAL_BADGE.pausado);
   });
 });
+
+describe("Estado de integración de módulos con el canal", () => {
+  it("cada estado tiene etiqueta y color de badge", async () => {
+    const { ESTADO_INTEGRACION_LABEL, ESTADO_INTEGRACION_BADGE } = await import(
+      "@/pages/conversaciones/configuracion.secciones"
+    );
+    for (const e of ["conectado", "desconectado", "no_disponible"] as const) {
+      expect(ESTADO_INTEGRACION_LABEL[e].trim()).not.toBe("");
+      expect(ESTADO_INTEGRACION_BADGE[e]).toBeTruthy();
+    }
+  });
+});
+

@@ -1,0 +1,14 @@
+=== ChatDrawer · la barra de pestañas no rompe el slide-over ===
+
+  botones «WhatsApp» en el tablero: 5
+
+  OK   el tablero ofrece abrir el chat de un pedido
+  OK   se abre el drawer con el hilo de un pedido
+  OK   el drawer muestra las pestañas «Conversación» y «Pedidos»
+  OK   la barra cabe dentro del panel del drawer
+  OK   la barra tiene altura razonable (no se aplasta)
+  OK   el composer del drawer sigue presente
+  OK   la pestaña «Pedidos» monta su contexto dentro del drawer
+  OK   el contexto del drawer se rotula con el contacto
+
+=== 8 OK · 0 FAIL ===

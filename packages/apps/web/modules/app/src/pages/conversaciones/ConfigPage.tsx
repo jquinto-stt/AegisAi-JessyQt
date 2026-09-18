@@ -13,19 +13,28 @@ import TextArea from "@/elements/form/textarea";
 import {
   AlertIcon,
   BoltIcon,
+  BoxCubeIcon,
+  CartIcon,
   ChatIcon,
+  CheckCircleIcon,
   DocsIcon,
   EyeIcon,
   InfoIcon,
+  PlugInIcon,
   TimeIcon,
 } from "@/icons";
 import {
   conversacionesStore,
+  integracionesStore,
+  puede,
   puedeEditarPlantillas,
   motivoSinPermiso,
   pedidosStore,
   uiStore,
   ATENCION_LABEL,
+  MODULOS_INTEGRABLES,
+  ORDEN_MODULOS_INTEGRABLES,
+  type ModuloIntegrable,
   type PedidosConfig,
 } from "@/stores";
 import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
@@ -33,6 +42,8 @@ import {
   DIAS_ATENCION,
   ESTADO_CANAL_BADGE,
   ESTADO_CANAL_LABEL,
+  ESTADO_INTEGRACION_BADGE,
+  ESTADO_INTEGRACION_LABEL,
   FILAS_PLANTILLA,
   GRUPO_SECCION_LABEL,
   META_SECCION,
@@ -43,6 +54,7 @@ import {
   seccionesPorGrupo,
   type DensidadBandeja,
   type EstadoCanal,
+  type EstadoIntegracionCanal,
   type IconoSeccion,
   type PreferenciaTema,
   type SeccionCanal,
@@ -58,6 +70,7 @@ import {
 
 const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>>> = {
   ChatIcon,
+  PlugInIcon,
   DocsIcon,
   TimeIcon,
   BoltIcon,
@@ -539,6 +552,247 @@ export const ConfigPage = observer(() => {
                         >
                           {conversacionesStore.totalRequierenAtencion}
                         </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {/* ───────────── MÓDULOS CONECTADOS ───────────── */}
+              {seccion === "modulos" && (
+                <>
+                  <Card>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardHead>Módulos conectados al canal</CardHead>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Habilita o desconecta módulos del negocio. Cada módulo conectado aporta capacidades operativas al bot y pestañas de contexto en cada conversación de WhatsApp.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/[0.04]">
+                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                          Módulos activos:
+                        </span>
+                        <span className="text-sm font-bold text-gray-800 dark:text-white">
+                          {integracionesStore.modulosHabilitados.length} / {ORDEN_MODULOS_INTEGRABLES.length}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-5">
+                      {/* Plugin 1: Módulo de Pedidos */}
+                      {(() => {
+                        const id: ModuloIntegrable = "pedidos";
+                        const entrada = MODULOS_INTEGRABLES[id];
+                        const conectado = integracionesStore.estaConectado(id);
+                        const estado: EstadoIntegracionCanal = conectado ? "conectado" : "desconectado";
+
+                        return (
+                          <div
+                            key={id}
+                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
+                          >
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex items-start gap-4">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-xs dark:bg-brand-500/10 dark:text-brand-400">
+                                  <CartIcon className="h-6 w-6" />
+                                </div>
+
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2.5">
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                      Módulo de Pedidos
+                                    </h3>
+                                    <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
+                                      {ESTADO_INTEGRACION_LABEL[estado]}
+                                    </Badge>
+                                    <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
+                                      Plugin oficial · v1.2
+                                    </span>
+                                  </div>
+                                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                    Sincroniza el flujo operativo de pedidos con WhatsApp. Permite a los agentes y al bot consultar estados, crear órdenes directamente desde el hilo y enviar resúmenes al cliente.
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 sm:hidden">
+                                  {conectado ? "Habilitado" : "Deshabilitado"}
+                                </span>
+                                <Switch
+                                  color={SWITCH_COLOR}
+                                  checked={conectado}
+                                  disabled={soloLectura}
+                                  onChange={() => integracionesStore.alternar(id)}
+                                  aria-label={`Conectar módulo ${entrada.label} al canal`}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+                                Capacidades habilitadas en el chat
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {[
+                                  "Consultar pedidos y estado en tiempo real",
+                                  "Crear pedidos directamente desde el chat",
+                                  "Pestaña contextual «Pedidos» en cada conversación",
+                                  "Envío de resúmenes y guías al cliente",
+                                ].map((capacidad) => (
+                                  <span
+                                    key={capacidad}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/70 px-2.5 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
+                                  >
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                    {capacidad}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 dark:text-gray-500">
+                              <div className="flex items-center gap-4">
+                                <span>Proveedor: Núcleo de Pedidos</span>
+                                <span>Permiso: orders.read</span>
+                              </div>
+                              <span>Sincronización: En tiempo real</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Plugin 2: Módulo de Inventario */}
+                      {(() => {
+                        const id: ModuloIntegrable = "inventario";
+                        const entrada = MODULOS_INTEGRABLES[id];
+                        const conectado = integracionesStore.estaConectado(id);
+                        const estado: EstadoIntegracionCanal = !entrada.disponible
+                          ? "no_disponible"
+                          : conectado
+                            ? "conectado"
+                            : "desconectado";
+
+                        return (
+                          <div
+                            key={id}
+                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
+                          >
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                              <div className="flex items-start gap-4">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shadow-xs dark:bg-amber-500/10 dark:text-amber-400">
+                                  <BoxCubeIcon className="h-6 w-6" />
+                                </div>
+
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2.5">
+                                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                      Módulo de Inventario
+                                    </h3>
+                                    <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
+                                      {ESTADO_INTEGRACION_LABEL[estado]}
+                                    </Badge>
+                                    <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                      En desarrollo · Próximamente
+                                    </span>
+                                  </div>
+                                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                    Permite al cliente y a los operadores consultar el catálogo de productos, existencias disponibles y listas de precios actualizadas directamente desde WhatsApp.
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
+                                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">
+                                  No disponible
+                                </span>
+                                <Switch
+                                  color={SWITCH_COLOR}
+                                  checked={false}
+                                  disabled={true}
+                                  aria-label={`Conectar módulo ${entrada.label} al canal`}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+                                Capacidades planificadas
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {[
+                                  "Consultar catálogo de productos y precios",
+                                  "Verificar existencias y disponibilidad en almacén",
+                                  "Pestaña contextual «Inventario» en la conversación",
+                                  "Validación automática de existencias antes de pedir",
+                                ].map((capacidad) => (
+                                  <span
+                                    key={capacidad}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-2.5 py-1 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400"
+                                  >
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                    {capacidad}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mt-4">
+                              <Alert
+                                variant="info"
+                                title="Módulo declarado en el catálogo"
+                                message="Este módulo está registrado en la arquitectura del sistema, pero su proveedor de datos y catálogo de productos aún se encuentra en desarrollo. El interruptor se activará automáticamente al desplegar su proveedor."
+                              />
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 dark:text-gray-500">
+                              <div className="flex items-center gap-4">
+                                <span>Proveedor: Núcleo de Inventario</span>
+                                <span>Permiso: inventory.read (previsto)</span>
+                              </div>
+                              <span>Estado: Pendiente de conector</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </Card>
+
+                  <Card>
+                    <CardHead>Impacto de los módulos en las conversaciones</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Cómo se reflejan estos plugins en la experiencia del operador dentro de la bandeja de entrada.
+                    </p>
+
+                    <div className="mt-4">
+                      <div className={filaBase}>
+                        <Label2
+                          titulo="Pestañas activas en el chat"
+                          descripcion="Cada módulo conectado añade una pestaña de contexto operativo junto a los mensajes."
+                        />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge color="light" size="sm">
+                            Conversación
+                          </Badge>
+                          {integracionesStore.modulosHabilitados.map((m) => (
+                            <Badge key={m} color="success" size="sm">
+                              {MODULOS_INTEGRABLES[m].label}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={filaBase}>
+                        <Label2
+                          titulo="Disponibilidad para asesores"
+                          descripcion="Herramientas y vistas operativas habilitadas para los operadores del canal."
+                        />
+                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                          {integracionesStore.estaConectado("pedidos")
+                            ? "Operativa con módulo de Pedidos"
+                            : "Canal básico (sin módulos operativos)"}
+                        </span>
                       </div>
                     </div>
                   </Card>

@@ -6,10 +6,10 @@ import { Button } from "@/elements/ui/button";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Switch } from "@/elements/form/switch";
-import { TrashBinIcon } from "@/icons";
+import { CheckCircleIcon, ChevronDownIcon, CloseLineIcon, TrashBinIcon } from "@/icons";
 import { CAPACIDAD_GRUPOS, CAPACIDAD_LABEL, rolesStore, type Capacidad, type Rol } from "@/stores";
 import { CATEGORIA_COLORES, NIVEL_COLOR } from "./equipo.constants";
-import { NIVEL_LABEL, areasCompletas, fraseDeAcceso, resumenDeAreas } from "./equipo.presentacion";
+import { NIVEL_LABEL, areasCompletas, fraseDeAcceso, resumenDeArea, resumenDeAreas } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PESTAÑA "ROLES"
@@ -141,6 +141,33 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
   const [descripcion, setDescripcion] = useState(rol.descripcion);
   const [capacidades, setCapacidades] = useState<Capacidad[]>([...rol.capacidades]);
   const [guardado, setGuardado] = useState(false);
+  const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>(() => {
+    const inicial: Record<string, boolean> = {};
+    CAPACIDAD_GRUPOS.forEach((g) => {
+      inicial[g.id] = true;
+    });
+    return inicial;
+  });
+
+  const toggleGrupoColapso = (id: string) => {
+    setGruposAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const expandirTodos = () => {
+    const todos: Record<string, boolean> = {};
+    CAPACIDAD_GRUPOS.forEach((g) => {
+      todos[g.id] = true;
+    });
+    setGruposAbiertos(todos);
+  };
+
+  const colapsarTodos = () => {
+    const ninguno: Record<string, boolean> = {};
+    CAPACIDAD_GRUPOS.forEach((g) => {
+      ninguno[g.id] = false;
+    });
+    setGruposAbiertos(ninguno);
+  };
 
   const tiene = (c: Capacidad) => capacidades.includes(c);
 
@@ -266,62 +293,178 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
         </div>
       </div>
 
-      {/* Los siete bloques de área, sin columnas redundantes ni filtros. */}
+      {/* Reglas de acceso agrupadas en listas colapsables por categoría */}
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Permisos del rol</h3>
-        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-          Agrupados por área de negocio. Pasa el ratón por encima de un permiso para ver su nombre técnico.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              Reglas y permisos del rol
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              Agrupados por categoría con listas colapsables de lo que puede y no puede hacer.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={expandirTodos}
+              className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+            >
+              Expandir todas
+            </button>
+            <span className="text-gray-300 dark:text-gray-700">·</span>
+            <button
+              type="button"
+              onClick={colapsarTodos}
+              className="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            >
+              Colapsar todas
+            </button>
+          </div>
+        </div>
 
-        <div className="mt-3">
+        <div className="mt-3 space-y-3">
           {CAPACIDAD_GRUPOS.map((grupo) => {
-            const activasEnGrupo = grupo.capacidades.filter(tiene).length;
-            const todas = activasEnGrupo === grupo.capacidades.length;
+            const puede = grupo.capacidades.filter(tiene);
+            const noPuede = grupo.capacidades.filter((c) => !tiene(c));
+            const todas = puede.length === grupo.capacidades.length;
+            const abierto = gruposAbiertos[grupo.id] ?? false;
 
             return (
               <div
                 key={grupo.id}
-                className="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800"
+                className="overflow-hidden rounded-xl border border-gray-200 bg-white transition-all dark:border-gray-800 dark:bg-white/[0.02]"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                {/* Cabecera colapsable */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => toggleGrupoColapso(grupo.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleGrupoColapso(grupo.id);
+                    }
+                  }}
+                  className="flex cursor-pointer flex-wrap items-center justify-between gap-2 p-3.5 select-none hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
+                >
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
                       {grupo.label}
                     </Badge>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {activasEnGrupo} de {grupo.capacidades.length}
+                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      {puede.length} permitidas
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                      {noPuede.length} restringidas
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleGrupo(grupo.capacidades)}
-                    className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                  >
-                    {todas ? "Quitar todo" : "Dar todo"}
-                  </button>
+
+                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGrupo(grupo.capacidades)}
+                      className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                    >
+                      {todas ? "Quitar todo" : "Dar todo"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleGrupoColapso(grupo.id)}
+                      aria-label={abierto ? `Colapsar categoría ${grupo.label}` : `Expandir categoría ${grupo.label}`}
+                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    >
+                      <ChevronDownIcon
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          abierto ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="mt-2">
-                  {grupo.capacidades.map((cap) => {
-                    const activa = tiene(cap);
-                    return (
-                      <div
-                        key={cap}
-                        className="flex items-center justify-between gap-3 border-t border-gray-100 py-2 dark:border-white/5"
-                      >
-                        <span
-                          title={cap}
-                          className={`truncate text-sm ${
-                            activa ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"
-                          }`}
-                        >
-                          {CAPACIDAD_LABEL[cap]}
-                        </span>
-                        <Switch checked={activa} onChange={() => toggle(cap)} aria-label={CAPACIDAD_LABEL[cap]} />
+                {/* Contenido colapsable: Puede hacer vs No puede hacer */}
+                {abierto && (
+                  <div className="border-t border-gray-100 p-4 space-y-4 dark:border-white/5">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {resumenDeArea(grupo.id)}
+                    </p>
+
+                    {/* Subsección: Lo que PUEDE hacer */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                        <CheckCircleIcon className="h-3.5 w-3.5" />
+                        <span>Puede hacer ({puede.length})</span>
                       </div>
-                    );
-                  })}
-                </div>
+                      {puede.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {puede.map((cap) => (
+                            <div
+                              key={cap}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/30 px-3 py-2 transition-colors dark:border-emerald-500/20 dark:bg-emerald-500/5"
+                            >
+                              <div className="flex min-w-0 items-center gap-2">
+                                <CheckCircleIcon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                <span
+                                  title={cap}
+                                  className="truncate text-sm font-medium text-gray-800 dark:text-white/90"
+                                >
+                                  {CAPACIDAD_LABEL[cap]}
+                                </span>
+                              </div>
+                              <Switch
+                                checked={true}
+                                onChange={() => toggle(cap)}
+                                aria-label={CAPACIDAD_LABEL[cap]}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-400 dark:border-gray-800">
+                          Sin reglas activas en esta categoría.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Subsección: Lo que NO PUEDE hacer */}
+                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-white/5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        <CloseLineIcon className="h-3.5 w-3.5" />
+                        <span>No puede hacer ({noPuede.length})</span>
+                      </div>
+                      {noPuede.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {noPuede.map((cap) => (
+                            <div
+                              key={cap}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-gray-200/60 bg-gray-50/40 px-3 py-2 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                            >
+                              <div className="flex min-w-0 items-center gap-2">
+                                <CloseLineIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
+                                <span
+                                  title={cap}
+                                  className="truncate text-sm text-gray-500 dark:text-gray-400"
+                                >
+                                  {CAPACIDAD_LABEL[cap]}
+                                </span>
+                              </div>
+                              <Switch
+                                checked={false}
+                                onChange={() => toggle(cap)}
+                                aria-label={CAPACIDAD_LABEL[cap]}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="rounded-lg border border-dashed border-emerald-200/60 bg-emerald-50/30 px-3 py-2 text-xs text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400">
+                          Acceso total: este rol cuenta con todas las reglas de esta categoría.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

@@ -38,6 +38,7 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
  */
 export type SeccionCanal =
   | "perfil"
+  | "modulos"
   | "plantillas"
   | "horario"
   | "automatizacion"
@@ -84,6 +85,7 @@ export interface MetaSeccion {
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
 export type IconoSeccion =
   | "ChatIcon"
+  | "PlugInIcon"
   | "DocsIcon"
   | "TimeIcon"
   | "BoltIcon"
@@ -102,6 +104,12 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
     hint: "Identidad del canal y disponibilidad para atender.",
     grupo: "canal",
     icono: "ChatIcon",
+  },
+  modulos: {
+    label: "Módulos conectados",
+    hint: "Módulos del negocio integrados con el canal de WhatsApp.",
+    grupo: "canal",
+    icono: "PlugInIcon",
   },
   plantillas: {
     label: "Plantillas de mensaje",
@@ -144,6 +152,7 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
 /** Orden de las secciones dentro de la navegación. */
 export const ORDEN_SECCIONES: SeccionCanal[] = [
   "perfil",
+  "modulos",
   "plantillas",
   "horario",
   "automatizacion",
@@ -263,5 +272,21 @@ export const ESTADO_CANAL_BADGE: Record<EstadoCanal, BadgeColor> = {
   pausado: "warning",
 };
 
+/** Estado de integración de los módulos del negocio con el canal. */
+export type EstadoIntegracionCanal = "conectado" | "desconectado" | "no_disponible";
+
+export const ESTADO_INTEGRACION_LABEL: Record<EstadoIntegracionCanal, string> = {
+  conectado: "Conectado",
+  desconectado: "Desconectado",
+  no_disponible: "No disponible",
+};
+
+export const ESTADO_INTEGRACION_BADGE: Record<EstadoIntegracionCanal, BadgeColor> = {
+  conectado: "success",
+  desconectado: "light",
+  no_disponible: "warning",
+};
+
 /** Color de la pista del `Switch` cuando está encendido, por contexto de uso. */
 export const SWITCH_COLOR: SwitchColor = "blue";
+

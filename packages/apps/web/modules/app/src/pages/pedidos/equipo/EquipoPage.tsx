@@ -162,40 +162,67 @@ export const EquipoPage = observer(() => {
         <RolesTab />
       ) : (
         <>
-          {/* Pestañas de filtrado de personas */}
-          <div className="mb-5">
-            <Tab
-              variant="underline"
-              items={[
-                { key: "todos", label: "Todos", badge: equipo.length },
-                { key: "pendientes", label: "Pendientes", badge: pendientes },
-              ]}
-              activeTab={tab}
-              onTabChange={(k) => setTab(k as "todos" | "pendientes")}
-            />
-          </div>
-
-          {/* Buscador + filtro de estado */}
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Buscar por nombre o correo…"
-                className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
-              />
+          {/* Filtros rápidos y buscador alineados al diseño de Necto */}
+          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Pestañas tipo pill del sistema */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setTab("todos")}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  tab === "todos"
+                    ? "bg-brand-500 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
+                }`}
+              >
+                Todos ({equipo.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("pendientes")}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  tab === "pendientes"
+                    ? "bg-brand-500 text-white shadow-2xs"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
+                }`}
+              >
+                <span>Pendientes</span>
+                {pendientes > 0 && (
+                  <span
+                    className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      tab === "pendientes"
+                        ? "bg-white text-brand-600"
+                        : "bg-warning-500 text-white"
+                    }`}
+                  >
+                    {pendientes}
+                  </span>
+                )}
+              </button>
             </div>
-            {tab === "todos" && (
-              <div className="w-full sm:w-48">
-                <Select
-                  options={OPCIONES_FILTRO_ESTADO}
-                  defaultValue={FILTRO_ESTADO_TODAS}
-                  onChange={setFiltroEstado}
-                  aria-label="Filtrar por estado"
+
+            {/* Buscador + filtro de estado */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="w-full sm:w-64">
+                <Input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar por nombre o correo…"
+                  aria-label="Buscar personas"
                 />
               </div>
-            )}
+              {tab === "todos" && (
+                <div className="w-full sm:w-44">
+                  <Select
+                    options={OPCIONES_FILTRO_ESTADO}
+                    defaultValue={FILTRO_ESTADO_TODAS}
+                    onChange={setFiltroEstado}
+                    aria-label="Filtrar por estado"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <EquipoTabla operadores={listaFiltrada} />
