@@ -13,7 +13,7 @@ import {
 } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICONOS SVG VECTORIALES LIMPIOS (Sin dependencias externas)
+// ICONOS SVG VECTORIALES LIMPIOS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SettingsGearIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
@@ -53,18 +53,18 @@ const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   </svg>
 );
 
-/** Logo de Pedidos */
+/** Logo del Módulo de Pedidos */
 const OrdersBrandLogo = () => (
-  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" />
     </svg>
   </div>
 );
 
-/** Logo de Inventario */
+/** Logo del Módulo de Inventario */
 const InventoryBrandLogo = () => (
-  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
@@ -73,28 +73,44 @@ const InventoryBrandLogo = () => (
   </div>
 );
 
-/** Logo de Necto IA (en tamaño compacto) */
-const NectoIaMiniLogo = () => (
-  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+/** Logo de Integración: Necto IA */
+const NectoIaIntegrationLogo = () => (
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   </div>
 );
 
-/** Logo de WhatsApp (en tamaño compacto) */
-const WhatsAppMiniLogo = () => (
-  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-4 w-4">
+/** Logo de Integración: WhatsApp Business */
+const WhatsAppIntegrationLogo = () => (
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
   </div>
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DEFINICIONES DE MÓDULOS DE NEGOCIO Y ESPECIFICACIONES
+// TIPOS Y MODELOS DE DATOS
 // ═══════════════════════════════════════════════════════════════════════════
+
+interface SubIntegracionDef {
+  id: "necto_ia" | "whatsapp";
+  nombre: string;
+  descripcion: string;
+  logo: React.ReactNode;
+  activo: boolean;
+  onToggle: () => void;
+  rutaConfig?: string;
+  detalles: {
+    categoria: string;
+    beneficios: string[];
+    rutasHabilitadas: string[];
+    rolesRequeridos: string;
+  };
+}
 
 interface ModuloConfigDef {
   id: IdModuloNegocio;
@@ -142,16 +158,140 @@ const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPONENTE: TARJETA JERÁRQUICA DE MÓDULO (MÓDULO + SUS PLUGINS INTEGRADOS)
+// TARJETA DE INTEGRACIÓN (DISEÑO EXACTO DE LA REFERENCIA DEL USUARIO)
 // ═══════════════════════════════════════════════════════════════════════════
 
-const ModuloJerarquicoCard = observer(({
-  def,
+const SubIntegrationCard = observer(({
+  item,
+  parentActivo,
   onOpenDetails,
+}: {
+  item: SubIntegracionDef;
+  parentActivo: boolean;
+  onOpenDetails: (item: SubIntegracionDef) => void;
+}) => {
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div
+      className={`relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
+        parentActivo
+          ? "border-gray-200 hover:border-gray-300 hover:shadow-xs dark:border-gray-800 dark:hover:border-gray-700"
+          : "border-gray-200/60 bg-gray-50/50 opacity-60 dark:border-gray-800/60 dark:bg-gray-900/40"
+      }`}
+    >
+      <div>
+        {/* Fila Superior: Logo a la izquierda, menú '...' a la derecha */}
+        <div className="flex items-center justify-between">
+          <div>{item.logo}</div>
+
+          <div className="relative">
+            <button
+              type="button"
+              disabled={!parentActivo}
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40 dark:hover:bg-gray-800 dark:hover:text-gray-300 cursor-pointer"
+              title="Opciones de integración"
+            >
+              <MoreDotsIcon className="h-4 w-4" />
+            </button>
+
+            <Dropdown
+              isOpen={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              className="right-0 top-full mt-1 w-48 border border-gray-100 shadow-lg dark:border-white/5"
+            >
+              <DropdownItem
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenDetails(item);
+                }}
+              >
+                Ver especificaciones
+              </DropdownItem>
+              {item.rutaConfig && parentActivo && (
+                <DropdownItem
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate(item.rutaConfig!);
+                  }}
+                >
+                  Ir a configuración
+                </DropdownItem>
+              )}
+            </Dropdown>
+          </div>
+        </div>
+
+        {/* Título de la Integración */}
+        <h4 className="mt-4 text-sm font-bold text-gray-900 dark:text-white">
+          {item.nombre}
+        </h4>
+
+        {/* Descripción corta de 2 líneas */}
+        <p className="mt-1.5 min-h-[36px] text-xs leading-relaxed text-gray-500 line-clamp-2 dark:text-gray-400">
+          {item.descripcion}
+        </p>
+      </div>
+
+      {/* Fila Inferior: [ ⚙ ] [ Details ] a la izquierda, Switch a la derecha */}
+      <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-3.5 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          {item.rutaConfig && parentActivo ? (
+            <Link
+              to={item.rutaConfig}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Ajustes operativos"
+            >
+              <SettingsGearIcon className="h-4 w-4" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-300 opacity-50 dark:border-gray-800 dark:text-gray-600"
+              title="Sin ajustes adicionales"
+            >
+              <SettingsGearIcon className="h-4 w-4" />
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => onOpenDetails(item)}
+            className="rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+          >
+            Details
+          </button>
+        </div>
+
+        <div>
+          <Switch
+            checked={item.activo && parentActivo}
+            disabled={!parentActivo}
+            onChange={item.onToggle}
+            label=""
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTENEDOR MAESTRO DEL MÓDULO (INCLUYE SUS TARJETAS DE INTEGRACIÓN)
+// ═══════════════════════════════════════════════════════════════════════════
+
+const ModuloMaestroCard = observer(({
+  def,
+  onOpenModuloDetails,
+  onOpenIntegrationDetails,
   onDesinstalar,
 }: {
   def: ModuloConfigDef;
-  onOpenDetails: (def: ModuloConfigDef) => void;
+  onOpenModuloDetails: (def: ModuloConfigDef) => void;
+  onOpenIntegrationDetails: (item: SubIntegracionDef) => void;
   onDesinstalar: (def: ModuloConfigDef) => void;
 }) => {
   const navigate = useNavigate();
@@ -161,86 +301,137 @@ const ModuloJerarquicoCard = observer(({
   const nectoIaActivo = plataformaStore.esConectorActivo(def.id, "necto_ia");
   const whatsappActivo = plataformaStore.esConectorActivo(def.id, "whatsapp");
 
+  // Integraciones específicas asociadas a este módulo con el diseño de referencia
+  const integraciones: SubIntegracionDef[] = [
+    {
+      id: "necto_ia",
+      nombre: "Necto Intelligence (IA)",
+      descripcion:
+        def.id === "pedidos"
+          ? "Copiloto con IA para consultar pedidos, analizar ventas y respuestas automáticas."
+          : "Consultas instantáneas de existencias y productos con bajo stock.",
+      logo: <NectoIaIntegrationLogo />,
+      activo: nectoIaActivo,
+      onToggle: () => plataformaStore.toggleConector(def.id, "necto_ia"),
+      rutaConfig: def.id === "pedidos" ? "/asistente/config" : undefined,
+      detalles: {
+        categoria: "Plugin / Inteligencia Artificial",
+        beneficios: [
+          "Conexión con las herramientas del módulo para responder preguntas en tiempo real",
+          "Generación de reportes ejecutivos diarios y comparativas de ventas",
+          "Sugerencias contextuales de respuesta automática para clientes en espera",
+        ],
+        rutasHabilitadas: ["/asistente", "/asistente/config"],
+        rolesRequeridos: "assistant.use",
+      },
+    },
+    {
+      id: "whatsapp",
+      nombre: "WhatsApp Business",
+      descripcion:
+        def.id === "pedidos"
+          ? "Bandeja omnicanal y notificaciones automáticas de pedidos a clientes."
+          : "Atención de consultas de catálogo y disponibilidad vía WhatsApp.",
+      logo: <WhatsAppIntegrationLogo />,
+      activo: whatsappActivo,
+      onToggle: () => plataformaStore.toggleConector(def.id, "whatsapp"),
+      rutaConfig: def.id === "pedidos" ? "/conversaciones/config" : undefined,
+      detalles: {
+        categoria: "Plugin / Canal de Mensajería",
+        beneficios: [
+          "Envío de plantillas automáticas de estado al avanzar pedidos (confirmado, en camino, listo)",
+          "Bandeja unificada para que el equipo atienda mensajes de WhatsApp",
+          "Recepción de pedidos asistida por chat y bot de atención",
+        ],
+        rutasHabilitadas: ["/conversaciones", "/conversaciones/historial", "/conversaciones/config"],
+        rolesRequeridos: "channels.read, channels.respond, channels.manage",
+      },
+    },
+  ];
+
   return (
     <div
-      className={`relative flex flex-col justify-between rounded-2xl border bg-white p-6 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
+      className={`rounded-3xl border bg-white p-6 shadow-2xs transition-all duration-200 dark:bg-gray-900/60 ${
         esActivo
-          ? "border-gray-200 hover:border-gray-300 hover:shadow-xs dark:border-gray-800 dark:hover:border-gray-700"
-          : "border-gray-200/60 bg-gray-50/40 opacity-80 dark:border-gray-800/60 dark:bg-gray-900/40"
+          ? "border-gray-200 shadow-xs dark:border-gray-800"
+          : "border-gray-200/70 bg-gray-50/40 opacity-75 dark:border-gray-800/60"
       }`}
     >
-      <div>
-        {/* ── 1. Cabecera de la Tarjeta: Logo, Título, Menú '...' y Switch de Módulo ── */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3.5">
-            <div>{def.logo}</div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                  {def.nombre}
-                </h3>
-                <Badge color={esActivo ? "success" : "light"} size="xs">
-                  {esActivo ? "Módulo Activo" : "Desactivado"}
-                </Badge>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {def.tagline}
-              </p>
+      {/* ── 1. Cabecera del Módulo Principal ─────────────────────────────────── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div>{def.logo}</div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                {def.nombre}
+              </h3>
+              <Badge color={esActivo ? "success" : "light"} size="xs">
+                {esActivo ? "Módulo Activo" : "Desactivado"}
+              </Badge>
             </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {def.tagline}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Opciones del Módulo */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300 cursor-pointer"
+              title="Opciones de módulo"
+            >
+              <MoreDotsIcon className="h-4 w-4" />
+            </button>
+
+            <Dropdown
+              isOpen={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              className="right-0 top-full mt-1 w-52 border border-gray-100 shadow-lg dark:border-white/5"
+            >
+              {def.rutaConfig && (
+                <DropdownItem
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate(def.rutaConfig!);
+                  }}
+                >
+                  Configuración de {def.nombre}
+                </DropdownItem>
+              )}
+              <DropdownItem
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenModuloDetails(def);
+                }}
+              >
+                Ver especificaciones
+              </DropdownItem>
+              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+              <DropdownItem
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDesinstalar(def);
+                }}
+                className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                <div className="flex items-center gap-2">
+                  <TrashIcon className="h-3.5 w-3.5" />
+                  <span>Desinstalar módulo</span>
+                </div>
+              </DropdownItem>
+            </Dropdown>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Menú Más Opciones (...) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-                title="Opciones de módulo"
-              >
-                <MoreDotsIcon className="h-4 w-4" />
-              </button>
-
-              <Dropdown
-                isOpen={menuOpen}
-                onClose={() => setMenuOpen(false)}
-                className="right-0 top-full mt-1 w-52 border border-gray-100 shadow-lg dark:border-white/5"
-              >
-                {def.rutaConfig && (
-                  <DropdownItem
-                    onClick={() => {
-                      setMenuOpen(false);
-                      navigate(def.rutaConfig!);
-                    }}
-                  >
-                    Ajustes de {def.nombre}
-                  </DropdownItem>
-                )}
-                <DropdownItem
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onOpenDetails(def);
-                  }}
-                >
-                  Ver especificaciones
-                </DropdownItem>
-                <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-                <DropdownItem
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onDesinstalar(def);
-                  }}
-                  className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
-                >
-                  <div className="flex items-center gap-2">
-                    <TrashIcon className="h-3.5 w-3.5" />
-                    <span>Desinstalar módulo</span>
-                  </div>
-                </DropdownItem>
-              </Dropdown>
-            </div>
-
-            {/* Switch Principal: Activar / Desactivar Módulo */}
+          {/* Switch General de Activación del Módulo */}
+          <div className="flex items-center gap-2 pl-1 border-l border-gray-200 dark:border-gray-700">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {esActivo ? "Encendido" : "Apagado"}
+            </span>
             <Switch
               checked={esActivo}
               onChange={() => plataformaStore.toggleModulo(def.id)}
@@ -248,127 +439,68 @@ const ModuloJerarquicoCard = observer(({
             />
           </div>
         </div>
+      </div>
 
-        {/* ── 2. Descripción del Módulo ── */}
-        <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-          {def.descripcion}
-        </p>
+      {/* Descripción del Módulo */}
+      <p className="mt-3 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+        {def.descripcion}
+      </p>
 
-        {/* ── 3. ESTRUCTURA JERÁRQUICA: Plugins e Integraciones del Módulo ── */}
-        <div className="mt-5 rounded-xl border border-gray-100 bg-gray-50/75 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Plugins e Integraciones del Módulo
-            </span>
-            <span className="text-[11px] font-medium text-gray-400">
-              {esActivo ? (
-                `${(nectoIaActivo ? 1 : 0) + (whatsappActivo ? 1 : 0)} de 2 activos`
-              ) : (
-                "En pausa"
-              )}
-            </span>
+      {/* ── 2. SUBSECCIÓN DE INTEGRACIONES (CON EL DISEÑO DE REFERENCIA) ──────── */}
+      <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50/60 p-5 dark:border-gray-800/80 dark:bg-white/[0.02]">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+              Integrations
+            </h4>
+            <p className="text-xs text-gray-400">
+              Activa o apaga los canales y la inteligencia artificial integrados a {def.nombre}.
+            </p>
           </div>
 
-          <div className="space-y-3">
-            {/* Plugin 1: Necto IA */}
-            <div className={`flex items-center justify-between gap-3 rounded-lg border bg-white p-2.5 transition-colors dark:bg-gray-900/80 ${
-              nectoIaActivo && esActivo
-                ? "border-brand-200/80 dark:border-brand-500/20"
-                : "border-gray-100 dark:border-gray-800"
-            }`}>
-              <div className="flex items-center gap-2.5">
-                <NectoIaMiniLogo />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                      Necto Intelligence (IA)
-                    </span>
-                    {nectoIaActivo && esActivo && (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-brand-500" />
-                    )}
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Copiloto con IA para consultar {def.id === "pedidos" ? "pedidos y métricas" : "existencias"}.
-                  </p>
-                </div>
-              </div>
+          <span className="text-xs font-medium text-gray-400">
+            {esActivo
+              ? `${(nectoIaActivo ? 1 : 0) + (whatsappActivo ? 1 : 0)} de 2 activas`
+              : "Pausadas (módulo inactivo)"}
+          </span>
+        </div>
 
-              <Switch
-                checked={nectoIaActivo}
-                disabled={!esActivo}
-                onChange={() => plataformaStore.toggleConector(def.id, "necto_ia")}
-                label=""
-              />
-            </div>
-
-            {/* Plugin 2: WhatsApp Business */}
-            <div className={`flex items-center justify-between gap-3 rounded-lg border bg-white p-2.5 transition-colors dark:bg-gray-900/80 ${
-              whatsappActivo && esActivo
-                ? "border-emerald-200/80 dark:border-emerald-500/20"
-                : "border-gray-100 dark:border-gray-800"
-            }`}>
-              <div className="flex items-center gap-2.5">
-                <WhatsAppMiniLogo />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-gray-900 dark:text-white">
-                      WhatsApp Business
-                    </span>
-                    {whatsappActivo && esActivo && (
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    )}
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    Bandeja y notificaciones directas para {def.id === "pedidos" ? "estados de órdenes" : "consultas de stock"}.
-                  </p>
-                </div>
-              </div>
-
-              <Switch
-                checked={whatsappActivo}
-                disabled={!esActivo}
-                onChange={() => plataformaStore.toggleConector(def.id, "whatsapp")}
-                label=""
-              />
-            </div>
-          </div>
+        {/* Grid de las tarjetas de integración estilo Mailchimp / Google Meet */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {integraciones.map((it) => (
+            <SubIntegrationCard
+              key={it.id}
+              item={it}
+              parentActivo={esActivo}
+              onOpenDetails={onOpenIntegrationDetails}
+            />
+          ))}
         </div>
       </div>
 
-      {/* ── 4. Barra Inferior: Configuración y Detalles ── */}
-      <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+      {/* ── 3. Pie del Módulo: Configuración y Specs ───────────────────────── */}
+      <div className="mt-5 flex items-center justify-between pt-2">
         <div className="flex items-center gap-2">
           {def.rutaConfig ? (
-            <Link
-              to={def.rutaConfig}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition-colors hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-              title={`Configurar ${def.nombre}`}
-            >
-              <SettingsGearIcon className="h-4 w-4" />
+            <Link to={def.rutaConfig}>
+              <Button size="sm" variant="outline">
+                ⚙ Ajustes operativos de {def.nombre}
+              </Button>
             </Link>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 text-gray-300 opacity-60 dark:border-gray-800 dark:text-gray-600"
-              title="Sin ajustes adicionales"
-            >
-              <SettingsGearIcon className="h-4 w-4" />
-            </button>
-          )}
+          ) : null}
 
-          <button
-            type="button"
-            onClick={() => onOpenDetails(def)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onOpenModuloDetails(def)}
           >
-            Details
-          </button>
+            Especificaciones técnicas
+          </Button>
         </div>
 
-        <div className="text-[11px] text-gray-400 dark:text-gray-500">
-          {esActivo ? "Operando normalmente" : "Módulo apagado"}
-        </div>
+        <span className="text-xs text-gray-400">
+          Identificador: <code className="font-mono text-[11px]">{def.id}</code>
+        </span>
       </div>
     </div>
   );
@@ -380,15 +512,16 @@ const ModuloJerarquicoCard = observer(({
 
 export const ConfiguracionModulosPage = observer(() => {
   const [modalModulo, setModalModulo] = useState<ModuloConfigDef | null>(null);
+  const [modalIntegracion, setModalIntegracion] = useState<SubIntegracionDef | null>(null);
   const [moduloADesinstalar, setModuloADesinstalar] = useState<ModuloConfigDef | null>(null);
   const [modalAgregarAbierto, setModalAgregarAbierto] = useState(false);
 
-  // Módulos que están instalados actualmente en la organización
+  // Módulos instalados
   const modulosInstalados = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
     .filter((id) => plataformaStore.esModuloInstalado(id))
     .map((id) => MODULOS_DEF[id]);
 
-  // Módulos disponibles en el catálogo para ser instalados / agregados
+  // Módulos disponibles para instalar
   const modulosDisponiblesParaInstalar = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
     .filter((id) => !plataformaStore.esModuloInstalado(id))
     .map((id) => MODULOS_DEF[id]);
@@ -397,7 +530,7 @@ export const ConfiguracionModulosPage = observer(() => {
     <>
       <PageMeta
         title="Módulos e Integraciones · Organización"
-        description="Gestión jerárquica de módulos de negocio y sus plugins integrados"
+        description="Gestión jerárquica de módulos de negocio y sus tarjetas de integración"
       />
 
       {/* Cabecera Superior */}
@@ -417,7 +550,7 @@ export const ConfiguracionModulosPage = observer(() => {
             Módulos e Integraciones
           </h1>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Organización jerárquica: administra los módulos de tu empresa y activa plugins de IA y WhatsApp dentro de cada uno.
+            Control jerárquico: activa módulos core y administra sus integraciones de IA y WhatsApp dentro de cada uno.
           </p>
         </div>
 
@@ -442,26 +575,15 @@ export const ConfiguracionModulosPage = observer(() => {
         </div>
       </div>
 
-      {/* ── LISTADO JERÁRQUICO DE MÓDULOS INSTALADOS ── */}
+      {/* ── LISTADO DE MÓDULOS DE NEGOCIO Y SUS INTEGRACIONES ── */}
       <section className="mb-10">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              Módulos Instalados ({modulosInstalados.length})
-            </h2>
-            <p className="text-xs text-gray-400">
-              Cada módulo contiene sus propios plugins y canales integrados de forma independiente.
-            </p>
-          </div>
-        </div>
-
         {modulosInstalados.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
+          <div className="rounded-3xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
             <h3 className="text-base font-semibold text-gray-800 dark:text-white">
               No tienes módulos instalados
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Instala un módulo de negocio como Pedidos o Inventario para comenzar.
+              Instala un módulo de negocio para habilitar operaciones e integraciones.
             </p>
             <Button
               size="sm"
@@ -472,12 +594,13 @@ export const ConfiguracionModulosPage = observer(() => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="space-y-8">
             {modulosInstalados.map((mod) => (
-              <ModuloJerarquicoCard
+              <ModuloMaestroCard
                 key={mod.id}
                 def={mod}
-                onOpenDetails={(item) => setModalModulo(item)}
+                onOpenModuloDetails={(item) => setModalModulo(item)}
+                onOpenIntegrationDetails={(item) => setModalIntegracion(item)}
                 onDesinstalar={(item) => setModuloADesinstalar(item)}
               />
             ))}
@@ -485,7 +608,7 @@ export const ConfiguracionModulosPage = observer(() => {
         )}
       </section>
 
-      {/* ── MODAL 1: DETALLES DEL MÓDULO ('Details') ── */}
+      {/* ── MODAL 1: ESPECIFICACIONES DEL MÓDULO ── */}
       {modalModulo && (
         <Modal
           isOpen={Boolean(modalModulo)}
@@ -517,7 +640,7 @@ export const ConfiguracionModulosPage = observer(() => {
               {modalModulo.descripcion}
             </p>
 
-            {/* Capacidades del Módulo */}
+            {/* Capacidades */}
             <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
               <h4 className="text-xs font-semibold text-gray-900 dark:text-white">
                 Capacidades operativas incluidas:
@@ -532,7 +655,7 @@ export const ConfiguracionModulosPage = observer(() => {
               </ul>
             </div>
 
-            {/* Rutas y Permisos Requeridos */}
+            {/* Rutas y Permisos */}
             <div className="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
               <div>
                 <span className="font-semibold text-gray-700 dark:text-gray-300">Rutas del módulo: </span>
@@ -568,7 +691,90 @@ export const ConfiguracionModulosPage = observer(() => {
         </Modal>
       )}
 
-      {/* ── MODAL 2: CATÁLOGO PARA AGREGAR MÓDULOS ── */}
+      {/* ── MODAL 2: ESPECIFICACIONES DE INTEGRACIÓN ('Details') ── */}
+      {modalIntegracion && (
+        <Modal
+          isOpen={Boolean(modalIntegracion)}
+          onClose={() => setModalIntegracion(null)}
+          className="max-w-lg p-6"
+        >
+          <div>
+            <div className="flex items-center gap-3">
+              <div>{modalIntegracion.logo}</div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                    {modalIntegracion.nombre}
+                  </h3>
+                  <Badge
+                    color={modalIntegracion.activo ? "success" : "light"}
+                    size="xs"
+                  >
+                    {modalIntegracion.activo ? "Activa" : "Inactiva"}
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {modalIntegracion.detalles.categoria}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+              {modalIntegracion.descripcion}
+            </p>
+
+            {/* Beneficios */}
+            <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
+              <h4 className="text-xs font-semibold text-gray-900 dark:text-white">
+                Capacidades de la integración:
+              </h4>
+              <ul className="mt-2.5 space-y-2">
+                {modalIntegracion.detalles.beneficios.map((b, i) => (
+                  <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Rutas y Permisos */}
+            <div className="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
+              <div>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">Rutas asociadas: </span>
+                <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[11px] dark:bg-gray-800">
+                  {modalIntegracion.detalles.rutasHabilitadas.join(", ")}
+                </code>
+              </div>
+              <div>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">Permiso requerido: </span>
+                <span>{modalIntegracion.detalles.rolesRequeridos}</span>
+              </div>
+            </div>
+
+            {/* Footer Modal */}
+            <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+              {modalIntegracion.rutaConfig ? (
+                <Link
+                  to={modalIntegracion.rutaConfig}
+                  onClick={() => setModalIntegracion(null)}
+                >
+                  <Button size="sm" variant="outline">
+                    Ir a configuración operativa →
+                  </Button>
+                </Link>
+              ) : (
+                <div />
+              )}
+              <Button size="sm" onClick={() => setModalIntegracion(null)}>
+                Entendido
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL 3: CATÁLOGO PARA AGREGAR MÓDULOS ── */}
       {modalAgregarAbierto && (
         <Modal
           isOpen={modalAgregarAbierto}
@@ -651,7 +857,7 @@ export const ConfiguracionModulosPage = observer(() => {
         </Modal>
       )}
 
-      {/* ── MODAL 3: CONFIRMAR DESINSTALACIÓN DE MÓDULO ── */}
+      {/* ── MODAL 4: CONFIRMAR DESINSTALACIÓN DE MÓDULO ── */}
       {moduloADesinstalar && (
         <Modal
           isOpen={Boolean(moduloADesinstalar)}
@@ -668,7 +874,7 @@ export const ConfiguracionModulosPage = observer(() => {
             </h3>
 
             <p className="mt-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-              Al desinstalar este módulo de tu organización, se ocultará de la barra de navegación y sus plugins integrados (Necto IA y WhatsApp) quedarán pausados. Podrás volver a instalarlo en cualquier momento desde el catálogo.
+              Al desinstalar este módulo de tu organización, se ocultará de la barra de navegación y sus tarjetas de integración (Necto IA y WhatsApp) quedarán en pausa. Podrás volver a instalarlo en cualquier momento desde el catálogo.
             </p>
 
             <div className="mt-5 flex items-center justify-end gap-2.5">
