@@ -6,40 +6,12 @@ import { Button } from "@/elements/ui/button";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Switch } from "@/elements/form/switch";
-import { CheckCircleIcon, ChevronDownIcon, CloseLineIcon, TrashBinIcon } from "@/icons";
+import { CheckCircleIcon, ChevronDownIcon, CopyIcon, PlusIcon, TrashBinIcon } from "@/icons";
 import { CAPACIDAD_GRUPOS, CAPACIDAD_LABEL, rolesStore, type Capacidad, type Rol } from "@/stores";
-import { CATEGORIA_COLORES, NIVEL_COLOR } from "./equipo.constants";
-import { NIVEL_LABEL, areasCompletas, fraseDeAcceso, resumenDeArea, resumenDeAreas } from "./equipo.presentacion";
+import { CATEGORIA_COLORES } from "./equipo.constants";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PESTAÑA "ROLES"
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// Un rol es un paquete NOMBRADO y REUTILIZABLE de capacidades (contrato §1.3).
-// Esta pestaña es el sustituto del antiguo "modal con interruptores" por
-// persona: en vez de marcar secciones una a una sobre cada operador, se define
-// el rol una vez y se asigna a quien corresponda.
-//
-// Distinción que el editor hace visible:
-//   - El ROL define el paquete base de capacidades.
-//   - Las EXCEPCIONES por persona (extras/removidas) se editan en el perfil,
-//     no aquí. Un rol limpio es un rol reutilizable.
-//
-// CÓMO SE PRESENTA
-//
-// Antes el editor era una tabla de cuatro columnas con el código técnico de
-// cada capacidad en monoespaciado, un badge de categoría repetido en cada fila
-// y ocho píldoras de filtro con fracciones. Aquí:
-//
-//   - Se quita la columna de categoría: el encabezado del bloque ya la dice.
-//   - Se quitan las píldoras de filtro: con los siete bloques visibles y
-//     agrupados, filtrar era trabajo extra para esconder información que cabía.
-//   - El código técnico (`orders.confirm`) pasa al `title`, accesible al pasar
-//     el ratón pero fuera del camino de lectura.
-//   - Se añade arriba un resumen en lenguaje de negocio que se recalcula
-//     mientras se marcan interruptores: así se ve el efecto de cada cambio sin
-//     tener que interpretar la tabla.
-//
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const RolesTab = observer(() => {
@@ -52,61 +24,66 @@ export const RolesTab = observer(() => {
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
-      {/* Lista de roles */}
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)]">
+      {/* ── LISTA DE ROLES (SIDEBAR IZQUIERDO) ─────────────────────────────── */}
       <div>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white">
             Roles ({rolesStore.roles.length})
           </h2>
-          <Button size="sm" variant="outline" onClick={nuevoRol}>Nuevo rol</Button>
+          <Button size="sm" variant="outline" onClick={nuevoRol}>
+            <PlusIcon className="mr-1.5 h-3.5 w-3.5" />
+            Nuevo rol
+          </Button>
         </div>
 
-        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-          Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas.
-        </p>
-
         <div className="flex flex-col gap-2">
-          {rolesStore.roles.map((rol) => {
-            const areas = resumenDeAreas(rol.capacidades);
-            const completas = areasCompletas(areas);
+          {rolesStore.roles.map((r) => {
+            const esSeleccionado = r.id === seleccionadoId;
 
             return (
               <div
-                key={rol.id}
-                onClick={() => setSeleccionadoId(rol.id)}
-                className={`group relative flex items-center justify-between w-full rounded-xl border p-3 text-left transition-colors cursor-pointer ${
-                  rol.id === seleccionadoId
-                    ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
-                    : "border-gray-200 bg-white hover:border-brand-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-700"
+                key={r.id}
+                onClick={() => setSeleccionadoId(r.id)}
+                className={`group relative flex items-center justify-between w-full rounded-xl border p-3.5 text-left transition-all cursor-pointer ${
+                  esSeleccionado
+                    ? "border-brand-500 bg-brand-50/70 shadow-xs dark:border-brand-500 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
                 }`}
               >
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-sm font-medium text-gray-800 dark:text-white/90">{rol.nombre}</span>
-                    {rol.sistema && <Badge color="light" size="xs">Sistema</Badge>}
+                    <span
+                      className={`truncate text-sm font-semibold ${
+                        esSeleccionado
+                          ? "text-brand-900 dark:text-brand-200"
+                          : "text-gray-800 dark:text-gray-200"
+                      }`}
+                    >
+                      {r.nombre}
+                    </span>
+                    {r.sistema && <Badge color="light" size="xs">Sistema</Badge>}
                   </div>
-                  {/* Se cuenta por áreas, no por permisos: "cubre 4 de 7 áreas"
-                      dice mucho más que "13 de 18 capacidades". */}
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    Cubre {completas} de {areas.length} áreas
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {r.capacidades.length} de 18 capacidades
                   </p>
                 </div>
 
-                {!rol.sistema && (
+                {!r.sistema && (
                   <button
                     type="button"
                     title="Eliminar este rol"
+                    aria-label="Eliminar rol"
                     onClick={(e) => {
                       e.stopPropagation();
-                      rolesStore.eliminar(rol.id);
-                      if (seleccionadoId === rol.id) {
+                      rolesStore.eliminar(r.id);
+                      if (seleccionadoId === r.id) {
                         setSeleccionadoId(rolesStore.roles[0]?.id ?? null);
                       }
                     }}
-                    className="p-1.5 text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-950/30 rounded-lg opacity-80 group-hover:opacity-100 transition-all"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 opacity-70 group-hover:opacity-100 transition-all cursor-pointer"
                   >
-                    <TrashBinIcon className="h-4 w-4" />
+                    <TrashBinIcon className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
@@ -115,16 +92,12 @@ export const RolesTab = observer(() => {
         </div>
       </div>
 
-      {/* Editor del rol seleccionado.
-          La `key` remonta el editor al cambiar de rol, así el borrador local no
-          arrastra lo editado en otro rol. */}
+      {/* ── EDITOR DEL ROL SELECCIONADO ───────────────────────────────────── */}
       {seleccionado ? (
         <RolEditor key={seleccionado.id} rol={seleccionado} onDuplicado={setSeleccionadoId} />
       ) : (
-        <Card>
-          <p className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
-            Selecciona un rol para editarlo.
-          </p>
+        <Card className="p-12 text-center text-sm text-gray-500 dark:text-gray-400">
+          Selecciona un rol para editarlo.
         </Card>
       )}
     </div>
@@ -132,57 +105,40 @@ export const RolesTab = observer(() => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// EDITOR DE ROL
+// EDITOR DE ROL — LIMPIO Y JERÁRQUICO
 // ═══════════════════════════════════════════════════════════════════════════
 
 const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: string) => void }) => {
-  // Borrador local: no toca el store hasta "Guardar cambios".
   const [nombre, setNombre] = useState(rol.nombre);
   const [descripcion, setDescripcion] = useState(rol.descripcion);
   const [capacidades, setCapacidades] = useState<Capacidad[]>([...rol.capacidades]);
   const [guardado, setGuardado] = useState(false);
-  const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>(() => {
-    const inicial: Record<string, boolean> = {};
-    CAPACIDAD_GRUPOS.forEach((g) => {
-      inicial[g.id] = true;
-    });
-    return inicial;
-  });
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
 
-  const toggleGrupoColapso = (id: string) => {
-    setGruposAbiertos((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleColapso = (grupoId: string) => {
+    setColapsados((prev) => ({ ...prev, [grupoId]: !prev[grupoId] }));
   };
 
   const expandirTodos = () => {
-    const todos: Record<string, boolean> = {};
-    CAPACIDAD_GRUPOS.forEach((g) => {
-      todos[g.id] = true;
-    });
-    setGruposAbiertos(todos);
+    setColapsados({});
   };
 
   const colapsarTodos = () => {
-    const ninguno: Record<string, boolean> = {};
-    CAPACIDAD_GRUPOS.forEach((g) => {
-      ninguno[g.id] = false;
-    });
-    setGruposAbiertos(ninguno);
+    const todos: Record<string, boolean> = {};
+    for (const g of CAPACIDAD_GRUPOS) {
+      todos[g.id] = true;
+    }
+    setColapsados(todos);
   };
 
   const tiene = (c: Capacidad) => capacidades.includes(c);
-
-  // Se recalcula en cada render, así que el resumen de abajo refleja el borrador
-  // al instante: marcar un interruptor mueve el chip del área en el mismo frame.
-  const areas = resumenDeAreas(capacidades);
-  const completas = areasCompletas(areas);
 
   const toggle = (c: Capacidad) => {
     setCapacidades((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
     setGuardado(false);
   };
 
-  /** Enciende o apaga todas las capacidades de un área de una vez. */
-  const toggleGrupo = (grupo: Capacidad[]) => {
+  const alternarGrupo = (grupo: Capacidad[]) => {
     const todas = grupo.every((c) => capacidades.includes(c));
     setCapacidades((prev) => {
       const set = new Set(prev);
@@ -202,6 +158,7 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
       capacidades,
     });
     setGuardado(true);
+    setTimeout(() => setGuardado(false), 3000);
   };
 
   const duplicar = () => {
@@ -215,38 +172,65 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
   };
 
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Editar rol</h2>
-            {rol.sistema && <Badge color="light" size="xs">Sistema</Badge>}
+    <Card className="p-6 space-y-6">
+      {/* Cabecera del Editor */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              {nombre || "Rol sin nombre"}
+            </h2>
+            {rol.sistema ? (
+              <Badge color="light" size="xs">Rol de Sistema</Badge>
+            ) : (
+              <Badge color="success" size="xs">Personalizado</Badge>
+            )}
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Los roles de sistema no se pueden eliminar. Puedes duplicarlos para partir de una base.
+            {rol.sistema
+              ? "Los roles de sistema son predefinidos. Puedes duplicarlo para crear una base personalizada."
+              : "Rol editable. Los operadores con este rol recibirán estas capacidades por defecto."}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {guardado && <span className="text-xs text-success-600 dark:text-success-500">Guardado</span>}
-          <Button size="sm" variant="ghost" onClick={duplicar}>Duplicar</Button>
-          {/* El `title` va en un envoltorio: `ButtonProps` no lo acepta, y un
-              botón deshabilitado no siempre emite eventos de ratón. */}
-          <span title={rol.sistema ? "Los roles de sistema no se pueden eliminar" : "Eliminar este rol"}>
-            <Button size="sm" variant="destructive" disabled={rol.sistema} onClick={eliminar}>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          {guardado && (
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mr-1">
+              Guardado
+            </span>
+          )}
+
+          <Button size="sm" variant="outline" onClick={duplicar} title="Duplicar rol">
+            <CopyIcon className="mr-1.5 h-3.5 w-3.5" />
+            Duplicar
+          </Button>
+
+          {!rol.sistema && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400"
+              onClick={eliminar}
+            >
               Eliminar
             </Button>
-          </span>
+          )}
+
+          <Button size="sm" onClick={guardar}>
+            Guardar cambios
+          </Button>
         </div>
       </div>
 
       {/* Datos del rol */}
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="rol-nombre">Nombre</Label>
+          <Label htmlFor="rol-nombre">Nombre del Rol</Label>
           <Input
             id="rol-nombre"
             value={nombre}
             placeholder="Ej. Supervisor de turno"
+            disabled={rol.sistema}
             onChange={(e) => {
               setNombre(e.target.value);
               setGuardado(false);
@@ -258,7 +242,8 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
           <Input
             id="rol-desc"
             value={descripcion}
-            placeholder="Para qué sirve este rol"
+            placeholder="Propósito u operativa de este rol"
+            disabled={rol.sistema}
             onChange={(e) => {
               setDescripcion(e.target.value);
               setGuardado(false);
@@ -267,202 +252,160 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
         </div>
       </div>
 
-      {/* Resumen en lenguaje de negocio, vivo mientras se edita. */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-            Qué puede hacer este rol
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {capacidades.length} de 18 permisos · cubre {completas} de {areas.length} áreas
-          </p>
-        </div>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{fraseDeAcceso(areas)}</p>
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {areas.map((area) => (
-            <Badge
-              key={area.id}
-              color={NIVEL_COLOR[area.nivel]}
-              size="sm"
-              endIcon={<span className="tabular-nums opacity-70">{area.activas}/{area.total}</span>}
-            >
-              {area.label}: {NIVEL_LABEL[area.nivel]}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      {/* Reglas de acceso agrupadas en listas colapsables por categoría */}
-      <div className="mt-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* ── REGLAS Y PERMISOS DEL ROL (GRID JERÁRQUICO COLAPSABLE) ─────────── */}
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
-              Reglas y permisos del rol
+            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              Reglas y Permisos del Rol
             </h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Agrupados por categoría con listas colapsables de lo que puede y no puede hacer.
+              Activa o desactiva las capacidades asignadas al paquete de este rol.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={expandirTodos}
-              className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-            >
-              Expandir todas
-            </button>
-            <span className="text-gray-300 dark:text-gray-700">·</span>
-            <button
-              type="button"
-              onClick={colapsarTodos}
-              className="cursor-pointer text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400"
-            >
-              Colapsar todas
-            </button>
+
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300">
+              <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+              <span>{capacidades.length} de 18 activas</span>
+            </span>
+
+            <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-800 dark:bg-gray-900">
+              <button
+                type="button"
+                onClick={expandirTodos}
+                title="Expandir todas las categorías"
+                aria-label="Expandir todas las categorías"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3.5 w-3.5"
+                >
+                  <path d="M5 6l5 5 5-5" />
+                  <path d="M5 11l5 5 5-5" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                onClick={colapsarTodos}
+                title="Contraer todas las categorías"
+                aria-label="Contraer todas las categorías"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.75}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3.5 w-3.5"
+                >
+                  <path d="M5 9l5-5 5 5" />
+                  <path d="M5 14l5-5 5 5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="mt-3 space-y-3">
+        {/* Grid de tarjetas de categorías con switches estables */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {CAPACIDAD_GRUPOS.map((grupo) => {
             const puede = grupo.capacidades.filter(tiene);
-            const noPuede = grupo.capacidades.filter((c) => !tiene(c));
-            const todas = puede.length === grupo.capacidades.length;
-            const abierto = gruposAbiertos[grupo.id] ?? false;
+            const completa = puede.length === grupo.capacidades.length;
+            const estaColapsado = !!colapsados[grupo.id];
 
             return (
               <div
                 key={grupo.id}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-white transition-all dark:border-gray-800 dark:bg-white/[0.02]"
+                className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow dark:border-gray-800 dark:bg-gray-900"
               >
-                {/* Cabecera colapsable */}
+                {/* Cabecera de la Tarjeta con botón de colapso */}
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={() => toggleGrupoColapso(grupo.id)}
+                  onClick={() => toggleColapso(grupo.id)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      toggleGrupoColapso(grupo.id);
+                      toggleColapso(grupo.id);
                     }
                   }}
-                  className="flex cursor-pointer flex-wrap items-center justify-between gap-2 p-3.5 select-none hover:bg-gray-50/80 dark:hover:bg-white/[0.02]"
+                  className={`flex cursor-pointer select-none items-center justify-between p-4 transition-colors hover:bg-gray-50/75 dark:hover:bg-white/[0.02] ${
+                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800" : ""
+                  }`}
                 >
-                  <div className="flex flex-wrap items-center gap-2.5">
+                  <div className="flex items-center gap-2.5">
                     <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
                       {grupo.label}
                     </Badge>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                      {puede.length} permitidas
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
-                      {noPuede.length} restringidas
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {puede.length} de {grupo.capacidades.length}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {!estaColapsado && !rol.sistema && (
+                      <button
+                        type="button"
+                        onClick={() => alternarGrupo(grupo.capacidades)}
+                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                      >
+                        {completa ? "Quitar todo" : "Dar todo"}
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      onClick={() => toggleGrupo(grupo.capacidades)}
-                      className="cursor-pointer text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                    >
-                      {todas ? "Quitar todo" : "Dar todo"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleGrupoColapso(grupo.id)}
-                      aria-label={abierto ? `Colapsar categoría ${grupo.label}` : `Expandir categoría ${grupo.label}`}
-                      className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                      onClick={() => toggleColapso(grupo.id)}
+                      aria-label={estaColapsado ? `Expandir ${grupo.label}` : `Contraer ${grupo.label}`}
+                      title={estaColapsado ? "Expandir" : "Contraer"}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer"
                     >
                       <ChevronDownIcon
                         className={`h-4 w-4 transition-transform duration-200 ${
-                          abierto ? "rotate-180" : ""
+                          estaColapsado ? "-rotate-90" : "rotate-0"
                         }`}
                       />
                     </button>
                   </div>
                 </div>
 
-                {/* Contenido colapsable: Puede hacer vs No puede hacer */}
-                {abierto && (
-                  <div className="border-t border-gray-100 p-4 space-y-4 dark:border-white/5">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {resumenDeArea(grupo.id)}
-                    </p>
+                {/* Lista limpia y ordenada de capacidades */}
+                {!estaColapsado && (
+                  <div className="p-4 space-y-2.5">
+                    {grupo.capacidades.map((cap) => {
+                      const activa = tiene(cap);
 
-                    {/* Subsección: Lo que PUEDE hacer */}
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                        <CheckCircleIcon className="h-3.5 w-3.5" />
-                        <span>Puede hacer ({puede.length})</span>
-                      </div>
-                      {puede.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {puede.map((cap) => (
-                            <div
-                              key={cap}
-                              className="flex items-center justify-between gap-3 rounded-lg border border-emerald-100 bg-emerald-50/30 px-3 py-2 transition-colors dark:border-emerald-500/20 dark:bg-emerald-500/5"
-                            >
-                              <div className="flex min-w-0 items-center gap-2">
-                                <CheckCircleIcon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                <span
-                                  title={cap}
-                                  className="truncate text-sm font-medium text-gray-800 dark:text-white/90"
-                                >
-                                  {CAPACIDAD_LABEL[cap]}
-                                </span>
-                              </div>
-                              <Switch
-                                checked={true}
-                                onChange={() => toggle(cap)}
-                                aria-label={CAPACIDAD_LABEL[cap]}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-400 dark:border-gray-800">
-                          Sin reglas activas en esta categoría.
-                        </p>
-                      )}
-                    </div>
+                      return (
+                        <div
+                          key={cap}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                        >
+                          <span
+                            title={cap}
+                            className="truncate text-xs font-medium text-gray-800 dark:text-gray-200"
+                          >
+                            {CAPACIDAD_LABEL[cap]}
+                          </span>
 
-                    {/* Subsección: Lo que NO PUEDE hacer */}
-                    <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-white/5">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        <CloseLineIcon className="h-3.5 w-3.5" />
-                        <span>No puede hacer ({noPuede.length})</span>
-                      </div>
-                      {noPuede.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {noPuede.map((cap) => (
-                            <div
-                              key={cap}
-                              className="flex items-center justify-between gap-3 rounded-lg border border-gray-200/60 bg-gray-50/40 px-3 py-2 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
-                            >
-                              <div className="flex min-w-0 items-center gap-2">
-                                <CloseLineIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
-                                <span
-                                  title={cap}
-                                  className="truncate text-sm text-gray-500 dark:text-gray-400"
-                                >
-                                  {CAPACIDAD_LABEL[cap]}
-                                </span>
-                              </div>
-                              <Switch
-                                checked={false}
-                                onChange={() => toggle(cap)}
-                                aria-label={CAPACIDAD_LABEL[cap]}
-                              />
-                            </div>
-                          ))}
+                          <Switch
+                            checked={activa}
+                            disabled={rol.sistema}
+                            onChange={() => toggle(cap)}
+                            label=""
+                          />
                         </div>
-                      ) : (
-                        <p className="rounded-lg border border-dashed border-emerald-200/60 bg-emerald-50/30 px-3 py-2 text-xs text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-400">
-                          Acceso total: este rol cuenta con todas las reglas de esta categoría.
-                        </p>
-                      )}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -471,8 +414,16 @@ const RolEditor = observer(({ rol, onDuplicado }: { rol: Rol; onDuplicado: (id: 
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <Button size="sm" onClick={guardar}>Guardar cambios</Button>
+      {/* Botón inferior para guardar */}
+      <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+        {guardado && (
+          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            Cambios guardados correctamente
+          </span>
+        )}
+        <Button size="sm" onClick={guardar}>
+          Guardar cambios
+        </Button>
       </div>
     </Card>
   );
