@@ -8,6 +8,7 @@ import { Card } from "@/elements/ui/card";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import {
+  EyeIcon,
   MoreDotIcon,
   PencilIcon,
   UserCircleIcon,
@@ -384,19 +385,51 @@ const FilaEquipo = observer(
 
         {/* Columna 4: Acciones */}
         <TableCell className="py-4 text-right pr-6">
-          <div className="flex items-center justify-end gap-3 relative">
+          <div className="flex items-center justify-end gap-1.5 relative">
             {/* Botón de acción directa si está pendiente */}
             {esPendiente && (
               <Button
                 size="sm"
                 variant="primary"
-                onClick={() => operadoresStore.aprobar(op.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  operadoresStore.aprobar(op.id);
+                }}
+                className="h-8 px-3 text-xs"
               >
                 Aprobar
               </Button>
             )}
 
-            {/* Menú contextual de opciones rápidas */}
+            {/* Botón Lapicito: Editar Capacidades / Perfil */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAbrir();
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              title="Editar rol y capacidades"
+              aria-label="Editar rol y capacidades"
+            >
+              <PencilIcon className="h-4 w-4" />
+            </button>
+
+            {/* Botón Ojo: Ver perfil */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAbrir();
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              title="Ver perfil completo"
+              aria-label="Ver perfil"
+            >
+              <EyeIcon className="h-4 w-4" />
+            </button>
+
+            {/* Menú contextual de opciones adicionales (...) */}
             <div className="relative">
               <button
                 type="button"
@@ -404,23 +437,30 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   onToggleMenu();
                 }}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors cursor-pointer"
-                title="Opciones rápidas"
-                aria-label="Opciones rápidas"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                title="Más opciones"
+                aria-label="Más opciones"
               >
-                <MoreDotIcon className="h-5 w-5" />
+                <MoreDotIcon className="h-4 w-4" />
               </button>
 
               {/* Elements Dropdown Menu */}
               <Dropdown
                 isOpen={isMenuOpen}
                 onClose={onCloseMenu}
-                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
+                className="right-0 top-full mt-1 w-52 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
               >
                 <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
                   <span className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-gray-400" />
-                    <span>Ver perfil</span>
+                    <span>Ver perfil completo</span>
+                  </span>
+                </DropdownItem>
+
+                <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
+                  <span className="flex items-center gap-2">
+                    <PencilIcon className="h-4 w-4 text-gray-400" />
+                    <span>Editar capacidades y rol</span>
                   </span>
                 </DropdownItem>
 
@@ -431,13 +471,6 @@ const FilaEquipo = observer(
                   <span className="flex items-center gap-2">
                     <UserCircleIcon className="h-4 w-4 text-gray-400" />
                     <span>Ver como (Simular)</span>
-                  </span>
-                </DropdownItem>
-
-                <DropdownItem onClick={() => { onCloseMenu(); onAbrir(); }}>
-                  <span className="flex items-center gap-2">
-                    <PencilIcon className="h-4 w-4 text-gray-400" />
-                    <span>Editar capacidades</span>
                   </span>
                 </DropdownItem>
 
