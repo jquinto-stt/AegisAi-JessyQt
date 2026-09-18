@@ -175,7 +175,7 @@ const SubIntegrationCard = observer(({
 
   return (
     <div
-      className={`w-full sm:w-[325px] shrink-0 relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
+      className={`w-full relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
         parentActivo
           ? "border-gray-200 hover:border-gray-300 hover:shadow-xs dark:border-gray-800 dark:hover:border-gray-700"
           : "border-gray-200/60 bg-gray-50/50 opacity-60 dark:border-gray-800/60 dark:bg-gray-900/40"
@@ -351,7 +351,7 @@ const ModuloMaestroCard = observer(({
 
   return (
     <div
-      className={`rounded-3xl border bg-white p-6 shadow-2xs transition-all duration-200 dark:bg-gray-900/60 ${
+      className={`w-full max-w-[720px] rounded-3xl border bg-white p-6 shadow-2xs transition-all duration-200 dark:bg-gray-900/60 ${
         esActivo
           ? "border-gray-200 shadow-xs dark:border-gray-800"
           : "border-gray-200/70 bg-gray-50/40 opacity-75 dark:border-gray-800/60"
@@ -446,8 +446,8 @@ const ModuloMaestroCard = observer(({
         {def.descripcion}
       </p>
 
-      {/* ── 2. SUBSECCIÓN DE INTEGRACIONES (CON EL DISEÑO DE REFERENCIA) ──────── */}
-      <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50/60 p-5 dark:border-gray-800/80 dark:bg-white/[0.02]">
+      {/* ── 2. SUBSECCIÓN DE INTEGRACIONES (DISEÑO LIMPIO Y COMPACTO) ──────── */}
+      <div className="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h4 className="text-sm font-bold text-gray-900 dark:text-white">
@@ -465,8 +465,8 @@ const ModuloMaestroCard = observer(({
           </span>
         </div>
 
-        {/* Tarjetas de integración con ancho natural estilo Mailchimp / Google Meet */}
-        <div className="flex flex-wrap gap-4">
+        {/* Tarjetas de integración que llenan perfectamente los dos lados */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {integraciones.map((it) => (
             <SubIntegrationCard
               key={it.id}
@@ -594,7 +594,7 @@ export const ConfiguracionModulosPage = observer(() => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
             {modulosInstalados.map((mod) => (
               <ModuloMaestroCard
                 key={mod.id}
