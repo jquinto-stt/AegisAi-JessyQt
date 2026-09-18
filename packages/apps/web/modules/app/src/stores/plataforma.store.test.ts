@@ -79,6 +79,22 @@ describe("PlataformaStore (v2 - Scoped Connectors)", () => {
     expect(nuevoStore.esConectorActivo("pedidos", "necto_ia")).toBe(true);
   });
 
+  it("permite instalar y desinstalar módulos de la organización", () => {
+    expect(store.esModuloInstalado("pedidos")).toBe(true);
+    expect(store.esModuloInstalado("inventario")).toBe(false);
+
+    // Instalar inventario
+    store.instalarModulo("inventario");
+    expect(store.esModuloInstalado("inventario")).toBe(true);
+    expect(store.esModuloActivo("inventario")).toBe(true);
+
+    // Desinstalar pedidos
+    store.desinstalarModulo("pedidos");
+    expect(store.esModuloInstalado("pedidos")).toBe(false);
+    expect(store.esModuloActivo("pedidos")).toBe(false);
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(false);
+  });
+
   it("permite reiniciar al estado de fábrica", () => {
     store.setModuloActivo("pedidos", false);
     store.reiniciar();

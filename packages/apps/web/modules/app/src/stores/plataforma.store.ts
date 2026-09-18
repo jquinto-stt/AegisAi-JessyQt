@@ -103,6 +103,7 @@ export const DETALLE_CONECTORES: Record<IdModuloNegocio, Record<IdConector, Info
 };
 
 export interface EstadoModuloNegocio {
+  instalado: boolean;
   activo: boolean;
   conectores: Record<IdConector, boolean>;
 }
@@ -111,6 +112,7 @@ const STORAGE_KEY = "necto.plataforma.v2";
 
 const ESTADO_INICIAL: Record<IdModuloNegocio, EstadoModuloNegocio> = {
   pedidos: {
+    instalado: true,
     activo: true,
     conectores: {
       necto_ia: true,
@@ -118,6 +120,7 @@ const ESTADO_INICIAL: Record<IdModuloNegocio, EstadoModuloNegocio> = {
     },
   },
   inventario: {
+    instalado: false,
     activo: false,
     conectores: {
       necto_ia: false,
@@ -140,6 +143,7 @@ function cargarDesdeStorage(): Record<IdModuloNegocio, EstadoModuloNegocio> {
 
     return {
       pedidos: {
+        instalado: typeof parsed.pedidos?.instalado === "boolean" ? parsed.pedidos.instalado : ESTADO_INICIAL.pedidos.instalado,
         activo: typeof parsed.pedidos?.activo === "boolean" ? parsed.pedidos.activo : ESTADO_INICIAL.pedidos.activo,
         conectores: {
           necto_ia: typeof parsed.pedidos?.conectores?.necto_ia === "boolean"
@@ -151,6 +155,7 @@ function cargarDesdeStorage(): Record<IdModuloNegocio, EstadoModuloNegocio> {
         },
       },
       inventario: {
+        instalado: typeof parsed.inventario?.instalado === "boolean" ? parsed.inventario.instalado : ESTADO_INICIAL.inventario.instalado,
         activo: typeof parsed.inventario?.activo === "boolean" ? parsed.inventario.activo : ESTADO_INICIAL.inventario.activo,
         conectores: {
           necto_ia: typeof parsed.inventario?.conectores?.necto_ia === "boolean"
@@ -184,14 +189,22 @@ export class PlataformaStore {
     makeAutoObservable(this);
   }
 
+  /** ¿Está instalado el módulo en la organización? */
+  esModuloInstalado(id: IdModuloNegocio): boolean {
+    return Boolean(this.modulos[id]?.instalado);
+  }
+
   /** ¿Está habilitado el módulo de negocio en la organización? */
   esModuloActivo(id: IdModuloNegocio): boolean {
-    return Boolean(this.modulos[id]?.activo);
+    return Boolean(this.modulos[id]?.instalado && this.modulos[id]?.activo);
   }
 
   /** Activa o desactiva un módulo de negocio completo. */
   setModuloActivo(id: IdModuloNegocio, activo: boolean): void {
     if (!this.modulos[id]) return;
+    if (activo) {
+      this.modulos[id].instalado = true;
+    }
     this.modulos[id].activo = activo;
     this.sincronizarConectores(id);
     guardarEnStorage(this.modulos);
@@ -202,9 +215,27 @@ export class PlataformaStore {
     this.setModuloActivo(id, !this.esModuloActivo(id));
   }
 
+  /** Instala un módulo en la organización y lo deja activo. */
+  instalarModulo(id: IdModuloNegocio): void {
+    if (!this.modulos[id]) return;
+    this.modulos[id].instalado = true;
+    this.modulos[id].activo = true;
+    this.sincronizarConectores(id);
+    guardarEnStorage(this.modulos);
+  }
+
+  /** Desinstala / elimina un módulo de la organización. */
+  desinstalarModulo(id: IdModuloNegocio): void {
+    if (!this.modulos[id]) return;
+    this.modulos[id].instalado = false;
+    this.modulos[id].activo = false;
+    this.sincronizarConectores(id);
+    guardarEnStorage(this.modulos);
+  }
+
   /** ¿Está habilitado un conector específico para un módulo de negocio? */
   esConectorActivo(moduloId: IdModuloNegocio, conectorId: IdConector): boolean {
-    return Boolean(this.modulos[moduloId]?.activo && this.modulos[moduloId]?.conectores[conectorId]);
+    return Boolean(this.modulos[moduloId]?.instalado && this.modulos[moduloId]?.activo && this.modulos[moduloId]?.conectores[conectorId]);
   }
 
   /** Activa o desactiva un conector en un módulo de negocio. */
