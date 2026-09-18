@@ -10,7 +10,7 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
-import { ChevronDownIcon } from "@/icons";
+import { ChevronDownIcon, EyeIcon, PencilIcon } from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
@@ -208,20 +208,32 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             {puedeVerComo && (
-              <Button size="sm" variant="outline" onClick={verComo}>
-                Ver como (Simular)
-              </Button>
+              <button
+                type="button"
+                onClick={verComo}
+                title="Ver como (Simular)"
+                aria-label="Ver como (Simular)"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                <EyeIcon className="h-4.5 w-4.5" />
+              </button>
             )}
 
-            <Button
-              size="sm"
-              variant="outline"
+            <button
+              type="button"
               onClick={() => setEditandoDatos(!editandoDatos)}
+              title={editandoDatos ? "Cancelar edición" : "Editar datos"}
+              aria-label={editandoDatos ? "Cancelar edición" : "Editar datos"}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
+                editandoDatos
+                  ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              }`}
             >
-              {editandoDatos ? "Cancelar edición" : "Editar datos"}
-            </Button>
+              <PencilIcon className="h-4.5 w-4.5" />
+            </button>
           </div>
         </div>
 
