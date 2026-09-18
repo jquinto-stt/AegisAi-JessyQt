@@ -70,17 +70,19 @@ export type {
   EntradaDeclarada,
 } from './integraciones.store';
 
-// Módulos y Plugins de la Organización (Plataforma)
+// Módulos y Plugins de la Organización (Plataforma v2 Scoped)
 export {
   plataformaStore,
   PlataformaStore,
-  CATALOGO_PLATAFORMA,
-  ORDEN_PLATAFORMA,
+  CATALOGO_MODULOS,
+  DETALLE_CONECTORES,
 } from './plataforma.store';
 export type {
-  CategoriaPlataforma,
-  IdPlataforma,
-  ItemPlataforma,
+  IdModuloNegocio,
+  IdConector,
+  InfoModuloNegocio,
+  InfoConectorModulo,
+  EstadoModuloNegocio,
 } from './plataforma.store';
 
 // Helpers de capacidad para las páginas (capa de conveniencia sobre hasPermission)

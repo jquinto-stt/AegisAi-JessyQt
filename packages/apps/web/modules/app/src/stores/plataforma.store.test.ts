@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { PlataformaStore, CATALOGO_PLATAFORMA } from "./plataforma.store";
+import { PlataformaStore } from "./plataforma.store";
 
 function instalarLocalStorageStub() {
   const map = new Map<string, string>();
@@ -21,7 +21,7 @@ function instalarLocalStorageStub() {
   return storage;
 }
 
-describe("PlataformaStore", () => {
+describe("PlataformaStore (v2 - Scoped Connectors)", () => {
   let store: PlataformaStore;
 
   beforeEach(() => {
@@ -29,55 +29,60 @@ describe("PlataformaStore", () => {
     store = new PlataformaStore();
   });
 
-  it("arranca con la configuración de fábrica (pedidos, conversaciones y asistente activos)", () => {
+  it("arranca con pedidos activo y sus conectores encendidos por defecto", () => {
+    expect(store.esModuloActivo("pedidos")).toBe(true);
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(true);
+    expect(store.esConectorActivo("pedidos", "whatsapp")).toBe(true);
+    expect(store.esModuloActivo("inventario")).toBe(false);
+  });
+
+  it("evalúa correctamente tieneConectorActivo", () => {
+    // Como pedidos tiene necto_ia y whatsapp activos:
+    expect(store.tieneConectorActivo("necto_ia")).toBe(true);
+    expect(store.tieneConectorActivo("whatsapp")).toBe(true);
+
+    // Si apagamos el conector necto_ia de pedidos:
+    store.setConectorActivo("pedidos", "necto_ia", false);
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(false);
+    expect(store.tieneConectorActivo("necto_ia")).toBe(false);
+
+    // Si encendemos inventario y su conector necto_ia:
+    store.setModuloActivo("inventario", true);
+    store.setConectorActivo("inventario", "necto_ia", true);
+    expect(store.tieneConectorActivo("necto_ia")).toBe(true);
+  });
+
+  it("si se desactiva un módulo completo, sus conectores quedan inactivos de cara al sistema", () => {
+    store.setModuloActivo("pedidos", false);
+    expect(store.esModuloActivo("pedidos")).toBe(false);
+    // Aunque la config interna conserve el flag, esConectorActivo evalúa que el módulo esté activo
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(false);
+    expect(store.tieneConectorActivo("necto_ia")).toBe(false);
+  });
+
+  it("el helper estaActivo responde de forma coherente para retrocompatibilidad", () => {
     expect(store.estaActivo("pedidos")).toBe(true);
+    expect(store.estaActivo("asistente")).toBe(true);
     expect(store.estaActivo("conversaciones")).toBe(true);
-    expect(store.estaActivo("asistente")).toBe(true);
-    expect(store.estaActivo("inventario")).toBe(false);
-  });
 
-  it("permite alternar el estado de un plugin o módulo con toggle", () => {
-    store.toggle("asistente");
+    store.setConectorActivo("pedidos", "necto_ia", false);
     expect(store.estaActivo("asistente")).toBe(false);
-
-    store.toggle("asistente");
-    expect(store.estaActivo("asistente")).toBe(true);
   });
 
-  it("permite activar y desactivar explícitamente", () => {
-    store.desactivar("pedidos");
-    expect(store.estaActivo("pedidos")).toBe(false);
-
-    store.activar("pedidos");
-    expect(store.estaActivo("pedidos")).toBe(true);
-
-    store.activar("inventario");
-    expect(store.estaActivo("inventario")).toBe(true);
-  });
-
-  it("retorna false para módulos o claves desconocidas (fail-closed)", () => {
-    expect(store.estaActivo("modulo_inexistente" as any)).toBe(false);
-  });
-
-  it("persiste y restaura el estado en localStorage", () => {
-    store.desactivar("conversaciones");
-    store.activar("inventario");
+  it("persiste y restaura en localStorage", () => {
+    store.setModuloActivo("inventario", true);
+    store.setConectorActivo("pedidos", "whatsapp", false);
 
     const nuevoStore = new PlataformaStore();
-    expect(nuevoStore.estaActivo("conversaciones")).toBe(false);
-    expect(nuevoStore.estaActivo("inventario")).toBe(true);
-    expect(nuevoStore.estaActivo("pedidos")).toBe(true);
+    expect(nuevoStore.esModuloActivo("inventario")).toBe(true);
+    expect(nuevoStore.esConectorActivo("pedidos", "whatsapp")).toBe(false);
+    expect(nuevoStore.esConectorActivo("pedidos", "necto_ia")).toBe(true);
   });
 
-  it("separa correctamente módulos de negocio y plugins", () => {
-    expect(store.modulosNegocio.map((m) => m.id)).toEqual(["pedidos", "inventario"]);
-    expect(store.plugins.map((p) => p.id)).toEqual(["conversaciones", "asistente"]);
-  });
-
-  it("reinicia al estado de fábrica correctamente", () => {
-    store.desactivar("pedidos");
+  it("permite reiniciar al estado de fábrica", () => {
+    store.setModuloActivo("pedidos", false);
     store.reiniciar();
-    expect(store.estaActivo("pedidos")).toBe(true);
-    expect(store.estaActivo("inventario")).toBe(false);
+    expect(store.esModuloActivo("pedidos")).toBe(true);
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(true);
   });
 });

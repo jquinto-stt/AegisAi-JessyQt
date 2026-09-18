@@ -5,7 +5,7 @@
  */
 export { EquipoPage } from "./EquipoPage";
 export { PerfilOperadorPage } from "./PerfilOperadorPage";
-export { ModulosPage } from "./ModulosPage";
+export { ConfiguracionModulosPage } from "./ConfiguracionModulosPage";
 
 export { ESTADO_META, CATEGORIA_COLORES, NIVEL_COLOR, FILTRO_ESTADO_TODAS, OPCIONES_FILTRO_ESTADO, emailSugerido } from "./equipo.constants";
 export type { TabEquipo } from "./equipo.constants";

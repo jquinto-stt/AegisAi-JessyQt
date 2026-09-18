@@ -191,7 +191,7 @@ const SidebarContent = observer(() => {
 
       <div className="flex flex-col gap-5">
         {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones */}
-        {plataformaStore.estaActivo("conversaciones") && sessionStore.hasPermission("channels.read") && (
+        {plataformaStore.tieneConectorActivo("whatsapp") && sessionStore.hasPermission("channels.read") && (
           <div>
             <MenuSectionHeader
               title="Canales"
@@ -216,7 +216,7 @@ const SidebarContent = observer(() => {
         )}
 
         {/* Inteligencia (Necto Intelligence) — justo debajo de Canales. */}
-        {plataformaStore.estaActivo("asistente") && sessionStore.hasPermission("assistant.use") && (
+        {plataformaStore.tieneConectorActivo("necto_ia") && sessionStore.hasPermission("assistant.use") && (
           <div>
             <MenuSectionHeader
               title="Inteligencia"
@@ -238,7 +238,7 @@ const SidebarContent = observer(() => {
         )}
 
         {/* Módulos de negocio (Pedidos y, más adelante, Inventario, etc.). */}
-        {plataformaStore.estaActivo("pedidos") && (
+        {plataformaStore.esModuloActivo("pedidos") && (
           <div>
             <MenuSectionHeader
               title="Pedidos"
@@ -279,7 +279,7 @@ const SidebarContent = observer(() => {
             >
               <ul className="flex flex-col gap-1">
                 <MenuItem icon={<GroupIcon />} name="Equipo" path="/equipo" isActive={esRutaConHijas} />
-                <MenuItem icon={<PlugInIcon />} name="Módulos y Plugins" path="/organizacion/modulos" isActive={esRutaConHijas} />
+                <MenuItem icon={<PlugInIcon />} name="Configuración de Módulos" path="/organizacion/configuracion" isActive={esRutaConHijas} />
               </ul>
             </div>
           </div>

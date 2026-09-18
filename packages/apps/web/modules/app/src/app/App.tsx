@@ -10,7 +10,7 @@ import {
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
-import { EquipoPage, PerfilOperadorPage, ModulosPage } from "@/pages/equipo";
+import { EquipoPage, PerfilOperadorPage, ConfiguracionModulosPage } from "@/pages/equipo";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
@@ -41,10 +41,10 @@ const LegacyEquipoIdRedirect = () => {
   return <Navigate to={id ? `/equipo/${id}` : "/equipo"} replace />;
 };
 
-/** Guarda de plataforma: si la organización tiene el módulo o plugin apagado, redirige a módulos. */
+/** Guarda de plataforma: si la organización tiene el módulo o plugin apagado, redirige a configuración. */
 const ModuloGuard = observer(({ modulo, children }: { modulo: string; children: React.ReactNode }) => {
   if (!plataformaStore.estaActivo(modulo)) {
-    return <Navigate to="/organizacion/modulos" replace />;
+    return <Navigate to="/organizacion/configuracion" replace />;
   }
   return <>{children}</>;
 });
@@ -62,10 +62,11 @@ export default function App() {
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Organización / Equipo y Roles / Módulos de Plataforma (Transversal) */}
+        {/* Organización / Equipo y Roles / Centro de Módulos (Transversal) */}
         <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
-        <Route path="/organizacion/modulos" element={<CapabilityGuard capacidad="team.manage"><ModulosPage /></CapabilityGuard>} />
+        <Route path="/organizacion/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionModulosPage /></CapabilityGuard>} />
+        <Route path="/organizacion/modulos" element={<Navigate to="/organizacion/configuracion" replace />} />
 
         {/* Redirecciones legacy para compatibilidad */}
         <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />

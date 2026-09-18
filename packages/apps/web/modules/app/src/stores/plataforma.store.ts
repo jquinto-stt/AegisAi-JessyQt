@@ -1,117 +1,173 @@
 import { makeAutoObservable } from "mobx";
+import { integracionesStore } from "./integraciones.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PLATAFORMA STORE — Módulos Core y Plugins de la Organización
+// PLATAFORMA STORE (v2) — Módulos de Negocio y Conectores Scoped
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Administra qué módulos de negocio (verticales) y qué plugins (capacidades
-// transversales / add-ons) están habilitados en la organización.
-//
-// Principios de arquitectura:
-// 1. Fail-closed: Si un módulo está inactivo, no se renderiza en la navegación
-//    y sus rutas rechazan el acceso.
-// 2. Independencia de permisos: El acceso efectivo es la intersección entre
-//    módulo activo en la plataforma Y permisos asignados al rol del operador.
-// 3. Persistencia local reactiva con sincronización de estado.
+// Modelo de Arquitectura:
+// 1. Módulos de Negocio Core (Verticales): Pedidos, Inventario.
+// 2. Plugins / Conectores Scoped: Necto IA y Canales de WhatsApp se activan
+//    por CADA módulo de negocio.
+// 3. Efecto en Cascada:
+//    - Un canal o plugin global (como Canales o Inteligencia en el sidebar)
+//      solo se muestra si AL MENOS UN módulo activo tiene su conector prendido.
+//    - Si Pedidos apaga Necto IA, integracionesStore desconecta Pedidos de la IA.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type CategoriaPlataforma = "negocio" | "plugin";
+export type IdModuloNegocio = "pedidos" | "inventario";
+export type IdConector = "necto_ia" | "whatsapp";
 
-export type IdPlataforma = "pedidos" | "inventario" | "conversaciones" | "asistente";
-
-export interface ItemPlataforma {
-  id: IdPlataforma;
-  categoria: CategoriaPlataforma;
+export interface InfoModuloNegocio {
+  id: IdModuloNegocio;
   nombre: string;
+  tagline: string;
   descripcion: string;
-  detalle: string;
-  badgeLabel?: string;
-  disponible: boolean;
   rutaPrincipal: string;
   rutaConfig?: string;
+  disponible: boolean;
 }
 
-export const CATALOGO_PLATAFORMA: Record<IdPlataforma, ItemPlataforma> = {
+export interface InfoConectorModulo {
+  id: IdConector;
+  nombre: string;
+  descripcion: string;
+  beneficios: string[];
+}
+
+export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   pedidos: {
     id: "pedidos",
-    categoria: "negocio",
     nombre: "Pedidos & Delivery",
-    descripcion: "Gestión completa de órdenes, cocina, delivery, historial y métricas de venta.",
-    detalle: "Control de ciclo de vida del pedido, estados, asignación a repartidores y analítica operativa.",
-    disponible: true,
+    tagline: "Ventas y Operaciones",
+    descripcion: "Tablero de pedidos, cocina, delivery, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos",
     rutaConfig: "/pedidos/config",
+    disponible: true,
   },
   inventario: {
     id: "inventario",
-    categoria: "negocio",
     nombre: "Inventario & Stock",
-    descripcion: "Control de catálogo de productos, existencias, alertas de reposición y bodegas.",
-    detalle: "Permite gestionar variantes, costos, precios de venta y sincronización de existencias.",
-    disponible: true,
+    tagline: "Catálogo y Existencias",
+    descripcion: "Control de productos, variantes, bodegas, alertas de reposición y stock disponible.",
     rutaPrincipal: "/inventario",
-  },
-  conversaciones: {
-    id: "conversaciones",
-    categoria: "plugin",
-    nombre: "Canales de WhatsApp",
-    descripcion: "Bandeja de entrada omnicanal para atención al cliente y mensajes entrantes de WhatsApp.",
-    detalle: "Incluye chat en vivo, derivación inteligente a operadores e historial de conversaciones.",
     disponible: true,
-    rutaPrincipal: "/conversaciones",
-    rutaConfig: "/conversaciones/config",
-  },
-  asistente: {
-    id: "asistente",
-    categoria: "plugin",
-    nombre: "Necto Intelligence (IA)",
-    descripcion: "Copiloto con inteligencia artificial conectado a las herramientas de los módulos activos.",
-    detalle: "Genera resúmenes ejecutivos, sugiere respuestas automáticas y analiza métricas operativas.",
-    disponible: true,
-    rutaPrincipal: "/asistente",
-    rutaConfig: "/asistente/config",
   },
 };
 
-export const ORDEN_PLATAFORMA: IdPlataforma[] = [
-  "pedidos",
-  "inventario",
-  "conversaciones",
-  "asistente",
-];
-
-const STORAGE_KEY = "necto.plataforma.modulos";
-
-const ESTADO_INICIAL: Record<IdPlataforma, boolean> = {
-  pedidos: true,
-  inventario: false,
-  conversaciones: true,
-  asistente: true,
+export const DETALLE_CONECTORES: Record<IdModuloNegocio, Record<IdConector, InfoConectorModulo>> = {
+  pedidos: {
+    necto_ia: {
+      id: "necto_ia",
+      nombre: "Necto Intelligence (IA)",
+      descripcion: "Permite a Necto IA analizar y operar sobre los pedidos de la tienda.",
+      beneficios: [
+        "Consultar pedidos activos, tiempos de entrega y cocina",
+        "Generar resúmenes ejecutivos diarios y comparativas de ventas",
+        "Sugerir respuestas automáticas ante dudas de clientes",
+      ],
+    },
+    whatsapp: {
+      id: "whatsapp",
+      nombre: "Canales de WhatsApp",
+      descripcion: "Conecta la bandeja de entrada y notificaciones automáticas de pedidos a WhatsApp.",
+      beneficios: [
+        "Envío de plantillas automáticas de estado (confirmado, en camino, listo)",
+        "Recepción de pedidos y atención por chat unificado",
+        "Historial de conversación sincronizado con cada pedido",
+      ],
+    },
+  },
+  inventario: {
+    necto_ia: {
+      id: "necto_ia",
+      nombre: "Necto Intelligence (IA)",
+      descripcion: "Permite a Necto IA responder sobre existencias y niveles de stock.",
+      beneficios: [
+        "Consultar existencias y ubicación de productos por chat",
+        "Detectar productos próximos a agotarse",
+        "Asistencia en reposición y catálogo",
+      ],
+    },
+    whatsapp: {
+      id: "whatsapp",
+      nombre: "Canales de WhatsApp",
+      descripcion: "Habilita consultas de disponibilidad de productos por WhatsApp.",
+      beneficios: [
+        "Respuestas instantáneas de stock a clientes por chat",
+        "Envío de catálogo y precios por mensaje directo",
+      ],
+    },
+  },
 };
 
-function cargarDesdeStorage(): Record<IdPlataforma, boolean> {
+export interface EstadoModuloNegocio {
+  activo: boolean;
+  conectores: Record<IdConector, boolean>;
+}
+
+const STORAGE_KEY = "necto.plataforma.v2";
+
+const ESTADO_INICIAL: Record<IdModuloNegocio, EstadoModuloNegocio> = {
+  pedidos: {
+    activo: true,
+    conectores: {
+      necto_ia: true,
+      whatsapp: true,
+    },
+  },
+  inventario: {
+    activo: false,
+    conectores: {
+      necto_ia: false,
+      whatsapp: false,
+    },
+  },
+};
+
+function cargarDesdeStorage(): Record<IdModuloNegocio, EstadoModuloNegocio> {
   if (typeof localStorage === "undefined") {
-    return { ...ESTADO_INICIAL };
+    return JSON.parse(JSON.stringify(ESTADO_INICIAL));
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...ESTADO_INICIAL };
+    if (!raw) return JSON.parse(JSON.stringify(ESTADO_INICIAL));
     const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return { ...ESTADO_INICIAL };
+    if (typeof parsed !== "object" || parsed === null) {
+      return JSON.parse(JSON.stringify(ESTADO_INICIAL));
+    }
 
     return {
-      pedidos: typeof parsed.pedidos === "boolean" ? parsed.pedidos : ESTADO_INICIAL.pedidos,
-      inventario: typeof parsed.inventario === "boolean" ? parsed.inventario : ESTADO_INICIAL.inventario,
-      conversaciones: typeof parsed.conversaciones === "boolean" ? parsed.conversaciones : ESTADO_INICIAL.conversaciones,
-      asistente: typeof parsed.asistente === "boolean" ? parsed.asistente : ESTADO_INICIAL.asistente,
+      pedidos: {
+        activo: typeof parsed.pedidos?.activo === "boolean" ? parsed.pedidos.activo : ESTADO_INICIAL.pedidos.activo,
+        conectores: {
+          necto_ia: typeof parsed.pedidos?.conectores?.necto_ia === "boolean"
+            ? parsed.pedidos.conectores.necto_ia
+            : ESTADO_INICIAL.pedidos.conectores.necto_ia,
+          whatsapp: typeof parsed.pedidos?.conectores?.whatsapp === "boolean"
+            ? parsed.pedidos.conectores.whatsapp
+            : ESTADO_INICIAL.pedidos.conectores.whatsapp,
+        },
+      },
+      inventario: {
+        activo: typeof parsed.inventario?.activo === "boolean" ? parsed.inventario.activo : ESTADO_INICIAL.inventario.activo,
+        conectores: {
+          necto_ia: typeof parsed.inventario?.conectores?.necto_ia === "boolean"
+            ? parsed.inventario.conectores.necto_ia
+            : ESTADO_INICIAL.inventario.conectores.necto_ia,
+          whatsapp: typeof parsed.inventario?.conectores?.whatsapp === "boolean"
+            ? parsed.inventario.conectores.whatsapp
+            : ESTADO_INICIAL.inventario.conectores.whatsapp,
+        },
+      },
     };
   } catch {
-    return { ...ESTADO_INICIAL };
+    return JSON.parse(JSON.stringify(ESTADO_INICIAL));
   }
 }
 
-function guardarEnStorage(estado: Record<IdPlataforma, boolean>): void {
+function guardarEnStorage(estado: Record<IdModuloNegocio, EstadoModuloNegocio>): void {
   if (typeof localStorage === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
@@ -121,60 +177,99 @@ function guardarEnStorage(estado: Record<IdPlataforma, boolean>): void {
 }
 
 export class PlataformaStore {
-  activos: Record<IdPlataforma, boolean>;
+  modulos: Record<IdModuloNegocio, EstadoModuloNegocio>;
 
   constructor() {
-    this.activos = cargarDesdeStorage();
+    this.modulos = cargarDesdeStorage();
     makeAutoObservable(this);
   }
 
-  /** Consulta si un módulo o plugin está activo en la organización. */
-  estaActivo(id: IdPlataforma | string): boolean {
-    return Boolean(this.activos[id as IdPlataforma]);
+  /** ¿Está habilitado el módulo de negocio en la organización? */
+  esModuloActivo(id: IdModuloNegocio): boolean {
+    return Boolean(this.modulos[id]?.activo);
   }
 
-  /** Activa o desactiva un módulo o plugin. */
-  toggle(id: IdPlataforma): void {
-    this.activos[id] = !this.activos[id];
-    guardarEnStorage(this.activos);
+  /** Activa o desactiva un módulo de negocio completo. */
+  setModuloActivo(id: IdModuloNegocio, activo: boolean): void {
+    if (!this.modulos[id]) return;
+    this.modulos[id].activo = activo;
+    this.sincronizarConectores(id);
+    guardarEnStorage(this.modulos);
   }
 
-  /** Activa explícitamente un módulo o plugin. */
-  activar(id: IdPlataforma): void {
-    this.activos[id] = true;
-    guardarEnStorage(this.activos);
+  /** Toggle de activación del módulo de negocio. */
+  toggleModulo(id: IdModuloNegocio): void {
+    this.setModuloActivo(id, !this.esModuloActivo(id));
   }
 
-  /** Desactiva explícitamente un módulo o plugin. */
-  desactivar(id: IdPlataforma): void {
-    this.activos[id] = false;
-    guardarEnStorage(this.activos);
+  /** ¿Está habilitado un conector específico para un módulo de negocio? */
+  esConectorActivo(moduloId: IdModuloNegocio, conectorId: IdConector): boolean {
+    return Boolean(this.modulos[moduloId]?.activo && this.modulos[moduloId]?.conectores[conectorId]);
   }
 
-  /** Restablece la configuración de módulos a su estado inicial. */
+  /** Activa o desactiva un conector en un módulo de negocio. */
+  setConectorActivo(moduloId: IdModuloNegocio, conectorId: IdConector, activo: boolean): void {
+    if (!this.modulos[moduloId]) return;
+    this.modulos[moduloId].conectores[conectorId] = activo;
+    this.sincronizarConectores(moduloId);
+    guardarEnStorage(this.modulos);
+  }
+
+  /** Toggle de activación de un conector en un módulo. */
+  toggleConector(moduloId: IdModuloNegocio, conectorId: IdConector): void {
+    const actual = Boolean(this.modulos[moduloId]?.conectores[conectorId]);
+    this.setConectorActivo(moduloId, conectorId, !actual);
+  }
+
+  /**
+   * ¿Existe al menos un módulo activo que tenga este conector encendido?
+   * Determina si la sección general (ej: Inteligencia o Canales) se pinta en el sidebar.
+   */
+  tieneConectorActivo(conectorId: IdConector): boolean {
+    return (Object.keys(this.modulos) as IdModuloNegocio[]).some((mId) =>
+      this.esConectorActivo(mId, conectorId)
+    );
+  }
+
+  /**
+   * Helper de compatibilidad con código que pregunte estaActivo("pedidos"),
+   * estaActivo("asistente") o estaActivo("conversaciones").
+   */
+  estaActivo(id: string): boolean {
+    if (id === "pedidos" || id === "inventario") {
+      return this.esModuloActivo(id);
+    }
+    if (id === "asistente") {
+      return this.tieneConectorActivo("necto_ia");
+    }
+    if (id === "conversaciones") {
+      return this.tieneConectorActivo("whatsapp");
+    }
+    return false;
+  }
+
+  /** Sincroniza el store del Asistente (Necto IA) con el estado del conector de pedidos. */
+  private sincronizarConectores(moduloId: IdModuloNegocio): void {
+    if (moduloId === "pedidos") {
+      const activo = this.esConectorActivo("pedidos", "necto_ia");
+      if (activo) {
+        integracionesStore.conectar("pedidos");
+      } else {
+        integracionesStore.desconectar("pedidos");
+      }
+    }
+  }
+
+  /** Restablece la configuración inicial. */
   reiniciar(): void {
-    this.activos = { ...ESTADO_INICIAL };
-    guardarEnStorage(this.activos);
+    this.modulos = JSON.parse(JSON.stringify(ESTADO_INICIAL));
+    this.sincronizarConectores("pedidos");
+    guardarEnStorage(this.modulos);
   }
 
-  /** Catálogo completo con información de cada módulo. */
-  get items(): ItemPlataforma[] {
-    return ORDEN_PLATAFORMA.map((id) => CATALOGO_PLATAFORMA[id]);
-  }
-
-  /** Módulos de negocio (Core Verticals). */
-  get modulosNegocio(): ItemPlataforma[] {
-    return this.items.filter((item) => item.categoria === "negocio");
-  }
-
-  /** Plugins e integraciones (Cross-cutting Add-ons). */
-  get plugins(): ItemPlataforma[] {
-    return this.items.filter((item) => item.categoria === "plugin");
-  }
-
-  /** Cantidad de módulos y plugins activos en la organización. */
-  get cantidadActivos(): number {
-    return Object.values(this.activos).filter(Boolean).length;
+  /** Lista de catálogo de módulos. */
+  get catalogoModulos(): InfoModuloNegocio[] {
+    return Object.values(CATALOGO_MODULOS);
   }
 }
 
