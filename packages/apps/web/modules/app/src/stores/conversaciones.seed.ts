@@ -314,7 +314,7 @@ const MENSAJES: Mensaje[] = [
     conversacionId: "conv-2",
     autor: "bot",
     contenido: texto(
-      "¡Buenas tardes, Carlos! En este momento tenemos 6 porciones de postre del día disponibles en inventario. Tienen un valor de 8.000 c/u.",
+      "¡Buenas tardes, Carlos! En este momento tenemos porciones de postre del día disponibles en nuestro menú. Tienen un valor de 8.000 c/u.",
     ),
     timestamp: haceMin(54),
     moduloContexto: "inventario",

@@ -82,7 +82,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
                 ? "No puedes responder en esta conversación"
                 : esModoBot
                   ? "El bot está atendiendo esta conversación"
-                  : "Type a message"
+                  : "Escribe un mensaje..."
             }
             className="w-full bg-transparent border-0 outline-hidden h-9 text-sm text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
           />

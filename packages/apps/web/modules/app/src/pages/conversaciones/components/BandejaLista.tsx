@@ -7,7 +7,12 @@ import { MoreDotIcon } from "@/icons";
 import { retardoEscalonado } from "@/utils";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
-import type { FiltroBandeja } from "@/stores/conversaciones.types";
+import type { FiltroBandeja, FiltroIntencion } from "@/stores/conversaciones.types";
+import {
+  intencionDe,
+  INTENCION_LABEL,
+  INTENCION_BADGE,
+} from "../conversaciones.clasificacion";
 import {
   AVATAR_MAP,
   inicialesDe,
@@ -16,11 +21,19 @@ import {
   ultimoTexto,
 } from "../conversaciones.utils";
 
-const FILTROS: ReadonlyArray<{ valor: FiltroBandeja; etiqueta: string }> = [
-  { valor: "todas", etiqueta: "Todas" },
-  { valor: "no_leidas", etiqueta: "No leídas" },
+const FILTROS_ESTADO: ReadonlyArray<{ valor: FiltroBandeja; etiqueta: string }> = [
+  { valor: "todas", etiqueta: "Ver todas" },
   { valor: "requieren_atencion", etiqueta: "Requieren atención" },
+  { valor: "no_leidas", etiqueta: "Solo no leídas" },
   { valor: "cerradas", etiqueta: "Cerradas" },
+];
+
+const FILTROS_INTENCION: ReadonlyArray<{ valor: FiltroIntencion; etiqueta: string }> = [
+  { valor: "todas", etiqueta: "Todas" },
+  { valor: "consultar", etiqueta: INTENCION_LABEL.consultar },
+  { valor: "comprar", etiqueta: INTENCION_LABEL.comprar },
+  { valor: "seguir_pedido", etiqueta: INTENCION_LABEL.seguir_pedido },
+  { valor: "reclamar", etiqueta: INTENCION_LABEL.reclamar },
 ];
 
 interface BandejaListaProps {
@@ -30,9 +43,15 @@ interface BandejaListaProps {
 
 export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: BandejaListaProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [filtroIntencion, setFiltroIntencion] = useState<FiltroIntencion>("todas");
   const bandeja = conversacionesStore.bandeja;
-  const filtroActivo = conversacionesStore.filtro;
+  const filtroEstado = conversacionesStore.filtro;
   const seleccionadaId = conversacionesStore.seleccionadaId;
+
+  const listaFiltrada =
+    filtroIntencion === "todas"
+      ? bandeja
+      : bandeja.filter((conv) => intencionDe(conv.id) === filtroIntencion);
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -81,49 +100,46 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
               <button
                 type="button"
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
-                aria-label="Opciones de chat"
+                className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
+                  filtroEstado !== "todas"
+                    ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+                    : "text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                }`}
+                aria-label="Filtrar por estado"
+                title="Filtrar por estado"
               >
                 <MoreDotIcon className="h-5 w-5" />
+                {filtroEstado !== "todas" && (
+                  <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-brand-500" />
+                )}
               </button>
             <Dropdown
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
               className="w-48 p-1.5"
             >
-              <DropdownItem
-                onItemClick={() => {
-                  conversacionesStore.setFiltro("todas");
-                  setMenuOpen(false);
-                }}
-                className="text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                Ver todas
-              </DropdownItem>
-              <DropdownItem
-                onItemClick={() => {
-                  conversacionesStore.setFiltro("requieren_atencion");
-                  setMenuOpen(false);
-                }}
-                className="text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                Requieren atención
-              </DropdownItem>
-              <DropdownItem
-                onItemClick={() => {
-                  conversacionesStore.setFiltro("no_leidas");
-                  setMenuOpen(false);
-                }}
-                className="text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-              >
-                Solo no leídas
-              </DropdownItem>
+              {FILTROS_ESTADO.map((f) => (
+                <DropdownItem
+                  key={f.valor}
+                  onItemClick={() => {
+                    conversacionesStore.setFiltro(f.valor);
+                    setMenuOpen(false);
+                  }}
+                  className={`text-xs ${
+                    filtroEstado === f.valor
+                      ? "font-semibold text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-500/10"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                  }`}
+                >
+                  {f.etiqueta}
+                </DropdownItem>
+              ))}
             </Dropdown>
           </div>
         </div>
       </div>
 
-        {/* Buscador: Search... */}
+        {/* Buscador */}
         <div className="relative mt-3.5">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <svg
@@ -139,22 +155,22 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
           </div>
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Buscar..."
             value={conversacionesStore.busqueda}
             onChange={(e) => conversacionesStore.setBusqueda(e.target.value)}
             className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50/70 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/15 dark:border-gray-800 dark:bg-gray-900/60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
 
-        {/* Píldoras de Filtro */}
+        {/* Píldoras de Filtro por Intención */}
         <div className="mt-3 flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {FILTROS.map((f) => {
-            const activo = filtroActivo === f.valor;
+          {FILTROS_INTENCION.map((f) => {
+            const activo = filtroIntencion === f.valor;
             return (
               <button
                 key={f.valor}
                 type="button"
-                onClick={() => conversacionesStore.setFiltro(f.valor)}
+                onClick={() => setFiltroIntencion(f.valor)}
                 className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   activo
                     ? "bg-brand-500 text-white shadow-2xs"
@@ -170,16 +186,17 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
 
       {/* Lista de Chats */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-2 custom-scrollbar">
-        {bandeja.length === 0 ? (
+        {listaFiltrada.length === 0 ? (
           <div className="flex h-36 items-center justify-center p-4 text-center text-xs text-gray-400 dark:text-gray-500">
             No se encontraron conversaciones.
           </div>
         ) : (
           <div className="space-y-1">
-            {bandeja.map((conv, i) => {
+            {listaFiltrada.map((conv, i) => {
               const seleccionada = seleccionadaId === conv.id;
               const avatarSrc = AVATAR_MAP[conv.id] || "";
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
+              const intencion = intencionDe(conv.id);
 
               // Pedido ACTIVO del contacto. Se resuelve con el selector canónico
               // del store de Pedidos (`pedidoActivoDe`), que cruza por teléfono
@@ -218,14 +235,24 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-1">
-                      <div className="flex min-w-0 items-center gap-1.5">
+                      <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
                         <h5 className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
                           {conv.contacto.nombre}
                         </h5>
+                        <Badge
+                          size="xs"
+                          color={INTENCION_BADGE[intencion]}
+                        >
+                          {INTENCION_LABEL[intencion]}
+                        </Badge>
                         {conversacionesStore.requiereAtencionHumana(conv) && (
-                          <span className="flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-400" title="Requiere atención humana">
-                            ⚠️ Asesor
-                          </span>
+                          <Badge
+                            size="xs"
+                            color="warning"
+                            title="Requiere atención humana"
+                          >
+                            Asesor
+                          </Badge>
                         )}
                         {/* Badge del pedido activo: #PED-XXX + su estado actual.
                             Etiqueta y color SIEMPRE del store de Pedidos — este
