@@ -7,7 +7,7 @@ import {
   MenuItem,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
-import { sessionStore } from "@/stores";
+import { sessionStore, plataformaStore } from "@/stores";
 import {
   GridIcon,
   TaskIcon,
@@ -191,7 +191,7 @@ const SidebarContent = observer(() => {
 
       <div className="flex flex-col gap-5">
         {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones */}
-        {sessionStore.hasPermission("channels.read") && (
+        {plataformaStore.estaActivo("conversaciones") && sessionStore.hasPermission("channels.read") && (
           <div>
             <MenuSectionHeader
               title="Canales"
@@ -216,7 +216,7 @@ const SidebarContent = observer(() => {
         )}
 
         {/* Inteligencia (Necto Intelligence) — justo debajo de Canales. */}
-        {sessionStore.hasPermission("assistant.use") && (
+        {plataformaStore.estaActivo("asistente") && sessionStore.hasPermission("assistant.use") && (
           <div>
             <MenuSectionHeader
               title="Inteligencia"
@@ -238,30 +238,32 @@ const SidebarContent = observer(() => {
         )}
 
         {/* Módulos de negocio (Pedidos y, más adelante, Inventario, etc.). */}
-        <div>
-          <MenuSectionHeader
-            title="Pedidos"
-            collapsible
-            isCollapsed={estaColapsado("pedidos")}
-            onToggle={() => toggleSeccion("pedidos")}
-          />
-          <div
-            className={`transition-all duration-200 ease-in-out overflow-hidden ${
-              estaColapsado("pedidos") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
-            }`}
-          >
-            <ul className="flex flex-col gap-1">
-              {puedePedidos("inicio") && <MenuItem icon={<GridIcon />} name="Inicio" path="/pedidos/inicio" isActive={isActive} />}
-              {puedePedidos("tablero") && <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />}
-              {puedePedidos("crear") && <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />}
-              {puedePedidos("historial") && <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />}
-              {puedePedidos("analitica") && <MenuItem icon={<PieChartIcon />} name="Analítica" path="/pedidos/analitica" isActive={isActive} />}
-              {puedePedidos("configuracion") && <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />}
-            </ul>
+        {plataformaStore.estaActivo("pedidos") && (
+          <div>
+            <MenuSectionHeader
+              title="Pedidos"
+              collapsible
+              isCollapsed={estaColapsado("pedidos")}
+              onToggle={() => toggleSeccion("pedidos")}
+            />
+            <div
+              className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                estaColapsado("pedidos") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+              }`}
+            >
+              <ul className="flex flex-col gap-1">
+                {puedePedidos("inicio") && <MenuItem icon={<GridIcon />} name="Inicio" path="/pedidos/inicio" isActive={isActive} />}
+                {puedePedidos("tablero") && <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />}
+                {puedePedidos("crear") && <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />}
+                {puedePedidos("historial") && <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />}
+                {puedePedidos("analitica") && <MenuItem icon={<PieChartIcon />} name="Analítica" path="/pedidos/analitica" isActive={isActive} />}
+                {puedePedidos("configuracion") && <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />}
+              </ul>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Organización — gestión de equipo, roles y permisos transversales */}
+        {/* Organización — gestión de equipo, roles y módulos transversales */}
         {puedeGestionarEquipo && (
           <div>
             <MenuSectionHeader
@@ -277,6 +279,7 @@ const SidebarContent = observer(() => {
             >
               <ul className="flex flex-col gap-1">
                 <MenuItem icon={<GroupIcon />} name="Equipo" path="/equipo" isActive={esRutaConHijas} />
+                <MenuItem icon={<PlugInIcon />} name="Módulos y Plugins" path="/organizacion/modulos" isActive={esRutaConHijas} />
               </ul>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useParams } from "react-router";
-import { sessionStore } from "@/stores";
+import { observer } from "mobx-react-lite";
+import { sessionStore, plataformaStore } from "@/stores";
 import { AppShell } from "@/app/AppShell";
 import {
   TableroPage,
@@ -9,7 +10,7 @@ import {
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
-import { EquipoPage, PerfilOperadorPage } from "@/pages/equipo";
+import { EquipoPage, PerfilOperadorPage, ModulosPage } from "@/pages/equipo";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
@@ -40,43 +41,45 @@ const LegacyEquipoIdRedirect = () => {
   return <Navigate to={id ? `/equipo/${id}` : "/equipo"} replace />;
 };
 
+/** Guarda de plataforma: si la organización tiene el módulo o plugin apagado, redirige a módulos. */
+const ModuloGuard = observer(({ modulo, children }: { modulo: string; children: React.ReactNode }) => {
+  if (!plataformaStore.estaActivo(modulo)) {
+    return <Navigate to="/organizacion/modulos" replace />;
+  }
+  return <>{children}</>;
+});
+
 export default function App() {
   return (
     <Routes>
       {/* Rutas con Shell */}
       <Route element={<RequireSession><AppShell /></RequireSession>}>
-        <Route path="/pedidos/inicio" element={<CapabilityGuard capacidad="orders.read"><PedidosInicioPage /></CapabilityGuard>} />
-        <Route path="/pedidos" element={<CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard>} />
-        <Route path="/pedidos/crear" element={<CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard>} />
-        <Route path="/pedidos/historial" element={<CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard>} />
-        <Route path="/pedidos/analitica" element={<CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard>} />
-        <Route path="/pedidos/config" element={<CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard>} />
-        {/* Organización / Equipo y Roles (Transversal) */}
+        {/* Módulo Pedidos (condicionado a que esté activo en plataforma) */}
+        <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/historial" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
+
+        {/* Organización / Equipo y Roles / Módulos de Plataforma (Transversal) */}
         <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
+        <Route path="/organizacion/modulos" element={<CapabilityGuard capacidad="team.manage"><ModulosPage /></CapabilityGuard>} />
+
         {/* Redirecciones legacy para compatibilidad */}
         <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />
         <Route path="/pedidos/equipo/:id" element={<LegacyEquipoIdRedirect />} />
         <Route path="/pedidos/operadores" element={<Navigate to="/equipo" replace />} />
-        <Route path="/asistente" element={<CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard>} />
-        <Route path="/asistente/config" element={<CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard>} />
-        <Route path="/conversaciones" element={<CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard>} />
-        {/*
-          Historial de atención: misma capacidad `channels.read` que la consola.
-          El diseño del módulo define esa capacidad como "Ver la bandeja,
-          consultar historiales, entrar a la sección", así que consultar el
-          histórico es exactamente lo que habilita — no requiere una capacidad
-          nueva ni un permiso más fino.
-        */}
-        <Route path="/conversaciones/historial" element={<CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard>} />
-        {/*
-          Configuración del canal: exige `channels.manage`, no `channels.read`.
-          Ver la bandeja y editar cómo se comporta el canal son permisos
-          distintos: un operador que solo responde (`channels.respond`) no
-          debería poder cambiar las plantillas ni el horario de todo el equipo.
-          La propia página vuelve a comprobar la capacidad antes de persistir.
-        */}
-        <Route path="/conversaciones/config" element={<CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard>} />
+
+        {/* Plugin Necto IA */}
+        <Route path="/asistente" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/asistente/config" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard></ModuloGuard>} />
+
+        {/* Plugin Canales WhatsApp */}
+        <Route path="/conversaciones" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
         <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />
