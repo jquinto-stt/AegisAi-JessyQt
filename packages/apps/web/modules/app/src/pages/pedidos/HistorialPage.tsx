@@ -43,6 +43,30 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
+const DeliveryIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <rect x="1" y="3" width="15" height="13" rx="2" ry="2" />
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+    <circle cx="5.5" cy="18.5" r="2.5" />
+    <circle cx="18.5" cy="18.5" r="2.5" />
+  </svg>
+);
+
+const MapPinIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const AlertTriangleIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // MENÚ DE ACCIONES POR FILA (9 puntos) — igual patrón que el tablero en Lista
 // ═══════════════════════════════════════════════════════════════════════════
@@ -630,8 +654,9 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
       {pedido.modalidad === "domicilio" && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-800 dark:text-white/90">
-              🛵 Dirección de entrega
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
+              <DeliveryIcon className="h-3.5 w-3.5 text-brand-500" />
+              Dirección de entrega
             </span>
             {pedido.direccionEntrega?.calle && (
               <a
@@ -640,7 +665,8 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
               >
-                🗺️ Abrir en Google Maps
+                <MapPinIcon className="h-3.5 w-3.5" />
+                Abrir en Google Maps
               </a>
             )}
           </div>
@@ -662,8 +688,9 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
               )}
             </div>
           ) : (
-            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-              ⚠️ Sin dirección registrada.
+            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+              <AlertTriangleIcon className="h-3.5 w-3.5 shrink-0" />
+              Sin dirección registrada.
             </p>
           )}
 

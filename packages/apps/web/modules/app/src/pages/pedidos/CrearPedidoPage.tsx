@@ -84,6 +84,43 @@ const ModalidadIcon = ({ m }: { m: Modalidad }) => {
   );
 };
 
+const MapPinIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const CashIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M6 12h.01M18 12h.01" />
+  </svg>
+);
+
+const TransferIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+    <line x1="12" y1="18" x2="12.01" y2="18" />
+  </svg>
+);
+
+const CardIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <line x1="2" y1="10" x2="22" y2="10" />
+  </svg>
+);
+
+const DeliveryHandIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M16 11V7a4 4 0 0 0-8 0v4" />
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M10 15h4" />
+  </svg>
+);
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -436,9 +473,10 @@ export const CrearPedidoPage = observer(() => {
                         if (dir.referencia) setReferencia(dir.referencia);
                         if (dir.indicaciones) setIndicaciones(dir.indicaciones);
                       }}
-                      className="rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-gray-800 dark:text-brand-300"
+                      className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-gray-800 dark:text-brand-300"
                     >
-                      📍 {dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}
+                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                      <span>{dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}</span>
                     </button>
                   ))}
                 </div>
@@ -584,12 +622,13 @@ export const CrearPedidoPage = observer(() => {
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { id: "efectivo", label: "Efectivo", icon: "💵" },
-                { id: "transferencia", label: "Transferencia", icon: "📱" },
-                { id: "tarjeta", label: "Tarjeta", icon: "💳" },
-                { id: "contra_entrega", label: "Contra entrega", icon: "🤝" },
+                { id: "efectivo", label: "Efectivo", icon: CashIcon },
+                { id: "transferencia", label: "Transferencia", icon: TransferIcon },
+                { id: "tarjeta", label: "Tarjeta", icon: CardIcon },
+                { id: "contra_entrega", label: "Contra entrega", icon: DeliveryHandIcon },
               ].map((mp) => {
                 const activo = metodoPago === mp.id;
+                const IconComponent = mp.icon;
                 return (
                   <button
                     key={mp.id}
@@ -602,7 +641,7 @@ export const CrearPedidoPage = observer(() => {
                         : "border-gray-200 text-gray-600 hover:border-brand-300 dark:border-gray-700 dark:text-gray-300")
                     }
                   >
-                    <span className="text-xl">{mp.icon}</span>
+                    <IconComponent className="h-5 w-5" />
                     <span className="text-xs font-semibold">{mp.label}</span>
                   </button>
                 );
