@@ -620,7 +620,19 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
       const itemsTexto = pedidosStore.config.catalogo
         .map((c) => `• ${c.nombre} - ${money(c.precio)}`)
         .join("\n");
-      mensaje = `¡Hola ${nombre}! Te comparto nuestro menú actual:\n\n${itemsTexto}\n\n¿Qué te gustaría pedir?`;
+      const esComida = pedidosStore.config.perfilComercial === "food";
+      const esServicio = pedidosStore.config.perfilComercial === "services";
+      const encabezado = esComida
+        ? `¡Hola ${nombre}! Te comparto nuestro menú actual:`
+        : esServicio
+          ? `¡Hola ${nombre}! Te comparto nuestros servicios disponibles:`
+          : `¡Hola ${nombre}! Te comparto nuestro catálogo disponible:`;
+      const cierre = esComida
+        ? "¿Qué te gustaría pedir?"
+        : esServicio
+          ? "¿Qué servicio te gustaría agendar?"
+          : "¿Qué prendas o artículos te interesan?";
+      mensaje = `${encabezado}\n\n${itemsTexto}\n\n${cierre}`;
     } else if (tipo === "ubicacion") {
       mensaje = `Por favor compártenos tu dirección exacta y cualquier indicación (apartamento, barrio o punto de referencia) para coordinar la entrega.`;
     } else if (tipo === "pago") {
@@ -865,7 +877,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           <button
             type="button"
             onClick={() => enviarPlantilla("menu")}
-            title="Enviar menú con precios al chat"
+            title={`Enviar ${pedidosStore.config.perfilComercial === "food" ? "menú" : pedidosStore.config.perfilComercial === "services" ? "servicios" : "catálogo"} con precios al chat`}
             className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-2xs transition-all ${
               plantillaEnviada === "menu"
                 ? "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
@@ -895,7 +907,15 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 <polyline points="10 9 9 9 8 9" />
               </svg>
             )}
-            <span>{plantillaEnviada === "menu" ? "¡Enviado!" : "Menú"}</span>
+            <span>
+              {plantillaEnviada === "menu"
+                ? "¡Enviado!"
+                : pedidosStore.config.perfilComercial === "food"
+                  ? "Menú"
+                  : pedidosStore.config.perfilComercial === "services"
+                    ? "Servicios"
+                    : "Catálogo"}
+            </span>
           </button>
 
           <button

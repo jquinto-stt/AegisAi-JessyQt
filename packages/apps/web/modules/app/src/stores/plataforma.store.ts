@@ -39,9 +39,9 @@ export interface InfoConectorModulo {
 export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   pedidos: {
     id: "pedidos",
-    nombre: "Pedidos & Delivery",
+    nombre: "Pedidos & Fulfillment",
     tagline: "Ventas y Operaciones",
-    descripcion: "Tablero de pedidos, cocina, delivery, estados en tiempo real y analítica de ventas.",
+    descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos",
     rutaConfig: "/pedidos/config",
     disponible: true,
@@ -63,7 +63,7 @@ export const DETALLE_CONECTORES: Record<IdModuloNegocio, Record<IdConector, Info
       nombre: "Necto Intelligence (IA)",
       descripcion: "Permite a Necto IA analizar y operar sobre los pedidos de la tienda.",
       beneficios: [
-        "Consultar pedidos activos, tiempos de entrega y cocina",
+        "Consultar pedidos activos, tiempos de entrega y preparación",
         "Generar resúmenes ejecutivos diarios y comparativas de ventas",
         "Sugerir respuestas automáticas ante dudas de clientes",
       ],

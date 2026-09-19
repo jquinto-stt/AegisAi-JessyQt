@@ -1079,4 +1079,40 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
     });
     expect(store.cambioRequerido(pExacto)).toBe(0);
   });
+
+  describe("Perfil Comercial y Capacidades Declarativas (Strangler Fig)", () => {
+    let store: PedidosStore;
+    beforeEach(() => {
+      store = new PedidosStore();
+    });
+
+    it("inicia con perfil food por defecto y capacidades de gastronomía", () => {
+      expect(store.config.perfilComercial).toBe("food");
+      expect(store.tieneCapacidad("modifiers")).toBe(true);
+      expect(store.tieneCapacidad("variants")).toBe(false);
+    });
+
+    it("permite cambiar a perfil fashion y actualiza sus capacidades", () => {
+      store.setPerfilComercial("fashion");
+      expect(store.config.perfilComercial).toBe("fashion");
+      expect(store.tieneCapacidad("variants")).toBe(true);
+      expect(store.tieneCapacidad("carrier_shipment")).toBe(true);
+      expect(store.tieneCapacidad("modifiers")).toBe(false);
+    });
+
+    it("permite obtener un pedido como OrderCore y dar de alta desde OrderCore", () => {
+      const p = store.crearPedido({
+        cliente: "Carla Ropa",
+        telefono: "+573009998877",
+        modalidad: "domicilio",
+        items: [{ nombre: "Top Deportivo", cantidad: 2, precio: 30000 }],
+      });
+
+      const core = store.getOrderCore(p.id);
+      expect(core).not.toBeNull();
+      expect(core?.customer.name).toBe("Carla Ropa");
+      expect(core?.items[0].nameSnapshot).toBe("Top Deportivo");
+      expect(core?.payment.status).toBe("pending");
+    });
+  });
 });

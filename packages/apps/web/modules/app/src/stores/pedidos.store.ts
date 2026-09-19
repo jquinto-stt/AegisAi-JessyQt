@@ -1,4 +1,11 @@
 import { makeAutoObservable } from "mobx";
+import {
+  BUSINESS_PROFILES,
+  type BusinessProfileType,
+  type OrderCapability,
+} from "../domain/pedidos/pedidos.profiles.js";
+import { toOrderCore, toLegacyPedido } from "../domain/pedidos/pedidos.adapters.js";
+import type { OrderCore } from "../domain/pedidos/pedidos.domain.js";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -171,6 +178,10 @@ export interface PedidosConfig {
    * `activo` enciende/apaga el sonido; `cadaSegundos` calibra cada cuánto suena.
    */
   alertaAtencion: AlertaAtencion;
+  /** Perfil comercial del negocio (ej. 'food', 'fashion', 'services', 'general'). */
+  perfilComercial?: import("../domain/pedidos/pedidos.profiles.js").BusinessProfileType;
+  /** Capacidades comerciales activas para la tienda */
+  capacidadesActivas?: import("../domain/pedidos/pedidos.profiles.js").OrderCapability[];
 }
 
 /** Configuración de la alerta sonora de "requieren atención". */
@@ -268,6 +279,8 @@ const DEFAULT_CONFIG: PedidosConfig = {
     activo: true,
     cadaSegundos: 30,
   },
+  perfilComercial: "food",
+  capacidadesActivas: [...BUSINESS_PROFILES.food.defaultCapabilities],
 };
 
 const CONFIG_KEY = "necto.pedidosConfig";
@@ -278,6 +291,8 @@ function loadConfig(): PedidosConfig {
     const raw = localStorage.getItem(CONFIG_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PedidosConfig>;
+      const perfil = parsed.perfilComercial ?? DEFAULT_CONFIG.perfilComercial;
+      const preset = perfil ? BUSINESS_PROFILES[perfil] : BUSINESS_PROFILES.food;
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
@@ -289,6 +304,10 @@ function loadConfig(): PedidosConfig {
         horario: { ...DEFAULT_CONFIG.horario, ...(parsed.horario ?? {}) },
         tiemposObjetivo: { ...(parsed.tiemposObjetivo ?? {}) },
         alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion, ...(parsed.alertaAtencion ?? {}) },
+        perfilComercial: perfil,
+        capacidadesActivas: Array.isArray(parsed.capacidadesActivas)
+          ? parsed.capacidadesActivas
+          : [...preset.defaultCapabilities],
       };
     }
   } catch {
@@ -299,6 +318,7 @@ function loadConfig(): PedidosConfig {
     plantillas: { ...DEFAULT_CONFIG.plantillas },
     horario: { ...DEFAULT_CONFIG.horario },
     alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion },
+    capacidadesActivas: [...DEFAULT_CONFIG.capacidadesActivas!],
   };
 }
 
@@ -581,6 +601,140 @@ export class PedidosStore {
     // pipeline efectivo (estado desactivado) al siguiente estado activo, para
     // que no queden varados (sin poder avanzar y con su columna desaparecida).
     this.migrarPedidosVarados();
+  }
+
+  private generarPedidosDemo(perfil: BusinessProfileType): Pedido[] {
+  if (perfil === "fashion") {
+    return [
+      {
+        id: "pd-f1", numero: "P-001", cliente: "Ana Silva", telefono: "+573001112233", modalidad: "domicilio",
+        items: [
+          { nombre: "Camiseta Oversize Algodón (M / Blanco)", cantidad: 2, precio: 45000 },
+          { nombre: "Jean Mom Fit Tiro Alto (Talla 8 / Celeste)", cantidad: 1, precio: 98000 },
+        ],
+        notas: "Empacar para regalo por favor.", estado: "nuevo", origen: "whatsapp", pagado: false,
+        createdAt: minutesAgoIso(39), estadoDesde: minutesAgoIso(39),
+        direccionEntrega: { calle: "Cra 43A # 18 Sur-135", barrio: "El Poblado", referencia: "Edificio Santillana, Apto 402" },
+        costoEnvio: 10000, metodoPago: "efectivo", pagaCon: 200000,
+      },
+      {
+        id: "pd-f2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "retiro",
+        items: [{ nombre: "Vestido Floral Silueta Midi (Talla S)", cantidad: 1, precio: 85000 }],
+        estado: "confirmado", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
+        createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(6),
+      },
+      {
+        id: "pd-f3", numero: "P-003", cliente: "Pedro Ramírez", telefono: "+573003334455", modalidad: "domicilio",
+        items: [{ nombre: "Chaqueta Denim Oversize Vintage (Talla L)", cantidad: 1, precio: 135000 }],
+        notas: "Revisar costuras antes de despachar.", estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+        createdAt: minutesAgoIso(45), estadoDesde: minutesAgoIso(20),
+        direccionEntrega: { calle: "Transversal 39 # 74-12", barrio: "Conquistadores" },
+        costoEnvio: 12000,
+      },
+      {
+        id: "pd-f4", numero: "P-004", cliente: "Lucía Torres", telefono: "+573004445566", modalidad: "domicilio",
+        items: [{ nombre: "Sneakers Urbanos Cuero Blanco (Talla 38)", cantidad: 1, precio: 160000 }],
+        estado: "listo", origen: "whatsapp", pagado: true,
+        createdAt: minutesAgoIso(140), estadoDesde: minutesAgoIso(12),
+        direccionEntrega: { calle: "Calle 10 # 36-24", barrio: "Laureles" },
+        costoEnvio: 10000, metodoPago: "transferencia", repartidor: "Coordinadora Guía #CO-99881",
+      },
+      {
+        id: "pd-f5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
+        items: [{ nombre: "Camiseta Oversize Algodón (L / Negro)", cantidad: 1, precio: 45000 }],
+        estado: "en_camino", origen: "whatsapp", pagado: true,
+        createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(15),
+        direccionEntrega: { calle: "Av. Las Vegas # 7-45", barrio: "Envigado" },
+        costoEnvio: 8000, metodoPago: "contra_entrega", repartidor: "Servientrega Guía #SE-12345",
+      },
+    ];
+  }
+
+  if (perfil === "services") {
+    return [
+      {
+        id: "pd-s1", numero: "P-001", cliente: "Ana Silva", telefono: "+573001112233", modalidad: "en_sitio",
+        items: [{ nombre: "Corte y Perfilado de Barba", cantidad: 1, precio: 35000 }],
+        notas: "Cita 15:00 con Carlos.", estado: "nuevo", origen: "whatsapp", pagado: false,
+        createdAt: minutesAgoIso(30), estadoDesde: minutesAgoIso(30),
+      },
+      {
+        id: "pd-s2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "en_sitio",
+        items: [{ nombre: "Masaje Terapéutico Anti-estrés (60 min)", cantidad: 1, precio: 95000 }],
+        estado: "confirmado", origen: "whatsapp", pagado: true, metodoPago: "transferencia",
+        createdAt: minutesAgoIso(20), estadoDesde: minutesAgoIso(10),
+      },
+      {
+        id: "pd-s3", numero: "P-003", cliente: "Pedro Ramírez", telefono: "+573003334455", modalidad: "en_sitio",
+        items: [{ nombre: "Limpieza Facial Profunda con Hidratación", cantidad: 1, precio: 85000 }],
+        estado: "en_preparacion", origen: "operador", pagado: true, metodoPago: "tarjeta",
+        createdAt: minutesAgoIso(40), estadoDesde: minutesAgoIso(15),
+      },
+      {
+        id: "pd-s4", numero: "P-004", cliente: "Lucía Torres", telefono: "+573004445566", modalidad: "en_sitio",
+        items: [{ nombre: "Sesión de Consultoría Profesional (1h)", cantidad: 1, precio: 120000 }],
+        estado: "listo", origen: "whatsapp", pagado: true,
+        createdAt: minutesAgoIso(50), estadoDesde: minutesAgoIso(5),
+      },
+      {
+        id: "pd-s5", numero: "P-005", cliente: "Andrés Gil", telefono: "+573005556677", modalidad: "domicilio",
+        items: [{ nombre: "Atención a Domicilio: Masaje Deportivo", cantidad: 1, precio: 110000 }],
+        estado: "en_camino", origen: "whatsapp", pagado: true,
+        createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(25),
+        direccionEntrega: { calle: "Av. Las Vegas # 7-45", barrio: "Envigado" },
+        costoEnvio: 15000, repartidor: "Especialista Laura",
+      },
+    ];
+  }
+
+  return seed();
+}
+
+  /**
+   * Cambia el perfil comercial del negocio (preset de onboarding / configuración).
+   * Actualiza las capacidades activas por defecto, catálogo, alias de estados,
+   * modalidades y pedidos representativos de esa industria.
+   */
+  setPerfilComercial(perfil: BusinessProfileType, resetPedidosDemo = true): void {
+    const preset = BUSINESS_PROFILES[perfil] ?? BUSINESS_PROFILES.food;
+    this.updateConfig({
+      perfilComercial: perfil,
+      capacidadesActivas: [...preset.defaultCapabilities],
+      catalogo: preset.sampleCatalog.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio })),
+      modalidades: [...preset.defaultModalidades],
+      aliasEstados: { ...preset.defaultAliasEstados },
+      plantillas: { ...preset.defaultPlantillas },
+    });
+    if (resetPedidosDemo) {
+      this.pedidos = this.generarPedidosDemo(perfil);
+    }
+  }
+
+  /**
+   * Comprueba de forma declarativa si una capacidad de negocio está habilitada.
+   */
+  tieneCapacidad(capacidad: OrderCapability): boolean {
+    const perfil = this.config.perfilComercial ?? "food";
+    const preset = BUSINESS_PROFILES[perfil] ?? BUSINESS_PROFILES.food;
+    const activas = this.config.capacidadesActivas ?? preset.defaultCapabilities;
+    return activas.includes(capacidad);
+  }
+
+  /**
+   * Obtiene un pedido convertido al modelo limpio `OrderCore`.
+   */
+  getOrderCore(id: string): OrderCore | null {
+    const legacy = this.getPedido(id);
+    return legacy ? toOrderCore(legacy) : null;
+  }
+
+  /**
+   * Da de alta un pedido partiendo directamente de la entidad limpia `OrderCore`.
+   */
+  crearOrderCore(core: OrderCore): Pedido {
+    const legacy = toLegacyPedido(core);
+    this.pedidos.push(legacy);
+    return legacy;
   }
 
   /**

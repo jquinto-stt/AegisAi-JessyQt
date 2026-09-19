@@ -39,6 +39,22 @@ import {
 } from "@/stores";
 import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 import {
+  CardHead,
+  ChipDia,
+  ConfigAcciones,
+  ConfigHeader,
+  ConfigSectionNav,
+  ConfigShell,
+  Label2,
+  Segmentado,
+  ToggleRow,
+  claseFila,
+  type GrupoNav,
+} from "@/pages/config-layout";
+
+/** Alias del token compartido de fila, para no tocar cada uso en el cuerpo. */
+const filaBase = claseFila;
+import {
   DIAS_ATENCION,
   ESTADO_CANAL_BADGE,
   ESTADO_CANAL_LABEL,
@@ -104,110 +120,20 @@ const NUMERO_CANAL = "+57 300 555 1122";
 const NOMBRE_VISIBLE_CANAL = "Necto";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ESTILOS
+// LAYOUT COMPARTIDO
 // ═══════════════════════════════════════════════════════════════════════════
-
-/** Fila etiqueta-izquierda / control-derecha: el patrón de todas las tarjetas. */
-const filaBase =
-  "flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 py-4 last:border-b-0 last:pb-0 first:pt-0 dark:border-white/5";
-
-/** Etiqueta de un control, con su descripción opcional. */
-const Label2 = ({ titulo, descripcion }: { titulo: string; descripcion?: string }) => (
-  <div className="min-w-0">
-    <p className="text-sm font-medium text-gray-800 dark:text-white/90">{titulo}</p>
-    {descripcion && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{descripcion}</p>}
-  </div>
-);
-
-/** Encabezado de la tarjeta de una sección. */
-const CardHead = ({ children }: { children: React.ReactNode }) => (
-  <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">{children}</h2>
-);
-
-/**
- * Chip seleccionable para los días de atención.
- *
- * Se compone aquí en vez de usar un componente del catálogo porque ningún
- * elemento del catálogo expresa "conjunto múltiple visible sin desplegable":
- * `MultiSelect` esconde las opciones tras un dropdown (nueve clics para marcar
- * siete días) y `Checkbox` no admite un grupo horizontal compacto. Se replica
- * exactamente el patrón ya establecido en `pages/pedidos/ConfigPage.tsx` para el
- * mismo dato, para que el mismo ajuste se vea igual en las dos superficies.
- */
-const ChipDia = ({
-  activo,
-  label,
-  titulo,
-  onClick,
-}: {
-  activo: boolean;
-  label: string;
-  titulo: string;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={activo}
-    title={titulo}
-    className={
-      "inline-flex h-9 min-w-[46px] items-center justify-center gap-1 rounded-full border px-3 text-sm font-medium transition-colors " +
-      (activo
-        ? "border-brand-500 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
-        : "border-gray-300 text-gray-500 hover:border-brand-300 dark:border-gray-700 dark:text-gray-400")
-    }
-  >
-    {activo && (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-      </svg>
-    )}
-    {label}
-  </button>
-);
-
-/** Control segmentado de opciones mutuamente excluyentes (tema, densidad, atención). */
-const Segmentado = <T extends string>({
-  opciones,
-  valor,
-  onChange,
-  disabled,
-  ariaLabel,
-}: {
-  opciones: { value: T; label: string }[];
-  valor: T;
-  onChange: (v: T) => void;
-  disabled?: boolean;
-  ariaLabel: string;
-}) => (
-  <div
-    role="group"
-    aria-label={ariaLabel}
-    className="inline-flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900"
-  >
-    {opciones.map((o) => {
-      const activo = o.value === valor;
-      return (
-        <button
-          key={o.value}
-          type="button"
-          disabled={disabled}
-          aria-pressed={activo}
-          onClick={() => onChange(o.value)}
-          className={
-            "rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors " +
-            (activo
-              ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-800 dark:text-white"
-              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200") +
-            (disabled ? " cursor-not-allowed opacity-50" : "")
-          }
-        >
-          {o.label}
-        </button>
-      );
-    })}
-  </div>
-);
+//
+// La fila etiqueta/control, el encabezado de tarjeta, la etiqueta con
+// descripción, el control segmentado y el chip de día viven ahora en
+// `@/pages/config-layout`, junto con la cabecera de página y la navegación de
+// secciones. Se importan en vez de redeclararse: antes esta página y la de
+// Pedidos tenían cada una su copia y habían divergido, así que el mismo ajuste
+// se veía distinto según por dónde entraras.
+//
+// `filaBase` es un alias local del token compartido `claseFila`: el cuerpo de la
+// página tiene decenas de filas ya escritas contra ese nombre. Aliasarlo en vez
+// de reescribirlas mantiene el diff del refactor legible y, sobre todo, hace
+// que TODAS hereden el token único — que es el objetivo.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA
@@ -280,7 +206,25 @@ export const ConfigPage = observer(() => {
   const motivo = motivoSinPermiso("channels.manage");
 
   // ── Navegación: agrupación derivada del catálogo, calculada una vez ──
-  const grupos = useMemo(() => seccionesPorGrupo(), []);
+  //
+  // El catálogo (`configuracion.secciones.ts`) es la fuente de verdad del
+  // vocabulario; aquí solo se RESUELVE el nombre del icono contra el mapa
+  // explícito y se pasa la forma que consume `<ConfigSectionNav>`. La página no
+  // escribe ninguna etiqueta de sección: todas salen de `META_SECCION`.
+  const grupos: GrupoNav[] = useMemo(
+    () =>
+      seccionesPorGrupo().map(({ grupo, secciones }) => ({
+        grupo,
+        label: GRUPO_SECCION_LABEL[grupo],
+        secciones: secciones.map((s) => ({
+          key: s,
+          label: META_SECCION[s].label,
+          hint: META_SECCION[s].hint,
+          icono: ICONO_SECCION[META_SECCION[s].icono],
+        })),
+      })),
+    [],
+  );
 
   // ── Setters del borrador ──
   // Todos marcan `guardado = false`: cualquier edición invalida el aviso de
@@ -378,13 +322,11 @@ export const ConfigPage = observer(() => {
         description="Ajustes del canal de WhatsApp"
       />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-          Configuración del canal
-        </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Identidad del canal, plantillas, horario, escalado y alertas de WhatsApp.
-        </p>
+      <div className="mb-5">
+        <ConfigHeader
+          titulo="Configuración del canal"
+          descripcion="Identidad del canal, plantillas, horario, escalado y alertas de WhatsApp."
+        />
       </div>
 
       {/* Aviso de solo lectura — visible siempre que falte la capacidad, en
@@ -408,45 +350,12 @@ export const ConfigPage = observer(() => {
       <fieldset disabled={soloLectura} className="m-0 min-w-0 border-0 p-0">
         <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
           {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-          <nav
-            aria-label="Secciones de configuración del canal"
-            className="shrink-0 lg:w-[240px]"
-          >
-            <ul className="flex flex-col gap-6">
-              {grupos.map(({ grupo, secciones }) => (
-                <li key={grupo}>
-                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    {GRUPO_SECCION_LABEL[grupo]}
-                  </p>
-                  <ul className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-                    {secciones.map((s) => {
-                      const { label, icono } = META_SECCION[s];
-                      const Icono = ICONO_SECCION[icono];
-                      const activo = s === seccion;
-                      return (
-                        <li key={s}>
-                          <button
-                            type="button"
-                            onClick={() => setSeccion(s)}
-                            aria-current={activo ? "page" : undefined}
-                            className={
-                              "inline-flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
-                              (activo
-                                ? "bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white"
-                                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200")
-                            }
-                          >
-                            <Icono className="h-5 w-5 shrink-0" />
-                            {label}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <ConfigSectionNav
+            grupos={grupos}
+            activa={seccion}
+            onSeleccionar={(k) => setSeccion(k as SeccionCanal)}
+            ariaLabel="Secciones de configuración del canal"
+          />
 
           {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
           {/* El `key={seccion}` es lo que dispara el fundido: al cambiar de
@@ -459,13 +368,42 @@ export const ConfigPage = observer(() => {
               anterior, así que moverlo sugeriría que viene de algún lado. Cuando
               dos contenidos comparten el mismo hueco, lo correcto es que uno se
               apague y el otro se encienda. */}
-          <div key={seccion} className="animate-aparecer flex min-w-0 flex-1 flex-col">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">{meta.label}</h2>
-              <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{meta.hint}</p>
-            </div>
+          <ConfigShell
+            seccionKey={seccion}
+            titulo={meta.label}
+            hint={meta.hint}
+            footer={
+              <>
+                {/* Pie fijo: siempre visible, en toda sección. Se compone con
+                    `ConfigAcciones` —el mismo patrón de botones que las otras
+                    dos pantallas— y no con `ButtonsGroup`, que fija un ancho
+                    mínimo y rompería la alineación a la derecha. */}
+                <ConfigAcciones
+                  fija
+                  mensaje={
+                    guardado ? (
+                      <span className="text-sm text-success-600 dark:text-success-500">
+                        Guardado ✓
+                      </span>
+                    ) : undefined
+                  }
+                >
+                  <Button variant="outline" onClick={descartar} disabled={soloLectura}>
+                    Descartar cambios
+                  </Button>
+                  <Button onClick={guardar} disabled={!puedeGuardar}>
+                    Guardar cambios
+                  </Button>
+                </ConfigAcciones>
 
-            <div className="flex-1 space-y-5">
+                {soloLectura && (
+                  <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
+                    {motivo}
+                  </p>
+                )}
+              </>
+            }
+          >
               {/* ───────────── PERFIL DEL CANAL ───────────── */}
               {seccion === "perfil" && (
                 <>
@@ -1125,29 +1063,7 @@ export const ConfigPage = observer(() => {
                   </div>
                 </Card>
               )}
-            </div>
-
-            {/* ═══════════ Pie fijo: siempre visible, en toda sección ═══════════ */}
-            <div className="sticky bottom-0 mt-6 flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-gray-900">
-              {guardado && (
-                <span className="mr-auto text-sm text-success-600 dark:text-success-500">
-                  Guardado ✓
-                </span>
-              )}
-              {/* Dos botones individuales, NO un ButtonsGroup: el grupo fija un
-                  ancho mínimo que rompe el pie al alinearlo a la derecha. */}
-              <Button variant="outline" onClick={descartar} disabled={soloLectura}>
-                Descartar cambios
-              </Button>
-              <Button onClick={guardar} disabled={!puedeGuardar}>
-                Guardar cambios
-              </Button>
-            </div>
-
-            {soloLectura && (
-              <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">{motivo}</p>
-            )}
-          </div>
+          </ConfigShell>
         </div>
       </fieldset>
     </>

@@ -16,14 +16,14 @@ const columns: FooterColumn[] = [
     links: [
       { label: "Plataforma Necto", href: "#" },
       { label: "Tecnologia IA", href: "#" },
-      { label: "Restaurantes & SST", href: "#" },
+      { label: "Comercio & Operaciones", href: "#" },
     ],
   },
   {
     title: "Servicios",
     links: [
       { label: "Gestion de Pedidos", href: "#" },
-      { label: "KDS Cocina", href: "#" },
+      { label: "KDS & Pantalla de Despacho", href: "#" },
       { label: "Catalogo de Productos", href: "#" },
     ],
   },

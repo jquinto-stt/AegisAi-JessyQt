@@ -18,6 +18,7 @@ import {
   emailSugerido,
   type TabEquipo,
 } from "./equipo.constants";
+import { validarAlta, type AltaPersona } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA "EQUIPO" (Organización / Transversal)
@@ -35,14 +36,26 @@ import {
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Formulario de invitación de un miembro del equipo. */
-interface PersonaForm {
-  nombre: string;
-  email: string;
-  telefono: string;
-  cargo: string;
-  rolId: string;
-}
+/**
+ * Formulario de invitación de un miembro del equipo.
+ *
+ * Es un alias de `AltaPersona` (la forma que valida `equipo.presentacion`) en
+ * vez de una interfaz propia: dos declaraciones paralelas de los mismos campos
+ * se desincronizan en cuanto una cambia, y el validar deja de cubrir lo que la
+ * pantalla pinta.
+ */
+type PersonaForm = AltaPersona;
+
+/** Campos del formulario, para el mapa de "tocados". */
+type CampoForm = keyof PersonaForm;
+
+const FORM_VACIO: PersonaForm = {
+  nombre: "",
+  email: "",
+  telefono: "",
+  cargo: "",
+  rolId: "",
+};
 
 export const EquipoPage = observer(() => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
@@ -52,49 +65,80 @@ export const EquipoPage = observer(() => {
   const [modalOpen, setModalOpen] = useState(false);
 
   // ── Invitación de persona ──────────────────────────────────────────────────
-  const [form, setForm] = useState<PersonaForm>({
-    nombre: "",
-    email: "",
-    telefono: "",
-    cargo: "",
-    rolId: "",
-  });
+  const [form, setForm] = useState<PersonaForm>(FORM_VACIO);
+  /** El correo se autosugiere desde el nombre hasta que se edita a mano. */
   const [emailTocado, setEmailTocado] = useState(false);
+  /**
+   * Campos editados por el admin. Igual que en el perfil: los errores se
+   * calculan siempre, pero solo se muestran en lo que ya se tocó, para que el
+   * formulario no nazca en rojo.
+   */
+  const [tocados, setTocados] = useState<Partial<Record<CampoForm, boolean>>>({});
 
   const equipo = operadoresStore.porModulo("pedidos");
   const pendientes = operadoresStore.pendientesCount("pedidos");
 
-  const set = (campo: keyof PersonaForm) => (value: string) =>
-    setForm((prev) => ({ ...prev, [campo]: value }));
-
-  /** Roles asignables: todos, menos el de administrador (no se reparte por error). */
+  /**
+   * Roles asignables: todos, menos el de administrador (no se reparte por error).
+   *
+   * Un rol creado a mano es asignable, así que esto se recalcula en cada render:
+   * si el admin crea un rol en la pestaña "Roles" y vuelve, aparece aquí.
+   */
   const rolesAsignables = rolesStore.roles.filter((r) => r.id !== "admin_tienda");
 
+  /**
+   * Correos ya presentes en la organización (de TODOS los módulos, no solo
+   * pedidos): la colisión que se quiere evitar es contra la organización
+   * entera, porque el correo identifica a la persona.
+   */
+  const correosExistentes = operadoresStore.operadores.map((o) => o.email);
+
+  const validez = validarAlta(form, correosExistentes);
+
+  const set = (campo: CampoForm) => (value: string) =>
+    setForm((prev) => ({ ...prev, [campo]: value }));
+
+  /** Marca un campo como editado, para decidir si se pinta su error. */
+  const tocar = (campo: CampoForm) => setTocados((prev) => ({ ...prev, [campo]: true }));
+
+  /** Mensaje de error de un campo, o `undefined` si aún no se ha tocado. */
+  const errorDe = (campo: CampoForm): string | undefined =>
+    tocados[campo] ? validez.errores[campo] || undefined : undefined;
+
+  const cerrarModal = () => setModalOpen(false);
+
   const abrirCrear = () => {
-    setForm({
-      nombre: "",
-      email: "",
-      telefono: "",
-      cargo: "",
-      rolId: rolesAsignables[0]?.id ?? "",
-    });
+    setForm({ ...FORM_VACIO, rolId: rolesAsignables[0]?.id ?? "" });
     setEmailTocado(false);
+    setTocados({});
     setModalOpen(true);
   };
 
-  const datosOk =
-    form.nombre.trim() !== "" && form.email.trim() !== "" && form.telefono.trim() !== "" && form.rolId !== "";
-
   const guardar = () => {
-    if (!datosOk) return;
+    // Revalidar aquí, no solo confiar en el `disabled` del botón: la guarda de
+    // UI y la de datos son capas distintas a propósito.
+    if (!validez.valido) {
+      setTocados({ nombre: true, email: true, telefono: true, cargo: true, rolId: true });
+      return;
+    }
+
     operadoresStore.crear("pedidos", {
       nombre: form.nombre.trim(),
       email: form.email.trim(),
       telefono: form.telefono.trim(),
       cargo: form.cargo.trim() || undefined,
       rolId: form.rolId,
-      estado: "pendiente",
+      // Nace ACTIVO: lo dio de alta el propio administrador y ya eligió un rol,
+      // así que no hay nada que aprobar. Antes nacía "pendiente" (el estado
+      // reservado a las solicitudes de /operador/registro) y la persona quedaba
+      // en el grupo "Pendientes de aprobación" con sus permisos ya configurados.
+      estado: "activo",
     });
+
+    // Limpieza para la próxima apertura. El `key` del Select remonta el rol.
+    setForm(FORM_VACIO);
+    setEmailTocado(false);
+    setTocados({});
     setModalOpen(false);
   };
 
@@ -225,11 +269,11 @@ export const EquipoPage = observer(() => {
       )}
 
       {/* Modal: invitar miembro */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} className="max-w-md p-6">
+      <Modal isOpen={modalOpen} onClose={cerrarModal} className="max-w-md p-6">
         <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">Invitar miembro</h2>
         <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-          Se añadirá al equipo como <span className="font-medium">pendiente</span>, con el rol que elijas.
-          Cuando quieras darle acceso, apruébala desde su perfil.
+          Se añadirá al equipo como <span className="font-medium">activo</span>, con el rol que elijas.
+          Podrá entrar de inmediato y ajustar sus permisos desde su perfil.
         </p>
 
         <div className="space-y-4">
@@ -239,11 +283,16 @@ export const EquipoPage = observer(() => {
               id="eq-nombre"
               value={form.nombre}
               placeholder="Ej. María Fernández"
+              error={!!errorDe("nombre")}
+              hint={errorDe("nombre")}
               onChange={(e) => {
                 const valor = e.target.value;
+                tocar("nombre");
                 setForm((prev) => ({
                   ...prev,
                   nombre: valor,
+                  // La sugerencia se detiene en cuanto el correo se escribe a
+                  // mano: si no, seguiría pisando lo que el admin ya decidió.
                   email: emailTocado ? prev.email : emailSugerido(valor),
                 }));
               }}
@@ -256,7 +305,10 @@ export const EquipoPage = observer(() => {
               id="eq-cargo"
               value={form.cargo}
               placeholder="Ej. Operador de Mostrador, Despacho"
-              onChange={(e) => set("cargo")(e.target.value)}
+              onChange={(e) => {
+                tocar("cargo");
+                set("cargo")(e.target.value);
+              }}
             />
           </div>
 
@@ -267,8 +319,11 @@ export const EquipoPage = observer(() => {
               type="email"
               value={form.email}
               placeholder="persona@negocio.com"
+              error={!!errorDe("email")}
+              hint={errorDe("email")}
               onChange={(e) => {
                 setEmailTocado(true);
+                tocar("email");
                 set("email")(e.target.value);
               }}
             />
@@ -281,13 +336,22 @@ export const EquipoPage = observer(() => {
               type="tel"
               value={form.telefono}
               placeholder="+57 300 000 0000"
-              onChange={(e) => set("telefono")(e.target.value)}
+              error={!!errorDe("telefono")}
+              hint={errorDe("telefono")}
+              onChange={(e) => {
+                tocar("telefono");
+                set("telefono")(e.target.value);
+              }}
             />
           </div>
 
           <div>
             <Label htmlFor="eq-rol">Rol asignado <span className="text-error-500">*</span></Label>
+            {/* El `key` remonta el Select cuando el formulario se limpia: es
+                uncontrolled y solo lee `defaultValue` al montar, así que sin
+                esto conservaría el rol de la invitación anterior. */}
             <Select
+              key={form.rolId || "rol-vacio"}
               options={rolesAsignables.map((r) => ({ value: r.id, label: r.nombre }))}
               defaultValue={form.rolId}
               onChange={set("rolId")}
@@ -300,8 +364,8 @@ export const EquipoPage = observer(() => {
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-3">
-          <Button size="sm" variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
-          <Button size="sm" disabled={!datosOk} onClick={guardar}>Añadir al equipo</Button>
+          <Button size="sm" variant="outline" onClick={cerrarModal}>Cancelar</Button>
+          <Button size="sm" disabled={!validez.valido} onClick={guardar}>Añadir al equipo</Button>
         </div>
       </Modal>
     </>

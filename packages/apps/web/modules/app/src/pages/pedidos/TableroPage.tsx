@@ -21,6 +21,7 @@ import {
   avanzarPedido,
   cancelarPedido,
 } from "./pedidos.notificaciones";
+import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -216,6 +217,9 @@ const PedidoCard = observer(
             ${pedidosStore.totalPedido(pedido).toLocaleString()}
           </span>
           <div className="flex flex-wrap items-center gap-1">
+            <Badge color={pedido.pagado ? "success" : "warning"} size="xs">
+              {pedido.pagado ? "Pagado" : "Pago pendiente"}
+            </Badge>
             {pedido.metodoPago && (
               <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 capitalize dark:bg-gray-800 dark:text-gray-300">
                 {pedido.metodoPago.replace("_", " ")}
@@ -374,14 +378,20 @@ const DetalleModal = observer(
               </p>
             )}
 
-            {/* Asignación de Repartidor */}
+            {/* Asignación de Repartidor / Courier */}
             <div className="mt-3 flex items-center justify-between border-t border-gray-200/60 pt-2.5 dark:border-gray-800">
               <span className="text-xs text-gray-600 dark:text-gray-400">
-                Repartidor asignado:
+                {pedidosStore.tieneCapacidad("carrier_shipment")
+                  ? "Courier / Guía de envío:"
+                  : "Repartidor asignado:"}
               </span>
               <input
                 type="text"
-                placeholder="Nombre o empresa de mensajería"
+                placeholder={
+                  pedidosStore.tieneCapacidad("carrier_shipment")
+                    ? "Ej: Servientrega Guía #1234"
+                    : "Nombre o empresa de mensajería"
+                }
                 value={repartidorInput}
                 onChange={(e) => {
                   setRepartidorInput(e.target.value);
@@ -395,7 +405,11 @@ const DetalleModal = observer(
 
         {/* Items */}
         <div className="mb-4">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">Items y valores</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">
+            {pedidosStore.config.perfilComercial && BUSINESS_PROFILES[pedidosStore.config.perfilComercial]
+              ? BUSINESS_PROFILES[pedidosStore.config.perfilComercial].labels.itemPlural
+              : "Items"} y valores
+          </p>
           {pedido.items.length === 0 ? (
             <p className="text-sm text-gray-400">Sin items detallados.</p>
           ) : (

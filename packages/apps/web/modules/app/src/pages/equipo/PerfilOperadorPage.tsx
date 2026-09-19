@@ -6,11 +6,20 @@ import { Avatar } from "@/elements/ui/avatar";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
+import { Modal } from "@/elements/ui/modal";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { Switch } from "@/elements/form/switch";
-import { CheckCircleIcon, ChevronDownIcon, EyeIcon, PencilIcon } from "@/icons";
+import {
+  AlertIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  LockIcon,
+  PencilIcon,
+  TrashBinIcon,
+} from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
@@ -20,13 +29,51 @@ import {
   type Capacidad,
   type Operador,
 } from "@/stores";
+import { puede } from "@/stores/acceso.utils";
 import { ESTADO_META, CATEGORIA_COLORES } from "./equipo.constants";
 import { aplicarPreset, aplicarToggle, normalizar, procedenciaDe } from "./excepciones";
 import {
+  CAPACIDADES_GESTION,
   PROCEDENCIA_HUMANA,
   ajustesDe,
   inicialesDe,
+  motivoAutodesahucio,
+  validarContacto,
 } from "./equipo.presentacion";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GUARDAS FRONTEND DE SEGURIDAD (mock, sin backend)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Esta pantalla es la única de "Equipo" donde se puede revocar un permiso a la
+// persona que a su vez administra el equipo. Dos reglas se comprueban aquí, en
+// la capa de presentación, porque el mock no tiene backend donde ponerlas:
+//
+//   1. AUTODESAhuicio (self-lockout). Quitarse `team.manage` a uno mismo —o
+//      degradarse a un rol sin gestión de equipo— deja a la sesión sin la
+//      capacidad con la que se llegó a esta pantalla. En un sistema real lo
+//      rechazaría el servidor; aquí se **deshabilita el control y se explica
+//      por qué**, que es más honesto que un interruptor que no guarda.
+//
+//   2. Acciones de ciclo de vida sobre uno mismo (auto-suspensión, auto-borrado).
+//      Mismo razonamiento: la sesión que se suspende a sí misma queda sin sesión.
+//
+// El guard NO es autorización: eso es `puede()` (contrato §2). Esto es la
+// variante "y además no sobre ti mismo", que el contrato no cubría porque asume
+// un actor distinto del sujeto (contrato §1.7).
+//
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * ¿La sesión está inspeccionando a la persona con la que entró?
+ *
+ * Se compara solo cuando hay simulación (`operadorSimuladoId !== null`): en una
+ * sesión directa de administrador no hay "yo" que pueda colisionar con la fila,
+ * y el admin del SEED (`d0`) no es el administrador que navega.
+ */
+function esUnoMismo(op: Operador): boolean {
+  return sessionStore.operadorSimuladoId !== null && sessionStore.operadorSimuladoId === op.id;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA PERFIL DE MIEMBRO DEL EQUIPO — /equipo/:id
@@ -76,16 +123,71 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   const [telefono, setTelefono] = useState(op.telefono);
   const [editandoDatos, setEditandoDatos] = useState(false);
   const [datosGuardados, setDatosGuardados] = useState(false);
+  /**
+   * Campos tocados desde que se abrió el formulario.
+   *
+   * Existe para no pintar en rojo "El nombre es obligatorio" nada más abrir el
+   * editor: un formulario que nace en error se lee como roto. Los errores se
+   * calculan siempre, pero solo se muestran en los campos ya tocados, y
+   * "Guardar" se bloquea igual.
+   */
+  const [tocados, setTocados] = useState<{ nombre: boolean; email: boolean; telefono: boolean }>({
+    nombre: false,
+    email: false,
+    telefono: false,
+  });
 
   const estado = ESTADO_META[op.estado];
   const rol = rolesStore.porId(op.rolId);
   const capacidadesDelRol = rol?.capacidades ?? [];
   const efectivas = rolesStore.capacidadesEfectivas(op);
-  const rolesAsignables = rolesStore.roles.filter((r) => r.id !== "admin_tienda");
   const ajustes = ajustesDe(op);
+
+  // ── Guardas de la sesión sobre sí misma ───────────────────────────────────
+  const esUnoMismoOp = esUnoMismo(op);
+  const motivoSelf = motivoAutodesahucio(op, capacidadesDelRol);
+  /**
+   * La sesión puede gestionar el equipo (capacidad `team.manage`).
+   *
+   * No basta con estar *en* esta pantalla: entrar exige `team.read` y operarla
+   * exige `team.manage` (contrato §1.5 / invariante C5). Sin esto, el perfil
+   * ofrecía interruptores que un rol de solo lectura podía accionar.
+   */
+  const puedeGestionar = puede("team.manage");
+
+  // ── Rol: `admin_tienda` se muestra, no se cambia ──────────────────────────
+  //
+  // El selector filtraba `admin_tienda` de las opciones y el rol del operador
+  // caía a un `<option>` que no existía → el `<select>` se pintaba vacío y
+  // parecía que la persona no tenía rol. Se corrige en los dos sentidos:
+  //
+  //   - si la persona YA tiene el rol de administrador, se pinta una etiqueta
+  //     fija (dato exacto, no un desplegable en blanco);
+  //   - si no lo tiene, el selector ofrece los roles asignables **más su rol
+  //     actual**, marcado como heredado, para que un rol fuera del catálogo
+  //     (p. ej. uno creado a mano) tampoco se pierda de vista.
+  const esAdminPrincipal = op.rolId === "admin_tienda";
+  const opcionesRol =
+    esAdminPrincipal || !op.rolId || rolesStore.porId(op.rolId)
+      ? rolesStore.roles
+          .filter((r) => r.id !== "admin_tienda" || r.id === op.rolId)
+          .map((r) => ({
+            value: r.id,
+            label: r.id === op.rolId && r.id !== "admin_tienda" ? `${r.nombre} (actual)` : r.nombre,
+          }))
+      : [
+          ...rolesStore.roles.filter((r) => r.id !== "admin_tienda").map((r) => ({ value: r.id, label: r.nombre })),
+          { value: op.rolId, label: "Rol heredado (fuera del catálogo)" },
+        ];
+
+  const validez = validarContacto({ nombre, email, telefono });
 
   // ── Modificar capacidades individuales ────────────────────────────────────
   const toggleCapacidad = (cap: Capacidad) => {
+    // Segunda línea de defensa: la UI ya deshabilita el interruptor, pero el
+    // handler no depende de que el interruptor esté bien pintado.
+    if (esUnoMismoOp && CAPACIDADES_GESTION.includes(cap)) return;
+
     const activar = !efectivas.includes(cap);
     const siguiente = aplicarToggle(op, cap, capacidadesDelRol, activar);
     operadoresStore.setCapacidadesExtra(op.id, siguiente.capacidadesExtra);
@@ -96,9 +198,14 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   const alternarGrupo = (grupo: (typeof CAPACIDAD_GRUPOS)[number]) => {
     const tiene = new Set(efectivas);
     const completa = grupo.capacidades.every((c) => tiene.has(c));
-    const objetivo = completa
+    let objetivo = completa
       ? efectivas.filter((c) => !grupo.capacidades.includes(c))
       : [...new Set([...efectivas, ...grupo.capacidades])];
+
+    // El preset no puede revocar la gestión de equipo a quien está mirando su
+    // propio perfil: "Quitar todo" en el grupo Equipo recortaría el conjunto
+    // sin que el interruptor deshabilitado lo insinúe.
+    if (esUnoMismoOp) objetivo = objetivo.filter((c) => !CAPACIDADES_GESTION.includes(c));
 
     const siguiente = aplicarPreset(op, objetivo, capacidadesDelRol);
     operadoresStore.setCapacidadesExtra(op.id, siguiente.capacidadesExtra);
@@ -115,6 +222,14 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   const cambiarRol = (nuevoRolId: string) => {
     const nuevoRol = rolesStore.porId(nuevoRolId);
     if (!nuevoRol) return;
+
+    // La persona no puede quitarse a sí misma la gestión de equipo cambiándose
+    // el rol. En vez de degradar a ciegas se abre el aviso de autodesahuicio.
+    if (esUnoMismoOp && !nuevoRol.capacidades.includes("team.manage")) {
+      setAvisoRol(nuevoRol.nombre);
+      return;
+    }
+
     const normalizadas = normalizar(op, nuevoRol.capacidades);
     operadoresStore.setCapacidadesExtra(op.id, normalizadas.capacidadesExtra);
     operadoresStore.setCapacidadesRemovidas(op.id, normalizadas.capacidadesRemovidas);
@@ -122,22 +237,62 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   };
 
   // ── Guardar datos de contacto ─────────────────────────────────────────────
+  //
+  // Antes, cada campo vacío caía a su valor anterior en silencio
+  // (`nombre.trim() || op.nombre`): el formulario aceptaba cualquier cosa y
+  // "guardaba" sin guardar. Ahora se valida y no se puede guardar inválido.
   const guardarDatos = () => {
+    if (!validez.valido) {
+      setTocados({ nombre: true, email: true, telefono: true });
+      return;
+    }
     operadoresStore.actualizarDatos(op.id, {
-      nombre: nombre.trim() || op.nombre,
-      email: email.trim() || op.email,
-      telefono: telefono.trim() || op.telefono,
+      nombre: nombre.trim(),
+      email: email.trim(),
+      telefono: telefono.trim(),
     });
     setEditandoDatos(false);
     setDatosGuardados(true);
     setTimeout(() => setDatosGuardados(false), 3000);
   };
 
-  const puedeVerComo = op.estado === "activo";
+  /** Cierra el editor y descarta lo escrito, para que no quede a medias. */
+  const cancelarEdicion = () => {
+    setNombre(op.nombre);
+    setEmail(op.email);
+    setTelefono(op.telefono);
+    setTocados({ nombre: false, email: false, telefono: false });
+    setEditandoDatos(false);
+    setAvisoRol(null);
+  };
+
+  const puedeVerComo = op.estado === "activo" && !esUnoMismoOp;
   const verComo = () => {
     if (!puedeVerComo) return;
     sessionStore.simular(op.id);
     navigate(sessionStore.homePathActual);
+  };
+
+  // ── Acciones de ciclo de vida ─────────────────────────────────────────────
+  const [confirmacion, setConfirmacion] = useState<null | "suspender" | "reactivar" | "eliminar">(null);
+  const [avisoRol, setAvisoRol] = useState<string | null>(null);
+
+  /** Auto-suspensión y auto-borrado: la sesión se dejaría sin sesión. */
+  const motivoCicloPropio = "No puedes realizar esta acción sobre tu propia cuenta.";
+
+  const cerrarConfirmacion = () => setConfirmacion(null);
+
+  const ejecutarCiclo = () => {
+    if (!confirmacion) return;
+    if (confirmacion === "eliminar") {
+      operadoresStore.eliminar(op.id);
+      cerrarConfirmacion();
+      navigate("/equipo");
+      return;
+    }
+    if (confirmacion === "suspender") operadoresStore.desactivar(op.id);
+    if (confirmacion === "reactivar") operadoresStore.activar(op.id);
+    cerrarConfirmacion();
   };
 
   // ── Control de colapso de categorías por tarjetas ─────────────────────────
@@ -194,6 +349,11 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 <Badge color={estado.color} size="xs">
                   {estado.label}
                 </Badge>
+                {esUnoMismoOp && (
+                  <Badge color="primary" size="xs">
+                    Eres tú
+                  </Badge>
+                )}
               </div>
 
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -205,35 +365,115 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                   Datos actualizados correctamente.
                 </span>
               )}
+
+              {!puedeGestionar && (
+                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  <LockIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Solo lectura: tu rol no permite gestionar el equipo.</span>
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
-            {puedeVerComo && (
+          <div className="flex flex-col items-end gap-3 self-end sm:self-auto">
+            <div className="flex items-center gap-2">
+              {puedeVerComo && (
+                <button
+                  type="button"
+                  onClick={verComo}
+                  title="Ver como (Simular)"
+                  aria-label="Ver como (Simular)"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <EyeIcon className="h-4.5 w-4.5" />
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={verComo}
-                title="Ver como (Simular)"
-                aria-label="Ver como (Simular)"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+                onClick={() => (editandoDatos ? cancelarEdicion() : setEditandoDatos(true))}
+                disabled={!puedeGestionar}
+                title={
+                  !puedeGestionar
+                    ? "Requiere el permiso «Gestionar equipo»."
+                    : editandoDatos
+                    ? "Cancelar edición"
+                    : "Editar datos"
+                }
+                aria-label={editandoDatos ? "Cancelar edición" : "Editar datos"}
+                className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors ${
+                  !puedeGestionar
+                    ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-600"
+                    : editandoDatos
+                    ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400 cursor-pointer"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
+                }`}
               >
-                <EyeIcon className="h-4.5 w-4.5" />
+                <PencilIcon className="h-4.5 w-4.5" />
               </button>
+            </div>
+
+            {/* Acciones de ciclo de vida — antes solo existían en la tabla.
+                Van con `<button>` nativo y no con `<Button>` porque hacen falta
+                dos cosas que el componente del catálogo no expone: `title`
+                (el motivo del bloqueo, que es la mitad del requisito) y el
+                icono pegado al texto. */}
+            {puedeGestionar && op.estado !== "pendiente" && (
+              <div className="flex items-center gap-2">
+                {op.estado === "activo" && (
+                  <button
+                    type="button"
+                    disabled={esUnoMismoOp}
+                    title={esUnoMismoOp ? motivoCicloPropio : "Retira el acceso sin borrar su historial"}
+                    onClick={() => setConfirmacion("suspender")}
+                    className={`h-9 rounded-lg px-3 text-sm font-medium ring-1 ring-inset transition-colors ${
+                      esUnoMismoOp
+                        ? "cursor-not-allowed bg-white text-gray-300 ring-gray-200 dark:bg-gray-800 dark:text-gray-600 dark:ring-gray-700"
+                        : "bg-white text-amber-700 ring-amber-200 hover:bg-amber-50 dark:bg-gray-800 dark:text-amber-300 dark:ring-amber-500/30 dark:hover:bg-amber-500/10"
+                    }`}
+                  >
+                    Suspender operador
+                  </button>
+                )}
+
+                {op.estado === "inactivo" && (
+                  <button
+                    type="button"
+                    disabled={esUnoMismoOp}
+                    title={esUnoMismoOp ? motivoCicloPropio : "Vuelve a darle acceso"}
+                    onClick={() => setConfirmacion("reactivar")}
+                    className={`h-9 rounded-lg px-3 text-sm font-medium ring-1 ring-inset transition-colors ${
+                      esUnoMismoOp
+                        ? "cursor-not-allowed bg-white text-gray-300 ring-gray-200 dark:bg-gray-800 dark:text-gray-600 dark:ring-gray-700"
+                        : "bg-white text-emerald-700 ring-emerald-200 hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300 dark:ring-emerald-500/30 dark:hover:bg-emerald-500/10"
+                    }`}
+                  >
+                    Reactivar operador
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  disabled={esUnoMismoOp}
+                  title={esUnoMismoOp ? motivoCicloPropio : "Elimina a la persona del equipo"}
+                  onClick={() => setConfirmacion("eliminar")}
+                  className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${
+                    esUnoMismoOp
+                      ? "cursor-not-allowed bg-error-300 text-white"
+                      : "bg-error-500 text-white shadow-theme-xs hover:bg-error-600"
+                  }`}
+                >
+                  <TrashBinIcon className="h-4 w-4" />
+                  Eliminar del equipo
+                </button>
+              </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => setEditandoDatos(!editandoDatos)}
-              title={editandoDatos ? "Cancelar edición" : "Editar datos"}
-              aria-label={editandoDatos ? "Cancelar edición" : "Editar datos"}
-              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-colors cursor-pointer ${
-                editandoDatos
-                  ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
-              }`}
-            >
-              <PencilIcon className="h-4.5 w-4.5" />
-            </button>
+            {puedeGestionar && op.estado !== "pendiente" && esUnoMismoOp && (
+              <p className="max-w-[16rem] text-right text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                Las acciones de suspender y eliminar están deshabilitadas sobre tu propia cuenta.
+              </p>
+            )}
           </div>
         </div>
 
@@ -245,36 +485,60 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
-                <Label htmlFor="ed-nom">Nombre</Label>
+                <Label htmlFor="ed-nom">
+                  Nombre <span className="text-error-500">*</span>
+                </Label>
                 <Input
                   id="ed-nom"
                   value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
+                  error={tocados.nombre && !!validez.errores.nombre}
+                  hint={tocados.nombre ? validez.errores.nombre : undefined}
+                  aria-describedby={tocados.nombre && validez.errores.nombre ? "ed-nom-err" : undefined}
+                  onChange={(e) => {
+                    setNombre(e.target.value);
+                    setTocados((prev) => ({ ...prev, nombre: true }));
+                  }}
                 />
               </div>
               <div>
-                <Label htmlFor="ed-em">Correo Electrónico</Label>
+                <Label htmlFor="ed-em">
+                  Correo Electrónico <span className="text-error-500">*</span>
+                </Label>
                 <Input
                   id="ed-em"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  error={tocados.email && !!validez.errores.email}
+                  hint={tocados.email ? validez.errores.email : undefined}
+                  aria-describedby={tocados.email && validez.errores.email ? "ed-em-err" : undefined}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setTocados((prev) => ({ ...prev, email: true }));
+                  }}
                 />
               </div>
               <div>
-                <Label htmlFor="ed-tel">Teléfono</Label>
+                <Label htmlFor="ed-tel">
+                  Teléfono <span className="text-error-500">*</span>
+                </Label>
                 <Input
                   id="ed-tel"
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
+                  error={tocados.telefono && !!validez.errores.telefono}
+                  hint={tocados.telefono ? validez.errores.telefono : undefined}
+                  aria-describedby={tocados.telefono && validez.errores.telefono ? "ed-tel-err" : undefined}
+                  onChange={(e) => {
+                    setTelefono(e.target.value);
+                    setTocados((prev) => ({ ...prev, telefono: true }));
+                  }}
                 />
               </div>
             </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button size="sm" variant="outline" onClick={() => setEditandoDatos(false)}>
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button size="sm" variant="outline" onClick={cancelarEdicion}>
                 Cancelar
               </Button>
-              <Button size="sm" onClick={guardarDatos}>
+              <Button size="sm" disabled={!validez.valido} onClick={guardarDatos}>
                 Guardar cambios
               </Button>
             </div>
@@ -328,15 +592,62 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             </p>
           </div>
 
-          <div className="w-full sm:w-64 sm:flex-shrink-0">
-            <Select
-              options={rolesAsignables.map((r) => ({ value: r.id, label: r.nombre }))}
-              defaultValue={op.rolId ?? ""}
-              onChange={cambiarRol}
-              placeholder="Seleccionar rol"
-            />
+          <div className="w-full sm:w-72 sm:flex-shrink-0">
+            {esAdminPrincipal ? (
+              // El rol de administrador no se ofrece en el selector: si la
+              // persona lo tiene, se muestra como etiqueta fija para que el
+              // dato se lea en vez de aparecer un desplegable en blanco.
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {rolesStore.nombreDe(op.rolId) || "Administrador de tienda"}
+                  </span>
+                  <Badge color="dark" size="xs">
+                    Rol de sistema
+                  </Badge>
+                </div>
+                <p className="mt-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                  El rol de administrador es único por tienda y no se puede reasignar desde el perfil.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Select
+                  key={op.rolId ?? "sin-rol"}
+                  options={opcionesRol}
+                  defaultValue={op.rolId ?? ""}
+                  onChange={cambiarRol}
+                  disabled={!puedeGestionar || esUnoMismoOp}
+                  placeholder="Seleccionar rol"
+                  hint={
+                    esUnoMismoOp
+                      ? "Tu propio rol no se puede cambiar desde aquí: perderías el acceso a esta pantalla."
+                      : undefined
+                  }
+                />
+                {avisoRol && (
+                  <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-500/25 dark:bg-amber-500/10">
+                    <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                    <p className="text-[11px] leading-snug text-amber-800 dark:text-amber-200">
+                      No se aplicó «{avisoRol}»: ese rol no incluye la gestión de equipo y te dejaría sin
+                      acceso a esta pantalla. Elige otro rol o ajusta los permisos a mano.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
+
+        {!esAdminPrincipal && op.rolId && !rolesStore.porId(op.rolId) && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+            <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <span className="text-xs text-amber-800 dark:text-amber-200">
+              Esta persona apunta a un rol que ya no existe en el catálogo, así que ahora mismo no tiene
+              capacidades. Asígnale un rol para devolverle el acceso.
+            </span>
+          </div>
+        )}
 
         {ajustes.length > 0 && (
           <div className="mt-4 flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-500/10">
@@ -346,7 +657,13 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             <button
               type="button"
               onClick={restablecerAlRol}
-              className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400 cursor-pointer"
+              disabled={!puedeGestionar}
+              title={!puedeGestionar ? "Requiere el permiso «Gestionar equipo»." : undefined}
+              className={`text-xs font-semibold ${
+                puedeGestionar
+                  ? "text-brand-600 hover:underline dark:text-brand-400 cursor-pointer"
+                  : "cursor-not-allowed text-gray-400 dark:text-gray-600"
+              }`}
             >
               Restablecer al rol original
             </button>
@@ -402,6 +719,27 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
           </div>
         </div>
 
+        {/* Aviso de autodesahuicio: se explica aquí, una vez, en vez de dejar al
+            admin adivinando por qué un interruptor no responde. */}
+        {esUnoMismoOp && motivoSelf && (
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+            <LockIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
+              <span className="font-semibold">Protección contra autodesahuicio.</span> {motivoSelf}
+            </p>
+          </div>
+        )}
+
+        {!puedeGestionar && (
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
+            <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
+            <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300">
+              Estás viendo esta pantalla en modo solo lectura. Los interruptores están deshabilitados porque tu rol
+              no incluye la capacidad <span className="font-semibold">Gestionar equipo</span>.
+            </p>
+          </div>
+        )}
+
         {/* Grid de 2 columnas con tarjetas de categorías colapsables */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {CAPACIDAD_GRUPOS.map((grupo) => {
@@ -409,6 +747,9 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             const puede = grupo.capacidades.filter((c) => tiene.has(c));
             const completa = puede.length === grupo.capacidades.length;
             const estaColapsado = !!colapsados[grupo.id];
+            // El preset no puede tocar la gestión de equipo de uno mismo.
+            const alternarDeshabilitado =
+              !puedeGestionar || (esUnoMismoOp && grupo.capacidades.some((c) => CAPACIDADES_GESTION.includes(c)));
 
             return (
               <div
@@ -444,7 +785,19 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                       <button
                         type="button"
                         onClick={() => alternarGrupo(grupo)}
-                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                        disabled={alternarDeshabilitado}
+                        title={
+                          alternarDeshabilitado
+                            ? !puedeGestionar
+                              ? "Requiere el permiso «Gestionar equipo»."
+                              : "No puedes revocar tu propio permiso de gestión de equipo."
+                            : undefined
+                        }
+                        className={`text-xs font-semibold transition-colors ${
+                          alternarDeshabilitado
+                            ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
+                            : "text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                        }`}
                       >
                         {completa ? "Quitar todo" : "Dar todo"}
                       </button>
@@ -473,16 +826,33 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                       const activa = efectivas.includes(cap);
                       const proc = procedenciaDe(op, cap, capacidadesDelRol);
                       const meta = PROCEDENCIA_HUMANA[proc];
+                      // Interruptor candado: revocar la gestión de equipo a la
+                      // propia sesión la dejaría fuera de la pantalla.
+                      const bloqueadaPorAutodesahuicio =
+                        esUnoMismoOp && activa && CAPACIDADES_GESTION.includes(cap);
 
                       return (
                         <div
                           key={cap}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                          className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-colors ${
+                            bloqueadaPorAutodesahuicio
+                              ? "border-amber-200 bg-amber-50/50 dark:border-amber-500/20 dark:bg-amber-500/[0.06]"
+                              : "border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]"
+                          }`}
                         >
                           <div className="flex min-w-0 items-center gap-2">
+                            {bloqueadaPorAutodesahuicio && (
+                              <LockIcon className="h-3.5 w-3.5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            )}
                             <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
                               {CAPACIDAD_LABEL[cap]}
                             </span>
+
+                            {bloqueadaPorAutodesahuicio && (
+                              <Badge color="warning" size="xs">
+                                Protegida
+                              </Badge>
+                            )}
 
                             {meta.tono !== "neutro" && (
                               <Badge
@@ -497,6 +867,12 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                           <Switch
                             checked={activa}
                             onChange={() => toggleCapacidad(cap)}
+                            disabled={!puedeGestionar || bloqueadaPorAutodesahuicio}
+                            aria-label={
+                              bloqueadaPorAutodesahuicio
+                                ? "No puedes revocar tu propio permiso de administración"
+                                : CAPACIDAD_LABEL[cap]
+                            }
                             label=""
                           />
                         </div>
@@ -509,6 +885,74 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
           })}
         </div>
       </Card>
+
+      {/* ── 4. CONFIRMACIONES DE CICLO DE VIDA ─────────────────────────────── */}
+      <Modal
+        isOpen={confirmacion !== null}
+        onClose={cerrarConfirmacion}
+        className="max-w-md p-6"
+      >
+        {confirmacion === "eliminar" && (
+          <>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-error-50 dark:bg-error-500/10">
+              <TrashBinIcon className="h-5 w-5 text-error-600 dark:text-error-400" />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">
+              ¿Eliminar a {op.nombre} del equipo?
+            </h2>
+            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Se borra su ficha y sus permisos. No se puede deshacer. Si solo quieres retirarle el acceso
+              conservando su historial, suspéndelo en vez de eliminarlo.
+            </p>
+          </>
+        )}
+
+        {confirmacion === "suspender" && (
+          <>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-500/10">
+              <LockIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">
+              ¿Suspender a {op.nombre}?
+            </h2>
+            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Pierde el acceso a la plataforma de inmediato. Su ficha y su historial se conservan, y puedes
+              reactivarla cuando quieras.
+            </p>
+          </>
+        )}
+
+        {confirmacion === "reactivar" && (
+          <>
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+              <CheckCircleIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">
+              ¿Reactivar a {op.nombre}?
+            </h2>
+            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+              Vuelve a tener acceso con el rol y los permisos que ya tenía configurados.
+            </p>
+          </>
+        )}
+
+        <div className="flex items-center justify-end gap-3">
+          <Button size="sm" variant="outline" onClick={cerrarConfirmacion}>
+            Cancelar
+          </Button>
+          <Button
+            size="sm"
+            variant={confirmacion === "eliminar" ? "destructive" : "primary"}
+            onClick={ejecutarCiclo}
+          >
+            {confirmacion === "eliminar"
+              ? "Eliminar del equipo"
+              : confirmacion === "suspender"
+              ? "Suspender"
+              : "Reactivar"}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 });

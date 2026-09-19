@@ -9,7 +9,8 @@ import { Switch } from "@/elements/form/switch";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { pedidosStore, puedeCrearPedido, puedeGestionarProgramados, motivoSinPermiso } from "@/stores";
-import type { Modalidad, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
+import type { ModalidadPedido, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
+import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ProgramarModal } from "./ProgramarModal";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,7 +63,7 @@ const StepBadge = ({ n }: { n: number }) => (
   </span>
 );
 
-const ModalidadIcon = ({ m }: { m: Modalidad }) => {
+const ModalidadIcon = ({ m }: { m: ModalidadPedido }) => {
   const cls = "h-5 w-5";
   if (m === "domicilio")
     return (
@@ -139,7 +140,7 @@ export const CrearPedidoPage = observer(() => {
 
   const [cliente, setCliente] = useState(() => searchParams.get("cliente") ?? "");
   const [telefono, setTelefono] = useState(() => searchParams.get("telefono") ?? "");
-  const [modalidad, setModalidad] = useState<Modalidad>(modalidadesDisponibles[0] ?? "retiro");
+  const [modalidad, setModalidad] = useState<ModalidadPedido>(modalidadesDisponibles[0] ?? "retiro");
   const [notas, setNotas] = useState("");
   const [items, setItems] = useState<ItemFila[]>([{ nombre: "", cantidad: 1 }]);
   const [programar, setProgramar] = useState(false);
@@ -162,6 +163,34 @@ export const CrearPedidoPage = observer(() => {
   // ── Item handlers ──
   const setItem = (idx: number, patch: Partial<ItemFila>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+
+  /**
+   * Cambio de modalidad, con limpieza de los datos que solo aplican a domicilio.
+   *
+   * Punto único: los botones de modalidad llamaban a `setModalidad` directamente,
+   * así que elegir "retiro" después de escribir un repartidor dejaba el nombre
+   * guardado en el estado. El campo desaparecía de la vista —porque la sección de
+   * despacho solo se pinta en domicilio— pero el valor seguía ahí y viajaba al
+   * `crearPedido`: el pedido se registraba con un repartidor que nadie veía ni
+   * había pedido.
+   *
+   * Se limpia al ENTRAR a retiro/en_sitio, no al salir de domicilio, para que el
+   * caso quede cubierto aunque el estado inicial ya fuera otro.
+   *
+   * Nota: no se limpia la dirección (`calle`, `barrio`, …) a propósito. El
+   * repartidor describe cómo se despacha —no aplica fuera de domicilio—, mientras
+   * que la dirección es un dato del cliente que el operador puede querer
+   * recuperar si vuelve a cambiar a domicilio. Borrarla castigaría un cambio de
+   * idea.
+   */
+  const cambiarModalidad = (m: ModalidadPedido) => {
+    setModalidad(m);
+    if (m !== "domicilio") {
+      setRepartidor("");
+      // El error de calle ya no aplica si la sección dejó de existir.
+      setErrors((prev) => (prev.calle ? { ...prev, calle: "" } : prev));
+    }
+  };
 
   const addItem = () => setItems((prev) => [...prev, { nombre: "", cantidad: 1 }]);
   const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
@@ -191,6 +220,23 @@ export const CrearPedidoPage = observer(() => {
     setErrors({});
   };
 
+  // ── Derivados para el resumen en vivo ──
+  //
+  // Se calculan ANTES de `validate()` porque la validación del pago en efectivo
+  // necesita `totalPedido`: sin moverlos, `validate` referenciaría una constante
+  // declarada más abajo (zona muerta temporal en cada render).
+  const itemsValidos = items.filter((it) => it.nombre.trim() !== "");
+  const subtotalItems = itemsValidos.reduce(
+    (s, it) => s + Math.max(0, it.precio ?? 0) * Math.max(1, it.cantidad),
+    0,
+  );
+  const costoEnvioEfectivo = modalidad === "domicilio" ? Math.max(0, Number(costoEnvio) || 0) : 0;
+  const totalPedido = subtotalItems + costoEnvioEfectivo;
+  const direccionesGuardadas = pedidosStore.direccionesDe(telefono);
+
+  /** ¿El método de pago elegido cobra en el momento de la entrega? */
+  const esPagoEnEntrega = metodoPago === "efectivo" || metodoPago === "contra_entrega";
+
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!cliente.trim()) e.cliente = "El nombre es obligatorio";
@@ -200,6 +246,27 @@ export const CrearPedidoPage = observer(() => {
     if (modalidad === "domicilio" && !calle.trim()) {
       e.calle = "La dirección de entrega es obligatoria para domicilios";
     }
+
+    /*
+      Pago en efectivo / contra entrega: si el operador escribió con cuánto
+      abona el cliente, el monto tiene que cubrir el total.
+
+      Solo se valida cuando HAY un monto escrito (`pagaCon` no vacío y > 0). El
+      campo es opcional a propósito —a veces el cliente paga justo y el operador
+      no escribe nada—, así que exigirlo sería inventar una obligación que la
+      pantalla no pide. Lo que no se puede permitir es un monto declarado que no
+      alcanza: el repartidor saldría a cobrar sabiendo que falta dinero.
+
+      `Number("")` es 0, así que el `> 0` es lo que distingue "no escribió nada"
+      de "escribió 0". Escribir un 0 explícito sí se rechaza (0 < total) salvo
+      que el pedido valga 0, que es el caso de un pedido sin ítems ni envío.
+    */
+    if (esPagoEnEntrega && pagaCon.trim() !== "" && Number(pagaCon) > 0) {
+      if (Number(pagaCon) < totalPedido) {
+        e.pagaCon = `El monto recibido no puede ser menor al total a pagar (${money(totalPedido)}).`;
+      }
+    }
+
     if (programar) {
       if (!programadoISO) e.programado = "Elige una fecha y hora";
       else if (new Date(programadoISO).getTime() <= Date.now())
@@ -209,24 +276,30 @@ export const CrearPedidoPage = observer(() => {
     return Object.keys(e).length === 0;
   };
 
-  // ── Derivados para el resumen en vivo ──
-  const itemsValidos = items.filter((it) => it.nombre.trim() !== "");
-  const subtotalItems = itemsValidos.reduce((s, it) => s + (it.precio ?? 0) * Math.max(1, it.cantidad), 0);
-  const costoEnvioEfectivo = modalidad === "domicilio" ? Math.max(0, Number(costoEnvio) || 0) : 0;
-  const totalPedido = subtotalItems + costoEnvioEfectivo;
-  const direccionesGuardadas = pedidosStore.direccionesDe(telefono);
-
   const handleCreate = () => {
     // Defensa en profundidad (C5): la ruta exige `orders.create`, pero la
     // acción lo re-comprueba. Fail-closed.
     if (!puedeCrear) return;
     if (!validate()) return;
+
+    /*
+      Normalización de ítems en el borde de salida, además de la que ya se hace
+      en el `onChange`. No es redundante: el estado de React es una fuente entre
+      varias (el catálogo escribe `precio` directamente vía `pickCatalogo`, y un
+      pegado o un valor raro del navegador puede colar un número fuera de rango),
+      así que el mapeo final es el único punto por el que pasan TODOS los ítems.
+      Un precio negativo aquí restaría del total y produciría un pedido con total
+      negativo, que es justo lo que el requisito quiere evitar.
+    */
     const itemsLimpios: PedidoItem[] = items
       .filter((it) => it.nombre.trim() !== "")
       .map((it) => ({
         nombre: it.nombre.trim(),
         cantidad: Math.max(1, Number(it.cantidad) || 1),
-        precio: it.precio,
+        // `precio` es opcional: `undefined` significa "sin precio definido" y se
+        // conserva como tal. Solo se sanea si viene un número, y entonces nunca
+        // por debajo de 0.
+        precio: it.precio === undefined ? undefined : Math.max(0, Number(it.precio) || 0),
       }));
 
     // Programar exige `scheduled.manage`: si no se tiene, el pedido se crea
@@ -260,7 +333,15 @@ export const CrearPedidoPage = observer(() => {
       costoEnvio: modalidad === "domicilio" ? costoEnvioEfectivo : undefined,
       metodoPago,
       pagaCon: pagaConNum,
-      repartidor: repartidor.trim() || undefined,
+      /*
+        El repartidor solo existe en domicilio. `cambiarModalidad` ya limpia el
+        estado al salir, pero se vuelve a comprobar aquí: el estado es la defensa
+        de la UI y esto es la garantía del dato. Si por cualquier vía llegara un
+        repartidor con modalidad de retiro, no se guardaría — un pedido para
+        recoger en tienda no tiene mensajero, y guardarlo dejaría un dato falso
+        en la ficha del pedido.
+      */
+      repartidor: modalidad === "domicilio" ? repartidor.trim() || undefined : undefined,
     });
 
     setCreated({
@@ -371,15 +452,27 @@ export const CrearPedidoPage = observer(() => {
         </div>
       </div>
 
-      {/* Aviso fuera de horario (si el horario está activo) */}
+      {/*
+        Aviso de horario comercial.
+
+        La comprobación la hace `pedidosStore.estaAbierto()`, que es la fuente de
+        verdad del horario: mira `config.horario.activo`, si el día de hoy está en
+        `dias` y si la hora cae en la franja `apertura`–`cierre`. Si el horario no
+        está activo, devuelve `true` y aquí no se pinta nada.
+
+        Es informativo y NO bloquea: el operador puede registrar el pedido fuera
+        de horario —pasa de verdad, un cliente llama a deshora— y lo único que
+        necesita es saber que la fecha del pedido será la de hoy y no la de la
+        próxima apertura.
+      */}
       {!pedidosStore.estaAbierto() && (
         <div className="mx-auto mb-4 flex max-w-5xl items-start gap-2 rounded-xl border border-warning-300 bg-warning-50 p-3 dark:border-warning-500/40 dark:bg-warning-500/10">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="mt-0.5 h-5 w-5 shrink-0 text-warning-600 dark:text-warning-500">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-xs text-warning-700 dark:text-warning-300">
-            El negocio está fuera de horario de atención. Puedes registrar el pedido igual, o
-            <strong> programarlo</strong> para la próxima apertura con el toggle de abajo.
+            Atención: El negocio se encuentra fuera de su horario comercial habitual. Este pedido se
+            registrará con la fecha actual.
           </p>
         </div>
       )}
@@ -432,7 +525,7 @@ export const CrearPedidoPage = observer(() => {
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setModalidad(m)}
+                    onClick={() => cambiarModalidad(m)}
                     className={
                       "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors " +
                       (activo
@@ -523,11 +616,15 @@ export const CrearPedidoPage = observer(() => {
                 </div>
                 <div>
                   <Label htmlFor="costoEnvio">Costo de envío ($)</Label>
+                  {/* `step` del catálogo es `number` (no string, como en `min` y
+                      `max`), de ahí el `{500}` sin comillas. El saneado va en el
+                      onChange: se guarda ya normalizado, así que `totalPedido`
+                      nunca ve un valor fuera de rango. */}
                   <Input
                     id="costoEnvio"
                     type="number"
                     min="0"
-                    step="500"
+                    step={500}
                     placeholder="5000"
                     value={costoEnvio}
                     onChange={(e) => setCostoEnvio(Math.max(0, Number(e.target.value) || 0))}
@@ -548,65 +645,81 @@ export const CrearPedidoPage = observer(() => {
 
           {/* Paso · Items */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <StepBadge n={modalidad === "domicilio" ? 4 : 3} />
-                <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Items del pedido</h2>
-              </div>
-              <button
-                type="button"
-                onClick={addItem}
-                className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
-              >
-                + Añadir item
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {items.map((it, idx) => (
-                <div key={idx} className="flex items-end gap-2">
-                  <div className="flex-1">
-                    {tieneCatalogo ? (
-                      <Select
-                        key={`cat-${idx}-${it.nombre}`}
-                        options={catalogo.map((c) => ({ value: c.id, label: `${c.nombre} (${money(c.precio)})` }))}
-                        defaultValue={catalogo.find((c) => c.nombre === it.nombre)?.id ?? ""}
-                        placeholder="Elige un item"
-                        onChange={(v) => pickCatalogo(idx, v)}
-                      />
-                    ) : (
-                      <Input
-                        placeholder="Nombre del item"
-                        value={it.nombre}
-                        onChange={(e) => setItem(idx, { nombre: e.target.value })}
-                      />
-                    )}
-                  </div>
-                  <div className="w-20">
-                    <input
-                      type="number"
-                      min="1"
-                      value={it.cantidad}
-                      onChange={(e) => setItem(idx, { cantidad: Math.max(1, Number(e.target.value) || 1) })}
-                      className={`${inputBase} ${inputOk}`}
-                      aria-label="Cantidad"
-                    />
-                  </div>
-                  {items.length > 1 && (
+            {(() => {
+              const perfilActivo = pedidosStore.config.perfilComercial ?? "food";
+              const perfilPreset = BUSINESS_PROFILES[perfilActivo] ?? BUSINESS_PROFILES.food;
+              return (
+                <>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <StepBadge n={modalidad === "domicilio" ? 4 : 3} />
+                      <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                        {perfilPreset.labels.itemPlural}
+                      </h2>
+                    </div>
                     <button
                       type="button"
-                      onClick={() => removeItem(idx)}
-                      className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
-                      aria-label="Quitar item"
+                      onClick={addItem}
+                      className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      + Añadir {perfilPreset.labels.itemSingular.toLowerCase()}
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.map((it, idx) => (
+                      <div key={idx} className="flex items-end gap-2">
+                        <div className="flex-1">
+                          {tieneCatalogo ? (
+                            <Select
+                              key={`cat-${idx}-${it.nombre}`}
+                              options={catalogo.map((c) => ({ value: c.id, label: `${c.nombre} (${money(c.precio)})` }))}
+                              defaultValue={catalogo.find((c) => c.nombre === it.nombre)?.id ?? ""}
+                              placeholder={`Elige ${perfilPreset.labels.itemSingular.toLowerCase()}`}
+                              onChange={(v) => pickCatalogo(idx, v)}
+                            />
+                          ) : (
+                            <Input
+                              placeholder={
+                                pedidosStore.tieneCapacidad("variants")
+                                  ? "Ej: Camiseta Oversize (Talla M / Blanco)"
+                                  : pedidosStore.tieneCapacidad("appointment_scheduling")
+                                  ? "Ej: Corte y Perfilado de Barba (15:00)"
+                                  : "Nombre del producto"
+                              }
+                              value={it.nombre}
+                              onChange={(e) => setItem(idx, { nombre: e.target.value })}
+                            />
+                          )}
+                        </div>
+                        <div className="w-20">
+                          <input
+                            type="number"
+                            min="1"
+                            value={it.cantidad}
+                            onChange={(e) => setItem(idx, { cantidad: Math.max(1, Number(e.target.value) || 1) })}
+                            className={`${inputBase} ${inputOk}`}
+                            aria-label="Cantidad"
+                          />
+                        </div>
+                        {items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                            aria-label="Quitar item"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
             <p className="mt-2 text-xs text-gray-400">
               {tieneCatalogo
                 ? "Elige items del catálogo. Puedes dejar el pedido sin items si aún no se define."
@@ -656,10 +769,18 @@ export const CrearPedidoPage = observer(() => {
                     id="pagaCon"
                     type="number"
                     min="0"
-                    step="1000"
+                    step={1000}
                     placeholder={`Ej: ${totalPedido > 0 ? Math.ceil(totalPedido / 10000) * 10000 : 50000}`}
                     value={pagaCon}
-                    onChange={(e) => setPagaCon(e.target.value)}
+                    onChange={(e) => {
+                      setPagaCon(e.target.value);
+                      // El error se limpia al reescribir: si se dejara, el mensaje
+                      // "es menor al total" seguiría visible con un monto ya
+                      // corregido hasta el siguiente intento de envío.
+                      setErrors((prev) => (prev.pagaCon ? { ...prev, pagaCon: "" } : prev));
+                    }}
+                    error={!!errors.pagaCon}
+                    hint={errors.pagaCon}
                   />
                 </div>
                 {Number(pagaCon) > 0 && (
@@ -826,7 +947,7 @@ export const CrearPedidoPage = observer(() => {
                         </span>
                         {it.precio !== undefined && (
                           <span className="shrink-0 text-gray-500 dark:text-gray-400">
-                            {money(it.precio * Math.max(1, it.cantidad))}
+                            {money(Math.max(0, it.precio) * Math.max(1, it.cantidad))}
                           </span>
                         )}
                       </li>
@@ -878,6 +999,13 @@ export const CrearPedidoPage = observer(() => {
 
             {/* Acción */}
             <div className="border-t border-gray-100 px-5 py-4 dark:border-gray-800">
+              {/*
+                El botón NO se deshabilita por pago insuficiente a propósito: si
+                se apagara, el operador no podría pulsarlo y no llegaría a ver el
+                motivo —el error solo aparece tras intentar enviar—, quedando un
+                control mudo. Se bloquea la creación (`validate()` devuelve false)
+                pero se deja pulsar, y el clic es lo que explica qué falta.
+              */}
               <Button className="w-full" size="md" onClick={handleCreate} disabled={!puedeCrear}>
                 {programar && puedeProgramar ? "Programar pedido" : "Crear pedido"}
               </Button>
@@ -885,6 +1013,9 @@ export const CrearPedidoPage = observer(() => {
                 <p className="mt-2 text-center text-xs text-gray-500 dark:text-gray-400">
                   {motivoSinPermiso("orders.create")}
                 </p>
+              )}
+              {errors.pagaCon && (
+                <p className="mt-2 text-center text-xs text-error-500">{errors.pagaCon}</p>
               )}
               <button
                 type="button"

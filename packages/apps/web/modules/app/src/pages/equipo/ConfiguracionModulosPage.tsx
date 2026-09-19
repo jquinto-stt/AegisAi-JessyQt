@@ -127,9 +127,9 @@ interface ModuloConfigDef {
 const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
   pedidos: {
     id: "pedidos",
-    nombre: "Pedidos & Delivery",
+    nombre: "Pedidos & Fulfillment",
     tagline: "Ventas y Operación Core",
-    descripcion: "Tablero Kanban de órdenes, cocina, delivery, historial completo y métricas analíticas de venta.",
+    descripcion: "Tablero Kanban de órdenes, preparación, envíos, historial completo y métricas analíticas de venta.",
     logo: <OrdersBrandLogo />,
     rutaConfig: "/pedidos/config",
     rutasHabilitadas: ["/pedidos/inicio", "/pedidos", "/pedidos/crear", "/pedidos/historial", "/pedidos/analitica", "/pedidos/config"],
@@ -138,7 +138,7 @@ const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
       "Tablero Kanban de órdenes en tiempo real con ciclo de vida completo",
       "Creación ágil de pedidos con cálculo automático de totales",
       "Historial de ventas exportable y métricas analíticas clave",
-      "Asignación de repartidores y direcciones de entrega geolocalizadas",
+      "Asignación de repartidores y transportadoras con seguimiento",
     ],
   },
   inventario: {
@@ -152,7 +152,7 @@ const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
     capacidades: [
       "Control de existencias y alertas de reposición automática",
       "Administración de catálogo con variantes y costos de insumos",
-      "Sincronización con cocina para descontar stock en cada orden",
+      "Sincronización con pedidos para descontar stock en cada orden",
     ],
   },
 };

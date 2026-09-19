@@ -19,6 +19,16 @@ import {
 } from "@/icons";
 import { assistantStore, integracionesStore, uiStore } from "@/stores";
 import type { Modulo } from "@/stores/session.store";
+import {
+  CardHead,
+  ConfigHeader,
+  ConfigSectionNav,
+  ConfigShell,
+  Label2,
+  Segmentado,
+  claseFila,
+  type GrupoNav,
+} from "@/pages/config-layout";
 import { buildAccessContext } from "@/assistant/bootstrap";
 import { toolRegistry } from "@/assistant";
 import {
@@ -108,8 +118,7 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
 };
 
 /** Clases compartidas por las filas etiqueta/control de las tarjetas. */
-const filaBase =
-  "flex flex-col gap-2 border-b border-gray-100 py-4 last:border-b-0 last:pb-0 first:pt-0 sm:flex-row sm:items-start sm:justify-between sm:gap-6 dark:border-gray-800";
+const filaBase = claseFila;
 
 export const AsistenteConfigPage = observer(() => {
   const [seccion, setSeccion] = useState<SeccionAsistente>("perfil");
@@ -143,7 +152,16 @@ export const AsistenteConfigPage = observer(() => {
   // tampoco tiene nada que ejecutar — y la página lo dice.
   const { disponibles, totales } = herramientasVisibles();
 
-  const grupos = seccionesPorGrupo();
+  const grupos: GrupoNav[] = seccionesPorGrupo().map(({ grupo, secciones }) => ({
+    grupo,
+    label: GRUPO_SECCION_LABEL[grupo],
+    secciones: secciones.map((s) => ({
+      key: s,
+      label: META_SECCION[s].label,
+      hint: META_SECCION[s].hint,
+      icono: ICONO_SECCION[META_SECCION[s].icono],
+    })),
+  }));
   const meta = META_SECCION[seccion];
 
   return (
@@ -153,18 +171,16 @@ export const AsistenteConfigPage = observer(() => {
         description="Estado del asistente interno: motor, herramientas y límites"
       />
 
-      <div className="mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-            Configuración de NECTO AI
-          </h1>
-          <Badge color={MOTOR_BADGE[motor]} size="sm">
-            {MOTOR_BADGE_LABEL[motor]}
-          </Badge>
-        </div>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          El asistente interno del equipo: qué consulta, con qué motor y qué no hace.
-        </p>
+      <div className="mb-5">
+        <ConfigHeader
+          titulo="Configuración de NECTO AI"
+          descripcion="El asistente interno del equipo: qué consulta, con qué motor y qué no hace."
+          acciones={
+            <Badge color={MOTOR_BADGE[motor]} size="sm">
+              {MOTOR_BADGE_LABEL[motor]}
+            </Badge>
+          }
+        />
       </div>
 
       {/* Distinción explícita con el bot de WhatsApp. Sin esto, es fácil que
@@ -180,45 +196,12 @@ export const AsistenteConfigPage = observer(() => {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-        <nav
-          aria-label="Secciones de configuración de NECTO AI"
-          className="shrink-0 lg:w-[240px]"
-        >
-          <ul className="flex flex-col gap-6">
-            {grupos.map(({ grupo, secciones }) => (
-              <li key={grupo}>
-                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                  {GRUPO_SECCION_LABEL[grupo]}
-                </p>
-                <ul className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
-                  {secciones.map((s) => {
-                    const { label, icono } = META_SECCION[s];
-                    const Icono = ICONO_SECCION[icono];
-                    const activo = s === seccion;
-                    return (
-                      <li key={s}>
-                        <button
-                          type="button"
-                          onClick={() => setSeccion(s)}
-                          aria-current={activo ? "page" : undefined}
-                          className={
-                            "inline-flex w-full items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-medium transition-colors " +
-                            (activo
-                              ? "bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white"
-                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200")
-                          }
-                        >
-                          <Icono className="h-5 w-5 shrink-0" />
-                          {label}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <ConfigSectionNav
+          grupos={grupos}
+          activa={seccion}
+          onSeleccionar={(k) => setSeccion(k as SeccionAsistente)}
+          ariaLabel="Secciones de configuración de NECTO AI"
+        />
 
         {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
         {/* El `key={seccion}` dispara el fundido: al cambiar de sección React
@@ -230,16 +213,8 @@ export const AsistenteConfigPage = observer(() => {
             anterior, así que moverlo sugeriría que viene de algún lado. Cuando
             dos contenidos comparten el mismo hueco, lo correcto es que uno se
             apague y el otro se encienda. */}
-        <div key={seccion} className="animate-aparecer flex min-w-0 flex-1 flex-col">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              {meta.label}
-            </h2>
-            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{meta.hint}</p>
-          </div>
-
-          <div className="flex-1 space-y-5">
-            {/* ───────────── PERFIL DEL ASISTENTE ───────────── */}
+        <ConfigShell seccionKey={seccion} titulo={meta.label} hint={meta.hint}>
+          {/* ───────────── PERFIL DEL ASISTENTE ───────────── */}
             {seccion === "perfil" && (
               <>
                 <Card>
@@ -1001,8 +976,8 @@ export const AsistenteConfigPage = observer(() => {
                         label: o.label,
                       }))}
                       valor={densidad}
-                      onCambiar={(v) => setDensidad(v as DensidadAsistente)}
-                      etiqueta="Densidad del hilo"
+                      onChange={(v) => setDensidad(v as DensidadAsistente)}
+                      ariaLabel="Densidad del hilo"
                     />
                   </div>
 
@@ -1019,8 +994,8 @@ export const AsistenteConfigPage = observer(() => {
                         label: o.label,
                       }))}
                       valor={longitud}
-                      onCambiar={(v) => setLongitud(v as LongitudRespuesta)}
-                      etiqueta="Longitud de las respuestas"
+                      onChange={(v) => setLongitud(v as LongitudRespuesta)}
+                      ariaLabel="Longitud de las respuestas"
                     />
                   </div>
 
@@ -1039,12 +1014,11 @@ export const AsistenteConfigPage = observer(() => {
                 </div>
               </Card>
             )}
-          </div>
 
           {/* El pie de guardado NO existe en esta página: salvo el tema, que se
               aplica al instante, no hay nada que persistir. Mostrar un botón
               «Guardar» sin nada que guardar sería un control decorativo. */}
-        </div>
+        </ConfigShell>
       </div>
     </>
   );
@@ -1121,80 +1095,8 @@ export default AsistenteConfigPage;
 // SUBCOMPONENTES LOCALES
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Composiciones de elementos del catálogo, no sustitutos de ninguno. Se evita
-// `ButtonsGroup` porque fija `min-w-[393px]`/`min-w-[309px]` y rompería el ancho
-// de la tarjeta (mismo hallazgo que en la configuración del canal).
-//
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Label2 — etiqueta con descripción secundaria, alineada a la izquierda de una
- * fila. La descripción explica QUÉ es el valor, no lo repite.
- */
-function Label2({ titulo, descripcion }: { titulo: string; descripcion: string }) {
-  return (
-    <div className="min-w-0">
-      <Label>{titulo}</Label>
-      <p className="mt-0.5 max-w-md text-xs text-gray-500 dark:text-gray-400">
-        {descripcion}
-      </p>
-    </div>
-  );
-}
-
-/** CardHead — encabezado estándar de una tarjeta de sección. */
-function CardHead({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
-      {children}
-    </h3>
-  );
-}
-
-/**
- * Segmentado — control de selección exclusiva de dos o más opciones.
- *
- * No es un `<select>` (el del catálogo es NO controlado) ni `ButtonsGroup` (ancho
- * mínimo fijo): se compone con el estilo de píldora ya usado en el proyecto.
- * `role="radiogroup"` + `aria-checked` para que la selección sea anunciable.
- */
-function Segmentado({
-  opciones,
-  valor,
-  onCambiar,
-  etiqueta,
-}: {
-  opciones: { value: string; label: string }[];
-  valor: string;
-  onCambiar: (v: string) => void;
-  etiqueta: string;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label={etiqueta}
-      className="flex shrink-0 gap-1 rounded-lg border border-gray-200 p-1 dark:border-gray-800"
-    >
-      {opciones.map((o) => {
-        const activo = o.value === valor;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={activo}
-            onClick={() => onCambiar(o.value)}
-            className={
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-              (activo
-                ? "bg-gray-100 text-gray-900 dark:bg-white/[0.06] dark:text-white"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200")
-            }
-          >
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+// `Label2`, `CardHead` y `Segmentado` se movieron a `@/pages/config-layout`,
+// donde viven una sola vez para las tres pantallas de configuración. Antes esta
+// página tenía su propia copia del encabezado de tarjeta (`text-base`) y del
+// segmentado, y la configuración del canal otra (`text-sm`): el mismo bloque se
+// veía distinto según la pantalla. Ya no.

@@ -1,6 +1,6 @@
 import { CAPACIDAD_GRUPOS, CAPACIDAD_LABEL, type Capacidad, type PortadorDeRol } from "@/stores/roles.store";
 import { inicialesDe } from "@/utils";
-import type { Procedencia } from "./excepciones";
+import { esEfectiva, type Procedencia } from "./excepciones";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PRESENTACIÓN DEL ACCESO EN LENGUAJE DE NEGOCIO
@@ -221,6 +221,197 @@ export const PROCEDENCIA_HUMANA: Record<
   ninguna: { label: "No la tiene", tono: "neutro" },
 };
 
+// ── Guardas de seguridad sobre uno mismo (self-lockout) ────────────────────
+//
+// Estas funciones viven aquí, y no en la página, porque son **reglas de
+// dominio**: "qué capacidades no puede revocarse a sí misma la sesión activa".
+// La página solo las consulta para decidir si pinta el interruptor apagado.
+//
+// Nota importante de arquitectura: esto NO es autorización. La autorización es
+// `hasPermission()` sobre el `AccessContext` (contrato §2). Esto es la variante
+// "y además, no sobre ti mismo", que el contrato no cubría porque asume que el
+// actor y el sujeto del cambio son distintos.
+
+/**
+ * Capacidades que sostienen "estar aquí administrando".
+ *
+ * Es un conjunto, no un booleano, porque la guarda se aplica en dos sitios con
+ * granularidad distinta: el interruptor consulta la capacidad concreta que se
+ * está tocando, y `motivoAutodesahuicio()` resume el conjunto entero para el
+ * aviso de la cabecera. Un `esAdmin` habría obligado a ramificar por pantalla,
+ * que es justo lo que el contrato prohíbe (invariante C9).
+ */
+export const CAPACIDADES_GESTION: Capacidad[] = ["team.manage"];
+
+/** Datos de contacto editables en el perfil. */
+export interface Contacto {
+  nombre: string;
+  email: string;
+  telefono: string;
+}
+
+/** Resultado de validar el formulario de contacto. */
+export interface ValidacionContacto {
+  /** `true` solo si los tres campos pasan. */
+  valido: boolean;
+  /** Mensajes de error por campo. Vacío (`""`) en los campos correctos. */
+  errores: Contacto;
+}
+
+/**
+ * Comprobación básica de correo: `algo@dominio.algo`, sin espacios.
+ *
+ * Es deliberadamente superficial. No pretende implementar RFC 5322: en este
+ * mockup no hay backend que verifique la dirección, así que lo único honesto es
+ * atrapar el error de dedo evidente (una dirección sin `@`, o con el dominio a
+ * medias) y no fingir una validación más fuerte de la que hay.
+ */
+export function emailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
+/**
+ * Valida los datos de contacto del perfil.
+ *
+ * Reglas: nombre no vacío, correo con forma de correo, y teléfono con al menos
+ * 7 dígitos (se cuentan solo los dígitos, así que los separadores —espacios,
+ * guiones, paréntesis— y el prefijo internacional no estorban).
+ *
+ * Los tres campos se validan siempre, sin cortocircuito: devolver el primer
+ * error y callar los demás obliga a guardar y reintentar para descubrirlos.
+ */
+export function validarContacto(c: Contacto): ValidacionContacto {
+  const errores: Contacto = { nombre: "", email: "", telefono: "" };
+
+  if (c.nombre.trim().length === 0) {
+    errores.nombre = "El nombre es obligatorio.";
+  }
+
+  if (c.email.trim().length === 0) {
+    errores.email = "El correo electrónico es obligatorio.";
+  } else if (!emailValido(c.email)) {
+    errores.email = "Escribe un correo válido, con @ y dominio.";
+  }
+
+  const digitos = c.telefono.replace(/\D/g, "");
+  if (c.telefono.trim().length === 0) {
+    errores.telefono = "El teléfono es obligatorio.";
+  } else if (digitos.length < 7) {
+    errores.telefono = `El teléfono debe tener al menos 7 dígitos (tiene ${digitos.length}).`;
+  }
+
+  return { valido: !errores.nombre && !errores.email && !errores.telefono, errores };
+}
+
+// ── Alta de una persona nueva (modal "Invitar miembro") ────────────────────
+//
+// El perfil edita a alguien que ya existe; el alta crea a alguien que no. La
+// diferencia no es cosmética: aquí hay que comprobar además que el correo no
+// esté ya en la organización, y que se haya elegido un rol. Por eso el alta
+// tiene su propia función en vez de reutilizar `validarContacto`.
+
+/** Datos del formulario de alta de una persona del equipo. */
+export interface AltaPersona {
+  nombre: string;
+  email: string;
+  telefono: string;
+  cargo: string;
+  rolId: string;
+}
+
+/** Resultado de validar el alta. `errores` lleva un mensaje por campo. */
+export interface ValidacionAlta {
+  /** `true` solo si todos los campos pasan. */
+  valido: boolean;
+  errores: AltaPersona;
+}
+
+/**
+ * Normaliza un correo para compararlo: sin espacios y en minúsculas.
+ *
+ * Es la misma normalización con la que se guarda y con la que se busca, para
+ * que "  Camila.Ortiz@Negocio.COM " colisione con "camila.ortiz@negocio.com".
+ * Comparar sin normalizar dejaría pasar duplicados escritos con otra caja.
+ */
+export function normalizarEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+/**
+ * Mensaje exacto para el correo duplicado.
+ *
+ * Se exporta como constante para que la pantalla no lo reescriba a mano: el
+ * texto es parte del requisito, y tenerlo duplicado en dos sitios garantiza que
+ * un día digan cosas distintas.
+ */
+export const ERROR_EMAIL_DUPLICADO =
+  "Ya existe una persona registrada con este correo en la organización.";
+
+/**
+ * Valida el formulario de alta de una persona.
+ *
+ * @param alta Datos en crudo del formulario.
+ * @param correosExistentes Correos ya presentes en la organización. Se comparan
+ *        normalizados, así que pasar los correos en crudo es correcto.
+ *
+ * Los cuatro campos se validan siempre, sin cortocircuito, para que el admin vea
+ * todo lo que falta de una vez en lugar de descubrirlo campo a campo.
+ */
+export function validarAlta(alta: AltaPersona, correosExistentes: string[]): ValidacionAlta {
+  const errores: AltaPersona = { nombre: "", email: "", telefono: "", cargo: "", rolId: "" };
+
+  if (alta.nombre.trim().length === 0) {
+    errores.nombre = "El nombre es obligatorio.";
+  }
+
+  const email = normalizarEmail(alta.email);
+  if (email.length === 0) {
+    errores.email = "El correo electrónico es obligatorio.";
+  } else if (!emailValido(alta.email)) {
+    errores.email = "Escribe un correo válido, con @ y dominio.";
+  } else if (correosExistentes.some((e) => normalizarEmail(e) === email)) {
+    // El duplicado se comprueba DESPUÉS del formato a propósito: a un correo
+    // mal escrito no se le puede decir "ya existe" con honestidad, porque la
+    // coincidencia sería con una cadena inválida.
+    errores.email = ERROR_EMAIL_DUPLICADO;
+  }
+
+  const digitos = alta.telefono.replace(/\D/g, "");
+  if (alta.telefono.trim().length === 0) {
+    errores.telefono = "El teléfono es obligatorio.";
+  } else if (digitos.length < 7) {
+    errores.telefono = `El teléfono debe tener al menos 7 dígitos (tiene ${digitos.length}).`;
+  }
+
+  if (alta.rolId === "") {
+    errores.rolId = "Elige un rol para esta persona.";
+  }
+
+  const valido =
+    !errores.nombre && !errores.email && !errores.telefono && !errores.cargo && !errores.rolId;
+
+  return { valido, errores };
+}
+
+/**
+ * Explica en una frase por qué la sesión no puede revocarse su propia gestión
+ * de equipo. Devuelve `null` si no hay nada que proteger (la persona mirada no
+ * es la sesión, o su rol tampoco concede la capacidad).
+ *
+ * @param p Portador del rol de la persona inspeccionada.
+ * @param capacidadesDelRol Capacidades base de su rol.
+ */
+export function motivoAutodesahucio(
+  p: PortadorDeRol,
+  capacidadesDelRol: Capacidad[],
+): string | null {
+  const tiene = CAPACIDADES_GESTION.filter((cap) => esEfectiva(p, cap, capacidadesDelRol));
+  if (tiene.length === 0) return null;
+
+  const nombres = unirConY(tiene.map((cap) => CAPACIDAD_LABEL[cap].toLowerCase()));
+  return `No puedes revocar tu propio permiso de ${nombres}: perderías el acceso a esta pantalla y no habría quién te lo devolviera.`;
+}
+
 /** Un ajuste hecho a mano sobre el rol de una persona. */
 export interface AjustePersona {
   capacidad: Capacidad;
@@ -352,4 +543,119 @@ export { inicialesDe };
 export function perfilQueEncaja(capacidades: Capacidad[]): PerfilTarea | null {
   const clave = claveDe(capacidades);
   return PERFILES_TAREA.find((p) => claveDe(p.capacidades) === clave) ?? null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VALIDACIÓN DEL EDITOR DE ROLES
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// El editor de roles permitía guardar cualquier cosa: un rol sin nombre, dos
+// roles llamados igual, o un rol con cero capacidades. Los tres casos producen
+// un rol que no se puede usar —no se distingue en la lista, o no concede nada
+// y parece un fallo de permisos cuando en realidad es un rol vacío—, así que
+// se validan aquí, que es lógica pura y se puede razonar sin montar React.
+
+/**
+ * Normaliza el nombre de un rol para compararlo: sin espacios sobrantes y en
+ * minúsculas.
+ *
+ * También colapsa espacios internos repetidos: "Supervisor  de   Turno" y
+ * "Supervisor de Turno" son el mismo nombre a ojos de quien lo lee, y dejarlos
+ * pasar como distintos es exactamente cómo se acaba con dos roles iguales en la
+ * lista. Se comparan sin acentos NO: "Turnos" y "turnós" son distintos, y
+ * confundirlos sería adivinar la intención del admin.
+ */
+export function normalizarNombreRol(nombre: string): string {
+  return nombre.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Mensaje exacto para el nombre de rol vacío. */
+export const ERROR_ROL_SIN_NOMBRE = "El rol necesita un nombre.";
+
+/** Mensaje exacto para el nombre de rol duplicado. */
+export const ERROR_ROL_DUPLICADO = "Ya existe otro rol con este nombre.";
+
+/** Mensaje exacto para un rol sin capacidades. */
+export const ERROR_ROL_SIN_CAPACIDADES =
+  "Asigna al menos una capacidad: un rol sin permisos no concede nada.";
+
+/** Datos editables de un rol, en crudo desde el formulario. */
+export interface DatosRol {
+  nombre: string;
+  capacidades: Capacidad[];
+}
+
+/** Resultado de validar el editor de rol. */
+export interface ValidacionRol {
+  /** `true` solo si el rol se puede guardar. */
+  valido: boolean;
+  /** Mensaje para el campo nombre (vacío si está bien). */
+  errorNombre: string;
+  /** Mensaje para la sección de capacidades (vacío si está bien). */
+  errorCapacidades: string;
+}
+
+/**
+ * Valida el editor de un rol antes de guardarlo.
+ *
+ * @param datos Nombre y capacidades en crudo del formulario.
+ * @param rolesExistentes Todos los roles del catálogo.
+ * @param rolEditadoId Id del rol que se está editando, si es una edición.
+ *
+ * `rolEditadoId` es la pieza que evita el falso positivo más molesto: al
+ * guardar un rol **sin cambiarle el nombre**, su propio nombre ya está en el
+ * catálogo, así que sin excluirlo el editor se quejaría de que el rol choca
+ * consigo mismo y el botón Guardar quedaría bloqueado para siempre. Al crear,
+ * se pasa `undefined` y se comparan todos.
+ */
+export function validarRol(
+  datos: DatosRol,
+  rolesExistentes: { id: string; nombre: string }[],
+  rolEditadoId?: string,
+): ValidacionRol {
+  let errorNombre = "";
+
+  const normalizado = normalizarNombreRol(datos.nombre);
+  if (normalizado.length === 0) {
+    errorNombre = ERROR_ROL_SIN_NOMBRE;
+  } else {
+    const choca = rolesExistentes.some(
+      (r) => r.id !== rolEditadoId && normalizarNombreRol(r.nombre) === normalizado,
+    );
+    if (choca) errorNombre = ERROR_ROL_DUPLICADO;
+  }
+
+  const errorCapacidades =
+    datos.capacidades.length === 0 ? ERROR_ROL_SIN_CAPACIDADES : "";
+
+  return {
+    valido: !errorNombre && !errorCapacidades,
+    errorNombre,
+    errorCapacidades,
+  };
+}
+
+/**
+ * Motivo por el que un rol de sistema no se puede eliminar.
+ *
+ * El store ya lo impide (`RolesStore.eliminar` ignora los `sistema: true`), pero
+ * eso es una defensa silenciosa: el botón desaparecía sin decir nada y quien lo
+ * buscaba se quedaba sin saber si era un fallo. La pantalla usa este texto para
+ * explicarlo en el propio control.
+ */
+export const MOTIVO_ROL_SISTEMA =
+  "Los roles predeterminados del sistema no se pueden eliminar.";
+
+/**
+ * Frase que bloquea la eliminación de un rol que tiene gente asignada.
+ *
+ * Existe porque borrar un rol con miembros deja a esas personas sin
+ * `rolId` válido, y el modelo es **fail-closed**: `capacidadesEfectivas` de un
+ * rol inexistente devuelve `[]`, así que perderían todo el acceso de golpe y sin
+ * aviso. Se dice cuántos son y qué hacer, en vez de un "no se puede" a secas.
+ *
+ * @param n Número de miembros asignados (se espera > 0).
+ */
+export function motivoRolConMiembros(n: number): string {
+  return `No puedes eliminar este rol porque hay ${n} miembro(s) del equipo asignados a él. Reasigna a los usuarios antes de borrarlo.`;
 }

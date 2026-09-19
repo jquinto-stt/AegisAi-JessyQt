@@ -26,6 +26,7 @@ export default defineConfig({
     }),
   ],
   server: {
+    host: true,
     port: 6020,
     allowedHosts: true,
     proxy: {
