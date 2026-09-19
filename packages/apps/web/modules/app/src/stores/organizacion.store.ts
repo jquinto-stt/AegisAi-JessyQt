@@ -136,7 +136,7 @@ export class OrganizacionStore {
       case "organizacion":
         return "/onboarding/organizacion";
       case "modulos":
-        return "/modulos";
+        return "/onboarding/modulos";
       case "completado":
         return "/pedidos/inicio";
     }

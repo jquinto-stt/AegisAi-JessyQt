@@ -47,7 +47,7 @@ export const OrganizacionOnboardingPage = observer(() => {
       zonaHoraria,
     });
 
-    navigate("/modulos");
+    navigate("/onboarding/modulos");
   };
 
   return (

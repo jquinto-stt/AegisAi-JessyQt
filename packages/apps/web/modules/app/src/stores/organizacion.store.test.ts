@@ -50,7 +50,7 @@ describe("OrganizacionStore (Multi-tenant hierarchy)", () => {
     expect(store.organizacion?.slug).toBe("boutique-roma");
     expect(store.organizacion?.moneda).toBe("COP");
     expect(store.pasoActual).toBe("modulos");
-    expect(store.siguienteRuta).toBe("/modulos");
+    expect(store.siguienteRuta).toBe("/onboarding/modulos");
   });
 
   it("instala y desinstala modulos correctamente", () => {
