@@ -27,6 +27,7 @@ import {
   PerfilOnboardingPage,
   OrganizacionOnboardingPage,
   ModulosWorkspacePage,
+  PedidosOnboardingPage,
 } from "@/pages/onboarding";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
 
@@ -95,6 +96,7 @@ export default function App() {
       {/* Onboarding de 3 niveles: Perfil Personal -> Organización/Workspace -> Catálogo de Módulos */}
       <Route path="/onboarding/perfil" element={<PerfilOnboardingPage />} />
       <Route path="/onboarding/organizacion" element={<OrganizacionOnboardingPage />} />
+      <Route path="/onboarding/pedidos" element={<PedidosOnboardingPage />} />
       <Route path="/modulos" element={<ModulosWorkspacePage />} />
       <Route path="/workspace/modulos" element={<ModulosWorkspacePage />} />
 
