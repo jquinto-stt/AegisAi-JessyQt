@@ -32,7 +32,7 @@ export default function SignInForm() {
       pais: "Colombia",
     });
 
-    // 3. Garantizamos un workspace base si no existía para no bloquear la app
+    // 3. Garantizamos un workspace base si no existía
     if (!organizacionStore.organizacion) {
       organizacionStore.crearOrganizacion({
         nombre: "Mi Empresa",
@@ -40,15 +40,14 @@ export default function SignInForm() {
         moneda: "COP",
         zonaHoraria: "America/Bogota",
       });
-      organizacionStore.instalarModulo("pedidos", {
-        perfilComercial: "general",
-        habilitarWhatsApp: false,
-        habilitarAsistente: false,
-      });
     }
 
-    // 4. Entra directamente al módulo activo
-    navigate("/pedidos/inicio");
+    // 4. Si el módulo Pedidos ya está instalado, entra directo; si no, va a /modulos para agregarlo
+    if (organizacionStore.tieneModuloPedidos) {
+      navigate("/pedidos/inicio");
+    } else {
+      navigate("/modulos");
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

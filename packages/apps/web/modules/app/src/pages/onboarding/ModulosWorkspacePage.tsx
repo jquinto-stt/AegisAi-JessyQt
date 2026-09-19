@@ -10,39 +10,113 @@ import { ThemeToggleButton } from "@/shell";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import { sessionStore } from "@/stores/session.store";
-import { BUSINESS_PROFILES, type BusinessProfileId } from "@/domain/pedidos/pedidos.profiles";
+import { plataformaStore } from "@/stores/plataforma.store";
+import type { BusinessProfileType } from "@/domain/pedidos/pedidos.profiles";
+
+interface PerfilInfo {
+  id: BusinessProfileType;
+  icon: string;
+  name: string;
+  description: string;
+  tags: string[];
+}
+
+const PERFILES_DISPONIBLES: PerfilInfo[] = [
+  {
+    id: "food",
+    icon: "🍔",
+    name: "Alimentos y Bebidas",
+    description:
+      "Restaurantes, dark kitchens, cafés y panaderías con cocina o preparación inmediata.",
+    tags: [
+      "Modificadores de platillo",
+      "Tiempo de preparación",
+      "Reparto urbano",
+      "Consumo en mesa",
+    ],
+  },
+  {
+    id: "fashion",
+    icon: "👕",
+    name: "Ropa, Calzado y Accesorios",
+    description:
+      "Boutiques, tiendas de moda, calzado y confección con variantes de talla, color y envíos.",
+    tags: [
+      "Tallas y variantes",
+      "Envíos con guía",
+      "Devoluciones",
+      "Reparto urbano",
+    ],
+  },
+  {
+    id: "services",
+    icon: "🛠️",
+    name: "Servicios y Citas",
+    description:
+      "Profesionales, barberías, spas, consultorios y talleres con agendamiento.",
+    tags: ["Citas / Agendamiento"],
+  },
+  {
+    id: "general",
+    icon: "📦",
+    name: "Comercio General / Retail",
+    description:
+      "Venta de productos físicos estándar, papelería, tecnología u hogar.",
+    tags: ["Tallas y variantes", "Reparto urbano", "Envíos con guía"],
+  },
+];
 
 export const ModulosWorkspacePage = observer(() => {
   const navigate = useNavigate();
   const org = organizacionStore.organizacion;
 
   const [modalPedidosOpen, setModalPedidosOpen] = useState(false);
-  const [perfilElegido, setPerfilElegido] = useState<BusinessProfileId>("fashion");
-  const [conectarWhatsApp, setConectarWhatsApp] = useState(true);
-  const [conectarIA, setConectarIA] = useState(true);
+  const [pasoWizard, setPasoWizard] = useState<1 | 2>(1);
+  const [perfilElegido, setPerfilElegido] = useState<BusinessProfileType>("food");
+  const [habilitarWhatsApp, setHabilitarWhatsApp] = useState(true);
+  const [habilitarIA, setHabilitarIA] = useState(true);
 
   const tienePedidos = organizacionStore.tieneModuloPedidos;
 
-  const handleInstalarPedidos = () => {
+  const handleAbrirAgregarPedidos = () => {
+    setPasoWizard(1);
+    setModalPedidosOpen(true);
+  };
+
+  const handleTerminarOnboardingPedidos = () => {
     // 1. Guardar en la organización que el módulo está instalado
     organizacionStore.instalarModulo("pedidos");
 
     // 2. Aplicar el perfil comercial y generar datos demo correspondientes
     pedidosStore.setPerfilComercial(perfilElegido, true);
 
-    // 3. Activar la sesión con rol de Administrador para este módulo
+    // 3. Configurar en plataformaStore el módulo y los conectores
+    plataformaStore.setModuloActivo("pedidos", true);
+    plataformaStore.setConectorActivo("pedidos", "whatsapp", habilitarWhatsApp);
+    plataformaStore.setConectorActivo("pedidos", "necto_ia", habilitarIA);
+
+    // 4. Activar la sesión con rol de Administrador para este módulo
     sessionStore.configurar(["pedidos"], "administrador");
 
     setModalPedidosOpen(false);
 
-    // 4. Entrar al módulo Pedidos ya contextualizado
+    // 5. Entrar al módulo Pedidos ya contextualizado
     navigate("/pedidos/inicio");
   };
+
+  const handleDesinstalarPedidos = () => {
+    organizacionStore.desinstalarModulo("pedidos");
+    plataformaStore.desinstalarModulo("pedidos");
+  };
+
+  const perfilActualInfo = PERFILES_DISPONIBLES.find(
+    (p) => p.id === (pedidosStore.config.perfilComercial || "food")
+  );
 
   return (
     <>
       <PageMeta
-        title="Módulos · Necto"
+        title="Módulos del Workspace · Necto"
         description="Gestiona los módulos activos de tu Organización"
       />
 
@@ -62,14 +136,32 @@ export const ModulosWorkspacePage = observer(() => {
               Módulos del Negocio
             </h1>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 max-w-lg mx-auto">
-              Instala y gestiona las aplicaciones operativas que impulsan la actividad de tu empresa.
+              Selecciona e instala los módulos que impulsan la actividad de tu empresa.
             </p>
+          </div>
+
+          {/* Barra de acción de módulos */}
+          <div className="mb-6 flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Catálogo de Módulos
+            </div>
+            {!tienePedidos && (
+              <Button size="sm" onClick={handleAbrirAgregarPedidos}>
+                + Agregar módulo
+              </Button>
+            )}
           </div>
 
           {/* Grilla de Módulos */}
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {/* 1. Módulo Pedidos & Fulfillment */}
-            <div className="flex flex-col justify-between rounded-3xl border border-brand-500/30 bg-white p-6 shadow-sm dark:border-brand-500/20 dark:bg-gray-900 ring-2 ring-brand-500/10">
+            <div
+              className={`flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm dark:bg-gray-900 transition-all ${
+                tienePedidos
+                  ? "border-emerald-500/40 ring-2 ring-emerald-500/10"
+                  : "border-gray-200 dark:border-gray-800"
+              }`}
+            >
               <div>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-md shadow-brand-500/20">
@@ -79,8 +171,8 @@ export const ModulosWorkspacePage = observer(() => {
                       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
                     </svg>
                   </div>
-                  <Badge color={tienePedidos ? "success" : "primary"} size="sm">
-                    {tienePedidos ? "✓ Instalado" : "Disponible"}
+                  <Badge color={tienePedidos ? "success" : "light"} size="sm">
+                    {tienePedidos ? "✓ Activo" : "Disponible"}
                   </Badge>
                 </div>
 
@@ -88,8 +180,29 @@ export const ModulosWorkspacePage = observer(() => {
                   Pedidos & Fulfillment
                 </h3>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Gestión completa de órdenes de venta, preparación, transportadoras/courier, cobranza y analítica de despacho.
+                  Gestión completa de órdenes de venta, preparación en cocina o empaque, transportadoras, cobranza y analítica de despacho.
                 </p>
+
+                {tienePedidos && perfilActualInfo && (
+                  <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                      <span>{perfilActualInfo.icon}</span>
+                      <span>Perfil: {perfilActualInfo.name}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {plataformaStore.esConectorActivo("pedidos", "whatsapp") && (
+                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                          💬 WhatsApp Agent
+                        </span>
+                      )}
+                      {plataformaStore.esConectorActivo("pedidos", "necto_ia") && (
+                        <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                          🤖 Necto Agent
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800 text-xs text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-1.5">
@@ -98,31 +211,46 @@ export const ModulosWorkspacePage = observer(() => {
                   <div className="flex items-center gap-1.5">
                     <span className="text-brand-500">✓</span> Adaptable a Gastronomía, Ropa, Servicios o Retail
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-brand-500">✓</span> Historial exportable y métricas de venta
-                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+              <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
                 {tienePedidos ? (
-                  <Button
-                    size="md"
-                    className="w-full"
-                    onClick={() => {
-                      sessionStore.configurar(["pedidos"], "administrador");
-                      navigate("/pedidos/inicio");
-                    }}
-                  >
-                    Abrir Pedidos →
-                  </Button>
+                  <>
+                    <Button
+                      size="md"
+                      className="w-full"
+                      onClick={() => {
+                        sessionStore.configurar(["pedidos"], "administrador");
+                        navigate("/pedidos/inicio");
+                      }}
+                    >
+                      Entrar al módulo →
+                    </Button>
+                    <div className="flex items-center justify-between text-xs pt-1">
+                      <button
+                        type="button"
+                        onClick={handleAbrirAgregarPedidos}
+                        className="text-brand-500 hover:underline cursor-pointer"
+                      >
+                        Reconfigurar perfil
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDesinstalarPedidos}
+                        className="text-gray-400 hover:text-error-500 cursor-pointer"
+                      >
+                        Desinstalar
+                      </button>
+                    </div>
+                  </>
                 ) : (
                   <Button
                     size="md"
                     className="w-full"
-                    onClick={() => setModalPedidosOpen(true)}
+                    onClick={handleAbrirAgregarPedidos}
                   >
-                    Instalar módulo →
+                    + Agregar módulo
                   </Button>
                 )}
               </div>
@@ -139,16 +267,16 @@ export const ModulosWorkspacePage = observer(() => {
                       <line x1="12" y1="22.08" x2="12" y2="12" />
                     </svg>
                   </div>
-                  <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                  <Badge color="light" size="sm">
                     Próximamente
-                  </span>
+                  </Badge>
                 </div>
 
                 <h3 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
                   Inventario & Existencias
                 </h3>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Control de stock multi-bodega, insumos, alertas de reposición y sincronización automática de existencias con las órdenes.
+                  Control de existencias multi-bodega, materias primas, alertas de reposición y sincronización automática de stock con las órdenes.
                 </p>
 
                 <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-3 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
@@ -166,157 +294,221 @@ export const ModulosWorkspacePage = observer(() => {
 
               <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <Button size="md" variant="outline" className="w-full" disabled>
-                  En desarrollo
+                  Próximamente
                 </Button>
               </div>
-            </div>
-
-            {/* 3. Conector Transversal WhatsApp */}
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
-                    <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z" />
-                  </svg>
-                </div>
-                <Badge color="light" size="xs">Canal Conector</Badge>
-              </div>
-              <h4 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">
-                Canales de WhatsApp
-              </h4>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Conecta números de WhatsApp para recibir pedidos por chat y enviar notificaciones automáticas de estado.
-              </p>
-            </div>
-
-            {/* 4. Conector Transversal Necto IA */}
-            <div className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
-                    <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
-                  </svg>
-                </div>
-                <Badge color="light" size="xs">Inteligencia</Badge>
-              </div>
-              <h4 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">
-                Necto Intelligence (IA)
-              </h4>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Asistente analítico que diagnostica tus ventas, genera resúmenes diarios y redacta respuestas a clientes.
-              </p>
             </div>
           </div>
         </div>
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════════
-          MODAL DE ONBOARDING ESPECÍFICO DE PEDIDOS
+          ONBOARDING WIZARD DEL MÓDULO DE PEDIDOS
          ═════════════════════════════════════════════════════════════════════ */}
       <Modal
         isOpen={modalPedidosOpen}
         onClose={() => setModalPedidosOpen(false)}
-        className="max-w-2xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
+        className="max-w-3xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800"
       >
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
-              Setup de Módulo
-            </span>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
-            ¿Qué tipo de operaciones gestiona tu negocio?
-          </h2>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Pedidos adaptará su vocabulario, columnas de Kanban, modalidades de entrega y campos de producto para ajustarse a tu rubro.
-          </p>
+          {/* PASO 1: ¿Qué vende tu negocio? */}
+          {pasoWizard === 1 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                  Paso 1 de 2 · Perfil Comercial
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
+                ¿Qué vende tu negocio?
+              </h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Selecciona tu perfil comercial. Esto adapta las capacidades, campos de producto y terminología sin cambiar el núcleo de tus pedidos.
+              </p>
 
-          {/* Selector de Perfil Comercial */}
-          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 max-h-[42vh] overflow-y-auto pr-1 custom-scrollbar">
-            {(Object.entries(BUSINESS_PROFILES) as [BusinessProfileId, typeof BUSINESS_PROFILES[BusinessProfileId]][]).map(
-              ([id, perfil]) => {
-                const seleccionado = perfilElegido === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setPerfilElegido(id)}
-                    className={`flex flex-col text-left p-3.5 rounded-2xl border transition-all ${
-                      seleccionado
-                        ? "border-brand-500 bg-brand-50/50 dark:bg-brand-500/10 ring-2 ring-brand-500/20"
-                        : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xl">{perfil.icon}</span>
-                      <span
-                        className={`h-4 w-4 rounded-full border flex items-center justify-center text-[10px] font-bold ${
-                          seleccionado
-                            ? "border-brand-500 bg-brand-500 text-white"
-                            : "border-gray-300 dark:border-gray-700"
-                        }`}
-                      >
-                        {seleccionado && "✓"}
-                      </span>
+              {/* Grid de los 4 perfiles comerciales exactos */}
+              <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar">
+                {PERFILES_DISPONIBLES.map((perfil) => {
+                  const seleccionado = perfilElegido === perfil.id;
+                  return (
+                    <div
+                      key={perfil.id}
+                      onClick={() => setPerfilElegido(perfil.id)}
+                      className={`flex flex-col justify-between rounded-2xl border p-4 transition-all cursor-pointer ${
+                        seleccionado
+                          ? "border-brand-500 bg-brand-50/50 dark:border-brand-400 dark:bg-brand-950/20 shadow-sm ring-2 ring-brand-500/20"
+                          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-2xl">{perfil.icon}</span>
+                          <div className="flex items-center gap-2">
+                            {seleccionado && (
+                              <Badge color="success" size="xs">
+                                Activo
+                              </Badge>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPerfilElegido(perfil.id);
+                              }}
+                              className={`rounded-lg px-2.5 py-1 text-xs font-medium transition ${
+                                seleccionado
+                                  ? "bg-brand-500 text-white"
+                                  : "border border-gray-200 text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                              }`}
+                            >
+                              {seleccionado ? "Perfil seleccionado" : "Activar perfil"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <h4 className="mt-2.5 text-sm font-bold text-gray-900 dark:text-white">
+                          {perfil.name}
+                        </h4>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                          {perfil.description}
+                        </p>
+                      </div>
+
+                      {/* Badges de capacidades exactas */}
+                      <div className="mt-3.5 flex flex-wrap gap-1.5 border-t border-gray-100 pt-2.5 dark:border-gray-800/60">
+                        {perfil.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="mt-2 text-xs font-bold text-gray-900 dark:text-white">
-                      {perfil.name}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2">
-                      {perfil.description}
-                    </p>
-                  </button>
-                );
-              }
-            )}
-          </div>
+                  );
+                })}
+              </div>
 
-          {/* Integraciones Opcionales */}
-          <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800/80 space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Integraciones recomendadas para este módulo
-            </h4>
+              {/* Botones de acción Paso 1 */}
+              <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setModalPedidosOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button size="md" onClick={() => setPasoWizard(2)}>
+                  Siguiente: Configurar Agentes →
+                </Button>
+              </div>
+            </div>
+          )}
 
-            <div className="flex items-center justify-between rounded-xl bg-gray-50 p-3 dark:bg-white/[0.02]">
-              <div className="flex items-center gap-2.5">
-                <span className="text-base">💬</span>
-                <div>
-                  <p className="text-xs font-semibold text-gray-800 dark:text-white/90">
-                    Vincular canal de WhatsApp
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    Notificaciones automáticas al cliente y recepción de pedidos por chat.
-                  </p>
+          {/* PASO 2: ¿Quieres habilitar WhatsApp Agent o Necto Agent? */}
+          {pasoWizard === 2 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+                  Paso 2 de 2 · Agentes y Automatizaciones
+                </span>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
+                ¿Quieres habilitar WhatsApp Agent o Necto Agent?
+              </h2>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Automatiza la atención a clientes y la operación de tus pedidos con agentes especializados. Puedes activarlos o cambiarlos en cualquier momento.
+              </p>
+
+              <div className="mt-6 space-y-4">
+                {/* Switch WhatsApp Agent */}
+                <div
+                  onClick={() => setHabilitarWhatsApp(!habilitarWhatsApp)}
+                  className={`flex items-center justify-between rounded-2xl border p-4 sm:p-5 transition cursor-pointer ${
+                    habilitarWhatsApp
+                      ? "border-emerald-500/50 bg-emerald-50/40 dark:border-emerald-500/30 dark:bg-emerald-950/20"
+                      : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xl">
+                      💬
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                          WhatsApp Agent
+                        </h4>
+                        {habilitarWhatsApp && (
+                          <Badge color="success" size="xs">
+                            Habilitado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Recibe pedidos por WhatsApp, informa estados a los clientes y atiende conversaciones automáticamente.
+                      </p>
+                    </div>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Switch
+                      checked={habilitarWhatsApp}
+                      onChange={setHabilitarWhatsApp}
+                    />
+                  </div>
+                </div>
+
+                {/* Switch Necto Agent */}
+                <div
+                  onClick={() => setHabilitarIA(!habilitarIA)}
+                  className={`flex items-center justify-between rounded-2xl border p-4 sm:p-5 transition cursor-pointer ${
+                    habilitarIA
+                      ? "border-purple-500/50 bg-purple-50/40 dark:border-purple-500/30 dark:bg-purple-950/20"
+                      : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xl">
+                      🤖
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                          Necto Agent (IA)
+                        </h4>
+                        {habilitarIA && (
+                          <Badge color="primary" size="xs">
+                            Habilitado
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                        Copiloto con IA para análisis de ventas, asistencia a operadores y sugerencias automáticas de pedidos.
+                      </p>
+                    </div>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Switch checked={habilitarIA} onChange={setHabilitarIA} />
+                  </div>
                 </div>
               </div>
-              <Switch checked={conectarWhatsApp} onChange={setConectarWhatsApp} />
-            </div>
 
-            <div className="flex items-center justify-between rounded-xl bg-gray-50 p-3 dark:bg-white/[0.02]">
-              <div className="flex items-center gap-2.5">
-                <span className="text-base">⚡</span>
-                <div>
-                  <p className="text-xs font-semibold text-gray-800 dark:text-white/90">
-                    Habilitar Necto Intelligence (IA)
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    Sugerencias de respuesta automática y diagnóstico analítico de ventas.
-                  </p>
-                </div>
+              {/* Botones de acción Paso 2 */}
+              <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPasoWizard(1)}
+                >
+                  ← Volver al perfil
+                </Button>
+                <Button size="md" onClick={handleTerminarOnboardingPedidos}>
+                  Terminar y entrar a Pedidos →
+                </Button>
               </div>
-              <Switch checked={conectarIA} onChange={setConectarIA} />
             </div>
-          </div>
-
-          {/* Botones de acción */}
-          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-            <Button variant="outline" size="sm" onClick={() => setModalPedidosOpen(false)}>
-              Cancelar
-            </Button>
-            <Button size="md" onClick={handleInstalarPedidos}>
-              Instalar y entrar a Pedidos →
-            </Button>
-          </div>
+          )}
         </div>
       </Modal>
     </>

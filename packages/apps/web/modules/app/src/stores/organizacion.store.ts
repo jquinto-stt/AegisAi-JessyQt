@@ -46,12 +46,12 @@ const DEFAULT_USUARIO: UsuarioPerfil = {
 
 const DEFAULT_ORGANIZACION: OrganizacionWorkspace = {
   id: "org_default_1",
-  nombre: "Boutique Roma",
-  slug: "boutique-roma",
+  nombre: "Mi Empresa",
+  slug: "mi-empresa",
   pais: "Colombia",
   moneda: "COP",
   zonaHoraria: "America/Bogota",
-  modulosInstalados: ["pedidos"],
+  modulosInstalados: [],
   fechaCreacion: new Date().toISOString(),
 };
 
