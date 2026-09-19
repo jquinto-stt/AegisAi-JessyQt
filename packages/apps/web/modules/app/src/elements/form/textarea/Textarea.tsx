@@ -8,6 +8,11 @@ import { cn } from "@/utils";
  */
 export interface TextareaProps extends FormFieldProps {
   /**
+   * HTML id attribute for DOM and label pairing.
+   */
+  id?: string;
+
+  /**
    * Placeholder text shown when the textarea is empty.
    *
    * @default `"Enter your message"`
@@ -96,6 +101,7 @@ export interface TextareaProps extends FormFieldProps {
  * @kgId 3d7dabccfd4a
  */
 const TextArea: React.FC<TextareaProps> = ({
+  id,
   placeholder = "Enter your message",
   rows = 3,
   value = "",
@@ -137,6 +143,7 @@ const TextArea: React.FC<TextareaProps> = ({
   return (
     <div className="relative">
       <textarea
+        id={id}
         placeholder={placeholder}
         rows={rows}
         value={value}

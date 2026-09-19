@@ -21,9 +21,53 @@ export interface OrganizacionWorkspace {
   pais: string;
   moneda: string;
   zonaHoraria: string;
+  tipoEmpresa?: string;
+  tamanoEquipo?: string;
+  logoUrl?: string;
   modulosInstalados: string[];
   fechaCreacion: string;
 }
+
+export const PAISES_CONFIG: Record<
+  string,
+  { moneda: string; zonaHoraria: string; label: string }
+> = {
+  Colombia: {
+    moneda: "COP",
+    zonaHoraria: "America/Bogota",
+    label: "Colombia",
+  },
+  México: {
+    moneda: "MXN",
+    zonaHoraria: "America/Mexico_City",
+    label: "México",
+  },
+  Argentina: {
+    moneda: "ARS",
+    zonaHoraria: "America/Argentina/Buenos_Aires",
+    label: "Argentina",
+  },
+  Chile: {
+    moneda: "CLP",
+    zonaHoraria: "America/Santiago",
+    label: "Chile",
+  },
+  Perú: {
+    moneda: "PEN",
+    zonaHoraria: "America/Lima",
+    label: "Perú",
+  },
+  España: {
+    moneda: "EUR",
+    zonaHoraria: "Europe/Madrid",
+    label: "España",
+  },
+  "Estados Unidos": {
+    moneda: "USD",
+    zonaHoraria: "America/New_York",
+    label: "Estados Unidos",
+  },
+};
 
 export type OnboardingStep = "perfil" | "organizacion" | "modulos" | "completado";
 
@@ -51,6 +95,8 @@ const DEFAULT_ORGANIZACION: OrganizacionWorkspace = {
   pais: "Colombia",
   moneda: "COP",
   zonaHoraria: "America/Bogota",
+  tipoEmpresa: "Retail & Comercio",
+  tamanoEquipo: "2 a 5 personas",
   modulosInstalados: [],
   fechaCreacion: new Date().toISOString(),
 };
@@ -174,16 +220,25 @@ export class OrganizacionStore {
     pais?: string;
     moneda?: string;
     zonaHoraria?: string;
+    tipoEmpresa?: string;
+    tamanoEquipo?: string;
+    logoUrl?: string;
   }) {
     const nombre = (datos.nombre ?? "Mi Empresa").trim();
-    const slug = nombre
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "mi-empresa";
+    const slug =
+      nombre
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/[\s_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "mi-empresa";
+
     const pais = (datos.pais ?? "Colombia").trim();
-    const moneda = (datos.moneda ?? "COP").trim().toUpperCase();
-    const zonaHoraria = (datos.zonaHoraria ?? "America/Bogota").trim();
+    const configuracionPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
+    const moneda = (datos.moneda ?? configuracionPais.moneda).trim().toUpperCase();
+    const zonaHoraria = (datos.zonaHoraria ?? configuracionPais.zonaHoraria).trim();
+    const tipoEmpresa = datos.tipoEmpresa ?? this.organizacion?.tipoEmpresa ?? "Retail & Comercio";
+    const tamanoEquipo = datos.tamanoEquipo ?? this.organizacion?.tamanoEquipo ?? "2 a 5 personas";
+    const logoUrl = datos.logoUrl ?? this.organizacion?.logoUrl;
 
     this.organizacion = {
       id: this.organizacion?.id ?? `org_${Date.now()}`,
@@ -192,6 +247,9 @@ export class OrganizacionStore {
       pais,
       moneda,
       zonaHoraria,
+      tipoEmpresa,
+      tamanoEquipo,
+      logoUrl,
       modulosInstalados: this.organizacion?.modulosInstalados ?? [],
       fechaCreacion: this.organizacion?.fechaCreacion ?? new Date().toISOString(),
     };

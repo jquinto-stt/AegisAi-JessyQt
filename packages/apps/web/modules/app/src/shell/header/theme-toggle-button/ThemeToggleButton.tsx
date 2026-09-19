@@ -10,25 +10,30 @@ import { observer } from 'mobx-react-lite';
 import { uiStore } from '@/stores';
 
 interface ThemeToggleButtonProps {
-  variant?: "default" | "floating";
+  variant?: "default" | "floating" | "compact";
+  className?: string;
 }
 
 const variantClasses = {
   default:
-    "relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white",
+    "relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-dark-900 h-11 w-11 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer",
   floating:
-    "inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600",
+    "inline-flex items-center justify-center text-white transition-colors rounded-full size-14 bg-brand-500 hover:bg-brand-600 cursor-pointer",
+  compact:
+    "inline-flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors rounded-full size-9 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 cursor-pointer",
 };
 
 /**
  * @kgId 4f0e2cef2774
  */
 export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = observer(
-  ({ variant = "default" }) => {
+  ({ variant = "default", className = "" }) => {
     return (
       <button
         onClick={() => uiStore.toggleTheme()}
-        className={variantClasses[variant]}
+        className={`${variantClasses[variant]} ${className}`.trim()}
+        title="Cambiar tema claro / oscuro"
+        aria-label="Cambiar tema claro / oscuro"
       >
         {/* Los dos iconos van superpuestos y se turnan por OPACIDAD, ESCALA y
             GIRO, no por `display`. El intercambio anterior

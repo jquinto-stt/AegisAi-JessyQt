@@ -136,6 +136,15 @@ export default function SignInForm() {
                 <Link to="/register" className="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">Registrate aqui</Link>
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
+                ¿Tienes alguna duda sobre Necto?{" "}
+                <Link
+                  to="/ayuda"
+                  className="font-semibold text-gray-700 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400 underline"
+                >
+                  Centro de ayuda y FAQ
+                </Link>
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 <Link to="/onboarding/perfil" className="hover:underline text-gray-500 dark:text-gray-400">
                   O configura un nuevo espacio con el Onboarding
                 </Link>

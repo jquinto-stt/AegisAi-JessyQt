@@ -19,17 +19,23 @@ import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
 import { CapabilityGuard } from "@/app/CapabilityGuard";
 import { PlaceholderPage } from "@/pages/PlaceholderPage";
-import SignInForm from "@/pages/auth/sign-in";
-import SignUpForm from "@/pages/auth/sign-up";
-import ResetPasswordForm from "@/pages/auth/reset-password";
-import { AuthPageLayout } from "@/layouts/auth";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import SupportPage from "@/pages/SupportPage";
+import HelpPage from "@/pages/HelpPage";
+import TermsPage from "@/pages/TermsPage";
+import PrivacyPage from "@/pages/PrivacyPage";
+import CookiesPage from "@/pages/CookiesPage";
+import WorkspacesPage from "@/pages/WorkspacesPage";
 import {
   PerfilOnboardingPage,
   OrganizacionOnboardingPage,
   OnboardingModulosPage,
-  ModulosWorkspacePage,
   PedidosOnboardingPage,
+  EncuestaOnboardingPage,
 } from "@/pages/onboarding";
+import ProfilePage from "@/pages/ProfilePage";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
 
 // Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
@@ -90,25 +96,36 @@ export default function App() {
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
-        <Route path="/ayuda" element={<PlaceholderPage title="Ayuda" />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/perfil" element={<ProfilePage />} />
       </Route>
 
-      {/* Rutas Standalone */}
-      {/* Onboarding de 3 niveles: Perfil Personal -> Organización/Workspace -> Catálogo de Módulos */}
+      {/* Onboarding: Perfil -> Organización -> Módulos -> Encuesta final */}
       <Route path="/onboarding/perfil" element={<PerfilOnboardingPage />} />
       <Route path="/onboarding/organizacion" element={<OrganizacionOnboardingPage />} />
       <Route path="/onboarding/modulos" element={<OnboardingModulosPage />} />
       <Route path="/onboarding/pedidos" element={<PedidosOnboardingPage />} />
-      <Route path="/modulos" element={<ModulosWorkspacePage />} />
-      <Route path="/workspace/modulos" element={<ModulosWorkspacePage />} />
+      <Route path="/onboarding/encuesta" element={<EncuestaOnboardingPage />} />
+      <Route path="/workspaces" element={<WorkspacesPage />} />
+      <Route path="/modulos" element={<WorkspacesPage />} />
+      <Route path="/workspace/modulos" element={<WorkspacesPage />} />
+
+      {/* Autenticación & Acceso */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+      {/* Soporte, Ayuda y Páginas Legales (Acceso Libre) */}
+      <Route path="/ayuda" element={<HelpPage />} />
+      <Route path="/soporte" element={<SupportPage />} />
+      <Route path="/terminos" element={<TermsPage />} />
+      <Route path="/privacidad" element={<PrivacyPage />} />
+      <Route path="/cookies" element={<CookiesPage />} />
 
       <Route path="/seleccionar" element={<SeleccionarPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
       <Route path="/operador/login" element={<RedireccionViendoComo />} />
       <Route path="/wa" element={<SimuladorWhatsApp />} />
-      <Route path="/login" element={<AuthPageLayout><SignInForm /></AuthPageLayout>} />
-      <Route path="/register" element={<AuthPageLayout><SignUpForm /></AuthPageLayout>} />
-      <Route path="/forgot-password" element={<AuthPageLayout><ResetPasswordForm /></AuthPageLayout>} />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

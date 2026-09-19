@@ -6,6 +6,8 @@ import {
   ToggleAppSidebar,
 } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
+import NotificationDropdown from "@/shell/header/NotificationDropdown";
+import UserDropdown from "@/shell/header/UserDropdown";
 import { AppSidebar } from "@/app/AppSidebar";
 import { AppFooter } from "@/shell/footer";
 import { sessionStore } from "@/stores";
@@ -73,14 +75,10 @@ const AppHeader = observer(() => (
       </div>
     }
   >
-    <div className="flex items-center gap-2">
-      <button className="flex h-10 w-10 items-center justify-center rounded-full text-secondary-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
-        <NotificationIcon />
-      </button>
-      <button className="flex h-10 w-10 items-center justify-center rounded-full text-secondary-600 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
-        <UserIconOutline />
-      </button>
+    <div className="flex items-center gap-2.5 sm:gap-3">
       <ThemeToggleButton />
+      <NotificationDropdown />
+      <UserDropdown />
     </div>
   </BaseAppHeader>
 ));

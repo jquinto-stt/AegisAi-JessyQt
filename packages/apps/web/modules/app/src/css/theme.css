@@ -63,6 +63,10 @@
   --color-secondary-900: #0a003a;
   --color-secondary-950: #060022;
 
+  /* NECTO public content — green (#17B363) */
+  --color-public-500: #17b363;
+  --color-public-700: #0e7a43;
+
   /* NECTO accent — light blue (#97D6DF) */
   --color-accent-25: #f5fcfd;
   --color-accent-50: #eaf7f9;

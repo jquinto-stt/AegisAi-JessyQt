@@ -1,30 +1,70 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
+import { Clock, DollarSign, Upload, Edit3, ArrowRight } from "lucide-react";
 import { PageMeta } from "@/shell/meta";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Button } from "@/elements/ui/button";
-import { ThemeToggleButton } from "@/shell";
-import { organizacionStore } from "@/stores/organizacion.store";
+import { organizacionStore, PAISES_CONFIG } from "@/stores/organizacion.store";
+import { OnboardingLayout } from "./OnboardingLayout";
 
-const MONEDAS_COMUNES = [
-  { codigo: "COP", label: "Peso Colombiano (COP · $)", pais: "Colombia" },
-  { codigo: "USD", label: "Dólar Estadounidense (USD · $)", pais: "Internacional" },
-  { codigo: "MXN", label: "Peso Mexicano (MXN · $)", pais: "México" },
-  { codigo: "ARS", label: "Peso Argentino (ARS · $)", pais: "Argentina" },
-  { codigo: "EUR", label: "Euro (EUR · €)", pais: "España / Europa" },
+const TIPOS_EMPRESA = [
+  "Gastronomía & Alimentos",
+  "Moda, Calzado & Accesorios",
+  "Retail & Comercio minorista",
+  "Tecnología & Software",
+  "Servicios Profesionales & Consultoría",
+  "Salud, Estética & Bienestar",
+  "Construcción & Hogar",
+  "Otro rubro comercial",
+];
+
+const TAMANOS_EQUIPO = [
+  "Solo yo (1 persona)",
+  "2 a 5 personas",
+  "6 a 20 personas",
+  "Más de 20 personas",
+];
+
+const BRAND_MESSAGES_ORGANIZACION = [
+  {
+    badge: "Tu Organización",
+    title: "Centraliza la operación de tu negocio.",
+    subtitle: "Un espacio de trabajo unificado donde conviven tus ventas, catálogo y equipo.",
+  },
+  {
+    badge: "Estandarización Regional",
+    title: "Moneda y horarios sincronizados.",
+    subtitle: "Tus reportes y transacciones operan automáticamente bajo el huso horario correcto.",
+  },
+  {
+    badge: "Identidad de Marca",
+    title: "Reconocible para clientes y equipo.",
+    subtitle: "Personaliza tus comprobantes, pedidos y despachos con el logo de tu empresa.",
+  },
 ];
 
 export const OrganizacionOnboardingPage = observer(() => {
   const navigate = useNavigate();
   const orgActual = organizacionStore.organizacion;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sub-paso dentro de Organización: 1 (Datos) o 2 (Logo)
+  const [subPaso, setSubPaso] = useState<1 | 2>(1);
 
   const [nombre, setNombre] = useState(orgActual?.nombre || "");
   const [pais, setPais] = useState(orgActual?.pais || "Colombia");
-  const [moneda, setMoneda] = useState(orgActual?.moneda || "COP");
-  const [zonaHoraria, setZonaHoraria] = useState(orgActual?.zonaHoraria || "America/Bogota");
+  const [tipoEmpresa, setTipoEmpresa] = useState(
+    orgActual?.tipoEmpresa || "Retail & Comercio minorista"
+  );
+  const [tamanoEquipo, setTamanoEquipo] = useState(
+    orgActual?.tamanoEquipo || "2 a 5 personas"
+  );
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(orgActual?.logoUrl);
   const [error, setError] = useState("");
+
+  const configPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
 
   const slugGenerado = nombre
     .toLowerCase()
@@ -33,21 +73,41 @@ export const OrganizacionOnboardingPage = observer(() => {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNextSubPaso = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!nombre.trim()) {
-      setError("Por favor ingresa el nombre de tu negocio o empresa.");
+      setError("Por favor ingresa el nombre de tu empresa o negocio.");
       return;
     }
+    setError("");
+    setSubPaso(2);
+  };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string;
+        setLogoUrl(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFinalizarOrganizacion = () => {
     organizacionStore.crearOrganizacion({
       nombre,
       pais,
-      moneda,
-      zonaHoraria,
+      moneda: configPais.moneda,
+      zonaHoraria: configPais.zonaHoraria,
+      tipoEmpresa,
+      tamanoEquipo,
+      logoUrl,
     });
 
-    navigate("/onboarding/modulos");
+    // Pasa a la encuesta final antes de entrar directo al workspace
+    navigate("/onboarding/encuesta?redirect=/workspaces");
   };
 
   return (
@@ -57,126 +117,260 @@ export const OrganizacionOnboardingPage = observer(() => {
         description="Define el espacio de trabajo para tu negocio"
       />
 
-      <div className="relative min-h-screen bg-gray-50/70 px-4 py-12 dark:bg-gray-950 sm:px-6">
-        <div className="fixed right-6 top-6 z-50">
-          <ThemeToggleButton variant="floating" />
-        </div>
-
-        <div className="mx-auto w-full max-w-xl">
-          {/* Logo y Encabezado */}
-          <div className="mb-8 text-center">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 shadow-lg shadow-brand-500/20 text-white font-black text-xl mb-4">
-              N
-            </div>
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 mb-2">
-              Paso 2 de 3 · Espacio de Trabajo
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-              Crea tu Organización
+      <OnboardingLayout
+        pasoActual={2}
+        totalPasos={2}
+        pasoLabel="Organización"
+        onBack={subPaso === 2 ? () => setSubPaso(1) : () => navigate("/onboarding/perfil")}
+        brandMessages={BRAND_MESSAGES_ORGANIZACION}
+        brandSummary={{
+          eyebrow: "Tu empresa",
+          title: nombre || "Nombre de tu empresa",
+          lines: [
+            slugGenerado ? `necto.app/${slugGenerado}` : "",
+            `${configPais.moneda} · ${pais}`,
+            `Zona horaria: ${configPais.zonaHoraria}`,
+            tipoEmpresa,
+          ].filter(Boolean),
+        }}
+      >
+        <div className="w-full">
+          {/* Encabezado del paso */}
+          <div className="mb-6 text-center sm:text-left">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+              Paso 2 de 2 — {subPaso} / 2 Personaliza tu organización
+            </span>
+            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              Personaliza tu organización
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              La Organización es el contenedor donde viven tus módulos operativos, miembros y ajustes macro.
+            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+              {subPaso === 1
+                ? "Configura tu empresa para ti y los miembros que se unan más adelante."
+                : "Agrega el logo de tu empresa para que todos tus reportes y clientes la reconozcan."}
             </p>
           </div>
 
-          {/* Tarjeta del formulario */}
-          <div className="rounded-3xl border border-gray-200/80 bg-white p-6 sm:p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            {error && (
-              <div className="mb-5 rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
-                {error}
-              </div>
-            )}
+          {error && (
+            <div className="mb-5 rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+              {error}
+            </div>
+          )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {/* SUB-PASO 1: Datos de la organización */}
+          {subPaso === 1 && (
+            <form onSubmit={handleNextSubPaso} className="space-y-4">
               <div>
-                <Label htmlFor="nombreOrg">Nombre del negocio o empresa <span className="text-error-500">*</span></Label>
+                <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Nombre de la empresa <span className="text-brand-500">*</span>
+                </Label>
                 <Input
-                  id="nombreOrg"
+                  id="companyName"
                   placeholder="Ej: Boutique Roma, Café Central, Consultoría Solís"
                   value={nombre}
                   onChange={(e) => {
                     setNombre(e.target.value);
                     setError("");
                   }}
+                  className="mt-1.5 h-11"
                 />
                 {slugGenerado && (
-                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                    Identificador único: <span className="font-mono text-brand-600 dark:text-brand-400">necto.app/{slugGenerado}</span>
+                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    Identificador web:{" "}
+                    <span className="font-mono font-semibold text-brand-600 dark:text-brand-400">
+                      necto.app/{slugGenerado}
+                    </span>
                   </p>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="paisOrg">País de operación</Label>
+              {/* País y Zona horaria / Moneda juntos con micro-copy natural */}
+              <div>
+                <Label htmlFor="countrySelect" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  País de operación <span className="text-brand-500">*</span>
+                </Label>
+                <div className="mt-1.5 relative">
                   <select
-                    id="paisOrg"
+                    id="countrySelect"
                     value={pais}
                     onChange={(e) => setPais(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
-                    <option value="Colombia">Colombia</option>
-                    <option value="México">México</option>
-                    <option value="Argentina">Argentina</option>
-                    <option value="Chile">Chile</option>
-                    <option value="España">España</option>
-                    <option value="Estados Unidos">Estados Unidos</option>
-                  </select>
-                </div>
-
-                <div>
-                  <Label htmlFor="monedaOrg">Moneda base</Label>
-                  <select
-                    id="monedaOrg"
-                    value={moneda}
-                    onChange={(e) => setMoneda(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                  >
-                    {MONEDAS_COMUNES.map((m) => (
-                      <option key={m.codigo} value={m.codigo}>
-                        {m.label}
+                    {Object.keys(PAISES_CONFIG).map((pKey) => (
+                      <option key={pKey} value={pKey}>
+                        {pKey} ({PAISES_CONFIG[pKey].moneda})
                       </option>
                     ))}
                   </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Explicación sutil y elegante en texto natural, sin badges artificiales */}
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Moneda base ({configPais.moneda}) y zona horaria ({configPais.zonaHoraria}) sincronizadas automáticamente con tu región.
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="companyType" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Tipo de empresa <span className="text-brand-500">*</span>
+                </Label>
+                <div className="mt-1.5 relative">
+                  <select
+                    id="companyType"
+                    value={tipoEmpresa}
+                    onChange={(e) => setTipoEmpresa(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                  >
+                    {TIPOS_EMPRESA.map((tipo) => (
+                      <option key={tipo} value={tipo}>
+                        {tipo}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="zonaHoraria">Zona horaria del negocio</Label>
-                <select
-                  id="zonaHoraria"
-                  value={zonaHoraria}
-                  onChange={(e) => setZonaHoraria(e.target.value)}
-                  className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                >
-                  <option value="America/Bogota">Bogotá, Lima, Quito (GMT-5)</option>
-                  <option value="America/Mexico_City">Ciudad de México (GMT-6)</option>
-                  <option value="America/Argentina/Buenos_Aires">Buenos Aires (GMT-3)</option>
-                  <option value="America/Santiago">Santiago de Chile (GMT-4)</option>
-                  <option value="Europe/Madrid">Madrid, Barcelona (GMT+1)</option>
-                  <option value="America/New_York">Nueva York, Miami (GMT-5)</option>
-                </select>
-                <p className="mt-1.5 text-xs text-gray-400">
-                  Tus pedidos, reportes y turnos se sincronizarán bajo este huso horario.
-                </p>
+                <Label htmlFor="teamStrength" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Tamaño del equipo <span className="text-brand-500">*</span>
+                </Label>
+                <div className="mt-1.5 relative">
+                  <select
+                    id="teamStrength"
+                    value={tamanoEquipo}
+                    onChange={(e) => setTamanoEquipo(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                  >
+                    {TAMANOS_EQUIPO.map((tam) => (
+                      <option key={tam} value={tam}>
+                        {tam}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
 
-              <div className="pt-4 flex items-center justify-between">
-                <button
+              <div className="pt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => navigate("/onboarding/perfil")}
-                  className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="rounded-full px-5 text-sm font-semibold cursor-pointer"
                 >
-                  ← Volver a perfil
-                </button>
-                <Button size="md" type="submit">
-                  Crear espacio de trabajo →
+                  Volver
+                </Button>
+                <Button
+                  type="submit"
+                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+                >
+                  Continuar
+                  <ArrowRight className="size-4 ml-1.5 inline" />
                 </Button>
               </div>
             </form>
-          </div>
+          )}
+
+          {/* SUB-PASO 2: Logo de la organización */}
+          {subPaso === 2 && (
+            <div className="flex flex-col items-center py-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+
+              {/* Círculo central con borde e ícono o previsualización */}
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-brand-500 bg-brand-50/40 p-2 shadow-inner dark:border-brand-400 dark:bg-brand-500/10">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo Organización"
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    className="h-16 w-16 text-brand-500 dark:text-brand-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                  </svg>
+                )}
+              </div>
+
+              {/* Botones de acción Subir Logo / Cambiar Logo */}
+              <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Subir logo
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (logoUrl) {
+                      setLogoUrl(undefined);
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  {logoUrl ? "Quitar logo" : "Cambiar logo"}
+                </Button>
+              </div>
+
+              {/* Botón Continuar */}
+              <div className="mt-10 w-full max-w-sm">
+                <Button
+                  type="button"
+                  onClick={handleFinalizarOrganizacion}
+                  className="w-full rounded-xl py-3 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+                >
+                  Continuar
+                </Button>
+                <div className="mt-3 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setSubPaso(1)}
+                    className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white cursor-pointer"
+                  >
+                    ← Volver a editar datos
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </OnboardingLayout>
     </>
   );
 });
