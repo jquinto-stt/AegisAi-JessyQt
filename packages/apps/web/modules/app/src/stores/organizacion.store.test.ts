@@ -78,4 +78,16 @@ describe("OrganizacionStore (Multi-tenant hierarchy)", () => {
     expect(store.tieneModuloPedidos).toBe(false);
     expect(store.pasoActual).toBe("modulos");
   });
+
+  it("tolera datos parciales o nulos sin lanzar TypeError", () => {
+    expect(() => {
+      store.actualizarPerfil({});
+      store.crearOrganizacion({});
+    }).not.toThrow();
+
+    expect(store.usuario?.nombre).toBe("Usuario");
+    expect(store.usuario?.pais).toBe("Colombia");
+    expect(store.organizacion?.nombre).toBe("Mi Empresa");
+    expect(store.organizacion?.moneda).toBe("COP");
+  });
 });

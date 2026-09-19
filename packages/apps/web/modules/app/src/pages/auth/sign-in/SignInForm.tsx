@@ -29,12 +29,14 @@ export default function SignInForm() {
       nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
       apellido: "Necto",
       email: finalEmail,
+      pais: "Colombia",
     });
 
     // 3. Garantizamos un workspace base si no existía para no bloquear la app
     if (!organizacionStore.organizacion) {
       organizacionStore.crearOrganizacion({
         nombre: "Mi Empresa",
+        pais: "Colombia",
         moneda: "COP",
         zonaHoraria: "America/Bogota",
       });

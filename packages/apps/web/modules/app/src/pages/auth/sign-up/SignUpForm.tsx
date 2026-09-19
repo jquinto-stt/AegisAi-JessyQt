@@ -31,6 +31,7 @@ export default function SignUpForm() {
       nombre: finalNombre,
       apellido: finalApellido,
       email: finalEmail,
+      pais: "Colombia",
     });
 
     // 3. Guía al onboarding de plataforma (perfil -> organización -> módulos)

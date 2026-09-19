@@ -145,46 +145,55 @@ export class OrganizacionStore {
   // ── Mutaciones ────────────────────────────────────────────────────────────
 
   actualizarPerfil(datos: {
-    nombre: string;
-    apellido: string;
-    email: string;
-    pais: string;
+    nombre?: string;
+    apellido?: string;
+    email?: string;
+    pais?: string;
     comoNosConociste?: string;
   }) {
+    const nombre = (datos.nombre ?? this.usuario?.nombre ?? "Usuario").trim();
+    const apellido = (datos.apellido ?? this.usuario?.apellido ?? "Necto").trim();
+    const email = (datos.email ?? this.usuario?.email ?? "usuario@empresa.com").trim();
+    const pais = (datos.pais ?? this.usuario?.pais ?? "Colombia").trim();
+    const comoNosConociste = datos.comoNosConociste ? datos.comoNosConociste.trim() : this.usuario?.comoNosConociste;
+
     this.usuario = {
       id: this.usuario?.id ?? `usr_${Date.now()}`,
-      nombre: datos.nombre.trim(),
-      apellido: datos.apellido.trim(),
-      email: datos.email.trim(),
-      pais: datos.pais.trim(),
-      comoNosConociste: datos.comoNosConociste?.trim(),
+      nombre,
+      apellido,
+      email,
+      pais,
+      comoNosConociste,
       perfilCompletado: true,
     };
     this.persist();
   }
 
   crearOrganizacion(datos: {
-    nombre: string;
-    pais: string;
-    moneda: string;
+    nombre?: string;
+    pais?: string;
+    moneda?: string;
     zonaHoraria?: string;
   }) {
-    const slug = datos.nombre
+    const nombre = (datos.nombre ?? "Mi Empresa").trim();
+    const slug = nombre
       .toLowerCase()
-      .trim()
       .replace(/[^\w\s-]/g, "")
       .replace(/[\s_-]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+      .replace(/^-+|-+$/g, "") || "mi-empresa";
+    const pais = (datos.pais ?? "Colombia").trim();
+    const moneda = (datos.moneda ?? "COP").trim().toUpperCase();
+    const zonaHoraria = (datos.zonaHoraria ?? "America/Bogota").trim();
 
     this.organizacion = {
-      id: `org_${Date.now()}`,
-      nombre: datos.nombre.trim(),
-      slug: slug || "mi-empresa",
-      pais: datos.pais.trim(),
-      moneda: datos.moneda.trim().toUpperCase(),
-      zonaHoraria: datos.zonaHoraria || "America/Bogota",
-      modulosInstalados: [],
-      fechaCreacion: new Date().toISOString(),
+      id: this.organizacion?.id ?? `org_${Date.now()}`,
+      nombre,
+      slug,
+      pais,
+      moneda,
+      zonaHoraria,
+      modulosInstalados: this.organizacion?.modulosInstalados ?? [],
+      fechaCreacion: this.organizacion?.fechaCreacion ?? new Date().toISOString(),
     };
     this.persist();
   }
