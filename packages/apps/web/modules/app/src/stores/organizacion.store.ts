@@ -1,0 +1,219 @@
+import { makeAutoObservable } from "mobx";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TIPOS DEL DOMINIO DE ORGANIZACIÓN & USUARIO (Multi-tenant)
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface UsuarioPerfil {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  pais: string;
+  comoNosConociste?: string;
+  perfilCompletado: boolean;
+}
+
+export interface OrganizacionWorkspace {
+  id: string;
+  nombre: string;
+  slug: string;
+  pais: string;
+  moneda: string;
+  zonaHoraria: string;
+  modulosInstalados: string[];
+  fechaCreacion: string;
+}
+
+export type OnboardingStep = "perfil" | "organizacion" | "modulos" | "completado";
+
+const STORAGE_KEY = "necto_workspace_v1";
+
+interface WorkspaceStorage {
+  usuario: UsuarioPerfil | null;
+  organizacion: OrganizacionWorkspace | null;
+}
+
+const DEFAULT_USUARIO: UsuarioPerfil = {
+  id: "usr_admin_default",
+  nombre: "Carolina",
+  apellido: "Zapata",
+  email: "carolina@necto.app",
+  pais: "Colombia",
+  comoNosConociste: "Recomendación de un colega",
+  perfilCompletado: true,
+};
+
+const DEFAULT_ORGANIZACION: OrganizacionWorkspace = {
+  id: "org_default_1",
+  nombre: "Boutique Roma",
+  slug: "boutique-roma",
+  pais: "Colombia",
+  moneda: "COP",
+  zonaHoraria: "America/Bogota",
+  modulosInstalados: ["pedidos"],
+  fechaCreacion: new Date().toISOString(),
+};
+
+function loadStorage(): WorkspaceStorage {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      // Para entornos iniciales o desarrollo, cargar valores por defecto
+      return {
+        usuario: DEFAULT_USUARIO,
+        organizacion: DEFAULT_ORGANIZACION,
+      };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      usuario: parsed.usuario ?? DEFAULT_USUARIO,
+      organizacion: parsed.organizacion ?? DEFAULT_ORGANIZACION,
+    };
+  } catch {
+    return {
+      usuario: DEFAULT_USUARIO,
+      organizacion: DEFAULT_ORGANIZACION,
+    };
+  }
+}
+
+function persistStorage(data: WorkspaceStorage) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Entorno sin localStorage (tests / SSR)
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ORGANIZACION STORE
+// ═══════════════════════════════════════════════════════════════════════════
+
+export class OrganizacionStore {
+  usuario: UsuarioPerfil | null = null;
+  organizacion: OrganizacionWorkspace | null = null;
+
+  constructor() {
+    const saved = loadStorage();
+    this.usuario = saved.usuario;
+    this.organizacion = saved.organizacion;
+    makeAutoObservable(this);
+  }
+
+  private persist() {
+    persistStorage({
+      usuario: this.usuario,
+      organizacion: this.organizacion,
+    });
+  }
+
+  // ── Getters de estado del onboarding ──────────────────────────────────────
+
+  get tienePerfil(): boolean {
+    return !!this.usuario && this.usuario.perfilCompletado;
+  }
+
+  get tieneOrganizacion(): boolean {
+    return !!this.organizacion && !!this.organizacion.nombre.trim();
+  }
+
+  get tieneModuloPedidos(): boolean {
+    return this.organizacion?.modulosInstalados.includes("pedidos") ?? false;
+  }
+
+  get pasoActual(): OnboardingStep {
+    if (!this.tienePerfil) return "perfil";
+    if (!this.tieneOrganizacion) return "organizacion";
+    if (!this.tieneModuloPedidos) return "modulos";
+    return "completado";
+  }
+
+  get siguienteRuta(): string {
+    switch (this.pasoActual) {
+      case "perfil":
+        return "/onboarding/perfil";
+      case "organizacion":
+        return "/onboarding/organizacion";
+      case "modulos":
+        return "/modulos";
+      case "completado":
+        return "/pedidos/inicio";
+    }
+  }
+
+  // ── Mutaciones ────────────────────────────────────────────────────────────
+
+  actualizarPerfil(datos: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    pais: string;
+    comoNosConociste?: string;
+  }) {
+    this.usuario = {
+      id: this.usuario?.id ?? `usr_${Date.now()}`,
+      nombre: datos.nombre.trim(),
+      apellido: datos.apellido.trim(),
+      email: datos.email.trim(),
+      pais: datos.pais.trim(),
+      comoNosConociste: datos.comoNosConociste?.trim(),
+      perfilCompletado: true,
+    };
+    this.persist();
+  }
+
+  crearOrganizacion(datos: {
+    nombre: string;
+    pais: string;
+    moneda: string;
+    zonaHoraria?: string;
+  }) {
+    const slug = datos.nombre
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    this.organizacion = {
+      id: `org_${Date.now()}`,
+      nombre: datos.nombre.trim(),
+      slug: slug || "mi-empresa",
+      pais: datos.pais.trim(),
+      moneda: datos.moneda.trim().toUpperCase(),
+      zonaHoraria: datos.zonaHoraria || "America/Bogota",
+      modulosInstalados: [],
+      fechaCreacion: new Date().toISOString(),
+    };
+    this.persist();
+  }
+
+  instalarModulo(moduloId: string) {
+    if (!this.organizacion) return;
+    if (!this.organizacion.modulosInstalados.includes(moduloId)) {
+      this.organizacion.modulosInstalados.push(moduloId);
+      this.persist();
+    }
+  }
+
+  desinstalarModulo(moduloId: string) {
+    if (!this.organizacion) return;
+    this.organizacion.modulosInstalados = this.organizacion.modulosInstalados.filter(
+      (m) => m !== moduloId
+    );
+    this.persist();
+  }
+
+  reiniciarOnboardingParaTest() {
+    this.usuario = null;
+    this.organizacion = null;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignorar
+    }
+  }
+}
+
+export const organizacionStore = new OrganizacionStore();

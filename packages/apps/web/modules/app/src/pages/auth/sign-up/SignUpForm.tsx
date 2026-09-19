@@ -15,8 +15,8 @@ export default function SignUpForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: integrate with Cognito auth
-    navigate("/login");
+    // Redirige al Onboarding Paso 1: Perfil de usuario
+    navigate("/onboarding/perfil");
   };
 
   return (
@@ -25,7 +25,7 @@ export default function SignUpForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Crea tu cuenta</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Registrate para empezar a gestionar tus turnos</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Regístrate para crear tu cuenta en Necto</p>
           </div>
           <div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">

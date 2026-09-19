@@ -19,6 +19,9 @@ export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
 export { sessionStore, SessionStore } from '@/stores/session.store';
 export type { Modulo, TipoSesion, AccessContext, DataScope } from '@/stores/session.store';
 
+export { organizacionStore, OrganizacionStore } from '@/stores/organizacion.store';
+export type { UsuarioPerfil, OrganizacionWorkspace, OnboardingStep } from '@/stores/organizacion.store';
+
 export {
   rolesStore,
   RolesStore,

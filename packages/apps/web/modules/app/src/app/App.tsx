@@ -23,6 +23,11 @@ import SignInForm from "@/pages/auth/sign-in";
 import SignUpForm from "@/pages/auth/sign-up";
 import ResetPasswordForm from "@/pages/auth/reset-password";
 import { AuthPageLayout } from "@/layouts/auth";
+import {
+  PerfilOnboardingPage,
+  OrganizacionOnboardingPage,
+  ModulosWorkspacePage,
+} from "@/pages/onboarding";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
 
 // Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
@@ -87,6 +92,12 @@ export default function App() {
       </Route>
 
       {/* Rutas Standalone */}
+      {/* Onboarding de 3 niveles: Perfil Personal -> Organización/Workspace -> Catálogo de Módulos */}
+      <Route path="/onboarding/perfil" element={<PerfilOnboardingPage />} />
+      <Route path="/onboarding/organizacion" element={<OrganizacionOnboardingPage />} />
+      <Route path="/modulos" element={<ModulosWorkspacePage />} />
+      <Route path="/workspace/modulos" element={<ModulosWorkspacePage />} />
+
       <Route path="/seleccionar" element={<SeleccionarPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
       <Route path="/operador/login" element={<RedireccionViendoComo />} />
