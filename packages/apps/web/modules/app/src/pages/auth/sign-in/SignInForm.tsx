@@ -11,19 +11,51 @@ import { sessionStore, organizacionStore } from "@/stores";
  * @kgId 07b80348fc4c
  */
 export default function SignInForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const navigate = useNavigate();
 
+  const handleLogin = (userEmail?: string) => {
+    const finalEmail = userEmail || email.trim() || "admin@necto.io";
+    const nombreUsuario = finalEmail.split("@")[0] || "Admin";
+
+    // 1. En mockup sin backend, cualquier credencial autentica la sesión
+    sessionStore.configurar(["pedidos"], "administrador");
+
+    // 2. Registramos el perfil
+    organizacionStore.actualizarPerfil({
+      nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
+      apellido: "Necto",
+      email: finalEmail,
+    });
+
+    // 3. Garantizamos un workspace base si no existía para no bloquear la app
+    if (!organizacionStore.organizacion) {
+      organizacionStore.crearOrganizacion({
+        nombre: "Mi Empresa",
+        moneda: "COP",
+        zonaHoraria: "America/Bogota",
+      });
+      organizacionStore.instalarModulo("pedidos", {
+        perfilComercial: "general",
+        habilitarWhatsApp: false,
+        habilitarAsistente: false,
+      });
+    }
+
+    // 4. Entra directamente al módulo activo
+    navigate("/pedidos/inicio");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Si la organización y los módulos ya están completos y la sesión activa, entra directo
-    if (sessionStore.isReady && organizacionStore.pasoActual === "completado") {
-      navigate(sessionStore.moduloEntryPath);
-    } else {
-      // De lo contrario, guía al usuario por el paso correspondiente del onboarding
-      navigate(organizacionStore.siguienteRuta);
-    }
+    handleLogin();
+  };
+
+  const handleGoogleLogin = () => {
+    handleLogin("usuario.google@necto.io");
   };
 
   return (
@@ -39,12 +71,22 @@ export default function SignInForm() {
               <div className="space-y-6">
                 <div>
                   <Label>Correo electronico <span className="text-error-500">*</span></Label>
-                  <Input type="email" placeholder="nombre@empresa.com" />
+                  <Input
+                    type="email"
+                    placeholder="nombre@empresa.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label>Contrasena <span className="text-error-500">*</span></Label>
                   <div className="relative">
-                    <Input type={showPassword ? "text" : "password"} placeholder="Ingresa tu contrasena" />
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Ingresa tu contrasena"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
                     <span onClick={() => setShowPassword(!showPassword)} className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2">
                       {showPassword ? (
                         <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
@@ -74,7 +116,11 @@ export default function SignInForm() {
                 <span className="p-2 text-gray-400 bg-white dark:bg-gray-900 sm:px-5 sm:py-2">O CONTINUA CON</span>
               </div>
             </div>
-            <button className="inline-flex items-center justify-center w-full gap-3 py-3 text-sm font-normal text-gray-700 transition-colors border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-white/90 dark:hover:bg-white/5">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="inline-flex items-center justify-center w-full gap-3 py-3 text-sm font-normal text-gray-700 transition-colors border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-white/90 dark:hover:bg-white/5 cursor-pointer"
+            >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z" fill="#4285F4" />
                 <path d="M10.1788 18.75C12.5895 18.75 14.6133 17.9722 16.0915 16.6305L13.274 14.4916C12.5201 15.0068 11.5081 15.3666 10.1788 15.3666C7.81773 15.3666 5.81379 13.8402 5.09944 11.7305L4.99473 11.7392L2.23868 13.8295L2.20264 13.9277C3.67087 16.786 6.68674 18.75 10.1788 18.75Z" fill="#34A853" />
@@ -83,10 +129,15 @@ export default function SignInForm() {
               </svg>
               Google
             </button>
-            <div className="mt-5">
-              <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400">
-                No tienes una cuenta?{" "}
-                <Link to="/register" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">Registrate aqui</Link>
+            <div className="mt-5 space-y-2 text-center">
+              <p className="text-sm font-normal text-gray-700 dark:text-gray-400">
+                ¿No tienes una cuenta?{" "}
+                <Link to="/register" className="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">Registrate aqui</Link>
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                <Link to="/onboarding/perfil" className="hover:underline text-gray-500 dark:text-gray-400">
+                  O configura un nuevo espacio con el Onboarding
+                </Link>
               </p>
             </div>
           </div>
