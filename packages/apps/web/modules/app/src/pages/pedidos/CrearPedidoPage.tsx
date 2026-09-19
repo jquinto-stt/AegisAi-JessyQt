@@ -28,6 +28,7 @@ interface ItemFila {
   nombre: string;
   cantidad: number;
   precio?: number;
+  variante?: string;
 }
 
 interface CreatedInfo {
@@ -37,6 +38,7 @@ interface CreatedInfo {
   /** ISO programado, si el pedido se creó como programado. */
   programadoPara?: string;
   direccion?: string;
+  mesa?: string;
   total?: number;
 }
 
@@ -159,29 +161,14 @@ export const CrearPedidoPage = observer(() => {
   const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
   const [pagaCon, setPagaCon] = useState<string>("");
   const [repartidor, setRepartidor] = useState<string>("");
+  const [mesa, setMesa] = useState<string>("");
 
   // ── Item handlers ──
   const setItem = (idx: number, patch: Partial<ItemFila>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
 
   /**
-   * Cambio de modalidad, con limpieza de los datos que solo aplican a domicilio.
-   *
-   * Punto único: los botones de modalidad llamaban a `setModalidad` directamente,
-   * así que elegir "retiro" después de escribir un repartidor dejaba el nombre
-   * guardado en el estado. El campo desaparecía de la vista —porque la sección de
-   * despacho solo se pinta en domicilio— pero el valor seguía ahí y viajaba al
-   * `crearPedido`: el pedido se registraba con un repartidor que nadie veía ni
-   * había pedido.
-   *
-   * Se limpia al ENTRAR a retiro/en_sitio, no al salir de domicilio, para que el
-   * caso quede cubierto aunque el estado inicial ya fuera otro.
-   *
-   * Nota: no se limpia la dirección (`calle`, `barrio`, …) a propósito. El
-   * repartidor describe cómo se despacha —no aplica fuera de domicilio—, mientras
-   * que la dirección es un dato del cliente que el operador puede querer
-   * recuperar si vuelve a cambiar a domicilio. Borrarla castigaría un cambio de
-   * idea.
+   * Cambio de modalidad, con limpieza de los datos que solo aplican a domicilio o en_sitio.
    */
   const cambiarModalidad = (m: ModalidadPedido) => {
     setModalidad(m);
@@ -190,15 +177,24 @@ export const CrearPedidoPage = observer(() => {
       // El error de calle ya no aplica si la sección dejó de existir.
       setErrors((prev) => (prev.calle ? { ...prev, calle: "" } : prev));
     }
+    if (m !== "en_sitio") {
+      setMesa("");
+    }
   };
 
   const addItem = () => setItems((prev) => [...prev, { nombre: "", cantidad: 1 }]);
   const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
 
-  /** Al elegir un item del catálogo, autocompleta nombre y precio. */
+  /** Al elegir un item del catálogo, autocompleta nombre, precio y primera variante si aplica. */
   const pickCatalogo = (idx: number, itemId: string) => {
     const cat = catalogo.find((c) => c.id === itemId);
-    if (cat) setItem(idx, { nombre: cat.nombre, precio: cat.precio });
+    if (cat) {
+      setItem(idx, {
+        nombre: cat.nombre,
+        precio: cat.precio,
+        variante: cat.variantesDisponibles?.[0],
+      });
+    }
   };
 
   const resetForm = () => {
@@ -217,6 +213,7 @@ export const CrearPedidoPage = observer(() => {
     setMetodoPago("efectivo");
     setPagaCon("");
     setRepartidor("");
+    setMesa("");
     setErrors({});
   };
 
@@ -293,14 +290,17 @@ export const CrearPedidoPage = observer(() => {
     */
     const itemsLimpios: PedidoItem[] = items
       .filter((it) => it.nombre.trim() !== "")
-      .map((it) => ({
-        nombre: it.nombre.trim(),
-        cantidad: Math.max(1, Number(it.cantidad) || 1),
-        // `precio` es opcional: `undefined` significa "sin precio definido" y se
-        // conserva como tal. Solo se sanea si viene un número, y entonces nunca
-        // por debajo de 0.
-        precio: it.precio === undefined ? undefined : Math.max(0, Number(it.precio) || 0),
-      }));
+      .map((it) => {
+        const nombreFinal = it.variante ? `${it.nombre.trim()} (${it.variante})` : it.nombre.trim();
+        return {
+          nombre: nombreFinal,
+          cantidad: Math.max(1, Number(it.cantidad) || 1),
+          // `precio` es opcional: `undefined` significa "sin precio definido" y se
+          // conserva como tal. Solo se sanea si viene un número, y entonces nunca
+          // por debajo de 0.
+          precio: it.precio === undefined ? undefined : Math.max(0, Number(it.precio) || 0),
+        };
+      });
 
     // Programar exige `scheduled.manage`: si no se tiene, el pedido se crea
     // activo aunque el estado local hubiera quedado en `true`.
@@ -321,12 +321,17 @@ export const CrearPedidoPage = observer(() => {
         ? Number(pagaCon)
         : undefined;
 
+    const notasLimpias = [
+      modalidad === "en_sitio" && mesa.trim() ? `Mesa: ${mesa.trim()}` : "",
+      notas.trim(),
+    ].filter(Boolean).join(" · ") || undefined;
+
     const pedido = pedidosStore.crearPedido({
       cliente: cliente.trim(),
       telefono: telefono.trim(),
       modalidad,
       items: itemsLimpios,
-      notas: notas.trim() || undefined,
+      notas: notasLimpias,
       origen: "operador",
       programadoPara,
       direccionEntrega,
@@ -352,6 +357,7 @@ export const CrearPedidoPage = observer(() => {
       direccion: direccionEntrega
         ? `${direccionEntrega.calle}${direccionEntrega.referencia ? ` (${direccionEntrega.referencia})` : ""}`
         : undefined,
+      mesa: modalidad === "en_sitio" && mesa.trim() ? mesa.trim() : undefined,
       total: pedidosStore.totalPedido(pedido),
     });
     resetForm();
@@ -391,6 +397,14 @@ export const CrearPedidoPage = observer(() => {
                     <span className="text-gray-500">Dirección</span>
                     <span className="max-w-[170px] truncate text-right font-medium text-gray-800 dark:text-white/90">
                       {created.direccion}
+                    </span>
+                  </div>
+                )}
+                {created.mesa && (
+                  <div className="flex justify-between border-b border-dashed border-gray-200 pb-2 dark:border-gray-700">
+                    <span className="text-gray-500">Mesa / Salón</span>
+                    <span className="max-w-[170px] truncate text-right font-medium text-gray-800 dark:text-white/90">
+                      {created.mesa}
                     </span>
                   </div>
                 )}
@@ -615,11 +629,11 @@ export const CrearPedidoPage = observer(() => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="costoEnvio">Costo de envío ($)</Label>
-                  {/* `step` del catálogo es `number` (no string, como en `min` y
-                      `max`), de ahí el `{500}` sin comillas. El saneado va en el
-                      onChange: se guarda ya normalizado, así que `totalPedido`
-                      nunca ve un valor fuera de rango. */}
+                  <Label htmlFor="costoEnvio">
+                    {pedidosStore.tieneCapacidad("carrier_shipment")
+                      ? "Flete / Costo de envío ($)"
+                      : "Costo de entrega / domicilio ($)"}
+                  </Label>
                   <Input
                     id="costoEnvio"
                     type="number"
@@ -631,14 +645,46 @@ export const CrearPedidoPage = observer(() => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="repartidor">Repartidor / Mensajero (opcional)</Label>
+                  <Label htmlFor="repartidor">
+                    {pedidosStore.tieneCapacidad("carrier_shipment")
+                      ? "Transportadora / Courier / Guía"
+                      : "Repartidor / Mensajero (opcional)"}
+                  </Label>
                   <Input
                     id="repartidor"
-                    placeholder="Ej: Javier Moto 04"
+                    placeholder={
+                      pedidosStore.tieneCapacidad("carrier_shipment")
+                        ? "Ej: Servientrega, Envia o Guía #12345"
+                        : "Ej: Javier Moto 04"
+                    }
                     value={repartidor}
                     onChange={(e) => setRepartidor(e.target.value)}
                   />
                 </div>
+              </div>
+            </section>
+          )}
+
+          {/* Paso 3 (Condicional) · Consumo en salón / Mesa (si es en_sitio y tiene table_service) */}
+          {modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service") && (
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+              <div className="mb-4 flex items-center gap-2">
+                <StepBadge n={3} />
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  Ubicación en salón / Mesa
+                </h2>
+              </div>
+              <div>
+                <Label htmlFor="mesa">Mesa / Ubicación del cliente</Label>
+                <Input
+                  id="mesa"
+                  placeholder="Ej: Mesa 4, Barra principal, Terraza exterior"
+                  value={mesa}
+                  onChange={(e) => setMesa(e.target.value)}
+                />
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Identifica en qué mesa o punto del local se atenderá la comanda.
+                </p>
               </div>
             </section>
           )}
@@ -648,11 +694,16 @@ export const CrearPedidoPage = observer(() => {
             {(() => {
               const perfilActivo = pedidosStore.config.perfilComercial ?? "food";
               const perfilPreset = BUSINESS_PROFILES[perfilActivo] ?? BUSINESS_PROFILES.food;
+              const stepItems =
+                modalidad === "domicilio" ||
+                (modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service"))
+                  ? 4
+                  : 3;
               return (
                 <>
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <StepBadge n={modalidad === "domicilio" ? 4 : 3} />
+                      <StepBadge n={stepItems} />
                       <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
                         {perfilPreset.labels.itemPlural}
                       </h2>
@@ -667,55 +718,96 @@ export const CrearPedidoPage = observer(() => {
                   </div>
 
                   <div className="space-y-3">
-                    {items.map((it, idx) => (
-                      <div key={idx} className="flex items-end gap-2">
-                        <div className="flex-1">
-                          {tieneCatalogo ? (
-                            <Select
-                              key={`cat-${idx}-${it.nombre}`}
-                              options={catalogo.map((c) => ({ value: c.id, label: `${c.nombre} (${money(c.precio)})` }))}
-                              defaultValue={catalogo.find((c) => c.nombre === it.nombre)?.id ?? ""}
-                              placeholder={`Elige ${perfilPreset.labels.itemSingular.toLowerCase()}`}
-                              onChange={(v) => pickCatalogo(idx, v)}
-                            />
-                          ) : (
-                            <Input
-                              placeholder={
-                                pedidosStore.tieneCapacidad("variants")
-                                  ? "Ej: Camiseta Oversize (Talla M / Blanco)"
-                                  : pedidosStore.tieneCapacidad("appointment_scheduling")
-                                  ? "Ej: Corte y Perfilado de Barba (15:00)"
-                                  : "Nombre del producto"
-                              }
-                              value={it.nombre}
-                              onChange={(e) => setItem(idx, { nombre: e.target.value })}
-                            />
+                    {items.map((it, idx) => {
+                      const catItem = catalogo.find((c) => c.nombre === it.nombre);
+                      return (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                              {tieneCatalogo ? (
+                                <Select
+                                  key={`cat-${idx}-${it.nombre}`}
+                                  options={catalogo.map((c) => ({
+                                    value: c.id,
+                                    label: `${c.nombre} (${money(c.precio)})`,
+                                  }))}
+                                  defaultValue={catalogo.find((c) => c.nombre === it.nombre)?.id ?? ""}
+                                  placeholder={`Elige ${perfilPreset.labels.itemSingular.toLowerCase()}`}
+                                  onChange={(v) => pickCatalogo(idx, v)}
+                                />
+                              ) : (
+                                <Input
+                                  placeholder={
+                                    pedidosStore.tieneCapacidad("variants")
+                                      ? "Ej: Camiseta Oversize (Talla M / Blanco)"
+                                      : pedidosStore.tieneCapacidad("appointment_scheduling")
+                                      ? "Ej: Corte y Perfilado de Barba (15:00)"
+                                      : "Nombre del producto"
+                                  }
+                                  value={it.nombre}
+                                  onChange={(e) => setItem(idx, { nombre: e.target.value })}
+                                />
+                              )}
+                            </div>
+                            <div className="w-20">
+                              <input
+                                type="number"
+                                min="1"
+                                value={it.cantidad}
+                                onChange={(e) =>
+                                  setItem(idx, { cantidad: Math.max(1, Number(e.target.value) || 1) })
+                                }
+                                className={`${inputBase} ${inputOk}`}
+                                aria-label="Cantidad"
+                              />
+                            </div>
+                            {items.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeItem(idx)}
+                                className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
+                                aria-label="Quitar item"
+                              >
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  className="h-4 w-4"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+
+                          {catItem?.variantesDisponibles && catItem.variantesDisponibles.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50/70 p-2 dark:border-gray-800 dark:bg-white/[0.02]">
+                              <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                                Talla / Variante:
+                              </span>
+                              {catItem.variantesDisponibles.map((v) => {
+                                const selected = (it.variante ?? catItem.variantesDisponibles![0]) === v;
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setItem(idx, { variante: v })}
+                                    className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-all ${
+                                      selected
+                                        ? "bg-brand-500 text-white shadow-2xs"
+                                        : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                                    }`}
+                                  >
+                                    {v}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
-                        <div className="w-20">
-                          <input
-                            type="number"
-                            min="1"
-                            value={it.cantidad}
-                            onChange={(e) => setItem(idx, { cantidad: Math.max(1, Number(e.target.value) || 1) })}
-                            className={`${inputBase} ${inputOk}`}
-                            aria-label="Cantidad"
-                          />
-                        </div>
-                        {items.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeItem(idx)}
-                            className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-500 dark:hover:bg-error-500/10"
-                            aria-label="Quitar item"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </>
               );
@@ -730,7 +822,14 @@ export const CrearPedidoPage = observer(() => {
           {/* Paso · Método de pago */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
-              <StepBadge n={modalidad === "domicilio" ? 5 : 4} />
+              <StepBadge
+                n={
+                  modalidad === "domicilio" ||
+                  (modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service"))
+                    ? 5
+                    : 4
+                }
+              />
               <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Método de pago</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

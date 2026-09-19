@@ -334,6 +334,18 @@ const DetalleModal = observer(
           </div>
         </div>
 
+        {/* Consumo en Salón / Mesa (si es en_sitio) */}
+        {pedido.modalidad === "en_sitio" && (
+          <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
+              🍽️ Consumo en salón / Mesa
+            </span>
+            <p className="mt-1.5 text-xs text-gray-700 dark:text-gray-300">
+              {pedido.notas?.match(/Mesa:?\s*[^·\n]+/i)?.[0] ?? "Servicio en salón / mesa"}
+            </p>
+          </div>
+        )}
+
         {/* Logística de Entrega (Domicilio) */}
         {pedido.modalidad === "domicilio" && (
           <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
@@ -431,7 +443,11 @@ const DetalleModal = observer(
                     <span>${subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <span>Costo de envío (delivery)</span>
+                    <span>
+                      {pedidosStore.tieneCapacidad("carrier_shipment")
+                        ? "Costo de envío / flete"
+                        : "Costo de envío (delivery)"}
+                    </span>
                     <span>${(pedido.costoEnvio ?? 0).toLocaleString()}</span>
                   </div>
                 </>

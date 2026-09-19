@@ -870,7 +870,10 @@ export const AnaliticaPage = observer(() => {
               {/* Card 2: Pedidos por modalidad de entrega */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <CardTitle title="Modalidades de entrega" hint={`Retiro, domicilio y en sitio · ${etiquetaRango}`} />
+                  <CardTitle
+                    title="Modalidades de entrega"
+                    hint={`${pedidosStore.config.modalidades.map((m) => pedidosStore.modalidadLabel(m)).join(", ")} · ${etiquetaRango}`}
+                  />
 
                   <div className="mt-4 space-y-3">
                     {filasModalidad.map((f) => (
