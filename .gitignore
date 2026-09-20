@@ -13,3 +13,12 @@ sst-env.d.ts
 outputs/
 tailadmin-free-tailwind-dashboard-template-main/
 copia de la copia/
+
+# Temporary test/audit build outputs
+packages/apps/web/modules/cn-*
+packages/apps/web/modules/neg-*
+packages/apps/web/modules/novedad-out*
+packages/apps/web/modules/vcr-*
+packages/apps/web/modules/verify-*
+packages/apps/web/modules/vite-verify-out
+
