@@ -11,6 +11,8 @@ import UserDropdown from "@/shell/header/UserDropdown";
 import { AppSidebar } from "@/app/AppSidebar";
 import { AppFooter } from "@/shell/footer";
 import { sessionStore } from "@/stores";
+import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
+import { inicialesDe } from "@/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HEADER ICONS
@@ -34,33 +36,62 @@ const UserIconOutline = () => (
 
 /**
  * Chip de identidad de "Viendo como". Se muestra en el header en TODAS las
- * vistas mientras se simula un operador, para dejar claro bajo qué perfil se
- * está viendo la app.
+ * vistas mientras se simula un operador.
  *
- * El nombre se lee del store de operadores por `operadorSimuladoId`: el
- * `AccessContext` es solo autorización y no lleva datos de presentación
- * (contrato §1.8).
+ * ── Qué grita el chip ────────────────────────────────────────────────────
+ *
+ * El **nombre del rol asignado** es la línea destacada, no el nombre de la
+ * persona. El motivo es que el chip responde a una sola pregunta —«¿bajo qué
+ * autoridad estoy viendo la app?»— y el nombre de un operador no la contesta:
+ * «Mateo Vargas» no predice qué botones vas a poder pulsar, «Operador» sí
+ * (0 capacidades de las 18 son de equipo). Y en modo simulación **toda** la
+ * diferencia entre lo que ves ahora y lo que veías hace un segundo es el rol.
+ *
+ * El nombre del operador no se pierde: queda como línea secundaria, porque
+ * identifica la sesión ante un tercero y desambigua dos operadores que
+ * compartan rol. Antes era la única línea —informaba de quién, no de qué.
+ *
+ * El nombre del rol se resuelve en la capa de presentación
+ * (`acceso.utils.rolSimuladoNombre`): el `AccessContext` es solo autorización
+ * y no lleva datos de presentación (contrato §1.8; C6).
+ *
+ * ── Por qué no usa `op.avatarUrl` ────────────────────────────────────────
+ *
+ * El chip usaba iniciales derivadas del nombre. El modelo SÍ tiene
+ * `avatarUrl` (Seed d0–d3), así que el `Avatar` de la casa iría aquí — pero
+ * el chip es una píldora de 7×7 con `rounded-full` y el `Avatar` se
+ * autoenvuelve en otro `relative rounded-full shrink-0`, de modo que el
+ * `bg-brand-500` que identificaba la superficie dejaría de verse. Es una
+ * mejora real, no un cambio de una línea: va anotada como deuda abierta en
+ * `informe-dashboard-inicio-por-rol.md` §8, no metida a escondidas aquí.
  */
 const OperadorChip = observer(() => {
   const op = sessionStore.operadorSimulado;
   if (!op) return null;
 
-  const iniciales = op.nombre
-    .trim()
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  // Derivadas del nombre; con «(Tú)» el helper del repo devuelve «TT».
+  const iniciales = inicialesDe(op.nombre);
+  const rol = rolSimuladoNombre() ?? "Sin rol";
 
   return (
     <div className="flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 py-1 pl-1 pr-3 dark:border-brand-500/30 dark:bg-brand-500/10">
       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">
         {iniciales}
       </span>
-      <div className="hidden leading-tight sm:block">
+      {/* Contenedor estrecho: en el header de 68 px caben dos líneas de 10 y
+          12 px, pero una tercera no. Por eso la etiqueta, el rol y el
+          operador entran en un `title` en vez de en un tercer renglón. */}
+      <div
+        className="hidden leading-tight sm:block"
+        title={`Viendo como ${rol} — ${operadorSimuladoNombre()}`}
+      >
         <p className="text-[10px] font-medium uppercase tracking-wide text-brand-500 dark:text-brand-400">Viendo como</p>
-        <p className="text-xs font-semibold text-gray-800 dark:text-white/90">{op.nombre}</p>
+        <p className="text-xs font-semibold text-gray-800 dark:text-white/90">
+          {rol}
+          <span className="ml-1 font-normal text-gray-500 dark:text-gray-400">
+            · {operadorSimuladoNombre()}
+          </span>
+        </p>
       </div>
     </div>
   );

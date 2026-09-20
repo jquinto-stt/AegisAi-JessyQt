@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { OrganizacionStore } from "./organizacion.store";
+import { OrganizacionStore, slugDe } from "./organizacion.store";
 import { integracionesStore } from "./integraciones.store";
 
 /** `localStorage` en memoria, para poder simular instalaciones previas. */
@@ -585,5 +585,83 @@ describe("OrganizacionStore — actualizarOrganizacion es una actualización PAR
     expect(store.pasoActual).toBe("completado");
     expect(store.rutaPrimerModuloActivo).toBeNull();
     expect(store.siguienteRuta).toBe("/configuracion?tab=modulos");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// slugDe — la dirección web derivada del nombre
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Esta suite existe porque el defecto **sobrevivió a 32 tests del store**: todos
+// usaban nombres ASCII («Boutique Roma»), así que ninguno pisaba el rango de
+// caracteres donde estaba el fallo. `slugDe` se ejercitaba de rebote —vía
+// `crearOrganizacion`— y nunca de frente.
+//
+// El defecto: `[^\w\s-]` con `\w` de JavaScript = `[A-Za-z0-9_]`, o sea ASCII.
+// No incluía las vocales acentuadas, así que las **borraba**: «Almacén» →
+// `almacn`. No es un detalle cosmético en un producto en español; es el nombre
+// del negocio del usuario mutilado en su propia URL.
+//
+// Los casos de acentos NO son hipotéticos: `actualizarOrganizacion` recalcula el
+// slug en CADA renombrado, así que el valor roto se escribía fresco cada vez.
+
+describe("slugDe — translitera los acentos, no los borra", () => {
+  it("conserva la vocal acentuada en vez de eliminarla", () => {
+    // El caso exacto que fallaba: «almacn-la-candelaria» perdía la `e`.
+    expect(slugDe("Almacén La Candelaria")).toBe("almacen-la-candelaria");
+  });
+
+  it("translitera la eñe y las vocales acentuadas juntas", () => {
+    // «Ñandú» → `nandu`, no `andu` ni `and`.
+    expect(slugDe("Ñandú Café")).toBe("nandu-cafe");
+  });
+
+  it("cubre las cinco vocales con tilde y la diéresis", () => {
+    expect(slugDe("áéíóú ü")).toBe("aeiou-u");
+  });
+
+  it("no deja un guion colgando cuando el acento estaba al final", () => {
+    // «Café» → `cafe`; con el bug daba `caf`, y un `-` sobrante daría `cafe-`.
+    expect(slugDe("Café")).toBe("cafe");
+  });
+
+  it("sigue bajando a minúsculas y colapsando separadores", () => {
+    expect(slugDe("  El   Buen   Sabor  ")).toBe("el-buen-sabor");
+  });
+
+  it("sigue descartando la puntuación que no es palabra", () => {
+    expect(slugDe("Panadería & Café, S.A.S.")).toBe("panaderia-cafe-sas");
+  });
+
+  it("mantiene el fallback cuando no queda nada utilizable", () => {
+    // Solo emojis: no queda letra ni dígito. El fallback evita un slug vacío.
+    expect(slugDe("🍞🥐")).toBe("mi-empresa");
+  });
+
+  it("es idempotente: aplicarlo al resultado no lo cambia", () => {
+    // Importa porque el onboarding previsualiza el slug y el store lo guarda;
+    // si no fuera idempotente, la vista previa y el valor guardado discreparían.
+    const nombres = ["Almacén La Candelaria", "Ñandú Café", "El Buen Sabor"];
+    for (const n of nombres) {
+      const una = slugDe(n);
+      expect(slugDe(una)).toBe(una);
+    }
+  });
+});
+
+describe("slugDe — el slug roto llegaba a persistirse", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("renombrar con acentos guarda el slug transliterado", () => {
+    // La regresión de extremo a extremo: no basta con que la función esté bien,
+    // el store tiene que escribir el valor correcto al renombrar.
+    const store = new OrganizacionStore();
+    store.crearOrganizacion({ nombre: "Boutique Roma" });
+    store.actualizarOrganizacion({ nombre: "Almacén La Candelaria" });
+
+    expect(store.organizacion?.slug).toBe("almacen-la-candelaria");
+    expect(store.organizacion?.nombre).toBe("Almacén La Candelaria");
   });
 });

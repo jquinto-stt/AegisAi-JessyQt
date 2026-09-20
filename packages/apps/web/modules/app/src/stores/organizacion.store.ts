@@ -303,12 +303,32 @@ function persistStorage(data: OrganizacionStorage) {
  * antes de guardarlo). El onboarding tenía su propia copia del algoritmo —con
  * un `.trim()` de más y sin fallback—, así que podía previsualizar una dirección
  * distinta de la que el store acababa guardando.
+ *
+ * ── Los acentos se TRANSLITERAN, no se borran ─────────────────────────────
+ *
+ * `[^\w\s-]` NO servía: en JavaScript `\w` es `[A-Za-z0-9_]`, es decir ASCII, así
+ * que **no incluye las vocales acentuadas y las ELIMINA** en vez de convertirlas.
+ * En un producto en español eso rompe el primer día: «Almacén La Candelaria»
+ * daba `almacn-la-candelaria` —la `é` se perdió y con ella la palabra—, y como
+ * `actualizarOrganizacion` recalcula el slug en cada renombrado, el valor roto se
+ * escribe fresco cada vez. Un nombre como «Ñandú Café» quedaba irreconocible.
+ *
+ * La descomposición NFD separa cada letra de su acento (`é` → `e` + U+0301) y el
+ * `replace` del rango de diacríticos combinantes borra solo el acento. Así
+ * «Almacén» → `almacen` y «Ñandú» → `nandu`: la dirección web es legible y sigue
+ * siendo un identificador ASCII seguro.
+ *
+ * Después se conservan letras, dígitos y guiones (`\p{L}\p{N}` con la bandera
+ * `u`), lo que además deja pasar alfabetos no latinos en vez de vaciarlos.
  */
 export function slugDe(nombre: string): string {
   return (
     nombre
+      .normalize("NFD")
+      // Rango de marcas diacríticas combinantes: lo único que sobra tras NFD.
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
+      .replace(/[^\p{L}\p{N}\s-]/gu, "")
       .replace(/[\s_-]+/g, "-")
       .replace(/^-+|-+$/g, "") || "mi-empresa"
   );

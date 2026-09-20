@@ -1,5 +1,5 @@
 import { sessionStore } from "@/stores/session.store";
-import { CAPACIDAD_LABEL, type Capacidad } from "@/stores/roles.store";
+import { rolesStore, CAPACIDAD_LABEL, type Capacidad } from "@/stores/roles.store";
 import type { PedidoEstado } from "@/stores/pedidos.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -179,4 +179,50 @@ export function puedeGestionarEquipo(): boolean {
  */
 export function motivoSinPermiso(capacidad: Capacidad): string {
   return `Requiere el permiso «${CAPACIDAD_LABEL[capacidad]}».`;
+}
+
+// ── Presentación de la simulación ("Viendo como") ──────────────────────────
+
+/**
+ * Nombre del rol del operador que se está simulando.
+ *
+ * ── Por qué esto vive aquí y no en `sessionStore` ────────────────────────
+ *
+ * El nombre de un rol es **presentación**, y `AccessContext` es
+ * exclusivamente autorización: el contrato (§1.8) prohíbe meter datos de
+ * presentación ahí, y la invariante C6 mantiene el scope de datos fuera también.
+ * Por eso el store expone `rolId` —el hecho— y la traducción a un nombre legible
+ * se resuelve en esta capa, que ya es la encargada de convertir hechos de los
+ * stores en algo que una pantalla pueda pintar.
+ *
+ * ── Por qué el fallback no es una cadena vacía ───────────────────────────
+ *
+ * `rolesStore.nombreDe()` devuelve `""` cuando el rol no existe, que es correcto
+ * para autorización (fail-closed) pero **incorrecto para pintar**: un chip que
+ * dijera «Viendo como: » con el nombre en blanco parece un fallo de la
+ * aplicación. Se distingue el caso, y se dice «Sin rol» — que además es la
+ * verdad útil, porque un operador sin rol no tiene ninguna capacidad.
+ *
+ * Devuelve `null` cuando NO hay simulación: así el llamador decide si pinta el
+ * chip, en vez de recibir una cadena que parezca un nombre real.
+ */
+export function rolSimuladoNombre(): string | null {
+  const op = sessionStore.operadorSimulado;
+  if (!op) return null;
+  // `op.rolId` puede ser `undefined` si el operador se creó por la vía que no
+  // lo asigna (`operadores.store.solicitar`, que deja `rolId: undefined`) y
+  // nunca pasó por la aprobación que lo normaliza. En ese caso `nombreDe()`
+  // devuelve `""` y esta capa declara «Sin rol», que es la verdad útil: un
+  // operador sin rol no tiene ninguna capacidad.
+  return rolesStore.nombreDe(op.rolId) || "Sin rol";
+}
+
+/**
+ * Nombre del operador que se está simulando, o `null` si no hay simulación.
+ *
+ * Acompaña a `rolSimuladoNombre()`: el indicador de «Viendo como» necesita las
+ * dos cosas para ser útil.
+ */
+export function operadorSimuladoNombre(): string | null {
+  return sessionStore.operadorSimulado?.nombre ?? null;
 }

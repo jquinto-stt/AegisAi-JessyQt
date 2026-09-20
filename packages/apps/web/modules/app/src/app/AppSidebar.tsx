@@ -8,6 +8,7 @@ import {
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { sessionStore, organizacionStore } from "@/stores";
+import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import { Settings } from "lucide-react";
 import {
   GridIcon,
@@ -111,7 +112,16 @@ const SimulacionBanner = observer(() => {
 
   if (!sessionStore.isSimulando) return null;
 
-  const nombre = sessionStore.operadorSimulado?.nombre ?? "Operador";
+  // El rol asignado es el titular del banner; el operador va debajo. Ver el
+  // docblock de `OperadorChip` en AppShell.tsx para el porqué completo.
+  //
+  // La resolución del nombre del rol NO se hace aquí: `acceso.utils` ya traduce
+  // `rolId` a texto y declara «Sin rol» cuando no existe, que es el caso real
+  // de un operador creado sin rol (`operadores.store.crear` lo deja en
+  // `personalizado` solo si se aprobó por la puerta de aprobación; una
+  // simulación sobre un `rolId` ausente pinta la cadena vacía si se improvisa).
+  const rol = rolSimuladoNombre() ?? "Sin rol";
+  const nombre = operadorSimuladoNombre();
 
   const salir = () => {
     sessionStore.salirSimulacion();
@@ -125,7 +135,10 @@ const SimulacionBanner = observer(() => {
           <p className="text-xs font-semibold uppercase tracking-wider text-warning-600 dark:text-orange-400">
             Viendo como
           </p>
-          <p className="mt-1 truncate text-sm font-medium text-gray-800 dark:text-white/90">{nombre}</p>
+          <p className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-white/90">{rol}</p>
+          {nombre && (
+            <p className="truncate text-xs font-normal text-gray-600 dark:text-gray-400">{nombre}</p>
+          )}
           <button
             onClick={salir}
             className="mt-2 text-xs font-medium text-warning-600 underline hover:text-warning-700 dark:text-orange-400"
@@ -136,9 +149,9 @@ const SimulacionBanner = observer(() => {
       ) : (
         <button
           onClick={salir}
-          aria-label="Salir de vista"
+          aria-label={`Salir de vista (${rol})`}
           className="flex w-full items-center justify-center text-warning-600 dark:text-orange-400"
-          title="Viendo como — salir"
+          title={`Viendo como ${rol} — salir`}
         >
           <ArrowRightIcon />
         </button>
