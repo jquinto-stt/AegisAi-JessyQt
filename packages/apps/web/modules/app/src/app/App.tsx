@@ -10,7 +10,8 @@ import {
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
-import { EquipoPage, PerfilOperadorPage, ConfiguracionModulosPage } from "@/pages/equipo";
+import { PerfilOperadorPage } from "@/pages/equipo";
+import { ConfiguracionPage } from "@/pages/configuracion";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
@@ -61,10 +62,14 @@ const LegacyEquipoIdRedirect = () => {
  * leía de `plataformaStore`, y eso hacía que esta guarda y la pantalla de workspace
  * dieran respuestas distintas a la misma pregunta — con dos stores, en el mismo
  * render. Ver `outputs/analisis-jerarquia-modulos.md` §4.
+ *
+ * Va a `?tab=modulos` y no a `/configuracion` a secas: la pestaña por defecto es
+ * «General», y esta guarda significa «ve a encender un módulo». Apuntar a la
+ * pestaña equivocada convierte una redirección útil en un clic extra.
  */
 const ModuloGuard = observer(({ modulo, children }: { modulo: string; children: React.ReactNode }) => {
   if (!organizacionStore.estaActivo(modulo)) {
-    return <Navigate to="/configuracion" replace />;
+    return <Navigate to="/configuracion?tab=modulos" replace />;
   }
   return <>{children}</>;
 });
@@ -82,20 +87,31 @@ export default function App() {
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Organización — equipo, roles y configuración de módulos.
-            `/configuracion` es la ruta CANÓNICA de la configuración de la
-            organización (módulos y conectores), frente a las configs por módulo
+        {/* Organización — UNA sola pantalla de configuración, con tres pestañas
+            (`?tab=general|modulos|equipo`).
+
+            `/configuracion` es la ruta canónica, frente a las configs por módulo
             (`/pedidos/config`, `/conversaciones/config`, `/asistente/config`).
             Antes `/configuracion` renderizaba un `PlaceholderPage` vacío mientras
             la página real vivía en `/organizacion/configuracion`: dos rutas, una
-            de ellas mintiendo. Ahora hay una sola y las viejas redirigen. */}
-        <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
-        <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
-        <Route path="/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionModulosPage /></CapabilityGuard>} />
-        <Route path="/organizacion/configuracion" element={<Navigate to="/configuracion" replace />} />
-        <Route path="/organizacion/modulos" element={<Navigate to="/configuracion" replace />} />
+            de ellas mintiendo.
 
-        {/* Redirecciones legacy para compatibilidad */}
+            `/equipo` era una segunda pantalla con su propia lista de personas. Se
+            retira como página y pasa a ser la pestaña «Equipo y permisos», pero
+            **sigue existiendo como ruta que redirige**: hay enlaces guardados y
+            enlaces internos que apuntan ahí, y romperlos sería cobrarle al usuario
+            una reorganización nuestra. Es un `<Navigate>`, no un duplicado.
+            `/equipo/:id` sí sigue siendo una ruta real: el perfil de una persona
+            es una pantalla con su propia dirección. */}
+        <Route path="/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionPage /></CapabilityGuard>} />
+        <Route path="/equipo" element={<Navigate to="/configuracion?tab=equipo" replace />} />
+        <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
+        <Route path="/organizacion/configuracion" element={<Navigate to="/configuracion?tab=modulos" replace />} />
+        <Route path="/organizacion/modulos" element={<Navigate to="/configuracion?tab=modulos" replace />} />
+
+        {/* Redirecciones legacy para compatibilidad. Apuntan a `/equipo`, que es
+            el ÚNICO sitio donde se declara a dónde va el equipo: repetir el
+            destino final en cada alias es cómo tres rutas empiezan a discrepar. */}
         <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />
         <Route path="/pedidos/equipo/:id" element={<LegacyEquipoIdRedirect />} />
         <Route path="/pedidos/operadores" element={<Navigate to="/equipo" replace />} />

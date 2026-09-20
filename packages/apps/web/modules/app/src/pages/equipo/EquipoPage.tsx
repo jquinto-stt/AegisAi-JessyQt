@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { PageMeta } from "@/shell/meta";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
@@ -21,18 +20,25 @@ import {
 import { validarAlta, type AltaPersona } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PÁGINA "EQUIPO" (Organización / Transversal)
+// PESTAÑA "EQUIPO Y PERMISOS" (Organización / Transversal)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Módulo transversal de gestión de equipo y roles con capacidades atómicas.
+// Era una PÁGINA servida en `/equipo`. Ahora es una pestaña de la configuración
+// de la organización, así que ya no pinta su `<h1>` ni su `PageMeta`: el
+// `ConfigShell` que la aloja pone el título y el consejo de la sección.
 //
 // Características principales:
-//   1. Se gestiona un EQUIPO (personas con un rol), desacoplado de módulos específicos.
-//   2. Pestaña de ROLES: los paquetes de capacidades se definen una vez y se reutilizan.
-//   3. El perfil de cada persona es una RUTA (`/equipo/:id`).
+//   1. Se gestionan PERSONAS con un rol. El listado es el del módulo Pedidos
+//      (`operadoresStore.porModulo("pedidos")`) — y la sección lo dice, porque
+//      un equipo que solo muestra parte de la organización sin avisar es una
+//      media verdad.
+//   2. Sub-vista de ROLES: los paquetes de capacidades se definen una vez y se
+//      reutilizan. Es un nivel INTERNO de esta pestaña, no una pestaña más: el
+//      `ConfigSectionNav` de la página no lo conoce.
+//   3. El perfil de cada persona es una RUTA (`/equipo/:id`), que sigue viva.
 //   4. "Ver como" (impersonación) vive aquí.
 //
-// La página entera está detrás de `team.manage` (ver `App.tsx`).
+// La ruta entera está detrás de `team.manage` (ver `App.tsx`).
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -57,7 +63,7 @@ const FORM_VACIO: PersonaForm = {
   rolId: "",
 };
 
-export const EquipoPage = observer(() => {
+export const EquipoTab = observer(() => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
   const [tab, setTab] = useState<"todos" | "pendientes">("todos");
   const [busqueda, setBusqueda] = useState("");
@@ -155,29 +161,29 @@ export const EquipoPage = observer(() => {
 
   return (
     <>
-      <PageMeta title="Equipo · Pedidos" description="Personas, roles y capacidades del módulo de pedidos" />
-
-      {/* Encabezado */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      {/* Contexto y acciones de la sub-vista. El título de la sección lo pinta el
+          `ConfigShell` que aloja esta pestaña; aquí solo va lo que cambia entre
+          «personas» y «roles», más los botones. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white/90">
-              {vista === "roles" ? "Roles y Permisos" : "Equipo"}
-            </h1>
+            <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              {vista === "roles" ? "Roles y permisos" : "Personas del equipo"}
+            </span>
             {vista === "equipo" && pendientes > 0 && (
               <Badge color="warning" size="sm">
                 {pendientes} pendiente{pendientes === 1 ? "" : "s"}
               </Badge>
             )}
           </div>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {vista === "roles"
               ? "Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
               : "Cada persona tiene un rol, y el rol define qué puede hacer. Haz clic en una persona para ver su perfil."}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           <Button
             size="sm"
             variant={vista === "roles" ? "primary" : "outline"}
@@ -372,4 +378,4 @@ export const EquipoPage = observer(() => {
   );
 });
 
-export default EquipoPage;
+export default EquipoTab;

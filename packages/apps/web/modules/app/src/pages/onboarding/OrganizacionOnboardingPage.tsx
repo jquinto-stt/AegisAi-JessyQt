@@ -6,26 +6,24 @@ import { PageMeta } from "@/shell/meta";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Button } from "@/elements/ui/button";
-import { organizacionStore, PAISES_CONFIG } from "@/stores/organizacion.store";
+import {
+  organizacionStore,
+  PAISES_CONFIG,
+  TAMANO_EQUIPO_POR_DEFECTO,
+  TAMANOS_EQUIPO,
+  TIPO_EMPRESA_POR_DEFECTO,
+  TIPOS_EMPRESA,
+  slugDe,
+} from "@/stores/organizacion.store";
 import { OnboardingLayout } from "./OnboardingLayout";
 
-const TIPOS_EMPRESA = [
-  "Gastronomía & Alimentos",
-  "Moda, Calzado & Accesorios",
-  "Retail & Comercio minorista",
-  "Tecnología & Software",
-  "Servicios Profesionales & Consultoría",
-  "Salud, Estética & Bienestar",
-  "Construcción & Hogar",
-  "Otro rubro comercial",
-];
-
-const TAMANOS_EQUIPO = [
-  "Solo yo (1 persona)",
-  "2 a 5 personas",
-  "6 a 20 personas",
-  "Más de 20 personas",
-];
+// `TIPOS_EMPRESA` y `TAMANOS_EQUIPO` vivían aquí. Se mudaron al store, junto al
+// tipo que los guarda, porque la configuración de la organización ofrece las
+// MISMAS listas para editar lo mismo: dos copias del mismo vocabulario acaban
+// divergiendo, y esta ya lo había hecho —el default del store era «Retail &
+// Comercio», que no está en la lista—. El `slugDe` corre la misma suerte: la
+// vista previa «necto.app/…» tiene que enseñar el slug que se va a guardar, no
+// el resultado de un segundo algoritmo parecido.
 
 const BRAND_MESSAGES_ORGANIZACION = [
   {
@@ -56,22 +54,20 @@ export const OrganizacionOnboardingPage = observer(() => {
   const [nombre, setNombre] = useState(orgActual?.nombre || "");
   const [pais, setPais] = useState(orgActual?.pais || "Colombia");
   const [tipoEmpresa, setTipoEmpresa] = useState(
-    orgActual?.tipoEmpresa || "Retail & Comercio minorista"
+    orgActual?.tipoEmpresa || TIPO_EMPRESA_POR_DEFECTO
   );
   const [tamanoEquipo, setTamanoEquipo] = useState(
-    orgActual?.tamanoEquipo || "2 a 5 personas"
+    orgActual?.tamanoEquipo || TAMANO_EQUIPO_POR_DEFECTO
   );
   const [logoUrl, setLogoUrl] = useState<string | undefined>(orgActual?.logoUrl);
   const [error, setError] = useState("");
 
   const configPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
 
-  const slugGenerado = nombre
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  // Sin nombre no hay vista previa: se enseña el slug REAL que se guardará, así
+  // que con el campo vacío no se anuncia «necto.app/mi-empresa», que es el
+  // fallback del store y no una dirección que este formulario haya propuesto.
+  const slugGenerado = nombre.trim() ? slugDe(nombre) : "";
 
   const handleNextSubPaso = (e?: React.FormEvent) => {
     if (e) e.preventDefault();

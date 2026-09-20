@@ -67,7 +67,10 @@ function getLinkForSource(source: ToolSource): { label: string; to: string } {
     return { label: "Ir a Configuración", to: "/pedidos/config" };
   }
   if (tid.includes("equipo") || tid.includes("operador")) {
-    return { label: "Ir a Equipo", to: "/equipo" };
+    // El equipo ya no es una pantalla propia: es una pestaña de la configuración
+    // de la organización. El enlace apunta a la pestaña, no a la ruta que
+    // redirige a ella, para no encadenar dos saltos desde dentro de la app.
+    return { label: "Ir a Equipo", to: "/configuracion?tab=equipo" };
   }
   if (tid.includes("diagnostico") || tid.includes("resumen") || tid.includes("top") || tid.includes("pico")) {
     return { label: "Ir a Métricas de Inicio", to: "/pedidos/inicio" };

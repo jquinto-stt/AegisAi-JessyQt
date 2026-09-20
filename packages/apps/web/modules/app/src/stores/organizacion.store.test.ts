@@ -464,3 +464,126 @@ describe("OrganizacionStore — actualizarPerfil es una actualización PARCIAL",
     expect(recargado.usuario?.redes?.x).toBe("https://x.com/ana");
   });
 });
+
+describe("OrganizacionStore — actualizarOrganizacion es una actualización PARCIAL", () => {
+  let store: OrganizacionStore;
+
+  const ORGANIZACION_COMPLETA = {
+    nombre: "Boutique Roma",
+    pais: "Colombia",
+    moneda: "COP",
+    zonaHoraria: "America/Bogota",
+    tipoEmpresa: "Retail & Comercio",
+    tamanoEquipo: "2 a 5 personas",
+    logoUrl: "https://cdn.necto.test/roma.svg",
+  };
+
+  beforeEach(() => {
+    instalarLocalStorageStub();
+    store = new OrganizacionStore();
+    store.reiniciar();
+    store.crearOrganizacion(ORGANIZACION_COMPLETA);
+  });
+
+  /**
+   * Mismo contrato que `actualizarPerfil`, y por la misma razón: un método que
+   * reconstruye el objeto campo a campo borra en cada guardado cualquier campo
+   * del modelo que no esté en su lista, y **el tipo no avisa**. La pestaña
+   * «General» guarda subconjuntos distintos según lo que el usuario toque, así
+   * que este es el caso de uso real, no una hipótesis.
+   */
+  it("un guardado que solo toca el nombre no borra el resto de los datos", () => {
+    store.actualizarOrganizacion({ nombre: "Boutique Roma Norte" });
+
+    expect(store.organizacion?.nombre).toBe("Boutique Roma Norte");
+    expect(store.organizacion?.pais).toBe("Colombia");
+    expect(store.organizacion?.moneda).toBe("COP");
+    expect(store.organizacion?.zonaHoraria).toBe("America/Bogota");
+    expect(store.organizacion?.tipoEmpresa).toBe("Retail & Comercio");
+    expect(store.organizacion?.tamanoEquipo).toBe("2 a 5 personas");
+    expect(store.organizacion?.logoUrl).toBe("https://cdn.necto.test/roma.svg");
+  });
+
+  it("renombrar recalcula el slug, que es su proyección", () => {
+    // Si el slug se quedara en «boutique-roma» tras renombrar, habría dos
+    // identificadores del mismo objeto diciendo cosas distintas.
+    store.actualizarOrganizacion({ nombre: "Boutique Roma Norte" });
+    expect(store.organizacion?.slug).toBe("boutique-roma-norte");
+  });
+
+  it("no toca la identidad ni la fecha de creación", () => {
+    const idAntes = store.organizacion?.id;
+    const fechaAntes = store.organizacion?.fechaCreacion;
+
+    store.actualizarOrganizacion({ nombre: "Otro Nombre", moneda: "USD" });
+
+    expect(store.organizacion?.id).toBe(idAntes);
+    expect(store.organizacion?.fechaCreacion).toBe(fechaAntes);
+  });
+
+  it("vaciar un campo opcional lo borra de verdad: cadena vacía no significa «no tocar»", () => {
+    store.actualizarOrganizacion({ logoUrl: "" });
+    expect(store.organizacion?.logoUrl).toBe("");
+  });
+
+  it("un nombre en blanco conserva el anterior en vez de dejar la organización «sin crear»", () => {
+    // `tieneOrganizacion` es `nombre.trim() !== ""`. Aceptar el blanco dejaría a
+    // la organización en el estado que el resto de la app usa para decidir si
+    // manda al onboarding, o sea: un guardado que deshace la empresa.
+    store.actualizarOrganizacion({ nombre: "   " });
+
+    expect(store.organizacion?.nombre).toBe("Boutique Roma");
+    expect(store.tieneOrganizacion).toBe(true);
+  });
+
+  it("normaliza la moneda a mayúsculas", () => {
+    store.actualizarOrganizacion({ moneda: "usd" });
+    expect(store.organizacion?.moneda).toBe("USD");
+  });
+
+  it("NO crea organización si no existe: devuelve el store intacto", () => {
+    // Crear una empresa es un paso del onboarding, con sus propias reglas. Una
+    // segunda ruta de creación aquí tendría que reimplementarlas o
+    // contradecirlas, así que este método se declara incompetente y no hace nada.
+    const vacio = new OrganizacionStore();
+    vacio.reiniciar();
+    expect(vacio.organizacion).toBeNull();
+
+    expect(() => vacio.actualizarOrganizacion({ nombre: "Empresa Fantasma" })).not.toThrow();
+
+    expect(vacio.organizacion).toBeNull();
+    expect(vacio.tieneOrganizacion).toBe(false);
+    expect(vacio.pasoActual).toBe("perfil");
+  });
+
+  it("los datos generales sobreviven a una recarga", () => {
+    store.actualizarOrganizacion({
+      nombre: "Boutique Roma Norte",
+      zonaHoraria: "America/Mexico_City",
+      tipoEmpresa: "Servicios",
+    });
+
+    const recargado = new OrganizacionStore();
+    expect(recargado.organizacion?.nombre).toBe("Boutique Roma Norte");
+    expect(recargado.organizacion?.slug).toBe("boutique-roma-norte");
+    expect(recargado.organizacion?.zonaHoraria).toBe("America/Mexico_City");
+    expect(recargado.organizacion?.tipoEmpresa).toBe("Servicios");
+    // Y lo que no se tocó sigue ahí tras el viaje por localStorage.
+    expect(recargado.organizacion?.moneda).toBe("COP");
+  });
+
+  it("sin módulo activo, siguienteRuta manda a la pestaña de módulos, no a la General", () => {
+    // Estado alcanzable: perfil completo, organización creada, y Pedidos
+    // instalado pero APAGADO. `pasoActual` es «completado» —el paso mira si está
+    // INSTALADO— pero no hay ruta de entrada, así que cae al fallback.
+    // `/configuracion` a secas abriría la pestaña «General», que no es lo que
+    // esta ruta significa: la ruta quiere que enciendas un módulo.
+    store.actualizarPerfil({ nombre: "Ana", apellido: "Ríos", email: "ana@tienda.com" });
+    store.instalarModulo("pedidos");
+    store.setModuloActivo("pedidos", false);
+
+    expect(store.pasoActual).toBe("completado");
+    expect(store.rutaPrimerModuloActivo).toBeNull();
+    expect(store.siguienteRuta).toBe("/configuracion?tab=modulos");
+  });
+});

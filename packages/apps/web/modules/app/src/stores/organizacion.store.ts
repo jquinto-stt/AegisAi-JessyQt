@@ -134,6 +134,41 @@ export const PAISES_CONFIG: Record<
   },
 };
 
+/**
+ * Rubros de empresa que el producto reconoce.
+ *
+ * Viven aquí, junto al tipo que los guarda, y no en la pantalla que los pinta:
+ * el onboarding los ofrece al crear y la configuración al editar, y **es el
+ * mismo dato persistido**. Cuando cada pantalla tenía su copia, el defecto ya
+ * había ocurrido: el valor por defecto del store era «Retail & Comercio», que no
+ * está en la lista —así que una organización creada sin elegir rubro quedaba con
+ * un valor que ningún `<select>` podía volver a mostrar.
+ */
+export const TIPOS_EMPRESA = [
+  "Gastronomía & Alimentos",
+  "Moda, Calzado & Accesorios",
+  "Retail & Comercio minorista",
+  "Tecnología & Software",
+  "Servicios Profesionales & Consultoría",
+  "Salud, Estética & Bienestar",
+  "Construcción & Hogar",
+  "Otro rubro comercial",
+] as const;
+
+/** Rangos de tamaño de equipo. Mismo criterio que `TIPOS_EMPRESA`. */
+export const TAMANOS_EQUIPO = [
+  "Solo yo (1 persona)",
+  "2 a 5 personas",
+  "6 a 20 personas",
+  "Más de 20 personas",
+] as const;
+
+/** Rubro por defecto: el que el onboarding propone y el que el store escribe. */
+export const TIPO_EMPRESA_POR_DEFECTO = "Retail & Comercio minorista";
+
+/** Tamaño de equipo por defecto. */
+export const TAMANO_EQUIPO_POR_DEFECTO = "2 a 5 personas";
+
 export type OnboardingStep = "perfil" | "organizacion" | "modulos" | "completado";
 
 /**
@@ -259,6 +294,26 @@ function persistStorage(data: OrganizacionStorage) {
   }
 }
 
+/**
+ * Deriva el `slug` de un nombre de organización.
+ *
+ * Se exporta porque lo consumen TRES sitios y todos tienen que dar el mismo
+ * resultado: `crearOrganizacion` (lo guarda), `actualizarOrganizacion` (lo
+ * recalcula al renombrar) y el onboarding (lo enseña como «Identificador web»
+ * antes de guardarlo). El onboarding tenía su propia copia del algoritmo —con
+ * un `.trim()` de más y sin fallback—, así que podía previsualizar una dirección
+ * distinta de la que el store acababa guardando.
+ */
+export function slugDe(nombre: string): string {
+  return (
+    nombre
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/[\s_-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "mi-empresa"
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ORGANIZACION STORE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -342,8 +397,10 @@ export class OrganizacionStore {
         // Al primer módulo activo, sea cual sea. Antes estaba fijo a
         // `/pedidos/inicio`, lo que asumía que Pedidos siempre existe — y con
         // una organización sin módulos mandaba a una ruta que `ModuloGuard`
-        // bloquea. Si no hay ninguno activo, a la configuración de módulos.
-        return this.rutaPrimerModuloActivo ?? "/configuracion";
+        // bloquea. Si no hay ninguno activo, a la configuración de módulos:
+        // `?tab=modulos` y no `/configuracion` a secas, porque la pestaña por
+        // defecto es «General» y esta ruta significa «ve a encender un módulo».
+        return this.rutaPrimerModuloActivo ?? "/configuracion?tab=modulos";
     }
   }
 
@@ -423,6 +480,64 @@ export class OrganizacionStore {
     this.persist();
   }
 
+  /**
+   * Actualiza los datos generales de la organización ya creada.
+   *
+   * **Actualización parcial de verdad**, con el mismo contrato que
+   * `actualizarPerfil`: se parte de la organización existente y solo se
+   * sobreescribe lo que llega. `undefined` significa «no tocar»; la cadena vacía
+   * SÍ se escribe, porque vaciar un campo opcional (el logo, por ejemplo) es una
+   * edición legítima. La versión «reconstruir campo a campo» es la trampa que ya
+   * borró `variantesDisponibles` y los campos extendidos del perfil.
+   *
+   * **No crea organización.** Si no hay ninguna, no hace nada. Crear una empresa
+   * es un paso del onboarding —con su país, su moneda y su paso siguiente— y una
+   * segunda ruta de creación aquí tendría que reimplementar esas reglas o
+   * contradecirlas. La pantalla que lo llama enseña un estado vacío en vez de
+   * fingir que guardó.
+   *
+   * **El nombre no puede quedar en blanco.** `tieneOrganizacion` es
+   * `nombre.trim() !== ""`, así que aceptar un nombre vacío dejaría la
+   * organización en el estado «no creada» que el resto de la aplicación usa para
+   * decidir si manda al onboarding. Un nombre en blanco conserva el anterior; el
+   * formulario lo impide antes de llegar aquí, y esto es la red de seguridad.
+   *
+   * El `slug` se **recalcula** desde el nombre: es su proyección, no un campo
+   * independiente. Dejarlo quieto al renombrar produciría dos identificadores del
+   * mismo objeto que ya no dicen lo mismo.
+   */
+  actualizarOrganizacion(datos: {
+    nombre?: string;
+    pais?: string;
+    moneda?: string;
+    zonaHoraria?: string;
+    tipoEmpresa?: string;
+    tamanoEquipo?: string;
+    logoUrl?: string;
+  }) {
+    if (!this.organizacion) return;
+
+    const nombre = (datos.nombre ?? this.organizacion.nombre).trim() || this.organizacion.nombre;
+    const pais = (datos.pais ?? this.organizacion.pais).trim() || this.organizacion.pais;
+    const moneda =
+      (datos.moneda ?? this.organizacion.moneda).trim().toUpperCase() || this.organizacion.moneda;
+    const zonaHoraria =
+      (datos.zonaHoraria ?? this.organizacion.zonaHoraria).trim() || this.organizacion.zonaHoraria;
+
+    this.organizacion = {
+      ...this.organizacion,
+      nombre,
+      slug: slugDe(nombre),
+      pais,
+      moneda,
+      zonaHoraria,
+      tipoEmpresa: datos.tipoEmpresa?.trim() ?? this.organizacion.tipoEmpresa,
+      tamanoEquipo: datos.tamanoEquipo?.trim() ?? this.organizacion.tamanoEquipo,
+      logoUrl: datos.logoUrl?.trim() ?? this.organizacion.logoUrl,
+    };
+    this.persist();
+  }
+
   crearOrganizacion(datos: {
     nombre?: string;
     pais?: string;
@@ -433,19 +548,20 @@ export class OrganizacionStore {
     logoUrl?: string;
   }) {
     const nombre = (datos.nombre ?? "Mi Empresa").trim();
-    const slug =
-      nombre
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/[\s_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") || "mi-empresa";
+    const slug = slugDe(nombre);
 
     const pais = (datos.pais ?? "Colombia").trim();
     const configuracionPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
     const moneda = (datos.moneda ?? configuracionPais.moneda).trim().toUpperCase();
     const zonaHoraria = (datos.zonaHoraria ?? configuracionPais.zonaHoraria).trim();
-    const tipoEmpresa = datos.tipoEmpresa ?? this.organizacion?.tipoEmpresa ?? "Retail & Comercio";
-    const tamanoEquipo = datos.tamanoEquipo ?? this.organizacion?.tamanoEquipo ?? "2 a 5 personas";
+    // Los defaults salen de las listas compartidas, no de un literal. Antes eran
+    // «Retail & Comercio», que no es ninguna de las opciones que el `<select>`
+    // ofrece: una organización creada sin elegir rubro nacía con un valor que la
+    // propia pantalla no podía volver a pintar.
+    const tipoEmpresa =
+      datos.tipoEmpresa ?? this.organizacion?.tipoEmpresa ?? TIPO_EMPRESA_POR_DEFECTO;
+    const tamanoEquipo =
+      datos.tamanoEquipo ?? this.organizacion?.tamanoEquipo ?? TAMANO_EQUIPO_POR_DEFECTO;
     const logoUrl = datos.logoUrl ?? this.organizacion?.logoUrl;
 
     this.organizacion = {

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Link, useNavigate } from "react-router";
-import { PageMeta } from "@/shell/meta";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
@@ -489,10 +488,19 @@ const ModuloMaestroCard = observer(({
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PÁGINA PRINCIPAL
+// PESTAÑA "MÓDULOS E INTEGRACIONES"
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// Era una PÁGINA servida en `/configuracion`. Ahora es una pestaña de la
+// configuración de la organización, y por eso ya no pinta su propio `<h1>`, ni
+// su descripción, ni su `PageMeta`: el `ConfigShell` de la página que la aloja
+// pone el título y el consejo de la sección. Repetirlos aquí daba dos
+// encabezados para la misma cosa, que es la misma clase de defecto que las tres
+// descripciones distintas del mismo módulo.
+//
+// Lo que sí es suyo: el contenido y sus dos acciones (agregar y restablecer).
 
-export const ConfiguracionModulosPage = observer(() => {
+export const ModulosTab = observer(() => {
   const [modalModulo, setModalModulo] = useState<ModuloConfigDef | null>(null);
   const [modalIntegracion, setModalIntegracion] = useState<SubIntegracionDef | null>(null);
   const [moduloADesinstalar, setModuloADesinstalar] = useState<ModuloConfigDef | null>(null);
@@ -528,41 +536,26 @@ export const ConfiguracionModulosPage = observer(() => {
 
   return (
     <>
-      <PageMeta
-        title="Módulos e Integraciones · Organización"
-        description="Gestión jerárquica de módulos de negocio y sus tarjetas de integración"
-      />
+      {/* Acciones de la sección. El título y el consejo los pinta el
+          `ConfigShell` que aloja esta pestaña; aquí solo van los botones. */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <Button
+          size="sm"
+          onClick={() => setModalAgregarAbierto(true)}
+          className="flex items-center gap-1.5"
+        >
+          <PlusIcon className="h-4 w-4" />
+          <span>Agregar Módulo</span>
+        </Button>
 
-      {/* Cabecera Superior */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Módulos e Integraciones
-          </h1>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Administra los módulos de tu organización y las integraciones activas en cada uno.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5">
-          <Button
-            size="sm"
-            onClick={() => setModalAgregarAbierto(true)}
-            className="flex items-center gap-1.5"
-          >
-            <PlusIcon className="h-4 w-4" />
-            <span>Agregar Módulo</span>
+        {/* `Button` del catálogo no reenvía `title` al DOM (documentado en
+            REFERENCIA.md), así que el tooltip va en un `<span>` que lo envuelve:
+            pasarlo directo al `Button` no compila y no pintaría nada. */}
+        <span title="Restablecer configuración de fábrica">
+          <Button size="sm" variant="outline" onClick={() => organizacionStore.reiniciarModulos()}>
+            Restablecer
           </Button>
-
-          {/* `Button` del catálogo no reenvía `title` al DOM (documentado en
-              REFERENCIA.md), así que el tooltip va en un `<span>` que lo envuelve:
-              pasarlo directo al `Button` no compila y no pintaría nada. */}
-          <span title="Restablecer configuración de fábrica">
-            <Button size="sm" variant="outline" onClick={() => organizacionStore.reiniciarModulos()}>
-              Restablecer
-            </Button>
-          </span>
-        </div>
+        </span>
       </div>
 
       {/* ── LISTADO DE MÓDULOS DE NEGOCIO Y SUS INTEGRACIONES ── */}

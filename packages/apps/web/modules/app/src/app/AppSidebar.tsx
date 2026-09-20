@@ -8,6 +8,7 @@ import {
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { sessionStore, organizacionStore } from "@/stores";
+import { Settings } from "lucide-react";
 import {
   GridIcon,
   TaskIcon,
@@ -16,7 +17,6 @@ import {
   InfoIcon,
   ArrowRightIcon,
   PlusIcon,
-  GroupIcon,
   AiIcon,
   ChatIcon,
   PieChartIcon,
@@ -170,13 +170,17 @@ const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motiv
   /**
    * El motivo se pinta SIEMPRE; el enlace solo si el rol puede ejecutarlo.
    *
-   * El enlace apunta a `/configuracion`, que exige `team.manage`. Antes se pintaba
-   * para todo el mundo, así que un rol con `channels.read` y sin `team.manage` veía
-   * «Activarlo», lo pulsaba y aterrizaba en «No tienes acceso a esta sección» — un
-   * control visible que el rol no puede ejecutar, que es justo lo que el contrato
-   * manda **ocultar**. Es el mismo defecto que se retiró del pie del sidebar, en
-   * otra ubicación. Medido con un operador simulado en
+   * El enlace apunta a `/configuracion?tab=modulos`, que exige `team.manage`.
+   * Antes se pintaba para todo el mundo, así que un rol con `channels.read` y sin
+   * `team.manage` veía «Activarlo», lo pulsaba y aterrizaba en «No tienes acceso
+   * a esta sección» — un control visible que el rol no puede ejecutar, que es
+   * justo lo que el contrato manda **ocultar**. Es el mismo defecto que se retiró
+   * del pie del sidebar, en otra ubicación. Medido con un operador simulado en
    * `outputs/flujos-config-verify/`.
+   *
+   * La pestaña va explícita porque el destino por defecto de `/configuracion` es
+   * «General»: «Activarlo» significa encender un módulo, y eso vive en la pestaña
+   * de módulos.
    *
    * Ocultar el motivo entero sería peor: la sección está vacía y quien la busca
    * tiene derecho a saber por qué. Se dice la verdad, y se nombra a quien puede
@@ -192,7 +196,7 @@ const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motiv
           {motivo}{" "}
           {puedeActivarlo ? (
             <Link
-              to="/configuracion"
+              to="/configuracion?tab=modulos"
               className="font-medium text-brand-600 hover:underline dark:text-brand-400"
             >
               Activarlo
@@ -218,6 +222,20 @@ const SidebarContent = observer(() => {
   const puedePedidos = (seccionId: string) => sessionStore.puedeVerSeccion("pedidos", seccionId);
   const puedeGestionarEquipo = sessionStore.hasPermission("team.manage");
   const esRutaConHijas = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+
+  /**
+   * La entrada «Configuración» cubre DOS rutas, no una.
+   *
+   * `/configuracion` —con cualquier `?tab=`, que no cambia el `pathname`— y
+   * `/equipo/:id`, el perfil de una persona, que se abre desde la pestaña de
+   * equipo. Sin lo segundo, el ítem se apagaría justo mientras estás dentro de lo
+   * que gobierna, que es la forma más barata de que el sidebar parezca roto.
+   *
+   * `/equipo` a secas no hace falta nombrarla: es un `<Navigate>` a
+   * `/configuracion?tab=equipo` y nunca llega a pintarse.
+   */
+  const esRutaOrganizacion = (path: string) =>
+    esRutaConHijas(path) || esRutaConHijas("/equipo");
 
   // Las dos preguntas que decide cada sección transversal, separadas a propósito:
   // «¿el rol puede?» (permiso) y «¿la organización lo tiene encendido?» (config).
@@ -347,11 +365,16 @@ const SidebarContent = observer(() => {
           </div>
         )}
 
-        {/* Organización — gestión de equipo, roles y módulos transversales.
-            «Configuración de Módulos» apunta a la ruta canónica `/configuracion`
-            (antes `/organizacion/configuracion`, que hoy redirige). Es el único
-            enlace del sidebar a esa pantalla: el del pie se retiró porque lo veía
-            todo el mundo y la ruta exige `team.manage`. */}
+        {/* Organización — UNA sola entrada para UNA sola pantalla.
+            Antes eran dos («Equipo» y «Configuración de Módulos») porque eran dos
+            pantallas distintas; ahora son dos pestañas de `/configuracion`, así que
+            dos enlaces al mismo sitio serían dos caminos sin ninguna razón para
+            elegir uno. El icono es el mismo que usa el menú de usuario para este
+            destino (`UserDropdown`), que es lo que hace que dos accesos al mismo
+            sitio se lean como el mismo sitio.
+
+            Sigue siendo el ÚNICO enlace del sidebar a `/configuracion`: el del pie
+            se retiró porque lo veía todo el mundo y la ruta exige `team.manage`. */}
         {puedeGestionarEquipo && (
           <div>
             <MenuSectionHeader
@@ -366,8 +389,12 @@ const SidebarContent = observer(() => {
               }`}
             >
               <ul className="flex flex-col gap-1">
-                <MenuItem icon={<GroupIcon />} name="Equipo" path="/equipo" isActive={esRutaConHijas} />
-                <MenuItem icon={<PlugInIcon />} name="Configuración de Módulos" path="/configuracion" isActive={esRutaConHijas} />
+                <MenuItem
+                  icon={<Settings className="size-5" />}
+                  name="Configuración"
+                  path="/configuracion"
+                  isActive={esRutaOrganizacion}
+                />
               </ul>
             </div>
           </div>
