@@ -67,7 +67,7 @@ export default function PublicPageLayout({
   const navigate = useNavigate();
   const isAuthenticated = sessionStore.isReady;
 
-  const backLabel = isAuthenticated ? "Volver al workspace" : "Iniciar sesión";
+  const backLabel = isAuthenticated ? "Volver a mi organización" : "Iniciar sesión";
   const backTarget = isAuthenticated ? "/modulos" : "/login";
 
   return (

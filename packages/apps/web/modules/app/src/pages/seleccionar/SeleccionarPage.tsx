@@ -5,18 +5,17 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Card, CardTitle, CardDescription } from "@/elements/ui/card";
 import { ThemeToggleButton } from "@/shell";
-import { sessionStore, type Modulo, type TipoSesion } from "@/stores";
+import {
+  CATALOGO_MODULOS,
+  organizacionStore,
+  sessionStore,
+  modulosOperablesDeSesion,
+  type TipoSesion,
+} from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ICONS
 // ═══════════════════════════════════════════════════════════════════════════
-
-
-const PedidosIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-8 w-8">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-  </svg>
-);
 
 const AdminIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-7 w-7">
@@ -40,22 +39,6 @@ const CheckIcon = () => (
 // DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
-interface ModuloOption {
-  id: Modulo;
-  titulo: string;
-  descripcion: string;
-  icon: () => ReactNode;
-}
-
-const MODULOS: ModuloOption[] = [
-  {
-    id: "pedidos",
-    titulo: "Pedidos",
-    descripcion: "Flujo de pedidos que llegan por WhatsApp: tablero por estados, entrega e historial.",
-    icon: PedidosIcon,
-  },
-];
-
 interface TipoSesionOption {
   id: TipoSesion;
   titulo: string;
@@ -67,7 +50,7 @@ const TIPOS_SESION: TipoSesionOption[] = [
   {
     id: "administrador",
     titulo: "Administrador",
-    descripcion: "Acceso completo: configuración, filas/profesionales, reportes y ajustes del negocio.",
+    descripcion: "Acceso completo: configuración, equipo, reportes y ajustes del negocio.",
     icon: AdminIcon,
   },
   {
@@ -98,8 +81,7 @@ interface SelectCardProps {
  * Construida sobre el componente `Card` del catálogo Elements siguiendo el
  * blueprint IconCard (contenedor de ícono + CardTitle + CardDescription). Se
  * envuelve en un <button> para hacer toda la superficie clickeable y añade el
- * estado activo/hover + el check por encima. Sirve tanto para selección
- * múltiple (módulos, toggle) como exclusiva (tipo de acceso).
+ * estado activo/hover + el check por encima.
  */
 const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: SelectCardProps) => (
   <button
@@ -138,72 +120,61 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// STEP INDICATOR
-// ═══════════════════════════════════════════════════════════════════════════
-
-const StepDots = ({ step }: { step: 1 | 2 }) => (
-  <div className="flex items-center gap-2">
-    <span className={`h-2 rounded-full transition-all ${step === 1 ? "w-6 bg-brand-500" : "w-2 bg-gray-300 dark:bg-gray-700"}`} />
-    <span className={`h-2 rounded-full transition-all ${step === 2 ? "w-6 bg-brand-500" : "w-2 bg-gray-300 dark:bg-gray-700"}`} />
-  </div>
-);
-
-/** Etiqueta legible del conjunto de módulos elegidos, para el subtítulo. */
-const sessionModulosLabel = (modulos: Modulo[]) => {
-  const label: Record<Modulo, string> = { turnos: "Turnos", agendamiento: "Agendamiento", pedidos: "Pedidos" };
-  const nombres = modulos.map((m) => label[m]);
-  if (nombres.length === 0) return "tu módulo";
-  if (nombres.length === 1) return `el módulo de ${nombres[0]}`;
-  return `los módulos de ${nombres.join(" y ")}`;
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * SeleccionarPage — pantalla de configuración previa post-login (mock).
+ * SeleccionarPage — elige la **vía de entrada** antes de entrar a la app (mock).
  *
- * Paso 1: elegir módulo (Turnos | Agendamiento | Pedidos).
- * Paso 2: elegir vía de entrada (Administrador | Operador).
+ * ── Qué cambió, y por qué ─────────────────────────────────────────────────
+ * Esta pantalla tenía DOS pasos: elegir módulo y elegir vía de entrada. El paso
+ * de módulos ya solo ofrecía una tarjeta —Pedidos—, así que pedía una decisión
+ * que no existía: un selector de un solo elemento no elige nada, y presentarlo
+ * como una elección es una mentira en la interfaz. Se eliminó, junto con
+ * `turnos` y `agendamiento`, que eran las otras dos opciones.
  *
- * Al confirmar:
- * - **Administrador** → guarda la selección y entra al módulo elegido.
- * - **Operador** → guarda la selección y va a `/operador/registro` a **solicitar
- *   acceso**. No entra: un operador no existe hasta que el admin aprueba su
- *   solicitud y le asigna un rol (ver `pages/equipo`).
+ * Lo que queda es la parte que sí decidía algo. Las dos vías tienen efectos
+ * distintos y reales:
+ *   - **Administrador** → `configurar()` deja la sesión autenticada y entra.
+ *   - **Operador** → NO entra: va a `/operador/registro` a solicitar acceso. La
+ *     sesión queda sin rol, así que `RequireSession` bloquea el shell.
  *
- * Aquí ya NO hay botón "Simular": la impersonación ("Viendo como") es una
- * herramienta de administrador y vive en Equipo, donde está guardada por
- * `team.manage`. Tenerla también aquí era una segunda puerta sin autorizar.
+ * ── El módulo, ahora derivado ─────────────────────────────────────────────
+ * La sesión recibe la pertenencia real de la organización
+ * (`Sesión ⊆ Organización`), no una lista escrita a mano. Si la organización no
+ * tiene ningún módulo activo, esta pantalla **no** entra: manda a `/modulos` a
+ * agregar uno. Antes, `moduloEntryPath` devolvía `/seleccionar` con la lista
+ * vacía, lo que era un bucle de redirección esperando a que alguien lo pisara.
  */
 export const SeleccionarPage = observer(() => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<1 | 2>(1);
-  // Seleccion multiple: el usuario puede elegir uno o los dos modulos.
-  const [modulos, setModulos] = useState<Modulo[]>([...sessionStore.modulos]);
   const [tipoSesion, setTipoSesion] = useState<TipoSesion | null>(sessionStore.tipoSesion);
 
   /** El operador no "entra": solicita acceso. Cambia la copia y el CTA. */
   const esOperador = tipoSesion === "operador";
 
-  const toggleModulo = (m: Modulo) => {
-    setModulos((prev) => (prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]));
-  };
-
-  const goToRol = () => {
-    if (modulos.length === 0) return;
-    setStep(2);
-  };
+  const modulosDisponibles = modulosOperablesDeSesion(organizacionStore.modulosActivos);
+  const nombreModulo = modulosDisponibles[0]
+    ? CATALOGO_MODULOS[modulosDisponibles[0]].nombre
+    : null;
 
   const confirmar = () => {
-    if (modulos.length === 0 || !tipoSesion) return;
-    sessionStore.configurar(modulos, tipoSesion);
+    if (!tipoSesion) return;
+
+    // Sin módulos activos no hay nada que operar: se va a agregarlos. Es la
+    // misma regla que sigue el login, y evita que `moduloEntryPath` devuelva
+    // `/seleccionar` y la pantalla se recargue a sí misma.
+    if (modulosDisponibles.length === 0) {
+      navigate("/modulos");
+      return;
+    }
+
+    sessionStore.configurar(modulosDisponibles, tipoSesion);
 
     if (tipoSesion === "operador") {
-      // Un operador "sale de" un administrador: en vez de entrar al modulo,
+      // Un operador "sale de" un administrador: en vez de entrar al módulo,
       // pasa por una pantalla para dejar sus datos, que (mock) le llegan como
-      // notificacion al administrador para darlo de alta.
+      // notificación al administrador para darlo de alta.
       //
       // `configurar()` deja la sesión SIN autenticar (el tipo "operador" no
       // resuelve a ningún rol), así que `RequireSession` bloquea el shell: el
@@ -213,14 +184,12 @@ export const SeleccionarPage = observer(() => {
       return;
     }
 
-    // Administrador: entra directo al modulo funcional. Regla acordada: si
-    // eligio ambos modulos, entra por Turnos (navegable luego por el sidebar).
     navigate(sessionStore.moduloEntryPath);
   };
 
   return (
     <>
-      <PageMeta title="Seleccionar módulo" description="Elige el módulo y cómo vas a entrar" />
+      <PageMeta title="Cómo vas a entrar" description="Elige la vía de entrada a tu organización" />
 
       <div className="relative min-h-screen bg-gray-50 px-6 py-12 dark:bg-gray-950">
         <div className="fixed right-6 top-6 z-50">
@@ -232,68 +201,38 @@ export const SeleccionarPage = observer(() => {
           <div className="mb-8 flex flex-col items-center text-center">
             <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-              {step === 1 ? "¿Qué módulo quieres usar?" : esOperador ? "Solicita tu acceso" : "¿Cómo vas a entrar?"}
+              {esOperador ? "Solicita tu acceso" : "¿Cómo vas a entrar?"}
             </h1>
             <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
-              {step === 1
-                ? "Elige uno o los dos módulos con los que quieres trabajar. Podrás cambiarlo cuando quieras."
-                : esOperador
-                  ? `Vas a solicitar acceso a ${sessionModulosLabel(modulos)}. Un administrador revisará tu solicitud y te asignará un rol.`
-                  : `Vas a entrar a ${sessionModulosLabel(modulos)}. Elige cómo vas a entrar.`}
+              {esOperador
+                ? `Vas a solicitar acceso a ${nombreModulo ?? "tu módulo"}. Un administrador revisará tu solicitud y te asignará un rol.`
+                : `Vas a entrar a ${nombreModulo ?? "tu módulo"}. Elige cómo vas a entrar.`}
             </p>
           </div>
 
-          {/* Paso 1: módulos */}
-          {step === 1 && (
-            <>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {MODULOS.map((m) => (
-                  <SelectCard
-                    key={m.id}
-                    titulo={m.titulo}
-                    descripcion={m.descripcion}
-                    icon={m.icon}
-                    selected={modulos.includes(m.id)}
-                    onSelect={() => toggleModulo(m.id)}
-                  />
-                ))}
-              </div>
-              <div className="mt-8 flex items-center justify-between">
-                <StepDots step={1} />
-                <Button size="sm" disabled={modulos.length === 0} onClick={goToRol}>Continuar</Button>
-              </div>
-            </>
-          )}
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            {TIPOS_SESION.map((r) => (
+              <SelectCard
+                key={r.id}
+                titulo={r.titulo}
+                descripcion={r.descripcion}
+                icon={r.icon}
+                selected={tipoSesion === r.id}
+                onSelect={() => setTipoSesion(r.id)}
+              />
+            ))}
+          </div>
 
-          {/* Paso 2: tipo de acceso */}
-          {step === 2 && (
-            <>
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {TIPOS_SESION.map((r) => (
-                  <SelectCard
-                    key={r.id}
-                    titulo={r.titulo}
-                    descripcion={r.descripcion}
-                    icon={r.icon}
-                    selected={tipoSesion === r.id}
-                    onSelect={() => setTipoSesion(r.id)}
-                  />
-                ))}
-              </div>
-              <div className="mt-8 flex items-center justify-between">
-                <StepDots step={2} />
-                <div className="flex items-center gap-3">
-                  <Button size="sm" variant="outline" onClick={() => setStep(1)}>Atrás</Button>
-                  {/* El CTA dice lo que de verdad pasa: el administrador entra,
-                      el operador solicita acceso. Antes ambos decían "Entrar" y
-                      había un botón "Simular" aparte, que ya no existe. */}
-                  <Button size="sm" disabled={!tipoSesion} onClick={confirmar}>
-                    {esOperador ? "Solicitar acceso" : "Entrar"}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+          <div className="mt-8 flex items-center justify-end">
+            <div className="flex items-center gap-3">
+              {/* El CTA dice lo que de verdad pasa: el administrador entra,
+                  el operador solicita acceso. Antes ambos decían "Entrar" y
+                  había un botón "Simular" aparte, que ya no existe. */}
+              <Button size="sm" disabled={!tipoSesion} onClick={confirmar}>
+                {esOperador ? "Solicitar acceso" : "Entrar"}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </>

@@ -148,8 +148,6 @@ export const MODULO_DESTINO_LABEL: Record<
 > = {
   pedidos: { etiqueta: "Pedidos", disponible: true },
   inventario: { etiqueta: "Inventario", disponible: false },
-  turnos: { etiqueta: "Turnos", disponible: false },
-  agendamiento: { etiqueta: "Agendamiento", disponible: false },
   general: { etiqueta: "General", disponible: true },
 };
 

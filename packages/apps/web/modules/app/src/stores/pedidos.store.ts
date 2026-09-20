@@ -1,6 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import {
   BUSINESS_PROFILES,
+  type BusinessProfile,
   type BusinessProfileType,
   type OrderCapability,
 } from "../domain/pedidos/pedidos.profiles.js";
@@ -116,6 +117,14 @@ export interface CatalogoItem {
   id: string;
   nombre: string;
   precio: number;
+  /**
+   * Tallas / variantes elegibles del item (`["S","M","L"]`, `["37","38"]`).
+   *
+   * Espeja `ProfileProductItem.variantesDisponibles` del dominio. Solo la traen los
+   * perfiles que declaran la capacidad `variants` (moda); en el resto es `undefined`
+   * y `CrearPedidoPage` no pinta el selector de talla.
+   */
+  variantesDisponibles?: string[];
 }
 
 /** Plantillas de WhatsApp que el bot "enviaría" en cada transición (solo texto). */
@@ -293,6 +302,57 @@ const DEFAULT_CONFIG: PedidosConfig = {
   columnasPersonalizadas: undefined,
 };
 
+// ── Proyección del catálogo ──────────────────────────────────────────────────
+//
+// El catálogo se proyecta desde `BusinessProfile.sampleCatalog` en DOS sitios
+// (aquí, al aplicar un perfil, y en `ConfigPage`, al previsualizarlo en el
+// borrador). Antes cada sitio reescribía el objeto a mano y los dos tiraban
+// `variantesDisponibles`, así que el selector de talla de `CrearPedidoPage`
+// era inalcanzable y el único síntoma eran 6 errores de `tsc`. Una sola
+// función para que no vuelvan a divergir.
+
+/**
+ * Proyecta el catálogo de muestra de un preset al catálogo persistible.
+ *
+ * Conserva `variantesDisponibles` cuando el perfil las declara (moda). Se copia
+ * el array en vez de compartir la referencia del preset, para que mutar el
+ * catálogo del store no toque la constante del dominio.
+ */
+export function catalogoDesdePreset(preset: BusinessProfile): CatalogoItem[] {
+  return preset.sampleCatalog.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    precio: c.precio,
+    ...(c.variantesDisponibles ? { variantesDisponibles: [...c.variantesDisponibles] } : {}),
+  }));
+}
+
+/**
+ * Rehidrata `variantesDisponibles` en un catálogo ya guardado, tomándolas del
+ * preset por `id`.
+ *
+ * Necesario porque las sesiones que ya corrieron el onboarding tienen en
+ * `localStorage` un catálogo al que el mapper viejo le quitó las variantes: sin
+ * este paso el arreglo de `catalogoDesdePreset` no les llegaría nunca. Nunca
+ * pisa un valor existente, y un item cuyo `id` no esté en el preset se deja
+ * intacto (el usuario pudo editar el catálogo a mano).
+ */
+function conVariantesDelPreset(catalogo: CatalogoItem[], preset: BusinessProfile): CatalogoItem[] {
+  const variantesPorId = new Map<string, string[]>();
+  for (const c of preset.sampleCatalog) {
+    if (c.variantesDisponibles && c.variantesDisponibles.length > 0) {
+      variantesPorId.set(c.id, [...c.variantesDisponibles]);
+    }
+  }
+  if (variantesPorId.size === 0) return catalogo;
+
+  return catalogo.map((item) => {
+    if (item.variantesDisponibles && item.variantesDisponibles.length > 0) return item;
+    const variantes = variantesPorId.get(item.id);
+    return variantes ? { ...item, variantesDisponibles: variantes } : item;
+  });
+}
+
 const CONFIG_KEY = "necto.pedidosConfig";
 
 /** Carga la config guardada (merge con defaults) desde localStorage. */
@@ -308,7 +368,10 @@ function loadConfig(): PedidosConfig {
         ...parsed,
         plantillas: { ...DEFAULT_CONFIG.plantillas, ...(parsed.plantillas ?? {}) },
         modalidades: Array.isArray(parsed.modalidades) ? parsed.modalidades : DEFAULT_CONFIG.modalidades,
-        catalogo: Array.isArray(parsed.catalogo) ? parsed.catalogo : DEFAULT_CONFIG.catalogo,
+        catalogo: conVariantesDelPreset(
+          Array.isArray(parsed.catalogo) ? parsed.catalogo : DEFAULT_CONFIG.catalogo,
+          preset,
+        ),
         aliasEstados: { ...(parsed.aliasEstados ?? {}) },
         aliasModalidades: { ...(parsed.aliasModalidades ?? {}) },
         horario: { ...DEFAULT_CONFIG.horario, ...(parsed.horario ?? {}) },
@@ -714,7 +777,7 @@ export class PedidosStore {
     this.updateConfig({
       perfilComercial: perfil,
       capacidadesActivas: [...preset.defaultCapabilities],
-      catalogo: preset.sampleCatalog.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio })),
+      catalogo: catalogoDesdePreset(preset),
       modalidades: [...preset.defaultModalidades],
       aliasEstados: { ...preset.defaultAliasEstados },
       plantillas: { ...preset.defaultPlantillas },

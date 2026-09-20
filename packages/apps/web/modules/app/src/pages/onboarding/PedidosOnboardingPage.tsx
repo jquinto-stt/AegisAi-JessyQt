@@ -8,8 +8,7 @@ import { Switch } from "@/elements/form/switch";
 import { ThemeToggleButton } from "@/shell";
 import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
-import { sessionStore } from "@/stores/session.store";
-import { plataformaStore } from "@/stores/plataforma.store";
+import { sessionStore, modulosOperablesDeSesion } from "@/stores/session.store";
 import type { BusinessProfileType } from "@/domain/pedidos/pedidos.profiles";
 import { OnboardingStepper } from "./OnboardingStepper";
 import { OnboardingBrandPanel } from "./OnboardingBrandPanel";
@@ -81,19 +80,23 @@ export const PedidosOnboardingPage = observer(() => {
   const [habilitarIA, setHabilitarIA] = useState(true);
 
   const handleFinalizar = () => {
-    // 1. Guardar en la organización que el módulo está instalado
+    // 1. Instalar y encender el módulo, y fijar sus conectores. Las tres cosas
+    //    son nivel 2 (Organización) y viven en un solo store: `organizacionStore`.
+    //    `instalarModulo` ya deja el módulo activo y siembra sus conectores, así
+    //    que solo hay que corregir lo que el usuario decidió en el paso 2.
     organizacionStore.instalarModulo("pedidos");
+    organizacionStore.setConectorActivo("pedidos", "whatsapp", habilitarWhatsApp);
+    organizacionStore.setConectorActivo("pedidos", "necto_ia", habilitarIA);
 
     // 2. Aplicar el perfil comercial y generar datos demo correspondientes
     pedidosStore.setPerfilComercial(perfilElegido, true);
 
-    // 3. Configurar en plataformaStore el módulo y los conectores
-    plataformaStore.setModuloActivo("pedidos", true);
-    plataformaStore.setConectorActivo("pedidos", "whatsapp", habilitarWhatsApp);
-    plataformaStore.setConectorActivo("pedidos", "necto_ia", habilitarIA);
-
-    // 4. Activar la sesión con rol de Administrador para este módulo
-    sessionStore.configurar(["pedidos"], "administrador");
+    // 3. Activar la sesión con rol de Administrador para este módulo. La lista se
+    //    deriva de la pertenencia recién instalada, no se escribe a mano.
+    sessionStore.configurar(
+      modulosOperablesDeSesion(organizacionStore.modulosActivos),
+      "administrador",
+    );
 
     // 5. Entrar a la encuesta final antes de iniciar la operativa
     navigate("/onboarding/encuesta?redirect=/pedidos/inicio");

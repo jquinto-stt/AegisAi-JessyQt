@@ -1,18 +1,38 @@
 import { makeAutoObservable } from "mobx";
-import { integracionesStore } from "./integraciones.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PLATAFORMA STORE (v2) — Módulos de Negocio y Conectores Scoped
+// NIVEL 1 — PLATAFORMA (catálogo)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Modelo de Arquitectura:
-// 1. Módulos de Negocio Core (Verticales): Pedidos, Inventario.
-// 2. Plugins / Conectores Scoped: Necto IA y Canales de WhatsApp se activan
-//    por CADA módulo de negocio.
-// 3. Efecto en Cascada:
-//    - Un canal o plugin global (como Canales o Inteligencia en el sidebar)
-//      solo se muestra si AL MENOS UN módulo activo tiene su conector prendido.
-//    - Si Pedidos apaga Necto IA, integracionesStore desconecta Pedidos de la IA.
+//   Nivel 1 · PLATAFORMA    ¿qué módulos y conectores EXISTEN?   ← este archivo
+//   Nivel 2 · ORGANIZACIÓN  ¿qué tiene ACTIVADO esta empresa?    (organizacion.store)
+//   Nivel 3 · SESIÓN        ¿qué OPERA esta persona?             (session.store)
+//
+//   Regla de dirección: Sesión ⊆ Organización ⊆ Plataforma.
+//   Cada nivel puede RESTRINGIR al de abajo. Ninguno puede AMPLIAR.
+//
+// ── Qué cambió, y por qué ─────────────────────────────────────────────────
+// Este store **mezclaba dos niveles**. Guardaba el catálogo (correcto: es global
+// y constante) junto con `modulos[id].{instalado, activo, conectores}`, que es
+// estado **por organización**, bajo una clave de `localStorage` sin `orgId`
+// (`necto.plataforma.v2`).
+//
+// Ese estado se mudó a `organizacionStore`, que es su nivel. El síntoma que lo
+// delataba: `esModuloActivo("pedidos")` se leía «la plataforma tiene Pedidos
+// activo» cuando significaba «esta organización lo tiene». Y el defecto real:
+// dos consumidores leían de aquí y otros dos de `organizacionStore`, así que
+// «¿tiene Pedidos esta organización?» tenía dos respuestas en el mismo render.
+//
+// ── Lo que este store NO hace ─────────────────────────────────────────────
+// 1. **No tiene estado propio.** No persiste nada, no muta nada. Es un catálogo
+//    de solo lectura. Si alguna vez necesita un `set`, está en el nivel equivocado.
+// 2. **No decide qué tiene activo nadie.** Eso es nivel 2.
+// 3. **No decide acceso.** Eso es nivel 3 (capacidades) y el nivel 2 (pertenencia).
+//
+// El catálogo está indexado por `Record<IdModuloNegocio, …>`, así que es
+// **exhaustivo por construcción**: no se puede añadir un módulo al tipo sin darle
+// entrada aquí, y el compilador lo exige. Es el mismo patrón que
+// `integracionesStore.MODULOS_INTEGRABLES`, que sí estaba bien hecho.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -24,8 +44,17 @@ export interface InfoModuloNegocio {
   nombre: string;
   tagline: string;
   descripcion: string;
+  /**
+   * Ruta de ENTRADA del módulo — a dónde se manda a alguien cuando «entra» a él.
+   *
+   * No es la ruta raíz del módulo por casualidad: en Pedidos, `/pedidos` es el
+   * Tablero y `/pedidos/inicio` es la pantalla de llegada (es la que usan el logo
+   * del sidebar, `homePathActual` de la sesión y el redirect del login). Si no
+   * coinciden, manda la de entrada.
+   */
   rutaPrincipal: string;
   rutaConfig?: string;
+  /** ¿Existe de verdad en el producto, o es una intención declarada? */
   disponible: boolean;
 }
 
@@ -36,13 +65,29 @@ export interface InfoConectorModulo {
   beneficios: string[];
 }
 
+/**
+ * Estado de un módulo **en una organización** (nivel 2).
+ *
+ * El TIPO vive aquí, junto al catálogo, porque describe la forma del estado
+ * respecto de las claves del catálogo (`IdConector`). El DATO vive en
+ * `organizacionStore`. Un tipo no pertenece a un nivel; un dato sí.
+ */
+export interface EstadoModuloNegocio {
+  instalado: boolean;
+  activo: boolean;
+  conectores: Record<IdConector, boolean>;
+}
+
+/** Conectores posibles de cualquier módulo, en orden canónico. */
+export const IDS_CONECTORES: IdConector[] = ["necto_ia", "whatsapp"];
+
 export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   pedidos: {
     id: "pedidos",
     nombre: "Pedidos & Fulfillment",
     tagline: "Ventas y Operaciones",
     descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
-    rutaPrincipal: "/pedidos",
+    rutaPrincipal: "/pedidos/inicio",
     rutaConfig: "/pedidos/config",
     disponible: true,
   },
@@ -102,205 +147,34 @@ export const DETALLE_CONECTORES: Record<IdModuloNegocio, Record<IdConector, Info
   },
 };
 
-export interface EstadoModuloNegocio {
-  instalado: boolean;
-  activo: boolean;
-  conectores: Record<IdConector, boolean>;
-}
-
-const STORAGE_KEY = "necto.plataforma.v2";
-
-const ESTADO_INICIAL: Record<IdModuloNegocio, EstadoModuloNegocio> = {
-  pedidos: {
-    instalado: true,
-    activo: true,
-    conectores: {
-      necto_ia: true,
-      whatsapp: true,
-    },
-  },
-  inventario: {
-    instalado: false,
-    activo: false,
-    conectores: {
-      necto_ia: false,
-      whatsapp: false,
-    },
-  },
-};
-
-function cargarDesdeStorage(): Record<IdModuloNegocio, EstadoModuloNegocio> {
-  if (typeof localStorage === "undefined") {
-    return JSON.parse(JSON.stringify(ESTADO_INICIAL));
-  }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return JSON.parse(JSON.stringify(ESTADO_INICIAL));
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) {
-      return JSON.parse(JSON.stringify(ESTADO_INICIAL));
-    }
-
-    return {
-      pedidos: {
-        instalado: typeof parsed.pedidos?.instalado === "boolean" ? parsed.pedidos.instalado : ESTADO_INICIAL.pedidos.instalado,
-        activo: typeof parsed.pedidos?.activo === "boolean" ? parsed.pedidos.activo : ESTADO_INICIAL.pedidos.activo,
-        conectores: {
-          necto_ia: typeof parsed.pedidos?.conectores?.necto_ia === "boolean"
-            ? parsed.pedidos.conectores.necto_ia
-            : ESTADO_INICIAL.pedidos.conectores.necto_ia,
-          whatsapp: typeof parsed.pedidos?.conectores?.whatsapp === "boolean"
-            ? parsed.pedidos.conectores.whatsapp
-            : ESTADO_INICIAL.pedidos.conectores.whatsapp,
-        },
-      },
-      inventario: {
-        instalado: typeof parsed.inventario?.instalado === "boolean" ? parsed.inventario.instalado : ESTADO_INICIAL.inventario.instalado,
-        activo: typeof parsed.inventario?.activo === "boolean" ? parsed.inventario.activo : ESTADO_INICIAL.inventario.activo,
-        conectores: {
-          necto_ia: typeof parsed.inventario?.conectores?.necto_ia === "boolean"
-            ? parsed.inventario.conectores.necto_ia
-            : ESTADO_INICIAL.inventario.conectores.necto_ia,
-          whatsapp: typeof parsed.inventario?.conectores?.whatsapp === "boolean"
-            ? parsed.inventario.conectores.whatsapp
-            : ESTADO_INICIAL.inventario.conectores.whatsapp,
-        },
-      },
-    };
-  } catch {
-    return JSON.parse(JSON.stringify(ESTADO_INICIAL));
-  }
-}
-
-function guardarEnStorage(estado: Record<IdModuloNegocio, EstadoModuloNegocio>): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
-  } catch {
-    // Fail-safe silencioso
-  }
-}
-
+/**
+ * PlataformaStore — el catálogo de lo que Necto ofrece. **Solo lectura.**
+ *
+ * No tiene estado ni persistencia: es una vista sobre las constantes de arriba.
+ * Existe como objeto para que las superficies pregunten «¿qué ofrece Necto?» sin
+ * importar las constantes directamente, y para tener un sitio donde añadir
+ * consultas del catálogo sin abrir el nivel 2.
+ */
 export class PlataformaStore {
-  modulos: Record<IdModuloNegocio, EstadoModuloNegocio>;
-
   constructor() {
-    this.modulos = cargarDesdeStorage();
     makeAutoObservable(this);
   }
 
-  /** ¿Está instalado el módulo en la organización? */
-  esModuloInstalado(id: IdModuloNegocio): boolean {
-    return Boolean(this.modulos[id]?.instalado);
-  }
-
-  /** ¿Está habilitado el módulo de negocio en la organización? */
-  esModuloActivo(id: IdModuloNegocio): boolean {
-    return Boolean(this.modulos[id]?.instalado && this.modulos[id]?.activo);
-  }
-
-  /** Activa o desactiva un módulo de negocio completo. */
-  setModuloActivo(id: IdModuloNegocio, activo: boolean): void {
-    if (!this.modulos[id]) return;
-    if (activo) {
-      this.modulos[id].instalado = true;
-    }
-    this.modulos[id].activo = activo;
-    this.sincronizarConectores(id);
-    guardarEnStorage(this.modulos);
-  }
-
-  /** Toggle de activación del módulo de negocio. */
-  toggleModulo(id: IdModuloNegocio): void {
-    this.setModuloActivo(id, !this.esModuloActivo(id));
-  }
-
-  /** Instala un módulo en la organización y lo deja activo. */
-  instalarModulo(id: IdModuloNegocio): void {
-    if (!this.modulos[id]) return;
-    this.modulos[id].instalado = true;
-    this.modulos[id].activo = true;
-    this.sincronizarConectores(id);
-    guardarEnStorage(this.modulos);
-  }
-
-  /** Desinstala / elimina un módulo de la organización. */
-  desinstalarModulo(id: IdModuloNegocio): void {
-    if (!this.modulos[id]) return;
-    this.modulos[id].instalado = false;
-    this.modulos[id].activo = false;
-    this.sincronizarConectores(id);
-    guardarEnStorage(this.modulos);
-  }
-
-  /** ¿Está habilitado un conector específico para un módulo de negocio? */
-  esConectorActivo(moduloId: IdModuloNegocio, conectorId: IdConector): boolean {
-    return Boolean(this.modulos[moduloId]?.instalado && this.modulos[moduloId]?.activo && this.modulos[moduloId]?.conectores[conectorId]);
-  }
-
-  /** Activa o desactiva un conector en un módulo de negocio. */
-  setConectorActivo(moduloId: IdModuloNegocio, conectorId: IdConector, activo: boolean): void {
-    if (!this.modulos[moduloId]) return;
-    this.modulos[moduloId].conectores[conectorId] = activo;
-    this.sincronizarConectores(moduloId);
-    guardarEnStorage(this.modulos);
-  }
-
-  /** Toggle de activación de un conector en un módulo. */
-  toggleConector(moduloId: IdModuloNegocio, conectorId: IdConector): void {
-    const actual = Boolean(this.modulos[moduloId]?.conectores[conectorId]);
-    this.setConectorActivo(moduloId, conectorId, !actual);
-  }
-
-  /**
-   * ¿Existe al menos un módulo activo que tenga este conector encendido?
-   * Determina si la sección general (ej: Inteligencia o Canales) se pinta en el sidebar.
-   */
-  tieneConectorActivo(conectorId: IdConector): boolean {
-    return (Object.keys(this.modulos) as IdModuloNegocio[]).some((mId) =>
-      this.esConectorActivo(mId, conectorId)
-    );
-  }
-
-  /**
-   * Helper de compatibilidad con código que pregunte estaActivo("pedidos"),
-   * estaActivo("asistente") o estaActivo("conversaciones").
-   */
-  estaActivo(id: string): boolean {
-    if (id === "pedidos" || id === "inventario") {
-      return this.esModuloActivo(id);
-    }
-    if (id === "asistente") {
-      return this.tieneConectorActivo("necto_ia");
-    }
-    if (id === "conversaciones") {
-      return this.tieneConectorActivo("whatsapp");
-    }
-    return false;
-  }
-
-  /** Sincroniza el store del Asistente (Necto IA) con el estado del conector de pedidos. */
-  private sincronizarConectores(moduloId: IdModuloNegocio): void {
-    if (moduloId === "pedidos") {
-      const activo = this.esConectorActivo("pedidos", "necto_ia");
-      if (activo) {
-        integracionesStore.conectar("pedidos");
-      } else {
-        integracionesStore.desconectar("pedidos");
-      }
-    }
-  }
-
-  /** Restablece la configuración inicial. */
-  reiniciar(): void {
-    this.modulos = JSON.parse(JSON.stringify(ESTADO_INICIAL));
-    this.sincronizarConectores("pedidos");
-    guardarEnStorage(this.modulos);
-  }
-
-  /** Lista de catálogo de módulos. */
+  /** Lista del catálogo, en orden de declaración. */
   get catalogoModulos(): InfoModuloNegocio[] {
     return Object.values(CATALOGO_MODULOS);
+  }
+
+  /** ¿Existe el módulo en el producto (aunque la organización no lo tenga)? */
+  esModuloDisponible(id: IdModuloNegocio): boolean {
+    return Boolean(CATALOGO_MODULOS[id]?.disponible);
+  }
+
+  /** Los conectores que un módulo puede llegar a tener, según el catálogo. */
+  conectoresDe(id: IdModuloNegocio): IdConector[] {
+    const detalle = DETALLE_CONECTORES[id];
+    if (!detalle) return [];
+    return (Object.keys(detalle) as IdConector[]).filter((c) => Boolean(detalle[c]));
   }
 }
 

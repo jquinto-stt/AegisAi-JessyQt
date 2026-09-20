@@ -8,7 +8,7 @@ import { Modal } from "@/elements/ui/modal";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Switch } from "@/elements/form/switch";
 import {
-  plataformaStore,
+  organizacionStore,
   type IdModuloNegocio,
 } from "@/stores";
 
@@ -297,9 +297,9 @@ const ModuloMaestroCard = observer(({
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const esActivo = plataformaStore.esModuloActivo(def.id);
-  const nectoIaActivo = plataformaStore.esConectorActivo(def.id, "necto_ia");
-  const whatsappActivo = plataformaStore.esConectorActivo(def.id, "whatsapp");
+  const esActivo = organizacionStore.esModuloActivo(def.id);
+  const nectoIaActivo = organizacionStore.esConectorActivo(def.id, "necto_ia");
+  const whatsappActivo = organizacionStore.esConectorActivo(def.id, "whatsapp");
 
   // Integraciones específicas asociadas a este módulo con el diseño de referencia
   const integraciones: SubIntegracionDef[] = [
@@ -312,7 +312,7 @@ const ModuloMaestroCard = observer(({
           : "Consultas instantáneas de existencias y productos con bajo stock.",
       logo: <NectoIaIntegrationLogo />,
       activo: nectoIaActivo,
-      onToggle: () => plataformaStore.toggleConector(def.id, "necto_ia"),
+      onToggle: () => organizacionStore.toggleConector(def.id, "necto_ia"),
       rutaConfig: def.id === "pedidos" ? "/asistente/config" : undefined,
       detalles: {
         categoria: "Plugin / Inteligencia Artificial",
@@ -334,7 +334,7 @@ const ModuloMaestroCard = observer(({
           : "Atención de consultas de catálogo y disponibilidad vía WhatsApp.",
       logo: <WhatsAppIntegrationLogo />,
       activo: whatsappActivo,
-      onToggle: () => plataformaStore.toggleConector(def.id, "whatsapp"),
+      onToggle: () => organizacionStore.toggleConector(def.id, "whatsapp"),
       rutaConfig: def.id === "pedidos" ? "/conversaciones/config" : undefined,
       detalles: {
         categoria: "Plugin / Canal de Mensajería",
@@ -425,7 +425,7 @@ const ModuloMaestroCard = observer(({
           {/* Switch del Módulo */}
           <Switch
             checked={esActivo}
-            onChange={() => plataformaStore.toggleModulo(def.id)}
+            onChange={() => organizacionStore.toggleModulo(def.id)}
             label=""
           />
         </div>
@@ -465,12 +465,12 @@ export const ConfiguracionModulosPage = observer(() => {
 
   // Módulos instalados
   const modulosInstalados = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
-    .filter((id) => plataformaStore.esModuloInstalado(id))
+    .filter((id) => organizacionStore.esModuloInstalado(id))
     .map((id) => MODULOS_DEF[id]);
 
   // Módulos disponibles para instalar
   const modulosDisponiblesParaInstalar = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
-    .filter((id) => !plataformaStore.esModuloInstalado(id))
+    .filter((id) => !organizacionStore.esModuloInstalado(id))
     .map((id) => MODULOS_DEF[id]);
 
   return (
@@ -501,14 +501,14 @@ export const ConfiguracionModulosPage = observer(() => {
             <span>Agregar Módulo</span>
           </Button>
 
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => plataformaStore.reiniciar()}
-            title="Restablecer configuración de fábrica"
-          >
-            Restablecer
-          </Button>
+          {/* `Button` del catálogo no reenvía `title` al DOM (documentado en
+              REFERENCIA.md), así que el tooltip va en un `<span>` que lo envuelve:
+              pasarlo directo al `Button` no compila y no pintaría nada. */}
+          <span title="Restablecer configuración de fábrica">
+            <Button size="sm" variant="outline" onClick={() => organizacionStore.reiniciarModulos()}>
+              Restablecer
+            </Button>
+          </span>
         </div>
       </div>
 
@@ -561,10 +561,10 @@ export const ConfiguracionModulosPage = observer(() => {
                     {modalModulo.nombre}
                   </h3>
                   <Badge
-                    color={plataformaStore.esModuloActivo(modalModulo.id) ? "success" : "light"}
+                    color={organizacionStore.esModuloActivo(modalModulo.id) ? "success" : "light"}
                     size="xs"
                   >
-                    {plataformaStore.esModuloActivo(modalModulo.id) ? "Activo" : "Inactivo"}
+                    {organizacionStore.esModuloActivo(modalModulo.id) ? "Activo" : "Inactivo"}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -723,7 +723,7 @@ export const ConfiguracionModulosPage = observer(() => {
               Catálogo de Módulos de la Organización
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Agrega módulos a tu espacio de trabajo para habilitar nuevas áreas de negocio.
+              Agrega módulos a tu organización para habilitar nuevas áreas de negocio.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -752,7 +752,7 @@ export const ConfiguracionModulosPage = observer(() => {
                     <Button
                       size="sm"
                       onClick={() => {
-                        plataformaStore.instalarModulo(mod.id);
+                        organizacionStore.instalarModulo(mod.id);
                         setModalAgregarAbierto(false);
                       }}
                     >
@@ -826,7 +826,7 @@ export const ConfiguracionModulosPage = observer(() => {
                 size="sm"
                 className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
                 onClick={() => {
-                  plataformaStore.desinstalarModulo(moduloADesinstalar.id);
+                  organizacionStore.desinstalarModulo(moduloADesinstalar.id);
                   setModuloADesinstalar(null);
                 }}
               >

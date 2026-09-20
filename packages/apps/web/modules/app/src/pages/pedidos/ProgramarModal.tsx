@@ -130,10 +130,19 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{MESES[month]} {year}</h3>
               <div className="flex gap-2">
-                <Button size="icon" variant="outline" aria-label="Mes anterior" onClick={prevMonth}>
+                {/* El nombre accesible va como HIJO, no como `aria-label`: el
+                    `Button` del catálogo tiene la interfaz de props cerrada y no
+                    reenvía atributos nativos, así que un `aria-label` aquí
+                    compila, se descarta y deja el botón sin nombre — que es
+                    exactamente lo que decía estar resolviendo. `sr-only` sí se
+                    renderiza dentro del `<button>`, y el nombre se calcula del
+                    contenido. Mismo patrón que `HistorialAtencionPage`. */}
+                <Button size="icon" variant="outline" onClick={prevMonth}>
+                  <span className="sr-only">Mes anterior</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
                 </Button>
-                <Button size="icon" variant="outline" aria-label="Mes siguiente" onClick={nextMonth}>
+                <Button size="icon" variant="outline" onClick={nextMonth}>
+                  <span className="sr-only">Mes siguiente</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                 </Button>
               </div>

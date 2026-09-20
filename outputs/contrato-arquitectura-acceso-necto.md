@@ -3,13 +3,40 @@
 **Proyecto:** Necto
 **Ámbito:** `packages/apps/web/modules/app/src/`
 **Naturaleza:** mock 100 % frontend. Sin backend, sin Cognito, sin persistencia de operadores.
-**Aplica a:** módulo `pedidos`. `turnos` y `agendamiento` quedan **congelados** en el modelo legado.
-**Fecha:** 2026-09-16
+**Aplica a:** módulo `pedidos` — **el único módulo de negocio del producto**.
+**Fecha:** 2026-09-16 · **Enmienda 1:** 2026-09-20 (retirada de `turnos` y `agendamiento`)
 **Estado:** normativo — cierra el diseño antes de implementar.
 
 > **Regla de autoridad.** Este documento es normativo. Si el código contradice el contrato,
 > el contrato gana y el código es el bug. Durante la implementación no se puede "resolver"
 > una ambigüedad improvisando en el código: se resuelve aquí primero.
+
+> ### Enmienda 1 (20/09/2026) — `turnos` y `agendamiento` se retiran
+>
+> Este contrato nació con dos módulos «congelados» en el modelo legado de secciones
+> (`permisos: string[]`), y su condición de retirada era textual: *«`permisos` se elimina
+> cuando `turnos` y `agendamiento` migren a capacidades»*. **No migraron: se retiraron del
+> producto.** El contrato se enmienda en consecuencia, y el código ya está enmendado.
+>
+> **Lo que desaparece:** `Operador.permisos`, `Operador.profesionalIds`, `Operador.colaIds`,
+> `OperadoresStore.setPermisos/setProfesionales/setColas`, `statsDe`/`encuestaStatsDe` y sus
+> tipos, el invariante **C10**, y las dos filas de la tabla §5 sobre el modelo de autorización
+> por módulo. `Seccion.capacidad` pasa de opcional a **obligatoria**.
+>
+> **Lo que no cambia:** el resto del contrato sigue vigente sin tocar. `puedeVer(seccionId)`
+> **se conserva** como adaptador de firma (§4), porque el contrato lo pide y no depende de
+> qué módulos existan.
+>
+> **Por qué no fue una migración.** Al comprobar los consumidores antes de borrar, el legado
+> ya estaba muerto: `puedeVerSeccion` leía `SECCIONES.pedidos` y **nadie** leía `permisos`.
+> Un campo con escritor y cero lectores no está «congelado»: está muerto, y la congelación se
+> había honrado sola. El coste de haberlo dejado era un tipo que prometía dos modelos de
+> autorización donde solo hay uno.
+>
+> **Consecuencia para C2:** el invariante se cumplía, pero no porque alguien lo vigilara —
+> porque el modelo nuevo se implementó sin el viejo. C2 se retira como invariante activo y
+> queda como lección: un invariante que nadie puede romper ya no necesita test, necesita
+> borrarse.
 
 ---
 
@@ -112,8 +139,8 @@ La distinción sección/acción en un solo ejemplo: `/pedidos/config` se **entra
 `settings.read` (sección) pero se **guarda** con `settings.manage` (acción). Entrar a una
 pantalla nunca implica poder operarla. Ver invariante **C5**.
 
-Las secciones de `turnos` y `agendamiento` **no** llevan `capacidad`: siguen con ids de
-sección como hoy (ver §5).
+Toda sección de `SECCIONES` declara su `capacidad`, y el campo es **obligatorio** (enmienda 1).
+Una sección sin capacidad sería una pantalla sin gobierno de acceso.
 
 ### 1.6 Scope de datos
 
@@ -249,15 +276,15 @@ Cada uno es verificable. Si un invariante no se puede verificar, el diseño est�
 | # | Invariante | Cómo se verifica |
 |---|---|---|
 | **C1** | Ninguna decisión de autorización puede leer `tipoSesion`. | Grep: `tipoSesion` solo aparece en `session.store.ts`, `SeleccionarPage.tsx`, `SignInForm.tsx`. Cero apariciones en guards y componentes de negocio. |
-| **C2** | Ninguna decisión de autorización puede leer `Operador.permisos`. | Grep: `permisos` solo en `operadores.store.ts` (definición), el adaptador legado de `session.store.ts` y `OperadoresPage.tsx`. Cualquier archivo nuevo que lo lea es un bug. |
+| **C2** | ~~Ninguna decisión de autorización puede leer `Operador.permisos`.~~ **RETIRADO (enmienda 1).** | `Operador.permisos` ya no existe: se retiró con `turnos` y `agendamiento`. No queda nada que vigilar, así que el invariante se retira en vez de dejar un test afirmando una ausencia trivial. |
 | **C3** | `AccessContext.capacidades` nunca es `null`. | Test: store recién creado ⇒ `capacidades` es `[]`, `autenticado` es `false`. |
 | **C4** | Ninguna capacidad puede nombrar una pantalla. | Revisión del catálogo: todo id termina en una acción. |
 | **C5** | Entrar a una sección nunca implica poder operarla. | Test: `settings.read` permite `puedeVerSeccion("pedidos","configuracion")` pero `hasPermission("settings.manage") === false`. |
-| **C6** | El scope de datos no vive en `AccessContext`. | Revisión de la interfaz: sin `colaIds` ni `profesionalIds`. |
+| **C6** | El scope de datos no vive en `AccessContext`. | Revisión de la interfaz: `AccessContext` no declara ningún campo de scope (`dataScope` vive aparte). |
 | **C7** | Simular nunca amplía capacidades. | Test: para todo operador `X`, `capacidadesEfectivas(X) ⊆ capacidades(Rol[X.rolId]) ∪ X.capacidadesExtra`. |
 | **C8** | `simular()` solo acepta operadores `activo`, y es reversible. | Test: `simular("inactivo")` es no-op; `simular` + `salirSimulacion` restaura el snapshot exacto. |
 | **C9** | El administrador no tiene rama especial de código. | Grep: cero `if (esAdmin)` / `if (isAdmin)` en decisiones de acceso. Se resuelve por `hasPermission`. |
-| **C10** | `turnos` y `agendamiento` no leen capacidades. | Grep: ningún archivo de esos módulos importa `Capacidad` ni `hasPermission`. Solo `puedeVerSeccion` / `puedeVerCola` / `puedeVerProfesional`. |
+| **C10** | ~~`turnos` y `agendamiento` no leen capacidades.~~ **RETIRADO (enmienda 1).** | Los dos módulos ya no existen en el producto, así que el invariante es inexpresable. |
 
 ---
 
@@ -272,53 +299,56 @@ Operador.capacidadesRemovidas
 RolesStore.roles[].capacidades
 ```
 
-**Legado congelado:** `Operador.permisos: string[]`
+**Legado congelado:** ~~`Operador.permisos: string[]`~~ — **retirado (enmienda 1).**
 
-`permisos` **no puede participar en ninguna decisión de autorización nueva**. Reglas:
+Este apartado describía un puente entre dos modelos de autorización y su condición de
+retirada. La condición se cumplió, pero **no como se esperaba**: `turnos` y `agendamiento` no
+migraron a capacidades, se retiraron del producto. El puente se fue con ellos, y con él
+`permisos`, `profesionalIds`, `colaIds` y los setters que los escribían.
 
-1. **No se lee** desde ninguna ruta, acción, guard o componente nuevo.
-2. **No se escribe** desde ninguna UI nueva. El editor nuevo escribe rol + excepciones.
-3. Solo lo lee el **adaptador legado** de `puedeVerSeccion`, y **solo** para `turnos` y
-   `agendamiento`.
-4. Se marca `@deprecated` con su condición de retirada en el propio código.
-
-**El adaptador** (puente explícito, no una segunda fuente de verdad):
+**El adaptador, hoy** (no hay rama legada):
 
 ```ts
-/** Compatibilidad temporal con turnos/agendamiento. @deprecated — ver contrato §4. */
+/**
+ * ¿Puede la sesión actual entrar a la sección dada de un módulo?
+ *
+ * Recibe el módulo porque los ids de sección NO son únicos entre módulos
+ * (`inicio` y `crear` se repiten). Resuelve la capacidad declarada por la sección.
+ */
 puedeVerSeccion(modulo: Modulo, seccionId: string): boolean {
-  if (modulo !== "pedidos") {
-    // Legado: lista blanca de ids de sección. Solo estos dos módulos.
-    return this.accessContext.capacidades.length > 0
-      ? (this.operadorActual?.permisos ?? []).includes(seccionId)
-      : /* admin */ true;
-  }
-  // Nuevo: capacidad declarada por la sección.
-  const cap = SECCIONES.pedidos.find((s) => s.id === seccionId)?.capacidad;
-  return cap ? this.hasPermission(cap) : false;
+  const seccion = SECCIONES[modulo]?.find((s) => s.id === seccionId);
+  return seccion ? this.hasPermission(seccion.capacidad) : false;
 }
 ```
 
-`puedeVer(seccionId)` se conserva como adaptador de firma hacia `puedeVerSeccion`, para que
-`SeccionGuard` y `AppSidebar` sigan compilando.
+`puedeVer(seccionId)` **se conserva** como adaptador de firma hacia `puedeVerSeccion`, porque
+este contrato lo pide (§4) y no depende de qué módulos existan. Es su único consumidor vivo
+junto con los tests que afirman la tabla de resolución.
 
-**Condición de retirada de `permisos`:** se elimina cuando `turnos` y `agendamiento` migren
-a capacidades. Esa migración está **fuera del alcance** de este contrato.
+**La lección, que sustituye a la condición de retirada:** el legado no se retiró por
+disciplina, se retiró por inercia. Cuando se fue a comprobar quién leía `permisos` —el
+docblock del código afirmaba que lo leía el adaptador— **nadie lo leía**: `puedeVerSeccion` ya
+solo consultaba `SECCIONES.pedidos`. Un campo con escritor y cero lectores no está
+«congelado»: está muerto. Antes de escribir un invariante que prohíbe usar algo, conviene
+comprobar que alguien lo usa.
 
 ---
 
 ## 5. Frontera con el legado
 
+**Ya no hay frontera: hay un módulo.** Desde la enmienda 1, `pedidos` es el único módulo de
+negocio del producto, y su modelo de autorización —capacidades— es el único que existe.
+
 | Módulo | Modelo de autorización | Entidades |
 |---|---|---|
-| `pedidos` | **Capacidades** (nuevo) | `rolId` + excepciones → `hasPermission` |
-| `turnos` | **Secciones** (legado, congelado) | `permisos: string[]` → `puedeVerSeccion` |
-| `agendamiento` | **Secciones** (legado, congelado) | `permisos: string[]` → `puedeVerSeccion` |
+| `pedidos` | **Capacidades** | `rolId` + excepciones → `hasPermission` |
 
-`turnos` y `agendamiento` **no se tocan** en esta fase. Sus 6 consumidores de
+`turnos` y `agendamiento` se retiraron del producto. Con ellos se fueron `Operador.permisos`,
+`Operador.profesionalIds`, `Operador.colaIds`, sus setters, sus stats mock y el vocabulario
+`turnos` / `agendamiento` de `ModuloDestino`. Los consumidores de
 `puedeVerCola`/`puedeVerProfesional` (`TurnosPage`, `ColasPage`, `RecepcionPage`,
-`QueuesOverview`, `AgendaPage`, `CalendarioPage`, `CrearCitaPage`, `CitaDetallePage`) deben
-comportarse **exactamente igual que antes**. Eso es criterio de aceptación, no una aspiración.
+`QueuesOverview`, `AgendaPage`, `CalendarioPage`, `CrearCitaPage`, `CitaDetallePage`) no
+existen en este árbol: **nunca estuvieron aquí**, y este contrato los nombraba como si sí.
 
 > Los ids de sección **no son únicos entre módulos** (`inicio` y `crear` se repiten). Hoy es
 > seguro solo porque un operador simulado tiene un único módulo. Por eso la firma canónica es
@@ -389,7 +419,8 @@ Explícitamente **no** cubierto, y por tanto no se implementa:
 - Persistencia de operadores/roles en `localStorage` (siguen en memoria).
 - La entidad `Tienda` y el multi-tenant.
 - Invitaciones por email, tokens o notificaciones.
-- Migración de `turnos` y `agendamiento` a capacidades.
+- ~~Migración de `turnos` y `agendamiento` a capacidades.~~ **Resuelto por retirada
+  (enmienda 1)**, no por migración: los módulos salieron del producto.
 - `orders.edit` y `orders.delete`: reservadas, sin UI.
 
 > **Limitación que debe quedar escrita en el código:** al ser un mock sin autenticación, el

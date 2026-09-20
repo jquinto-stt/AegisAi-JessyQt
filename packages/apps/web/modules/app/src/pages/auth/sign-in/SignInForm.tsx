@@ -5,7 +5,7 @@ import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Checkbox } from "@/elements/form/checkbox";
 import { Button } from "@/elements/ui/button";
-import { sessionStore, organizacionStore } from "@/stores";
+import { sessionStore, organizacionStore, modulosOperablesDeSesion } from "@/stores";
 
 /**
  * @kgId 07b80348fc4c
@@ -21,10 +21,7 @@ export default function SignInForm() {
     const finalEmail = userEmail || email.trim() || "admin@necto.io";
     const nombreUsuario = finalEmail.split("@")[0] || "Admin";
 
-    // 1. En mockup sin backend, cualquier credencial autentica la sesión
-    sessionStore.configurar(["pedidos"], "administrador");
-
-    // 2. Registramos el perfil
+    // 1. En mockup sin backend, cualquier credencial autentica. Registramos el perfil.
     organizacionStore.actualizarPerfil({
       nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
       apellido: "Necto",
@@ -32,7 +29,7 @@ export default function SignInForm() {
       pais: "Colombia",
     });
 
-    // 3. Garantizamos un workspace base si no existía
+    // 2. Garantizamos una organización base si no existía
     if (!organizacionStore.organizacion) {
       organizacionStore.crearOrganizacion({
         nombre: "Mi Empresa",
@@ -41,6 +38,16 @@ export default function SignInForm() {
         zonaHoraria: "America/Bogota",
       });
     }
+
+    // 3. La sesión recibe como máximo lo que la organización tiene activo.
+    //
+    // Antes decía `["pedidos"]` fijo: la sesión afirmaba operar un módulo que la
+    // organización podía no tener instalado, en contra de la regla
+    // `Sesión ⊆ Organización`.
+    sessionStore.configurar(
+      modulosOperablesDeSesion(organizacionStore.modulosActivos),
+      "administrador",
+    );
 
     // 4. Si el módulo Pedidos ya está instalado, entra directo; si no, va a /modulos para agregarlo
     if (organizacionStore.tieneModuloPedidos) {

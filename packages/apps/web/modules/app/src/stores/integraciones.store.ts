@@ -65,10 +65,11 @@ import type { ModuloDestino } from "@/stores/conversaciones.types";
 /**
  * Módulos que el producto ofrece al asistente.
  *
- * Es un subconjunto DELIBERADO de `ModuloDestino`: `turnos` y `agendamiento`
- * existen como dominio declarado en Conversaciones pero están congelados con el
- * modelo de secciones (contrato §5) y no aportan herramientas al asistente, así
- * que no se ofrecen aquí. `general` no es un módulo: es la ausencia de dominio.
+ * Es un subconjunto DELIBERADO de `ModuloDestino`: los módulos de NEGOCIO, que
+ * son los únicos que aportan herramientas. `general` no es un módulo —es la
+ * ausencia de dominio— así que no se ofrece aquí. El `Extract` no es ceremonia:
+ * obliga a que ampliar `ModuloDestino` no amplíe por accidente lo que el
+ * asistente puede conectar.
  */
 export type ModuloIntegrable = Extract<ModuloDestino, "pedidos" | "inventario">;
 

@@ -70,19 +70,6 @@ describe("solicitar() registra la solicitud", () => {
     expect(nuevo.telefono).toBe(SOLICITUD.telefono);
   });
 
-  it("no contamina los otros módulos", async () => {
-    const { operadoresStore } = await freshStores();
-    const turnosAntes = operadoresStore.pendientesCount("turnos");
-    const agendamientoAntes = operadoresStore.pendientesCount("agendamiento");
-    const pedidosAntes = operadoresStore.pendientesCount("pedidos");
-
-    operadoresStore.solicitar({ ...SOLICITUD, modulo: "pedidos" });
-
-    expect(operadoresStore.pendientesCount("pedidos")).toBe(pedidosAntes + 1);
-    expect(operadoresStore.pendientesCount("turnos")).toBe(turnosAntes);
-    expect(operadoresStore.pendientesCount("agendamiento")).toBe(agendamientoAntes);
-  });
-
   it("aparece en la lista de pendientes que ve el admin", async () => {
     const { operadoresStore } = await freshStores();
 
@@ -93,6 +80,12 @@ describe("solicitar() registra la solicitud", () => {
       .filter((o) => o.estado === "pendiente");
     expect(pendientes.some((o) => o.email === SOLICITUD.email)).toBe(true);
   });
+
+  // Aquí vivía «no contamina los otros módulos», que comparaba
+  // `pendientesCount("turnos")` y `pendientesCount("agendamiento")` antes y
+  // después de una solicitud. Los dos módulos se retiraron, así que la
+  // distinción que el test guardaba ya no existe y el test habría pasado por
+  // vacuidad. Vuelve el día que `Modulo` deje de tener un solo valor.
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -100,16 +93,13 @@ describe("solicitar() registra la solicitud", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("pedir acceso no otorga acceso (fail-closed)", () => {
-  it("nace sin rol y sin permisos, y con cero capacidades efectivas", async () => {
+  it("nace sin rol y con cero capacidades efectivas", async () => {
     const { operadoresStore, rolesStore } = await freshStores();
 
     operadoresStore.solicitar({ ...SOLICITUD, modulo: "pedidos" });
     const nuevo = ultimoDe(operadoresStore, "pedidos");
 
     expect(nuevo.rolId).toBeUndefined();
-    // `permisos` es el campo legado congelado (invariante C2). Esta ruta es UI
-    // nueva, así que no debe escribir nada en él: se queda vacío.
-    expect(nuevo.permisos).toEqual([]);
     // Lo que de verdad importa: sin rol, no hay ninguna capacidad.
     expect(rolesStore.capacidadesEfectivas(nuevo)).toEqual([]);
   });

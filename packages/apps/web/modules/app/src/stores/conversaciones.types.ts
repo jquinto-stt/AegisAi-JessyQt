@@ -18,8 +18,18 @@ export type ModoAtencion = "bot" | "humano";
 /** Autoría de un mensaje. "negocio" = operador humano; "bot" = Necto Intelligence. */
 export type AutorMensaje = "cliente" | "negocio" | "bot";
 
-/** Módulo de dominio al que un mensaje/acción hace referencia (para el panel de contexto). */
-export type ModuloDestino = "pedidos" | "turnos" | "agendamiento" | "inventario" | "general";
+/**
+ * Módulo de dominio al que un mensaje/acción hace referencia (para el panel de contexto).
+ *
+ * `turnos` y `agendamiento` se retiraron: eran vocabulario de dos módulos que ya
+ * no existen en el producto, y su única función era que `MODULO_DESTINO_LABEL`
+ * los rotulase como `disponible: false`. Un valor de tipo que ninguna superficie
+ * puede alcanzar no es "declaración de intención": es una etiqueta que nadie lee.
+ *
+ * `inventario` se queda y es distinto: existe en `CATALOGO_MODULOS` y aparece en
+ * el seed de conversaciones como procedencia real de mensajes.
+ */
+export type ModuloDestino = "pedidos" | "inventario" | "general";
 
 /** Canal de comunicación. Hoy solo WhatsApp; preparado para más. */
 export type CanalId = "whatsapp"; // futuro: "instagram" | "webchat" | ...
@@ -123,8 +133,6 @@ export interface Conversacion {
    * reactiva (MobX) y siempre fresca; no puede desincronizarse.
    */
   pedidoActivoId?: string;
-  /** @deprecated Mismo motivo que `pedidoActivoId`: el módulo Turnos no está activo. */
-  turnoActivoId?: string;
 }
 
 /** Filtros de la bandeja. `requieren_atencion` == estado "en_espera". */

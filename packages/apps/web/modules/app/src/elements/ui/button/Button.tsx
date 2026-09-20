@@ -96,9 +96,14 @@ export interface ButtonProps {
   /**
    * Callback fired when the button is clicked.
    *
+   * Receives the native click event: the handler se conecta directo al `<button>`
+   * subyacente, así que `event.stopPropagation()` está disponible. Lo usa
+   * `ConfigPage` para que pulsar el botón dentro de una tarjeta clickable no
+   * seleccione además la tarjeta.
+   *
    * Not fired when `disabled` or `loading` is `true`.
    */
-  onClick?: () => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 
   /**
    * When `true`, the button is visually dimmed (`opacity-50`,

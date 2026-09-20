@@ -263,6 +263,11 @@ describe("persistencia", () => {
   });
 
   it("descarta un id que no está en el catálogo", async () => {
+    // `turnos` es vocabulario de una versión anterior del producto: se retiró de
+    // `ModuloDestino` y de `MODULO_DESTINO_LABEL`. El test se queda con él a
+    // propósito, porque es el valor que de verdad puede haber guardado en el
+    // `localStorage` de alguien — y la propiedad que hay que blindar es que un
+    // estado viejo **no** pueda resucitar vocabulario retirado.
     localStorage.setItem(CLAVE, JSON.stringify(["turnos", "pedidos"]));
     vi.resetModules();
     const { integracionesStore } = await import("@/stores/integraciones.store");

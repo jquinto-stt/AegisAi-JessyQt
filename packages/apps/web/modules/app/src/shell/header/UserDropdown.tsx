@@ -1,17 +1,39 @@
 import { useState } from "react";
+import { observer } from "mobx-react-lite";
 import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
 import { User, Settings, Info, Globe, LogOut } from "lucide-react";
-import { sessionStore } from "@/stores";
+import { sessionStore, organizacionStore } from "@/stores";
 
 /**
  * UserDropdown
  * Trigger y menú desplegable del perfil de usuario.
- * Diseño limpio: [Foto con halo lila] [Musharof] [Chevron]
+ * Diseño: [Iniciales con halo lila] [Nombre] [Chevron]
+ *
+ * La identidad se lee de `organizacionStore.usuario`. Antes estaba escrita a mano
+ * —«Musharof», «Musharof Chowdhury», `randomuser@pimjo.com` y la foto
+ * `/images/user/owner.png`—, así que la cabecera de **todas** las páginas le
+ * atribuía al usuario un nombre, un correo y una cara que no eran los suyos.
+ *
+ * `UsuarioPerfil` no tiene campo de avatar, así que se pintan **iniciales** en vez
+ * de la foto de un desconocido: es lo que el sistema sabe de verdad. El día que el
+ * modelo tenga `avatarUrl`, se cambia aquí y en ningún otro sitio.
+ *
+ * Es `observer` porque `usuario` cambia —onboarding, `/profile`— y el nombre del
+ * trigger tiene que seguirlo sin recargar la página.
  */
-export default function UserDropdown() {
+const UserDropdown = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+
+  const usuario = organizacionStore.usuario;
+
+  const iniciales = usuario
+    ? `${usuario.nombre.charAt(0)}${usuario.apellido?.charAt(0) ?? ""}`.toUpperCase()
+    : "";
+  const nombreCompleto = usuario
+    ? `${usuario.nombre} ${usuario.apellido ?? ""}`.trim()
+    : "Mi cuenta";
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -23,7 +45,10 @@ export default function UserDropdown() {
 
   const handleLogout = () => {
     closeDropdown();
-    sessionStore.logout();
+    // `logout()` no existe en `SessionStore` —el método real es `reset()`, con el
+    // docblock «Limpia la sesión (ej. al cerrar sesión)»—. Este botón lanzaba un
+    // TypeError al pulsarlo: el sidebar cerraba sesión y el menú de usuario no.
+    sessionStore.reset();
     navigate("/login");
   };
 
@@ -35,17 +60,16 @@ export default function UserDropdown() {
         className="flex items-center gap-2 text-gray-800 dark:text-gray-100 hover:opacity-85 transition-opacity cursor-pointer select-none"
         aria-expanded={isOpen}
       >
-        {/* Avatar circular con halo lila suave idéntico a la referencia */}
+        {/* Avatar circular con halo lila suave. Sin `avatarUrl` en el modelo se
+            pintan iniciales; si no hay sesión de usuario, un glifo genérico. */}
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E0E2FD] dark:bg-indigo-950/60 p-0.5 overflow-hidden">
-          <img
-            src="/images/user/owner.png"
-            alt="Musharof"
-            className="h-full w-full rounded-full object-cover"
-          />
+          <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+            {iniciales || <User className="size-4 text-gray-400" />}
+          </span>
         </div>
 
         <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
-          Musharof
+          {usuario?.nombre ?? "Mi cuenta"}
         </span>
 
         <svg
@@ -73,14 +97,17 @@ export default function UserDropdown() {
         onClose={closeDropdown}
         className="absolute right-0 mt-[14px] flex w-[270px] flex-col rounded-2xl border border-gray-200 bg-white p-3.5 shadow-xl dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-in fade-in slide-in-from-top-2"
       >
-        {/* Cabecera del usuario */}
+        {/* Cabecera del usuario. Sin `usuario` no se inventa un correo: la línea
+            simplemente no se pinta. */}
         <div className="px-2 pt-1 pb-2">
           <span className="block font-bold text-gray-900 text-sm dark:text-white">
-            Musharof Chowdhury
+            {nombreCompleto}
           </span>
-          <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400 truncate">
-            randomuser@pimjo.com
-          </span>
+          {usuario?.email && (
+            <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400 truncate">
+              {usuario.email}
+            </span>
+          )}
         </div>
 
         {/* Lista de opciones */}
@@ -98,16 +125,19 @@ export default function UserDropdown() {
             </ShellDropdownItem>
           </li>
 
-          {/* Configuración de la cuenta */}
+          {/* Configuración de la organización — módulos y conectores.
+              Decía «Configuración de la cuenta» y llevaba a la configuración de la
+              ORGANIZACIÓN: cuenta y organización no son lo mismo, y «Editar perfil»
+              ya cubre lo de la cuenta. Se corrigió la etiqueta, no el destino. */}
           <li>
             <ShellDropdownItem
               onItemClick={closeDropdown}
               tag="a"
-              to="/organizacion/configuracion"
+              to="/configuracion"
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
             >
               <Settings className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
-              <span>Configuración de la cuenta</span>
+              <span>Configuración de la organización</span>
             </ShellDropdownItem>
           </li>
 
@@ -124,7 +154,8 @@ export default function UserDropdown() {
             </ShellDropdownItem>
           </li>
 
-          {/* Idioma */}
+          {/* Idioma — informativo, no un control: no hay i18n. Decía «English 🇺🇸»
+              mientras toda la interfaz está en español. */}
           <li>
             <div className="flex items-center justify-between px-2.5 py-2 font-medium text-gray-700 rounded-xl text-sm hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/70 transition-colors">
               <div className="flex items-center gap-3">
@@ -132,7 +163,7 @@ export default function UserDropdown() {
                 <span>Idioma</span>
               </div>
               <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                English 🇺🇸
+                Español
               </span>
             </div>
           </li>
@@ -153,4 +184,6 @@ export default function UserDropdown() {
       </ShellDropdown>
     </div>
   );
-}
+});
+
+export default UserDropdown;

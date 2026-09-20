@@ -7,7 +7,7 @@ import {
   MenuItem,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
-import { sessionStore, plataformaStore } from "@/stores";
+import { sessionStore, organizacionStore } from "@/stores";
 import {
   GridIcon,
   TaskIcon,
@@ -69,14 +69,12 @@ const SidebarFooter = observer(() => {
   return (
     <div className="border-t border-gray-200/70 dark:border-white/5 pt-4 pb-6">
       <ul className="flex flex-col gap-1">
-        <li>
-          <Link to="/configuracion" className={rowClasses}>
-            <span className="menu-item-icon-size menu-item-icon-inactive">
-              <PlugInIcon />
-            </span>
-            {showExpanded && <span className="menu-item-text">Configuración</span>}
-          </Link>
-        </li>
+        {/* Aquí vivía un enlace «Configuración» → `/configuracion`, que por entonces
+            renderizaba un `PlaceholderPage` vacío. Se retira en vez de apuntarlo a
+            la página real, por dos razones: (1) duplicaba «Configuración de Módulos»
+            de la sección Organización, y (2) este pie lo ve todo el mundo, mientras
+            `/configuracion` exige `team.manage`. Un enlace visible que el rol no
+            puede ejecutar es justo lo que el contrato manda **ocultar**. */}
         <li>
           <Link to="/ayuda" className={rowClasses}>
             <span className="menu-item-icon-size menu-item-icon-inactive">
@@ -150,6 +148,44 @@ const SimulacionBanner = observer(() => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SECCIÓN TRANSVERSAL SIN CONECTAR — el motivo, no el silencio
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fila que explica por qué una sección transversal está vacía.
+ *
+ * Antes, con el conector apagado, la sección **desaparecía entera**: se instalaba
+ * Pedidos desde el catálogo, el sidebar perdía «Canales» e «Inteligencia», y nada
+ * decía por qué. `instalarModulo()` no enciende conectores a propósito —la app no
+ * fabrica una decisión de integración que el usuario no tomó—, pero el efecto
+ * visible era un deshabilitado en silencio.
+ *
+ * Ocultar lo que el rol **no puede ejecutar** sigue siendo correcto, y ese gate
+ * está fuera, en las condiciones de cada sección. Lo que no se puede es hacer
+ * desaparecer algo que el rol sí puede ejecutar porque falte configuración.
+ */
+const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motivo: string }) => {
+  const { isExpanded: showExpanded } = useSidebarContext();
+
+  return (
+    <div>
+      <MenuSectionHeader title={titulo} />
+      {showExpanded && (
+        <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
+          {motivo}{" "}
+          <Link
+            to="/configuracion"
+            className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+          >
+            Activarlo
+          </Link>
+        </p>
+      )}
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SIDEBAR CONTENT — Módulo de Pedidos
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -161,6 +197,17 @@ const SidebarContent = observer(() => {
   const puedePedidos = (seccionId: string) => sessionStore.puedeVerSeccion("pedidos", seccionId);
   const puedeGestionarEquipo = sessionStore.hasPermission("team.manage");
   const esRutaConHijas = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+
+  // Las dos preguntas que decide cada sección transversal, separadas a propósito:
+  // «¿el rol puede?» (permiso) y «¿la organización lo tiene encendido?» (config).
+  const puedeVerCanales = sessionStore.hasPermission("channels.read");
+  const puedeVerAsistente = sessionStore.hasPermission("assistant.use");
+  const canalesConectados = organizacionStore.tieneConectorActivo("whatsapp");
+  const asistenteConectado = organizacionStore.tieneConectorActivo("necto_ia");
+  // Sin ningún módulo activo no hay nada que conectar, así que el motivo sobra:
+  // decir «el canal está desconectado» cuando el problema es que no hay módulo
+  // sería cambiar un silencio por una explicación falsa.
+  const hayModuloActivo = organizacionStore.modulosActivos.length > 0;
 
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
     try {
@@ -190,8 +237,12 @@ const SidebarContent = observer(() => {
       <SimulacionBanner />
 
       <div className="flex flex-col gap-5">
-        {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones */}
-        {plataformaStore.tieneConectorActivo("whatsapp") && sessionStore.hasPermission("channels.read") && (
+        {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones.
+            Tres estados, y ninguno es «desaparecer sin decir nada»:
+              · el rol no puede leer canales        → se oculta (contrato §4);
+              · puede y el conector está encendido  → la sección normal;
+              · puede y el conector está apagado    → la sección con el motivo. */}
+        {puedeVerCanales && canalesConectados && (
           <div>
             <MenuSectionHeader
               title="Canales"
@@ -214,9 +265,15 @@ const SidebarContent = observer(() => {
             </div>
           </div>
         )}
+        {puedeVerCanales && !canalesConectados && hayModuloActivo && (
+          <SeccionSinConectar
+            titulo="Canales"
+            motivo="El canal de WhatsApp está desconectado, así que Conversaciones e Historial de atención todavía no aparecen."
+          />
+        )}
 
-        {/* Inteligencia (Necto Intelligence) — justo debajo de Canales. */}
-        {plataformaStore.tieneConectorActivo("necto_ia") && sessionStore.hasPermission("assistant.use") && (
+        {/* Inteligencia (Necto Intelligence) — justo debajo de Canales, mismo criterio. */}
+        {puedeVerAsistente && asistenteConectado && (
           <div>
             <MenuSectionHeader
               title="Inteligencia"
@@ -236,9 +293,15 @@ const SidebarContent = observer(() => {
             </div>
           </div>
         )}
+        {puedeVerAsistente && !asistenteConectado && hayModuloActivo && (
+          <SeccionSinConectar
+            titulo="Inteligencia"
+            motivo="Necto Intelligence está desconectado, así que NECTO AI todavía no aparece."
+          />
+        )}
 
         {/* Módulos de negocio (Pedidos y, más adelante, Inventario, etc.). */}
-        {plataformaStore.esModuloActivo("pedidos") && (
+        {organizacionStore.esModuloActivo("pedidos") && (
           <div>
             <MenuSectionHeader
               title="Pedidos"
@@ -263,7 +326,11 @@ const SidebarContent = observer(() => {
           </div>
         )}
 
-        {/* Organización — gestión de equipo, roles y módulos transversales */}
+        {/* Organización — gestión de equipo, roles y módulos transversales.
+            «Configuración de Módulos» apunta a la ruta canónica `/configuracion`
+            (antes `/organizacion/configuracion`, que hoy redirige). Es el único
+            enlace del sidebar a esa pantalla: el del pie se retiró porque lo veía
+            todo el mundo y la ruta exige `team.manage`. */}
         {puedeGestionarEquipo && (
           <div>
             <MenuSectionHeader
@@ -279,7 +346,7 @@ const SidebarContent = observer(() => {
             >
               <ul className="flex flex-col gap-1">
                 <MenuItem icon={<GroupIcon />} name="Equipo" path="/equipo" isActive={esRutaConHijas} />
-                <MenuItem icon={<PlugInIcon />} name="Configuración de Módulos" path="/organizacion/configuracion" isActive={esRutaConHijas} />
+                <MenuItem icon={<PlugInIcon />} name="Configuración de Módulos" path="/configuracion" isActive={esRutaConHijas} />
               </ul>
             </div>
           </div>

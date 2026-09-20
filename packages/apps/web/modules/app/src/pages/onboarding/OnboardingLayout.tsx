@@ -117,7 +117,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   onBack,
   brandMessages,
   brandBadge = "Necto",
-  brandHeadline = "Tu espacio de trabajo en tiempo real",
+  brandHeadline = "Tu organización en tiempo real",
   brandDescription = "Configuración rápida para iniciar tus operaciones sin fricción.",
   brandBullets = [],
   brandQuote,

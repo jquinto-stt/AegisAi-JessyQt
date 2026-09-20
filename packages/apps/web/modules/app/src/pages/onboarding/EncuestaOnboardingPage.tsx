@@ -84,7 +84,7 @@ const CANALES_ADQUISICION = [
 const BRAND_MESSAGES_ENCUESTA = [
   {
     badge: "Bienvenida",
-    title: "Tu espacio de trabajo está listo.",
+    title: "Tu organización está lista.",
     subtitle: "Diseñado para darte claridad y agilidad operativa desde el primer minuto.",
   },
   {
@@ -97,7 +97,7 @@ const BRAND_MESSAGES_ENCUESTA = [
 export const EncuestaOnboardingPage = observer(() => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/workspaces";
+  const redirectTo = searchParams.get("redirect") || "/modulos";
 
   const usuarioActual = organizacionStore.usuario;
   const [canalElegido, setCanalElegido] = useState(
@@ -130,7 +130,7 @@ export const EncuestaOnboardingPage = observer(() => {
           title: "¿Cómo conociste a Necto?",
           lines: [
             canalElegido ? `Canal: ${canalElegido}` : "Selecciona una opción",
-            "Listo para ingresar al espacio de trabajo",
+            "Listo para ingresar a tu organización",
           ],
         }}
       >
@@ -186,7 +186,7 @@ export const EncuestaOnboardingPage = observer(() => {
               onClick={() => handleFinalizar()}
               className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
             >
-              Ir a mi espacio de trabajo
+              Ir a mi organización
               <ArrowRight className="size-4 ml-1.5 inline" />
             </Button>
           </div>

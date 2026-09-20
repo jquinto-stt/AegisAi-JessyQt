@@ -75,7 +75,10 @@ describe("AssistantStore.enviar — flujo feliz", () => {
   });
 
   it("pasa el texto ya normalizado (trim) al engine (Req 1.1)", async () => {
-    const ask = vi.fn(async () => respuestaFake());
+    // El mock declara el primer parámetro de `AssistantEngine.ask` para que
+    // `mock.calls[0]` sea una tupla con elemento 0 y la aserción tenga sentido.
+    // Sin él, TS infiere `() => …` y `mock.calls[0][0]` no existe.
+    const ask = vi.fn(async (_question: string) => respuestaFake());
     const engine: AssistantEngine = { kind: "fake", ask };
     const store = new AssistantStore(engine);
 

@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Clock, DollarSign, Upload, Edit3, ArrowRight } from "lucide-react";
+import { Upload, Edit3, ArrowRight } from "lucide-react";
 import { PageMeta } from "@/shell/meta";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
@@ -31,7 +31,7 @@ const BRAND_MESSAGES_ORGANIZACION = [
   {
     badge: "Tu Organización",
     title: "Centraliza la operación de tu negocio.",
-    subtitle: "Un espacio de trabajo unificado donde conviven tus ventas, catálogo y equipo.",
+    subtitle: "Un solo lugar donde conviven tus ventas, catálogo y equipo.",
   },
   {
     badge: "Estandarización Regional",
@@ -107,14 +107,14 @@ export const OrganizacionOnboardingPage = observer(() => {
     });
 
     // Pasa a la encuesta final antes de entrar directo al workspace
-    navigate("/onboarding/encuesta?redirect=/workspaces");
+    navigate("/onboarding/encuesta?redirect=/modulos");
   };
 
   return (
     <>
       <PageMeta
         title="Crear Organización · Necto"
-        description="Define el espacio de trabajo para tu negocio"
+        description="Define la organización de tu negocio"
       />
 
       <OnboardingLayout

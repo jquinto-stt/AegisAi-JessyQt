@@ -11,8 +11,14 @@ import { cn } from "@/utils";
  * neutralizar los estilos del enlace para dejarla igual.
  *
  * ⚠️ Este componente es el **único** punto que cambia si el destino de soporte
- * cambia (un canal externo, un widget, un número de WhatsApp). Las dos
- * superficies que lo usan —`StockFlowHeader` y `WorkspacesPage`— no se tocan.
+ * cambia (un canal externo, un widget, un número de WhatsApp).
+ *
+ * Nota (20/09): hoy **no lo importa nadie**. La línea anterior decía que lo usaban
+ * `StockFlowHeader` y `WorkspacesPage`, y ninguna de las dos es cierta ya. Se
+ * conserva porque es superficie compartida de `compositions/shared/` y porque dos
+ * docblocks vivos lo citan como el patrón de aislamiento (ver
+ * `pages/support/support-requests.ts`). Si se decide que sobra, hay que actualizar
+ * esas dos citas en el mismo cambio.
  */
 export function SupportButton({ className = "" }: { className?: string }) {
   const navigate = useNavigate();

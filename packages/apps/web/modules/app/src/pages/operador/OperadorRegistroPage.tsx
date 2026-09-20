@@ -12,7 +12,7 @@ import { ThemeToggleButton } from "@/shell";
 import {
   CATALOGO_MODULOS,
   operadoresStore,
-  plataformaStore,
+  organizacionStore,
   sessionStore,
   type IdModuloNegocio,
   type Modulo,
@@ -81,8 +81,8 @@ const EMPTY_FORM: OperadorForm = {
  *
  * Antes esto era una lista local con `turnos` y `agendamiento` —dos módulos
  * que ya no existen en el producto (`Modulo = "pedidos"`) y que además no
- * estaban en `plataformaStore`, así que la comprobación de disponibilidad no
- * tenía nada que consultar para ellos.
+ * estaban en el catálogo de la organización, así que la comprobación de
+ * disponibilidad no tenía nada que consultar para ellos.
  *
  * Ahora sale de `CATALOGO_MODULOS`, que es la fuente única de verdad: si mañana
  * se añade un módulo de negocio al catálogo, aparece aquí solo. Se conserva el
@@ -122,7 +122,7 @@ const esModuloRegistrable = (id: IdModuloNegocio): id is Modulo => id === "pedid
  */
 const modulosDisponibles = (): { value: IdModuloNegocio; label: string }[] =>
   MODULOS_DE_PLATAFORMA.filter(
-    (m) => plataformaStore.estaActivo(m.value) && esModuloRegistrable(m.value)
+    (m) => organizacionStore.estaActivo(m.value) && esModuloRegistrable(m.value)
   );
 
 /**

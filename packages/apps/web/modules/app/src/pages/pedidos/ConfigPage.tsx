@@ -17,6 +17,7 @@ import type {
   CatalogoItem,
   EstadoConfigurable,
 } from "@/stores/pedidos.store";
+import { catalogoDesdePreset } from "@/stores/pedidos.store";
 import {
   BUSINESS_PROFILES,
   type BusinessProfileType,
@@ -294,7 +295,7 @@ export const ConfigPage = observer(() => {
                           modalidades: [...p.defaultModalidades],
                           aliasEstados: { ...p.defaultAliasEstados },
                           plantillas: { ...p.defaultPlantillas },
-                          catalogo: p.sampleCatalog.map((c) => ({ id: c.id, nombre: c.nombre, precio: c.precio })),
+                          catalogo: catalogoDesdePreset(p),
                         }));
                       }}
                       className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
@@ -317,7 +318,7 @@ export const ConfigPage = observer(() => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
-                            size="xs"
+                            size="sm"
                             variant={seleccionado ? "outline" : "primary"}
                             onClick={(e) => {
                               e.stopPropagation();

@@ -37,6 +37,22 @@ import { rolesStore, ROL_ADMIN, type Capacidad } from "@/stores/roles.store";
 export type Modulo = "pedidos";
 
 /**
+ * Reduce la pertenencia de la organización a los módulos que la SESIÓN sabe operar.
+ *
+ * La regla de dirección es `Sesión ⊆ Organización`: una sesión no puede recibir más
+ * de lo que la organización tiene activo. Pero el vocabulario de sesión es hoy más
+ * estrecho que el de la organización (`Modulo` solo conoce `"pedidos"`, mientras el
+ * catálogo ya declara `"inventario"`), así que hay que intersectar.
+ *
+ * Existe como función —y no como un `["pedidos"]` escrito a mano en cada pantalla—
+ * para que el límite esté declarado en **un** sitio: el día que `Modulo` crezca,
+ * se borra el filtro y los llamadores no cambian.
+ */
+export function modulosOperablesDeSesion(modulos: readonly string[]): Modulo[] {
+  return modulos.filter((m): m is Modulo => m === "pedidos");
+}
+
+/**
  * Tipo de sesión — la **vía de entrada** elegida en `/seleccionar`.
  *
  * Contrato §1.2: **no es autorización.** Solo decide a qué onboarding ir tras
@@ -127,7 +143,13 @@ function loadSession(): SessionSnapshot {
     if (raw) {
       const s = JSON.parse(raw) as LegacySnapshot;
       return {
-        modulos: Array.isArray(s.modulos) ? s.modulos : [],
+        // El vocabulario de sesión se valida **al leer**, no solo al escribir.
+        // Antes esto era `Array.isArray(s.modulos) ? s.modulos : []`: un snapshot
+        // viejo con `["turnos","pedidos"]` sobrevivía tal cual y el tipo `Modulo[]`
+        // mentía sobre su contenido. `modulosOperablesDeSesion` es el único sitio
+        // donde se declara qué valores conoce la sesión, así que se reutiliza aquí
+        // en vez de repetir el filtro. Ver `analisis-jerarquia-modulos.md` §13.7.
+        modulos: modulosOperablesDeSesion(Array.isArray(s.modulos) ? s.modulos : []),
         // `s.rol` es la clave antigua: compatibilidad de lectura.
         tipoSesion: s.tipoSesion ?? s.rol ?? null,
         operadorSimuladoId: s.operadorSimuladoId ?? null,
@@ -223,9 +245,14 @@ export class SessionStore {
   /**
    * true cuando hay una sesión utilizable. Es la puerta que usa `RequireSession`.
    *
-   * Contrato §2: sin configurar (`modulos` vacío o sin rol resoluble) es
-   * `false`. Esto corrige el bug H2 del análisis: antes una sesión vacía se
-   * comportaba como administrador porque `permisosActuales` devolvía `null`.
+   * Contrato §2: sin configurar (sin rol resoluble) es `false`. Esto corrige el bug
+   * H2 del análisis: antes una sesión vacía se comportaba como administrador porque
+   * `permisosActuales` devolvía `null`.
+   *
+   * **No depende de los módulos.** Una organización sin módulos instalados tiene
+   * sesión válida y entra al shell, que se pinta vacío. La versión anterior exigía
+   * `modulos.length > 0`, y con eso el workspace sin módulos era inalcanzable: el
+   * shell no podía existir sin un módulo, por bien puesto que estuviera `ModuloGuard`.
    */
   get isReady() {
     return this.accessContext.autenticado;
@@ -296,9 +323,13 @@ export class SessionStore {
    * | Estado                        | autenticado | rolId         | capacidades |
    * |-------------------------------|-------------|---------------|-------------|
    * | Sin configurar                | false       | null          | []          |
-   * | Sesión directa de admin       | true        | admin_tienda  | las 16      |
+   * | Sesión directa de admin       | true        | admin_tienda  | las 18      |
+   * | Admin sin módulos instalados  | true        | admin_tienda  | las 18      |
    * | Simulando operador X          | true        | X.rolId       | efectivas X |
    * | Sesión directa de operador    | false       | null          | []          |
+   *
+   * La fila «admin sin módulos» es la que cambió: `autenticado` ya no depende de
+   * `modulos`, así que una organización recién creada entra al shell y lo ve vacío.
    */
   get accessContext(): AccessContext {
     const op = this.operadorSimulado;
@@ -322,7 +353,19 @@ export class SessionStore {
     const rolId = this.tipoSesion === "administrador" ? ROL_ADMIN : null;
 
     return {
-      autenticado: this.modulos.length > 0 && rolId !== null,
+      // `autenticado` responde «¿hay identidad?», NO «¿hay módulos?».
+      //
+      // Antes era `this.modulos.length > 0 && rolId !== null`, y eso mezclaba dos
+      // hechos de niveles distintos: la identidad (nivel 3) con la pertenencia de
+      // módulos (nivel 2). Consecuencia real: una organización sin módulos no podía
+      // tener sesión, así que `RequireSession` mandaba a `/login` y **el workspace
+      // vacío era inalcanzable** — el shell no podía existir sin un módulo activo,
+      // por mucho que `ModuloGuard` estuviera bien puesto.
+      //
+      // El bug H2 que la condición original corregía sigue cubierto, y por la vía
+      // correcta: una sesión sin configurar tiene `tipoSesion === null` ⇒ `rolId`
+      // es `null` ⇒ no autenticada. Los módulos nunca hicieron falta para eso.
+      autenticado: rolId !== null,
       tipoSesion: this.tipoSesion,
       operadorId: null,
       rolId,
@@ -342,14 +385,17 @@ export class SessionStore {
   }
 
   /**
-   * Puente legado: ¿la sesión opera sin restricción?
-   *
-   * @deprecated Solo para `turnos` y `agendamiento`, que están congelados con el
-   * modelo de secciones (contrato §5). **En código nuevo usar `hasPermission()`.**
+   * ¿La sesión es la del administrador de la tienda?
    *
    * Lee `rolId` —la fuente de verdad del contrato— en vez de un flag `esAdmin`
    * suelto, para no reintroducir la semántica especial que el contrato elimina
-   * (invariante C9). Se retira cuando esos módulos migren a capacidades.
+   * (invariante C9).
+   *
+   * **Sin consumidor de producto.** Nació como puente para `turnos` y
+   * `agendamiento`, que no leían capacidades; esos módulos se retiraron y hoy
+   * solo lo usan los tests para afirmar la tabla de resolución de
+   * `accessContext`. En código nuevo, `hasPermission()`. Se retira si nadie lo
+   * reclama.
    */
   get accesoTotal(): boolean {
     return this.accessContext.rolId === ROL_ADMIN;
@@ -362,16 +408,18 @@ export class SessionStore {
    *
    * Es la API canónica de navegación, y recibe el módulo porque los ids de
    * sección **no son únicos** entre módulos (`inicio` y `crear` se repiten).
-   *
-   * - `pedidos` → capacidad declarada por la sección (`Seccion.capacidad`).
-   * - `turnos` / `agendamiento` → lista blanca de `op.permisos` (legado).
+   * Resuelve la capacidad declarada por la sección (`Seccion.capacidad`).
    *
    * Invariante C5: entrar a una sección NO implica poder operarla. Las acciones
    * de dentro se comprueban aparte con `hasPermission()`.
+   *
+   * Ya **no** tiene rama legada: leía la lista blanca `op.permisos` para
+   * `turnos` y `agendamiento`, y esos módulos se retiraron junto con el modelo
+   * de permisos. El parámetro `modulo` se conserva por la razón de arriba.
    */
   puedeVerSeccion(modulo: Modulo, seccionId: string): boolean {
-    const seccion = SECCIONES.pedidos.find((s) => s.id === seccionId);
-    return seccion?.capacidad ? this.hasPermission(seccion.capacidad) : false;
+    const seccion = SECCIONES[modulo]?.find((s) => s.id === seccionId);
+    return seccion ? this.hasPermission(seccion.capacidad) : false;
   }
 
   /** Adaptador de compatibilidad con la firma antigua. */

@@ -1,9 +1,31 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { PedidosStore, type Pedido, type Modalidad } from "./pedidos.store";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { PedidosStore, catalogoDesdePreset, type Pedido, type Modalidad } from "./pedidos.store";
+import { BUSINESS_PROFILES } from "../domain/pedidos/pedidos.profiles";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
+
+/** `localStorage` en memoria: el entorno de test es `node` y no lo trae. */
+function instalarLocalStorageStub(): Storage {
+  const map = new Map<string, string>();
+  const storage: Storage = {
+    get length() {
+      return map.size;
+    },
+    clear: () => map.clear(),
+    getItem: (k: string) => (map.has(k) ? map.get(k)! : null),
+    key: (i: number) => [...map.keys()][i] ?? null,
+    removeItem: (k: string) => {
+      map.delete(k);
+    },
+    setItem: (k: string, v: string) => {
+      map.set(k, String(v));
+    },
+  };
+  vi.stubGlobal("localStorage", storage);
+  return storage;
+}
 
 /** Crea un store limpio y le añade un pedido nuevo, devolviendo ambos. */
 function nuevoStoreConPedido(modalidad: Modalidad = "domicilio"): { store: PedidosStore; pedido: Pedido } {
@@ -1149,5 +1171,103 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
       expect(store.columnasTablero).not.toContain(colId);
       expect(store.getPedido(p.id)!.estado).not.toBe(colId);
     });
+  });
+});
+
+describe("PedidosStore — catálogo y tallas (proyección del preset)", () => {
+  // El catálogo se proyecta desde `BusinessProfile.sampleCatalog` en dos sitios
+  // (el store al aplicar un perfil, y `ConfigPage` al previsualizarlo en el
+  // borrador). Los dos reescribían el objeto a mano y tiraban
+  // `variantesDisponibles`, así que el selector de talla de `CrearPedidoPage`
+  // era inalcanzable y el único síntoma eran 6 errores de `tsc`.
+  //
+  // Estos tests fallan si la proyección vuelve a divergir, si se pierde la copia
+  // defensiva del array, o si la rehidratación deja de reparar las sesiones que
+  // ya tenían la config guardada sin variantes.
+
+  beforeEach(() => {
+    instalarLocalStorageStub();
+  });
+
+  it("conserva las tallas del preset fashion al aplicar el perfil", () => {
+    const store = new PedidosStore();
+    store.setPerfilComercial("fashion");
+
+    expect(store.config.catalogo.find((c) => c.id === "cat-cl1")?.variantesDisponibles).toEqual([
+      "S",
+      "M",
+      "L",
+      "XL",
+    ]);
+    expect(store.config.catalogo.find((c) => c.id === "cat-cl2")?.variantesDisponibles).toEqual([
+      "6",
+      "8",
+      "10",
+      "12",
+    ]);
+  });
+
+  it("no inventa tallas en un perfil que no las declara (food)", () => {
+    const store = new PedidosStore();
+    store.setPerfilComercial("food");
+
+    expect(store.config.catalogo.every((c) => c.variantesDisponibles === undefined)).toBe(true);
+  });
+
+  it("copia el array de tallas en vez de compartir la referencia del preset", () => {
+    const catalogo = catalogoDesdePreset(BUSINESS_PROFILES.fashion);
+    catalogo.find((c) => c.id === "cat-cl1")!.variantesDisponibles!.push("XXL");
+
+    const enElPreset = BUSINESS_PROFILES.fashion.sampleCatalog.find((c) => c.id === "cat-cl1");
+    expect(enElPreset?.variantesDisponibles).toEqual(["S", "M", "L", "XL"]);
+  });
+
+  it("rehidrata las tallas de una config guardada por el mapper viejo", () => {
+    // Sesión ya existente: el onboarding corrió antes del arreglo y dejó en
+    // localStorage un catálogo sin variantes. Sin la rehidratación, el arreglo
+    // del mapper no le llegaría nunca a quien ya pasó por el onboarding.
+    localStorage.setItem(
+      "necto.pedidosConfig",
+      JSON.stringify({
+        perfilComercial: "fashion",
+        catalogo: [
+          { id: "cat-cl1", nombre: "Camiseta Oversize Algodón 100%", precio: 45000 },
+          { id: "cat-cl2", nombre: "Jean Mom Fit Tiro Alto", precio: 98000 },
+        ],
+      }),
+    );
+
+    const store = new PedidosStore();
+
+    expect(store.config.catalogo.find((c) => c.id === "cat-cl1")?.variantesDisponibles).toEqual([
+      "S",
+      "M",
+      "L",
+      "XL",
+    ]);
+    expect(store.config.catalogo.find((c) => c.id === "cat-cl2")?.variantesDisponibles).toEqual([
+      "6",
+      "8",
+      "10",
+      "12",
+    ]);
+  });
+
+  it("no pisa las tallas ya guardadas ni toca items ajenos al preset", () => {
+    localStorage.setItem(
+      "necto.pedidosConfig",
+      JSON.stringify({
+        perfilComercial: "fashion",
+        catalogo: [
+          { id: "cat-cl1", nombre: "Camiseta", precio: 45000, variantesDisponibles: ["Única"] },
+          { id: "cat-propio", nombre: "Item propio del negocio", precio: 1000 },
+        ],
+      }),
+    );
+
+    const store = new PedidosStore();
+
+    expect(store.config.catalogo.find((c) => c.id === "cat-cl1")?.variantesDisponibles).toEqual(["Única"]);
+    expect(store.config.catalogo.find((c) => c.id === "cat-propio")?.variantesDisponibles).toBeUndefined();
   });
 });

@@ -53,7 +53,7 @@ export const HELP_STEPS: HelpStep[] = [
   {
     num: 3,
     title: "Crea tu Organización",
-    body: "Define el nombre de tu empresa, país, moneda base y zona horaria para tu espacio de trabajo.",
+    body: "Define el nombre de tu empresa, país, moneda base y zona horaria para tu organización.",
   },
   {
     num: 4,
@@ -73,13 +73,13 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "usuario-vs-organizacion",
     question: "¿Qué diferencia hay entre mi usuario y mi organización?",
     answer:
-      "Tu usuario es la persona: se crea al registrarte y sigue siendo el mismo aunque cambies de correo o entres con Google. La organización es tu espacio de trabajo comercial donde conviven tus módulos activos.",
+      "Tu usuario es la persona: se crea al registrarte y sigue siendo el mismo aunque cambies de correo o entres con Google. La organización es el espacio comercial de tu negocio, donde conviven tus módulos activos.",
   },
   {
     id: "agregar-modulos",
     question: "¿Puedo activar más módulos en cualquier momento?",
     answer:
-      "Sí, totalmente. Desde tu espacio de trabajo puedes explorar el catálogo y agregar módulos como Pedidos, adaptando su perfil a tu modelo de negocio.",
+      "Sí, totalmente. Desde tu organización puedes explorar el catálogo y agregar módulos como Pedidos, adaptando su perfil a tu modelo de negocio.",
   },
   {
     id: "password-google",
@@ -103,7 +103,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "cambiar-pais-moneda",
     question: "¿Puedo cambiar el país o la moneda de mi organización?",
     answer:
-      "Sí, desde Configuración de la Organización puedes ajustar la moneda base y la zona horaria de tu espacio de trabajo.",
+      "Sí, desde Configuración de la Organización puedes ajustar la moneda base y la zona horaria de tu organización.",
   },
   {
     id: "recuperar-password",

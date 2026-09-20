@@ -241,6 +241,14 @@ export const Modal: React.FC<ModalProps> = ({
         {showCloseButton && (
           <button
             onClick={onClose}
+            // Nombre accesible: el botón solo contiene un `<svg>`, así que sin
+            // esto el árbol de accesibilidad lo anuncia como «botón» a secas.
+            // Medido con `Accessibility.getFullAXTree`: era el único control sin
+            // nombre de `/pedidos/crear` con el modal abierto, y al ser el
+            // `Modal` del catálogo afectaba a TODOS los modales de la app.
+            // El `aria-label` va aquí y no en el consumidor porque el botón es
+            // de este componente: quien monta un `Modal` no puede nombrarlo.
+            aria-label="Cerrar"
             className="absolute right-3 top-3 z-999 flex h-9.5 w-9.5 items-center justify-center rounded-full bg-gray-100 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white sm:right-6 sm:top-6 sm:h-11 sm:w-11"
           >
             <svg

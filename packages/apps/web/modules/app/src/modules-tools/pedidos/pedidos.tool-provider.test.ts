@@ -36,6 +36,22 @@ const hoyYmd = (): string => {
 const minutesAgoIso = (mins: number): string =>
   new Date(Date.now() - mins * 60000).toISOString();
 
+/**
+ * ISO que cae **hoy** (día de calendario local) y en el pasado, a cualquier hora.
+ *
+ * Existe por el mismo motivo que `rangoDe`: `minutesAgoIso(10)` a las 00:05 es
+ * AYER, así que un test que cuenta «entregados hoy» con ese fixture falla durante
+ * los primeros minutos de cada día. `pedidosStore.entregadosHoy` compara por día
+ * de calendario local, así que el instante tiene que estar dentro del día, no
+ * dentro de las últimas 24 h. Si la suite corre en el primer minuto del día, el
+ * mínimo es el propio inicio del día.
+ */
+const hoyHacePocoIso = (): string => {
+  const ahora = new Date();
+  const inicioDeHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+  return new Date(Math.max(inicioDeHoy.getTime(), ahora.getTime() - 10 * 60000)).toISOString();
+};
+
 /** "YYYY-MM-DD" local de un instante ISO dado. */
 const ymdDeIso = (iso: string): string => {
   const d = new Date(iso);
@@ -120,7 +136,9 @@ describe("getResumenHoy", () => {
       makePedido({ estado: "nuevo" }),
       makePedido({ estado: "nuevo" }),
       makePedido({ estado: "en_preparacion" }),
-      makePedido({ estado: "entregado", finishedAt: minutesAgoIso(10) }),
+      // `hoyHacePocoIso()` y no `minutesAgoIso(10)`: «Entregados hoy» cuenta por
+      // día de calendario local, y a las 00:05 «hace 10 minutos» es ayer.
+      makePedido({ estado: "entregado", finishedAt: hoyHacePocoIso() }),
       makePedido({
         estado: "programado",
         programadoPara: new Date(Date.now() + 3600_000).toISOString(),

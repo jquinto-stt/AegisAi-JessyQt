@@ -16,11 +16,17 @@ export type {
 } from '@/stores/pedidos.store';
 export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
 
-export { sessionStore, SessionStore } from '@/stores/session.store';
+export { sessionStore, SessionStore, modulosOperablesDeSesion } from '@/stores/session.store';
 export type { Modulo, TipoSesion, AccessContext, DataScope } from '@/stores/session.store';
 
 export { organizacionStore, OrganizacionStore } from '@/stores/organizacion.store';
-export type { UsuarioPerfil, OrganizacionWorkspace, OnboardingStep } from '@/stores/organizacion.store';
+export type {
+  UsuarioPerfil,
+  RedesSociales,
+  DireccionPerfil,
+  OrganizacionWorkspace,
+  OnboardingStep,
+} from '@/stores/organizacion.store';
 
 export {
   rolesStore,
@@ -34,7 +40,7 @@ export {
 export type { Rol, Capacidad, CapacidadGrupo, PortadorDeRol } from '@/stores/roles.store';
 
 export { operadoresStore, OperadoresStore, SECCIONES } from '@/stores/operadores.store';
-export type { Operador, OperadorEstado, Seccion, OperadorStats, EncuestaStats } from '@/stores/operadores.store';
+export type { Operador, OperadorEstado, Seccion } from '@/stores/operadores.store';
 
 export {
   conversacionesStore,
@@ -73,12 +79,14 @@ export type {
   EntradaDeclarada,
 } from './integraciones.store';
 
-// Módulos y Plugins de la Organización (Plataforma v2 Scoped)
+// NIVEL 1 — Catálogo de la plataforma: qué módulos y conectores EXISTEN.
+// Solo lectura. Qué tiene activado una organización es nivel 2 (`organizacionStore`).
 export {
   plataformaStore,
   PlataformaStore,
   CATALOGO_MODULOS,
   DETALLE_CONECTORES,
+  IDS_CONECTORES,
 } from './plataforma.store';
 export type {
   IdModuloNegocio,

@@ -104,6 +104,39 @@ describe("administrador como rol normal (invariante C9)", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Jerarquía de módulos — el shell NO depende de tener un módulo
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("sesión de admin SIN módulos instalados", () => {
+  it("está autenticada: el shell existe aunque la organización no tenga módulos", async () => {
+    const { sessionStore } = await freshStores();
+
+    // Organización recién creada: hay identidad, no hay módulos.
+    sessionStore.configurar([], "administrador");
+
+    const ctx = sessionStore.accessContext;
+    expect(ctx.autenticado).toBe(true);
+    expect(sessionStore.isReady).toBe(true);
+    expect(ctx.modulos).toEqual([]);
+    expect(ctx.rolId).toBe("admin_tienda");
+  });
+
+  it("sigue sin haber sesión si no hay identidad, aunque hubiera módulos", async () => {
+    // El bug H2 que la condición `modulos.length > 0` corregía sigue cubierto, y
+    // por la vía correcta: lo que decide es `rolId`, no la lista de módulos.
+    const { sessionStore } = await freshStores();
+
+    // `configurar` con módulos pero sin tipo de sesión resoluble.
+    sessionStore.setModulos(["pedidos"]);
+    expect(sessionStore.tipoSesion).toBeNull();
+
+    expect(sessionStore.accessContext.autenticado).toBe(false);
+    expect(sessionStore.isReady).toBe(false);
+    expect(sessionStore.hasPermission("orders.read")).toBe(false);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Simulación: capacidades efectivas, C5 y C7
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -196,7 +229,11 @@ describe("entrar y salir de la simulación (invariante C8)", () => {
 
   it("simular dos veces conserva el snapshot original", async () => {
     const { sessionStore } = await freshStores();
-    sessionStore.configurar(["turnos", "pedidos"], "administrador");
+    // La lista tiene un solo elemento porque `Modulo` tiene un solo valor. La
+    // propiedad que este test guarda —que el segundo `simular()` NO pisa el
+    // snapshot— la delata `tipoSesion`: si se pisara, el snapshot sería el
+    // estado "dentro de la simulación" (`operador`) y la salida lo restauraría.
+    sessionStore.configurar(["pedidos"], "administrador");
 
     sessionStore.simular("d2");
     sessionStore.simular("d1");
@@ -204,7 +241,7 @@ describe("entrar y salir de la simulación (invariante C8)", () => {
 
     sessionStore.salirSimulacion();
     expect(sessionStore.tipoSesion).toBe("administrador");
-    expect(sessionStore.modulos).toEqual(["turnos", "pedidos"]);
+    expect(sessionStore.modulos).toEqual(["pedidos"]);
   });
 
   it("salir sin snapshot limpia la sesión (no inventa un admin)", async () => {

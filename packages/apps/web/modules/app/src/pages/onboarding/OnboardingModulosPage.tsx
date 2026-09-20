@@ -3,17 +3,12 @@ import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
-import { ThemeToggleButton } from "@/shell";
 import { organizacionStore } from "@/stores/organizacion.store";
-import { OnboardingStepper } from "./OnboardingStepper";
-import { OnboardingBrandPanel } from "./OnboardingBrandPanel";
 import { OnboardingLayout } from "./OnboardingLayout";
 
-const ONBOARDING_STEPS = [
-  { num: 1, label: "Perfil" },
-  { num: 2, label: "Organización" },
-  { num: 3, label: "Módulos" },
-];
+// Aquí se importaban `ThemeToggleButton`, `OnboardingStepper` y
+// `OnboardingBrandPanel`, y se declaraba `ONBOARDING_STEPS`. Ninguno se usaba:
+// medido con `--noUnusedLocals`. Se retiran en la limpieza de superficie.
 
 export const OnboardingModulosPage = observer(() => {
   const navigate = useNavigate();
@@ -24,14 +19,14 @@ export const OnboardingModulosPage = observer(() => {
   };
 
   const handleOmitir = () => {
-    navigate("/onboarding/encuesta?redirect=/workspaces");
+    navigate("/onboarding/encuesta?redirect=/modulos");
   };
 
   return (
     <>
       <PageMeta
         title="Catálogo de Módulos · Necto"
-        description="Selecciona los módulos para tu espacio de trabajo"
+        description="Selecciona los módulos para tu organización"
       />
 
       <OnboardingLayout
@@ -69,7 +64,7 @@ export const OnboardingModulosPage = observer(() => {
               Elige los módulos para tu negocio
             </h1>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Necto es modular. Puedes agregar Pedidos ahora para gestionar tus ventas y entregas, o explorar tu espacio de trabajo primero.
+              Necto es modular. Puedes agregar Pedidos ahora para gestionar tus ventas y entregas, o explorar tu organización primero.
             </p>
           </div>
 
@@ -195,7 +190,7 @@ export const OnboardingModulosPage = observer(() => {
               onClick={handleOmitir}
               className="cursor-pointer text-xs font-semibold text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition"
             >
-              Omitir por ahora e ir al workspace →
+              Omitir por ahora e ir a mi organización →
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { ModuloDestino } from "@/stores/conversaciones.types";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // conversaciones.clasificacion.test.ts — Eje de INTENCIÓN
@@ -202,15 +203,22 @@ describe("MODULO_DESTINO_LABEL — catálogo de dominio", () => {
       .MODULO_DESTINO_LABEL;
   });
 
+  /**
+   * Lista COMPLETA de `ModuloDestino`, afirmada por el compilador.
+   *
+   * Antes esto era un array de literales dentro del test, que es una copia del
+   * tipo: añadir un miembro a `ModuloDestino` no rompía nada y el test seguía
+   * verde sin cubrirlo. Con un `Record<ModuloDestino, true>` el compilador
+   * exige la entrada nueva, y entonces el `for` sí comprueba que tenga etiqueta.
+   */
+  const TODOS_LOS_DESTINOS: Record<ModuloDestino, true> = {
+    pedidos: true,
+    inventario: true,
+    general: true,
+  };
+
   it("todo ModuloDestino tiene etiqueta", () => {
-    const modulos = [
-      "pedidos",
-      "turnos",
-      "agendamiento",
-      "inventario",
-      "general",
-    ] as const;
-    for (const m of modulos) {
+    for (const m of Object.keys(TODOS_LOS_DESTINOS) as ModuloDestino[]) {
       expect(MODULO_DESTINO_LABEL[m].etiqueta).toBeTruthy();
     }
   });
@@ -219,7 +227,16 @@ describe("MODULO_DESTINO_LABEL — catálogo de dominio", () => {
     expect(MODULO_DESTINO_LABEL.pedidos.disponible).toBe(true);
     expect(MODULO_DESTINO_LABEL.general.disponible).toBe(true);
     expect(MODULO_DESTINO_LABEL.inventario.disponible).toBe(false);
-    expect(MODULO_DESTINO_LABEL.turnos.disponible).toBe(false);
-    expect(MODULO_DESTINO_LABEL.agendamiento.disponible).toBe(false);
+  });
+
+  it("no queda rastro de los módulos retirados", () => {
+    // Guarda de la retirada: `turnos` y `agendamiento` salieron del vocabulario
+    // de dominio. Si alguien los reintroduce en el catálogo, este test lo dice
+    // por su nombre en vez de dejar una etiqueta que nadie lee.
+    expect(Object.keys(MODULO_DESTINO_LABEL).sort()).toEqual([
+      "general",
+      "inventario",
+      "pedidos",
+    ]);
   });
 });

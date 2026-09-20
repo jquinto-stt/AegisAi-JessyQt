@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate, useParams } from "react-router";
 import { observer } from "mobx-react-lite";
-import { sessionStore, plataformaStore } from "@/stores";
+import { sessionStore, organizacionStore } from "@/stores";
 import { AppShell } from "@/app/AppShell";
 import {
   TableroPage,
@@ -18,7 +18,6 @@ import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
 import { CapabilityGuard } from "@/app/CapabilityGuard";
-import { PlaceholderPage } from "@/pages/PlaceholderPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
@@ -27,7 +26,7 @@ import HelpPage from "@/pages/HelpPage";
 import TermsPage from "@/pages/TermsPage";
 import PrivacyPage from "@/pages/PrivacyPage";
 import CookiesPage from "@/pages/CookiesPage";
-import WorkspacesPage from "@/pages/WorkspacesPage";
+import ModulosPage from "@/pages/ModulosPage";
 import {
   PerfilOnboardingPage,
   OrganizacionOnboardingPage,
@@ -54,10 +53,18 @@ const LegacyEquipoIdRedirect = () => {
   return <Navigate to={id ? `/equipo/${id}` : "/equipo"} replace />;
 };
 
-/** Guarda de plataforma: si la organización tiene el módulo o plugin apagado, redirige a configuración. */
+/**
+ * Guarda de pertenencia (nivel 2): si la ORGANIZACIÓN no tiene el módulo o plugin
+ * activo, redirige a la configuración de módulos.
+ *
+ * Lee de `organizacionStore`, que es la fuente de verdad de la pertenencia. Antes
+ * leía de `plataformaStore`, y eso hacía que esta guarda y la pantalla de workspace
+ * dieran respuestas distintas a la misma pregunta — con dos stores, en el mismo
+ * render. Ver `outputs/analisis-jerarquia-modulos.md` §4.
+ */
 const ModuloGuard = observer(({ modulo, children }: { modulo: string; children: React.ReactNode }) => {
-  if (!plataformaStore.estaActivo(modulo)) {
-    return <Navigate to="/organizacion/configuracion" replace />;
+  if (!organizacionStore.estaActivo(modulo)) {
+    return <Navigate to="/configuracion" replace />;
   }
   return <>{children}</>;
 });
@@ -75,11 +82,18 @@ export default function App() {
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Organización / Equipo y Roles / Centro de Módulos (Transversal) */}
+        {/* Organización — equipo, roles y configuración de módulos.
+            `/configuracion` es la ruta CANÓNICA de la configuración de la
+            organización (módulos y conectores), frente a las configs por módulo
+            (`/pedidos/config`, `/conversaciones/config`, `/asistente/config`).
+            Antes `/configuracion` renderizaba un `PlaceholderPage` vacío mientras
+            la página real vivía en `/organizacion/configuracion`: dos rutas, una
+            de ellas mintiendo. Ahora hay una sola y las viejas redirigen. */}
         <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
-        <Route path="/organizacion/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionModulosPage /></CapabilityGuard>} />
-        <Route path="/organizacion/modulos" element={<Navigate to="/organizacion/configuracion" replace />} />
+        <Route path="/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionModulosPage /></CapabilityGuard>} />
+        <Route path="/organizacion/configuracion" element={<Navigate to="/configuracion" replace />} />
+        <Route path="/organizacion/modulos" element={<Navigate to="/configuracion" replace />} />
 
         {/* Redirecciones legacy para compatibilidad */}
         <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />
@@ -95,7 +109,6 @@ export default function App() {
         <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
-        <Route path="/configuracion" element={<PlaceholderPage title="Configuración" />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/perfil" element={<ProfilePage />} />
       </Route>
@@ -106,9 +119,14 @@ export default function App() {
       <Route path="/onboarding/modulos" element={<OnboardingModulosPage />} />
       <Route path="/onboarding/pedidos" element={<PedidosOnboardingPage />} />
       <Route path="/onboarding/encuesta" element={<EncuestaOnboardingPage />} />
-      <Route path="/workspaces" element={<WorkspacesPage />} />
-      <Route path="/modulos" element={<WorkspacesPage />} />
-      <Route path="/workspace/modulos" element={<WorkspacesPage />} />
+
+      {/* Módulos de la organización. `/modulos` es la canónica; las otras dos eran
+          la misma pantalla con tres nombres distintos (`/workspaces`,
+          `/workspace/modulos`), que es la ambigüedad «Workspace vs Organización»
+          resuelta a favor de Organización. Redirigen, no duplican. */}
+      <Route path="/modulos" element={<ModulosPage />} />
+      <Route path="/workspaces" element={<Navigate to="/modulos" replace />} />
+      <Route path="/workspace/modulos" element={<Navigate to="/modulos" replace />} />
 
       {/* Autenticación & Acceso */}
       <Route path="/login" element={<Login />} />

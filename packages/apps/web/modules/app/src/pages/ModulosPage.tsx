@@ -1,18 +1,6 @@
-import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import {
-  Layers,
-  Plus,
-  ArrowRight,
-  Building2,
-  LogOut,
-  ChevronDown,
-  User,
-  Settings,
-  Info,
-  Globe,
-} from "lucide-react";
+import { Layers, Plus, ArrowRight } from "lucide-react";
 import { BaseAppHeader } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
@@ -24,47 +12,59 @@ import { NectoLogo } from "@/compositions/shared/NectoLogo";
 import {
   organizacionStore,
   pedidosStore,
-  plataformaStore,
   sessionStore,
+  modulosOperablesDeSesion,
 } from "@/stores";
 import {
   BUSINESS_PROFILES,
   type BusinessProfileType,
 } from "@/domain/pedidos/pedidos.profiles";
 
-export const WorkspacesPage = observer(() => {
+/**
+ * Módulos de la organización — la pantalla de «qué tiene contratado esta empresa».
+ *
+ * Se llamaba `WorkspacesPage` y se servía en tres rutas (`/workspaces`, `/modulos`,
+ * `/workspace/modulos`). «Workspace» y «Organización» eran la misma cosa con dos
+ * nombres, y esa ambigüedad es la que hacía que nadie supiera cuál era la canónica.
+ * Se quedó «Organización»: la ruta es `/modulos` y las otras dos redirigen aquí.
+ *
+ * Nota de alcance: la rejilla de abajo sigue listando **solo Pedidos** a mano. Es
+ * correcto mientras `Modulo = "pedidos"` sea el único valor del tipo, pero el día
+ * que entre Inventario hay que derivarla del catálogo.
+ */
+export const ModulosPage = observer(() => {
   const navigate = useNavigate();
   const org = organizacionStore.organizacion;
-  const usuario = organizacionStore.usuario;
   const tienePedidos = organizacionStore.tieneModuloPedidos;
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const perfilActualKey = (pedidosStore.config.perfilComercial || "food") as BusinessProfileType;
   const perfilActual = BUSINESS_PROFILES[perfilActualKey] || BUSINESS_PROFILES.food;
 
   const handleEntrarPedidos = () => {
-    sessionStore.configurar(["pedidos"], "administrador");
+    // La sesión no puede operar más de lo que la organización tiene activo
+    // (`Sesión ⊆ Organización`): se concede la pertenencia real, no una lista fija.
+    sessionStore.configurar(
+      modulosOperablesDeSesion(organizacionStore.modulosActivos),
+      "administrador",
+    );
     navigate("/pedidos/inicio");
   };
 
   const handleDesinstalarPedidos = () => {
+    // Una sola llamada: la pertenencia tiene un único dueño. Antes había que
+    // acordarse de escribir en DOS stores (`organizacionStore` y `plataformaStore`),
+    // y esa obligación es justo la que se olvidaba en `ConfiguracionModulosPage`,
+    // que solo escribía en uno y dejaba a la organización desfasada.
     organizacionStore.desinstalarModulo("pedidos");
-    plataformaStore.desinstalarModulo("pedidos");
   };
 
-  const handleLogout = () => {
-    sessionStore.reset();
-    navigate("/login");
-  };
-
-  const iniciales = usuario?.nombre
-    ? `${usuario.nombre.charAt(0)}${usuario.apellido?.charAt(0) || ""}`.toUpperCase()
-    : "AD";
+  // Aquí vivían `handleLogout` e `iniciales`, ya sin usar en `WorkspacesPage`: el
+  // cierre de sesión está en `UserDropdown` y las iniciales no las pintaba nadie.
 
   return (
     <div className="flex min-h-screen w-full flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:p-8 bg-gray-50/70 dark:bg-gray-950">
       <PageMeta
-        title="Espacio de Trabajo · Módulos"
+        title="Módulos · Organización"
         description="Módulos activos en tu Organización"
       />
 
@@ -75,7 +75,7 @@ export const WorkspacesPage = observer(() => {
             <NectoLogo size="xs" inline />
             <span className="hidden h-5 w-px bg-gray-200 sm:block dark:bg-gray-800" />
             <span className="hidden text-theme-xs font-semibold uppercase tracking-wider text-gray-400 sm:inline dark:text-gray-500">
-              {org?.nombre || "Espacio de trabajo"}
+              {org?.nombre || "Mi organización"}
             </span>
           </div>
         }
@@ -87,10 +87,10 @@ export const WorkspacesPage = observer(() => {
         </div>
       </BaseAppHeader>
 
-      {/* Superficie principal del Workspace */}
+      {/* Superficie principal */}
       <main className="w-full flex-1 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-theme-sm sm:p-8 lg:p-10 dark:border-gray-800 dark:bg-gray-900">
         <div className="mx-auto w-full max-w-5xl space-y-8">
-          {/* Cabecera del Workspace */}
+          {/* Cabecera de la organización */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6 dark:border-gray-800">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300 mb-2">
@@ -101,7 +101,7 @@ export const WorkspacesPage = observer(() => {
                 Módulos del Negocio
               </h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Gestiona las aplicaciones operativas activas en tu espacio de trabajo.
+                Gestiona las aplicaciones operativas activas en tu organización.
               </p>
             </div>
 
@@ -136,7 +136,7 @@ export const WorkspacesPage = observer(() => {
                 No tienes ningún módulo instalado
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                Tu espacio de trabajo está listo. Comienza agregando el módulo de Pedidos para gestionar tus ventas y clientes.
+                Tu organización está lista. Comienza agregando el módulo de Pedidos para gestionar tus ventas y clientes.
               </p>
 
               <div className="mt-8 flex justify-center">
@@ -154,8 +154,11 @@ export const WorkspacesPage = observer(() => {
             /* VISTA CON MÓDULOS ACTIVOS */
             <div className="space-y-6">
               <div className="flex items-center justify-between">
+                {/* Sin contador: mientras `Modulo` tenga un solo valor, «(1)» sería
+                    un número inventado esperando a ser falso. Vuelve cuando la
+                    rejilla se derive del catálogo. */}
                 <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Módulos Activos (1)
+                  Módulo activo
                 </h3>
                 <Button
                   size="sm"
@@ -205,12 +208,12 @@ export const WorkspacesPage = observer(() => {
                           <span>Perfil: {perfilActual.name}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {plataformaStore.esConectorActivo("pedidos", "whatsapp") && (
+                          {organizacionStore.esConectorActivo("pedidos", "whatsapp") && (
                             <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
                               💬 WhatsApp Agent
                             </span>
                           )}
-                          {plataformaStore.esConectorActivo("pedidos", "necto_ia") && (
+                          {organizacionStore.esConectorActivo("pedidos", "necto_ia") && (
                             <span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
                               🤖 Necto Agent (IA)
                             </span>
@@ -256,4 +259,4 @@ export const WorkspacesPage = observer(() => {
   );
 });
 
-export default WorkspacesPage;
+export default ModulosPage;

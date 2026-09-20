@@ -22,78 +22,54 @@ export interface Operador {
   estado: OperadorEstado;
   /** Módulo al que pertenece — las listas son independientes por módulo. */
   modulo: Modulo;
-
-  // ── Autorización (modelo nuevo, solo `pedidos`) ───────────────────────────
-  //
-  // Fuente de verdad de la autorización. Contrato:
-  //   outputs/contrato-arquitectura-acceso-necto.md §4
-
   /** Cargo o designación del operador (ej. Head of Design, Vendedor Mostrador). */
   cargo?: string;
   /** URL de la foto de perfil del operador. */
   avatarUrl?: string;
+
+  // ── Autorización (único modelo) ───────────────────────────────────────────
+  //
+  // Fuente de verdad de la autorización. Contrato:
+  //   outputs/contrato-arquitectura-acceso-necto.md §4
+  //
+  // Aquí vivía un segundo modelo —`permisos: string[]`, una lista blanca de
+  // secciones— que solo se usaba para `turnos` y `agendamiento`. Se retiró con
+  // ellos. La lección que deja: el docblock lo declaraba «congelado, solo lo lee
+  // `SessionStore.puedeVerSeccion`», y cuando se fue a comprobar, `puedeVerSeccion`
+  // ya solo leía `SECCIONES.pedidos` y **nadie leía `permisos`**. Un campo con
+  // escritor y cero lectores no está «congelado»: está muerto. La congelación se
+  // había honrado sola, y el coste era un tipo que prometía dos modelos de
+  // autorización donde solo hay uno.
+
   /** Rol asignado (ver `rolesStore`). De él se derivan las capacidades base. */
   rolId?: string;
   /** Excepciones que SUMAN capacidades sobre las del rol. */
   capacidadesExtra?: Capacidad[];
   /** Excepciones que RESTAN capacidades. La denegación gana siempre. */
   capacidadesRemovidas?: Capacidad[];
-
-  // ── Legado (congelado: solo turnos y agendamiento) ────────────────────────
-
-  /**
-   * Permisos = secciones del módulo que el operador puede ver en la app.
-   *
-   * @deprecated LEGADO CONGELADO (contrato §4 / invariante C2).
-   *
-   * **No puede participar en ninguna decisión de autorización nueva.** Las
-   * reglas son duras:
-   *   1. No se lee desde rutas, acciones, guards ni componentes nuevos.
-   *   2. No se escribe desde ninguna UI nueva.
-   *   3. Solo lo lee el adaptador legado de `SessionStore.puedeVerSeccion`, y
-   *      solo para `turnos` y `agendamiento`.
-   *
-   * Se retira cuando esos dos módulos migren a capacidades (fuera del alcance
-   * del contrato). Mantenerlo vivo como fuente paralela es el riesgo que el
-   * contrato existe para evitar.
-   */
-  permisos: string[];
-
-  /**
-   * Profesionales a los que está ligado el operador (solo Agendamiento).
-   * Un operador de Agendamiento ayuda a uno o varios profesionales y solo ve
-   * los datos de esos profesionales. En Turnos queda vacío (no aplica).
-   *
-   * Es **scope de datos**, no autorización (contrato §1.6).
-   */
-  profesionalIds: string[];
-  /**
-   * Colas que el operador puede manejar (solo Turnos). El admin decide qué
-   * colas ve; debe tener al menos una. En Agendamiento queda vacío (no aplica).
-   *
-   * Es **scope de datos**, no autorización (contrato §1.6).
-   */
-  colaIds: string[];
 }
 
-/** Una sección visible del módulo, controlable por permisos. */
+/** Una sección visible del módulo. */
 export interface Seccion {
   id: string;
   label: string;
   /** Ruta asociada (informativa, para futura integración con el sidebar). */
   path: string;
   /**
-   * Capacidad **mínima para entrar** a esta sección (solo `pedidos`).
+   * Capacidad **mínima para entrar** a esta sección.
    *
    * Una sección es un destino de navegación, NO una unidad de autorización
    * (contrato §1.5). Entrar a una pantalla nunca implica poder operarla: p. ej.
    * `/pedidos/config` se entra con `settings.read` pero se guarda con
    * `settings.manage`. Invariante C5.
    *
-   * Las secciones de `turnos` y `agendamiento` no declaran capacidad: siguen
-   * con ids de sección porque esos módulos están congelados (contrato §5).
+   * Es **obligatoria**. Fue opcional mientras `turnos` y `agendamiento` —que no
+   * declaraban capacidad— vivían en este catálogo. Con un solo módulo y todas
+   * sus secciones migradas, un `capacidad?` opcional solo serviría para admitir
+   * una sección sin gobierno de acceso, que es exactamente lo que el contrato
+   * prohíbe.
    */
-  capacidad?: Capacidad;
+  capacidad: Capacidad;
 }
 
 /**
@@ -103,12 +79,11 @@ export interface Seccion {
  */
 export const SECCIONES: Record<Modulo, Seccion[]> = {
   // Pedidos: flujo de pedidos que llegan por WhatsApp hasta la entrega.
-  // (La sección "Operadores" es solo-admin y no es un permiso togglable, igual
-  // que en Turnos/Agendamiento; por eso no aparece en este catálogo.)
+  // (La sección "Operadores" es solo-admin y no es un permiso togglable; por eso
+  // no aparece en este catálogo.)
   //
-  // Pedidos es el único módulo migrado a capacidades (contrato §5): cada
-  // sección declara la capacidad mínima para ENTRAR. Las acciones de dentro se
-  // gobiernan aparte con `hasPermission()`.
+  // Cada sección declara la capacidad mínima para ENTRAR. Las acciones de dentro
+  // se gobiernan aparte con `hasPermission()`.
   pedidos: [
     { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.read" },
     { id: "tablero", label: "Tablero", path: "/pedidos", capacidad: "orders.read" },
@@ -121,76 +96,11 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   ],
 };
 
-/** Todos los ids de sección de un módulo (útil para "seleccionar todo" y seeds). */
-const todasLasSecciones = (modulo: Modulo): string[] => SECCIONES[modulo]?.map((s) => s.id) ?? [];
-
-/**
- * Estadísticas de rendimiento de un operador (mock, sin backend).
- * Hoy los tickets no registran autor, así que estos números son de ejemplo
- * para el dashboard del admin. Cuando exista backend, se derivarían de la
- * actividad real del operador.
- */
-export interface OperadorStats {
-  /** Turnos que el operador dio de alta. */
-  turnosCreados: number;
-  /** Turnos que el operador pasó a atención / llamó. */
-  turnosAtendidos: number;
-  /** Turnos que completó hoy. */
-  completadosHoy: number;
-  /** Última actividad, texto legible relativo (ej. "hace 5 min"). */
-  ultimaActividad: string;
-}
-
-/** Stats mock por id de operador (solo Turnos por ahora). */
-const STATS_SEED: Record<string, OperadorStats> = {
-  t1: { turnosCreados: 42, turnosAtendidos: 38, completadosHoy: 12, ultimaActividad: "hace 5 min" },
-  t2: { turnosCreados: 18, turnosAtendidos: 25, completadosHoy: 7, ultimaActividad: "hace 22 min" },
-  t3: { turnosCreados: 0, turnosAtendidos: 9, completadosHoy: 3, ultimaActividad: "hace 1 h" },
-  t4: { turnosCreados: 5, turnosAtendidos: 2, completadosHoy: 0, ultimaActividad: "ayer" },
-};
-
-/** Stats por defecto para operadores sin datos en el seed (ej. recién creados). */
-const STATS_VACIAS: OperadorStats = {
-  turnosCreados: 0,
-  turnosAtendidos: 0,
-  completadosHoy: 0,
-  ultimaActividad: "sin actividad",
-};
-
-/**
- * Estadísticas de encuestas COMPARTIDAS MANUALMENTE por un operador (mock).
- * Solo cuentan las que el operador comparte a mano desde su vista; las
- * encuestas automáticas que el sistema envía al cerrar turno NO suman aquí.
- */
-export interface EncuestaStats {
-  /** Encuestas que el operador compartió manualmente. */
-  compartidas: number;
-  /** Respuestas recibidas de las encuestas que compartió. */
-  respuestas: number;
-  /** Calificación promedio (1–5) de esas respuestas. 0 si no hay respuestas. */
-  calificacionProm: number;
-}
-
-/** Stats de encuestas mock por id de operador (solo Turnos por ahora). */
-const ENCUESTA_STATS_SEED: Record<string, EncuestaStats> = {
-  t1: { compartidas: 34, respuestas: 21, calificacionProm: 4.6 },
-  t2: { compartidas: 12, respuestas: 5, calificacionProm: 4.1 },
-  t3: { compartidas: 8, respuestas: 3, calificacionProm: 3.7 },
-  t4: { compartidas: 0, respuestas: 0, calificacionProm: 0 },
-};
-
-const ENCUESTA_STATS_VACIAS: EncuestaStats = {
-  compartidas: 0,
-  respuestas: 0,
-  calificacionProm: 0,
-};
-
 // ═══════════════════════════════════════════════════════════════════════════
 // MOCK DATA
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SEED: Operador[] = [
-  // ── Pedidos (migrado a capacidades: el rol es la fuente de verdad) ──────────
   {
     id: "d0",
     nombre: "Tailor Davis (Tú)",
@@ -201,9 +111,6 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "admin_tienda",
-    permisos: todasLasSecciones("pedidos"),
-    profesionalIds: [],
-    colaIds: [],
   },
   {
     id: "d1",
@@ -215,9 +122,6 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "supervisor_pedidos",
-    permisos: todasLasSecciones("pedidos"),
-    profesionalIds: [],
-    colaIds: [],
   },
   {
     id: "d2",
@@ -229,9 +133,6 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "vendedor",
-    permisos: ["inicio", "tablero", "crear"],
-    profesionalIds: [],
-    colaIds: [],
   },
   {
     id: "d3",
@@ -243,9 +144,6 @@ const SEED: Operador[] = [
     estado: "pendiente",
     modulo: "pedidos",
     rolId: "vendedor",
-    permisos: ["inicio", "tablero"],
-    profesionalIds: [],
-    colaIds: [],
   },
 ];
 
@@ -256,14 +154,12 @@ const SEED: Operador[] = [
 /**
  * OperadoresStore — equipo de operadores del administrador (mock, sin backend).
  *
- * Cada módulo (turnos | agendamiento | pedidos) tiene su propia lista
- * independiente. El admin puede crear operadores directamente, aprobar los que
- * llegan por solicitud (estado `pendiente`, enviada desde /operador/registro),
- * desactivarlos o eliminarlos.
+ * Cada módulo tiene su propia lista independiente. El admin puede crear
+ * operadores directamente, aprobar los que llegan por solicitud (estado
+ * `pendiente`, enviada desde /operador/registro), desactivarlos o eliminarlos.
  *
- * La autorización se guarda distinto según el módulo:
- *   - `pedidos` → `rolId` + excepciones (modelo nuevo, contrato §4)
- *   - `turnos` / `agendamiento` → `permisos[]` (legado congelado)
+ * La autorización tiene **un solo** modelo: `rolId` + excepciones. El modelo
+ * paralelo de `permisos[]` se retiró junto con los módulos que lo usaban.
  *
  * Este store es **memoria pura**: no persiste, así que todo se pierde al
  * recargar. Es una decisión explícita del mock, no un olvido.
@@ -313,27 +209,15 @@ export class OperadoresStore {
     return this.operadores.filter((o) => o.modulo === modulo && o.estado === "pendiente").length;
   }
 
-  /** Estadísticas (mock) de un operador. Devuelve ceros si no tiene datos. */
-  statsDe(id: string): OperadorStats {
-    return STATS_SEED[id] ?? STATS_VACIAS;
-  }
-
-  /** Estadísticas de encuestas compartidas (mock) de un operador. */
-  encuestaStatsDe(id: string): EncuestaStats {
-    return ENCUESTA_STATS_SEED[id] ?? ENCUESTA_STATS_VACIAS;
-  }
-
   // ── Acciones ────────────────────────────────────────────────────────────────
 
   /**
    * Crea un operador nuevo (activo de inmediato) en el módulo dado.
    *
-   * Para `pedidos` el rol es la fuente de verdad: si no se indica `rolId` se
-   * asigna `"personalizado"` (sin capacidades), que es el valor **fail-closed**.
-   *
-   * TODO(Fase 3): el modal de creación de `OperadoresPage` todavía no ofrece
-   * selector de rol, así que hoy un operador de pedidos nace sin acceso y hay
-   * que asignarle rol. La pantalla "Equipo" resuelve esto con un `Select`.
+   * El rol es la fuente de verdad: si no se indica `rolId` se asigna
+   * `"personalizado"` (sin capacidades), que es el valor **fail-closed**. Un
+   * operador recién creado sin rol no puede entrar a ninguna sección, y eso es
+   * lo correcto: la pantalla Equipo le asigna uno acto seguido.
    */
   crear(
     modulo: Modulo,
@@ -345,8 +229,6 @@ export class OperadoresStore {
       estado?: OperadorEstado;
       cargo?: string;
       avatarUrl?: string;
-      profesionalIds?: string[];
-      colaIds?: string[];
     }
   ) {
     this.operadores.push({
@@ -358,19 +240,14 @@ export class OperadoresStore {
       avatarUrl: data.avatarUrl,
       estado: data.estado ?? "activo",
       modulo,
-      rolId: data.rolId ?? (modulo === "pedidos" ? "personalizado" : undefined),
-      permisos: todasLasSecciones(modulo),
-      // Solo Agendamiento liga profesionales; en Turnos queda vacío.
-      profesionalIds: modulo === "agendamiento" ? data.profesionalIds ?? [] : [],
-      // Solo Turnos liga colas; en Agendamiento queda vacío.
-      colaIds: modulo === "turnos" ? data.colaIds ?? [] : [],
+      rolId: data.rolId ?? "personalizado",
     });
     this.emit();
   }
 
   /**
    * Registra una solicitud de acceso: crea el operador en estado `pendiente`,
-   * sin rol y sin permisos. El admin lo aprueba y le asigna rol desde "Equipo".
+   * sin rol. El admin lo aprueba y le asigna rol desde "Equipo".
    *
    * Antes de esto, `/operador/registro` solo cambiaba a un estado de éxito
    * visual y no creaba nada: los `pendiente` de la tabla venían solo del SEED.
@@ -384,23 +261,7 @@ export class OperadoresStore {
       estado: "pendiente",
       modulo: data.modulo,
       rolId: undefined,
-      permisos: [],
-      profesionalIds: [],
-      colaIds: [],
     });
-    this.emit();
-  }
-
-  /**
-   * Actualiza los permisos (secciones visibles) de un operador.
-   *
-   * @deprecated LEGADO CONGELADO (contrato §4). Solo para turnos y agendamiento.
-   * El modelo nuevo escribe `rolId` + excepciones (`setRol`,
-   * `setCapacidadesExtra`, `setCapacidadesRemovidas`).
-   */
-  setPermisos(id: string, permisos: string[]) {
-    const op = this.porId(id);
-    if (op) op.permisos = permisos;
     this.emit();
   }
 
@@ -440,20 +301,6 @@ export class OperadoresStore {
   setCapacidadesRemovidas(id: string, capacidades: Capacidad[]) {
     const op = this.porId(id);
     if (op) op.capacidadesRemovidas = capacidades;
-    this.emit();
-  }
-
-  /** Actualiza los profesionales ligados a un operador (solo Agendamiento). */
-  setProfesionales(id: string, profesionalIds: string[]) {
-    const op = this.porId(id);
-    if (op) op.profesionalIds = profesionalIds;
-    this.emit();
-  }
-
-  /** Actualiza las colas que puede manejar un operador (solo Turnos). */
-  setColas(id: string, colaIds: string[]) {
-    const op = this.porId(id);
-    if (op) op.colaIds = colaIds;
     this.emit();
   }
 

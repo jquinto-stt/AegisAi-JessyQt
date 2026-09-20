@@ -23,8 +23,12 @@ export default function SignUpForm() {
     const finalNombre = customNombre || fname.trim() || "Usuario";
     const finalApellido = lname.trim() || "Necto";
 
-    // 1. En mockup sin backend, registrarse autentica la sesión
-    sessionStore.configurar(["pedidos"], "administrador");
+    // 1. En mockup sin backend, registrarse autentica la sesión.
+    //
+    // Sin módulos: la cuenta acaba de nacer y todavía no hay organización, así que
+    // no hay nada que operar. Antes decía `["pedidos"]`, lo que le concedía a la
+    // sesión un módulo que nadie había instalado (`Sesión ⊆ Organización`).
+    sessionStore.configurar([], "administrador");
 
     // 2. Guarda el perfil personal
     organizacionStore.actualizarPerfil({

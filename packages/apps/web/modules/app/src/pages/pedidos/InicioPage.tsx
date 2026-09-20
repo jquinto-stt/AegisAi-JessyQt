@@ -34,7 +34,7 @@ import { SinDatos } from "./SinDatos";
 // PALETA
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Paleta oficial NECTO (misma que usa el dashboard de Turnos).
+// Paleta oficial NECTO.
 const ORANGE = "#FF3F1A";
 const INDIGO = "#190088";
 const CELESTE = "#97D6DF";
