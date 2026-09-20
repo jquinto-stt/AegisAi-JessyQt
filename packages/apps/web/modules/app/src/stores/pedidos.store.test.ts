@@ -1115,4 +1115,39 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
       expect(core?.payment.status).toBe("pending");
     });
   });
+
+  describe("Columnas Dinámicas y Kanban Personalizado", () => {
+    it("permite agregar, renombrar, reordenar y eliminar columnas libremente", () => {
+      const store = new PedidosStore();
+      const colId = store.agregarColumna("En revisión de calidad");
+      expect(colId).toBeTruthy();
+      expect(store.columnasTablero).toContain(colId);
+      expect(store.estadoLabel(colId as any)).toBe("En revisión de calidad");
+
+      // Renombrar
+      store.renombrarColumna(colId, "Control de Calidad OK");
+      expect(store.estadoLabel(colId as any)).toBe("Control de Calidad OK");
+
+      // Mover pedido a la nueva columna
+      const p = store.crearPedido({
+        cliente: "Mario Test",
+        telefono: "+573001239876",
+        modalidad: "retiro",
+        items: [{ nombre: "Test", cantidad: 1 }],
+      });
+      expect(store.moverAColumna(p.id, colId)).toBe(true);
+      expect(store.getPedido(p.id)!.estado).toBe(colId);
+
+      // Reordenar
+      const cols = [...store.columnasTablero];
+      const reverso = [...cols].reverse();
+      store.reordenarColumnas(reverso);
+      expect(store.columnasTablero).toEqual(reverso);
+
+      // Eliminar y verificar migración de pedidos
+      store.eliminarColumna(colId);
+      expect(store.columnasTablero).not.toContain(colId);
+      expect(store.getPedido(p.id)!.estado).not.toBe(colId);
+    });
+  });
 });

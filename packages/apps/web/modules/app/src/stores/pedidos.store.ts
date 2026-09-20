@@ -182,6 +182,15 @@ export interface PedidosConfig {
   perfilComercial?: import("../domain/pedidos/pedidos.profiles.js").BusinessProfileType;
   /** Capacidades comerciales activas para la tienda */
   capacidadesActivas?: import("../domain/pedidos/pedidos.profiles.js").OrderCapability[];
+  /** Columnas dinámicas personalizadas del tablero (permite crear, renombrar, reordenar y eliminar). */
+  columnasPersonalizadas?: ColumnaPersonalizada[];
+}
+
+/** Configuración de una columna personalizada en el tablero Kanban. */
+export interface ColumnaPersonalizada {
+  id: string;
+  label: string;
+  color?: string;
 }
 
 /** Configuración de la alerta sonora de "requieren atención". */
@@ -281,6 +290,7 @@ const DEFAULT_CONFIG: PedidosConfig = {
   },
   perfilComercial: "food",
   capacidadesActivas: [...BUSINESS_PROFILES.food.defaultCapabilities],
+  columnasPersonalizadas: undefined,
 };
 
 const CONFIG_KEY = "necto.pedidosConfig";
@@ -308,6 +318,9 @@ function loadConfig(): PedidosConfig {
         capacidadesActivas: Array.isArray(parsed.capacidadesActivas)
           ? parsed.capacidadesActivas
           : [...preset.defaultCapabilities],
+        columnasPersonalizadas: Array.isArray(parsed.columnasPersonalizadas)
+          ? parsed.columnasPersonalizadas
+          : undefined,
       };
     }
   } catch {
@@ -319,6 +332,7 @@ function loadConfig(): PedidosConfig {
     horario: { ...DEFAULT_CONFIG.horario },
     alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion },
     capacidadesActivas: [...DEFAULT_CONFIG.capacidadesActivas!],
+    columnasPersonalizadas: undefined,
   };
 }
 
@@ -775,9 +789,91 @@ export class PedidosStore {
   /**
    * Columnas del tablero: estados activos del pipeline (sin `entregado`, que
    * es terminal y vive en el historial). El tablero muestra el trabajo en curso.
+   * Si se configuraron columnas personalizadas, devuelve los IDs de dichas columnas.
    */
   get columnasTablero(): PedidoEstado[] {
+    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
+      return this.config.columnasPersonalizadas.map((c) => c.id as PedidoEstado);
+    }
     return this.estadosActivos.filter((e) => e !== "entregado");
+  }
+
+  /** Garantiza que la lista de columnas personalizadas esté inicializada */
+  asegurarColumnasPersonalizadas(): ColumnaPersonalizada[] {
+    if (!this.config.columnasPersonalizadas || this.config.columnasPersonalizadas.length === 0) {
+      this.config.columnasPersonalizadas = this.estadosActivos
+        .filter((e) => e !== "entregado")
+        .map((e) => ({
+          id: e,
+          label: this.estadoLabel(e),
+        }));
+    }
+    return this.config.columnasPersonalizadas;
+  }
+
+  /** Agrega una nueva columna al tablero Kanban */
+  agregarColumna(label: string, color?: string): string {
+    const cols = [...this.asegurarColumnasPersonalizadas()];
+    const clean = label.trim();
+    if (!clean) return "";
+    const id = `col_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    cols.push({ id, label: clean, color });
+    this.updateConfig({ columnasPersonalizadas: cols });
+    return id;
+  }
+
+  /** Renombra una columna existente del tablero */
+  renombrarColumna(id: string, nuevoLabel: string): void {
+    const cols = [...this.asegurarColumnasPersonalizadas()];
+    const target = cols.find((c) => c.id === id);
+    if (target && nuevoLabel.trim()) {
+      target.label = nuevoLabel.trim();
+      this.updateConfig({ columnasPersonalizadas: [...cols] });
+    }
+  }
+
+  /** Elimina una columna del tablero y migra sus pedidos a la primera columna disponible */
+  eliminarColumna(id: string): void {
+    const cols = [...this.asegurarColumnasPersonalizadas()];
+    if (cols.length <= 1) return; // Mínimo 1 columna
+    const filtradas = cols.filter((c) => c.id !== id);
+    const destinoFallback = filtradas[0].id;
+    for (const p of this.pedidos) {
+      if (p.estado === id) {
+        p.estado = destinoFallback as PedidoEstado;
+        p.estadoDesde = nowIso();
+      }
+    }
+    this.updateConfig({ columnasPersonalizadas: filtradas });
+  }
+
+  /** Reordena las columnas según el array de IDs suministrado */
+  reordenarColumnas(nuevosIds: string[]): void {
+    const cols = this.asegurarColumnasPersonalizadas();
+    const mapa = new Map(cols.map((c) => [c.id, c]));
+    const reordenadas: ColumnaPersonalizada[] = [];
+    for (const id of nuevosIds) {
+      const c = mapa.get(id);
+      if (c) reordenadas.push(c);
+    }
+    for (const c of cols) {
+      if (!reordenadas.some((r) => r.id === c.id)) {
+        reordenadas.push(c);
+      }
+    }
+    this.updateConfig({ columnasPersonalizadas: reordenadas });
+  }
+
+  /** Mueve un pedido directamente a cualquier columna (drag & drop o acción rápida) */
+  moverAColumna(id: string, destinoColumna: string): boolean {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    p.estado = destinoColumna as PedidoEstado;
+    p.estadoDesde = nowIso();
+    if (this.esTerminal(destinoColumna as PedidoEstado)) {
+      p.finishedAt = nowIso();
+    }
+    return true;
   }
 
   /** Pipeline efectivo para un pedido concreto: descarta `en_camino` si no es domicilio. */
@@ -796,10 +892,18 @@ export class PedidosStore {
   /** Siguiente estado válido para un pedido, o null si ya está en un estado terminal/final. */
   siguienteEstado(p: Pedido): PedidoEstado | null {
     if (this.esTerminal(p.estado)) return null;
+    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
+      const cols = this.columnasTablero;
+      const idx = cols.indexOf(p.estado);
+      if (idx !== -1) {
+        if (idx < cols.length - 1) return cols[idx + 1];
+        return "entregado";
+      }
+    }
     const pipeline = this.pipelineDe(p);
-    const idx = pipeline.indexOf(p.estado);
-    if (idx === -1 || idx >= pipeline.length - 1) return null;
-    return pipeline[idx + 1];
+    const idxPipe = pipeline.indexOf(p.estado);
+    if (idxPipe === -1 || idxPipe >= pipeline.length - 1) return null;
+    return pipeline[idxPipe + 1];
   }
 
   /**
@@ -811,6 +915,10 @@ export class PedidosStore {
   private transicionValida(p: Pedido, destino: PedidoEstado): boolean {
     if (this.esTerminal(p.estado)) return false;
     if (destino === "cancelado") return true;
+    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
+      const cols = this.columnasTablero;
+      if (cols.includes(destino) || destino === "entregado") return true;
+    }
     const pipeline = this.pipelineDe(p);
     const from = pipeline.indexOf(p.estado);
     const to = pipeline.indexOf(destino);
@@ -1611,10 +1719,14 @@ export class PedidosStore {
 
   // ── Display helpers ────────────────────────────────────────────────────────
 
-  /** Etiqueta de estado, honrando el alias de la config (C) si existe. */
+  /** Etiqueta de estado, honrando columnas personalizadas y alias de config si existen. */
   estadoLabel(e: PedidoEstado): string {
+    if (this.config.columnasPersonalizadas) {
+      const custom = this.config.columnasPersonalizadas.find((c) => c.id === e);
+      if (custom) return custom.label;
+    }
     const alias = this.config.aliasEstados[e as EstadoConfigurable];
-    return alias && alias.trim() ? alias.trim() : ESTADO_LABEL[e];
+    return alias && alias.trim() ? alias.trim() : (ESTADO_LABEL[e] ?? (e as string));
   }
 
   /** Etiqueta de modalidad, honrando el alias de la config (C) si existe. */
@@ -1648,36 +1760,32 @@ export class PedidosStore {
 
   /** Color semántico del Badge (Elements) según el estado. */
   estadoBadgeColor(e: PedidoEstado): "info" | "primary" | "warning" | "success" | "light" | "error" {
-    return (
-      {
-        programado: "light",
-        nuevo: "info",
-        confirmado: "primary",
-        en_preparacion: "warning",
-        listo: "success",
-        // Fix #6: `en_camino` unificado a un solo color coherente con el dot.
-        en_camino: "primary",
-        entregado: "success",
-        cancelado: "error",
-      } as const
-    )[e];
+    const mapa: Record<string, "info" | "primary" | "warning" | "success" | "light" | "error"> = {
+      programado: "light",
+      nuevo: "info",
+      confirmado: "primary",
+      en_preparacion: "warning",
+      listo: "success",
+      en_camino: "primary",
+      entregado: "success",
+      cancelado: "error",
+    };
+    return mapa[e] ?? "primary";
   }
 
   /** Color del punto/acento de columna del tablero según el estado. */
   estadoDotClass(e: PedidoEstado): string {
-    return (
-      {
-        programado: "bg-gray-400",
-        nuevo: "bg-blue-light-500",
-        confirmado: "bg-brand-500",
-        en_preparacion: "bg-warning-500",
-        listo: "bg-success-500",
-        // Fix #6: mismo color que el badge `primary` (marca) para `en_camino`.
-        en_camino: "bg-brand-500",
-        entregado: "bg-success-600",
-        cancelado: "bg-error-500",
-      } as const
-    )[e];
+    const mapa: Record<string, string> = {
+      programado: "bg-gray-400",
+      nuevo: "bg-blue-light-500",
+      confirmado: "bg-brand-500",
+      en_preparacion: "bg-warning-500",
+      listo: "bg-success-500",
+      en_camino: "bg-brand-500",
+      entregado: "bg-success-600",
+      cancelado: "bg-error-500",
+    };
+    return mapa[e] ?? "bg-brand-500";
   }
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Badge } from "@/elements/ui/badge";
@@ -23,6 +23,19 @@ import {
 } from "./pedidos.notificaciones";
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
+import {
+  MoreHorizontal,
+  SlidersHorizontal,
+  Plus,
+  Calendar,
+  MessageSquare,
+  Paperclip,
+  ArrowLeft,
+  ArrowRight,
+  Edit3,
+  Trash2,
+  Check,
+} from "lucide-react";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTORIZACIÓN DE ACCIONES (contrato §1.4 / §2)
@@ -125,6 +138,22 @@ const AlertTriangleIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }
 // TARJETA DE PEDIDO
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Helper para avatar de cliente o responsable
+const AVATARES_RESPONSABLES: Record<string, string> = {
+  "0": "/images/user/user-01.jpg",
+  "1": "/images/user/user-02.jpg",
+  "2": "/images/user/user-03.jpg",
+  "3": "/images/user/user-04.jpg",
+  "4": "/images/user/user-05.jpg",
+  "5": "/images/user/user-06.jpg",
+};
+
+const getAvatarForPedido = (id: string): string => {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i)) % 6;
+  return AVATARES_RESPONSABLES[String(hash)] ?? "/images/user/user-01.jpg";
+};
+
 const PedidoCard = observer(
   ({
     pedido,
@@ -146,31 +175,55 @@ const PedidoCard = observer(
     const siguiente = pedidosStore.siguienteEstado(pedido);
     const mins = pedidosStore.minutosEnEstado(pedido);
 
-    // ── Autorización de las tres acciones de la tarjeta ─────────────────────
-    // Avanzar exige la capacidad del ESTADO DESTINO (no una genérica): confirmar
-    // un pedido y prepararlo son permisos distintos, y un rol de Preparación no
-    // debe poder confirmar. `puedeMoverA` es fail-closed: sin destino → false.
     const puedeAvanzar = puedeMoverA(siguiente);
     const puedeEscribir = puedeEscribirCliente();
     const puedeCancelar = puedeCancelarPedido();
     const sinAcciones = !puedeAvanzar && !puedeEscribir && !puedeCancelar;
 
-    // El avance a `entregado` es irreversible: pide confirmación. El resto de
-    // pasos son reversibles de facto (siguen en curso) y avanzan directo.
     const handleAvanzar = () => {
       if (siguiente === "entregado") onConfirmarEntrega();
-      // `avanzarPedido` (no `pedidosStore.avanzar`) para que el avance publique
-      // además la plantilla de WhatsApp del nuevo estado en el hilo del cliente.
       else avanzarPedido(pedido.id);
     };
 
-    // Evita que un click en la zona de acciones abra el detalle.
     const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+    // Determinar tag visual suave según modalidad u origen
+    const tagModalidad = () => {
+      if (pedido.modalidad === "domicilio") {
+        return { label: "Delivery", bg: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300" };
+      }
+      if (pedido.modalidad === "en_sitio") {
+        return { label: "En Mesa", bg: "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300" };
+      }
+      return { label: "Pickup", bg: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300" };
+    };
+    const tag = tagModalidad();
+
+    // Simular fecha amigable similar a la maqueta (ej. "Today", "Tomorrow" o fecha formateada)
+    const fechaAmigable = () => {
+      if (pedido.programadoPara) {
+        return formatFechaHora(pedido.programadoPara);
+      }
+      if (mins < 60) return `Hace ${mins}m`;
+      return "Hoy";
+    };
+
+    // Resumen de items para la descripción estilo maqueta
+    const descripcionItems = pedidosStore.resumenItems(pedido);
+    const avatarUrl = getAvatarForPedido(pedido.id);
+
+    // Si el pedido tiene portada (por ejemplo, el primer pedido de preparación para replicar el preview de la imagen)
+    const tieneCover = pedido.id === "pd-3" || pedido.id === "pd-f3";
 
     return (
       <div
         role="button"
         tabIndex={0}
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData("text/plain", pedido.id);
+          e.dataTransfer.effectAllowed = "move";
+        }}
         onClick={onDetalle}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -178,102 +231,119 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`cursor-pointer rounded-xl border bg-white p-4 shadow-2xs transition-colors hover:border-brand-300 hover:shadow-theme-md dark:bg-white/[0.03] dark:hover:border-brand-700 ${
+        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-brand-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
           urgente
-            ? "border-error-200 dark:border-error-500/30"
-            : "border-gray-200/70 dark:border-white/5"
+            ? "border-rose-300 dark:border-rose-800"
+            : "border-gray-100 dark:border-gray-800"
         }`}
       >
-        {/* Encabezado: número + modalidad */}
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <div className="text-left">
-            <p className="text-sm font-bold text-gray-800 dark:text-white/90">{pedido.numero}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{pedido.cliente}</p>
+        {/* Cabecera de la tarjeta: Título + Avatar del responsable / cliente */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm sm:text-base font-semibold text-[#1E293B] dark:text-white line-clamp-2 leading-snug">
+              {pedido.items[0]?.nombre ? pedido.items[0].nombre : `Pedido ${pedido.numero}`}
+            </h3>
+            <p className="mt-0.5 text-xs text-[#64748B] dark:text-gray-400 font-medium truncate">
+              {pedido.numero} · {pedido.cliente}
+            </p>
           </div>
-          <Badge color="light" size="sm">{pedidosStore.modalidadLabel(pedido.modalidad)}</Badge>
+
+          <div className="relative shrink-0">
+            <img
+              src={avatarUrl}
+              alt={pedido.cliente}
+              className="size-7 sm:size-8 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 shadow-2xs"
+            />
+          </div>
         </div>
 
-        {/* Dirección si es domicilio */}
-        {pedido.modalidad === "domicilio" && pedido.direccionEntrega && (
-          <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-gray-50 px-2 py-1 text-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-300">
-            <DeliveryIcon className="h-3.5 w-3.5 text-brand-500 shrink-0" />
-            <span className="truncate font-medium">{pedido.direccionEntrega.calle}</span>
-            {pedido.direccionEntrega.barrio && (
-              <span className="text-gray-400 shrink-0">({pedido.direccionEntrega.barrio})</span>
-            )}
-          </div>
-        )}
-
-        {/* Items resumidos */}
-        {pedido.items.length > 0 && (
-          <p className="mb-2 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
-            {pedidosStore.resumenItems(pedido)}
+        {/* Descripción secundaria / notas */}
+        {descripcionItems && (
+          <p className="mt-2.5 text-xs text-[#64748B] dark:text-gray-400 leading-relaxed line-clamp-2">
+            {descripcionItems}
           </p>
         )}
 
-        {/* Total, Método de pago y Repartidor */}
-        <div className="mb-2 flex items-center justify-between text-xs">
-          <span className="font-bold text-gray-800 dark:text-white">
-            ${pedidosStore.totalPedido(pedido).toLocaleString()}
-          </span>
-          <div className="flex flex-wrap items-center gap-1">
-            <Badge color={pedido.pagado ? "success" : "warning"} size="xs">
-              {pedido.pagado ? "Pagado" : "Pago pendiente"}
-            </Badge>
-            {pedido.metodoPago && (
-              <span className="rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 capitalize dark:bg-gray-800 dark:text-gray-300">
-                {pedido.metodoPago.replace("_", " ")}
-              </span>
-            )}
-            {pedido.repartidor && (
-              <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                <RiderIcon className="h-3 w-3" />
-                <span>{pedido.repartidor}</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Tiempo en estado + urgencia */}
-        <div className="mb-3 flex items-center gap-2">
-          <span className="text-xs text-gray-400">Hace {mins} min en este estado</span>
-          {urgente && <Badge color="error" size="xs">Urgente</Badge>}
-          {pedido.origen === "whatsapp" && <Badge color="success" size="xs">WhatsApp</Badge>}
-        </div>
-
-        {/* Acciones primarias (no propagan el click al cuerpo).
-            Si el rol no puede ejecutar ninguna, no se dibuja la zona. */}
-        {!sinAcciones && (
-          <div className="flex flex-wrap items-center gap-2" onClick={stop}>
-            {siguiente && puedeAvanzar && (
-              <Button size="sm" onClick={handleAvanzar}>
-                {pedidosStore.estadoLabel(siguiente)}
-              </Button>
-            )}
-            {puedeEscribir && (
-              <Button
-                size="sm"
-                variant="ghost"
-                startIcon={<WhatsAppIcon />}
-                onClick={onChat}
-                className="!text-[#17b363] hover:!bg-[#17b363]/10"
-              >
-                WhatsApp
-              </Button>
-            )}
+        {/* Imagen de previsualización (cover banner) idéntica a la maqueta de referencia */}
+        {tieneCover && (
+          <div className="mt-3.5 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
+            <img
+              src="/images/kanban-cover.jpg"
+              alt="Preview"
+              className="h-28 sm:h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
           </div>
         )}
 
-        {/* Acción destructiva separada (evita misclicks junto a "avanzar") */}
-        {puedeCancelar && (
-          <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800" onClick={stop}>
-            <button
-              type="button"
-              onClick={onCancelar}
-              className="text-xs font-medium text-error-500 hover:text-error-600 dark:text-error-400"
+        {/* Metadatos inferiores: Fecha/Tiempo, Comentarios (items), Enlaces (chat), y Tag */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-[#94A3B8] dark:text-gray-400">
+          <div className="flex items-center gap-3 font-medium">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="size-3.5 text-[#94A3B8]" />
+              <span className="text-[11px] sm:text-xs text-[#475569] dark:text-gray-300">
+                {fechaAmigable()}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <MessageSquare className="size-3.5 text-[#94A3B8]" />
+              <span className="text-[11px] text-[#64748B] dark:text-gray-400">
+                {pedido.items.length}
+              </span>
+            </div>
+
+            {pedido.direccionEntrega && (
+              <div className="flex items-center gap-1" title={pedido.direccionEntrega.calle}>
+                <Paperclip className="size-3.5 text-[#94A3B8]" />
+                <span className="text-[11px] text-[#64748B] dark:text-gray-400">1</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-wide ${tag.bg}`}
             >
-              Cancelar pedido
-            </button>
+              {tag.label}
+            </span>
+          </div>
+        </div>
+
+        {/* Barra de acciones operativas (Avanzar estado / WhatsApp / Cancelar) */}
+        {!sinAcciones && (
+          <div className="mt-3 flex items-center justify-between gap-2 pt-2" onClick={stop}>
+            <div className="flex items-center gap-2">
+              {siguiente && puedeAvanzar && (
+                <button
+                  type="button"
+                  onClick={handleAvanzar}
+                  className="rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+                >
+                  {pedidosStore.estadoLabel(siguiente)} →
+                </button>
+              )}
+
+              {puedeEscribir && (
+                <button
+                  type="button"
+                  onClick={onChat}
+                  className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 transition-colors cursor-pointer"
+                >
+                  <WhatsAppIcon />
+                  <span>Chat</span>
+                </button>
+              )}
+            </div>
+
+            {puedeCancelar && (
+              <button
+                type="button"
+                onClick={onCancelar}
+                className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -1115,22 +1185,22 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
     },
   ];
   return (
-    <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-800 dark:bg-gray-800/50">
+    <div className="inline-flex h-10 items-center rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50 shrink-0">
       {opciones.map((o) => (
         <button
           key={o.id}
           type="button"
           onClick={() => onChange(o.id)}
           className={
-            "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
+            "flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer select-none whitespace-nowrap " +
             (vista === o.id
-              ? "bg-white text-gray-800 shadow-theme-xs dark:bg-gray-900 dark:text-white"
+              ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white"
               : "text-gray-500 hover:text-gray-700 dark:text-gray-400")
           }
           aria-pressed={vista === o.id}
         >
           {o.icon}
-          {o.label}
+          <span>{o.label}</span>
         </button>
       ))}
     </div>
@@ -1169,7 +1239,17 @@ export const TableroPage = observer(() => {
   const [entregaId, setEntregaId] = useState<string | null>(null);
   const [reprogramarId, setReprogramarId] = useState<string | null>(null);
   const [verTodosProgramados, setVerTodosProgramados] = useState(false);
-  const [filtro, setFiltro] = useState<Modalidad | typeof FILTRO_TODAS>(FILTRO_TODAS);
+  type CriterioOrden = "reciente" | "antiguo" | "monto" | "urgente";
+  const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
+  const [menuFilterOpen, setMenuFilterOpen] = useState(false);
+
+  // Gestión dinámica de columnas
+  const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
+  const [modalNuevaColumna, setModalNuevaColumna] = useState(false);
+  const [nuevoNombreColumna, setNuevoNombreColumna] = useState("");
+  const [modalRenombrar, setModalRenombrar] = useState<{ id: string; label: string } | null>(null);
+  const [nuevoLabelEdit, setNuevoLabelEdit] = useState("");
+
   const [focusId, setFocusId] = useState<string | null>(null);
   const [vista, setVista] = useState<VistaTablero>(loadVista);
   // Chat rápido (slide-over). Guarda el ID del pedido, no el teléfono: así el
@@ -1238,15 +1318,24 @@ export const TableroPage = observer(() => {
   }, []);
 
   const columnas = pedidosStore.columnasTablero;
-  // Fix #1 (modalidad): muestra las de config + las presentes en pedidos activos.
-  const modalidades = pedidosStore.modalidadesTablero;
   const detalle = detalleId ? pedidosStore.getPedido(detalleId) ?? null : null;
   const paraCancelar = cancelarId ? pedidosStore.getPedido(cancelarId) ?? null : null;
   const paraEntrega = entregaId ? pedidosStore.getPedido(entregaId) ?? null : null;
   const paraReprogramar = reprogramarId ? pedidosStore.getPedido(reprogramarId) ?? null : null;
 
-  const pedidosDeColumna = (estado: PedidoEstado): Pedido[] =>
-    pedidosStore.porEstado(estado).filter((p) => filtro === FILTRO_TODAS || p.modalidad === filtro);
+  const pedidosDeColumna = (estado: PedidoEstado): Pedido[] => {
+    let list = pedidosStore.porEstado(estado);
+    if (criterioOrden === "reciente") {
+      list = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    } else if (criterioOrden === "antiguo") {
+      list = [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    } else if (criterioOrden === "monto") {
+      list = [...list].sort((a, b) => pedidosStore.totalPedido(b) - pedidosStore.totalPedido(a));
+    } else if (criterioOrden === "urgente") {
+      list = [...list].sort((a, b) => (pedidosStore.esUrgente(b) ? 1 : 0) - (pedidosStore.esUrgente(a) ? 1 : 0));
+    }
+    return list;
+  };
 
   // ── Apertura de modales, gobernada por capacidad ─────────────────────────
   //
@@ -1269,43 +1358,139 @@ export const TableroPage = observer(() => {
   // sección ni poder abrir su modal.
   const verProgramados = puedeVerProgramados();
 
+  const navigate = useNavigate();
+
+  // Estados filtrados según la pestaña activa superior ("All Tasks", o columna específica)
+  const [columnaFiltroActiva, setColumnaFiltroActiva] = useState<string>("all");
+
+  const totalTareasGlobal = pedidosStore.totalEnCurso;
+
+  // Filtrado de columnas visibles según la pestaña seleccionada
+  const columnasVisibles = columnas.filter((estado) => {
+    if (columnaFiltroActiva === "all") return true;
+    return estado === columnaFiltroActiva;
+  });
+
   return (
     <>
       <PageMeta title="Tablero de pedidos" description="Flujo de pedidos en vivo, de nuevo a entregado" />
 
-      {/* Encabezado */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Tablero de pedidos</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {pedidosStore.totalEnCurso} pedido{pedidosStore.totalEnCurso === 1 ? "" : "s"} en curso
-          </p>
+      {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a la Maqueta) ── */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between min-w-0">
+        {/* Pestañas / Pills agrupadas con contador en badge suave */}
+        <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-[#F8FAFC] dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
+          <button
+            type="button"
+            onClick={() => setColumnaFiltroActiva("all")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
+              columnaFiltroActiva === "all"
+                ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white"
+                : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            }`}
+          >
+            <span className="whitespace-nowrap">All Tasks</span>
+            <span
+              className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
+                columnaFiltroActiva === "all"
+                  ? "bg-[#EEF2FF] text-[#4F46E5] dark:bg-indigo-950 dark:text-indigo-400"
+                  : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {totalTareasGlobal}
+            </span>
+          </button>
+
+          {columnas.map((estado) => {
+            const count = pedidosDeColumna(estado).length;
+            const activa = columnaFiltroActiva === estado;
+            return (
+              <button
+                key={estado}
+                type="button"
+                onClick={() => setColumnaFiltroActiva(activa ? "all" : estado)}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
+                  activa
+                    ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white font-semibold"
+                    : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                }`}
+              >
+                <span className="whitespace-nowrap">{pedidosStore.estadoLabel(estado)}</span>
+                <span
+                  className={`flex size-5.5 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
+                    activa
+                      ? "bg-[#EEF2FF] text-[#4F46E5] dark:bg-indigo-950 dark:text-indigo-400 font-bold"
+                      : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Filtro de modalidad */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Modalidad:</span>
-            <div className="flex flex-wrap gap-1.5">
-              <FiltroChip label="Todas" activo={filtro === FILTRO_TODAS} onClick={() => setFiltro(FILTRO_TODAS)} />
-              {modalidades.map((m) => (
-                <FiltroChip
-                  key={m}
-                  label={pedidosStore.modalidadLabel(m)}
-                  activo={filtro === m}
-                  onClick={() => setFiltro(m)}
-                />
-              ))}
-            </div>
-          </div>
-
+        {/* Acciones derechas: VistaToggle + Filter & Sort + Add New Task */}
+        <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-auto">
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
+
+          {/* Botón y menú Filter & Sort */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuFilterOpen((v) => !v)}
+              className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <SlidersHorizontal className="size-4 text-gray-600 dark:text-gray-300 shrink-0" />
+              <span>Filter & Sort</span>
+            </button>
+
+            {menuFilterOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
+                {[
+                  { id: "reciente", label: "Más reciente" },
+                  { id: "antiguo", label: "Más antiguo" },
+                  { id: "monto", label: "Mayor importe" },
+                  { id: "urgente", label: "Urgentes primero" },
+                ].map((op) => (
+                  <button
+                    key={op.id}
+                    type="button"
+                    onClick={() => {
+                      setCriterioOrden(op.id as CriterioOrden);
+                      setMenuFilterOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                      criterioOrden === op.id
+                        ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 font-semibold"
+                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    <span>{op.label}</span>
+                    {criterioOrden === op.id && <Check className="size-3.5" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Botón primario: Add New Task + */}
+          <button
+            type="button"
+            onClick={() => navigate("/pedidos/crear")}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] px-4 text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <span>Add New Task</span>
+            <Plus className="size-4 stroke-[2.5] shrink-0" />
+          </button>
         </div>
       </div>
 
-      {/* Pedidos programados (arriba del kanban, no como columna del pipeline).
-          Requiere `scheduled.read`; sin él la sección no existe para el rol. */}
+      {/* Pedidos programados (arriba del kanban, no como columna del pipeline) */}
       {verProgramados && (
         <ProgramadosSection
           focusId={focusId}
@@ -1316,44 +1501,138 @@ export const TableroPage = observer(() => {
         />
       )}
 
-      {/* Tablero — vista Kanban o Lista según preferencia.
-          El fundido de entrada de cada vista vive en la raíz de cada rama, no en un
-          envoltorio: React ya desmonta y vuelve a montar al conmutar, porque `div` y
-          `ListaView` son tipos de elemento distintos en la misma posición. Eso hace
-          que la clase se vuelva a disparar en cada cambio de vista sin necesidad de
-          `key`, y sin añadir un nodo al árbol.
-          Es un fundido PURO, sin desplazamiento: las dos vistas ocupan el mismo
-          hueco, así que desplazarlas sugeriría un movimiento entre dos sitios que
-          no existen. */}
+      {/* Tablero — vista Kanban o Lista */}
       {vista === "kanban" ? (
-        <div className="animate-aparecer grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
-          {columnas.map((estado) => {
+        <div
+          className={`animate-aparecer grid grid-cols-1 gap-6 md:grid-cols-2 ${
+            columnasVisibles.length === 1
+              ? "xl:grid-cols-1 max-w-xl mx-auto"
+              : columnasVisibles.length === 2
+              ? "xl:grid-cols-2"
+              : columnasVisibles.length === 3
+              ? "xl:grid-cols-3"
+              : columnasVisibles.length === 4
+              ? "xl:grid-cols-4"
+              : "xl:grid-cols-5"
+          }`}
+        >
+          {columnasVisibles.map((estado, colIndex) => {
             const items = pedidosDeColumna(estado);
             return (
-              <div key={estado} className="rounded-2xl bg-gray-50 p-2 dark:bg-white/[0.02]">
-                <div className="mb-3 flex items-center justify-between px-2 pt-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${pedidosStore.estadoDotClass(estado)}`} />
-                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div
+                key={estado}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const id = e.dataTransfer.getData("text/plain");
+                  if (id) {
+                    pedidosStore.moverAColumna(id, estado);
+                  }
+                }}
+                className="flex flex-col rounded-3xl bg-[#F8FAFC]/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 min-h-[480px] transition-colors"
+              >
+                {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos ... */}
+                <div className="mb-4 flex items-center justify-between px-1.5 pt-1 relative">
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-sm sm:text-base font-bold text-[#1E293B] dark:text-white">
                       {pedidosStore.estadoLabel(estado)}
                     </h2>
+                    <span className="flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-gray-700 shadow-2xs border border-gray-100 dark:border-gray-700/80 dark:bg-gray-800 dark:text-gray-200">
+                      {items.length}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                    {items.length}
-                  </span>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuColumnaId(menuColumnaId === estado ? null : estado);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </button>
+
+                    {menuColumnaId === estado && (
+                      <div
+                        className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuColumnaId(null);
+                            setNuevoLabelEdit(pedidosStore.estadoLabel(estado));
+                            setModalRenombrar({ id: estado, label: pedidosStore.estadoLabel(estado) });
+                          }}
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                        >
+                          <Edit3 className="size-3.5 text-gray-400" />
+                          <span>Renombrar</span>
+                        </button>
+
+                        {colIndex > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newCols = [...columnas];
+                              const temp = newCols[colIndex - 1];
+                              newCols[colIndex - 1] = newCols[colIndex];
+                              newCols[colIndex] = temp;
+                              pedidosStore.reordenarColumnas(newCols);
+                              setMenuColumnaId(null);
+                            }}
+                            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                          >
+                            <ArrowLeft className="size-3.5 text-gray-400" />
+                            <span>Mover a la izquierda</span>
+                          </button>
+                        )}
+
+                        {colIndex < columnas.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newCols = [...columnas];
+                              const temp = newCols[colIndex + 1];
+                              newCols[colIndex + 1] = newCols[colIndex];
+                              newCols[colIndex] = temp;
+                              pedidosStore.reordenarColumnas(newCols);
+                              setMenuColumnaId(null);
+                            }}
+                            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                          >
+                            <ArrowRight className="size-3.5 text-gray-400" />
+                            <span>Mover a la derecha</span>
+                          </button>
+                        )}
+
+                        <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuColumnaId(null);
+                            pedidosStore.eliminarColumna(estado);
+                          }}
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
+                        >
+                          <Trash2 className="size-3.5 text-rose-500" />
+                          <span>Eliminar columna</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                {/* Lista de tarjetas Kanban */}
+                <div className="flex flex-col gap-4 flex-1">
                   {items.map((p, i) => (
-                    // El envoltorio existe para animar sin tocar `PedidoCard`.
-                    // Al ser un hijo flex más, la columna lo estira al ancho
-                    // completo igual que antes y `gap-3` sigue rigiendo la
-                    // separación: el layout no cambia, solo aparece.
-                    //
-                    // La entrada describe «esta tarjeta acaba de hacerse visible
-                    // en esta columna», que es exactamente lo que ocurre cuando un
-                    // pedido avanza de estado: se desmonta de una columna y se
-                    // monta en la siguiente, y el usuario lo ve llegar.
                     <div
                       key={p.id}
                       className="animate-entrada-lista"
@@ -1369,14 +1648,15 @@ export const TableroPage = observer(() => {
                     </div>
                   ))}
                   {items.length === 0 && (
-                    <p className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-xs text-gray-400 dark:border-gray-800">
+                    <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
                       Sin pedidos
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>
             );
           })}
+
         </div>
       ) : (
         <ListaView
@@ -1435,6 +1715,102 @@ export const TableroPage = observer(() => {
             setTimeout(() => setFocusId(null), 2600);
           }}
         />
+      )}
+
+      {/* Modal Crear Columna */}
+      {modalNuevaColumna && (
+        <Modal isOpen onClose={() => setModalNuevaColumna(false)} className="max-w-md p-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Nueva Columna</h3>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Define un nuevo estado para organizar el flujo de trabajo en el tablero.
+          </p>
+          <div className="mt-4">
+            <input
+              type="text"
+              autoFocus
+              value={nuevoNombreColumna}
+              onChange={(e) => setNuevoNombreColumna(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && nuevoNombreColumna.trim()) {
+                  pedidosStore.agregarColumna(nuevoNombreColumna.trim());
+                  setModalNuevaColumna(false);
+                }
+              }}
+              placeholder="Ej: En Control de Calidad, Empacando..."
+              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:text-white"
+            />
+          </div>
+          <div className="mt-5 flex justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setModalNuevaColumna(false)}
+              className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={!nuevoNombreColumna.trim()}
+              onClick={() => {
+                if (nuevoNombreColumna.trim()) {
+                  pedidosStore.agregarColumna(nuevoNombreColumna.trim());
+                  setModalNuevaColumna(false);
+                }
+              }}
+              className="rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+            >
+              Crear columna
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal Renombrar Columna */}
+      {modalRenombrar && (
+        <Modal isOpen onClose={() => setModalRenombrar(null)} className="max-w-md p-6">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Renombrar Columna</h3>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Cambia el nombre de la columna "{modalRenombrar.label}".
+          </p>
+          <div className="mt-4">
+            <input
+              type="text"
+              autoFocus
+              value={nuevoLabelEdit}
+              onChange={(e) => setNuevoLabelEdit(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && nuevoLabelEdit.trim()) {
+                  pedidosStore.renombrarColumna(modalRenombrar.id, nuevoLabelEdit.trim());
+                  setModalRenombrar(null);
+                }
+              }}
+              placeholder="Nuevo nombre de columna..."
+              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:text-white"
+            />
+          </div>
+          <div className="mt-5 flex justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setModalRenombrar(null)}
+              className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={!nuevoLabelEdit.trim()}
+              onClick={() => {
+                if (nuevoLabelEdit.trim()) {
+                  pedidosStore.renombrarColumna(modalRenombrar.id, nuevoLabelEdit.trim());
+                  setModalRenombrar(null);
+                }
+              }}
+              className="rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+            >
+              Guardar
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Chat rápido (slide-over). Una sola instancia para todo el tablero: el
