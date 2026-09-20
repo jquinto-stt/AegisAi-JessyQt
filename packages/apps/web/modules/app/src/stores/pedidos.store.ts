@@ -573,7 +573,7 @@ const seed = (): Pedido[] => [
   {
     id: "pd2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "retiro",
     items: [{ nombre: "Postre del día", cantidad: 1, precio: 8000 }],
-    estado: "confirmado", origen: "whatsapp", pagado: true,
+    estado: "listo", origen: "whatsapp", pagado: true,
     metodoPago: "transferencia",
     createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(6),
   },
@@ -604,6 +604,17 @@ const seed = (): Pedido[] => [
     items: [{ nombre: "Bebida 350ml", cantidad: 4, precio: 4000 }],
     estado: "en_camino", origen: "whatsapp", pagado: false,
     createdAt: minutesAgoIso(60), estadoDesde: minutesAgoIso(15),
+    // Este pedido SÍ trae notas del cliente, a propósito.
+    //
+    // Sin una nota previa, «anexar» y «pisar» producen el MISMO resultado y
+    // ninguna comprobación puede distinguirlos. Es exactamente lo que pasó: el
+    // sabotaje D (`p.notas = texto` en vez de anexar) se aplicó al bundle, se
+    // comprobó que el binario servido era distinto (453ccb0b7e46 vs
+    // 4a7dc2a43416) y la corrida salió VERDE igual — porque el pedido objetivo
+    // no tenía nada que perder.
+    //
+    // Con esta nota, «pisar» borra la indicación del cliente y el arnés lo ve.
+    notas: "Dejar en portería, el cliente trabaja hasta las 6.",
     direccionEntrega: {
       calle: "Av. Las Vegas # 7-45",
       barrio: "Envigado",
@@ -1773,6 +1784,60 @@ export class PedidosStore {
   /** Cancela un pedido (válido desde cualquier estado no terminal). */
   cancelar(id: string): boolean {
     return this.moverEstado(id, "cancelado");
+  }
+
+  /**
+   * Devuelve a la hoja de ruta un pedido que falló en la calle, para un segundo
+   * intento de entrega.
+   *
+   * Va de `en_camino` (o `listo`) a `listo`, y es la ÚNICA transición hacia
+   * ATRÁS del pipeline. Existe porque el desenlace natural de una entrega
+   * fallida no es anular la venta: si el cliente no estaba, el negocio vuelve
+   * mañana. Sin esta transición la única salida de `en_camino` sería `entregado`
+   * o `cancelado`, así que «reintentar» no tendría forma de expresarse.
+   *
+   * NO se implementa aflojando `transicionValida` (que prohíbe retroceder): se
+   * hace un método propio, explícito y con nombre. Un `moverEstado` que aceptara
+   * cualquier destino convertiría una regla de negocio en un agujero por el que
+   * cualquier UI podría devolver un pedido a `nuevo`.
+   *
+   * `en_camino` puede no pertenecer al pipeline efectivo (es opcional y solo
+   * aplica a domicilio), así que la guarda comprueba el estado de ORIGEN, no una
+   * posición en la lista.
+   */
+  reintentarEntrega(id: string): boolean {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    if (p.estado !== "en_camino" && p.estado !== "listo") return false;
+    p.estado = "listo";
+    p.estadoDesde = nowIso();
+    // Se limpia la marca de cierre: el pedido vuelve a estar activo. Sin esto,
+    // un pedido que ya había tocado un terminal arrastraría un `finishedAt`
+    // mientras figura en la hoja de ruta, y el recaudo del día lo contaría como
+    // cerrado hoy.
+    delete p.finishedAt;
+    return true;
+  }
+
+  /**
+   * Anexa un bloque a las notas del pedido, conservando lo que ya había.
+   *
+   * Existe para que ninguna superficie tenga que hacer
+   * `pedido.notas = \`Cancelado: ${motivo}\``, que MACHACA las notas del cliente
+   * («Sin cebolla en uno», «Mesa 5»). El campo es del cliente; las superficies
+   * solo tienen derecho a añadir.
+   *
+   * Devuelve `false` si el pedido no existe, para que el llamador pueda saber
+   * que la nota no se escribió en vez de asumirlo.
+   */
+  anexarNota(id: string, bloque: string): boolean {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    const texto = bloque.trim();
+    if (texto === "") return false;
+    const previo = (p.notas ?? "").trim();
+    p.notas = previo ? `${previo}\n${texto}` : texto;
+    return true;
   }
 
   /** Elimina un pedido de la lista (mock). */

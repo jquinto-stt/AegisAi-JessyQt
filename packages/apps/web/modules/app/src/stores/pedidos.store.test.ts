@@ -146,6 +146,134 @@ describe("PedidosStore — transiciones inválidas", () => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// REINTENTO DE ENTREGA — la única transición hacia ATRÁS del pipeline
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// `reintentarEntrega` no se implementa aflojando `transicionValida`, así que hay
+// que probar las dos caras: que el método funciona Y que `moverEstado` sigue
+// prohibiendo el retroceso. Sin el segundo bloque, alguien podría «arreglarlo»
+// mañana metiendo `listo` en las transiciones válidas y ningún test se quejaría.
+describe("PedidosStore — reintento de entrega", () => {
+  /** Pedido llevado hasta `en_camino` (domicilio, pipeline completo). */
+  function hastaEnCamino() {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    store.avanzar(pedido.id); // confirmado
+    store.avanzar(pedido.id); // en_preparacion
+    store.avanzar(pedido.id); // listo
+    store.avanzar(pedido.id); // en_camino
+    expect(store.getPedido(pedido.id)!.estado).toBe("en_camino");
+    return { store, pedido };
+  }
+
+  it("devuelve el pedido a 'listo' desde 'en_camino'", () => {
+    const { store, pedido } = hastaEnCamino();
+    expect(store.reintentarEntrega(pedido.id)).toBe(true);
+    expect(store.getPedido(pedido.id)!.estado).toBe("listo");
+  });
+
+  it("refresca estadoDesde al volver a la hoja de ruta", () => {
+    const { store, pedido } = hastaEnCamino();
+    const antes = store.getPedido(pedido.id)!.estadoDesde;
+    store.reintentarEntrega(pedido.id);
+    expect(store.getPedido(pedido.id)!.estadoDesde >= antes).toBe(true);
+  });
+
+  it("acepta el pedido ya en 'listo' (idempotente)", () => {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    store.avanzar(pedido.id); // confirmado
+    store.avanzar(pedido.id); // en_preparacion
+    store.avanzar(pedido.id); // listo
+    expect(store.reintentarEntrega(pedido.id)).toBe(true);
+    expect(store.getPedido(pedido.id)!.estado).toBe("listo");
+  });
+
+  it("borra finishedAt: un pedido que vuelve a la ruta no está cerrado", () => {
+    // El caso real: se cancela una entrega fallida y el negocio decide
+    // reintentar. Si `finishedAt` sobreviviera, el recaudo del día contaría el
+    // pedido como cerrado hoy mientras sigue en la hoja de ruta.
+    const { store, pedido } = hastaEnCamino();
+    store.cancelar(pedido.id);
+    expect(store.getPedido(pedido.id)!.finishedAt).toBeTruthy();
+
+    // Se reabre a mano al estado de ruta (cancelado es terminal, así que el
+    // reintento no aplica desde ahí: se simula el pedido que nunca se canceló).
+    const p = store.getPedido(pedido.id)!;
+    p.estado = "en_camino";
+    p.finishedAt = "2026-09-20T10:00:00.000Z";
+
+    expect(store.reintentarEntrega(pedido.id)).toBe(true);
+    expect(store.getPedido(pedido.id)!.finishedAt).toBeUndefined();
+  });
+
+  it("rechaza todo lo que no sea 'en_camino' o 'listo', y no toca el estado", () => {
+    // Un solo recorrido en vez de tres casos separados: es la misma rama de la
+    // función, y lo que importa es el conjunto de estados admitidos.
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    expect(store.reintentarEntrega(pedido.id)).toBe(false); // 'nuevo'
+    store.avanzar(pedido.id); // confirmado
+    expect(store.reintentarEntrega(pedido.id)).toBe(false);
+    store.avanzar(pedido.id); // en_preparacion
+    expect(store.reintentarEntrega(pedido.id)).toBe(false);
+    expect(store.getPedido(pedido.id)!.estado).toBe("en_preparacion");
+
+    for (let i = 0; i < 2; i++) store.avanzar(pedido.id); // listo, en_camino
+    store.avanzar(pedido.id); // entregado
+    expect(store.reintentarEntrega(pedido.id)).toBe(false); // terminal
+    expect(store.getPedido(pedido.id)!.estado).toBe("entregado");
+
+    // Y un id que no existe: mismo contrato, mismo false.
+    expect(store.reintentarEntrega("inexistente")).toBe(false);
+  });
+
+  it("NO relaja moverEstado: el retroceso directo sigue prohibido", () => {
+    // Control de diseño. Si alguien «simplifica» reintentarEntrega metiendo
+    // `listo` en las transiciones válidas, este test cae.
+    const { store, pedido } = hastaEnCamino();
+    expect(store.moverEstado(pedido.id, "listo")).toBe(false);
+    expect(store.getPedido(pedido.id)!.estado).toBe("en_camino");
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANEXAR NOTA — el campo es del cliente, la superficie solo añade
+// ═══════════════════════════════════════════════════════════════════════════
+describe("PedidosStore — anexarNota", () => {
+  it("conserva las notas del cliente al anexar", () => {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    store.anexarNota(pedido.id, "Sin cebolla en uno.");
+    store.anexarNota(pedido.id, "[Novedad Logística 10:00] Algo.");
+    expect(store.getPedido(pedido.id)!.notas).toBe(
+      "Sin cebolla en uno.\n[Novedad Logística 10:00] Algo.",
+    );
+  });
+
+  it("escribe sin salto inicial cuando no había notas, y acumula en orden", () => {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    expect(store.getPedido(pedido.id)!.notas).toBeUndefined();
+    store.anexarNota(pedido.id, "Uno.");
+    expect(store.getPedido(pedido.id)!.notas).toBe("Uno.");
+    store.anexarNota(pedido.id, "Dos.");
+    expect(store.getPedido(pedido.id)!.notas).toBe("Uno.\nDos.");
+  });
+
+  it("rechaza un bloque en blanco (espacios o saltos) sin tocar las notas", () => {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    store.anexarNota(pedido.id, "Previa.");
+    expect(store.anexarNota(pedido.id, "   ")).toBe(false);
+    expect(store.anexarNota(pedido.id, "")).toBe(false);
+    expect(store.anexarNota(pedido.id, "\n\n")).toBe(false);
+    expect(store.getPedido(pedido.id)!.notas).toBe("Previa.");
+  });
+
+  it("recorta el bloque en blanco y trata un id inexistente como no-op", () => {
+    const { store, pedido } = nuevoStoreConPedido("domicilio");
+    store.anexarNota(pedido.id, "Con espacios.  ");
+    expect(store.getPedido(pedido.id)!.notas).toBe("Con espacios.");
+    expect(store.anexarNota("inexistente", "Algo.")).toBe(false);
+  });
+});
+
 describe("PedidosStore — cancelación", () => {
   const estadosDePrueba: Array<() => { store: PedidosStore; pedido: Pedido }> = [];
 
@@ -485,13 +613,19 @@ describe("PedidosStore — analítica sobre el seed", () => {
   it("conteoPorEstado cuenta cada estado y suma al total de pedidos", () => {
     const store = new PedidosStore();
     const conteo = store.conteoPorEstado();
-    // El seed tiene exactamente uno en cada uno de estos 7 estados y ninguno programado.
+    // El seed cubre 7 estados, con DOS en `listo` y ninguno programado.
+    //
+    // `listo` tiene dos a propósito: `pd4` es a domicilio (reparto por salir) y
+    // `pd2` es de retiro (el cliente lo recoge en el local). Esa distinción es
+    // la que permite comprobar que «Reportar novedad» solo se ofrece a los
+    // primeros — un pedido de retiro no tiene entrega que pueda fallar. Con un
+    // solo `listo` a domicilio, esa compuerta no se podía medir.
     expect(conteo).toEqual({
       programado: 0,
       nuevo: 1,
-      confirmado: 1,
+      confirmado: 0,
       en_preparacion: 1,
-      listo: 1,
+      listo: 2,
       en_camino: 1,
       entregado: 1,
       cancelado: 1,

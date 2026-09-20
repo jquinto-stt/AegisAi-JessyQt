@@ -164,3 +164,180 @@ describe("Puente Pedido → Conversaciones (notificaciones)", () => {
     expect(ultimoMensajeDe().moduloContexto).toBe("pedidos");
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOVEDAD DE ENTREGA — nota + estado + aviso en una operación
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Se prueba aquí, y no en el modal, porque el cruce Pedido→Conversaciones solo
+// puede verificarse con los dos singletons vivos — que es exactamente lo que
+// este archivo monta. El modal es un `.tsx` y va por arnés de navegador.
+describe("Puente — reportarNovedadEntrega", () => {
+  let pedidosStore: import("@/stores/pedidos.store").PedidosStore;
+  let conversacionesStore: import("@/stores/conversaciones.store").ConversacionesStore;
+  let bridge: typeof import("./pedidos.notificaciones");
+
+  beforeEach(async () => {
+    vi.resetModules();
+    const modPedidos = await import("@/stores/pedidos.store");
+    const modConv = await import("@/stores/conversaciones.store");
+    pedidosStore = modPedidos.pedidosStore;
+    conversacionesStore = modConv.conversacionesStore;
+    bridge = await import("./pedidos.notificaciones");
+  });
+
+  /** Pedido de domicilio con hilo abierto, llevado hasta `en_camino`. */
+  const pedidoEnCamino = () => {
+    const p = pedidosStore.crearPedido({
+      cliente: "Juan Carlos",
+      telefono: "+573005551122",
+      modalidad: "domicilio",
+      items: [{ nombre: "Combo clásico", cantidad: 1, precio: 25000 }],
+      // Explícito: `crearPedido` por defecto marca los pedidos como `"operador"`
+      // (los crea el negocio). Sin esto el aviso no se intenta siquiera, y la
+      // prueba del envío pasaría a medir la guarda de origen en vez del envío.
+      origen: "whatsapp",
+    });
+    const id = p.id;
+    pedidosStore.avanzar(id); // confirmado
+    pedidosStore.avanzar(id); // en_preparacion
+    pedidosStore.avanzar(id); // listo
+    pedidosStore.avanzar(id); // en_camino
+    expect(pedidosStore.getPedido(id)!.estado).toBe("en_camino");
+    return pedidosStore.getPedido(id)!;
+  };
+
+  const mensajesDeConv1 = () =>
+    conversacionesStore
+      .lineaDeTiempo("conv-1")
+      .filter((i) => i.clase === "mensaje")
+      .map((i) => i.data);
+
+  const ultimoMensajeDe = () => {
+    const m = mensajesDeConv1();
+    return m[m.length - 1];
+  };
+
+  const BLOQUE = "[Novedad Logística 15:30] Cliente no responde en el domicilio. Intento fallido.";
+
+  it("cancelar: anexa la nota, deja el pedido cancelado y avisa al cliente", () => {
+    const pedido = pedidoEnCamino();
+    const antes = mensajesDeConv1().length;
+
+    const r = bridge.reportarNovedadEntrega(pedido.id, BLOQUE, "cancelar");
+
+    expect(r).toEqual({ nota: true, estado: true, aviso: "enviado" });
+    const p = pedidosStore.getPedido(pedido.id)!;
+    expect(p.notas).toBe(BLOQUE);
+    expect(p.estado).toBe("cancelado");
+    expect(p.finishedAt).toBeTruthy();
+    expect(mensajesDeConv1().length).toBe(antes + 1);
+    expect(ultimoMensajeDe().contenido.texto).toBe(
+      "Tu pedido fue cancelado. Si tienes dudas, escríbenos.",
+    );
+    expect(ultimoMensajeDe().payload?.pedidoId).toBe(pedido.id);
+  });
+
+  it("reintentar: devuelve el pedido a 'listo' y NO manda la plantilla de cancelación", () => {
+    // Mandarle «tu pedido fue cancelado» a un cliente al que le vamos a llevar
+    // el pedido mañana sería una mentira; el reintento no avisa.
+    const pedido = pedidoEnCamino();
+    const antes = mensajesDeConv1().length;
+
+    const r = bridge.reportarNovedadEntrega(pedido.id, BLOQUE, "reintentar");
+
+    expect(r.nota).toBe(true);
+    expect(r.estado).toBe(true);
+    const p = pedidosStore.getPedido(pedido.id)!;
+    expect(p.estado).toBe("listo");
+    expect(p.notas).toBe(BLOQUE);
+    expect(mensajesDeConv1().length).toBe(antes);
+  });
+
+  it("NO pisa las notas que ya traía el pedido", () => {
+    // La regresión que motiva que la nota se anexe: el patrón anterior del
+    // Tablero (`pedido.notas = \`Cancelado: ${motivo}\``) borraba lo del cliente.
+    const pedido = pedidoEnCamino();
+    pedidosStore.anexarNota(pedido.id, "Sin cebolla en uno.");
+
+    bridge.reportarNovedadEntrega(pedido.id, BLOQUE, "cancelar");
+
+    const p = pedidosStore.getPedido(pedido.id)!;
+    expect(p.notas).toBe(`Sin cebolla en uno.\n${BLOQUE}`);
+    expect(p.notas).toContain("Sin cebolla en uno.");
+  });
+
+  it("un pedido de origen «operador» no inventa hilo y lo declara", () => {
+    const p = pedidosStore.crearPedido({
+      cliente: "Mostrador",
+      telefono: "+573005551122", // MISMO teléfono con hilo: la guarda es el origen, no el cruce
+      modalidad: "domicilio",
+      items: [{ nombre: "Combo", cantidad: 1, precio: 1000 }],
+      origen: "operador",
+    });
+    const id = p.id;
+    for (let i = 0; i < 4; i++) pedidosStore.avanzar(id);
+    const antes = mensajesDeConv1().length;
+
+    const r = bridge.reportarNovedadEntrega(id, BLOQUE, "cancelar");
+
+    // Sin la guarda de origen, el cruce por teléfono habría encontrado el hilo
+    // y habría avisado «a Juan Carlos» de un pedido de mostrador que no es suyo.
+    expect(r.aviso).toBe("sin_conversacion");
+    expect(mensajesDeConv1().length).toBe(antes);
+    expect(pedidosStore.getPedido(id)!.notas).toBe(BLOQUE);
+  });
+
+  it("un pedido de WhatsApp sin hilo no revienta: el estado se aplica igual", () => {
+    const p = pedidosStore.crearPedido({
+      cliente: "Sin Hilo",
+      telefono: "+57 300 999 8888",
+      modalidad: "domicilio",
+      items: [{ nombre: "Bebida", cantidad: 1, precio: 4000 }],
+      origen: "whatsapp",
+    });
+    const id = p.id;
+    for (let i = 0; i < 4; i++) pedidosStore.avanzar(id);
+    const hilosAntes = conversacionesStore.conversaciones.length;
+
+    const r = bridge.reportarNovedadEntrega(id, BLOQUE, "cancelar");
+
+    expect(r.aviso).toBe("sin_conversacion");
+    expect(pedidosStore.getPedido(id)!.estado).toBe("cancelado");
+    expect(conversacionesStore.conversaciones.length).toBe(hilosAntes);
+  });
+
+  it("si el estado no aplica, la nota NO afirma una novedad que no se registró", () => {
+    // `moverEstado` rechaza desde un terminal. La nota se escribe primero, así
+    // que el resultado tiene que REPORTAR que el estado no se aplicó en vez de
+    // fingir éxito.
+    const pedido = pedidoEnCamino();
+    pedidosStore.cancelar(pedido.id);
+    expect(pedidosStore.getPedido(pedido.id)!.estado).toBe("cancelado");
+
+    const r = bridge.reportarNovedadEntrega(pedido.id, BLOQUE, "reintentar");
+
+    // `reintentarEntrega` no acepta un terminal: la bandera lo dice.
+    expect(r.estado).toBe(false);
+    expect(pedidosStore.getPedido(pedido.id)!.estado).toBe("cancelado");
+  });
+
+  it("un bloque vacío no escribe nota pero sí mueve el estado", () => {
+    const pedido = pedidoEnCamino();
+
+    const r = bridge.reportarNovedadEntrega(pedido.id, "   ", "cancelar");
+
+    expect(r.nota).toBe(false);
+    expect(r.estado).toBe(true);
+    expect(pedidosStore.getPedido(pedido.id)!.notas).toBeUndefined();
+  });
+
+  it("deja el hilo etiquetado con el módulo Pedidos", () => {
+    const pedido = pedidoEnCamino();
+
+    bridge.reportarNovedadEntrega(pedido.id, BLOQUE, "cancelar");
+
+    expect(ultimoMensajeDe().moduloContexto).toBe("pedidos");
+    expect(ultimoMensajeDe().autor).toBe("bot");
+  });
+});

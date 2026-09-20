@@ -2,7 +2,7 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
-import { User, Settings, Info, Globe, LogOut } from "lucide-react";
+import { User, Settings, Info, Globe, LogOut, LayoutGrid } from "lucide-react";
 import { sessionStore, organizacionStore } from "@/stores";
 
 /**
@@ -27,6 +27,14 @@ const UserDropdown = observer(() => {
   const navigate = useNavigate();
 
   const usuario = organizacionStore.usuario;
+
+  /**
+   * «¿el rol puede gestionar la organización?» — la misma capacidad que exige
+   * `/modulos` en `App.tsx`. Se lee por `hasPermission` y no por `esAdmin`
+   * (prohibido por el contrato de acceso, §1.8): el permiso es el hecho, el rol
+   * es una de sus fuentes.
+   */
+  const puedeIrAlLanzador = sessionStore.hasPermission("team.manage");
 
   const iniciales = usuario
     ? `${usuario.nombre.charAt(0)}${usuario.apellido?.charAt(0) ?? ""}`.toUpperCase()
@@ -171,6 +179,36 @@ const UserDropdown = observer(() => {
 
         {/* Separador */}
         <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+        {/* Cambiar de módulo — de vuelta al Lanzador (`/modulos`).
+            Va destacado —fondo de marca, no el gris de las opciones de arriba—
+            porque no es una preferencia de la cuenta: es salir de donde estás.
+            Separado del bloque de perfil por la misma línea que separa «Cerrar
+            sesión», para que se lea como acción de navegación y no de ajustes.
+
+            COMPUERTA `team.manage`. `/modulos` gestiona la pertenencia de la
+            organización (instalar, desinstalar) y la ruta exige lo mismo que
+            `/configuracion` — ver `App.tsx`. Sin esta condición, un rol con
+            `orders.read` y sin `team.manage` vería la opción, la pulsaría y
+            aterrizaría en «No tienes acceso a esta sección»: un control visible
+            que el rol no puede ejecutar, que es lo que el contrato de acceso
+            manda **ocultar**. Es el mismo defecto que se retiró del pie del
+            sidebar (`Ayuda` sí, `Configuración` no) y de `SeccionSinConectar`;
+            no se reintroduce aquí por copiar la spec al pie de la letra. */}
+        {puedeIrAlLanzador && (
+          <>
+            <ShellDropdownItem
+              onItemClick={closeDropdown}
+              tag="a"
+              to="/modulos"
+              className="flex items-center gap-3 px-2.5 py-2 font-medium text-brand-700 rounded-xl group text-sm bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 transition-colors"
+            >
+              <LayoutGrid className="size-4.5 text-brand-500 group-hover:text-brand-600 dark:text-brand-400" />
+              <span>Cambiar de Módulo / Workspace</span>
+            </ShellDropdownItem>
+            <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+          </>
+        )}
 
         {/* Cerrar sesión */}
         <button

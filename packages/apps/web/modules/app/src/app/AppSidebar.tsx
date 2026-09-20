@@ -27,11 +27,41 @@ import {
 // LOGO COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Ruta del Lanzador de Módulos. Es la pantalla que responde «¿qué tiene
+ * contratado esta organización?» y desde la que se entra a cada módulo.
+ *
+ * Estaba solo en `App.tsx`; los dos accesos de retorno que se añaden abajo la
+ * necesitan, y escribir `/modulos` dos veces más es cómo se acaba con tres rutas
+ * para la misma pantalla —que es exactamente lo que pasó con `/workspaces` y
+ * `/workspace/modulos`, hoy reducidas a redirecciones—.
+ */
+const RUTA_LANZADOR = "/modulos";
+
+/** Tooltip común a los dos logos: dicen lo MISMO porque hacen lo mismo. */
+const TOOLTIP_LANZADOR = "Volver al selector de módulos";
+
+/**
+ * Los logos llevan de vuelta al Lanzador de Módulos (`/modulos`).
+ *
+ * Antes iban a `/pedidos/inicio`: el logo de una app es el atajo universal al
+ * «inicio», y aquí el inicio de la aplicación es el Lanzador, no la primera
+ * pantalla del único módulo. Con Pedidos como módulo único la diferencia era
+ * invisible; con dos módulos, el logo de la barra lateral de Pedidos habría sido
+ * el camino más corto a… Pedidos.
+ *
+ * Se añade `title` porque el destino dejó de ser obvio: un wordmark que salta a
+ * otra pantalla necesita decir a dónde. Va en la `<img>` y no en el `<Link>`: el
+ * `title` de un `<Link>` lo hereda el `<a>`, y un `<a>` sin área propia de hover
+ * deja el tooltip a merced de que el puntero caiga sobre la imagen —que es lo que
+ * ya pasa—, así que se pone donde el puntero realmente está.
+ */
 const Logo = () => (
-  <Link to="/pedidos/inicio" className="flex items-center">
+  <Link to={RUTA_LANZADOR} className="flex items-center">
     <img
       src="/images/logo/necto-full.svg"
       alt="NECTO"
+      title={TOOLTIP_LANZADOR}
       className="h-5 w-auto"
     />
   </Link>
@@ -39,12 +69,13 @@ const Logo = () => (
 
 const LogoCollapsed = () => (
   <Link
-    to="/pedidos/inicio"
+    to={RUTA_LANZADOR}
     className="flex items-center justify-center h-10 w-10 rounded-xl border-2 border-brand-500"
   >
     <img
       src="/images/logo/necto-icon.svg"
       alt="NECTO"
+      title={TOOLTIP_LANZADOR}
       className="h-6 w-6"
     />
   </Link>

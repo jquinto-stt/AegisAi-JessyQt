@@ -7,6 +7,7 @@ import { Button } from "@/elements/ui/button";
 import { pedidosStore } from "@/stores";
 import { puede, motivoSinPermiso, capacidadParaAvanzar } from "@/stores/acceso.utils";
 import type { Pedido } from "@/stores/pedidos.store";
+import { moverPedidoA } from "@/pages/pedidos/pedidos.notificaciones";
 import { CabeceraWidget, ListaVacia, relativo, money } from "./widgets.comunes";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -79,6 +80,13 @@ const TarjetaPrep = observer(({ pedido, indice }: { pedido: Pedido; indice: numb
   const minutos = pedidosStore.minutosEnEstado(pedido);
   const items = pedido.items.reduce((acc, i) => acc + i.cantidad, 0);
 
+  // `moverPedidoA` y NO `pedidosStore.moverEstado`: el primero es el envoltorio
+  // del puente de notificaciones, que además publica la plantilla del estado
+  // nuevo en el hilo del cliente. Con `moverEstado` directo, «Marcar en camino»
+  // desde el Inicio no le avisaba a nadie mientras el Tablero sí lo hacía — la
+  // misma acción con dos comportamientos según desde dónde se pulsara.
+  const avanzar = () => moverPedidoA(pedido.id, destino!);
+
   // El umbral de «está tardando» es de presentación, no de negocio: colorea sin
   // bloquear nada. Se dice el número siempre, para que el color sea un realce y
   // no la única forma de enterarse.
@@ -145,7 +153,7 @@ const TarjetaPrep = observer(({ pedido, indice }: { pedido: Pedido; indice: numb
             <Button
               size="sm"
               disabled={!puedeAvanzar}
-              onClick={() => pedidosStore.moverEstado(pedido.id, destino)}
+              onClick={avanzar}
             >
               Marcar {pedidosStore.estadoLabel(destino).toLowerCase()}
             </Button>

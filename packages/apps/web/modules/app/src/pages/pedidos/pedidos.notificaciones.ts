@@ -1,6 +1,7 @@
 import { pedidosStore } from "@/stores/pedidos.store";
 import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import type { DesenlaceNovedad } from "./novedad.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PUENTE DE NOTIFICACIÓN: cambio de estado de pedido → mensaje en el hilo
@@ -129,4 +130,79 @@ export function cancelarPedido(id: string): boolean {
     if (pedido) notificarCambioDeEstado(pedido);
   }
   return aplicado;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NOVEDAD DE ENTREGA — nota + desenlace + aviso, en una sola operación
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Una entrega fallida toca TRES cosas a la vez: deja constancia en el pedido
+// (nota), lo saca de la calle (estado) y avisa al cliente (hilo). Repartirlas
+// entre la vista y el store fue justo lo que produjo el defecto que este módulo
+// documenta más abajo: el Tablero anexaba la nota a mano y el widget de
+// logística movía el estado saltándose el aviso.
+//
+// El puente es el único sitio donde las tres ocurren juntas, así que la
+// operación vive aquí y no en el modal.
+
+/** Resultado de reportar una novedad. */
+export interface ResultadoNovedad {
+  /** ¿Se anexó la nota al pedido? */
+  nota: boolean;
+  /** ¿Se movió el estado? `false` si la transición no aplicaba. */
+  estado: boolean;
+  /** Qué se hizo con el hilo del cliente (vocabulario de `notificarCambioDeEstado`). */
+  aviso: ResultadoNotificacion;
+}
+
+/**
+ * Reporta una novedad de entrega: anexa la nota, aplica el desenlace y —si el
+ * desenlace fue una transición— publica la plantilla en el hilo del cliente.
+ *
+ * ── Por qué el desenlace es un parámetro y no un `"cancelado"` fijo ────────
+ * Anular la venta no es el único final posible de una entrega fallida, y muchas
+ * veces no es el correcto: si el cliente no estaba, el negocio reintenta. El
+ * llamador decide; este módulo no asume.
+ *
+ * ── Por qué la nota se escribe ANTES de mover el estado ────────────────────
+ * Porque `moverEstado` puede RECHAZAR la transición (un pedido ya terminal, por
+ * ejemplo). Si el orden fuera el inverso, un rechazo dejaría el pedido intacto
+ * pero con una nota afirmando que hubo una novedad que no se registró. La nota
+ * se escribe primero y el resultado se reporta: quien llama ve las dos banderas
+ * y puede decidir si el estado aplicado le basta.
+ *
+ * ── Guarda de origen ──────────────────────────────────────────────────────
+ * El aviso solo se intenta si `origen === "whatsapp"`. No es una optimización:
+ * un pedido creado por el operador en el mostrador no tiene (ni debe tener) un
+ * hilo del que el cliente sea dueño, y `notificarCambioDeEstado` devolvería
+ * `sin_conversacion` de todos modos. La guarda hace explícita la decisión en
+ * lugar de depender de que el teléfono no cruce por casualidad.
+ *
+ * @param id       pedido al que se le reporta la novedad
+ * @param bloque   texto ya formateado (`novedadTexto`) que se anexa a las notas
+ * @param desenlace `cancelar` (terminal) o `reintentar` (vuelve a la ruta)
+ */
+export function reportarNovedadEntrega(
+  id: string,
+  bloque: string,
+  desenlace: DesenlaceNovedad,
+): ResultadoNovedad {
+  const nota = pedidosStore.anexarNota(id, bloque);
+
+  const estado =
+    desenlace === "cancelar"
+      ? pedidosStore.cancelar(id)
+      : pedidosStore.reintentarEntrega(id);
+  if (!estado) return { nota, estado, aviso: "sin_plantilla" };
+
+  const pedido = pedidosStore.getPedido(id);
+  if (!pedido) return { nota, estado, aviso: "sin_plantilla" };
+
+  // Un reintento NO avisa al cliente: el pedido vuelve a `listo`, y comunicarle
+  // «tu pedido está listo» dos veces por el mismo pedido sería ruido. El aviso
+  // de la cancelación, en cambio, es exactamente lo que el cliente necesita.
+  if (desenlace === "reintentar") return { nota, estado, aviso: "sin_plantilla" };
+  if (pedido.origen !== "whatsapp") return { nota, estado, aviso: "sin_conversacion" };
+
+  return { nota, estado, aviso: notificarCambioDeEstado(pedido) };
 }

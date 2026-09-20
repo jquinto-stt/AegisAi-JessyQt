@@ -1,12 +1,16 @@
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
+import { AlertIcon } from "@/icons";
 import { pedidosStore } from "@/stores";
 import { puede, motivoSinPermiso } from "@/stores/acceso.utils";
 import type { Pedido } from "@/stores/pedidos.store";
+import { moverPedidoA } from "@/pages/pedidos/pedidos.notificaciones";
+import { ModalNovedadEntrega } from "@/pages/pedidos/ModalNovedadEntrega";
 import { CabeceraWidget, ListaVacia, relativo, money } from "./widgets.comunes";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -34,6 +38,24 @@ import { CabeceraWidget, ListaVacia, relativo, money } from "./widgets.comunes";
 // falta las dos: el store protege la coherencia del pipeline y la vista protege
 // la autorización. El store no mira permisos —es la capa de datos, no la de
 // acceso—, así que una vista que se fiara de él sería un bypass.
+//
+// El AVISO al cliente lo añade el puente `pedidos.notificaciones` a través de
+// `moverPedidoA`. Antes esta vista llamaba `pedidosStore.moverEstado` directo y
+// se saltaba la notificación que el Tablero sí enviaba: la misma acción tenía
+// dos comportamientos según desde dónde se pulsara.
+//
+// ── Sobre «Novedad» ───────────────────────────────────────────────────────
+//
+// El repartidor que no puede entregar tiene que poder decirlo AHÍ, con el
+// cliente delante, sin buscar el pedido en el Tablero. El botón abre
+// `ModalNovedadEntrega`, que recoge el motivo y decide el desenlace: cancelar
+// (terminal) o reintentar (vuelve a la hoja de ruta como `listo`).
+//
+// Es deliberadamente un botón de TEXTO con icono y no un icono suelto: la
+// tarjeta ya tiene tres acciones y un icono sin etiqueta obligaría a adivinar.
+// Va en variante `outline` teñida de rojo en vez de `destructive` porque abrir
+// un formulario no es destruir nada — el rojo sólido se reserva al botón que
+// de verdad cancela, dentro del modal.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Pedidos que están en la calle o a punto de salir, el más antiguo primero. */
@@ -57,6 +79,7 @@ function direccionDe(p: Pedido): string | null {
 
 const FilaEntrega = observer(({ pedido, accion }: { pedido: Pedido; accion: "salir" | "entregar" }) => {
   const navigate = useNavigate();
+  const [novedadAbierta, setNovedadAbierta] = useState(false);
   const dir = direccionDe(pedido);
   const destino = accion === "salir" ? "en_camino" : "entregado";
   // Una sola capacidad gobierna las dos transiciones de esta vista
@@ -64,50 +87,109 @@ const FilaEntrega = observer(({ pedido, accion }: { pedido: Pedido; accion: "sal
   const puedeAvanzar = puede("preparation.manage");
   const minutos = pedidosStore.minutosEnEstado(pedido);
 
+  // ── Quién puede reportar una novedad ────────────────────────────────────
+  //
+  // NO toda fila de esta vista. La columna «Listos para salir» mezcla pedidos a
+  // domicilio (a los que les falta salir) con pedidos `en_sitio`/`retiro` que
+  // se sirven en el local: esos NO tienen entrega que fallar. Un repartidor no
+  // puede «no entregar» un plato que se come en la mesa, y ofrecerle el botón
+  // le invita a cancelar una venta por un motivo que no existe.
+  //
+  // La condición es HABER SALIDO (`en_camino`) o ESTAR POR SALIR A DOMICILIO
+  // (`listo` + modalidad `domicilio`). Es la misma partición que decide la
+  // etiqueta de la acción principal, leída de `modalidadDe()` y no del texto de
+  // la fila.
+  const admiteNovedad =
+    pedido.estado === "en_camino" ||
+    (pedido.estado === "listo" && pedido.modalidad === "domicilio");
+
+  // `moverPedidoA` y NO `pedidosStore.moverEstado`: el primero es el envoltorio
+  // del puente de notificaciones, que además publica la plantilla del estado
+  // nuevo en el hilo del cliente. Estaba llamándose `moverEstado` directo, así
+  // que «Marcar entregado» desde el Inicio no avisaba a nadie mientras el mismo
+  // botón en el Tablero sí — la misma acción con dos comportamientos.
+  const avanzar = () => moverPedidoA(pedido.id, destino);
+
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-gray-200/70 p-3 dark:border-white/5">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
-            {pedido.cliente}
+    <>
+      <div className="flex items-start gap-3 rounded-xl border border-gray-200/70 p-3 dark:border-white/5">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
+              {pedido.cliente}
+            </p>
+            <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
+              {pedidosStore.estadoLabel(pedido.estado)}
+            </Badge>
+          </div>
+          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+            {pedido.numero} · {pedidosStore.modalidadLabel(pedido.modalidad)} · {relativo(minutos)}
           </p>
-          <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
-            {pedidosStore.estadoLabel(pedido.estado)}
-          </Badge>
+          {/* La ausencia se declara. Un hueco no dice nada. */}
+          <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+            {dir ?? <span className="text-gray-400 dark:text-gray-500">Sin dirección de entrega</span>}
+          </p>
+          <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+            {pedido.telefono}
+            {pedido.repartidor ? ` · ${pedido.repartidor}` : ""}
+          </p>
         </div>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-          {pedido.numero} · {pedidosStore.modalidadLabel(pedido.modalidad)} · {relativo(minutos)}
-        </p>
-        {/* La ausencia se declara. Un hueco no dice nada. */}
-        <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-          {dir ?? <span className="text-gray-400 dark:text-gray-500">Sin dirección de entrega</span>}
-        </p>
-        <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-          {pedido.telefono}
-          {pedido.repartidor ? ` · ${pedido.repartidor}` : ""}
-        </p>
+
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span title={puedeAvanzar ? undefined : motivoSinPermiso("preparation.manage")}>
+            <Button
+              size="sm"
+              variant={accion === "entregar" ? "primary" : "outline"}
+              disabled={!puedeAvanzar}
+              onClick={avanzar}
+            >
+              {accion === "salir" ? "Marcar en camino" : "Marcar entregado"}
+            </Button>
+          </span>
+
+          {/* Reportar la novedad no avanza el pipeline: lo interrumpe. La
+              transición la decide el modal (cancelar o reintentar), así que aquí
+              solo se abre. Compuerta propia y NO la de `avanzar`: cancelar exige
+              `orders.cancel`, que el rol de preparación no tiene, y ese permiso
+              se comprueba donde se ejerce — dentro del modal, sobre el botón
+              que de verdad cancela.
+
+              Solo se ofrece si el pedido ADMITE una entrega fallida
+              (`admiteNovedad`): un pedido `en_sitio` servido en el local no
+              tiene entrega que fallar, y el botón ahí sería una invitación a
+              cancelar una venta por un motivo inexistente. */}
+          {admiteNovedad && (
+            <span title={puedeAvanzar ? undefined : motivoSinPermiso("preparation.manage")}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!puedeAvanzar}
+                onClick={() => setNovedadAbierta(true)}
+                className="text-error-600 ring-error-200 hover:bg-error-50 dark:text-error-400 dark:ring-error-500/30 dark:hover:bg-error-500/10"
+              >
+                <AlertIcon className="mr-1.5 h-3.5 w-3.5" />
+                Novedad
+              </Button>
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={() => navigate(`/pedidos?detalle=${pedido.id}`)}
+            className="text-[11px] font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            Ver pedido
+          </button>
+        </div>
       </div>
 
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
-        <span title={puedeAvanzar ? undefined : motivoSinPermiso("preparation.manage")}>
-          <Button
-            size="sm"
-            variant={accion === "entregar" ? "primary" : "outline"}
-            disabled={!puedeAvanzar}
-            onClick={() => pedidosStore.moverEstado(pedido.id, destino)}
-          >
-            {accion === "salir" ? "Marcar en camino" : "Marcar entregado"}
-          </Button>
-        </span>
-        <button
-          type="button"
-          onClick={() => navigate(`/pedidos?detalle=${pedido.id}`)}
-          className="text-[11px] font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          Ver pedido
-        </button>
-      </div>
-    </div>
+      {/* El modal solo se monta cuando hace falta: `Modal` aplica
+          `overflow:hidden` al `<body>` en cuanto está abierto, así que dejar
+          veinte modales cerrados en el árbol sería dejar veinte efectos. */}
+      {novedadAbierta && (
+        <ModalNovedadEntrega pedido={pedido} onClose={() => setNovedadAbierta(false)} />
+      )}
+    </>
   );
 });
 
