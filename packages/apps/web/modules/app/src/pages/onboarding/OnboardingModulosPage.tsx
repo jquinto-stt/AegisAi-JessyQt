@@ -4,19 +4,54 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { organizacionStore } from "@/stores/organizacion.store";
+import { plataformaStore, type IdModuloNegocio } from "@/stores/plataforma.store";
 import { OnboardingLayout } from "./OnboardingLayout";
 
 // Aquí se importaban `ThemeToggleButton`, `OnboardingStepper` y
 // `OnboardingBrandPanel`, y se declaraba `ONBOARDING_STEPS`. Ninguno se usaba:
 // medido con `--noUnusedLocals`. Se retiran en la limpieza de superficie.
 
+/**
+ * Logo de cada módulo. Es PRESENTACIÓN: el catálogo no guarda JSX.
+ *
+ * Es lo único de esta pantalla que no sale del catálogo, junto con el paso de
+ * onboarding. El nombre, el tagline, la descripción, los destacados y —sobre
+ * todo— la DISPONIBILIDAD se leen de `CATALOGO_MODULOS`, que es la única
+ * respuesta a «¿se puede usar hoy?».
+ */
+const LOGO_MODULO: Record<IdModuloNegocio, React.ReactNode> = {
+  pedidos: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+      <circle cx="9" cy="21" r="1" />
+      <circle cx="20" cy="21" r="1" />
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+    </svg>
+  ),
+  inventario: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+      <path d="m7.5 4.27 9 5.15" />
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
+  ),
+};
+
+/**
+ * Paso de onboarding de cada módulo, si lo tiene.
+ *
+ * `pedidos` lo tiene: instala el módulo y pregunta por sus conectores. Un módulo
+ * DISPONIBLE sin paso no debe pintar botón — mandarlo a `/onboarding/pedidos`
+ * desde su ficha instalaría Pedidos, que es exactamente el defecto de la
+ * proyección duplicada: una superficie que dice una cosa y hace otra.
+ */
+const PASO_ONBOARDING: Partial<Record<IdModuloNegocio, string>> = {
+  pedidos: "/onboarding/pedidos",
+};
+
 export const OnboardingModulosPage = observer(() => {
   const navigate = useNavigate();
   const org = organizacionStore.organizacion;
-
-  const handleAgregarPedidos = () => {
-    navigate("/onboarding/pedidos");
-  };
 
   const handleOmitir = () => {
     navigate("/onboarding/encuesta?redirect=/modulos");
@@ -49,10 +84,12 @@ export const OnboardingModulosPage = observer(() => {
         brandSummary={{
           eyebrow: "Espacio de trabajo",
           title: org?.nombre || "Mi Organización",
-          lines: [
-            "Módulo Pedidos & Fulfillment disponible",
-            "Inventario & Stock próximamente",
-          ],
+          // Derivado del catálogo: antes decía «Inventario & Stock próximamente» a
+          // mano, así que el día que Inventario estuviera disponible este resumen
+          // habría seguido anunciándolo como futuro.
+          lines: plataformaStore.catalogoModulos.map((m) =>
+            m.disponible ? `${m.nombre} disponible` : `${m.nombre} próximamente`,
+          ),
         }}
       >
         <div className="w-full">
@@ -70,110 +107,100 @@ export const OnboardingModulosPage = observer(() => {
 
           {/* Grilla de módulos */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* 1. Módulo Pedidos & Fulfillment */}
-            <div className="flex flex-col justify-between rounded-2xl border border-brand-500/40 bg-white p-5 shadow-sm hover:border-brand-500 hover:shadow-md transition-all dark:border-brand-500/30 dark:bg-gray-800/80">
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/20">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="h-5 w-5"
+            {/* Una tarjeta por módulo DEL CATÁLOGO, no dos fichas a mano.
+                Antes cada ficha traía su propio texto, así que la descripción de
+                Pedidos aquí era un TERCER texto distinto del de `/configuracion` y
+                del de `/modulos`. Ahora nombre, descripción, destacados y
+                disponibilidad salen de `CATALOGO_MODULOS`; en esta página solo
+                viven el logo y el paso de onboarding. */}
+            {plataformaStore.catalogoModulos.map((modulo) => (
+              <div
+                key={modulo.id}
+                className={
+                  modulo.disponible
+                    ? "flex flex-col justify-between rounded-2xl border border-brand-500/40 bg-white p-5 shadow-sm hover:border-brand-500 hover:shadow-md transition-all dark:border-brand-500/30 dark:bg-gray-800/80"
+                    : "flex flex-col justify-between rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 opacity-70 dark:border-gray-800 dark:bg-gray-800/40"
+                }
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className={
+                        modulo.disponible
+                          ? "flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/20"
+                          : "flex h-11 w-11 items-center justify-center rounded-xl bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+                      }
                     >
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
+                      {LOGO_MODULO[modulo.id]}
+                    </div>
+                    {modulo.disponible ? (
+                      <Badge color="primary" size="sm">
+                        Disponible
+                      </Badge>
+                    ) : (
+                      <span className="rounded-full bg-gray-200/80 px-2.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                        Próximamente
+                      </span>
+                    )}
                   </div>
-                  <Badge color="primary" size="sm">
-                    Disponible
-                  </Badge>
+
+                  <h3
+                    className={
+                      modulo.disponible
+                        ? "mt-3 text-base font-bold text-gray-900 dark:text-white"
+                        : "mt-3 text-base font-bold text-gray-600 dark:text-gray-300"
+                    }
+                  >
+                    {modulo.nombre}
+                  </h3>
+                  <p
+                    className={
+                      modulo.disponible
+                        ? "mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed"
+                        : "mt-1 text-xs text-gray-400 dark:text-gray-500 leading-relaxed"
+                    }
+                  >
+                    {modulo.descripcion}
+                  </p>
+
+                  <div className="mt-3 space-y-1 border-t border-gray-100 pt-2.5 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
+                    {modulo.destacados.map((destacado) => (
+                      <div key={destacado} className="flex items-center gap-1.5">
+                        <span className={modulo.disponible ? "text-brand-500" : ""}>
+                          {modulo.disponible ? "✓" : "•"}
+                        </span>{" "}
+                        {destacado}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <h3 className="mt-3 text-base font-bold text-gray-900 dark:text-white">
-                  Pedidos & Fulfillment
-                </h3>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Gestión completa de órdenes de venta, preparación, transportadoras, cobranza y analítica.
-                </p>
-
-                <div className="mt-3 space-y-1 border-t border-gray-100 pt-2.5 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-brand-500">✓</span> Tablero Kanban por estados
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-brand-500">✓</span> Perfiles comerciales adaptables
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-brand-500">✓</span> Agentes IA & WhatsApp
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-                <Button
-                  size="sm"
-                  onClick={handleAgregarPedidos}
-                  className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-500/20 cursor-pointer"
-                >
-                  Agregar este módulo →
-                </Button>
-              </div>
-            </div>
-
-            {/* 2. Módulo Inventario (Próximamente) */}
-            <div className="flex flex-col justify-between rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 opacity-70 dark:border-gray-800 dark:bg-gray-800/40">
-              <div>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      className="h-5 w-5"
+                <div className="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
+                  {/* El botón exige las DOS cosas: que el módulo exista hoy
+                      (`disponible`) y que tenga un paso de onboarding al que ir.
+                      Un módulo disponible sin paso no puede pintar «Agregar»:
+                      no hay a dónde llevarlo sin instalar otro módulo. */}
+                  {modulo.disponible && PASO_ONBOARDING[modulo.id] ? (
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(PASO_ONBOARDING[modulo.id]!)}
+                      className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-500/20 cursor-pointer"
                     >
-                      <path d="m7.5 4.27 9 5.15" />
-                      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
-                      <path d="m3.3 7 8.7 5 8.7-5" />
-                      <path d="M12 22V12" />
-                    </svg>
-                  </div>
-                  <span className="rounded-full bg-gray-200/80 px-2.5 py-0.5 text-[10px] font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                    Próximamente
-                  </span>
-                </div>
-
-                <h3 className="mt-3 text-base font-bold text-gray-600 dark:text-gray-300">
-                  Inventario & Stock
-                </h3>
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
-                  Bodegas, lotes, conteo físico y alertas de existencias mínimas.
-                </p>
-
-                <div className="mt-3 space-y-1 border-t border-gray-200/50 pt-2.5 dark:border-gray-700 text-xs text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <span>•</span> Kárdex y movimientos
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span>•</span> Multi-almacén
-                  </div>
+                      Agregar este módulo →
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="w-full rounded-full text-xs text-gray-400 cursor-not-allowed"
+                    >
+                      En desarrollo
+                    </Button>
+                  )}
                 </div>
               </div>
-
-              <div className="mt-5 pt-3 border-t border-gray-200/50 dark:border-gray-700">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled
-                  className="w-full rounded-full text-xs text-gray-400 cursor-not-allowed"
-                >
-                  En desarrollo
-                </Button>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="pt-6 mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">

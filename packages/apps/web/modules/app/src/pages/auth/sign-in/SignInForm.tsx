@@ -21,13 +21,22 @@ export default function SignInForm() {
     const finalEmail = userEmail || email.trim() || "admin@necto.io";
     const nombreUsuario = finalEmail.split("@")[0] || "Admin";
 
-    // 1. En mockup sin backend, cualquier credencial autentica. Registramos el perfil.
-    organizacionStore.actualizarPerfil({
-      nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
-      apellido: "Necto",
-      email: finalEmail,
-      pais: "Colombia",
-    });
+    // 1. En mockup sin backend, cualquier credencial autentica. Se registra el
+    //    perfil **solo si no había ninguno**.
+    //
+    //    Antes se llamaba siempre, y eso borraba datos: `actualizarPerfil` pisa
+    //    `nombre` y `apellido` con lo que derive del correo, así que entrar con
+    //    `ana@tienda.com` después de haber escrito «Ana Gómez» en `/profile`
+    //    dejaba «Ana» / «Necto». El nombre de la persona no es algo que un inicio
+    //    de sesión deba reescribir; si ya hay identidad, el login solo la usa.
+    if (!organizacionStore.usuario) {
+      organizacionStore.actualizarPerfil({
+        nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
+        apellido: "Necto",
+        email: finalEmail,
+        pais: "Colombia",
+      });
+    }
 
     // 2. Garantizamos una organización base si no existía
     if (!organizacionStore.organizacion) {

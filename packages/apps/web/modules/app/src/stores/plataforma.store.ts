@@ -54,8 +54,32 @@ export interface InfoModuloNegocio {
    */
   rutaPrincipal: string;
   rutaConfig?: string;
-  /** ¿Existe de verdad en el producto, o es una intención declarada? */
+  /**
+   * ¿Existe de verdad en el producto, o es una intención declarada?
+   *
+   * **Esta bandera es la única respuesta a «¿se puede usar hoy?»**, y las
+   * superficies deben DERIVAR de ella en vez de decidirlo por su cuenta:
+   *   · `ConfiguracionModulosPage` no ofrece instalar lo que no está disponible;
+   *   · `OnboardingModulosPage` lo pinta «Próximamente» y deshabilitado.
+   *
+   * El día que Inventario exista, se pasa a `true` aquí y las dos superficies se
+   * encienden solas — ninguna pregunta «¿es inventario?». Es el mismo patrón que
+   * `integracionesStore.MODULOS_INTEGRABLES`, que ya lo hacía bien.
+   *
+   * **Debe coincidir con `MODULOS_INTEGRABLES[id].disponible`**: son dos
+   * catálogos (el de módulos de negocio y el de módulos integrables en la IA) y
+   * una discrepancia entre ellos hace que la app afirme dos cosas opuestas del
+   * mismo módulo. Estuvo discrepando: aquí decía `true` y allí `false`.
+   */
   disponible: boolean;
+  /**
+   * Tres o cuatro capacidades cortas, para la tarjeta del catálogo.
+   *
+   * Vive aquí y no en cada página porque es copy DEL MÓDULO, no de la pantalla:
+   * mientras estuvo escrito a mano en `OnboardingModulosPage`, la misma ficha
+   * tenía un texto distinto en cada sitio que la pintaba.
+   */
+  destacados: string[];
 }
 
 export interface InfoConectorModulo {
@@ -90,6 +114,11 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
     rutaPrincipal: "/pedidos/inicio",
     rutaConfig: "/pedidos/config",
     disponible: true,
+    destacados: [
+      "Tablero Kanban por estados",
+      "Perfiles comerciales adaptables",
+      "Agentes IA & WhatsApp",
+    ],
   },
   inventario: {
     id: "inventario",
@@ -97,7 +126,20 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
     tagline: "Catálogo y Existencias",
     descripcion: "Control de productos, variantes, bodegas, alertas de reposición y stock disponible.",
     rutaPrincipal: "/inventario",
-    disponible: true,
+    // `rutaConfig` sin declarar: no hay pantalla de configuración que enlazar.
+    //
+    // `disponible: false` — Inventario está DECLARADO pero no existe: no hay ruta
+    // `/inventario` en `App.tsx`, ni página, ni store. Antes decía `true`, y esa
+    // mentira se propagaba: `/configuracion` ofrecía «Instalar» un módulo que al
+    // instalarse no aparecía en ninguna parte (el sidebar solo pinta Pedidos) y
+    // cuya ruta de entrada no existía. `integracionesStore.MODULOS_INTEGRABLES`
+    // ya lo tenía en `false` con un test que lo exigía («no se promete lo que no
+    // existe») — dos catálogos afirmando lo contrario del mismo módulo.
+    //
+    // Sigue en el tipo y en el catálogo a propósito: es una intención del producto
+    // y nombrarla es legítimo. Lo que no es legítimo es ofrecerla como comprable.
+    disponible: false,
+    destacados: ["Kárdex y movimientos", "Multi-almacén"],
   },
 };
 

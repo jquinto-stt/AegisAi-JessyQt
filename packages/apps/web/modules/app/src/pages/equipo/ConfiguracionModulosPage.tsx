@@ -9,7 +9,10 @@ import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Switch } from "@/elements/form/switch";
 import {
   organizacionStore,
+  plataformaStore,
+  CATALOGO_MODULOS,
   type IdModuloNegocio,
+  type InfoModuloNegocio,
 } from "@/stores";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -112,26 +115,31 @@ interface SubIntegracionDef {
   };
 }
 
-interface ModuloConfigDef {
-  id: IdModuloNegocio;
-  nombre: string;
-  tagline: string;
-  descripcion: string;
+/**
+ * Lo que esta pantalla añade al catálogo. **Nada de identidad del módulo.**
+ *
+ * `nombre`, `tagline`, `descripcion`, `rutaConfig` y `disponible` viven en
+ * `CATALOGO_MODULOS` y se leen de ahí. Esta tabla los duplicaba, y la copia ya
+ * había divergido: el `tagline` de Pedidos decía aquí «Ventas y Operación Core»
+ * mientras el catálogo decía «Ventas y Operaciones», y la `descripcion` era un
+ * tercer texto distinto del de `/modulos` y del de `/onboarding/modulos`.
+ *
+ * Lo que sí es de esta pantalla: con qué logo se pinta, qué rutas habilita el
+ * módulo, qué permisos pide y qué lista larga de capacidades se muestra en su
+ * modal de detalles.
+ */
+interface PresentacionModulo {
   logo: React.ReactNode;
-  rutaConfig?: string;
   rutasHabilitadas: string[];
   rolesRequeridos: string;
   capacidades: string[];
 }
 
-const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
+type ModuloConfigDef = InfoModuloNegocio & PresentacionModulo;
+
+const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
   pedidos: {
-    id: "pedidos",
-    nombre: "Pedidos & Fulfillment",
-    tagline: "Ventas y Operación Core",
-    descripcion: "Tablero Kanban de órdenes, preparación, envíos, historial completo y métricas analíticas de venta.",
     logo: <OrdersBrandLogo />,
-    rutaConfig: "/pedidos/config",
     rutasHabilitadas: ["/pedidos/inicio", "/pedidos", "/pedidos/crear", "/pedidos/historial", "/pedidos/analitica", "/pedidos/config"],
     rolesRequeridos: "orders.read, orders.create, orders.move.*",
     capacidades: [
@@ -142,12 +150,11 @@ const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
     ],
   },
   inventario: {
-    id: "inventario",
-    nombre: "Inventario & Stock",
-    tagline: "Catálogo y Existencias Core",
-    descripcion: "Control de productos, catálogo de precios, alertas automáticas de existencias y bodegas.",
     logo: <InventoryBrandLogo />,
-    rutasHabilitadas: ["/inventario"],
+    // Vacío a propósito: `/inventario` NO existe en `App.tsx`. Antes esta lista
+    // declaraba esa ruta inexistente y el modal de detalles la mostraba como si
+    // el módulo la habilitara — una ruta que no lleva a ninguna parte.
+    rutasHabilitadas: [],
     rolesRequeridos: "inventory.read, inventory.manage",
     capacidades: [
       "Control de existencias y alertas de reposición automática",
@@ -156,6 +163,19 @@ const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
     ],
   },
 };
+
+/** Identidad (catálogo) + presentación (esta pantalla). Una sola fuente por dato. */
+const moduloDef = (id: IdModuloNegocio): ModuloConfigDef => ({
+  ...CATALOGO_MODULOS[id],
+  ...PRESENTACION_MODULOS[id],
+});
+
+const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
+  pedidos: moduloDef("pedidos"),
+  inventario: moduloDef("inventario"),
+};
+
+const IDS_MODULOS = Object.keys(MODULOS_DEF) as IdModuloNegocio[];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TARJETA DE INTEGRACIÓN (DISEÑO EXACTO DE LA REFERENCIA DEL USUARIO)
@@ -300,6 +320,7 @@ const ModuloMaestroCard = observer(({
   const esActivo = organizacionStore.esModuloActivo(def.id);
   const nectoIaActivo = organizacionStore.esConectorActivo(def.id, "necto_ia");
   const whatsappActivo = organizacionStore.esConectorActivo(def.id, "whatsapp");
+  const disponible = plataformaStore.esModuloDisponible(def.id);
 
   // Integraciones específicas asociadas a este módulo con el diseño de referencia
   const integraciones: SubIntegracionDef[] = [
@@ -422,12 +443,26 @@ const ModuloMaestroCard = observer(({
             </Dropdown>
           </div>
 
-          {/* Switch del Módulo */}
-          <Switch
-            checked={esActivo}
-            onChange={() => organizacionStore.toggleModulo(def.id)}
-            label=""
-          />
+          {/* Switch del Módulo.
+              Si el módulo está instalado pero YA NO disponible (una instalación
+              anterior a que se marcara `disponible: false`), el interruptor no se
+              pinta: encenderlo no encendería nada — no hay ruta, ni página, ni
+              store detrás. Se dice con una etiqueta en vez de ofrecer un control
+              que no hace nada. */}
+          {disponible ? (
+            <Switch
+              checked={esActivo}
+              onChange={() => organizacionStore.toggleModulo(def.id)}
+              label=""
+            />
+          ) : (
+            <span
+              className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-500 dark:bg-white/5 dark:text-gray-400"
+              title="Este módulo todavía no está disponible: activarlo no habilitaría ninguna pantalla."
+            >
+              Próximamente
+            </span>
+          )}
         </div>
       </div>
 
@@ -464,13 +499,31 @@ export const ConfiguracionModulosPage = observer(() => {
   const [modalAgregarAbierto, setModalAgregarAbierto] = useState(false);
 
   // Módulos instalados
-  const modulosInstalados = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
+  const modulosInstalados = IDS_MODULOS
     .filter((id) => organizacionStore.esModuloInstalado(id))
     .map((id) => MODULOS_DEF[id]);
 
-  // Módulos disponibles para instalar
-  const modulosDisponiblesParaInstalar = (Object.keys(MODULOS_DEF) as IdModuloNegocio[])
+  /**
+   * Módulos instalables: no instalados **y disponibles en la plataforma**.
+   *
+   * El filtro por `disponible` no es cosmético. Sin él esta lista ofrecía
+   * «Instalar» Inventario, que no tiene ruta, ni página, ni store — y al
+   * instalarlo no aparecía en ninguna parte de la aplicación. `disponible` es la
+   * única respuesta a «¿se puede usar hoy?»; la pantalla no lo decide por su
+   * cuenta.
+   */
+  const modulosDisponiblesParaInstalar = IDS_MODULOS
     .filter((id) => !organizacionStore.esModuloInstalado(id))
+    .filter((id) => plataformaStore.esModuloDisponible(id))
+    .map((id) => MODULOS_DEF[id]);
+
+  /**
+   * Declarados pero todavía no disponibles: se **nombran con su motivo** en vez de
+   * desaparecer. Un catálogo que esconde lo que viene es tan poco honesto como uno
+   * que ofrece lo que no existe.
+   */
+  const modulosProximamente = IDS_MODULOS
+    .filter((id) => !plataformaStore.esModuloDisponible(id))
     .map((id) => MODULOS_DEF[id]);
 
   return (
@@ -596,9 +649,16 @@ export const ConfiguracionModulosPage = observer(() => {
             <div className="mt-4 space-y-2 text-xs text-gray-500 dark:text-gray-400">
               <div>
                 <span className="font-semibold text-gray-700 dark:text-gray-300">Rutas del módulo: </span>
-                <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[11px] dark:bg-gray-800">
-                  {modalModulo.rutasHabilitadas.join(", ")}
-                </code>
+                {modalModulo.rutasHabilitadas.length > 0 ? (
+                  <code className="rounded bg-gray-100 px-1 py-0.5 font-mono text-[11px] dark:bg-gray-800">
+                    {modalModulo.rutasHabilitadas.join(", ")}
+                  </code>
+                ) : (
+                  // Vacío es un dato, no un hueco: significa «este módulo todavía no
+                  // habilita ninguna ruta». Antes aquí se listaba `/inventario`, que
+                  // no existe en el router.
+                  <span className="italic text-gray-400">Todavía no habilita rutas</span>
+                )}
               </div>
               <div>
                 <span className="font-semibold text-gray-700 dark:text-gray-300">Permisos de rol requeridos: </span>
@@ -761,6 +821,30 @@ export const ConfiguracionModulosPage = observer(() => {
                   </div>
                 ))
               )}
+
+              {/* Declarados y todavía no disponibles: se nombran, sin interruptor.
+                  Se DERIVAN del catálogo, así que el día que Inventario exista
+                  basta con pasar su `disponible` a `true` y este bloque se vacía
+                  solo — esta pantalla no pregunta «¿es inventario?». */}
+              {modulosProximamente.map((mod) => (
+                <div
+                  key={mod.id}
+                  className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 p-3.5 opacity-70 dark:border-gray-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="opacity-60">{mod.logo}</div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {mod.nombre}
+                        </h4>
+                        <Badge color="light" size="xs">Próximamente</Badge>
+                      </div>
+                      <p className="text-xs text-gray-400">{mod.descripcion}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
 
               {/* Módulo Próximamente */}
               <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 p-3.5 opacity-70 dark:border-gray-800">

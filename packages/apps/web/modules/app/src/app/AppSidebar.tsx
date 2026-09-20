@@ -167,18 +167,39 @@ const SimulacionBanner = observer(() => {
 const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motivo: string }) => {
   const { isExpanded: showExpanded } = useSidebarContext();
 
+  /**
+   * El motivo se pinta SIEMPRE; el enlace solo si el rol puede ejecutarlo.
+   *
+   * El enlace apunta a `/configuracion`, que exige `team.manage`. Antes se pintaba
+   * para todo el mundo, así que un rol con `channels.read` y sin `team.manage` veía
+   * «Activarlo», lo pulsaba y aterrizaba en «No tienes acceso a esta sección» — un
+   * control visible que el rol no puede ejecutar, que es justo lo que el contrato
+   * manda **ocultar**. Es el mismo defecto que se retiró del pie del sidebar, en
+   * otra ubicación. Medido con un operador simulado en
+   * `outputs/flujos-config-verify/`.
+   *
+   * Ocultar el motivo entero sería peor: la sección está vacía y quien la busca
+   * tiene derecho a saber por qué. Se dice la verdad, y se nombra a quien puede
+   * cambiarla en vez de ofrecer un enlace que termina en una negación.
+   */
+  const puedeActivarlo = sessionStore.hasPermission("team.manage");
+
   return (
     <div>
       <MenuSectionHeader title={titulo} />
       {showExpanded && (
         <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
           {motivo}{" "}
-          <Link
-            to="/configuracion"
-            className="font-medium text-brand-600 hover:underline dark:text-brand-400"
-          >
-            Activarlo
-          </Link>
+          {puedeActivarlo ? (
+            <Link
+              to="/configuracion"
+              className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+            >
+              Activarlo
+            </Link>
+          ) : (
+            <span>Pídele a un administrador que lo active.</span>
+          )}
         </p>
       )}
     </div>

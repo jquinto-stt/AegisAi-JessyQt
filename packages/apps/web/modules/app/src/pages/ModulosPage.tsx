@@ -14,6 +14,7 @@ import {
   pedidosStore,
   sessionStore,
   modulosOperablesDeSesion,
+  CATALOGO_MODULOS,
 } from "@/stores";
 import {
   BUSINESS_PROFILES,
@@ -32,6 +33,16 @@ import {
  * correcto mientras `Modulo = "pedidos"` sea el único valor del tipo, pero el día
  * que entre Inventario hay que derivarla del catálogo.
  */
+/**
+ * Identidad del único módulo que esta rejilla pinta.
+ *
+ * La rejilla sigue listando solo Pedidos a mano (correcto mientras
+ * `Modulo = "pedidos"` sea el único valor del tipo), pero su nombre y su
+ * descripción salen del catálogo: escribirlos aquí otra vez es cómo aparecieron
+ * tres descripciones distintas del mismo módulo.
+ */
+const MODULO_PEDIDOS = CATALOGO_MODULOS.pedidos;
+
 export const ModulosPage = observer(() => {
   const navigate = useNavigate();
   const org = organizacionStore.organizacion;
@@ -41,12 +52,32 @@ export const ModulosPage = observer(() => {
   const perfilActual = BUSINESS_PROFILES[perfilActualKey] || BUSINESS_PROFILES.food;
 
   const handleEntrarPedidos = () => {
-    // La sesión no puede operar más de lo que la organización tiene activo
-    // (`Sesión ⊆ Organización`): se concede la pertenencia real, no una lista fija.
-    sessionStore.configurar(
-      modulosOperablesDeSesion(organizacionStore.modulosActivos),
-      "administrador",
-    );
+    // Re-deriva la pertenencia de la sesión desde la organización
+    // (`Sesión ⊆ Organización`) **preservando el tipo de sesión**.
+    //
+    // Antes decía `"administrador"` fijo, y eso era una escalada: bastaba con
+    // abrir `/modulos` y pulsar este botón para obtener una sesión de
+    // administrador sin credenciales. La ruta ya no es anónima (ver `App.tsx`),
+    // pero el tipo de sesión tampoco es algo que un botón de navegación deba
+    // conceder — quien entra aquí ya tiene `team.manage`.
+    //
+    // Queda un segundo resto del mismo defecto, más difícil de ver: el fallback
+    // `sessionStore.tipoSesion ?? "administrador"`. Con una sesión simulada
+    // cuyo `tipoSesion` persistido sea nulo (clave antigua, o `localStorage`
+    // editado a mano) el `??` **fabricaba** el tipo. Ahora el tipo se lee del
+    // `accessContext` —la fuente resuelta— y si no hay ninguno **no se toca la
+    // sesión**: navegar no es autenticar.
+    //
+    // No se re-deriva mientras se simula: `simular()` restringe los módulos de la
+    // sesión a los del operador a propósito, y re-derivarlos de la organización
+    // los ampliaría.
+    const tipoActual = sessionStore.accessContext.tipoSesion;
+    if (!sessionStore.isSimulando && tipoActual) {
+      sessionStore.configurar(
+        modulosOperablesDeSesion(organizacionStore.modulosActivos),
+        tipoActual,
+      );
+    }
     navigate("/pedidos/inicio");
   };
 
@@ -195,10 +226,14 @@ export const ModulosPage = observer(() => {
                     </div>
 
                     <h4 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
-                      Pedidos & Fulfillment
+                      {MODULO_PEDIDOS.nombre}
                     </h4>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                      Gestión completa de órdenes de venta, preparación en cocina o empaque, transportadoras, cobranza y analítica de despacho.
+                      {/* Del catálogo, no escrita aquí: esta tarjeta tenía su PROPIA
+                          descripción, distinta de la de `/configuracion` y de la de
+                          `/onboarding/modulos`. Tres pantallas, tres textos del
+                          mismo módulo. */}
+                      {MODULO_PEDIDOS.descripcion}
                     </p>
 
                     {perfilActual && (

@@ -298,6 +298,59 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
     expect(store.siguienteRuta).toBe("/pedidos/inicio");
   });
 
+  it("rutaPrimerModuloActivo ignora un módulo NO disponible: no devuelve una ruta que no existe", () => {
+    // Estado persistido real, de una organización anterior a que
+    // `inventario.disponible` pasara a `false`: Pedidos instalado pero apagado,
+    // Inventario instalado Y encendido.
+    //
+    // Sin el filtro por `disponible`, esta getter devolvía
+    // `CATALOGO_MODULOS.inventario.rutaPrincipal` → `/inventario`, que no está en
+    // `App.tsx`: el comodín redirige a `/login`, o sea que «entrar al primer módulo
+    // activo» echaba al usuario de la aplicación.
+    //
+    // Se mide aquí y no en el navegador porque el único consumidor de esta ruta es
+    // `siguienteRuta`, y `siguienteRuta` solo lo leen los tests: en runtime la ruta
+    // es inalcanzable, así que un arnés de navegador pasaría con y sin el arreglo.
+    localStorage.setItem(
+      "necto.organizacion.v1",
+      JSON.stringify({
+        usuario: {
+          id: "usr_ana",
+          nombre: "Ana",
+          apellido: "Ríos",
+          email: "ana@tienda.com",
+          pais: "Colombia",
+          perfilCompletado: true,
+        },
+        organizacion: {
+          id: "org_ana",
+          nombre: "Tienda Ana",
+          slug: "tienda-ana",
+          pais: "Colombia",
+          moneda: "COP",
+          zonaHoraria: "America/Bogota",
+          fechaCreacion: "2026-09-01T00:00:00.000Z",
+        },
+        modulos: {
+          pedidos: { instalado: true, activo: false, conectores: { necto_ia: false, whatsapp: false } },
+          inventario: { instalado: true, activo: true, conectores: { necto_ia: false, whatsapp: false } },
+        },
+      }),
+    );
+
+    const leido = new OrganizacionStore();
+
+    // Precondición: el estado obsoleto SÍ se carga como activo. Sin esta aserción
+    // el test pasaría por vacío (si `inventario` no se hubiera leído, `null` sería
+    // la respuesta por la razón equivocada).
+    expect(leido.esModuloActivo("inventario")).toBe(true);
+    expect(leido.esModuloActivo("pedidos")).toBe(false);
+    // `modulosActivos` sigue diciendo la verdad de la configuración…
+    expect(leido.modulosActivos).toEqual(["inventario"]);
+    // …pero no se traduce en una ruta a ninguna parte.
+    expect(leido.rutaPrimerModuloActivo).toBeNull();
+  });
+
   it("normaliza la pertenencia leída de localStorage: lo que no sea exactamente true queda en false", () => {
     localStorage.setItem(
       "necto.organizacion.v1",

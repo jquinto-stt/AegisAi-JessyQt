@@ -352,10 +352,21 @@ export class OrganizacionStore {
    *
    * `null` si la organización no tiene ninguno activo — que es un estado legítimo
    * (organización recién creada) y no un error.
+   *
+   * **Exige además que el módulo esté `disponible`.** Una ruta es navegable solo
+   * si la pantalla existe, y `rutaPrincipal` de un módulo declarado pero no
+   * implementado apunta a una ruta que no está en `App.tsx`: devolverla manda al
+   * comodín, que redirige a `/login`. El estado que lo provoca es real y está
+   * persistido: una organización de antes de que `inventario.disponible` pasara a
+   * `false` puede tener Inventario encendido y Pedidos apagado.
+   *
+   * `modulosActivos` NO filtra por `disponible` a propósito: dice qué tiene
+   * encendido la organización, que es un hecho de configuración. Lo que no puede
+   * hacer es traducirse en una ruta a ninguna parte.
    */
   get rutaPrimerModuloActivo(): string | null {
-    const activo = (Object.keys(this.modulos) as IdModuloNegocio[]).find((id) =>
-      this.esModuloActivo(id),
+    const activo = (Object.keys(this.modulos) as IdModuloNegocio[]).find(
+      (id) => this.esModuloActivo(id) && CATALOGO_MODULOS[id].disponible,
     );
     return activo ? CATALOGO_MODULOS[activo].rutaPrincipal : null;
   }

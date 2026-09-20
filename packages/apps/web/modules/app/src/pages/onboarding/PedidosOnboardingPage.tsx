@@ -91,11 +91,17 @@ export const PedidosOnboardingPage = observer(() => {
     // 2. Aplicar el perfil comercial y generar datos demo correspondientes
     pedidosStore.setPerfilComercial(perfilElegido, true);
 
-    // 3. Activar la sesión con rol de Administrador para este módulo. La lista se
-    //    deriva de la pertenencia recién instalada, no se escribe a mano.
+    // 3. Sincronizar la sesión con la pertenencia recién instalada. La lista se
+    //    deriva de la organización, no se escribe a mano.
+    //
+    //    El TIPO de sesión se PRESERVA: antes decía `"administrador"` fijo, así que
+    //    volver a este paso desde `/modulos` → «Reconfigurar perfil» ascendía a
+    //    administrador a cualquier rol con `team.manage` que no lo fuera. El
+    //    fallback solo cubre el caso legítimo de quien llega aquí sin sesión (el
+    //    alta desde `/register`), donde el creador de la organización sí es admin.
     sessionStore.configurar(
       modulosOperablesDeSesion(organizacionStore.modulosActivos),
-      "administrador",
+      sessionStore.tipoSesion ?? "administrador",
     );
 
     // 5. Entrar a la encuesta final antes de iniciar la operativa

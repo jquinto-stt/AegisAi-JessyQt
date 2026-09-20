@@ -123,8 +123,26 @@ export default function App() {
       {/* Módulos de la organización. `/modulos` es la canónica; las otras dos eran
           la misma pantalla con tres nombres distintos (`/workspaces`,
           `/workspace/modulos`), que es la ambigüedad «Workspace vs Organización»
-          resuelta a favor de Organización. Redirigen, no duplican. */}
-      <Route path="/modulos" element={<ModulosPage />} />
+          resuelta a favor de Organización. Redirigen, no duplican.
+
+          COMPUERTA: esta ruta gestiona módulos (instalar, desinstalar) igual que
+          `/configuracion`, así que exige lo mismo. Antes vivía fuera de toda
+          guarda: sin sesión se renderizaba entera —con el nombre y la moneda de la
+          organización— y su botón «Entrar al módulo» concedía una sesión de
+          administrador. Sigue FUERA del `AppShell` a propósito (pinta su propio
+          marco a pantalla completa, sin sidebar), pero `RequireSession` y
+          `CapabilityGuard` no necesitan el shell: se apilan aquí. Medido en
+          `outputs/flujos-config-verify/`. */}
+      <Route
+        path="/modulos"
+        element={
+          <RequireSession>
+            <CapabilityGuard capacidad="team.manage">
+              <ModulosPage />
+            </CapabilityGuard>
+          </RequireSession>
+        }
+      />
       <Route path="/workspaces" element={<Navigate to="/modulos" replace />} />
       <Route path="/workspace/modulos" element={<Navigate to="/modulos" replace />} />
 
