@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { Layers, Plus, ArrowRight } from "lucide-react";
@@ -8,7 +9,17 @@ import UserDropdown from "@/shell/header/UserDropdown";
 import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
+import { CartIcon } from "@/icons";
 import { NectoLogo } from "@/compositions/shared/NectoLogo";
+import {
+  MetricasVivas,
+  AtajosRapidos,
+  TarjetaProximo,
+  metricasPedidosHoy,
+  modulosProximos,
+  ATAJOS_PEDIDOS,
+} from "@/pages/modulos/TarjetasModulo";
+import { ModalEspecificaciones } from "@/pages/modulos/ModalEspecificaciones";
 import {
   organizacionStore,
   pedidosStore,
@@ -16,6 +27,7 @@ import {
   modulosOperablesDeSesion,
   CATALOGO_MODULOS,
 } from "@/stores";
+import type { InfoModuloNegocio } from "@/stores/plataforma.store";
 import {
   BUSINESS_PROFILES,
   type BusinessProfileType,
@@ -48,8 +60,22 @@ export const ModulosPage = observer(() => {
   const org = organizacionStore.organizacion;
   const tienePedidos = organizacionStore.tieneModuloPedidos;
 
+  // Módulo cuyas especificaciones se están mirando (o `null`).
+  const [moduloEspecificado, setModuloEspecificado] = useState<InfoModuloNegocio | null>(null);
+
   const perfilActualKey = (pedidosStore.config.perfilComercial || "food") as BusinessProfileType;
   const perfilActual = BUSINESS_PROFILES[perfilActualKey] || BUSINESS_PROFILES.food;
+
+  // Métricas de hoy. `metricasPedidosHoy()` es una función pura sobre el store;
+  // el `observer` de este componente la re-ejecuta cuando el store cambia, así
+  // que los números siguen al negocio sin ningún polling.
+  const metricas = metricasPedidosHoy();
+
+  // Solo si el módulo está activo: si la organización no tiene Pedidos
+  // instalados, los atajos a sus subrutas son enlaces a un módulo que no está.
+  const proximos = tienePedidos
+    ? modulosProximos(organizacionStore.modulosActivos)
+    : modulosProximos([]);
 
   const handleEntrarPedidos = () => {
     // Re-deriva la pertenencia de la sesión desde la organización
@@ -81,13 +107,10 @@ export const ModulosPage = observer(() => {
     navigate("/pedidos/inicio");
   };
 
-  const handleDesinstalarPedidos = () => {
-    // Una sola llamada: la pertenencia tiene un único dueño. Antes había que
-    // acordarse de escribir en DOS stores (`organizacionStore` y `plataformaStore`),
-    // y esa obligación es justo la que se olvidaba en `ConfiguracionModulosPage`,
-    // que solo escribía en uno y dejaba a la organización desfasada.
-    organizacionStore.desinstalarModulo("pedidos");
-  };
+  // Aquí vivía `handleDesinstalarPedidos`, que escribía en `organizacionStore`
+  // (una sola llamada: la pertenencia tiene un único dueño). Se retiró junto con
+  // el botón «Desinstalar» de la tarjeta: la baja de un módulo es administración
+  // avanzada y destructiva, y su sitio es `/configuracion?tab=modulos`.
 
   // Aquí vivían `handleLogout` e `iniciales`, ya sin usar en `WorkspacesPage`: el
   // cierre de sesión está en `UserDropdown` y las iniciales no las pintaba nadie.
@@ -140,14 +163,25 @@ export const ModulosPage = observer(() => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/onboarding/organizacion")}
+                onClick={() => navigate("/configuracion")}
                 className="rounded-full"
               >
                 Configurar Organización
               </Button>
+              {/* Único botón de alta de módulos de la pantalla. Antes había tres
+                  destinos al asistente en esta misma vista (cabecera, subcabecera
+                  de la lista y estado vacío); la subcabecera se retiró. El del
+                  estado vacío se conserva porque «sin módulos» no pinta esta
+                  cabecera, así que nunca se ven los dos.
+
+                  El destino es `/configuracion?tab=modulos`, no el asistente de
+                  onboarding: la gestión de la pertenencia (instalar, desinstalar)
+                  vive ahí, junto a la compuerta `team.manage` que esta pantalla
+                  ya exige — ver `App.tsx`. `?tab=modulos` es una `ClaveTab` real
+                  (`ConfiguracionPage.tsx`), no un parámetro inventado. */}
               <Button
                 size="sm"
-                onClick={() => navigate("/onboarding/modulos")}
+                onClick={() => navigate("/configuracion?tab=modulos")}
                 className="rounded-full font-bold bg-brand-500 text-white shadow-sm shadow-brand-500/20"
               >
                 <Plus className="size-4 mr-1.5" />
@@ -171,9 +205,13 @@ export const ModulosPage = observer(() => {
               </p>
 
               <div className="mt-8 flex justify-center">
+                {/* Mismo destino que el botón de la cabecera, por la misma razón:
+                    instalar un módulo es gestionar la pertenencia, y eso vive en
+                    `/configuracion?tab=modulos`. Se conserva este botón porque en
+                    el estado vacío no hay cabecera de módulos que lo ofrezca. */}
                 <Button
                   size="lg"
-                  onClick={() => navigate("/onboarding/modulos")}
+                  onClick={() => navigate("/configuracion?tab=modulos")}
                   className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
                 >
                   <Plus className="size-5 mr-1.5" />
@@ -184,23 +222,16 @@ export const ModulosPage = observer(() => {
           ) : (
             /* VISTA CON MÓDULOS ACTIVOS */
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                {/* Sin contador: mientras `Modulo` tenga un solo valor, «(1)» sería
-                    un número inventado esperando a ser falso. Vuelve cuando la
-                    rejilla se derive del catálogo. */}
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  Módulo activo
-                </h3>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate("/onboarding/modulos")}
-                  className="rounded-full text-xs"
-                >
-                  <Plus className="size-3.5 mr-1" />
-                  Agregar más módulos
-                </Button>
-              </div>
+              {/* Subcabecera de la lista. Tenía un botón «Agregar más módulos»
+                  apuntando al asistente, duplicando el de la cabecera con otro
+                  destino. Se retiró: la acción de alta es UNA y vive arriba.
+
+                  Sin contador a la derecha: mientras `Modulo` tenga un solo
+                  valor, «(1)» sería un número inventado esperando a ser falso.
+                  Vuelve cuando la rejilla se derive del catálogo. */}
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Módulo activo
+              </h3>
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {/* Módulo Pedidos Activo */}
@@ -208,17 +239,11 @@ export const ModulosPage = observer(() => {
                   <div>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-md shadow-brand-500/20">
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          className="h-6 w-6"
-                        >
-                          <circle cx="9" cy="21" r="1" />
-                          <circle cx="20" cy="21" r="1" />
-                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                        </svg>
+                        {/* El glifo venía como `<svg>` inline escrito a mano aquí.
+                            Se usa `CartIcon` de `@/icons`, que es el MISMO que ya
+                            usaba `conversaciones/ConfigPage`. Deuda pendiente: el
+                            icono por módulo debería salir del catálogo. */}
+                        <CartIcon className="h-6 w-6" />
                       </div>
                       <Badge color="success" size="sm">
                         ✓ Activo
@@ -235,6 +260,9 @@ export const ModulosPage = observer(() => {
                           mismo módulo. */}
                       {MODULO_PEDIDOS.descripcion}
                     </p>
+
+                    {/* Métricas vivas del negocio. */}
+                    <MetricasVivas metricas={metricas} />
 
                     {perfilActual && (
                       <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
@@ -258,7 +286,17 @@ export const ModulosPage = observer(() => {
                     )}
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+                  {/* Pie de la tarjeta: UNA sola acción de primer nivel.
+                      Se retiraron dos controles que vivían aquí y no pertenecen
+                      al launcher:
+                        · «Desinstalar» — destructivo. Dar de baja un módulo es
+                          administración avanzada y vive en
+                          `/configuracion?tab=modulos`, que ya exige `team.manage`.
+                        · «Reconfigurar perfil» — opción técnica del módulo.
+                      Un lanzador sirve para ENTRAR; ofrecer aquí la baja es
+                      poner una acción irreversible a un clic de quien venía a
+                      trabajar, junto al botón que sí quiere pulsar. */}
+                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                     <Button
                       size="md"
                       className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-md shadow-brand-500/20"
@@ -267,29 +305,48 @@ export const ModulosPage = observer(() => {
                       Entrar al módulo
                       <ArrowRight className="size-4 ml-1.5 inline" />
                     </Button>
-                    <div className="flex items-center justify-between text-xs pt-1">
-                      <button
-                        type="button"
-                        onClick={() => navigate("/onboarding/pedidos")}
-                        className="text-brand-600 hover:underline cursor-pointer dark:text-brand-400 font-medium"
-                      >
-                        Reconfigurar perfil
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDesinstalarPedidos}
-                        className="text-gray-400 hover:text-error-500 cursor-pointer"
-                      >
-                        Desinstalar
-                      </button>
-                    </div>
                   </div>
+
+                  {/* Atajos directos a las subrutas del módulo. Cada uno se
+                      pinta según SU capacidad (no todas piden lo mismo). */}
+                  <AtajosRapidos atajos={ATAJOS_PEDIDOS} onIr={(to) => navigate(to)} />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Módulos del catálogo que esta organización no tiene activos ──
+              Se derivan del catálogo, no de una lista a mano. `disponible`
+              decide el rótulo: hoy `inventario` está en `false` → «Próximamente». */}
+          {proximos.length > 0 && (
+            <div className="space-y-4 border-t border-gray-100 pt-8 dark:border-gray-800">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  Catálogo de módulos
+                </h3>
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  {proximos.length === 1 ? "1 disponible" : `${proximos.length} disponibles`}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                {proximos.map((m) => (
+                  <TarjetaProximo
+                    key={m.id}
+                    modulo={m}
+                    onVerEspecificaciones={(mod) => setModuloEspecificado(mod)}
+                  />
+                ))}
               </div>
             </div>
           )}
         </div>
       </main>
+
+      <ModalEspecificaciones
+        modulo={moduloEspecificado}
+        onClose={() => setModuloEspecificado(null)}
+      />
     </div>
   );
 });

@@ -16,6 +16,7 @@ copia de la copia/
 
 # Temporary test/audit build outputs
 packages/apps/web/modules/cn-*
+packages/apps/web/modules/hub-*
 packages/apps/web/modules/neg-*
 packages/apps/web/modules/novedad-out*
 packages/apps/web/modules/vcr-*

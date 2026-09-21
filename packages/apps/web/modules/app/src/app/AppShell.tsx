@@ -6,6 +6,7 @@ import {
   ToggleAppSidebar,
 } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
+import ModuleSwitcher from "@/shell/header/ModuleSwitcher";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
 import UserDropdown from "@/shell/header/UserDropdown";
 import { AppSidebar } from "@/app/AppSidebar";
@@ -102,6 +103,11 @@ const AppHeader = observer(() => (
     leftContent={
       <div className="flex items-center gap-4">
         <ToggleAppSidebar />
+        {/* Selector rápido de módulo, alineado a la izquierda. Se monta AQUÍ y
+            no dentro de `BaseAppHeader`: ese componente también lo usa
+            `ModulosPage`, la pantalla que ES el lanzador, donde "cambiar de
+            módulo" no significaría nada. */}
+        <ModuleSwitcher />
         <OperadorChip />
       </div>
     }

@@ -180,11 +180,19 @@ const UserDropdown = observer(() => {
         {/* Separador */}
         <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
-        {/* Cambiar de módulo — de vuelta al Lanzador (`/modulos`).
+        {/* Workspace — de vuelta al Lanzador de Módulos (`/modulos`).
             Va destacado —fondo de marca, no el gris de las opciones de arriba—
             porque no es una preferencia de la cuenta: es salir de donde estás.
             Separado del bloque de perfil por la misma línea que separa «Cerrar
             sesión», para que se lea como acción de navegación y no de ajustes.
+
+            El rótulo es «Workspace» a secas. Decía «Cambiar de Módulo /
+            Workspace» y nombraba dos cosas que son la misma: `/modulos` es
+            «Módulos de la organización» y es el Lanzador; «Workspace» era el
+            nombre viejo de esa pantalla, retirado porque describía a la
+            ORGANIZACIÓN con el nombre de otra cosa. Aquí se conserva porque es
+            el término que el usuario reconoce, pero una sola vez y no en
+            conflicto con «Módulo».
 
             COMPUERTA `team.manage`. `/modulos` gestiona la pertenencia de la
             organización (instalar, desinstalar) y la ruta exige lo mismo que
@@ -204,7 +212,7 @@ const UserDropdown = observer(() => {
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-brand-700 rounded-xl group text-sm bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 transition-colors"
             >
               <LayoutGrid className="size-4.5 text-brand-500 group-hover:text-brand-600 dark:text-brand-400" />
-              <span>Cambiar de Módulo / Workspace</span>
+              <span>Workspace</span>
             </ShellDropdownItem>
             <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
           </>
