@@ -4,7 +4,7 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { organizacionStore } from "@/stores/organizacion.store";
-import { plataformaStore, type IdModuloNegocio } from "@/stores/plataforma.store";
+import { plataformaStore, CATALOGO_MODULOS, type IdModuloNegocio } from "@/stores/plataforma.store";
 import { OnboardingLayout } from "./OnboardingLayout";
 
 // Aquí se importaban `ThemeToggleButton`, `OnboardingStepper` y
@@ -37,17 +37,9 @@ const LOGO_MODULO: Record<IdModuloNegocio, React.ReactNode> = {
   ),
 };
 
-/**
- * Paso de onboarding de cada módulo, si lo tiene.
- *
- * `pedidos` lo tiene: instala el módulo y pregunta por sus conectores. Un módulo
- * DISPONIBLE sin paso no debe pintar botón — mandarlo a `/onboarding/pedidos`
- * desde su ficha instalaría Pedidos, que es exactamente el defecto de la
- * proyección duplicada: una superficie que dice una cosa y hace otra.
- */
-const PASO_ONBOARDING: Partial<Record<IdModuloNegocio, string>> = {
-  pedidos: "/onboarding/pedidos",
-};
+// `rutaOnboarding` se lee del catálogo (`CATALOGO_MODULOS[id].rutaOnboarding`).
+// Antes había un mapeo local `PASO_ONBOARDING` duplicado; se eliminó porque
+// estaba desconectado del que usaba `ConfiguracionModulosPage`.
 
 export const OnboardingModulosPage = observer(() => {
   const navigate = useNavigate();
@@ -180,10 +172,10 @@ export const OnboardingModulosPage = observer(() => {
                       (`disponible`) y que tenga un paso de onboarding al que ir.
                       Un módulo disponible sin paso no puede pintar «Agregar»:
                       no hay a dónde llevarlo sin instalar otro módulo. */}
-                  {modulo.disponible && PASO_ONBOARDING[modulo.id] ? (
+                  {modulo.disponible && modulo.rutaOnboarding ? (
                     <Button
                       size="sm"
-                      onClick={() => navigate(PASO_ONBOARDING[modulo.id]!)}
+                      onClick={() => navigate(modulo.rutaOnboarding!)}
                       className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-sm shadow-brand-500/20 cursor-pointer"
                     >
                       Agregar este módulo →

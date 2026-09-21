@@ -506,6 +506,7 @@ const ModuloMaestroCard = observer(({
 // Lo que sí es suyo: el contenido y sus dos acciones (agregar y restablecer).
 
 export const ModulosTab = observer(() => {
+  const navigate = useNavigate();
   const [modalModulo, setModalModulo] = useState<ModuloConfigDef | null>(null);
   const [modalIntegracion, setModalIntegracion] = useState<SubIntegracionDef | null>(null);
   const [moduloADesinstalar, setModuloADesinstalar] = useState<ModuloConfigDef | null>(null);
@@ -807,14 +808,24 @@ export const ModulosTab = observer(() => {
                       </div>
                     </div>
 
+                    {/* Si el módulo tiene paso de onboarding, se redirige ahí
+                        en vez de instalarlo en silencio: el onboarding configura
+                        rubro, conectores y lo que haga falta antes de activar.
+                        Un módulo sin `rutaOnboarding` se instala directamente. */}
                     <Button
                       size="sm"
                       onClick={() => {
-                        organizacionStore.instalarModulo(mod.id);
-                        setModalAgregarAbierto(false);
+                        const ruta = mod.rutaOnboarding;
+                        if (ruta) {
+                          setModalAgregarAbierto(false);
+                          navigate(ruta);
+                        } else {
+                          organizacionStore.instalarModulo(mod.id);
+                          setModalAgregarAbierto(false);
+                        }
                       }}
                     >
-                      Instalar
+                      {mod.rutaOnboarding ? "Configurar e instalar" : "Instalar"}
                     </Button>
                   </div>
                 ))

@@ -70,6 +70,18 @@ export interface InfoModuloNegocio {
   rutaPrincipal: string;
   rutaConfig?: string;
   /**
+   * Ruta de configuración inicial cuando el módulo se instala por primera vez.
+   *
+   * Si existe, tanto el onboarding (`OnboardingModulosPage`) como la pantalla
+   * de configuración (`ConfiguracionModulosPage`) redirigen ahí en vez de
+   * instalar en silencio. Es la única fuente de «¿tiene paso de onboarding?»;
+   * antes cada pantalla tenía su propio mapeo y estaban desconectados.
+   *
+   * Un módulo sin `rutaOnboarding` se instala directamente con
+   * `instalarModulo()` — no hay configuración inicial que pedir.
+   */
+  rutaOnboarding?: string;
+  /**
    * ¿Existe de verdad en el producto, o es una intención declarada?
    *
    * **Esta bandera es la única respuesta a «¿se puede usar hoy?»**, y las
@@ -130,6 +142,7 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
     descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos/inicio",
     rutaConfig: "/pedidos/config",
+    rutaOnboarding: "/onboarding/pedidos",
     disponible: true,
     destacados: [
       "Tablero Kanban por estados",
