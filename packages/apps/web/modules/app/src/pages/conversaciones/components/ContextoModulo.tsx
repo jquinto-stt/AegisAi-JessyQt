@@ -27,18 +27,24 @@ import { tiempoRelativo } from "@/pages/conversaciones/conversaciones.utils";
 // (Pedidos), y su puerta pública es el store de ese módulo.
 //
 // ── Por qué una vista por módulo y no una genérica ────────────────────────
-// «Contexto» significa cosas distintas en cada módulo: en Pedidos es *qué ha
-// comprado este cliente*, en Inventario sería *qué productos se le ofrecieron*.
+// «Contexto» significa cosas distintas en cada módulo, y en uno puede no
+// significar nada: en Pedidos es *qué ha comprado este cliente*; en Inventario
+// no hay una pregunta equivalente, porque **el almacén no es de un cliente**.
 // Un componente genérico que pintara «cosas del módulo» acabaría mostrando lo
 // que le sobrara a cada uno. Cada módulo declara su vista; el `switch` es
 // exhaustivo sobre `ModuloIntegrable`, así que añadir un módulo al catálogo sin
 // escribir su vista es un error de compilación, no un hueco silencioso.
 //
-// ── Sobre el módulo declarado sin proveedor ───────────────────────────────
-// `inventario` está en el catálogo pero NO disponible, así que hoy su pestaña no
-// se pinta nunca. Su rama existe para que el día que se marque `disponible` —que
-// es un cambio de una línea en el catálogo— la pantalla lo diga en vez de
-// mostrar un panel vacío sin explicación.
+// ── Sobre el módulo que no tiene vista ────────────────────────────────────
+// `inventario` está conectado a la conversación como cualquier otro —su
+// `disponible` es `true` desde el 21/09 y su proveedor de herramientas está
+// registrado—, pero su pestaña NO muestra un panel vacío: muestra el motivo.
+//
+// La ausencia es **semántica, no temporal**: no es que la vista esté pendiente
+// de construir, es que no hay nada que construir, porque las existencias de un
+// artículo no dependen de quién pregunta. Si algún día se quiere ver «qué se le
+// ofreció a este cliente», eso es historia comercial del contacto y su dueño
+// sería Pedidos, no Inventario.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 

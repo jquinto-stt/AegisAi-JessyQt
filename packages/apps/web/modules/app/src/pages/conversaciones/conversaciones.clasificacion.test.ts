@@ -223,10 +223,18 @@ describe("MODULO_DESTINO_LABEL — catálogo de dominio", () => {
     }
   });
 
-  it("solo `pedidos` y `general` están disponibles: no se promete un módulo sin datos", () => {
-    expect(MODULO_DESTINO_LABEL.pedidos.disponible).toBe(true);
-    expect(MODULO_DESTINO_LABEL.general.disponible).toBe(true);
-    expect(MODULO_DESTINO_LABEL.inventario.disponible).toBe(false);
+  it("los tres destinos están disponibles: el chip de dominio se pinta respaldado", () => {
+    // Este test afirmaba `inventario.disponible === false` («no se promete un
+    // módulo sin datos») y su premisa se invirtió el 21/09, cuando Inventario
+    // pasó a existir de verdad: rutas, store, páginas y proveedor de tools.
+    //
+    // El defecto que vigila sigue siendo el mismo, y por eso no se borra: un
+    // `disponible: true` sobre un módulo sin datos hace que la bandeja pinte el
+    // chip de dominio de mensajes cuya procedencia no está respaldada por nada.
+    // Hoy los tres lo están, y el test lo fija.
+    for (const m of Object.keys(TODOS_LOS_DESTINOS) as ModuloDestino[]) {
+      expect(MODULO_DESTINO_LABEL[m].disponible, `"${m}" declarado sin datos`).toBe(true);
+    }
   });
 
   it("no queda rastro de los módulos retirados", () => {

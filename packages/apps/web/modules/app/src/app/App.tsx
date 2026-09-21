@@ -11,6 +11,12 @@ import {
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
 import { PerfilOperadorPage } from "@/pages/equipo";
+import {
+  InventarioInicioPage,
+  ExistenciasPage,
+  MovimientosPage,
+  InventarioConfigPage,
+} from "@/pages/inventario";
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
@@ -86,6 +92,24 @@ export default function App() {
         <Route path="/pedidos/historial" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
+
+        {/* Módulo Inventario — espejo exacto de Pedidos, con las MISMAS dos
+            guardas apiladas y sin `React.lazy`: el repo no hace code splitting y
+            las páginas de Pedidos se importan estáticamente. Introducirlo aquí
+            sería cambiar la arquitectura de carga para un módulo.
+
+            `/inventario/inicio` es la ruta de ENTRADA (la del catálogo y la del
+            redirect del login) y `/inventario` es «Existencias», igual que en
+            Pedidos `/pedidos/inicio` es la llegada y `/pedidos` el tablero. La
+            distinción está escrita en `plataforma.store.ts` y manda la de
+            entrada.
+
+            `config` se entra con `settings.read` y se guarda con
+            `settings.manage`, como las otras tres configuraciones. */}
+        <Route path="/inventario/inicio" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><InventarioInicioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventario" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><ExistenciasPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventario/movimientos" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><MovimientosPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventario/config" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="settings.read"><InventarioConfigPage /></CapabilityGuard></ModuloGuard>} />
 
         {/* Organización — UNA sola pantalla de configuración, con tres pestañas
             (`?tab=general|modulos|equipo`).

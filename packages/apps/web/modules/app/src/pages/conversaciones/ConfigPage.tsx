@@ -136,6 +136,64 @@ const NOMBRE_VISIBLE_CANAL = "Necto";
 // que TODAS hereden el token único — que es el objetivo.
 
 // ═══════════════════════════════════════════════════════════════════════════
+// PRESENTACIÓN DE LOS MÓDULOS INTEGRABLES
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// La tarjeta de un módulo es una VISTA del catálogo `MODULOS_INTEGRABLES`, no
+// una copia suya. Aquí vive solo lo que es presentación —el icono, su color, la
+// chapa de versión y el nombre del proveedor—; el estado, la descripción y las
+// capacidades se leen del catálogo.
+//
+// ── Por qué se separó (21/09) ─────────────────────────────────────────────
+// Antes eran dos bloques escritos a mano, uno por módulo. El de Inventario se
+// quedó afirmando «En desarrollo · Próximamente» con el interruptor
+// deshabilitado cuando el módulo ya tenía proveedor, cuatro rutas y su
+// `disponible: true` — y encima con el estado real ya calculado tres líneas más
+// arriba. Un control que miente, que es el defecto que el propio catálogo de
+// integrables dice por escrito que hay que evitar.
+//
+// La copia no fue el problema: fue el síntoma. El problema es que la tarjeta
+// pudiera afirmar del módulo algo distinto de lo que el asistente tiene
+// registrado. Con una sola fuente, no puede.
+//
+// Es `Record<ModuloIntegrable, …>`: añadir un módulo integrable sin darle
+// presentación es un error de compilación, no una tarjeta en blanco.
+
+interface PresentacionIntegrable {
+  /** Glifo del módulo. */
+  Icono: React.FC<React.SVGProps<SVGSVGElement>>;
+  /** Clases del cuadro del icono (fondo + tinta), en claro y en oscuro. */
+  tono: string;
+  /** Nombre del proveedor de datos, en el pie de la tarjeta. */
+  proveedor: string;
+  /** Chapa junto al nombre: versión del plugin. */
+  version: string;
+}
+
+const PRESENTACION_INTEGRABLE: Record<ModuloIntegrable, PresentacionIntegrable> = {
+  pedidos: {
+    Icono: CartIcon,
+    tono: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400",
+    proveedor: "Núcleo de Pedidos",
+    version: "Plugin oficial · v1.2",
+  },
+  inventario: {
+    Icono: BoxCubeIcon,
+    // Tono de aviso, no de marca: el naranja de la marca es el acento de Pedidos
+    // en esta misma pantalla y dos tarjetas contiguas del mismo color se leerían
+    // como el mismo módulo.
+    tono: "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400",
+    proveedor: "Núcleo de Inventario",
+    // v1.0 es la primera versión: el proveedor se registró el 21/09.
+    version: "Plugin oficial · v1.0",
+  },
+};
+
+/** Clases de la chapa de versión. Igual en los dos módulos, a propósito. */
+const TONO_VERSION =
+  "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400";
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -525,94 +583,19 @@ export const ConfigPage = observer(() => {
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 gap-5">
-                      {/* Plugin 1: Módulo de Pedidos */}
-                      {(() => {
-                        const id: ModuloIntegrable = "pedidos";
-                        const entrada = MODULOS_INTEGRABLES[id];
+                      {/* Una tarjeta por módulo del catálogo, en su orden canónico.
+                          Ninguna rama pregunta «¿es pedidos?»: el estado, la
+                          descripción y las capacidades se leen de
+                          `MODULOS_INTEGRABLES`, y solo el icono, su color y la
+                          chapa de versión son presentación. */}
+                      {integracionesStore.entradas.map(({ id, entrada }) => {
+                        const { Icono, tono, proveedor, version } =
+                          PRESENTACION_INTEGRABLE[id];
                         const conectado = integracionesStore.estaConectado(id);
-                        const estado: EstadoIntegracionCanal = conectado ? "conectado" : "desconectado";
 
-                        return (
-                          <div
-                            key={id}
-                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-theme-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
-                          >
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
-                                  <CartIcon className="h-6 w-6" />
-                                </div>
-
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2.5">
-                                    <h3 className="text-base font-semibold text-ink-title dark:text-white">
-                                      Módulo de Pedidos
-                                    </h3>
-                                    <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
-                                      {ESTADO_INTEGRACION_LABEL[estado]}
-                                    </Badge>
-                                    <span className="rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
-                                      Plugin oficial · v1.2
-                                    </span>
-                                  </div>
-                                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                    Sincroniza el flujo operativo de pedidos con WhatsApp. Permite a los agentes y al bot consultar estados, crear órdenes directamente desde el hilo y enviar resúmenes al cliente.
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 sm:hidden">
-                                  {conectado ? "Habilitado" : "Deshabilitado"}
-                                </span>
-                                <Switch
-                                  color={SWITCH_COLOR}
-                                  checked={conectado}
-                                  disabled={soloLectura}
-                                  onChange={() => integracionesStore.alternar(id)}
-                                  aria-label={`Conectar módulo ${entrada.label} al canal`}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
-                              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                                Capacidades habilitadas en el chat
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {[
-                                  "Consultar pedidos y estado en tiempo real",
-                                  "Crear pedidos directamente desde el chat",
-                                  "Pestaña contextual «Pedidos» en cada conversación",
-                                  "Envío de resúmenes y guías al cliente",
-                                ].map((capacidad) => (
-                                  <span
-                                    key={capacidad}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/70 px-2.5 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-                                  >
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-success-500 shrink-0" />
-                                    {capacidad}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 dark:text-gray-500">
-                              <div className="flex items-center gap-4">
-                                <span>Proveedor: Núcleo de Pedidos</span>
-                                <span>Permiso: orders.read</span>
-                              </div>
-                              <span>Sincronización: En tiempo real</span>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Plugin 2: Módulo de Inventario */}
-                      {(() => {
-                        const id: ModuloIntegrable = "inventario";
-                        const entrada = MODULOS_INTEGRABLES[id];
-                        const conectado = integracionesStore.estaConectado(id);
+                        // El estado se deriva de dos hechos independientes: si el
+                        // módulo existe (catálogo) y si está conectado (store). La
+                        // pantalla no decide nada por su cuenta.
                         const estado: EstadoIntegracionCanal = !entrada.disponible
                           ? "no_disponible"
                           : conectado
@@ -626,36 +609,49 @@ export const ConfigPage = observer(() => {
                           >
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                               <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-600 shadow-theme-xs dark:bg-warning-500/10 dark:text-warning-400">
-                                  <BoxCubeIcon className="h-6 w-6" />
+                                <div
+                                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-theme-xs ${tono}`}
+                                >
+                                  <Icono className="h-6 w-6" />
                                 </div>
 
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2.5">
                                     <h3 className="text-base font-semibold text-ink-title dark:text-white">
-                                      Módulo de Inventario
+                                      Módulo de {entrada.label}
                                     </h3>
                                     <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
                                       {ESTADO_INTEGRACION_LABEL[estado]}
                                     </Badge>
-                                    <span className="rounded-md bg-warning-50 px-2 py-0.5 text-[11px] font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">
-                                      En desarrollo · Próximamente
+                                    <span
+                                      className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${TONO_VERSION}`}
+                                    >
+                                      {version}
                                     </span>
                                   </div>
                                   <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                    Permite al cliente y a los operadores consultar el catálogo de productos, existencias disponibles y listas de precios actualizadas directamente desde WhatsApp.
+                                    {entrada.descripcion}
                                   </p>
                                 </div>
                               </div>
 
                               <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
+                                {/* El estado, también aquí, y no «Habilitado» /
+                                    «Deshabilitado»: en un módulo declarado sin
+                                    proveedor «Deshabilitado» sugeriría que basta
+                                    con pulsarlo. */}
                                 <span className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">
-                                  No disponible
+                                  {ESTADO_INTEGRACION_LABEL[estado]}
                                 </span>
                                 <Switch
                                   color={SWITCH_COLOR}
-                                  checked={false}
-                                  disabled={true}
+                                  checked={conectado}
+                                  // Dos motivos distintos para deshabilitar, y los
+                                  // dos ciertos: sin permiso de escritura no se
+                                  // toca, y un módulo sin proveedor no tiene nada
+                                  // que conectar.
+                                  disabled={soloLectura || !entrada.disponible}
+                                  onChange={() => integracionesStore.alternar(id)}
                                   aria-label={`Conectar módulo ${entrada.label} al canal`}
                                 />
                               </div>
@@ -663,44 +659,59 @@ export const ConfigPage = observer(() => {
 
                             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
                               <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                                Capacidades planificadas
+                                {entrada.disponible
+                                  ? "Capacidades habilitadas en el chat"
+                                  : "Capacidades planificadas"}
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {[
-                                  "Consultar catálogo de productos y precios",
-                                  "Verificar existencias y disponibilidad en almacén",
-                                  "Pestaña contextual «Inventario» en la conversación",
-                                  "Validación automática de existencias antes de pedir",
-                                ].map((capacidad) => (
+                                {entrada.ejemplos.map((capacidad) => (
                                   <span
                                     key={capacidad}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-2.5 py-1 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400"
+                                    className={
+                                      entrada.disponible
+                                        ? "inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/70 px-2.5 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
+                                        : "inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-2.5 py-1 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400"
+                                    }
                                   >
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                    <CheckCircleIcon
+                                      className={`h-3.5 w-3.5 shrink-0 ${
+                                        entrada.disponible ? "text-success-500" : "text-gray-400"
+                                      }`}
+                                    />
                                     {capacidad}
                                   </span>
                                 ))}
                               </div>
                             </div>
 
-                            <div className="mt-4">
-                              <Alert
-                                variant="info"
-                                title="Módulo declarado en el catálogo"
-                                message="Este módulo está registrado en la arquitectura del sistema, pero su proveedor de datos y catálogo de productos aún se encuentra en desarrollo. El interruptor se activará automáticamente al desplegar su proveedor."
-                              />
-                            </div>
+                            {/* Un módulo declarado que todavía no existe se
+                                explica; no se disfraza de módulo apagado. */}
+                            {!entrada.disponible && (
+                              <div className="mt-4">
+                                <Alert
+                                  variant="info"
+                                  title="Módulo declarado en el catálogo"
+                                  message="Este módulo está registrado en la arquitectura del sistema, pero todavía no tiene proveedor de herramientas. El interruptor se habilitará solo el día que lo tenga: no se puede conectar algo que aún no hay."
+                                />
+                              </div>
+                            )}
 
                             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 dark:text-gray-500">
                               <div className="flex items-center gap-4">
-                                <span>Proveedor: Núcleo de Inventario</span>
-                                <span>Permiso: inventory.read (previsto)</span>
+                                <span>Proveedor: {proveedor}</span>
+                                {entrada.disponible && (
+                                  <span>Permiso: {entrada.capacidad}</span>
+                                )}
                               </div>
-                              <span>Estado: Pendiente de conector</span>
+                              <span>
+                                {entrada.disponible
+                                  ? "Sincronización: En tiempo real"
+                                  : "Estado: Pendiente de conector"}
+                              </span>
                             </div>
                           </div>
                         );
-                      })()}
+                      })}
                     </div>
                   </Card>
 

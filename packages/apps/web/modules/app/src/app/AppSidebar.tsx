@@ -7,7 +7,9 @@ import {
   MenuItem,
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
-import { sessionStore, organizacionStore } from "@/stores";
+import { sessionStore, organizacionStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
+import type { Modulo, Seccion } from "@/stores";
+import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import { Settings } from "lucide-react";
 import {
@@ -21,6 +23,8 @@ import {
   AiIcon,
   ChatIcon,
   PieChartIcon,
+  BoxIconLine,
+  TableIcon,
 } from "@/icons";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -60,7 +64,9 @@ const Logo = () => (
   <Link to={RUTA_LANZADOR} className="flex items-center">
     {/*
       Dos archivos, no uno: el lockup lleva «grow together» en índigo (#15008B),
-      que sobre el panel oscuro (`gray-900`, #1A1A1A) es prácticamente invisible.
+      que sobre el panel oscuro (`gray-900`, #212121) es prácticamente invisible.
+      El hex estaba mal escrito (`#1A1A1A` era el paso 950, el lienzo, no el
+      panel): el sidebar es `dark:bg-gray-900`, así que el fondo real es #212121.
       CSS no puede repintar el interior de un `<img>`, así que el cambio se hace
       con `dark:hidden` / `dark:block` y la caja queda idéntica en los dos temas.
 
@@ -271,15 +277,63 @@ const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motiv
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SIDEBAR CONTENT — Módulo de Pedidos
+// SIDEBAR CONTENT — Módulos de negocio
 // ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Qué secciones de cada módulo pinta el sidebar, en qué orden y con qué icono.
+ *
+ * **Solo el orden y el glifo.** La ETIQUETA y la RUTA se leen de `SECCIONES`
+ * (`operadores.store.ts`), que es el catálogo de destinos del módulo. Duplicarlas
+ * aquí es cómo se acaba con `/inventario/config` escrito en dos archivos y una
+ * sección renombrada en uno solo.
+ *
+ * **No es `SECCIONES[modulo]` entero, y no puede serlo.** El catálogo incluye las
+ * secciones TRANSVERSALES —`asistente` y `conversaciones` en Pedidos— que este
+ * archivo NO pinta aquí: viven en los bloques «Inteligencia» y «Canales», que
+ * preguntan por el conector de la organización y no por el módulo. Recorrer el
+ * catálogo completo pintaría Conversaciones dos veces.
+ *
+ * La compuerta NO se declara aquí: cada ítem pasa por
+ * `sessionStore.puedeVerSeccion(modulo, id)`, que resuelve la capacidad en
+ * `SECCIONES`. Nunca una comprobación de rol ni `esAdmin` (invariante C9).
+ */
+const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SVGProps<SVGSVGElement>> }[]> = {
+  pedidos: [
+    { seccionId: "inicio", Icono: GridIcon },
+    { seccionId: "tablero", Icono: ListIcon },
+    { seccionId: "crear", Icono: PlusIcon },
+    { seccionId: "historial", Icono: TaskIcon },
+    { seccionId: "analitica", Icono: PieChartIcon },
+    { seccionId: "configuracion", Icono: PlugInIcon },
+  ],
+  inventario: [
+    { seccionId: "inicio", Icono: GridIcon },
+    { seccionId: "existencias", Icono: BoxIconLine },
+    { seccionId: "movimientos", Icono: TableIcon },
+    { seccionId: "configuracion", Icono: PlugInIcon },
+  ],
+};
+
+/**
+ * Sección del catálogo, o `null` si el id no existe.
+ *
+ * El `null` no debería ocurrir nunca —los ids de `ITEMS_MODULO` salen del mismo
+ * catálogo— y por eso mismo no se calla: devolver el id como etiqueta o `"#"` como
+ * ruta sería pintar un enlace que no lleva a ninguna parte. Se omite el ítem y
+ * `AppSidebar.secciones.test.ts` fija que la omisión nunca se activa.
+ */
+function seccionDe(modulo: Modulo, seccionId: string): Seccion | null {
+  return SECCIONES[modulo]?.find((s) => s.id === seccionId) ?? null;
+}
 
 const SidebarContent = observer(() => {
   const { pathname } = useLocation();
   const { isExpanded: showExpanded } = useSidebarContext();
   const isActive = (path: string) => pathname === path;
 
-  const puedePedidos = (seccionId: string) => sessionStore.puedeVerSeccion("pedidos", seccionId);
+  const puedeVerSeccion = (modulo: Modulo, seccionId: string) =>
+    sessionStore.puedeVerSeccion(modulo, seccionId);
   const puedeGestionarEquipo = sessionStore.hasPermission("team.manage");
   const esRutaConHijas = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
@@ -399,31 +453,64 @@ const SidebarContent = observer(() => {
           />
         )}
 
-        {/* Módulos de negocio (Pedidos y, más adelante, Inventario, etc.). */}
-        {organizacionStore.esModuloActivo("pedidos") && (
-          <div>
-            <MenuSectionHeader
-              title="Pedidos"
-              collapsible
-              isCollapsed={estaColapsado("pedidos")}
-              onToggle={() => toggleSeccion("pedidos")}
-            />
-            <div
-              className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                estaColapsado("pedidos") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
-              }`}
-            >
-              <ul className="flex flex-col gap-1">
-                {puedePedidos("inicio") && <MenuItem icon={<GridIcon />} name="Inicio" path="/pedidos/inicio" isActive={isActive} />}
-                {puedePedidos("tablero") && <MenuItem icon={<ListIcon />} name="Tablero" path="/pedidos" isActive={isActive} />}
-                {puedePedidos("crear") && <MenuItem icon={<PlusIcon />} name="Crear pedido" path="/pedidos/crear" isActive={isActive} />}
-                {puedePedidos("historial") && <MenuItem icon={<TaskIcon />} name="Historial" path="/pedidos/historial" isActive={isActive} />}
-                {puedePedidos("analitica") && <MenuItem icon={<PieChartIcon />} name="Analítica" path="/pedidos/analitica" isActive={isActive} />}
-                {puedePedidos("configuracion") && <MenuItem icon={<PlugInIcon />} name="Configuración" path="/pedidos/config" isActive={isActive} />}
-              </ul>
+        {/* Módulos de negocio — UNA rama por módulo, y ninguna escrita a mano.
+            Antes era una rama literal de Pedidos con el título `"Pedidos"` y seis
+            `puedePedidos(...)` cableados, y el comentario decía «y, más adelante,
+            Inventario». Eso dejó de ser una promesa: el módulo existe.
+
+            Dos decisiones, y las dos son sobre no mentir:
+              · La lista sale de `modulosOperablesDeSesion(modulosActivos)` —el
+                mismo vocabulario que usa el `ModuleSwitcher`—, no de un array
+                literal. Un módulo que la app no sabe nombrar no tiene rama, y uno
+                que la organización no tiene encendido no se pinta.
+              · El título es `CATALOGO_MODULOS[modulo].nombreCorto`. Con Pedidos
+                como módulo único, `"Pedidos"` literal era invisible; con dos,
+                habría titulado «Pedidos» una sección de Inventario.
+              · La sección entera se omite si no queda NINGÚN ítem visible. Sin
+                esto, un rol sin `inventory.read` ni `settings.read` —el rol
+                «Operador», por ejemplo— vería un encabezado «Inventario» plegable
+                con nada debajo: una sección que promete un destino y no lleva a
+                ninguno. Los ítems ya se filtraban por capacidad; el título no. */}
+        {modulosOperablesDeSesion(organizacionStore.modulosActivos).map((modulo) => {
+          const visibles = ITEMS_MODULO[modulo].flatMap(({ seccionId, Icono }) => {
+            const seccion = seccionDe(modulo, seccionId);
+            // Sección inexistente en el catálogo: se omite en vez de pintar un
+            // enlace sin destino. Ver `seccionDe`.
+            if (!seccion) return [];
+            if (!puedeVerSeccion(modulo, seccionId)) return [];
+            return [{ seccionId, Icono, seccion }];
+          });
+
+          if (visibles.length === 0) return null;
+
+          return (
+            <div key={modulo}>
+              <MenuSectionHeader
+                title={CATALOGO_MODULOS[modulo].nombreCorto}
+                collapsible
+                isCollapsed={estaColapsado(modulo)}
+                onToggle={() => toggleSeccion(modulo)}
+              />
+              <div
+                className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                  estaColapsado(modulo) ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
+                }`}
+              >
+                <ul className="flex flex-col gap-1">
+                  {visibles.map(({ seccionId, Icono, seccion }) => (
+                    <MenuItem
+                      key={seccionId}
+                      icon={<Icono />}
+                      name={seccion.label}
+                      path={seccion.path}
+                      isActive={isActive}
+                    />
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })}
 
         {/* Organización — UNA sola entrada para UNA sola pantalla.
             Antes eran dos («Equipo» y «Configuración de Módulos») porque eran dos

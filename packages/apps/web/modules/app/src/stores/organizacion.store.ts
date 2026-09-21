@@ -433,9 +433,11 @@ export class OrganizacionStore {
    * **Exige además que el módulo esté `disponible`.** Una ruta es navegable solo
    * si la pantalla existe, y `rutaPrincipal` de un módulo declarado pero no
    * implementado apunta a una ruta que no está en `App.tsx`: devolverla manda al
-   * comodín, que redirige a `/login`. El estado que lo provoca es real y está
-   * persistido: una organización de antes de que `inventario.disponible` pasara a
-   * `false` puede tener Inventario encendido y Pedidos apagado.
+   * comodín, que redirige a `/login`. El estado que lo provoca es alcanzable y
+   * está persistido: `modulos` se guarda en `localStorage` y `modulosActivos` no
+   * filtra por `disponible` (dice qué tiene encendido la organización, que es un
+   * hecho de configuración), así que un blob guardado puede tener Inventario
+   * encendido y Pedidos apagado.
    *
    * `modulosActivos` NO filtra por `disponible` a propósito: dice qué tiene
    * encendido la organización, que es un hecho de configuración. Lo que no puede

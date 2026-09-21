@@ -78,7 +78,7 @@ export const ModalEspecificaciones: React.FC<ModalEspecificacionesProps> = obser
               </div>
             )}
 
-            {/* Lo que el catálogo NO dice no se rellena: si `inventario` no
+            {/* Lo que el catálogo NO dice no se rellena: si un módulo no
                 tiene más campos, no hay más filas. Un «Precio: —» inventado
                 sería una promesa. */}
 

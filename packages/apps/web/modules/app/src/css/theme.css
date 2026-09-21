@@ -137,7 +137,25 @@
      habia aqui era azulada (tinte 28-32 en los pasos medios), asi que cada
      paso conserva su L* y pierde el tinte: mismo contraste, sin el azul.
      Los cuatro neutros medidos caen sobre esta rampa (pasos 100, 200, 900
-     y 950), que es lo que confirma que la forma era correcta. */
+     y 950) —salvo el 950, que se aparta a proposito y se explica abajo—, que
+     es lo que confirma que la forma era correcta.
+
+     ── EXCEPCION DECLARADA: el paso 950 (21/09) ─────────────────────────────
+     El manual mide el lienzo en #1a1a1a y ese fue el valor de este paso. El
+     21/09 se cambia a **#121212** por indicacion expresa del propietario del
+     producto: es el fondo del tema oscuro y quiere el tono mas profundo.
+
+     Se cambia AQUI, en el token, y no en cada superficie, porque `gray-950`
+     es el fondo oscuro de TODO el producto: `.necto-lienzo` (el shell),
+     `ModulosPage`, onboarding, operador, seleccionar, simulador y
+     `PublicPageLayout`. Tocarlo en un solo sitio deja las nueve superficies
+     coherentes; tocarlo en una sola las deja discrepando entre si.
+
+     Efecto sobre la escala oscura de tres peldanos (lienzo -> panel ->
+     tarjeta): el salto lienzo/panel pasa de 7 a 15 unidades, asi que la
+     separacion MEJORA en vez de perderse. El panel sigue en `gray-900`
+     (#212121), que si es el valor medido del manual, y la tarjeta sigue en
+     `white/[0.03]`. */
   --color-gray-25: #fcfcfc;
   --color-gray-50: #fafafa;
   --color-gray-100: #f4f4f4;
@@ -149,7 +167,7 @@
   --color-gray-700: #3f3f3f;
   --color-gray-800: #282828;
   --color-gray-900: #212121;
-  --color-gray-950: #1a1a1a;
+  --color-gray-950: #121212;
 
   /* TINTAS DE TEXTO — medidas sobre el mueble de las diez paginas del manual.
      El manual NO escribe con el indigo de marca: tiene dos tintas propias, y

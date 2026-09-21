@@ -112,7 +112,19 @@ export interface Pedido {
   repartidor?: string;       // Nombre o alias del mensajero/repartidor asignado
 }
 
-/** Un item del catálogo simple opcional (para autocompletar en Crear pedido). */
+/**
+ * Un item del catálogo simple opcional (para autocompletar en Crear pedido).
+ *
+ * **Responde a «¿qué vendo y a cuánto?».** Es una lista de precios de venta, y
+ * su respuesta queda CONGELADA en el pedido (los `OrderItem` guardan snapshots,
+ * no punteros: cambiar un precio aquí no altera un pedido ya creado).
+ *
+ * **NO responde a «¿qué tengo, dónde y cuánto me costó?».** Eso es `Articulo`,
+ * en Inventario: SKU, unidad de medida, punto de reorden, costo y bodega. Los
+ * dos tipos no comparten clave ni campo; solo comparten el nombre de la cosa
+ * que describen. **Deuda declarada** (ver `domain/inventario/inventario.domain.ts`),
+ * con disparador: cuando el negocio pida «que un pedido descuente stock».
+ */
 export interface CatalogoItem {
   id: string;
   nombre: string;

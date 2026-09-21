@@ -10,7 +10,7 @@ import { esEfectiva, type Procedencia } from "./excepciones";
 // técnico. **No autoriza nada**: no decide quién puede qué, solo cuenta lo que
 // `rolesStore.capacidadesEfectivas` ya decidió.
 //
-// El problema que resuelve. La pantalla de perfil mostraba las 18 capacidades
+// El problema que resuelve. La pantalla de perfil mostraba las 22 capacidades
 // como una tabla de cuatro columnas —categoría, etiqueta, código técnico y
 // procedencia— con un interruptor por fila. Para responder "¿qué puede hacer
 // Camila?" había que leer dieciocho filas y, de paso, entender qué significa
@@ -19,7 +19,7 @@ import { esEfectiva, type Procedencia } from "./excepciones";
 //
 // La traducción va en tres pasos:
 //
-//   1. ÁREAS. Las 18 capacidades se agrupan en 7 áreas de negocio y cada área
+//   1. ÁREAS. Las 22 capacidades se agrupan en 8 áreas de negocio y cada área
 //      recibe un nombre y una descripción en lenguaje llano. "Órdenes" pasa a
 //      ser "Pedidos" y `preparation.manage` desaparece de la vista.
 //
@@ -83,6 +83,10 @@ export const AREA_COPY: Record<string, { label: string; resumen: string }> = {
   programados: {
     label: "Pedidos programados",
     resumen: "Pedidos agendados para más adelante en vez de para ahora.",
+  },
+  inventario: {
+    label: "Inventario",
+    resumen: "Qué hay en el almacén, dónde está y cuánto costó.",
   },
   canales: {
     label: "Canal WhatsApp",
@@ -148,9 +152,9 @@ export interface ResumenArea {
 }
 
 /**
- * Resume las 7 áreas de negocio para un conjunto de capacidades efectivas.
+ * Resume las 8 áreas de negocio para un conjunto de capacidades efectivas.
  *
- * Devuelve siempre las 7 áreas, incluidas las que la persona no tiene: ver que
+ * Devuelve siempre las 8 áreas, incluidas las que la persona no tiene: ver que
  * "Asistente IA: No" es información tan útil como ver que "Preparación: Sí".
  */
 export function resumenDeAreas(capacidades: Capacidad[]): ResumenArea[] {
@@ -181,7 +185,7 @@ export function areasCompletas(resumen: ResumenArea[]): number {
 /**
  * Frase de una línea que resume el acceso entero, para el encabezado.
  *
- * Ejemplo: "Cubre 4 de 7 áreas. Le faltan cosas en Pedidos y Equipo. No tiene
+ * Ejemplo: "Cubre 4 de 8 áreas. Le faltan cosas en Pedidos y Equipo. No tiene
  * acceso a Asistente IA." Es el resumen que evita tener que abrir nada.
  *
  * Va en frases separadas por punto, no encadenadas con comas: son tres ideas
@@ -425,7 +429,7 @@ export interface AjustePersona {
  * Los ajustes a mano de una persona, listos para mostrar.
  *
  * Es lo que la pantalla enseña en el bloque "ajustes solo para esta persona": no
- * las 18 capacidades, solo las que se desvían del rol. Una persona sin
+ * las 22 capacidades, solo las que se desvían del rol. Una persona sin
  * excepciones devuelve `[]` y el bloque no se pinta.
  */
 export function ajustesDe(p: PortadorDeRol): AjustePersona[] {

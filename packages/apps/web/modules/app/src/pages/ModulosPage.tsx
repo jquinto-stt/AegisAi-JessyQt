@@ -317,7 +317,8 @@ export const ModulosPage = observer(() => {
 
           {/* ── Módulos del catálogo que esta organización no tiene activos ──
               Se derivan del catálogo, no de una lista a mano. `disponible`
-              decide el rótulo: hoy `inventario` está en `false` → «Próximamente». */}
+              decide el rótulo: hoy los dos están en `true`, así que ninguno
+              sale «Próximamente». */}
           {proximos.length > 0 && (
             <div className="space-y-4 border-t border-gray-100 pt-8 dark:border-gray-800">
               <div className="flex items-center justify-between">

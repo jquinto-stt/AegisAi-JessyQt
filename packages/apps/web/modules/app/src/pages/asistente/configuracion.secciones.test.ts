@@ -357,7 +357,11 @@ describe("catálogo de preferencias de apariencia", () => {
 
 describe("alcance declarado — el asistente no conoce módulos que no existen", () => {
   it("MODULOS_CONOCIDOS contiene solo módulos con provider de tools registrado", () => {
-    // El bootstrap registra únicamente PedidosToolProvider (módulo "pedidos").
-    expect([...MODULOS_CONOCIDOS]).toEqual(["pedidos"]);
+    // El bootstrap registra PedidosToolProvider e InventarioToolProvider desde el
+    // 21/09. `MODULOS_CONOCIDOS` se DERIVA de `MODULOS_INTEGRABLES` filtrando por
+    // `disponible`, así que se actualizó solo — y ese es el punto del test: que no
+    // haya que acordarse. Si alguien marca un módulo disponible sin darle provider,
+    // esto se pone rojo.
+    expect([...MODULOS_CONOCIDOS]).toEqual(["pedidos", "inventario"]);
   });
 });

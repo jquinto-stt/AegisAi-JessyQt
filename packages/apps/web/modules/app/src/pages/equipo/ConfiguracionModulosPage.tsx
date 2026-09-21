@@ -150,15 +150,20 @@ const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
   },
   inventario: {
     logo: <InventoryBrandLogo />,
-    // Vacío a propósito: `/inventario` NO existe en `App.tsx`. Antes esta lista
-    // declaraba esa ruta inexistente y el modal de detalles la mostraba como si
-    // el módulo la habilitara — una ruta que no lleva a ninguna parte.
-    rutasHabilitadas: [],
-    rolesRequeridos: "inventory.read, inventory.manage",
+    // Las cuatro rutas reales del módulo. Antes estaba VACÍO con un comentario que
+    // decía que `/inventario` no existía — y era verdad entonces: el modal de
+    // detalles mostraba un módulo sin ninguna ruta, que es la mitad de una ficha.
+    rutasHabilitadas: [
+      "/inventario/inicio",
+      "/inventario",
+      "/inventario/movimientos",
+      "/inventario/config",
+    ],
+    rolesRequeridos: "inventory.read, inventory.manage, inventory.move, inventory.adjust",
     capacidades: [
-      "Control de existencias y alertas de reposición automática",
-      "Administración de catálogo con variantes y costos de insumos",
-      "Sincronización con pedidos para descontar stock en cada orden",
+      "Existencias derivadas del kárdex: entradas, salidas, transferencias y ajustes",
+      "Multi-almacén con una bodega principal y transferencias entre bodegas",
+      "Catálogo de artículos con variantes, punto de reorden y valoración a costo",
     ],
   },
 };
@@ -515,10 +520,10 @@ export const ModulosTab = observer(() => {
    * Módulos instalables: no instalados **y disponibles en la plataforma**.
    *
    * El filtro por `disponible` no es cosmético. Sin él esta lista ofrecía
-   * «Instalar» Inventario, que no tiene ruta, ni página, ni store — y al
-   * instalarlo no aparecía en ninguna parte de la aplicación. `disponible` es la
-   * única respuesta a «¿se puede usar hoy?»; la pantalla no lo decide por su
-   * cuenta.
+   * «Instalar» un módulo declarado pero no implementado —sin ruta, sin página y
+   * sin store— y al instalarlo no aparecía en ninguna parte de la aplicación.
+   * `disponible` es la única respuesta a «¿se puede usar hoy?»; la pantalla no lo
+   * decide por su cuenta.
    */
   const modulosDisponiblesParaInstalar = IDS_MODULOS
     .filter((id) => !organizacionStore.esModuloInstalado(id))
@@ -648,8 +653,8 @@ export const ModulosTab = observer(() => {
                   </code>
                 ) : (
                   // Vacío es un dato, no un hueco: significa «este módulo todavía no
-                  // habilita ninguna ruta». Antes aquí se listaba `/inventario`, que
-                  // no existe en el router.
+                  // habilita ninguna ruta». Antes aquí se listaba una ruta que no
+                  // existía en el router.
                   <span className="italic text-gray-400">Todavía no habilita rutas</span>
                 )}
               </div>
@@ -816,9 +821,10 @@ export const ModulosTab = observer(() => {
               )}
 
               {/* Declarados y todavía no disponibles: se nombran, sin interruptor.
-                  Se DERIVAN del catálogo, así que el día que Inventario exista
-                  basta con pasar su `disponible` a `true` y este bloque se vacía
-                  solo — esta pantalla no pregunta «¿es inventario?». */}
+                  Se DERIVAN del catálogo, así que el día que se declare un módulo
+                  sin implementarlo basta con dejarlo en `disponible: false` y
+                  aparece aquí solo — esta pantalla no pregunta «¿es inventario?».
+                  Hoy el bloque está vacío: los dos módulos del catálogo existen. */}
               {modulosProximamente.map((mod) => (
                 <div
                   key={mod.id}

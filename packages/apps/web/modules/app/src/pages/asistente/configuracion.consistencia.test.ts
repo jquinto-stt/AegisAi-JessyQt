@@ -128,31 +128,61 @@ describe("Herramientas — el recuento sale del registry, no de la página", () 
 });
 
 describe("Alcance — los módulos declarados son los que tienen provider registrado", () => {
+  /**
+   * Los providers que el bootstrap cablea, en orden canónico.
+   *
+   * Se listan aquí **a propósito y a mano**: el `ToolRegistry` indexa sus
+   * providers por módulo en un `Map` privado y no los expone, así que esta lista
+   * es la afirmación que hay que mantener viva. El test de abajo la contrasta
+   * contra el registry ya cableado, de modo que un provider registrado y no
+   * declarado (o al revés) se ve.
+   */
+  const providersDelBootstrap = async () => {
+    const { PedidosToolProvider } = await import(
+      "@/modules-tools/pedidos/pedidos.tool-provider"
+    );
+    const { InventarioToolProvider } = await import(
+      "@/modules-tools/inventario/inventario.tool-provider"
+    );
+    return [new PedidosToolProvider(), new InventarioToolProvider()];
+  };
+
   it("MODULOS_CONOCIDOS coincide con los módulos del bootstrap real", async () => {
     const { MODULOS_CONOCIDOS } = await import(
       "@/pages/asistente/configuracion.secciones"
     );
-    const { PedidosToolProvider } = await import(
-      "@/modules-tools/pedidos/pedidos.tool-provider"
-    );
+    const { toolRegistry } = await import("@/assistant/registry/tool-registry");
+    const { bootstrapAssistant } = await import("@/assistant/bootstrap");
 
-    // El bootstrap registra exactamente este provider. Si se añadiera otro
+    bootstrapAssistant();
+    const providers = await providersDelBootstrap();
+
+    // El bootstrap registra exactamente estos providers. Si se añadiera otro
     // módulo, esta aserción obliga a actualizar MODULOS_CONOCIDOS a la vez.
-    expect([...MODULOS_CONOCIDOS]).toEqual([new PedidosToolProvider().module]);
+    expect([...MODULOS_CONOCIDOS].sort()).toEqual(providers.map((p) => p.module).sort());
+
+    // Y el registry responde de verdad por cada uno: un módulo declarado como
+    // conocido sin provider registrado dejaría la página prometiendo un alcance
+    // que el motor no puede ejecutar.
+    for (const p of providers) {
+      const tools = toolRegistry.getAvailableTools({
+        access: { enabledModules: [p.module], hasCapability: () => true },
+      });
+      expect(tools.length, `"${p.module}" declarado pero sin tools en el registry`).toBeGreaterThan(0);
+    }
   });
 
   it("cada módulo declarado tiene al menos una tool que lo respalda", async () => {
     const { MODULOS_CONOCIDOS } = await import(
       "@/pages/asistente/configuracion.secciones"
     );
-    const { PedidosToolProvider } = await import(
-      "@/modules-tools/pedidos/pedidos.tool-provider"
-    );
+    const providers = await providersDelBootstrap();
+    const porModulo = new Map(providers.map((p) => [p.module, p]));
 
-    const provider = new PedidosToolProvider();
     for (const modulo of MODULOS_CONOCIDOS) {
-      expect(modulo).toBe(provider.module);
-      expect(provider.getTools().length, `"${modulo}" sin tools`).toBeGreaterThan(0);
+      const provider = porModulo.get(modulo);
+      expect(provider, `"${modulo}" declarado sin provider`).toBeDefined();
+      expect(provider!.getTools().length, `"${modulo}" sin tools`).toBeGreaterThan(0);
     }
   });
 });

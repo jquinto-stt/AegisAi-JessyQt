@@ -25,15 +25,14 @@
  *
  * 3. **La lista se deriva de los módulos OPERABLES, no de `modulosActivos`.**
  *    `organizacionStore.modulosActivos` responde "¿qué tiene encendido la
- *    organización?" e incluye a propósito lo no disponible (`inventario`:
- *    `disponible: false`, sin ruta, sin página, sin store). Ofrecer eso aquí
+ *    organización?" e incluye a propósito lo no disponible. Ofrecer eso aquí
  *    sería un control que miente. El vocabulario de la sesión es
- *    `type Modulo = "pedidos"`, así que hoy esta lista tiene **un** elemento.
- *    No se rellena ni se finge elección: `SeleccionarPage` ya retiró su selector
- *    de módulo por la misma razón — "un selector de un solo elemento no elige
- *    nada, y presentarlo como una elección es una mentira en la interfaz".
- *    Por eso el módulo activo se pinta como fila marcada y **deshabilitada**, y
- *    el desplegable conserva valor por la opción al lanzador.
+ *    `type Modulo = "pedidos" | "inventario"`, así que la lista tiene los que la
+ *    organización tenga activos **y** la app sepa nombrar. Cuando solo había un
+ *    módulo, la fila marcada y deshabilitada era la única forma de que el
+ *    desplegable conservara valor; ahora que hay dos, la elección es real y el
+ *    ítem activo sigue pintándose marcado —deshabilitado, porque navegar a donde
+ *    ya estás no es una acción.
  *
  * ── Icono ───────────────────────────────────────────────────────────────────
  *
@@ -52,7 +51,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
-import { CartIcon, ChevronDownIcon, GridIcon } from "@/icons";
+import { BoxIconLine, CartIcon, ChevronDownIcon, GridIcon } from "@/icons";
 import { organizacionStore, sessionStore } from "@/stores";
 import { modulosOperablesDeSesion } from "@/stores/session.store";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
@@ -65,11 +64,18 @@ const RUTA_LANZADOR = "/modulos";
 /** Icono por módulo operable. Ver @deuda en el encabezado. */
 const ICONO_MODULO: Record<Modulo, React.FC<React.SVGProps<SVGSVGElement>>> = {
   pedidos: CartIcon,
+  inventario: BoxIconLine,
 };
 
-/** Nombre visible de un módulo, tomado del catálogo. */
+/**
+ * Nombre visible de un módulo, tomado del catálogo.
+ *
+ * `nombreCorto`, no `nombre`: el pill tiene `max-w-[160px] truncate`, así que
+ * «Pedidos & Fulfillment» se leería «Pedidos & Fulfillm…». `nombre` es la razón
+ * social y vive en la ficha del catálogo, donde hay espacio para venderla.
+ */
 function nombreModulo(modulo: Modulo): string {
-  return CATALOGO_MODULOS[modulo]?.nombre ?? modulo;
+  return CATALOGO_MODULOS[modulo]?.nombreCorto ?? modulo;
 }
 
 export const ModuleSwitcher: React.FC = observer(() => {
@@ -77,8 +83,8 @@ export const ModuleSwitcher: React.FC = observer(() => {
   const navigate = useNavigate();
   const closeDropdown = () => setIsOpen(false);
 
-  // Módulos que la sesión sabe operar (hoy: `pedidos`). No `modulosActivos`:
-  // esa lista incluye lo encendido pero no disponible.
+  // Módulos que la sesión sabe operar. No `modulosActivos`: esa lista incluye lo
+  // encendido pero no disponible.
   const operables = modulosOperablesDeSesion(organizacionStore.modulosActivos);
   const actual = sessionStore.moduloActual;
 
@@ -103,8 +109,10 @@ export const ModuleSwitcher: React.FC = observer(() => {
     if (!sessionStore.isSimulando && tipoActual) {
       sessionStore.configurar(modulosOperablesDeSesion(organizacionStore.modulosActivos), tipoActual);
     }
-    const inicio = CATALOGO_MODULOS[modulo]?.rutaPrincipal ?? "/pedidos/inicio";
-    navigate(inicio);
+    // Sin `?? "/pedidos/inicio"`: `CATALOGO_MODULOS` es `Record<Modulo, …>`, así
+    // que la ruta siempre existe y el fallback era código muerto que además
+    // mandaba Inventario a Pedidos si algún día se alcanzara.
+    navigate(CATALOGO_MODULOS[modulo].rutaPrincipal);
   };
 
   return (

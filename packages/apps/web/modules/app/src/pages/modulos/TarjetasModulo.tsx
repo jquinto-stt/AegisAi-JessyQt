@@ -242,8 +242,9 @@ export const AtajosRapidos: React.FC<{ atajos: Atajo[]; onIr: (to: string) => vo
  *   · `disponible: true`  → «Disponible para instalar»
  *   · `disponible: false` → «Próximamente»
  *
- * Hoy `inventario` es el único caso y está en `disponible: false`, así que sale
- * «Próximamente». El día que se marque disponible, el rótulo cambia solo.
+ * Hoy los dos módulos del catálogo están en `disponible: true`, así que este
+ * rótulo no se pinta. El día que se declare uno sin implementarlo, sale
+ * «Próximamente» solo — sin tocar nada aquí.
  */
 export function modulosProximos(activos: readonly string[]): InfoModuloNegocio[] {
   return Object.values(CATALOGO_MODULOS)

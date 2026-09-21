@@ -22,7 +22,7 @@ import {
  *   1. Que la traducción es fiel — un área `parcial` no puede aparecer como
  *      `si`, y `faltantes` tiene que ser exactamente lo que falta.
  *   2. Que la traducción es **completa** — ninguna capacidad puede quedarse
- *      fuera de las 7 áreas, porque una capacidad invisible es un permiso que
+ *      fuera de las 8 áreas, porque una capacidad invisible es un permiso que
  *      el admin no puede revisar.
  *
  * Referencias:
@@ -91,9 +91,9 @@ describe("etiqueta llana", () => {
 });
 
 describe("resumen por áreas", () => {
-  it("devuelve siempre las 7 áreas, incluso sin ninguna capacidad", () => {
+  it("devuelve siempre las 8 áreas, incluso sin ninguna capacidad", () => {
     const resumen = resumenDeAreas([]);
-    expect(resumen).toHaveLength(7);
+    expect(resumen).toHaveLength(8);
     expect(resumen.every((a) => a.nivel === "no")).toBe(true);
     expect(areasCompletas(resumen)).toBe(0);
   });
@@ -101,11 +101,11 @@ describe("resumen por áreas", () => {
   it("con el catálogo completo todas las áreas están cubiertas", () => {
     const resumen = resumenDeAreas([...CAPACIDADES]);
     expect(resumen.every((a) => a.nivel === "si")).toBe(true);
-    expect(areasCompletas(resumen)).toBe(7);
+    expect(areasCompletas(resumen)).toBe(8);
     expect(resumen.every((a) => a.faltantes.length === 0)).toBe(true);
   });
 
-  it("reparte las 18 capacidades entre las áreas sin perder ni duplicar ninguna", () => {
+  it("reparte las 22 capacidades entre las áreas sin perder ni duplicar ninguna", () => {
     const resumen = resumenDeAreas([]);
     const vistas = resumen.flatMap((a) => a.concedidas.concat(a.faltantes));
     // `concedidas` y `faltantes` están en lenguaje llano, así que se compara por
@@ -175,7 +175,7 @@ describe("frase de acceso", () => {
 
   it("con huecos nombra las áreas incompletas", () => {
     const frase = fraseDeAcceso(resumenDeAreas(ROL_SOLO_LECTURA));
-    expect(frase).toContain("Cubre 0 de 7 áreas");
+    expect(frase).toContain("Cubre 0 de 8 áreas");
     expect(frase).toContain("Le faltan cosas en Pedidos");
     expect(frase).toContain("No tiene acceso a");
   });

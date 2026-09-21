@@ -5,7 +5,7 @@
 // Este archivo es el ÚNICO punto de integración ("cableado") entre el asistente
 // y el resto de la app: aquí se conecta el núcleo agnóstico con la sesión del
 // usuario (`sessionStore`) y con los providers de tools de cada módulo
-// (`PedidosToolProvider`).
+// (`PedidosToolProvider`, `InventarioToolProvider`).
 //
 // ── Decisión de arquitectura (invariante A1) ──────────────────────────────
 // El núcleo lógico (`contracts`, `registry`, `engine`) NO puede importar
@@ -24,6 +24,7 @@
 
 import { integracionesStore, sessionStore } from "@/stores";
 import { PedidosToolProvider } from "@/modules-tools/pedidos/pedidos.tool-provider";
+import { InventarioToolProvider } from "@/modules-tools/inventario/inventario.tool-provider";
 import { toolRegistry } from "./registry/tool-registry";
 import type { AssistantAccessContext } from "./registry/tool-registry";
 
@@ -91,12 +92,21 @@ let inicializado = false;
  * Cablea el asistente registrando los providers de tools de cada módulo.
  *
  * Debe invocarse en el arranque de la app, antes de la primera pregunta al
- * asistente. Registra el `PedidosToolProvider` en el `toolRegistry` singleton.
+ * asistente. Registra el `PedidosToolProvider` y el `InventarioToolProvider` en
+ * el `toolRegistry` singleton.
  *
- * Es idempotente: llamadas repetidas no vuelven a registrar el provider.
+ * Es idempotente: llamadas repetidas no vuelven a registrar los providers.
+ * `register` ya lo es por módulo (re-registrar reemplaza), y la bandera
+ * `inicializado` evita además reconstruirlos en cada llamada.
+ *
+ * Registra los DOS providers aunque el módulo esté apagado: encenderlo es un
+ * interruptor de configuración, no un despliegue. El filtro que decide si sus
+ * tools se ven es el de `buildAccessContext` (sesión ∩ conectados) más las
+ * capacidades — nunca la ausencia de un provider.
  */
 export function bootstrapAssistant(): void {
   if (inicializado) return;
   toolRegistry.register(new PedidosToolProvider());
+  toolRegistry.register(new InventarioToolProvider());
   inicializado = true;
 }

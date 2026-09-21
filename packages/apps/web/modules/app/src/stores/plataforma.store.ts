@@ -42,6 +42,21 @@ export type IdConector = "necto_ia" | "whatsapp";
 export interface InfoModuloNegocio {
   id: IdModuloNegocio;
   nombre: string;
+  /**
+   * Nombre para el CROMO — sidebar, selector de módulo, encabezados de sección.
+   *
+   * `nombre` es la razón social («Pedidos & Fulfillment»): sirve para la ficha
+   * del catálogo, donde hay espacio y se está vendiendo el módulo. No sirve para
+   * una pestaña de 200 px, y por eso los dos sitios que pintan el nombre en el
+   * cromo lo tenían ESCRITO A MANO — `"Pedidos"` literal en `AppSidebar` y en el
+   * `ModuleSwitcher`. Con un solo módulo eso no se notaba; con dos, el sidebar
+   * habría titulado «Pedidos» una sección de Inventario.
+   *
+   * Es la misma regla que ya rige el resto del cromo: **una etiqueta de módulo no
+   * se escribe en un componente, se lee del catálogo.** Se declara aquí para que
+   * añadir un módulo no exija editar tres componentes.
+   */
+  nombreCorto: string;
   tagline: string;
   descripcion: string;
   /**
@@ -62,8 +77,9 @@ export interface InfoModuloNegocio {
    *   · `ConfiguracionModulosPage` no ofrece instalar lo que no está disponible;
    *   · `OnboardingModulosPage` lo pinta «Próximamente» y deshabilitado.
    *
-   * El día que Inventario exista, se pasa a `true` aquí y las dos superficies se
-   * encienden solas — ninguna pregunta «¿es inventario?». Es el mismo patrón que
+   * Los dos módulos del catálogo están en `true` desde el 21/09. El día que se
+   * declare uno nuevo, se pone aquí a `true` y las dos superficies se encienden
+   * solas — ninguna pregunta «¿es inventario?». Es el mismo patrón que
    * `integracionesStore.MODULOS_INTEGRABLES`, que ya lo hacía bien.
    *
    * **Debe coincidir con `MODULOS_INTEGRABLES[id].disponible`**: son dos
@@ -109,6 +125,7 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   pedidos: {
     id: "pedidos",
     nombre: "Pedidos & Fulfillment",
+    nombreCorto: "Pedidos",
     tagline: "Ventas y Operaciones",
     descripcion: "Tablero de pedidos, preparación y despacho, envíos, estados en tiempo real y analítica de ventas.",
     rutaPrincipal: "/pedidos/inicio",
@@ -123,22 +140,28 @@ export const CATALOGO_MODULOS: Record<IdModuloNegocio, InfoModuloNegocio> = {
   inventario: {
     id: "inventario",
     nombre: "Inventario & Stock",
+    nombreCorto: "Inventario",
     tagline: "Catálogo y Existencias",
     descripcion: "Control de productos, variantes, bodegas, alertas de reposición y stock disponible.",
-    rutaPrincipal: "/inventario",
-    // `rutaConfig` sin declarar: no hay pantalla de configuración que enlazar.
+    // `/inventario` es «Existencias» y `/inventario/inicio` es la pantalla de
+    // llegada, igual que en Pedidos `/pedidos` es el Tablero y `/pedidos/inicio`
+    // es el Inicio. **Manda la de entrada**, que es lo que este campo significa
+    // (ver el docblock de `rutaPrincipal`): estaba apuntando a la raíz solo
+    // porque con un módulo sin rutas daba igual a dónde apuntara.
+    rutaPrincipal: "/inventario/inicio",
+    rutaConfig: "/inventario/config",
+    // `disponible: true` desde el 21/09 — y no es un flag suelto: es el último
+    // paso de un encendido ATÓMICO. Se pasa a `true` a la vez que las cuatro
+    // rutas ya existen, `SECCIONES.inventario` está declarada, el sidebar pinta
+    // su rama y `MODULOS_INTEGRABLES.inventario` tiene proveedor. Encenderlo
+    // antes habría ofrecido «Instalar» un módulo que al instalarse no aparecía
+    // en ninguna parte.
     //
-    // `disponible: false` — Inventario está DECLARADO pero no existe: no hay ruta
-    // `/inventario` en `App.tsx`, ni página, ni store. Antes decía `true`, y esa
-    // mentira se propagaba: `/configuracion` ofrecía «Instalar» un módulo que al
-    // instalarse no aparecía en ninguna parte (el sidebar solo pinta Pedidos) y
-    // cuya ruta de entrada no existía. `integracionesStore.MODULOS_INTEGRABLES`
-    // ya lo tenía en `false` con un test que lo exigía («no se promete lo que no
-    // existe») — dos catálogos afirmando lo contrario del mismo módulo.
-    //
-    // Sigue en el tipo y en el catálogo a propósito: es una intención del producto
-    // y nombrarla es legítimo. Lo que no es legítimo es ofrecerla como comprable.
-    disponible: false,
+    // **Debe coincidir con `MODULOS_INTEGRABLES.inventario.disponible`**: son dos
+    // catálogos y una discrepancia entre ellos hace que la app afirme dos cosas
+    // opuestas del mismo módulo. Un test lo fija
+    // (`plataforma.store.test.ts`).
+    disponible: true,
     destacados: ["Kárdex y movimientos", "Multi-almacén"],
   },
 };

@@ -136,18 +136,18 @@ export const ATENCION_BADGE: Record<ModoAtencion, BadgeColor> = {
  *    módulo sin datos es el defecto que el test de consistencia del asistente ya
  *    previene con `MODULOS_CONOCIDOS`.
  *
- * Hoy solo `pedidos` está implementado (`modules-tools/` contiene únicamente ese
- * provider). `inventario` aparece en el seed como declaración de intención hacia
- * el futuro, no como capacidad: por eso queda `false` hasta que exista su
- * provider. El día que se implemente, este catálogo es el ÚNICO sitio que hay
- * que tocar: la bandeja mostrará el badge sola porque lee de aquí.
+ * Hoy los dos módulos de negocio están implementados (`modules-tools/` tiene el
+ * provider de Pedidos y el de Inventario), así que ninguno queda en `false`:
+ * `inventario` pasó a `true` el 21/09, a la vez que su proveedor. El día que se
+ * implemente otro, este catálogo es el ÚNICO sitio que hay que tocar: la bandeja
+ * mostrará el badge sola porque lee de aquí.
  */
 export const MODULO_DESTINO_LABEL: Record<
   ModuloDestino,
   { etiqueta: string; disponible: boolean }
 > = {
   pedidos: { etiqueta: "Pedidos", disponible: true },
-  inventario: { etiqueta: "Inventario", disponible: false },
+  inventario: { etiqueta: "Inventario", disponible: true },
   general: { etiqueta: "General", disponible: true },
 };
 

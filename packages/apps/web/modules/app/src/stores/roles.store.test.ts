@@ -21,7 +21,7 @@ describe("catálogo de capacidades", () => {
   it("C4: todas las capacidades nombran acciones, no pantallas", async () => {
     const { CAPACIDADES } = await freshRolesStore();
 
-    expect(CAPACIDADES).toHaveLength(18);
+    expect(CAPACIDADES).toHaveLength(22);
     for (const cap of CAPACIDADES) {
       // Formato `<dominio>.<accion>`.
       expect(cap).toMatch(/^[a-z]+\.[a-z]+$/);
@@ -192,6 +192,6 @@ describe("mutaciones del catálogo", () => {
     rolesStore.crear({ nombre: "Ruido" });
     expect(rolesStore.roles).toHaveLength(ROLES_SEED.length + 1);
     // El SEED original no debe haberse mutado.
-    expect(ROLES_SEED).toHaveLength(5);
+    expect(ROLES_SEED).toHaveLength(6);
   });
 });

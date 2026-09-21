@@ -117,16 +117,20 @@ function extraerPayload(evidence?: ToolResult): Mensaje["payload"] | undefined {
  * Son dos tipos de CAPAS DISTINTAS y con propósitos distintos, y por eso no se
  * unifican: `Modulo` es el dominio que un proveedor de tools declara al núcleo
  * agnóstico, y `ModuloDestino` es la etiqueta que el canal de atención usa para
- * clasificar un hilo. Hoy `Modulo` colapsa a `"pedidos"`, pero cuando Inventario
- * registre su provider esto dejará de ser una identidad.
+ * clasificar un hilo.
+ *
+ * **Ya no es una identidad.** Con un solo módulo, este mapa era `{pedidos:
+ * "pedidos"}` y su única virtud era existir; con Inventario registrando su
+ * provider, la traducción empieza a poder fallar de verdad.
  *
  * Este mapa es el ÚNICO punto de fricción entre ambos vocabularios: al ser un
  * `Record<Modulo, ModuloDestino>`, añadir un módulo al núcleo SIN darle destino
  * en Conversaciones es un error de compilación — no una etiqueta que falta en
- * silencio.
+ * silencio. Así se detectó este mismo caso al ampliar `Modulo`.
  */
 const MODULO_A_DESTINO: Record<Modulo, ModuloDestino> = {
   pedidos: "pedidos",
+  inventario: "inventario",
 };
 
 /**

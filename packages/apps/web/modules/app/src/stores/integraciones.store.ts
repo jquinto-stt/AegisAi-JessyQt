@@ -129,11 +129,16 @@ export type EntradaModuloIntegrable = EntradaDisponible | EntradaDeclarada;
  * construcción**: no se puede añadir un módulo al tipo sin darle entrada aquí, y
  * el compilador lo exige.
  *
- * `inventario` está declarado y NO disponible. El día que exista su proveedor
- * de herramientas, este catálogo es el ÚNICO sitio que hay que tocar: basta con
- * pasar `disponible` a `true`, rellenar `modulo` y `capacidad`, y tanto el
- * interruptor de la configuración como la pestaña del chat se encienden solos —
- * ninguna de las dos superficies pregunta «¿es inventario?».
+ * Los dos módulos están DISPONIBLES desde el 21/09. El catálogo conserva la
+ * distinción `EntradaDisponible` / `EntradaDeclarada` porque la forma sigue
+ * siendo la correcta para el próximo módulo —lo declarado se pinta deshabilitado
+ * con su motivo en vez de desaparecer—, pero hoy no hay ninguna entrada en el
+ * segundo estado.
+ *
+ * El encendido de `inventario` se hizo como se anunció aquí: pasar `disponible` a
+ * `true`, rellenar `modulo` y `capacidad`. Ni la configuración del asistente ni
+ * la pestaña del chat preguntan «¿es inventario?» — se encendieron solas, que era
+ * el punto de tener el interruptor en un catálogo.
  */
 export const MODULOS_INTEGRABLES: Record<ModuloIntegrable, EntradaModuloIntegrable> = {
   pedidos: {
@@ -149,15 +154,22 @@ export const MODULOS_INTEGRABLES: Record<ModuloIntegrable, EntradaModuloIntegrab
     ],
   },
   inventario: {
-    disponible: false,
-    modulo: null,
-    capacidad: null,
+    // Encendido el 21/09, junto con el proveedor de tools y las cuatro rutas.
+    // `capacidad` es la que exigen las cinco tools del proveedor; el registry
+    // filtra por ella además de por el módulo conectado.
+    disponible: true,
+    modulo: "inventario",
+    capacidad: "inventory.read",
     label: "Inventario",
-    descripcion: "Consulta información de productos y disponibilidad.",
+    descripcion: "Consulta existencias, reposición y valor del almacén.",
+    // Los ejemplos dicen lo que las tools HACEN, no lo que el módulo promete:
+    // «consultar disponibilidad» era una frase de folleto, y ahora hay cinco
+    // tools concretas detrás. Un ejemplo que la IA no puede cumplir es una
+    // promesa que el producto no honra.
     ejemplos: [
-      "Consultar productos",
-      "Consultar disponibilidad",
-      "Consultar existencias",
+      "Cuánto queda de un artículo y en qué bodega",
+      "Qué está por debajo del punto de reorden",
+      "Cuánto vale el inventario a costo",
     ],
   },
 };

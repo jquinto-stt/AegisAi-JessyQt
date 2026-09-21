@@ -37,21 +37,27 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
     // Que la plataforma OFREZCA un módulo no dice nada de si la organización lo
     // tiene. Ambas preguntas son ciertas a la vez y viven en stores distintos.
     expect(store.esModuloDisponible("pedidos")).toBe(true);
-    // `inventario` está DECLARADO (existe en el tipo y en el catálogo) pero NO
-    // disponible: no hay ruta `/inventario`, ni página, ni store. Esta aserción
-    // decía `true` y era la mitad de una contradicción: `integraciones.store.test.ts`
-    // exigía `false` para el mismo módulo en el otro catálogo. El test estaba
-    // protegiendo la incoherencia, no detectándola.
-    expect(store.esModuloDisponible("inventario")).toBe(false);
+    // `inventario` pasó a `true` el 21/09, con el módulo construido y sus rutas
+    // en pie. Esta aserción decía `false` y era la mitad de una contradicción
+    // histórica: `integraciones.store.test.ts` exigía `false` para el mismo
+    // módulo en el otro catálogo, y los dos tests estaban protegiendo la
+    // incoherencia en vez de detectarla. Hoy los dos dicen `true` y el test de
+    // abajo fija que no puedan volver a discrepar.
+    expect(store.esModuloDisponible("inventario")).toBe(true);
   });
 
   it("lo declarado y lo disponible son cosas distintas, y el catálogo lo dice", () => {
     // La lista del catálogo es «lo que la plataforma NOMBRA»; `disponible` es
     // «lo que hoy se puede usar». Confundirlas es lo que hacía que
     // `/configuracion` ofreciera instalar un módulo inexistente.
+    //
+    // El catálogo sigue nombrando los dos módulos y hoy los dos son usables, así
+    // que la distinción no se ve por diferencia de longitud: se ve en que las dos
+    // listas son el MISMO conjunto, que es lo que la hace honesta.
     expect(store.catalogoModulos.map((m) => m.id)).toContain("inventario");
     expect(store.catalogoModulos.filter((m) => m.disponible).map((m) => m.id)).toEqual([
       "pedidos",
+      "inventario",
     ]);
   });
 

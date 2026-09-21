@@ -123,10 +123,10 @@ const CONVERSACIONES: Conversacion[] = [
   },
 
   // ── 2. CONSULTA DE DISPONIBILIDAD — bot, sin pedido ───────────────────────
-  //     Pregunta de existencias. Necto no tiene el módulo Inventario conectado
-  //     (solo existe `pedidos` en `modules-tools/`), así que el bot NO inventa
-  //     un número: dice lo que puede comprobar y ofrece alternativas. Ese es el
-  //     comportamiento honesto y el que se quiere demostrar.
+  //     Pregunta de existencias. El bot responde con disponibilidad, no con un
+  //     número exacto: dice lo que puede comprobar y ofrece alternativas, y no
+  //     promete una reserva. Ese es el comportamiento honesto y el que se quiere
+  //     demostrar.
   {
     id: "conv-2",
     canal: "whatsapp",
@@ -299,8 +299,19 @@ const MENSAJES: Mensaje[] = [
 
   // ─────────────────────────────────────────────────────────────────────────
   // Hilo conv-2 — CONSULTA DE DISPONIBILIDAD (INVENTARIO). Sin pedido.
-  // Intención: "¿cuántos quedan?". El bot consulta inventario y responde con
-  // unidades disponibles exactas sin forzar una orden.
+  // Intención: "¿cuántos quedan?". El bot responde sobre disponibilidad y
+  // precio SIN forzar una orden, y sin citar unidades exactas.
+  //
+  // Que no cite unidades es una decisión de ESTE guion, no una limitación del
+  // módulo: desde el 21/09 el proveedor de Inventario sí tiene una herramienta
+  // que devuelve el número (`getExistencias`). No se cita porque una cifra
+  // escrita en un chat es una promesa sobre un stock que se mueve mientras el
+  // cliente decide — y el módulo no puede sostenerla.
+  //
+  // El hilo tampoco promete una RESERVA. El módulo no aparta mercancía (no hay
+  // reservas en su dominio): un mensaje que las ofreciera quedaría respaldado,
+  // el día del encendido, por un módulo que no puede cumplirlo — el defecto que
+  // este repo llama «un control que miente», en forma de copy.
   // ─────────────────────────────────────────────────────────────────────────
   {
     id: "msg-2-1",
@@ -331,7 +342,7 @@ const MENSAJES: Mensaje[] = [
     conversacionId: "conv-2",
     autor: "bot",
     contenido: texto(
-      "Sí, claro. Podemos apartarla a tu nombre para que pases a recogerla hoy antes del cierre.",
+      "Hoy tenemos disponibilidad de postres del día. No apartamos mercancía, pero puedes pasar por el local a recogerlos antes del cierre.",
     ),
     timestamp: haceMin(53),
     moduloContexto: "inventario",

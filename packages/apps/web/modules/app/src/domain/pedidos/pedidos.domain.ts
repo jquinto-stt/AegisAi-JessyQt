@@ -36,7 +36,17 @@ export interface ServiceSnapshot {
 
 export interface OrderItem {
   id: string;
-  /** Referencia opcional al catálogo o inventario externo */
+  /**
+   * Referencia OPCIONAL y OPACA a un identificador externo (el catálogo simple
+   * de `pedidos.store`, un ERP, un e-commerce).
+   *
+   * **No es una clave foránea a `Articulo`.** Pedidos e Inventario son
+   * independientes por decisión de arquitectura (D1/D2): si este campo apuntara
+   * a un artículo del kárdex, el pedido tendría que consultar el stock para
+   * poder pintarse y las dos mitades dejarían de poder evolucionar por separado.
+   * El nombre y el precio del ítem ya viajan CONGELADOS en `nameSnapshot` y
+   * `unitPrice`, así que un pedido se lee entero sin abrir ningún otro módulo.
+   */
   productId?: string;
   /** Nombre congelado al momento de la venta */
   nameSnapshot: string;

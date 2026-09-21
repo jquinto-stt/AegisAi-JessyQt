@@ -1,6 +1,12 @@
 import { makeAutoObservable } from "mobx";
 import { operadoresStore, SECCIONES, type Seccion } from "@/stores/operadores.store";
 import { rolesStore, ROL_ADMIN, type Capacidad } from "@/stores/roles.store";
+// `CATALOGO_MODULOS` entra como VALOR, y es seguro: `plataforma.store.ts` no
+// importa ningún store (solo `mobx`), así que no se cierra un ciclo. Se usa para
+// dos cosas que antes eran literales: la etiqueta legible de los módulos de la
+// sesión y la ruta de entrada de respaldo. Ninguna de las dos puede volver a
+// escribirse a mano — con un módulo, un literal pasaba desapercibido.
+import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTRATO DE ARQUITECTURA
@@ -34,22 +40,38 @@ import { rolesStore, ROL_ADMIN, type Capacidad } from "@/stores/roles.store";
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Los módulos del producto. */
-export type Modulo = "pedidos";
+export type Modulo = "pedidos" | "inventario";
+
+/**
+ * Orden canónico de los módulos. Es el orden de `CATALOGO_MODULOS` y el que
+ * decide cuál es el «principal» de una sesión con varios.
+ */
+const ORDEN_MODULOS: Modulo[] = ["pedidos", "inventario"];
 
 /**
  * Reduce la pertenencia de la organización a los módulos que la SESIÓN sabe operar.
  *
  * La regla de dirección es `Sesión ⊆ Organización`: una sesión no puede recibir más
- * de lo que la organización tiene activo. Pero el vocabulario de sesión es hoy más
- * estrecho que el de la organización (`Modulo` solo conoce `"pedidos"`, mientras el
- * catálogo ya declara `"inventario"`), así que hay que intersectar.
+ * de lo que la organización tiene activo.
  *
- * Existe como función —y no como un `["pedidos"]` escrito a mano en cada pantalla—
- * para que el límite esté declarado en **un** sitio: el día que `Modulo` crezca,
- * se borra el filtro y los llamadores no cambian.
+ * Existía porque el vocabulario de sesión era más estrecho que el de la
+ * organización (`Modulo` solo conocía `"pedidos"` mientras el catálogo ya
+ * declaraba `"inventario"`), así que había que intersectar. **Hoy los dos
+ * vocabularios coinciden**, y la función sigue existiendo por dos motivos:
+ *
+ *   1. Es el único sitio donde se declara qué valores conoce la sesión, y
+ *      `loadSession()` la reutiliza para validar lo leído de `localStorage`.
+ *      Un snapshot viejo con `["turnos","pedidos"]` no puede sobrevivir tal cual.
+ *   2. Si mañana entra un módulo más al catálogo, el filtro está aquí y los
+ *      llamadores no cambian.
+ *
+ * ⚠️ **No es la compuerta de acceso.** Que un módulo sea operable no dice que la
+ * organización lo tenga activo (eso es `organizacionStore.modulosActivos`) ni
+ * que el rol pueda entrar (eso son las capacidades). Esta función solo descarta
+ * lo que la sesión no sabe nombrar.
  */
 export function modulosOperablesDeSesion(modulos: readonly string[]): Modulo[] {
-  return modulos.filter((m): m is Modulo => m === "pedidos");
+  return ORDEN_MODULOS.filter((m) => modulos.includes(m));
 }
 
 /**
@@ -267,15 +289,23 @@ export class SessionStore {
 
   /** Etiqueta legible del conjunto de módulos seleccionados. */
   get modulosLabel() {
-    return "Pedidos";
+    const nombres = this.modulos.map((m) => CATALOGO_MODULOS[m]?.nombre ?? m);
+    if (nombres.length === 0) return "";
+    if (nombres.length === 1) return nombres[0];
+    return `${nombres.slice(0, -1).join(", ")} y ${nombres[nombres.length - 1]}`;
   }
 
   /**
    * Módulo "principal" con el que arranca la app tras la selección.
+   *
+   * Con dos módulos posibles, «el principal» es **el primero del catálogo que la
+   * sesión tenga**, no un `"pedidos"` escrito a mano. Antes esto era
+   * `if (this.modulos.includes("pedidos")) return "pedidos"`, que con una sesión
+   * de solo Inventario devolvía `null` y mandaba al login aunque la sesión fuera
+   * perfectamente válida.
    */
   get moduloPrincipal(): Modulo | null {
-    if (this.modulos.includes("pedidos")) return "pedidos";
-    return null;
+    return ORDEN_MODULOS.find((m) => this.modulos.includes(m)) ?? null;
   }
 
   /**
@@ -288,12 +318,17 @@ export class SessionStore {
 
   /**
    * Ruta de entrada tras iniciar sesión / entrar al módulo.
+   *
+   * El destino sale de `SECCIONES` (la sección `inicio` del módulo), con el
+   * `rutaPrincipal` del catálogo como respaldo. **No hay un literal
+   * `/pedidos/inicio`**: con dos módulos, un fallback escrito a mano mandaría a
+   * Inventario a la pantalla de Pedidos.
    */
   get moduloEntryPath() {
     const modulo = this.moduloPrincipal;
     if (modulo === null) return "/seleccionar";
     const inicio = SECCIONES[modulo]?.find((s) => s.id === "inicio");
-    return inicio?.path ?? "/pedidos/inicio";
+    return inicio?.path ?? CATALOGO_MODULOS[modulo]?.rutaPrincipal ?? "/seleccionar";
   }
 
   // ── Simulación de operador ("Viendo como") ──────────────────────────────
@@ -323,8 +358,8 @@ export class SessionStore {
    * | Estado                        | autenticado | rolId         | capacidades |
    * |-------------------------------|-------------|---------------|-------------|
    * | Sin configurar                | false       | null          | []          |
-   * | Sesión directa de admin       | true        | admin_tienda  | las 18      |
-   * | Admin sin módulos instalados  | true        | admin_tienda  | las 18      |
+   * | Sesión directa de admin       | true        | admin_tienda  | las 22      |
+   * | Admin sin módulos instalados  | true        | admin_tienda  | las 22      |
    * | Simulando operador X          | true        | X.rolId       | efectivas X |
    * | Sesión directa de operador    | false       | null          | []          |
    *

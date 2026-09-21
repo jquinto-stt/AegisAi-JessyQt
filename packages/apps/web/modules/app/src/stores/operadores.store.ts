@@ -94,6 +94,17 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
     { id: "conversaciones", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
   ],
+  // Inventario: qué hay en el almacén, dónde y a qué costo. Módulo INDEPENDIENTE
+  // de Pedidos — no comparte dominio, solo el vocabulario de catálogo. Su
+  // configuración se entra con `settings.read` y se guarda con
+  // `settings.manage`, igual que las otras tres configuraciones: no se inventa
+  // una capacidad `inventory.settings` que duplicaría una existente.
+  inventario: [
+    { id: "inicio", label: "Inicio", path: "/inventario/inicio", capacidad: "inventory.read" },
+    { id: "existencias", label: "Existencias", path: "/inventario", capacidad: "inventory.read" },
+    { id: "movimientos", label: "Movimientos", path: "/inventario/movimientos", capacidad: "inventory.read" },
+    { id: "configuracion", label: "Configuración", path: "/inventario/config", capacidad: "settings.read" },
+  ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
