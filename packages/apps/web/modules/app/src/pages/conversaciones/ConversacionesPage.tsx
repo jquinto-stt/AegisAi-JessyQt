@@ -56,12 +56,26 @@ export const ConversacionesPage = observer(() => {
         description="Consola de mensajería y WhatsApp — bandeja, chat y contexto del contacto"
       />
 
-      {/* Conmutador Chat en vivo / Historial de atención.
-          Las tres cadenas de color salen de `@/pages/config-layout`: el estado
-          activo se pinta igual aqui que en el `Segmentado` de las pantallas de
-          configuración. Antes eran literales duplicados y el activo iba en
-          blanco. */}
-      <div className="mb-3 flex items-center justify-between">
+      {/* ── Cabecera de la página ────────────────────────────────────────── */}
+      {/* El título FALTABA. Medido con `outputs/modulos-verify/huella-modulos.mjs`:
+          `/conversaciones` y `/conversaciones/historial` eran las DOS ÚNICAS
+          pantallas de módulo sin `<h1>`. El primer elemento visible era el
+          conmutador, así que la pantalla no decía dónde estabas.
+
+          La fila ya era `justify-between` **con un solo hijo**: un
+          `justify-between` de un hijo no reparte nada. Estaba preparada para un
+          título a la izquierda y el conmutador a la derecha, y el título nunca
+          llegó.
+
+          `text-2xl font-bold text-ink-title`, el token de las demás pantallas de
+          módulo (`/pedidos/inicio:864`, `/asistente:64`) — no el `text-xl` de las
+          configuraciones: esto es una superficie de trabajo, no ajustes.
+
+          El conmutador toma sus tres colores de `@/pages/config-layout`, así que
+          el estado activo se pinta igual aquí que en el `Segmentado` de las
+          pantallas de configuración. */}
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Conversaciones</h1>
         <div className={claseSegmentoTrack}>
           <button
             type="button"

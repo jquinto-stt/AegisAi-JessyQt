@@ -328,11 +328,26 @@ export const HistorialAtencionPage = observer(() => {
         description="Histórico de tickets de soporte del canal — estado, cliente y resolución"
       />
 
-      {/* ── Conmutador Chat en vivo / Historial ──
-          Mismo control que en `/conversaciones`, y mismas tres cadenas de
-          color: se importan de `@/pages/config-layout` en vez de repetirlas.
-          El activo va en el naranja de marca. */}
-      <div className="mb-3 flex items-center justify-between">
+      {/* ── Cabecera de la página ────────────────────────────────────────── */}
+      {/* El título FALTABA. Medido con `outputs/modulos-verify/huella-modulos.mjs`:
+          `/conversaciones` y `/conversaciones/historial` eran las DOS ÚNICAS
+          pantallas de módulo sin `<h1>`. El primer elemento visible era el
+          conmutador, así que la pantalla no decía dónde estabas.
+
+          La fila ya era `justify-between` **con un solo hijo**: un
+          `justify-between` de un hijo no reparte nada. Estaba preparada para un
+          título a la izquierda y el conmutador a la derecha, y el título nunca
+          llegó.
+
+          `text-2xl font-bold text-ink-title`, el token de las demás pantallas de
+          módulo (`/pedidos/inicio:864`, `/asistente:64`) — no el `text-xl` de las
+          configuraciones: esto es una superficie de trabajo, no ajustes.
+
+          El conmutador toma sus tres colores de `@/pages/config-layout`, así que
+          el estado activo se pinta igual aquí que en el `Segmentado` de las
+          pantallas de configuración. */}
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Historial de atención</h1>
         <div className={claseSegmentoTrack}>
           <button
             type="button"
