@@ -48,7 +48,7 @@ export const ChatThread = observer(
 const IndicadorPensando = () => (
   <div className="flex justify-start my-2">
     <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
-      <span className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xs">
+      <span className="flex h-5 w-5 items-center justify-center rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-theme-xs">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-pulse text-gray-600 dark:text-gray-300">
           <circle cx="12" cy="12" r="3" />
         </svg>

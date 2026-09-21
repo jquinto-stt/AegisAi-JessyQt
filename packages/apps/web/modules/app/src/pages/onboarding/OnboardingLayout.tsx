@@ -138,7 +138,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
       <div className="relative z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
         
         {/* ── COLUMNA IZQUIERDA: TARJETA BLANCA FLOTANTE ──────────────── */}
-        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-[28px] sm:rounded-[32px] p-6 sm:p-9 lg:p-12 shadow-2xl flex flex-col justify-between relative z-10 transition-all">
+        <div className="lg:col-span-7 xl:col-span-7 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-[28px] sm:rounded-[32px] p-6 sm:p-9 lg:p-12 shadow-theme-xl flex flex-col justify-between relative z-10 transition-all">
           {/* Barra superior de la tarjeta blanca con Logo en el centro exacto */}
           <div className="relative flex items-center justify-between gap-3 pb-6 border-b border-gray-100 dark:border-gray-800/80">
             {/* Izquierda: Volver + Contador de pasos */}
@@ -192,7 +192,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
             <AnimatedBrandMessages messages={brandMessages} />
           ) : (
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-xs shadow-xs">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-xs shadow-theme-xs">
                 <span className="size-1.5 rounded-full bg-white animate-pulse" />
                 {brandBadge}
               </div>

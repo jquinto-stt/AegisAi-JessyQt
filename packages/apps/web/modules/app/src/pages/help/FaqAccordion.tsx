@@ -20,7 +20,7 @@ export const FaqAccordion: React.FC = () => {
     <section aria-labelledby="help-faq">
       <h2
         id="help-faq"
-        className="text-2xl font-bold tracking-tight text-secondary-600 dark:text-white"
+        className="text-2xl font-bold tracking-tight text-ink-title dark:text-white"
       >
         Preguntas frecuentes
       </h2>
@@ -34,7 +34,7 @@ export const FaqAccordion: React.FC = () => {
               className={cn(
                 "overflow-hidden rounded-xl border transition-all duration-200",
                 isOpen
-                  ? "border-success-500/40 bg-success-50 shadow-xs dark:border-success-500/40 dark:bg-success-950/20"
+                  ? "border-success-500/40 bg-success-50 shadow-theme-xs dark:border-success-500/40 dark:bg-success-950/20"
                   : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
               )}
             >
@@ -44,7 +44,7 @@ export const FaqAccordion: React.FC = () => {
                 onClick={() => setOpenId(isOpen ? null : item.id)}
                 className="flex w-full cursor-pointer items-center justify-between gap-5 px-5 py-4 text-left"
               >
-                <span className="text-base font-bold leading-snug text-secondary-600 dark:text-white">
+                <span className="text-base font-bold leading-snug text-gray-900 dark:text-white">
                   {item.question}
                 </span>
                 <span
@@ -60,7 +60,7 @@ export const FaqAccordion: React.FC = () => {
               </button>
 
               {isOpen && (
-                <div className="animate-fade-in border-t border-success-500/15 bg-success-50 px-5 pt-2 pb-5 text-theme-sm leading-relaxed text-gray-700 dark:border-success-500/20 dark:bg-success-950/20 dark:text-gray-300">
+                <div className="animate-aparecer border-t border-success-500/15 bg-success-50 px-5 pt-2 pb-5 text-theme-sm leading-relaxed text-gray-700 dark:border-success-500/20 dark:bg-success-950/20 dark:text-gray-300">
                   <p>{item.answer}</p>
                 </div>
               )}

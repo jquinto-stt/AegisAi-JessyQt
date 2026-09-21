@@ -43,11 +43,12 @@ interface PublicPageLayoutProps {
  * sesión vuelve al hub; sin ella, a iniciar sesión. Si se fija un destino único,
  * uno de los dos casos acaba en una pantalla que no le corresponde.
  *
- * ⚠️ La banda es `public-500` (verde #17B363), **no** `brand-500`. El naranja de
- * marca es el acento de *interacción* —botones, focos, enlaces dentro de la
- * aplicación—; este verde identifica el **contenido abierto**, que es lo que
- * tienen en común las cinco páginas que usan este armazón. Con la banda en
- * naranja, las pantallas públicas se leían como si fueran la aplicación.
+ * ⚠️ La banda va en `brand-500`, el naranja de marca `#FF3C10`. **No siempre fue
+ * así**: aquí vivía un verde `#17B363` (`--color-public-500`) que no aparece en
+ * ninguna página del manual; se retiró el 20/09. El naranja a sangre es,
+ * literalmente, lo que hace la portada del manual (pág. 14): el contenido abierto
+ * se lee como la *portada* del producto, y el interior de la aplicación usa el
+ * índigo y el casi-negro. Esa es la distinción, y está dentro de la paleta.
  * Si se cambia aquí, cambian las cinco a la vez: es justo el punto único que
  * buscaba este componente.
  *
@@ -71,10 +72,10 @@ export default function PublicPageLayout({
   const backTarget = isAuthenticated ? "/modulos" : "/login";
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-public-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
+    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
       <section
         className={cn(
-          "relative overflow-hidden bg-public-500 px-5 pt-6 text-white sm:px-10 lg:px-16",
+          "relative overflow-hidden bg-brand-500 px-5 pt-6 text-white sm:px-10 lg:px-16",
           compactHero ? "pb-10" : "pb-14"
         )}
       >
@@ -121,7 +122,7 @@ export default function PublicPageLayout({
 
       <footer className="border-t border-gray-100 bg-white px-5 py-8 sm:px-10 lg:px-16 dark:border-gray-800 dark:bg-gray-950">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <NectoLogo size="xs" inline />
+          <NectoLogo size="xs" />
           <LegalFooterLinks />
         </div>
       </footer>

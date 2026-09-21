@@ -143,14 +143,29 @@ const AppHeader = observer(() => (
  */
 export const AppShell = () => {
   const location = useLocation();
-  const isAssistant = location.pathname.startsWith("/asistente");
+
+  // ── ¿Cuándo el contenido va a sangre? ─────────────────────────────────────
+  //
+  // `/asistente` es el chat: una superficie de conversación que ocupa el panel
+  // entero y trae su propio scroll, así que NO se envuelve en `.necto-panel`.
+  //
+  // `/asistente/config` sí. Con `startsWith("/asistente")` a secas, TODA la rama
+  // del asistente —incluida su pantalla de configuración— se quedaba sin panel:
+  // sin fondo, sin anillo, sin `animate-aparecer` y, sobre todo, sin el `p-6`.
+  // Medido con CDP: su cabecera caía en (314, 124) donde `/configuracion`,
+  // `/pedidos/config` y `/conversaciones/config` la tienen en (338, 148) — 24 px
+  // arriba y 24 px a la izquierda, exactamente el padding que faltaba. Era la
+  // única de las cuatro que no encajaba.
+  const esChatAsistente =
+    location.pathname.startsWith("/asistente") &&
+    !location.pathname.startsWith("/asistente/config");
 
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
       footer={<AppFooter />}
-      noCard={isAssistant}
+      noCard={esChatAsistente}
     >
       <Outlet />
     </BaseAppShell>

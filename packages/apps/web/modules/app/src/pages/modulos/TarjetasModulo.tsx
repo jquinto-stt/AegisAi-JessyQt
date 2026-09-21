@@ -107,7 +107,7 @@ export function metricasPedidosHoy(): MetricaViva[] {
       // Ámbar solo si hay algo que atender. Un cero en rojo grita por un problema
       // que no existe.
       valor: String(atencion),
-      tono: atencion > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500",
+      tono: atencion > 0 ? "text-warning-600 dark:text-warning-400" : "text-gray-400 dark:text-gray-500",
     },
   ];
 }
@@ -288,7 +288,7 @@ export const TarjetaProximo: React.FC<TarjetaProximoProps> = observer(
             </Badge>
           </div>
 
-          <h4 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">{modulo.nombre}</h4>
+          <h4 className="mt-4 text-lg font-bold text-ink-title dark:text-white">{modulo.nombre}</h4>
           <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
             {modulo.descripcion}
           </p>

@@ -379,7 +379,7 @@ const ClientesModal = observer(
     return (
       <Modal isOpen onClose={onClose} className="max-w-md p-6">
         <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">Clientes</h2>
+          <h2 className="text-xl font-bold text-ink-title dark:text-white/90">Clientes</h2>
           <CampanitaAtencion onClick={() => setSeg("atencion")} />
           <div className="ml-auto">
             <BotonSilenciar />
@@ -579,7 +579,7 @@ const PanelEjecutiva = observer(
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           <Card className="p-0 sm:p-0 lg:col-span-2">
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+              <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
                 Pedidos en curso
               </h3>
               <button
@@ -861,7 +861,7 @@ export const InicioPage = observer(() => {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">
               {esOperador ? `Hola, ${operador!.nombre}` : meta.titulo}
             </h1>
             <CampanitaAtencion onClick={() => setClientesOpen(true)} />

@@ -126,7 +126,7 @@ export const ModulosPage = observer(() => {
       <BaseAppHeader
         leftContent={
           <div className="flex items-center gap-3 sm:gap-4">
-            <NectoLogo size="xs" inline />
+            <NectoLogo size="xs" />
             <span className="hidden h-5 w-px bg-gray-200 sm:block dark:bg-gray-800" />
             <span className="hidden text-theme-xs font-semibold uppercase tracking-wider text-gray-400 sm:inline dark:text-gray-500">
               {org?.nombre || "Mi organización"}
@@ -151,7 +151,7 @@ export const ModulosPage = observer(() => {
                 <span className="size-2 rounded-full bg-brand-500" />
                 {org?.nombre || "Mi Organización"} · {org?.moneda || "COP"}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
                 Módulos del Negocio
               </h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -182,7 +182,7 @@ export const ModulosPage = observer(() => {
               <Button
                 size="sm"
                 onClick={() => navigate("/configuracion?tab=modulos")}
-                className="rounded-full font-bold bg-brand-500 text-white shadow-sm shadow-brand-500/20"
+                className="rounded-full font-bold bg-brand-500 text-white shadow-theme-sm shadow-brand-500/20"
               >
                 <Plus className="size-4 mr-1.5" />
                 Agregar módulo
@@ -192,12 +192,12 @@ export const ModulosPage = observer(() => {
 
           {/* ESTADO VACÍO (si no hay módulos instalados: BOTÓN EN EL CENTRO) */}
           {!tienePedidos ? (
-            <div className="mx-auto my-12 max-w-lg rounded-3xl border border-dashed border-gray-300 bg-white/70 p-10 text-center shadow-xs dark:border-gray-800 dark:bg-gray-900/60 sm:p-14">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-50 text-brand-500 shadow-sm dark:bg-brand-500/10 dark:text-brand-400 mb-6">
+            <div className="mx-auto my-12 max-w-lg rounded-3xl border border-dashed border-gray-300 bg-white/70 p-10 text-center shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/60 sm:p-14">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-50 text-brand-500 shadow-theme-sm dark:bg-brand-500/10 dark:text-brand-400 mb-6">
                 <Layers className="size-10" />
               </div>
 
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
+              <h2 className="text-xl font-bold text-ink-title dark:text-white sm:text-2xl">
                 No tienes ningún módulo instalado
               </h2>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -212,7 +212,7 @@ export const ModulosPage = observer(() => {
                 <Button
                   size="lg"
                   onClick={() => navigate("/configuracion?tab=modulos")}
-                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20"
                 >
                   <Plus className="size-5 mr-1.5" />
                   Agregar módulo
@@ -235,10 +235,10 @@ export const ModulosPage = observer(() => {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {/* Módulo Pedidos Activo */}
-                <div className="flex flex-col justify-between rounded-3xl border border-emerald-500/40 bg-white p-6 shadow-sm dark:bg-gray-900 ring-2 ring-emerald-500/10">
+                <div className="flex flex-col justify-between rounded-3xl border border-success-500/40 bg-white p-6 shadow-theme-sm dark:bg-gray-900 ring-2 ring-success-500/10">
                   <div>
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-md shadow-brand-500/20">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-theme-md shadow-brand-500/20">
                         {/* El glifo venía como `<svg>` inline escrito a mano aquí.
                             Se usa `CartIcon` de `@/icons`, que es el MISMO que ya
                             usaba `conversaciones/ConfigPage`. Deuda pendiente: el
@@ -250,7 +250,7 @@ export const ModulosPage = observer(() => {
                       </Badge>
                     </div>
 
-                    <h4 className="mt-4 text-lg font-bold text-gray-900 dark:text-white">
+                    <h4 className="mt-4 text-lg font-bold text-ink-title dark:text-white">
                       {MODULO_PEDIDOS.nombre}
                     </h4>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -265,19 +265,19 @@ export const ModulosPage = observer(() => {
                     <MetricasVivas metricas={metricas} />
 
                     {perfilActual && (
-                      <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                      <div className="mt-4 rounded-xl border border-success-100 bg-success-50/60 p-3 dark:border-success-500/20 dark:bg-success-500/5">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-success-800 dark:text-success-300">
                           <span>{perfilActual.icon}</span>
                           <span>Perfil: {perfilActual.name}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {organizacionStore.esConectorActivo("pedidos", "whatsapp") && (
-                            <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+                            <span className="rounded bg-success-100 px-2 py-0.5 text-[10px] font-medium text-success-800 dark:bg-success-900/50 dark:text-success-300">
                               💬 WhatsApp Agent
                             </span>
                           )}
                           {organizacionStore.esConectorActivo("pedidos", "necto_ia") && (
-                            <span className="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-800 dark:bg-purple-900/50 dark:text-purple-300">
+                            <span className="rounded bg-secondary-100 px-2 py-0.5 text-[10px] font-medium text-secondary-800 dark:bg-secondary-900/50 dark:text-secondary-300">
                               🤖 Necto Agent (IA)
                             </span>
                           )}
@@ -299,7 +299,7 @@ export const ModulosPage = observer(() => {
                   <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-800">
                     <Button
                       size="md"
-                      className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-md shadow-brand-500/20"
+                      className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-md shadow-brand-500/20"
                       onClick={handleEntrarPedidos}
                     >
                       Entrar al módulo

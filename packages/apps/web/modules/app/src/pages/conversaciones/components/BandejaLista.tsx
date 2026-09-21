@@ -59,11 +59,11 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       <div className="p-4 sm:p-5 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white/90">
+            <h3 className="text-xl font-bold text-ink-title dark:text-white/90">
               Chats
             </h3>
             {conversacionesStore.totalNoLeidos > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-[10px] font-bold text-white shadow-2xs">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-[10px] font-bold text-white shadow-theme-xs">
                 {conversacionesStore.totalNoLeidos}
               </span>
             )}
@@ -173,7 +173,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 onClick={() => setFiltroIntencion(f.valor)}
                 className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   activo
-                    ? "bg-brand-500 text-white shadow-2xs"
+                    ? "bg-brand-500 text-white shadow-theme-xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 }`}
               >
@@ -282,7 +282,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                         {preview}
                       </p>
                       {conv.noLeidos > 0 && (
-                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-2xs">
+                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-theme-xs">
                           {conv.noLeidos}
                         </span>
                       )}

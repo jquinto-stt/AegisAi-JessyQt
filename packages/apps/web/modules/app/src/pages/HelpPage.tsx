@@ -16,12 +16,11 @@ import { FaqAccordion } from "./help/FaqAccordion";
  * numerado y acordeón de preguntas— sin la tarjeta de precio, que era del
  * referente y aquí no aplica.
  *
- * ⚠️ La banda es `public-500` (verde #17B363) y **no** el naranja de marca. En
- * Necto el naranja es el acento de *interacción* —botones, focos, enlaces dentro
- * de la aplicación— y el verde de `success-*` sigue reservado para **estado**
- * (activo, conectado, correcto). Este verde es el tercero, el del **contenido
- * abierto**, y lo comparten `/ayuda`, `/soporte` y las páginas legales. Ver la
- * nota de `--color-public-500` en `css/theme.css`.
+ * ⚠️ La banda la pone `PublicPageLayout` en `brand-500` (`#FF3C10`). Aquí vivía
+ * un verde `#17B363` que no está en el manual; se retiró el 20/09 junto con el
+ * token `--color-public-500`, que no tenía ningún otro consumidor. El naranja a
+ * sangre es lo que hace la portada del manual, y `/ayuda`, `/soporte` y las
+ * páginas legales comparten ese armazón.
  *
  * El armazón —hero, columna y pie— vive en `PublicPageLayout`, que comparte con
  * las páginas legales y con soporte. Antes se resolvía aquí a mano y las páginas

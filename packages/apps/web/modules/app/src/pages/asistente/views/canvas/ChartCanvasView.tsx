@@ -61,11 +61,11 @@ export const ChartCanvasView = ({ metrics, title }: ChartCanvasViewProps) => {
 
             const barColors = [
               "bg-brand-500",
-              "bg-blue-500",
-              "bg-purple-500",
-              "bg-amber-500",
-              "bg-emerald-500",
-              "bg-indigo-500",
+              "bg-accent-500",
+              "bg-secondary-500",
+              "bg-warning-500",
+              "bg-success-500",
+              "bg-secondary-300",
             ];
             const colorClass = barColors[idx % barColors.length];
 

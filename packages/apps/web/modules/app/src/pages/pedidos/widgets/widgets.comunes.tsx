@@ -17,10 +17,10 @@ import { retardoEscalonado } from "@/utils";
 // ── Paleta oficial NECTO ───────────────────────────────────────────────────
 //
 // Los tres colores de marca. Se declaran aquí y los importan todos los widgets,
-// en vez de que cada uno redeclare su propio `const ORANGE = "#FF3F1A"`.
-export const ORANGE = "#FF3F1A";
-export const INDIGO = "#190088";
-export const CELESTE = "#97D6DF";
+// en vez de que cada uno redeclare su propio `const ORANGE = "#FF3C10"`.
+export const ORANGE = "#FF3C10";
+export const INDIGO = "#15008B";
+export const CELESTE = "#71D6E0";
 
 /**
  * Importe en pesos colombianos.
@@ -68,7 +68,7 @@ export function CabeceraWidget({
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-2">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">{titulo}</h3>
+        <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">{titulo}</h3>
         {extra}
       </div>
       {accion && onAccion && (

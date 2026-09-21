@@ -76,7 +76,7 @@ const RangoCalendarioModal = ({
 
   return (
     <Modal isOpen onClose={onClose} className="max-w-md p-6">
-      <h2 className="mb-1 text-xl font-bold text-gray-800 dark:text-white/90">Elegir periodo</h2>
+      <h2 className="mb-1 text-xl font-bold text-ink-title dark:text-white/90">Elegir periodo</h2>
       <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
         Elige un día o un rango. Un solo día muestra ese día.
       </p>

@@ -115,7 +115,7 @@ export const ArtifactCanvas = ({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
       {/* ── Cabecera del Canvas (Idéntica a capturas: [x] Título + Botones de acción) ── */}
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         {/* Lado izquierdo: Botón cerrar + Título */}
@@ -133,7 +133,7 @@ export const ArtifactCanvas = ({
             </svg>
           </button>
 
-          <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white">
+          <h3 className="truncate text-base font-semibold text-ink-title dark:text-white">
             {artifact.title || "Artefacto"}
           </h3>
         </div>
@@ -165,7 +165,7 @@ export const ArtifactCanvas = ({
             className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
           >
             {copied ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -199,7 +199,7 @@ export const ArtifactCanvas = ({
             title="No me gusta"
             className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
               feedback === "down"
-                ? "bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400"
+                ? "bg-error-50 text-error-600 dark:bg-error-900/30 dark:text-error-400"
                 : "text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             }`}
           >

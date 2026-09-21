@@ -153,35 +153,42 @@ export const ORDEN_ESTADO: PedidoEstado[] = [
   "cancelado",
 ];
 
-/** Color de cada estado del pipeline. */
+/** Color de cada estado del pipeline.
+ *
+ * El manual NECTO no trae paleta de gráficas: son seis colores y un pipeline
+ * necesita ocho series distinguibles. La decisión —escrita para poder
+ * discutirla— es recorrer el pipeline como una rampa: del neutro (aún no
+ * activo) al naranja profundo (cerrado), pasando por el celeste y el índigo de
+ * marca. Nada sale de fuera de las rampas `brand`/`secondary`/`accent`/`gray`,
+ * y el rojo de cancelación es el semántico `error-500` del tema. */
 export const COLOR_ESTADO: Record<PedidoEstado, string> = {
-  programado: "#94A3B8", // gris: aún no activo
-  nuevo: "#3B82F6", // azul
-  confirmado: "#190088", // indigo NECTO
-  en_preparacion: "#F59E0B", // ámbar
-  listo: "#10B981", // verde
-  en_camino: "#7E57FF", // indigo suave NECTO
-  entregado: "#059669", // verde profundo
-  cancelado: "#F43F5E", // rojo
+  programado: "#A1A1A1", // gray-400: aún no activo
+  nuevo: "#45AEBD", // accent-500 (celeste): recién entrado
+  confirmado: "#15008B", // secondary-600: el índigo de marca
+  en_preparacion: "#FF8F78", // brand-300: en cocina
+  listo: "#FF3C10", // brand-500: el naranja de marca
+  en_camino: "#7E57FF", // secondary-300: índigo suave
+  entregado: "#BF2810", // brand-700: naranja profundo, cerrado
+  cancelado: "#F04438", // error-500
 };
 
 /** Color de cada canal de entrada. */
 export const COLOR_ORIGEN: Record<Origen, string> = {
-  whatsapp: "#10B981",
-  operador: "#3B82F6",
+  whatsapp: "#25D366", // verde de WhatsApp: color de tercero, no de NECTO
+  operador: "#15008B", // secondary-600
 };
 
 /** Color de cada modalidad de entrega. */
 export const COLOR_MODALIDAD: Record<Modalidad, string> = {
-  retiro: "#8B5CF6",
-  domicilio: "#F59E0B",
-  en_sitio: "#EC4899",
+  retiro: "#4D1FE0", // secondary-400
+  domicilio: "#FF6647", // brand-400
+  en_sitio: "#348A97", // accent-600
 };
 
 /** Color del estado de pago (donut). */
 export const COLOR_PAGO = {
-  pagado: "#10B981",
-  pendiente: "#F59E0B",
+  pagado: "#12B76A", // success-500
+  pendiente: "#F79009", // warning-500
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════

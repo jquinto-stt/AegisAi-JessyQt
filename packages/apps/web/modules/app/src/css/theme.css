@@ -1,7 +1,48 @@
 @theme {
+  /* ══════════════════════════════════════════════════════════════════════════
+     TIPOGRAFÍA — la de `Esencia_necto`, sustituida y declarado el porqué
+     ══════════════════════════════════════════════════════════════════════════
+
+     La guía de marca usa **Gotham** (Hoefler&Co): `Gotham-Black` en el
+     logotipo, `Gotham-Bold` en titulares y `Gotham-Book` en texto corrido.
+
+     No se puede usar aquí, y son DOS razones independientes:
+
+       1. **No hay licencia.** Gotham es comercial y en el repo no hay ninguna
+          licencia de webfont. Incrustarla desde el PDF sería distribuir una
+          fuente propietaria.
+
+       2. **Lo que hay incrustado es un subconjunto.** Medido con `fontTools`
+          sobre los `FontFile3` extraídos de `PRESENTACIÓN NAMING + MARCA.pdf`:
+          `Gotham-Bold` trae **52 glifos**, `Gotham-Book` **47**, `Gotham-Black`
+          **12** y el del logotipo de la p.8 solo **9** (`e g h o r space t w`).
+          Falta `k u v w x y z`, casi todos los dígitos, la `ñ` y los signos de
+          apertura. «Configuración» saldría con huecos. Aunque hubiera licencia,
+          ese archivo no sirve como webfont.
+
+     **Sustituta: Montserrat.** Es el sustituto libre estándar de Gotham y
+     coincide en lo que hace reconocible a Gotham: construcción geométrica,
+     `a` de doble piso, `g` de un piso, altura de x alta y trazos de grosor
+     uniforme. Poppins queda descartada porque su `a` es de un solo piso, que es
+     justo el rasgo donde más se separa de Gotham.
+
+     Correspondencia de pesos guía → Montserrat: Black → 800/900,
+     Bold → 600/700, Book → 400/500.
+
+     `--font-outfit` se mantiene como alias: hay consumidores que lo nombran y
+     hoy no existe ninguna fuente «Outfit» cargada, así que apuntaba a DM Sans.
+     Ahora los dos tokens apuntan al mismo sitio.
+  */
   --font-*: initial;
-  --font-outfit: "DM Sans", sans-serif;
-  --font-sans: "DM Sans", sans-serif;
+  --font-outfit: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
+  /* `--font-*: initial` borra tambien `--font-mono` y `--font-serif`. Una
+     familia que no se declara NO genera CSS: `font-mono` quedaba sin regla y
+     sus 17 consumidores caian al monoespaciado del navegador (Consolas en
+     Windows, Courier en otros), que no es de la marca y cambia de una maquina a
+     otra. Se vuelve a declarar para que la clase exista. */
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
   --breakpoint-*: initial;
   --breakpoint-2xsm: 375px;
@@ -33,23 +74,23 @@
   --color-current: currentColor;
   --color-transparent: transparent;
   --color-white: #ffffff;
-  --color-black: #101828;
+  --color-black: #1a1a1a;
 
-  /* NECTO brand — primary orange (#FF3F1A) */
+  /* NECTO brand — primary orange (#FF3C10) — medido en la pág. G */
   --color-brand-25: #fff5f2;
   --color-brand-50: #ffede8;
   --color-brand-100: #ffd6cc;
   --color-brand-200: #ffb3a3;
   --color-brand-300: #ff8f78;
   --color-brand-400: #ff6647;
-  --color-brand-500: #ff3f1a;
+  --color-brand-500: #ff3c10;
   --color-brand-600: #e63314;
   --color-brand-700: #bf2810;
   --color-brand-800: #99200d;
   --color-brand-900: #7a1a0b;
   --color-brand-950: #4d0f06;
 
-  /* NECTO secondary — indigo (#190088) */
+  /* NECTO secondary — indigo (#15008B) — medido en la pág. G */
   --color-secondary-25: #f4f2ff;
   --color-secondary-50: #ebe6ff;
   --color-secondary-100: #d2c7ff;
@@ -57,22 +98,18 @@
   --color-secondary-300: #7e57ff;
   --color-secondary-400: #4d1fe0;
   --color-secondary-500: #2a0bb0;
-  --color-secondary-600: #190088;
+  --color-secondary-600: #15008b;
   --color-secondary-700: #14006e;
   --color-secondary-800: #0f0054;
   --color-secondary-900: #0a003a;
   --color-secondary-950: #060022;
 
-  /* NECTO public content — green (#17B363) */
-  --color-public-500: #17b363;
-  --color-public-700: #0e7a43;
-
-  /* NECTO accent — light blue (#97D6DF) */
+  /* NECTO accent — light blue (#71D6E0) — medido en la pág. G */
   --color-accent-25: #f5fcfd;
   --color-accent-50: #eaf7f9;
   --color-accent-100: #d5eff3;
   --color-accent-200: #b6e3ea;
-  --color-accent-300: #97d6df;
+  --color-accent-300: #71d6e0;
   --color-accent-400: #6bc2ce;
   --color-accent-500: #45aebd;
   --color-accent-600: #348a97;
@@ -81,49 +118,57 @@
   --color-accent-900: #1c474d;
   --color-accent-950: #0f2a2e;
 
-  /* NECTO neutrals */
-  --color-beige: #efe6d3;
-  --color-beige-light: #f5efe2;
+  /* NECTO neutrals.
+   * `beige` es uno de los siete colores MEDIDOS del manual (pagina `-0010`,
+   * la rejilla de muestras). Se queda aunque hoy no tenga consumidores: es
+   * color documentado y Tailwind no lo emite si nadie lo usa, asi que no
+   * cuesta un byte. Lo que NO se queda es `beige-light`: ese hex no aparece
+   * en ninguna pagina del manual, y medido sobre las diez paginas el beige
+   * solo pinta el 2.86% de la rejilla y el 0.00% de todo lo demas — el
+   * manual define el beige y nunca lo aplica a una superficie. Inventarle
+   * un uso seria decorar, no disenar. */
+  --color-beige: #f2e7d3;
 
-  --color-blue-light-25: #f5fbff;
-  --color-blue-light-50: #f0f9ff;
-  --color-blue-light-100: #e0f2fe;
-  --color-blue-light-200: #b9e6fe;
-  --color-blue-light-300: #7cd4fd;
-  --color-blue-light-400: #36bffa;
-  --color-blue-light-500: #0ba5ec;
-  --color-blue-light-600: #0086c9;
-  --color-blue-light-700: #026aa2;
-  --color-blue-light-800: #065986;
-  --color-blue-light-900: #0b4a6f;
-  --color-blue-light-950: #062c41;
 
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
-  --color-gray-200: #e4e7ec;
-  --color-gray-300: #d0d5dd;
-  --color-gray-400: #98a2b3;
-  --color-gray-500: #667085;
-  --color-gray-600: #475467;
-  --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-gray-950: #0c111d;
-  --color-gray-dark: #1a2231;
+  /* Rampa de grises NEUTRA. Medido sobre las diez paginas del manual, el
+     tinte de sus cuatro grises de interfaz es exactamente 0 (#f6f6f6 papel,
+     #ececec superficie, #212121 panel, #1a1a1a lienzo); los unicos grises
+     con tinte salen de las paginas fotograficas. La rampa de TailAdmin que
+     habia aqui era azulada (tinte 28-32 en los pasos medios), asi que cada
+     paso conserva su L* y pierde el tinte: mismo contraste, sin el azul.
+     Los cuatro neutros medidos caen sobre esta rampa (pasos 100, 200, 900
+     y 950), que es lo que confirma que la forma era correcta. */
+  --color-gray-25: #fcfcfc;
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f4;
+  --color-gray-200: #e7e7e7;
+  --color-gray-300: #d5d5d5;
+  --color-gray-400: #a1a1a1;
+  --color-gray-500: #707070;
+  --color-gray-600: #535353;
+  --color-gray-700: #3f3f3f;
+  --color-gray-800: #282828;
+  --color-gray-900: #212121;
+  --color-gray-950: #1a1a1a;
 
-  --color-orange-25: #fffaf5;
-  --color-orange-50: #fff6ed;
-  --color-orange-100: #ffead5;
-  --color-orange-200: #fddcab;
-  --color-orange-300: #feb273;
-  --color-orange-400: #fd853a;
-  --color-orange-500: #fb6514;
-  --color-orange-600: #ec4a0a;
-  --color-orange-700: #c4320a;
-  --color-orange-800: #9c2a10;
-  --color-orange-900: #7e2410;
-  --color-orange-950: #511c10;
+  /* TINTAS DE TEXTO — medidas sobre el mueble de las diez paginas del manual.
+     El manual NO escribe con el indigo de marca: tiene dos tintas propias, y
+     son las que llevan sus titulares y su texto corrido.
+
+       #1d3261  azul marino apagado -> TITULO. Es el color modal de la columna
+                de etiqueta en las pags. 6, 8, 9, 11, 12 y 13 (entre 14 892 y
+                16 011 px modales en cada una). «B / Naming» y «C / Conceptos
+                Visuales» estan en esta tinta.
+       #535250  gris calido oscuro  -> CUERPO y marca de letra. Color modal de
+                las pags. 5, 7 y 10, y segunda tinta de todas las demas.
+
+     El indigo `--color-secondary-600` (#15008B) es ACENTO —el punto del
+     logotipo, el isotopo, el «CO» del lockup— y nunca tinta de titular. Por eso
+     los titulos de la app no usan `text-secondary-*` ni `text-gray-900`: la
+     rampa de grises es neutra (tinte 0) y no tiene el azul del manual. */
+  --color-ink-title: #1d3261;
+  --color-ink-body: #535250;
+
 
   --color-success-25: #f6fef9;
   --color-success-50: #ecfdf3;
@@ -164,25 +209,36 @@
   --color-warning-900: #7a2e0e;
   --color-warning-950: #4e1d09;
 
-  --color-theme-pink-500: #ee46bc;
+  --shadow-theme-md: 0px 4px 8px -2px rgba(26, 26, 26, 0.1),
+    0px 2px 4px -2px rgba(26, 26, 26, 0.06);
+  --shadow-theme-lg: 0px 12px 16px -4px rgba(26, 26, 26, 0.08),
+    0px 4px 6px -2px rgba(26, 26, 26, 0.03);
+  --shadow-theme-sm: 0px 1px 3px 0px rgba(26, 26, 26, 0.1),
+    0px 1px 2px 0px rgba(26, 26, 26, 0.06);
+  --shadow-theme-xs: 0px 1px 2px 0px rgba(26, 26, 26, 0.05);
+  --shadow-theme-xl: 0px 20px 24px -4px rgba(26, 26, 26, 0.08),
+    0px 8px 8px -4px rgba(26, 26, 26, 0.03);
+  /* La sombra interior de la escala. Tailwind trae `shadow-inner` en
+     negro puro (#0000000d); esta es la misma forma con el casi-negro
+     medido, para que la escala entera hable del mismo color. */
+  --shadow-theme-inner: inset 0 2px 4px 0 rgba(26, 26, 26, 0.05);
+  /* NECTO — sombras con tinte de marca.
+     Las `--shadow-theme-*` de arriba son neutras (casi-negro #1A1A1A del manual) y siguen siendo
+     la base de todo. Estas tres son la misma forma con el negro cambiado por el
+     naranja de marca, y existen para un solo trabajo: que una superficie
+     destacada —el hero de una pantalla, el KPI que el operador debe mirar
+     primero— se lea como «de NECTO» **sin** pintarla de naranja. El tinte es
+     bajo (0.04–0.16) a propósito: por encima de ~0.2 el halo se lee como un
+     error de renderizado, no como marca. */
+  --shadow-necto-xs: 0 1px 2px 0 rgb(26 26 26 / 0.05), 0 0 0 1px rgb(255 60 16 / 0.04);
+  --shadow-necto-sm: 0 2px 6px -1px rgb(255 60 16 / 0.1), 0 1px 3px 0 rgb(26 26 26 / 0.06);
+  --shadow-necto-md: 0 10px 24px -6px rgb(255 60 16 / 0.16), 0 4px 8px -2px rgb(26 26 26 / 0.06);
 
-  --color-theme-purple-500: #7a5af8;
-
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1),
-    0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08),
-    0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1),
-    0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08),
-    0px 8px 8px -4px rgba(16, 24, 40, 0.03);
-  --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
-  --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
-    0px 1px 3px 0px rgba(16, 24, 40, 0.1);
-  --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),
-    -8px 0px 20px 8px rgba(16, 24, 40, 0.05);
+  --shadow-focus-ring: 0px 0px 0px 4px rgba(255, 60, 16, 0.12);
+  --shadow-slider-navigation: 0px 1px 2px 0px rgba(26, 26, 26, 0.1),
+    0px 1px 3px 0px rgba(26, 26, 26, 0.1);
+  --shadow-tooltip: 0px 4px 6px -2px rgba(26, 26, 26, 0.05),
+    -8px 0px 20px 8px rgba(26, 26, 26, 0.05);
 
   --drop-shadow-4xl: 0 35px 35px rgba(0, 0, 0, 0.25),
     0 45px 65px rgba(0, 0, 0, 0.15);

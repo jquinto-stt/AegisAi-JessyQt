@@ -5,11 +5,10 @@ import { Alert } from "@/elements/ui/alert";
 import { Card } from "@/elements/ui/card";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
-import { Tab, type TabItem } from "@/elements/ui/tabs";
 import { Switch } from "@/elements/form/switch";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
-import { CheckCircleIcon, PlusIcon, TrashBinIcon } from "@/icons";
+import { BoltIcon, CartIcon, GridIcon, PlusIcon, TimeIcon, TrashBinIcon } from "@/icons";
 import { pedidosStore, puedeGuardarConfig, motivoSinPermiso } from "@/stores";
 import type {
   Modalidad,
@@ -27,9 +26,12 @@ import {
   ChipDia,
   ConfigAcciones,
   ConfigHeader,
+  ConfigSectionNav,
+  ConfigShell,
   Label2,
   ToggleRow,
   claseFila,
+  type GrupoNav,
 } from "@/pages/config-layout";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -71,14 +73,51 @@ const DIAS_SEMANA: { d: number; label: string; largo: string }[] = [
   { d: 0, label: "Dom", largo: "Domingo" },
 ];
 
-type TabConfig = "perfil" | "flujo" | "tiempos" | "catalogo";
+type ClaveSeccion = "perfil" | "flujo" | "tiempos" | "catalogo";
 
-const TABS_CONFIG: TabItem[] = [
-  { key: "perfil", label: "Perfil de Negocio" },
-  { key: "flujo", label: "Operación y Flujo" },
-  { key: "tiempos", label: "Tiempos y Horarios" },
-  { key: "catalogo", label: "Catálogo Rápido" },
-];
+/** Orden de la columna de secciones. `flujo` primero: es la seccion por defecto. */
+const ORDEN_SECCIONES: ClaveSeccion[] = ["flujo", "perfil", "tiempos", "catalogo"];
+
+/**
+ * Metadatos de cada seccion. La etiqueta y el consejo los pinta `ConfigShell`,
+ * el mismo componente que usan `/configuracion`, `/conversaciones/config` y
+ * `/asistente/config`.
+ *
+ * Antes esto era `TABS_CONFIG: TabItem[]` —una barra horizontal con cuatro
+ * etiquetas y ningun consejo— y esta era la unica de las cuatro pantallas de
+ * configuracion sin columna de secciones: el mismo producto con dos
+ * navegaciones distintas.
+ *
+ * `React.FC<React.SVGProps<SVGSVGElement>>` es la forma que declara
+ * `SeccionNav.icono` en `@/pages/config-layout` y la que ya usa
+ * `/configuracion`. No se importa `React`: es una referencia de TIPO a un
+ * global UMD, y TypeScript solo prohibe eso en posicion de valor.
+ */
+const META_SECCION: Record<
+  ClaveSeccion,
+  { label: string; hint: string; icono: React.FC<React.SVGProps<SVGSVGElement>> }
+> = {
+  flujo: {
+    label: "Operación y flujo",
+    hint: "Estados del pipeline, modalidades de entrega y nombres de columna.",
+    icono: BoltIcon,
+  },
+  perfil: {
+    label: "Perfil de negocio",
+    hint: "Qué vendes. Adapta capacidades, campos y terminología.",
+    icono: GridIcon,
+  },
+  tiempos: {
+    label: "Tiempos y horarios",
+    hint: "Horario de atención, duración por etapa y avisos de demora.",
+    icono: TimeIcon,
+  },
+  catalogo: {
+    label: "Catálogo rápido",
+    hint: "Ítems sugeridos con precio para cargar pedidos sin teclear.",
+    icono: CartIcon,
+  },
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA CONFIGURACIÓN DE PEDIDOS
@@ -91,7 +130,7 @@ const TABS_CONFIG: TabItem[] = [
 // cambia respecto de la versión anterior.
 
 export const ConfigPage = observer(() => {
-  const [activeTab, setActiveTab] = useState<TabConfig>("flujo");
+  const [seccion, setSeccion] = useState<ClaveSeccion>("flujo");
 
   // Borrador local: preserva el store intacto hasta presionar "Guardar cambios".
   const [draft, setDraft] = useState<PedidosConfig>(() => ({
@@ -224,571 +263,592 @@ export const ConfigPage = observer(() => {
     setTimeout(() => setGuardado(false), 3000);
   };
 
+  const meta = META_SECCION[seccion];
+
+  const grupos: GrupoNav[] = [
+    {
+      grupo: "pedidos",
+      label: "Pedidos",
+      secciones: ORDEN_SECCIONES.map((k) => ({
+        key: k,
+        label: META_SECCION[k].label,
+        hint: META_SECCION[k].hint,
+        icono: META_SECCION[k].icono,
+      })),
+    },
+  ];
+
   return (
-    <div className="mx-auto max-w-5xl space-y-5 pb-12">
+    <div className="pb-12">
       <PageMeta title="Configuración · Pedidos" description="Ajustes del módulo de pedidos" />
 
       {/* ── CABECERA UNIFICADA ────────────────────────────────────────────── */}
-      <ConfigHeader
-        titulo="Configuración de Pedidos"
-        descripcion="Ajustes del flujo operativo, modalidades, horario y catálogo rápido."
-        acciones={
-          <>
-            {guardado && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-success-600 dark:text-success-500">
-                <CheckCircleIcon className="h-3.5 w-3.5" />
-                Guardado
-              </span>
-            )}
-            <Button size="sm" disabled={horarioInvalido || soloLectura} onClick={guardar}>
-              Guardar cambios
-            </Button>
-          </>
-        }
-      />
-
-      {/* ── AVISO DE SOLO LECTURA ──────────────────────────────────────────── */}
-      {soloLectura && (
-        <Alert
-          variant="warning"
-          title="Configuración en modo solo lectura"
-          message={motivoSinPermiso("settings.manage")}
-        />
-      )}
-
-      {/* ── TABS BAR ───────────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-200 dark:border-gray-800">
-        <Tab
-          items={TABS_CONFIG}
-          activeTab={activeTab}
-          onTabChange={(k) => setActiveTab(k as TabConfig)}
-          variant="underline"
+      {/* Sin botón de guardado. La acción vive en el pie de la sección, igual
+          que en `/conversaciones/config`: antes estaba aquí Y en el pie, así
+          que la misma acción salía dos veces en pantalla. El aviso de
+          «Guardado» también se pinta en el pie, junto al botón que lo produce
+          — un aviso separado del control que lo causa se lee tarde. */}
+      <div className="mb-5">
+        <ConfigHeader
+          titulo="Configuración de Pedidos"
+          descripcion="Ajustes del flujo operativo, modalidades, horario y catálogo rápido."
         />
       </div>
 
-      {/* ── FORMULARIO PRINCIPAL ───────────────────────────────────────────── */}
-      <fieldset disabled={soloLectura} className="m-0 min-w-0 space-y-5 border-0 p-0">
-        {/* ═════════════════════════════════════════════════════════════════════
-            PESTAÑA 0: PERFIL DE NEGOCIO (¿QUÉ VENDES?)
-           ═════════════════════════════════════════════════════════════════════ */}
-        {activeTab === "perfil" && (
-          <div className="space-y-5 animate-entrada-suave">
-            <Card>
-              <CardHead>¿Qué vende tu negocio?</CardHead>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Selecciona tu perfil comercial. Esto adapta las capacidades, campos de producto y terminología sin cambiar el núcleo de tus pedidos.
-              </p>
+      {/* ── AVISO DE SOLO LECTURA ──────────────────────────────────────────── */}
+      {soloLectura && (
+        <div className="mb-6">
+          <Alert
+            variant="warning"
+            title="Configuración en modo solo lectura"
+            message={motivoSinPermiso("settings.manage")}
+          />
+        </div>
+      )}
 
-              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {(Object.keys(BUSINESS_PROFILES) as BusinessProfileType[]).map((key) => {
-                  const p = BUSINESS_PROFILES[key];
-                  const seleccionado = (draft.perfilComercial ?? "food") === key;
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        {/* ═══════════ Navegación vertical de secciones ═══════════ */}
+        {/* Va FUERA del `<fieldset>` a propósito: navegar entre secciones no es
+            editar. Metida dentro, `fieldset disabled` desactiva sus botones y
+            en modo solo lectura el usuario no podría ni cambiar de sección. */}
+        <ConfigSectionNav
+          grupos={grupos}
+          activa={seccion}
+          onSeleccionar={(k) => setSeccion(k as ClaveSeccion)}
+          ariaLabel="Secciones de configuración de Pedidos"
+        />
 
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => {
-                        setDraft((prev) => ({
-                          ...prev,
-                          perfilComercial: key,
-                          capacidadesActivas: [...p.defaultCapabilities],
-                          modalidades: [...p.defaultModalidades],
-                          aliasEstados: { ...p.defaultAliasEstados },
-                          plantillas: { ...p.defaultPlantillas },
-                          catalogo: catalogoDesdePreset(p),
-                        }));
-                      }}
-                      className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
-                        seleccionado
-                          ? "border-brand-500 bg-brand-50/50 shadow-sm ring-2 ring-brand-500/20 dark:border-brand-400 dark:bg-brand-950/20"
-                          : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-2xl">{p.icon}</span>
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {p.name}
-                            </h4>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {p.description}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={seleccionado ? "outline" : "primary"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              aplicarPerfilInmediato(key);
-                            }}
-                          >
-                            {seleccionado ? "Reaplicar datos demo" : "Activar perfil"}
-                          </Button>
-                          {seleccionado && (
-                            <Badge color="success" size="sm">
-                              Activo
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+        {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
+        {/* El `<fieldset>` envuelve SOLO el panel, no la navegación. `min-w-0`
+            neutraliza el `min-inline-size: min-content` por defecto del
+            fieldset, que rompería el layout de dos columnas. */}
+        <fieldset
+          disabled={soloLectura}
+          className="m-0 min-w-0 flex-1 border-0 p-0"
+        >
+          <ConfigShell
+            seccionKey={seccion}
+            titulo={meta.label}
+            hint={meta.hint}
+            footer={
+              <ConfigAcciones
+                mensaje={
+                  guardado ? (
+                    <span className="text-sm text-success-600 dark:text-success-500">
+                      Guardado ✓
+                    </span>
+                  ) : undefined
+                }
+              >
+                <Button disabled={horarioInvalido || soloLectura} onClick={guardar}>
+                  Guardar cambios
+                </Button>
+              </ConfigAcciones>
+            }
+          >
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN 0: PERFIL DE NEGOCIO (¿QUÉ VENDES?)
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "perfil" && (
+              <div className="space-y-5">
+                <Card>
+                  <CardHead>¿Qué vende tu negocio?</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Selecciona tu perfil comercial. Esto adapta las capacidades, campos de producto y terminología sin cambiar el núcleo de tus pedidos.
+                  </p>
 
-                      <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800/60">
-                        {p.defaultCapabilities.map((cap) => (
-                          <span
-                            key={cap}
-                            className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                          >
-                            {cap === "modifiers" && "Modificadores de platillo"}
-                            {cap === "variants" && "Tallas y variantes"}
-                            {cap === "preparation_time" && "Tiempo de preparación"}
-                            {cap === "carrier_shipment" && "Envíos con guía"}
-                            {cap === "local_delivery" && "Reparto urbano"}
-                            {cap === "table_service" && "Consumo en mesa"}
-                            {cap === "appointment_scheduling" && "Citas / Agendamiento"}
-                            {cap === "returns_refunds" && "Devoluciones"}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          </div>
-        )}
+                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {(Object.keys(BUSINESS_PROFILES) as BusinessProfileType[]).map((key) => {
+                      const p = BUSINESS_PROFILES[key];
+                      const seleccionado = (draft.perfilComercial ?? "food") === key;
 
-        {/* ═════════════════════════════════════════════════════════════════════
-            PESTAÑA 1: OPERACIÓN Y FLUJO
-           ═════════════════════════════════════════════════════════════════════ */}
-        {activeTab === "flujo" && (
-          <div className="space-y-5 animate-entrada-suave">
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {/* Estados del pipeline */}
-              <Card>
-                <CardHead>Estados opcionales del pipeline</CardHead>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Activa pasos adicionales en el tablero Kanban.
-                </p>
-
-                <div className="mt-4">
-                  <ToggleRow
-                    titulo="Confirmado"
-                    descripcion={
-                      draft.perfilComercial === "fashion"
-                        ? "Paso previo de aceptación antes de empaque y rotulado."
-                        : draft.perfilComercial === "services"
-                        ? "Paso previo de confirmación de cita en la agenda."
-                        : "Paso previo de aceptación antes de preparación."
-                    }
-                    control={
-                      <div className="flex items-center gap-2.5">
-                        <Badge color={draft.usarConfirmado ? "success" : "light"} size="sm">
-                          {draft.usarConfirmado ? "Activo" : "Omitido"}
-                        </Badge>
-                        <Switch
-                          checked={draft.usarConfirmado}
-                          onChange={(v) => set("usarConfirmado", v)}
-                          aria-label="Usar estado Confirmado"
-                        />
-                      </div>
-                    }
-                  />
-
-                  <ToggleRow
-                    titulo="En camino"
-                    descripcion="Etapa de despacho y reparto a domicilio."
-                    control={
-                      <div className="flex items-center gap-2.5">
-                        <Badge color={draft.usarEnCamino ? "success" : "light"} size="sm">
-                          {draft.usarEnCamino ? "Activo" : "Omitido"}
-                        </Badge>
-                        <Switch
-                          checked={draft.usarEnCamino}
-                          onChange={(v) => set("usarEnCamino", v)}
-                          aria-label="Usar estado En camino"
-                        />
-                      </div>
-                    }
-                  />
-                </div>
-              </Card>
-
-              {/* Modalidades habilitadas */}
-              <Card>
-                <CardHead>Modalidades de entrega</CardHead>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Servicios de despacho activos para recepción de pedidos.
-                </p>
-
-                <div className="mt-4">
-                  {TODAS_MODALIDADES.map((m) => {
-                    const activa = draft.modalidades.includes(m);
-                    const info = MODALIDAD_INFO[m];
-
-                    return (
-                      <ToggleRow
-                        key={m}
-                        titulo={info.label}
-                        descripcion={info.desc}
-                        control={
-                          <div className="flex items-center gap-2.5">
-                            <Badge color={activa ? "primary" : "light"} size="sm">
-                              {activa ? "Activa" : "Inactiva"}
-                            </Badge>
-                            <Switch
-                              checked={activa}
-                              disabled={activa && draft.modalidades.length === 1}
-                              onChange={() => toggleModalidad(m)}
-                              aria-label={`Habilitar modalidad ${info.label}`}
-                            />
-                          </div>
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </Card>
-            </div>
-
-            {/* Nombres personalizados (Alias) */}
-            <Card>
-              <CardHead>Nombres personalizados (alias)</CardHead>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Renombra los títulos de columnas y modalidades. Deja vacío para usar los estándar.
-              </p>
-
-              <div className="mt-4 space-y-5">
-                <div>
-                  <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    Estados en tablero
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                    {ESTADOS_CONFIG.map(({ id, label }) => (
-                      <div key={id}>
-                        <Label htmlFor={`alias-e-${id}`} className="text-xs">
-                          {label}
-                        </Label>
-                        <Input
-                          id={`alias-e-${id}`}
-                          placeholder={label}
-                          value={draft.aliasEstados[id] ?? ""}
-                          onChange={(e) => setAliasEstado(id, e.target.value)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 pt-4 dark:border-gray-800/80">
-                  <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                    Modalidades de entrega
-                  </h3>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {TODAS_MODALIDADES.map((m) => {
-                      const def = { retiro: "Retiro", domicilio: "Domicilio", en_sitio: "En sitio" }[m];
                       return (
-                        <div key={m}>
-                          <Label htmlFor={`alias-m-${m}`} className="text-xs">
-                            {def}
-                          </Label>
-                          <Input
-                            id={`alias-m-${m}`}
-                            placeholder={def}
-                            value={draft.aliasModalidades[m] ?? ""}
-                            onChange={(e) => setAliasModalidad(m, e.target.value)}
-                          />
+                        <div
+                          key={key}
+                          onClick={() => {
+                            setDraft((prev) => ({
+                              ...prev,
+                              perfilComercial: key,
+                              capacidadesActivas: [...p.defaultCapabilities],
+                              modalidades: [...p.defaultModalidades],
+                              aliasEstados: { ...p.defaultAliasEstados },
+                              plantillas: { ...p.defaultPlantillas },
+                              catalogo: catalogoDesdePreset(p),
+                            }));
+                          }}
+                          className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
+                            seleccionado
+                              ? "border-brand-500 bg-brand-50/50 shadow-theme-sm ring-2 ring-brand-500/20 dark:border-brand-400 dark:bg-brand-950/20"
+                              : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-2xl">{p.icon}</span>
+                              <div>
+                                <h4 className="text-sm font-semibold text-ink-title dark:text-white">
+                                  {p.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {p.description}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant={seleccionado ? "outline" : "primary"}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  aplicarPerfilInmediato(key);
+                                }}
+                              >
+                                {seleccionado ? "Reaplicar datos demo" : "Activar perfil"}
+                              </Button>
+                              {seleccionado && (
+                                <Badge color="success" size="sm">
+                                  Activo
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                            {p.defaultCapabilities.map((cap) => (
+                              <span
+                                key={cap}
+                                className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                              >
+                                {cap === "modifiers" && "Modificadores de platillo"}
+                                {cap === "variants" && "Tallas y variantes"}
+                                {cap === "preparation_time" && "Tiempo de preparación"}
+                                {cap === "carrier_shipment" && "Envíos con guía"}
+                                {cap === "local_delivery" && "Reparto urbano"}
+                                {cap === "table_service" && "Consumo en mesa"}
+                                {cap === "appointment_scheduling" && "Citas / Agendamiento"}
+                                {cap === "returns_refunds" && "Devoluciones"}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
+                </Card>
               </div>
-            </Card>
-          </div>
-        )}
+            )}
 
-        {/* ═════════════════════════════════════════════════════════════════════
-            PESTAÑA 2: TIEMPOS Y HORARIOS
-           ═════════════════════════════════════════════════════════════════════ */}
-        {activeTab === "tiempos" && (
-          <div className="space-y-5 animate-entrada-suave">
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-              {/* Horario Comercial */}
-              <Card>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardHead>Horario comercial</CardHead>
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN 1: OPERACIÓN Y FLUJO
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "flujo" && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  {/* Estados del pipeline */}
+                  <Card>
+                    <CardHead>Estados opcionales del pipeline</CardHead>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Ventana de atención a clientes.
+                      Activa pasos adicionales en el tablero Kanban.
                     </p>
-                  </div>
-                  <Switch
-                    checked={draft.horario.activo}
-                    onChange={(v) => setHorario("activo", v)}
-                    aria-label="Aplicar horario comercial"
-                  />
+
+                    <div className="mt-4">
+                      <ToggleRow
+                        titulo="Confirmado"
+                        descripcion={
+                          draft.perfilComercial === "fashion"
+                            ? "Paso previo de aceptación antes de empaque y rotulado."
+                            : draft.perfilComercial === "services"
+                            ? "Paso previo de confirmación de cita en la agenda."
+                            : "Paso previo de aceptación antes de preparación."
+                        }
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.usarConfirmado ? "success" : "light"} size="sm">
+                              {draft.usarConfirmado ? "Activo" : "Omitido"}
+                            </Badge>
+                            <Switch
+                              checked={draft.usarConfirmado}
+                              onChange={(v) => set("usarConfirmado", v)}
+                              aria-label="Usar estado Confirmado"
+                            />
+                          </div>
+                        }
+                      />
+
+                      <ToggleRow
+                        titulo="En camino"
+                        descripcion="Etapa de despacho y reparto a domicilio."
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.usarEnCamino ? "success" : "light"} size="sm">
+                              {draft.usarEnCamino ? "Activo" : "Omitido"}
+                            </Badge>
+                            <Switch
+                              checked={draft.usarEnCamino}
+                              onChange={(v) => set("usarEnCamino", v)}
+                              aria-label="Usar estado En camino"
+                            />
+                          </div>
+                        }
+                      />
+                    </div>
+                  </Card>
+
+                  {/* Modalidades habilitadas */}
+                  <Card>
+                    <CardHead>Modalidades de entrega</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Servicios de despacho activos para recepción de pedidos.
+                    </p>
+
+                    <div className="mt-4">
+                      {TODAS_MODALIDADES.map((m) => {
+                        const activa = draft.modalidades.includes(m);
+                        const info = MODALIDAD_INFO[m];
+
+                        return (
+                          <ToggleRow
+                            key={m}
+                            titulo={info.label}
+                            descripcion={info.desc}
+                            control={
+                              <div className="flex items-center gap-2.5">
+                                <Badge color={activa ? "primary" : "light"} size="sm">
+                                  {activa ? "Activa" : "Inactiva"}
+                                </Badge>
+                                <Switch
+                                  checked={activa}
+                                  disabled={activa && draft.modalidades.length === 1}
+                                  onChange={() => toggleModalidad(m)}
+                                  aria-label={`Habilitar modalidad ${info.label}`}
+                                />
+                              </div>
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+                  </Card>
                 </div>
 
-                {draft.horario.activo ? (
-                  <div className="mt-4 space-y-4 border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                {/* Nombres personalizados (Alias) */}
+                <Card>
+                  <CardHead>Nombres personalizados (alias)</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Renombra los títulos de columnas y modalidades. Deja vacío para usar los estándar.
+                  </p>
+
+                  <div className="mt-4 space-y-5">
                     <div>
-                      <Label className="text-xs">Días laborales</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {DIAS_SEMANA.map(({ d, label, largo }) => (
-                          <ChipDia
-                            key={d}
-                            activo={draft.horario.dias.includes(d)}
-                            label={label}
-                            titulo={largo}
-                            onClick={() => toggleDia(d)}
-                          />
+                      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        Estados en tablero
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                        {ESTADOS_CONFIG.map(({ id, label }) => (
+                          <div key={id}>
+                            <Label htmlFor={`alias-e-${id}`} className="text-xs">
+                              {label}
+                            </Label>
+                            <Input
+                              id={`alias-e-${id}`}
+                              placeholder={label}
+                              value={draft.aliasEstados[id] ?? ""}
+                              onChange={(e) => setAliasEstado(id, e.target.value)}
+                            />
+                          </div>
                         ))}
                       </div>
-                      <p className="mt-2 text-xs text-gray-400">
-                        {draft.horario.dias.length === 0
-                          ? "Sin días seleccionados: el horario no aplica ningún día."
-                          : `${draft.horario.dias.length} de 7 días seleccionados.`}
-                      </p>
                     </div>
 
-                    <div className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <Label htmlFor="horario-apertura">Apertura</Label>
-                        <Input
-                          id="horario-apertura"
-                          type="time"
-                          value={draft.horario.apertura}
-                          onChange={(e) => setHorario("apertura", e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="horario-cierre">Cierre</Label>
-                        <Input
-                          id="horario-cierre"
-                          type="time"
-                          value={draft.horario.cierre}
-                          onChange={(e) => setHorario("cierre", e.target.value)}
-                          error={horarioInvalido}
-                        />
+                    <div className="border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                      <h3 className="mb-2.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        Modalidades de entrega
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {TODAS_MODALIDADES.map((m) => {
+                          const def = { retiro: "Retiro", domicilio: "Domicilio", en_sitio: "En sitio" }[m];
+                          return (
+                            <div key={m}>
+                              <Label htmlFor={`alias-m-${m}`} className="text-xs">
+                                {def}
+                              </Label>
+                              <Input
+                                id={`alias-m-${m}`}
+                                placeholder={def}
+                                value={draft.aliasModalidades[m] ?? ""}
+                                onChange={(e) => setAliasModalidad(m, e.target.value)}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
+                  </div>
+                </Card>
+              </div>
+            )}
 
-                    {horarioInvalido && (
-                      <p className="text-xs text-error-500">
-                        La hora de cierre debe ser posterior a la de apertura.
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN 2: TIEMPOS Y HORARIOS
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "tiempos" && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  {/* Horario Comercial */}
+                  <Card>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <CardHead>Horario comercial</CardHead>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Ventana de atención a clientes.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.horario.activo}
+                        onChange={(v) => setHorario("activo", v)}
+                        aria-label="Aplicar horario comercial"
+                      />
+                    </div>
+
+                    {draft.horario.activo ? (
+                      <div className="mt-4 space-y-4 border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                        <div>
+                          <Label className="text-xs">Días laborales</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {DIAS_SEMANA.map(({ d, label, largo }) => (
+                              <ChipDia
+                                key={d}
+                                activo={draft.horario.dias.includes(d)}
+                                label={label}
+                                titulo={largo}
+                                onClick={() => toggleDia(d)}
+                              />
+                            ))}
+                          </div>
+                          <p className="mt-2 text-xs text-gray-400">
+                            {draft.horario.dias.length === 0
+                              ? "Sin días seleccionados: el horario no aplica ningún día."
+                              : `${draft.horario.dias.length} de 7 días seleccionados.`}
+                          </p>
+                        </div>
+
+                        <div className="grid max-w-md grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <Label htmlFor="horario-apertura">Apertura</Label>
+                            <Input
+                              id="horario-apertura"
+                              type="time"
+                              value={draft.horario.apertura}
+                              onChange={(e) => setHorario("apertura", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="horario-cierre">Cierre</Label>
+                            <Input
+                              id="horario-cierre"
+                              type="time"
+                              value={draft.horario.cierre}
+                              onChange={(e) => setHorario("cierre", e.target.value)}
+                              error={horarioInvalido}
+                            />
+                          </div>
+                        </div>
+
+                        {horarioInvalido && (
+                          <p className="text-xs text-error-500">
+                            La hora de cierre debe ser posterior a la de apertura.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-4 border-t border-gray-100 pt-4 text-xs text-gray-400 dark:border-gray-800/80">
+                        Operación continua 24 horas sin restricción de horario.
                       </p>
                     )}
-                  </div>
-                ) : (
-                  <p className="mt-4 border-t border-gray-100 pt-4 text-xs text-gray-400 dark:border-gray-800/80">
-                    Operación continua 24 horas sin restricción de horario.
-                  </p>
-                )}
-              </Card>
+                  </Card>
 
-              {/* Alertas Operativas */}
-              <Card>
-                <CardHead>Alertas y notificación</CardHead>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Sensibilidad ante pedidos demorados o sin atender.
-                </p>
+                  {/* Alertas Operativas */}
+                  <Card>
+                    <CardHead>Alertas y notificación</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Sensibilidad ante pedidos demorados o sin atender.
+                    </p>
 
-                <div className="mt-4">
-                  <div className={claseFila}>
-                    <Label2
-                      titulo="Umbral de urgencia general"
-                      descripcion="Minutos sin cambio antes de resaltar la orden como urgente."
-                      htmlFor="umbral"
-                    />
-                    <div className="flex w-32 shrink-0 items-center gap-2">
-                      <Input
-                        id="umbral"
-                        type="number"
-                        min="1"
-                        value={draft.umbralUrgencia}
-                        onChange={(e) =>
-                          set("umbralUrgencia", Math.max(1, Number(e.target.value) || 1))
-                        }
-                        className="text-right font-semibold"
-                      />
-                      <span className="text-xs text-gray-400">min</span>
-                    </div>
-                  </div>
-
-                  <ToggleRow
-                    titulo="Campana sonora"
-                    descripcion="Aviso mientras existan pedidos pendientes de atención."
-                    control={
-                      <Switch
-                        checked={draft.alertaAtencion.activo}
-                        onChange={(v) => set("alertaAtencion", { ...draft.alertaAtencion, activo: v })}
-                        aria-label="Campana sonora de pedidos pendientes"
-                      />
-                    }
-                  />
-
-                  {draft.alertaAtencion.activo && (
-                    <div className={claseFila}>
-                      <Label2
-                        titulo="Repetir cada"
-                        descripcion="Frecuencia del aviso sonoro mientras haya pedidos sin atender."
-                        htmlFor="alerta-cada"
-                      />
-                      <div className="flex w-28 shrink-0 items-center gap-2">
-                        <Input
-                          id="alerta-cada"
-                          type="number"
-                          min="5"
-                          step={5}
-                          value={draft.alertaAtencion.cadaSegundos}
-                          onChange={(e) =>
-                            set("alertaAtencion", {
-                              ...draft.alertaAtencion,
-                              cadaSegundos: Math.max(5, Number(e.target.value) || 30),
-                            })
-                          }
-                          className="text-right font-semibold"
+                    <div className="mt-4">
+                      <div className={claseFila}>
+                        <Label2
+                          titulo="Umbral de urgencia general"
+                          descripcion="Minutos sin cambio antes de resaltar la orden como urgente."
+                          htmlFor="umbral"
                         />
-                        <span className="text-xs text-gray-400">seg</span>
+                        <div className="flex w-32 shrink-0 items-center gap-2">
+                          <Input
+                            id="umbral"
+                            type="number"
+                            min="1"
+                            value={draft.umbralUrgencia}
+                            onChange={(e) =>
+                              set("umbralUrgencia", Math.max(1, Number(e.target.value) || 1))
+                            }
+                            className="text-right font-semibold"
+                          />
+                          <span className="text-xs text-gray-400">min</span>
+                        </div>
                       </div>
+
+                      <ToggleRow
+                        titulo="Campana sonora"
+                        descripcion="Aviso mientras existan pedidos pendientes de atención."
+                        control={
+                          <Switch
+                            checked={draft.alertaAtencion.activo}
+                            onChange={(v) => set("alertaAtencion", { ...draft.alertaAtencion, activo: v })}
+                            aria-label="Campana sonora de pedidos pendientes"
+                          />
+                        }
+                      />
+
+                      {draft.alertaAtencion.activo && (
+                        <div className={claseFila}>
+                          <Label2
+                            titulo="Repetir cada"
+                            descripcion="Frecuencia del aviso sonoro mientras haya pedidos sin atender."
+                            htmlFor="alerta-cada"
+                          />
+                          <div className="flex w-28 shrink-0 items-center gap-2">
+                            <Input
+                              id="alerta-cada"
+                              type="number"
+                              min="5"
+                              step={5}
+                              value={draft.alertaAtencion.cadaSegundos}
+                              onChange={(e) =>
+                                set("alertaAtencion", {
+                                  ...draft.alertaAtencion,
+                                  cadaSegundos: Math.max(5, Number(e.target.value) || 30),
+                                })
+                              }
+                              className="text-right font-semibold"
+                            />
+                            <span className="text-xs text-gray-400">seg</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Tiempos objetivo por estado */}
+                <Card>
+                  <CardHead>Tiempos objetivo por estado (SLA)</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Minutos esperados por etapa. Si se supera, la orden se resalta. Deja en 0 para usar
+                    el umbral general ({draft.umbralUrgencia} min).
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                    {ESTADOS_CONFIG.map(({ id, label }) => (
+                      <div key={id}>
+                        <Label htmlFor={`sla-${id}`} className="text-xs">
+                          {label}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={`sla-${id}`}
+                            type="number"
+                            min="0"
+                            value={draft.tiemposObjetivo[id] ?? 0}
+                            onChange={(e) => setTiempoObjetivo(id, Math.max(0, Number(e.target.value) || 0))}
+                            className="text-right font-semibold"
+                            aria-label={`Minutos objetivo ${label}`}
+                          />
+                          <span className="text-xs font-medium text-gray-400">min</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN 3: CATÁLOGO RÁPIDO
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "catalogo" && (
+              <div className="space-y-5">
+                <Card>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <CardHead>Catálogo de productos rápidos</CardHead>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Items sugeridos con precio para carga ágil de pedidos.
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={addItem}>
+                      <PlusIcon className="mr-1 h-3.5 w-3.5" />
+                      Añadir item
+                    </Button>
+                  </div>
+
+                  {draft.catalogo.length === 0 ? (
+                    <div className="py-10 text-center">
+                      <p className="text-xs text-gray-400">
+                        Sin productos configurados. Los ítems se ingresan libremente en Crear Pedido.
+                      </p>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={addItem}>
+                        Crear primer producto
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800/80">
+                      <div className="grid grid-cols-[1fr_130px_40px] gap-2 px-1 pb-2 text-[11px] font-bold uppercase tracking-wide text-gray-400">
+                        <span>Producto</span>
+                        <span>Precio ($)</span>
+                        <span className="text-right"></span>
+                      </div>
+
+                      {draft.catalogo.map((c) => (
+                        <div
+                          key={c.id}
+                          className="grid grid-cols-[1fr_130px_40px] items-center gap-2 px-1 py-2"
+                        >
+                          <Input
+                            placeholder="Nombre del producto"
+                            value={c.nombre}
+                            onChange={(e) => setItem(c.id, { nombre: e.target.value })}
+                          />
+                          <Input
+                            type="number"
+                            min="0"
+                            value={c.precio}
+                            placeholder="0"
+                            onChange={(e) =>
+                              setItem(c.id, { precio: Math.max(0, Number(e.target.value) || 0) })
+                            }
+                            className="text-right font-semibold"
+                            aria-label="Precio"
+                          />
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeItem(c.id)}
+                              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-950/30 dark:hover:text-error-400"
+                              title="Eliminar"
+                              aria-label="Eliminar producto"
+                            >
+                              <TrashBinIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Tiempos objetivo por estado */}
-            <Card>
-              <CardHead>Tiempos objetivo por estado (SLA)</CardHead>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Minutos esperados por etapa. Si se supera, la orden se resalta. Deja en 0 para usar
-                el umbral general ({draft.umbralUrgencia} min).
-              </p>
-
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {ESTADOS_CONFIG.map(({ id, label }) => (
-                  <div key={id}>
-                    <Label htmlFor={`sla-${id}`} className="text-xs">
-                      {label}
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        id={`sla-${id}`}
-                        type="number"
-                        min="0"
-                        value={draft.tiemposObjetivo[id] ?? 0}
-                        onChange={(e) => setTiempoObjetivo(id, Math.max(0, Number(e.target.value) || 0))}
-                        className="text-right font-semibold"
-                        aria-label={`Minutos objetivo ${label}`}
-                      />
-                      <span className="text-xs font-medium text-gray-400">min</span>
-                    </div>
-                  </div>
-                ))}
+                </Card>
               </div>
-            </Card>
-          </div>
-        )}
-
-        {/* ═════════════════════════════════════════════════════════════════════
-            PESTAÑA 3: CATÁLOGO RÁPIDO
-           ═════════════════════════════════════════════════════════════════════ */}
-        {activeTab === "catalogo" && (
-          <div className="max-w-3xl space-y-5 animate-entrada-suave">
-            <Card>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <CardHead>Catálogo de productos rápidos</CardHead>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Items sugeridos con precio para carga ágil de pedidos.
-                  </p>
-                </div>
-                <Button size="sm" variant="outline" onClick={addItem}>
-                  <PlusIcon className="mr-1 h-3.5 w-3.5" />
-                  Añadir item
-                </Button>
-              </div>
-
-              {draft.catalogo.length === 0 ? (
-                <div className="py-10 text-center">
-                  <p className="text-xs text-gray-400">
-                    Sin productos configurados. Los ítems se ingresan libremente en Crear Pedido.
-                  </p>
-                  <Button size="sm" variant="outline" className="mt-3" onClick={addItem}>
-                    Crear primer producto
-                  </Button>
-                </div>
-              ) : (
-                <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800/80">
-                  <div className="grid grid-cols-[1fr_130px_40px] gap-2 px-1 pb-2 text-[11px] font-bold uppercase tracking-wide text-gray-400">
-                    <span>Producto</span>
-                    <span>Precio ($)</span>
-                    <span className="text-right"></span>
-                  </div>
-
-                  {draft.catalogo.map((c) => (
-                    <div
-                      key={c.id}
-                      className="grid grid-cols-[1fr_130px_40px] items-center gap-2 px-1 py-2"
-                    >
-                      <Input
-                        placeholder="Nombre del producto"
-                        value={c.nombre}
-                        onChange={(e) => setItem(c.id, { nombre: e.target.value })}
-                      />
-                      <Input
-                        type="number"
-                        min="0"
-                        value={c.precio}
-                        placeholder="0"
-                        onChange={(e) =>
-                          setItem(c.id, { precio: Math.max(0, Number(e.target.value) || 0) })
-                        }
-                        className="text-right font-semibold"
-                        aria-label="Precio"
-                      />
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => removeItem(c.id)}
-                          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400"
-                          title="Eliminar"
-                          aria-label="Eliminar producto"
-                        >
-                          <TrashBinIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-      </fieldset>
-
-      {/* ── PIE DE GUARDADO ────────────────────────────────────────────────── */}
-      {/* Misma barra de acciones que la configuración del canal: se compone con
-          `ConfigAcciones`, que alinea los botones a la derecha (`justify-end`).
-          Antes este pie usaba `justify-between` y repartía sus hijos a los
-          extremos, así que el botón de guardado no caía en el mismo sitio que
-          en la otra pantalla con guardado. */}
-      <ConfigAcciones
-        mensaje={
-          <span className="text-xs text-gray-400">
-            {guardado
-              ? "Cambios guardados con éxito"
-              : "Los cambios se aplican inmediatamente a la operativa."}
-          </span>
-        }
-      >
-        <Button disabled={horarioInvalido || soloLectura} onClick={guardar}>
-          Guardar cambios
-        </Button>
-      </ConfigAcciones>
+            )}
+          </ConfigShell>
+        </fieldset>
+      </div>
     </div>
   );
 });

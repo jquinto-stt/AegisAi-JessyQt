@@ -116,7 +116,7 @@ export const ModuleSwitcher: React.FC = observer(() => {
         aria-haspopup="menu"
         aria-label={`Módulo activo: ${nombreModulo(actual)}. Cambiar de módulo`}
         data-module-switcher="trigger"
-        className="dropdown-toggle flex items-center gap-2 h-10 px-2.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03] lg:h-11 lg:px-3 transition-colors"
+        className="dropdown-toggle flex items-center gap-2 h-10 px-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-brand-200 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03] lg:h-11 lg:px-3 transition-colors"
       >
         <span className="flex items-center justify-center size-6 rounded-md bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
           <IconoActual className="size-4" />
@@ -134,7 +134,7 @@ export const ModuleSwitcher: React.FC = observer(() => {
       <ShellDropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute left-0 mt-[14px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-xl dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-in fade-in slide-in-from-top-2"
+        className="absolute left-0 mt-[14px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-entrada-menu"
       >
         <span className="px-2 pt-1 pb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
           Módulos

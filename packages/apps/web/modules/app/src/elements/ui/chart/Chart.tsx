@@ -188,24 +188,24 @@ export const Chart = observer(function Chart({
     const themeDefaults: ApexOptions = isDark
       ? {
           chart: chartComun,
-          grid: { borderColor: "#1a2332" },
+          grid: { borderColor: "#212121" },
           xaxis: {
-            labels: { style: { colors: "#9CA3AF" } },
-            axisBorder: { color: "#374151" },
+            labels: { style: { colors: "#A1A1A1" } },
+            axisBorder: { color: "#3F3F3F" },
           },
-          yaxis: { labels: { style: { colors: ["#9CA3AF"] } } },
-          legend: { labels: { colors: "#D1D5DB" } },
+          yaxis: { labels: { style: { colors: ["#A1A1A1"] } } },
+          legend: { labels: { colors: "#D5D5D5" } },
           tooltip: { theme: "dark" },
         }
       : {
           chart: chartComun,
-          grid: { borderColor: "#F2F4F7" },
+          grid: { borderColor: "#F4F4F4" },
           xaxis: {
-            labels: { style: { colors: "#344054" } },
-            axisBorder: { color: "#E4E7EC" },
+            labels: { style: { colors: "#535250" } },
+            axisBorder: { color: "#E7E7E7" },
           },
-          yaxis: { labels: { style: { colors: ["#344054"] } } },
-          legend: { labels: { colors: "#344054" } },
+          yaxis: { labels: { style: { colors: ["#535250"] } } },
+          legend: { labels: { colors: "#535250" } },
           tooltip: { theme: "light" },
         };
 

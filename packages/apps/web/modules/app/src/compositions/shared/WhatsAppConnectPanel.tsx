@@ -84,12 +84,21 @@ const WA_HANDSET =
  * Va en dos trazos y no en uno. El glifo oficial es un solo `path` con la burbuja
  * y el auricular como contornos separados, y en monocromo el auricular sale
  * **perforado** —transparente—: sobre el verde oscuro del panel eso se leería como
- * un agujero, no como el logotipo. Con la burbuja en `whatsapp-500` y el auricular
+ * un agujero, no como el logotipo. Con la burbuja en verde y el auricular
  * en blanco encima, el resultado es el logotipo real.
  *
- * ⚠️ Los dos colores salen de tokens: un token que no exista deja el `fill`
- * **inválido y el trazo en negro**, sin avisar. La guarda comprueba que ambos
- * resuelven al color esperado.
+ * 🚨 MEDIDO EL 20/09 — la advertencia de abajo se cumple, y el comentario la
+ * incumplía. Los tokens `--color-whatsapp-*` NUNCA se declararon en `theme.css`:
+ * `var(--color-whatsapp-500)` no resuelve, el `fill` queda inválido y la burbuja
+ * se pinta en NEGRO, en silencio. Y no hay guarda: el texto prometía una, pero no
+ * existe ningún test de este archivo.
+ *
+ * El componente tampoco tiene consumidores (nadie lo importa), así que el fallo
+ * hoy no se ve — y por eso sobrevivió. Antes de montarlo hay que decidir una de
+ * dos: declarar la rampa `whatsapp-*` en el tema, sabiendo que WhatsApp define
+ * cuatro colores (#25D366, #128C7E, #075E54, #DCF8C6) y NO una rampa de nueve
+ * pasos —los intermedios hay que derivarlos—, o cambiar los `fill` y las clases
+ * por hex oficiales, que es lo que ya hacen TableroPage e HistorialPage.
  */
 const WhatsAppLogo: React.FC<{ className?: string }> = ({ className }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className={className}>
@@ -208,10 +217,10 @@ const WhatsAppDoodlePattern: React.FC<{ id: string }> = ({ id }) => (
  * la forma de las burbujas con su cola y el recibo de dos ticks, que es el
  * pictograma que la gente reconoce sin que nadie se lo explique.
  *
- * Los colores salen de los tokens `whatsapp-*` (no hex sueltos), para que la
- * ilustración siga al tema si la escala cambia. La burbuja saliente usa el mismo
- * `whatsapp-500` que el acento del canal, así que la ilustración y los motivos de
- * la izquierda comparten un solo verde.
+ * Los colores NO salen de tokens, aunque se escribieran como
+ * `var(--color-whatsapp-*)`: esa rampa nunca se declaró, así que hoy la
+ * ilustración se pinta en negro. Es el mismo caso que el logotipo de arriba —
+ * allí está la explicación y la decisión pendiente.
  */
 const WhatsAppHeroArt: React.FC = () => (
   <svg
@@ -345,7 +354,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
         </span>
         <h2
           id="whatsapp-connect-title"
-          className="mt-2 text-theme-xl font-bold tracking-tight text-secondary-600 dark:text-white"
+          className="mt-2 text-theme-xl font-bold tracking-tight text-ink-title dark:text-white"
         >
           Conecta tu WhatsApp Business
         </h2>
@@ -479,7 +488,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
 
           El logotipo de Necto va en su versión blanca porque este panel es una
           superficie oscura **en los dos temas**: la variante a color esconde la
-          "E" (#190088) sobre el verde. Es la misma regla que sigue el sidebar.
+          "E" (#15008B) sobre el verde. Es la misma regla que sigue el sidebar.
         */}
         <div className="relative flex flex-col items-center gap-3">
           <div className="flex items-center gap-4" role="img" aria-label="Necto con WhatsApp">

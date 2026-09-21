@@ -25,6 +25,11 @@ import {
   TimeIcon,
 } from "@/icons";
 import {
+  claseSegmentoActivo,
+  claseSegmentoInactivo,
+  claseSegmentoTrack,
+} from "@/pages/config-layout";
+import {
   conversacionesStore,
   pedidosStore,
   ESTADO_CONVERSACION_BADGE,
@@ -323,20 +328,23 @@ export const HistorialAtencionPage = observer(() => {
         description="Histórico de tickets de soporte del canal — estado, cliente y resolución"
       />
 
-      {/* ── Conmutador Chat en vivo / Historial ── */}
+      {/* ── Conmutador Chat en vivo / Historial ──
+          Mismo control que en `/conversaciones`, y mismas tres cadenas de
+          color: se importan de `@/pages/config-layout` en vez de repetirlas.
+          El activo va en el naranja de marca. */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="inline-flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
+        <div className={claseSegmentoTrack}>
           <button
             type="button"
             onClick={() => navigate("/conversaciones")}
-            className="rounded-md px-3.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${claseSegmentoInactivo}`}
           >
             Chat en vivo
           </button>
           <button
             type="button"
             aria-current="page"
-            className="rounded-md bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-900 shadow-theme-xs dark:bg-gray-800 dark:text-white"
+            className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors ${claseSegmentoActivo}`}
           >
             Historial de atención
           </button>
@@ -399,7 +407,7 @@ export const HistorialAtencionPage = observer(() => {
         {/* Cabecera de la tarjeta: título + buscador + botón de filtro */}
         <div className="flex flex-col gap-4 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">
               Tickets de soporte
             </h2>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
@@ -437,7 +445,7 @@ export const HistorialAtencionPage = observer(() => {
                 }}
                 className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
                   activo
-                    ? "bg-brand-500 text-white shadow-2xs"
+                    ? "bg-brand-500 text-white shadow-theme-xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 }`}
               >
@@ -709,7 +717,7 @@ export const HistorialAtencionPage = observer(() => {
                   aria-current={n === pagina ? "page" : undefined}
                   className={`h-8 min-w-8 rounded-lg px-2 text-xs font-medium transition-colors ${
                     n === pagina
-                      ? "bg-brand-500 text-white shadow-2xs"
+                      ? "bg-brand-500 text-white shadow-theme-xs"
                       : "border border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-white/5"
                   }`}
                 >
@@ -742,7 +750,7 @@ export const HistorialAtencionPage = observer(() => {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+              <h3 className="text-lg font-semibold text-ink-title dark:text-white/90">
                 {ticketId(detalle.id)}
               </h3>
               <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
@@ -837,7 +845,7 @@ export const HistorialAtencionPage = observer(() => {
                     )}
                     <div className="relative z-10 flex h-5 w-5 shrink-0 items-center justify-center">
                       {isCompleted ? (
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-white shadow-xs dark:bg-gray-200 dark:text-gray-900">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-white shadow-theme-xs dark:bg-gray-200 dark:text-gray-900">
                           <svg
                             width="10"
                             height="10"

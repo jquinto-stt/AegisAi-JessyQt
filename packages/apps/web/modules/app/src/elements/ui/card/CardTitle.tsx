@@ -15,7 +15,7 @@ const CardTitle: React.FC<CardTitleProps> = ({ children, divider, className }) =
   return (
     <h4 
       className={cn(
-        "mb-1 font-medium text-gray-800 text-theme-xl dark:text-white/90",
+        "mb-1 font-medium text-ink-title text-theme-xl dark:text-white/90",
         divider && "pb-4 mb-4 border-b border-gray-100 dark:border-white/5",
         className
       )}

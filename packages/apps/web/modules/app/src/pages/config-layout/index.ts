@@ -10,6 +10,9 @@ export {
   SegmentedRow,
   ToggleRow,
   claseFila,
+  claseSegmentoActivo,
+  claseSegmentoInactivo,
+  claseSegmentoTrack,
 } from "@/pages/config-layout/ConfigLayout";
 
 export type {

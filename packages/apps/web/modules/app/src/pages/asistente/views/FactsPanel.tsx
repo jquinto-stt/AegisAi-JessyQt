@@ -102,7 +102,7 @@ export const FactsPanel = ({ evidence }: { evidence?: ToolResult }) => {
             <FactIcon />
           </span>
           <div>
-            <h2 className="text-sm font-bold text-gray-800 dark:text-white/90">
+            <h2 className="text-sm font-bold text-ink-title dark:text-white/90">
               Fuentes consultadas
             </h2>
             <p className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -131,19 +131,19 @@ export const FactsPanel = ({ evidence }: { evidence?: ToolResult }) => {
 
       {/* ── Inferencias (separadas visualmente con aviso y links de acción) ── */}
       {inferences.length > 0 && (
-        <section className="flex flex-col gap-2.5 rounded-2xl border border-dashed border-amber-300/80 bg-amber-50/40 p-3.5 dark:border-amber-500/30 dark:bg-amber-500/5">
+        <section className="flex flex-col gap-2.5 rounded-2xl border border-dashed border-warning-300/80 bg-warning-50/40 p-3.5 dark:border-warning-500/30 dark:bg-warning-500/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <InferenceIcon />
-              <h3 className="text-xs font-semibold text-amber-900 dark:text-amber-300">
+              <h3 className="text-xs font-semibold text-warning-900 dark:text-warning-300">
                 Observaciones (inferencias)
               </h3>
             </div>
-            <span className="text-[10px] italic text-amber-700/80 dark:text-amber-400/70">
+            <span className="text-[10px] italic text-warning-700/80 dark:text-warning-400/70">
               No causal
             </span>
           </div>
-          <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
+          <p className="text-[11px] text-warning-800/80 dark:text-warning-300/80">
             Hipótesis y patrones detectados, no causas directas.
           </p>
           <ul className="flex flex-col gap-2">
@@ -225,7 +225,7 @@ const FactCard = ({ fact }: { fact: Fact }) => {
       <Link
         to={link.to}
         title={link.label}
-        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-2xs transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-brand-500"
+        className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-theme-xs transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-brand-500"
       >
         <span>{link.label}</span>
         <ExternalIcon />
@@ -244,7 +244,7 @@ const InferenceCard = ({ inference }: { inference: Inference }) => {
   );
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-2xs dark:bg-gray-900/70">
+    <li className="flex flex-col gap-2 rounded-xl bg-white p-3 shadow-theme-xs dark:bg-gray-900/70">
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <Badge size="xs" color={COLOR_CONFIANZA[inference.confidence]}>
           confianza: {inference.confidence}
@@ -265,7 +265,7 @@ const InferenceCard = ({ inference }: { inference: Inference }) => {
         {hasUrgentes ? (
           <Link
             to="/pedidos"
-            className="inline-flex items-center gap-1 rounded-md bg-amber-100/70 px-2 py-1 text-[11px] font-medium text-amber-900 transition-colors hover:bg-amber-200/70 dark:bg-amber-500/20 dark:text-amber-200"
+            className="inline-flex items-center gap-1 rounded-md bg-warning-100/70 px-2 py-1 text-[11px] font-medium text-warning-900 transition-colors hover:bg-warning-200/70 dark:bg-warning-500/20 dark:text-warning-200"
           >
             <span>Ver en Tablero</span>
             <ExternalIcon />
@@ -273,7 +273,7 @@ const InferenceCard = ({ inference }: { inference: Inference }) => {
         ) : hasCiclo ? (
           <Link
             to="/pedidos/inicio"
-            className="inline-flex items-center gap-1 rounded-md bg-amber-100/70 px-2 py-1 text-[11px] font-medium text-amber-900 transition-colors hover:bg-amber-200/70 dark:bg-amber-500/20 dark:text-amber-200"
+            className="inline-flex items-center gap-1 rounded-md bg-warning-100/70 px-2 py-1 text-[11px] font-medium text-warning-900 transition-colors hover:bg-warning-200/70 dark:bg-warning-500/20 dark:text-warning-200"
           >
             <span>Ver Métricas</span>
             <ExternalIcon />
@@ -295,7 +295,7 @@ const FactIcon = () => (
 );
 
 const InferenceIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-amber-600 dark:text-amber-400">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4 text-warning-600 dark:text-warning-400">
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
   </svg>
 );

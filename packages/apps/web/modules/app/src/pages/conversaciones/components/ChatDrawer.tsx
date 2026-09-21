@@ -148,7 +148,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
       {/* Panel lateral: aquí SÍ se reactivan los eventos de puntero, porque el
           panel es la superficie con la que el operador interactúa. */}
       <aside
-        className={`relative flex h-full flex-col border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${ANCHO_PANEL} ${
+        className={`relative flex h-full flex-col border-l border-gray-200 bg-white shadow-theme-xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${ANCHO_PANEL} ${
           visible ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ pointerEvents: "auto" }}
@@ -164,7 +164,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               status={conv ? statusDe(conv.estado) : "offline"}
             />
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
+              <h2 className="truncate text-sm font-semibold text-ink-title dark:text-white/90">
                 {nombre}
               </h2>
               <p className="truncate text-xs text-gray-400 dark:text-gray-500">{telefono}</p>
@@ -272,7 +272,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
             </div>
-            <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+            <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
               Sin conversación
             </h3>
             <p className="max-w-xs text-xs text-gray-400 dark:text-gray-500">

@@ -145,7 +145,7 @@ export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
         <div className="min-w-0 space-y-10">
           {doc.sections.map(section => (
             <section key={section.id} id={section.id} className="scroll-mt-24">
-              <h2 className="mb-3 text-lg font-bold tracking-tight text-secondary-600 dark:text-white">
+              <h2 className="mb-3 text-lg font-bold tracking-tight text-ink-title dark:text-white">
                 {section.title}
               </h2>
               <div className="space-y-3.5">

@@ -1,0 +1,243 @@
+/**
+ * Marca NECTO — Vocabulario visual compartido.
+ *
+ * ── De dónde sale esto ──────────────────────────────────────────────────────
+ *
+ * De `Esencia_necto/` (presentación de naming + marca). Los tres colores que
+ * mandan, y sus valores exactos:
+ *
+ *   · Naranja  #FF3C10 → `--color-brand-500`     (color primario, la marca)
+ *   · Índigo   #15008B → `--color-secondary-600` (secundario; "grow together")
+ *   · Celeste  #71D6E0 → `--color-accent-300`    (acento frío)
+ *
+ * Más el beige `#F2E7D3` (`--color-beige`) y el casi-negro `#1A1A1A`
+ * (`--color-gray-900`), que la guía usa como fondos de bloque. El isotipo es el
+ * glifo de nodo (`necto-icon.svg`): dos trazos que se cruzan y se anudan.
+ *
+ * ── Por qué en `@layer components` y no en `@utility` ───────────────────────
+ *
+ * `@utility` en Tailwind v4 sirve para una utilidad de una sola declaración que
+ * se compone con las demás. Estas clases son **superficies completas** (fondo,
+ * radio, anillo, sombra y sus variantes `dark:`) y varias llevan descendientes
+ * (`> *`) o selectores de estado. Van en la capa `components`, que se emite
+ * ANTES de `utilities`: así cualquier `className` de la instancia sigue ganando
+ * y estas clases no secuestran la composición — que es exactamente lo que
+ * pasaría si quedaran sin capa, porque el CSS sin capa gana a todo lo que está
+ * en una.
+ *
+ * ── Por qué NINGUNA clase hace `@apply` de otra de este archivo ─────────────
+ *
+ * `@apply` solo resuelve **utilidades**, no clases de componente. La primera
+ * versión de este archivo escribía `@apply necto-tarjeta` dentro de la variante
+ * interactiva y el build murió con `Cannot apply unknown utility class:
+ * necto-tarjeta`. Así que cada clase de aquí es **autocontenida**: repite las
+ * dos o tres declaraciones de forma que comparte con su familia. Cuesta unas
+ * líneas de CSS duplicado y a cambio cada clase se puede usar sola, sin tener
+ * que recordar qué pareja de nombres va junta.
+ *
+ * ── Regla que respetan todas ────────────────────────────────────────────────
+ *
+ * Ninguna introduce color nuevo a mano: todas leen los tokens de `theme.css`.
+ * Si mañana cambia el naranja de marca, cambia aquí sin tocar una sola clase.
+ */
+
+@layer components {
+  /* ══════════════════════════════════════════════════════════════════════════
+     LIENZO — el fondo sobre el que vive toda la aplicación
+     ══════════════════════════════════════════════════════════════════════════
+
+     Antes era `bg-gray-100` plano. El gris neutro no dice nada y hacía que las
+     tarjetas blancas flotaran sobre un vacío sin temperatura. Dos halos de
+     marca —naranja arriba a la izquierda, índigo arriba a la derecha— dan
+     profundidad sin costar legibilidad, porque su opacidad máxima es 0.07 y
+     caen fuera del área de lectura (los bordes superiores).
+
+     `fixed` es deliberado: el fondo no debe desplazarse con el contenido, o al
+     hacer scroll las tarjetas parecerían moverse sobre un color que cambia. */
+  .necto-lienzo {
+    @apply bg-gray-100 dark:bg-gray-950;
+    background-image:
+      radial-gradient(1100px 520px at 6% -12%, rgb(255 60 16 / 0.07), transparent 62%),
+      radial-gradient(900px 460px at 102% -6%, rgb(21 0 139 / 0.06), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  .dark .necto-lienzo {
+    background-image:
+      radial-gradient(1100px 520px at 6% -12%, rgb(255 60 16 / 0.1), transparent 62%),
+      radial-gradient(900px 460px at 102% -6%, rgb(77 31 224 / 0.14), transparent 60%);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     PANEL — la tarjeta que envuelve el contenido de una ruta
+     ══════════════════════════════════════════════════════════════════════════
+
+     `rounded-3xl` (24px) en vez del `rounded-2xl` (16px) anterior: con el
+     lienzo con halos, el radio grande es lo que separa «tarjeta de producto» de
+     «caja de formulario». El anillo de 1px sustituye al borde duro y se ve
+     igual en claro y en oscuro.
+
+     Sin `overflow-hidden`: hay páginas con menús desplegables y `sticky` que se
+     recortarían. El radio se respeta igual porque los hijos no llegan al borde. */
+  .necto-panel {
+    @apply rounded-3xl bg-white ring-1 ring-gray-200/80 shadow-theme-xs
+           dark:bg-gray-900 dark:ring-white/10;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     TARJETA — superficie de contenido dentro de una página
+     ══════════════════════════════════════════════════════════════════════════
+
+     `rounded-2xl` + anillo + `shadow-theme-xs`. **No hay
+     `hover:-translate-y-*`**: en este producto hay tarjetas que son
+     contenedores de trabajo (una cola de preparación, una lista de
+     conversaciones) y moverlas al pasar el ratón hace que el contenido bajo el
+     puntero se escape. El realce es de sombra, que comunica interactividad sin
+     mover nada.
+
+     ── Por qué en oscuro es `white/[0.03]` y NO `gray-900`
+     ────────────────────────────────────────────────────────────────────────
+
+     Estas tarjetas viven DENTRO de un `.necto-panel`, y el panel ya es
+     `dark:bg-gray-900`. Una tarjeta `dark:bg-gray-900` sobre un panel
+     `dark:bg-gray-900` es invisible: el borde quedaría flotando sobre el mismo
+     color. La escala oscura del producto tiene tres peldaños y hay que
+     respetarlos: lienzo `gray-950` → panel `gray-900` → tarjeta `white/[0.03]`.
+     Es la convención que ya usaba el `Card` de Elements; aquí se adopta en vez
+     de inventar un cuarto peldaño. */
+  .necto-tarjeta {
+    @apply rounded-2xl border border-gray-200 bg-white shadow-theme-xs
+           dark:border-white/10 dark:bg-white/[0.03];
+  }
+
+  /* La misma superficie, más el realce al pasar el ratón. Se usa SOLO en
+     tarjetas que de verdad son pulsables; en una tarjeta de solo lectura, el
+     realce promete una interacción que no existe. */
+  .necto-tarjeta-interactiva {
+    @apply rounded-2xl border border-gray-200 bg-white shadow-theme-xs
+           transition-[box-shadow,border-color] duration-200
+           hover:border-brand-200 hover:shadow-theme-sm
+           dark:border-white/10 dark:bg-white/[0.03]
+           dark:hover:border-brand-500/30;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     HERO — banda de cabecera de una pantalla
+     ══════════════════════════════════════════════════════════════════════════
+
+     El degradado va de naranja a índigo siguiendo el logotipo: el wordmark es
+     naranja y «grow together» es índigo, así que el degradado es literalmente
+     el logotipo estirado. El ángulo de 135° lo deja entrar por la esquina
+     superior izquierda, que es donde empieza la lectura.
+
+     Se apaga a un índigo profundo en oscuro: un naranja saturado a pantalla
+     completa en modo noche deslumbra y obliga a bajar el brillo del monitor. */
+  .necto-hero {
+    @apply relative overflow-hidden rounded-2xl text-white
+           bg-gradient-to-br from-brand-500 via-brand-600 to-secondary-600
+           dark:from-secondary-700 dark:via-secondary-800 dark:to-gray-950;
+  }
+
+  /* Malla de nodos: el isotipo como textura de fondo.
+     Puntos de 1px cada 22px, al 16% de blanco. Es la única textura del sistema
+     y va SIEMPRE dentro de un `.necto-hero` o de una superficie oscura, nunca
+     sobre texto suelto. */
+  .necto-malla {
+    background-image: radial-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: 0 0;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     AZULEJO — contenedor cuadrado de un icono
+     ══════════════════════════════════════════════════════════════════════════
+
+     Tres tonos, uno por color de marca, para poder separar secciones vecinas
+     sin inventar un cuarto color. Los tres comparten forma; el tamaño lo pone
+     quien los usa (`h-10 w-10`, `h-12 w-12`, …). */
+  .necto-azulejo-marca {
+    @apply inline-flex shrink-0 items-center justify-center rounded-xl
+           bg-brand-50 text-brand-600 ring-1 ring-brand-100
+           dark:bg-brand-500/10 dark:text-brand-400 dark:ring-brand-500/20;
+  }
+
+  .necto-azulejo-indigo {
+    @apply inline-flex shrink-0 items-center justify-center rounded-xl
+           bg-secondary-50 text-secondary-600 ring-1 ring-secondary-100
+           dark:bg-secondary-500/15 dark:text-secondary-300 dark:ring-secondary-500/25;
+  }
+
+  .necto-azulejo-celeste {
+    @apply inline-flex shrink-0 items-center justify-center rounded-xl
+           bg-accent-50 text-accent-700 ring-1 ring-accent-100
+           dark:bg-accent-500/15 dark:text-accent-300 dark:ring-accent-500/25;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     PÍLDORA — etiqueta compacta de estado o categoría
+     ══════════════════════════════════════════════════════════════════════════ */
+  .necto-pildora-marca {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-theme-xs font-medium
+           bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300;
+  }
+
+  .necto-pildora-indigo {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-theme-xs font-medium
+           bg-secondary-50 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-200;
+  }
+
+  .necto-pildora-celeste {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-theme-xs font-medium
+           bg-accent-50 text-accent-800 dark:bg-accent-500/15 dark:text-accent-200;
+  }
+
+  .necto-pildora-neutra {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-theme-xs font-medium
+           bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     TÍTULO — jerarquía tipográfica de marca
+     ══════════════════════════════════════════════════════════════════════════
+
+     La guía de marca pide Gotham (Black/Bold/Book). No está licenciada en este
+     proyecto, así que la sustituye DM Sans —geométrica, misma construcción de
+     «o» circular y altura de x alta—. Lo que SÍ se copia de Gotham es el
+     tratamiento: peso alto y `tracking` cerrado en títulos grandes, que es lo
+     que hace que la marca se reconozca antes de leer la palabra. */
+  .necto-titulo {
+    @apply font-semibold tracking-tight text-gray-900 dark:text-white;
+  }
+
+  /* Barra de acento bajo un título de sección. 32px, degradado naranja→índigo.
+     Es el recurso más barato para que un bloque se lea como «de NECTO» sin
+     pintar nada de naranja a fondo. */
+  .necto-filete {
+    @apply mt-2 h-1 w-8 rounded-full bg-gradient-to-r from-brand-500 to-secondary-500;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════
+     ESCALONADO — entrada de una lista, elemento a elemento
+     ══════════════════════════════════════════════════════════════════════════
+
+     Reusa los keyframes `entrada-lista` de `theme.css` (240 ms, curva
+     compartida) y reparte el retardo. El paso es de 40 ms y la cola se agrupa:
+     con más de ~280 ms acumulados, el último elemento de una lista larga
+     llegaría cuando el usuario ya está leyendo el primero, y el efecto pasa de
+     «ordenado» a «lento». Por eso `:nth-child(n + 8)` comparte retardo en vez
+     de seguir encadenando.
+
+     El `animation: none` de `prefers-reduced-motion` vive en `base.css`, junto
+     al resto de la lista — es la única que hay que mantener en dos sitios. */
+  .necto-escalonado > * {
+    animation: entrada-lista 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  .necto-escalonado > *:nth-child(1) { animation-delay: 0ms; }
+  .necto-escalonado > *:nth-child(2) { animation-delay: 40ms; }
+  .necto-escalonado > *:nth-child(3) { animation-delay: 80ms; }
+  .necto-escalonado > *:nth-child(4) { animation-delay: 120ms; }
+  .necto-escalonado > *:nth-child(5) { animation-delay: 160ms; }
+  .necto-escalonado > *:nth-child(6) { animation-delay: 200ms; }
+  .necto-escalonado > *:nth-child(7) { animation-delay: 240ms; }
+  .necto-escalonado > *:nth-child(n + 8) { animation-delay: 280ms; }
+}

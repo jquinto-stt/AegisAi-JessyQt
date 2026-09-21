@@ -159,7 +159,7 @@ export const UrgentChatsWidget = observer(({ max = 5 }: { max?: number }) => {
 
       {modalOpen && (
         <Modal isOpen onClose={() => setModalOpen(false)} className="max-w-md p-6">
-          <h2 className="mb-1 text-xl font-bold text-gray-800 dark:text-white/90">
+          <h2 className="mb-1 text-xl font-bold text-ink-title dark:text-white/90">
             Conversaciones esperando
           </h2>
           <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">

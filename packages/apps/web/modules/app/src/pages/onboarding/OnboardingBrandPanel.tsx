@@ -23,7 +23,7 @@ export const OnboardingBrandPanel: React.FC<BrandPanelProps> = ({
   summary,
 }) => {
   return (
-    <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden bg-brand-500 p-10 xl:p-12 text-white shadow-2xl dark:bg-secondary-600">
+    <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden bg-brand-500 p-10 xl:p-12 text-white shadow-theme-xl dark:bg-secondary-600">
       {/* Mosaico de estrellas interactivo */}
       <InteractiveDotGrid dotGap={26} baseRadius={1.6} activeRadius={3.8} glowDistance={150} />
 

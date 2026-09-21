@@ -83,7 +83,7 @@ export default function NotificationDropdown() {
         aria-label="Notificaciones"
       >
         <span
-          className={`absolute right-1 top-1 z-10 size-2.5 rounded-full bg-[#F26522] ring-2 ring-white dark:ring-gray-900 ${
+          className={`absolute right-1 top-1 z-10 size-2.5 rounded-full bg-brand-500 ring-2 ring-white dark:ring-gray-900 ${
             !notifying ? "hidden" : "block"
           }`}
         />
@@ -103,11 +103,11 @@ export default function NotificationDropdown() {
       <ShellDropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute -right-16 sm:right-0 mt-3 flex w-[350px] sm:w-[390px] flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl dark:border-gray-800 dark:bg-gray-900 z-50 animate-in fade-in slide-in-from-top-2 font-sans"
+        className="absolute -right-16 sm:right-0 mt-3 flex w-[350px] sm:w-[390px] flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-50 animate-entrada-menu font-sans"
       >
         {/* Cabecera del panel */}
         <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 dark:border-gray-800">
-          <h3 className="text-xl font-bold tracking-tight text-[#1A202C] dark:text-white">
+          <h3 className="text-xl font-bold tracking-tight text-ink-title dark:text-white">
             Notificaciones
           </h3>
           <button
@@ -134,24 +134,24 @@ export default function NotificationDropdown() {
                   />
                   <span
                     className={`absolute bottom-0.5 right-0.5 size-3 rounded-full border-2 border-white dark:border-gray-900 ${
-                      item.statusColor === "green" ? "bg-[#10B981]" : "bg-[#EF4444]"
+                      item.statusColor === "green" ? "bg-success-500" : "bg-error-500"
                     }`}
                   />
                 </div>
 
                 {/* Texto descriptivo */}
                 <div className="min-w-0 flex-1 leading-snug pt-0.5">
-                  <p className="text-[13px] sm:text-sm text-[#64748B] dark:text-gray-400">
-                    <strong className="font-semibold text-[#1E293B] dark:text-white">
+                  <p className="text-[13px] sm:text-sm text-gray-500 dark:text-gray-400">
+                    <strong className="font-semibold text-gray-900 dark:text-white">
                       {item.name}
                     </strong>{" "}
                     {item.action}{" "}
-                    <strong className="font-semibold text-[#1E293B] dark:text-white">
+                    <strong className="font-semibold text-gray-900 dark:text-white">
                       {item.target}
                     </strong>
                   </p>
 
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#94A3B8] dark:text-gray-500 font-normal">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 font-normal">
                     <span>{item.category}</span>
                     <span>•</span>
                     <span>{item.time}</span>
@@ -167,7 +167,7 @@ export default function NotificationDropdown() {
           <button
             type="button"
             onClick={closeDropdown}
-            className="w-full rounded-xl border border-gray-200/90 bg-white py-3 text-sm font-semibold text-[#334155] shadow-xs hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-750 transition-colors cursor-pointer text-center"
+            className="w-full rounded-xl border border-gray-200/90 bg-white py-3 text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-750 transition-colors cursor-pointer text-center"
           >
             Ver todas las notificaciones
           </button>

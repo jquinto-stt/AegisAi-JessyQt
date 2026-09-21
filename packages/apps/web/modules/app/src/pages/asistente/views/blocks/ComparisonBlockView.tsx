@@ -35,7 +35,7 @@ export const ComparisonBlockView = ({ block }: { block: ComparisonBlock }) => {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       {block.title && (
-        <h4 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">
+        <h4 className="mb-3 text-sm font-semibold text-ink-title dark:text-white/90">
           {block.title}
         </h4>
       )}
@@ -55,8 +55,8 @@ export const ComparisonBlockView = ({ block }: { block: ComparisonBlock }) => {
             vari === null || vari === 0
               ? "text-gray-400 dark:text-gray-500"
               : vari > 0
-              ? "text-green-600 dark:text-green-400"
-              : "text-red-600 dark:text-red-400";
+              ? "text-success-600 dark:text-success-400"
+              : "text-error-600 dark:text-error-400";
 
           const max = Math.max(Math.abs(item.valueA), Math.abs(item.valueB), 1);
           const anchoA = `${(Math.abs(item.valueA) / max) * 100}%`;

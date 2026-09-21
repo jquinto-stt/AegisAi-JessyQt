@@ -1905,7 +1905,7 @@ export class PedidosStore {
   estadoDotClass(e: PedidoEstado): string {
     const mapa: Record<string, string> = {
       programado: "bg-gray-400",
-      nuevo: "bg-blue-light-500",
+      nuevo: "bg-accent-500",
       confirmado: "bg-brand-500",
       en_preparacion: "bg-warning-500",
       listo: "bg-success-500",

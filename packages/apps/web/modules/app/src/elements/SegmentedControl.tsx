@@ -19,7 +19,7 @@ export interface SegmentedControlProps<V extends string = string> {
   /**
    * Estilo visual del segmento activo:
    *  - 'contrast' (default): activo oscuro (gray-950 / dark:white).
-   *  - 'accent': activo naranja de marca (#FF3F1A).
+   *  - 'accent': activo naranja de marca (#FF3C10).
    *  - 'panel': activo blanco sobre track gris (look de pestañas suaves).
    */
   tone?: 'contrast' | 'accent' | 'panel';
@@ -52,10 +52,10 @@ export function SegmentedControl<V extends string = string>({
 }: SegmentedControlProps<V>) {
   const activeClass =
     tone === 'accent'
-      ? 'bg-brand-500 text-white shadow-2xs'
+      ? 'bg-brand-500 text-white shadow-theme-xs'
       : tone === 'panel'
-        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-2xs'
-        : 'bg-secondary-600 text-white shadow-2xs';
+        ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-theme-xs'
+        : 'bg-secondary-600 text-white shadow-theme-xs';
 
   const inactiveClass =
     'text-gray-900/70 dark:text-gray-100/70 hover:text-gray-900 dark:hover:text-white';

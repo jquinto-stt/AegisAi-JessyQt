@@ -57,7 +57,7 @@ const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
 
 /** Logo del Módulo de Pedidos */
 const OrdersBrandLogo = () => (
-  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400">
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" />
     </svg>
@@ -66,7 +66,7 @@ const OrdersBrandLogo = () => (
 
 /** Logo del Módulo de Inventario */
 const InventoryBrandLogo = () => (
-  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-secondary-500/10 dark:text-secondary-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
@@ -87,7 +87,7 @@ const NectoIaIntegrationLogo = () => (
 
 /** Logo de Integración: WhatsApp Business */
 const WhatsAppIntegrationLogo = () => (
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
@@ -194,9 +194,9 @@ const SubIntegrationCard = observer(({
 
   return (
     <div
-      className={`w-full relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 dark:bg-gray-900 ${
+      className={`w-full relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-theme-xs transition-all duration-200 dark:bg-gray-900 ${
         parentActivo
-          ? "border-gray-200 hover:border-gray-300 hover:shadow-xs dark:border-gray-800 dark:hover:border-gray-700"
+          ? "border-gray-200 hover:border-gray-300 hover:shadow-theme-xs dark:border-gray-800 dark:hover:border-gray-700"
           : "border-gray-200/60 bg-gray-50/50 opacity-60 dark:border-gray-800/60 dark:bg-gray-900/40"
       }`}
     >
@@ -219,7 +219,7 @@ const SubIntegrationCard = observer(({
             <Dropdown
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
-              className="right-0 top-full mt-1 w-48 border border-gray-100 shadow-lg dark:border-white/5"
+              className="right-0 top-full mt-1 w-48 border border-gray-100 shadow-theme-lg dark:border-white/5"
             >
               <DropdownItem
                 onClick={() => {
@@ -244,7 +244,7 @@ const SubIntegrationCard = observer(({
         </div>
 
         {/* Título de la Integración */}
-        <h4 className="mt-4 text-sm font-bold text-gray-900 dark:text-white">
+        <h4 className="mt-4 text-sm font-bold text-ink-title dark:text-white">
           {item.nombre}
         </h4>
 
@@ -371,9 +371,9 @@ const ModuloMaestroCard = observer(({
 
   return (
     <div
-      className={`w-full max-w-[720px] rounded-3xl border bg-white p-6 shadow-2xs transition-all duration-200 dark:bg-gray-900/60 ${
+      className={`w-full max-w-[720px] rounded-3xl border bg-white p-6 shadow-theme-xs transition-all duration-200 dark:bg-gray-900/60 ${
         esActivo
-          ? "border-gray-200 shadow-xs dark:border-gray-800"
+          ? "border-gray-200 shadow-theme-xs dark:border-gray-800"
           : "border-gray-200/70 bg-gray-50/40 opacity-75 dark:border-gray-800/60"
       }`}
     >
@@ -382,7 +382,7 @@ const ModuloMaestroCard = observer(({
         <div className="flex items-center gap-3.5">
           <div>{def.logo}</div>
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-ink-title dark:text-white">
               {def.nombre}
             </h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
@@ -406,7 +406,7 @@ const ModuloMaestroCard = observer(({
             <Dropdown
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
-              className="right-0 top-full mt-1 w-48 border border-gray-100 shadow-lg dark:border-white/5"
+              className="right-0 top-full mt-1 w-48 border border-gray-100 shadow-theme-lg dark:border-white/5"
             >
               {def.rutaConfig && (
                 <DropdownItem
@@ -432,7 +432,7 @@ const ModuloMaestroCard = observer(({
                   setMenuOpen(false);
                   onDesinstalar(def);
                 }}
-                className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10"
+                className="text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
               >
                 <div className="flex items-center gap-2">
                   <TrashIcon className="h-3.5 w-3.5" />
@@ -467,7 +467,7 @@ const ModuloMaestroCard = observer(({
 
       {/* ── 2. SUBSECCIÓN DE INTEGRACIONES ── */}
       <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+        <h4 className="mb-3 text-sm font-semibold text-ink-title dark:text-white">
           Integrations
         </h4>
 
@@ -562,7 +562,7 @@ export const ModulosTab = observer(() => {
       <section className="mb-10">
         {modulosInstalados.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-gray-300 p-12 text-center dark:border-gray-700">
-            <h3 className="text-base font-semibold text-gray-800 dark:text-white">
+            <h3 className="text-base font-semibold text-ink-title dark:text-white">
               No tienes módulos instalados
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -603,7 +603,7 @@ export const ModulosTab = observer(() => {
               <div>{modalModulo.logo}</div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-bold text-ink-title dark:text-white">
                     {modalModulo.nombre}
                   </h3>
                   <Badge
@@ -625,13 +625,13 @@ export const ModulosTab = observer(() => {
 
             {/* Capacidades */}
             <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-              <h4 className="text-xs font-semibold text-gray-900 dark:text-white">
+              <h4 className="text-xs font-semibold text-ink-title dark:text-white">
                 Capacidades operativas incluidas:
               </h4>
               <ul className="mt-2.5 space-y-2">
                 {modalModulo.capacidades.map((cap, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-500" />
                     <span>{cap}</span>
                   </li>
                 ))}
@@ -693,7 +693,7 @@ export const ModulosTab = observer(() => {
               <div>{modalIntegracion.logo}</div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-bold text-ink-title dark:text-white">
                     {modalIntegracion.nombre}
                   </h3>
                   <Badge
@@ -715,13 +715,13 @@ export const ModulosTab = observer(() => {
 
             {/* Beneficios */}
             <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
-              <h4 className="text-xs font-semibold text-gray-900 dark:text-white">
+              <h4 className="text-xs font-semibold text-ink-title dark:text-white">
                 Capacidades de la integración:
               </h4>
               <ul className="mt-2.5 space-y-2">
                 {modalIntegracion.detalles.beneficios.map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-500" />
                     <span>{b}</span>
                   </li>
                 ))}
@@ -772,7 +772,7 @@ export const ModulosTab = observer(() => {
           className="max-w-md p-6"
         >
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-ink-title dark:text-white">
               Catálogo de Módulos de la Organización
             </h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -793,7 +793,7 @@ export const ModulosTab = observer(() => {
                     <div className="flex items-center gap-3">
                       <div>{mod.logo}</div>
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <h4 className="text-sm font-semibold text-ink-title dark:text-white">
                           {mod.nombre}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -828,7 +828,7 @@ export const ModulosTab = observer(() => {
                     <div className="opacity-60">{mod.logo}</div>
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <h4 className="text-sm font-semibold text-ink-title dark:text-white">
                           {mod.nombre}
                         </h4>
                         <Badge color="light" size="xs">Próximamente</Badge>
@@ -842,14 +842,14 @@ export const ModulosTab = observer(() => {
               {/* Módulo Próximamente */}
               <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 p-3.5 opacity-70 dark:border-gray-800">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-secondary-500/10 dark:text-secondary-400">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                     </svg>
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <h4 className="text-sm font-semibold text-ink-title dark:text-white">
                         Facturación Electrónica
                       </h4>
                       <Badge color="light" size="xs">Próximamente</Badge>
@@ -879,11 +879,11 @@ export const ModulosTab = observer(() => {
           className="max-w-sm p-6"
         >
           <div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400">
               <TrashIcon className="h-5 w-5" />
             </div>
 
-            <h3 className="mt-3 text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="mt-3 text-base font-bold text-ink-title dark:text-white">
               ¿Desinstalar {moduloADesinstalar.nombre}?
             </h3>
 
@@ -901,7 +901,7 @@ export const ModulosTab = observer(() => {
               </Button>
               <Button
                 size="sm"
-                className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                className="bg-error-600 text-white hover:bg-error-700 dark:bg-error-500 dark:hover:bg-error-600"
                 onClick={() => {
                   organizacionStore.desinstalarModulo(moduloADesinstalar.id);
                   setModuloADesinstalar(null);

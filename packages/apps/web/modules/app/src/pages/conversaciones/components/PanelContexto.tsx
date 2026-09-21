@@ -188,7 +188,7 @@ const CrearPedidoRapidoModal = observer(
       <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
           <div>
-            <h3 className="text-base font-bold text-gray-800 dark:text-white/90">
+            <h3 className="text-base font-bold text-ink-title dark:text-white/90">
               Nuevo Pedido para {clienteNombre}
             </h3>
             <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -417,7 +417,7 @@ const CrearPedidoRapidoModal = observer(
               type="button"
               disabled={itemsSeleccionados.length === 0}
               onClick={handleConfirmar}
-              className="rounded-xl bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-600 disabled:opacity-50"
+              className="rounded-xl bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
             >
               Crear Pedido ({money(totalCalculado)})
             </button>
@@ -445,7 +445,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
   const puedeAvanzar = siguiente !== null && puedeMoverA(siguiente);
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-gray-200/80 bg-white p-3.5 shadow-2xs dark:border-gray-800 dark:bg-gray-900/60">
+    <li className="flex flex-col gap-2 rounded-xl border border-gray-200/80 bg-white p-3.5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/60">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-gray-800 dark:text-white/90">
@@ -490,7 +490,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             )}
           </div>
           {pedido.repartidor && (
-            <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
+            <div className="text-[10px] text-success-600 dark:text-success-400">
               Repartidor: {pedido.repartidor}
             </div>
           )}
@@ -657,7 +657,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           size="large"
           status={statusDe(conv.estado)}
         />
-        <h3 className="mt-2 text-sm font-bold text-gray-800 dark:text-white/90">
+        <h3 className="mt-2 text-sm font-bold text-ink-title dark:text-white/90">
           {nombre}
         </h3>
 
@@ -679,7 +679,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-emerald-500"
+              className="text-success-500"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -761,11 +761,11 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             <span
               className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
                 etapaActiva === "cliente"
-                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                  ? "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400"
                   : etapaActiva === "perdido"
-                    ? "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400"
+                    ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400"
                     : etapaActiva === "interesado"
-                      ? "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400"
+                      ? "bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400"
                       : "bg-gray-200/70 text-gray-800 dark:bg-white/10 dark:text-gray-200"
               }`}
             >
@@ -803,10 +803,10 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             if (isActive) {
               barColor =
                 etapa.id === "perdido"
-                  ? "bg-rose-500"
+                  ? "bg-error-500"
                   : etapa.id === "cliente"
-                    ? "bg-emerald-500"
-                    : "bg-brand-500 shadow-2xs";
+                    ? "bg-success-500"
+                    : "bg-brand-500 shadow-theme-xs";
             } else if (isCompleted) {
               barColor = "bg-gray-700 hover:bg-gray-800 dark:bg-gray-400 dark:hover:bg-gray-300";
             }
@@ -852,7 +852,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           <button
             type="button"
             onClick={() => setModalCrearOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-2.5 text-xs font-semibold text-white shadow-2xs transition-all hover:bg-brand-600 hover:shadow-xs active:scale-[0.99]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-2.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 hover:shadow-theme-xs active:scale-[0.99]"
           >
             <svg
               width="15"
@@ -878,14 +878,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("menu")}
             title={`Enviar ${pedidosStore.config.perfilComercial === "food" ? "menú" : pedidosStore.config.perfilComercial === "services" ? "servicios" : "catálogo"} con precios al chat`}
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-2xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "menu"
-                ? "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "menu" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -922,14 +922,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("ubicacion")}
             title="Solicitar dirección de entrega al cliente"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-2xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "ubicacion"
-                ? "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "ubicacion" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -955,14 +955,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("pago")}
             title="Enviar datos bancarios para pago"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-2xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "pago"
-                ? "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "pago" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (

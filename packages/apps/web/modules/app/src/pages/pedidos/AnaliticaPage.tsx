@@ -27,7 +27,7 @@ import { SinDatos } from "./SinDatos";
 // pago son catálogos y salen de `analitica.utils`, para que un gráfico y su
 // leyenda no puedan pintar lo mismo de dos colores distintos.
 // ═══════════════════════════════════════════════════════════════════════════
-const ORANGE = "#FF3F1A";
+const ORANGE = "#FF3C10";
 
 import {
   COLOR_ESTADO,
@@ -114,7 +114,7 @@ interface KpiProps {
 
 const KpiCard = ({ title, value, subtitle, retardo }: KpiProps) => (
   <div
-    className="animate-entrada-lista flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-xs transition-shadow hover:shadow-sm dark:border-gray-800/80 dark:bg-gray-900"
+    className="animate-entrada-lista flex flex-col justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-shadow hover:shadow-theme-sm dark:border-gray-800/80 dark:bg-gray-900"
     style={{ animationDelay: retardo }}
   >
     <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</span>
@@ -128,7 +128,7 @@ const KpiCard = ({ title, value, subtitle, retardo }: KpiProps) => (
 /** Encabezado de bloque reutilizable. */
 const CardTitle = ({ title, hint }: { title: string; hint?: string }) => (
   <div>
-    <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+    <h2 className="text-base font-semibold text-ink-title dark:text-white">{title}</h2>
     {hint && <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">{hint}</p>}
   </div>
 );
@@ -370,7 +370,7 @@ export const AnaliticaPage = observer(() => {
       categories: volumenDiario.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { style: { colors: "#9CA3AF", fontSize: "11px", fontWeight: 400 } },
+      labels: { style: { colors: "#a1a1a1", fontSize: "11px", fontWeight: 400 } },
     },
     yaxis: {
       min: 0,
@@ -380,11 +380,11 @@ export const AnaliticaPage = observer(() => {
       tickAmount: 4,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#9CA3AF", fontSize: "11px" },
+        style: { colors: "#a1a1a1", fontSize: "11px" },
       },
     },
     grid: {
-      borderColor: isDark ? "#1F2937" : "#F3F4F6",
+      borderColor: isDark ? "#282828" : "#f4f4f4",
       strokeDashArray: 0,
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
@@ -424,7 +424,7 @@ export const AnaliticaPage = observer(() => {
       categories: serieEstado.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { style: { colors: "#9CA3AF", fontSize: "11px" } },
+      labels: { style: { colors: "#a1a1a1", fontSize: "11px" } },
     },
     yaxis: {
       min: 0,
@@ -432,11 +432,11 @@ export const AnaliticaPage = observer(() => {
       tickAmount: 5,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#9CA3AF", fontSize: "11px" },
+        style: { colors: "#a1a1a1", fontSize: "11px" },
       },
     },
     grid: {
-      borderColor: isDark ? "#1F2937" : "#F3F4F6",
+      borderColor: isDark ? "#282828" : "#f4f4f4",
       strokeDashArray: 0,
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
@@ -495,7 +495,7 @@ export const AnaliticaPage = observer(() => {
         ══════════════════════════════════════════════════════════════════ */}
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl dark:text-white">
+            <h1 className="text-2xl font-bold tracking-tight text-ink-title sm:text-3xl dark:text-white">
               Analítica de pedidos
             </h1>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -508,7 +508,7 @@ export const AnaliticaPage = observer(() => {
             <div
               role="tablist"
               aria-label="Modo de visualización"
-              className="inline-flex items-center gap-1 rounded-xl border border-gray-200/90 bg-white p-1 shadow-2xs dark:border-gray-800 dark:bg-gray-900"
+              className="inline-flex items-center gap-1 rounded-xl border border-gray-200/90 bg-white p-1 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900"
             >
               {(
                 [
@@ -526,7 +526,7 @@ export const AnaliticaPage = observer(() => {
                     onClick={() => setVista(id)}
                     className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                       activo
-                        ? "bg-emerald-500 text-white shadow-xs"
+                        ? "bg-success-500 text-white shadow-theme-xs"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -544,7 +544,7 @@ export const AnaliticaPage = observer(() => {
                 onClick={() => setPeriodoAbierto((v) => !v)}
                 aria-haspopup="listbox"
                 aria-expanded={periodoAbierto}
-                className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-2xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               >
                 <span>{etiquetaPeriodo(periodo)}</span>
                 <ChevronDown />
@@ -560,7 +560,7 @@ export const AnaliticaPage = observer(() => {
                         setPagina(1);
                       }}
                       onItemClick={() => setPeriodoAbierto(false)}
-                      className={periodo === op.value ? "font-semibold text-emerald-600 dark:text-emerald-400" : ""}
+                      className={periodo === op.value ? "font-semibold text-success-600 dark:text-success-400" : ""}
                     >
                       <span className="flex flex-col">
                         <span>{op.label}</span>
@@ -585,7 +585,7 @@ export const AnaliticaPage = observer(() => {
                 El degradado recorre las **tres rampas de marca** en orden
                 luminoso: `brand-500` (naranja NECTO) → `secondary-300` (violeta)
                 → `accent-300` (cian). El original usaba esas mismas tres rampas
-                pero terminaba en índigo `#190088`, tan oscuro que un extremo del
+                pero terminaba en índigo `#15008B`, tan oscuro que un extremo del
                 anillo se fundía con el fondo y el conjunto se leía sucio. Aquí
                 las tres son claras, así que el recorrido se lee como color, no
                 como mancha.
@@ -598,7 +598,7 @@ export const AnaliticaPage = observer(() => {
                 `@keyframes` nuevo.
 
                 **El texto lleva tonos MÁS OSCUROS que el anillo, y no es un
-                descuido.** `accent-300` (#97d6df) sobre blanco da 1.65:1 de
+                descuido.** `accent-300` (#71d6e0) sobre blanco da 1.65:1 de
                 contraste: ilegible. El anillo puede permitírselo porque es
                 decoración; el texto no. Por eso el texto va por
                 `brand-700` → `secondary-400` → `accent-700` (5.9:1, 8.1:1 y
@@ -611,7 +611,7 @@ export const AnaliticaPage = observer(() => {
                 type="button"
                 onClick={() => navigate("/asistente")}
                 title="Abrir NECTO AI — asistente interno"
-                className="group inline-flex h-9 shrink-0 items-center rounded-full bg-gradient-to-r from-brand-500 via-secondary-300 to-accent-300 bg-[length:200%_100%] bg-[position:0%_50%] p-[1.5px] shadow-md shadow-secondary-300/25 transition-all duration-500 ease-out hover:-translate-y-px hover:bg-[position:100%_50%] hover:shadow-lg hover:shadow-brand-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+                className="group inline-flex h-9 shrink-0 items-center rounded-full bg-gradient-to-r from-brand-500 via-secondary-300 to-accent-300 bg-[length:200%_100%] bg-[position:0%_50%] p-[1.5px] shadow-theme-md shadow-secondary-300/25 transition-all duration-500 ease-out hover:-translate-y-px hover:bg-[position:100%_50%] hover:shadow-theme-lg hover:shadow-brand-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
               >
                 <span className="flex h-full items-center gap-2 rounded-full bg-white px-3.5 dark:bg-secondary-900">
                   <ShootingStarIcon className="h-4 w-4 shrink-0 text-brand-500 transition-transform duration-300 ease-out group-hover:rotate-[18deg] group-hover:scale-110 dark:text-brand-400" />
@@ -675,10 +675,10 @@ export const AnaliticaPage = observer(() => {
             {/* ════════════════════════════════════════════════════════════
                 SECCIÓN SUPERIOR: Gráfico Principal de Columnas (Full Width)
             ════════════════════════════════════════════════════════════ */}
-            <div className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+            <div className="rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+                  <h3 className="text-lg font-semibold text-ink-title dark:text-white/90">
                     Pedidos por día
                   </h3>
                   <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -709,7 +709,7 @@ export const AnaliticaPage = observer(() => {
                           }}
                           className={`rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                             activo
-                              ? "bg-white text-gray-800 shadow-2xs dark:bg-gray-700 dark:text-white"
+                              ? "bg-white text-gray-800 shadow-theme-xs dark:bg-gray-700 dark:text-white"
                               : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                           }`}
                         >
@@ -725,14 +725,14 @@ export const AnaliticaPage = observer(() => {
                       type="button"
                       onClick={() => setCalendarioAbierto((v) => !v)}
                       aria-label="Elegir rango en calendario"
-                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-2xs transition-all ${
+                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-theme-xs transition-all ${
                         rangoPersonalizado
-                          ? "border-[#FF3F1A] bg-[#FF3F1A]/10 text-[#FF3F1A] dark:border-[#FF3F1A] dark:bg-[#FF3F1A]/20"
+                          ? "border-brand-500 bg-brand-500/10 text-brand-500 dark:border-brand-500 dark:bg-brand-500/20"
                           : "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                       }`}
                       title="Seleccionar rango de fechas libremente"
                     >
-                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-[#FF3F1A]" : "text-gray-500 dark:text-gray-400"}`} />
+                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-brand-500" : "text-gray-500 dark:text-gray-400"}`} />
                       <span>
                         {rangoPersonalizado
                           ? `${diaCorto(rangoPersonalizado.desde)} - ${diaCorto(rangoPersonalizado.hasta)}`
@@ -741,7 +741,7 @@ export const AnaliticaPage = observer(() => {
                     </button>
 
                     {calendarioAbierto && (
-                      <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                      <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xl dark:border-gray-700 dark:bg-gray-900">
                         <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-800">
                           <span className="text-xs font-semibold text-gray-900 dark:text-white">Rango personalizado</span>
                           <button
@@ -803,7 +803,7 @@ export const AnaliticaPage = observer(() => {
                                 setCalendarioAbierto(false);
                               }
                             }}
-                            className="rounded-lg bg-[#FF3F1A] px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-[#E63314] transition-colors cursor-pointer"
+                            className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs hover:bg-brand-600 transition-colors cursor-pointer"
                           >
                             Aplicar rango
                           </button>
@@ -830,7 +830,7 @@ export const AnaliticaPage = observer(() => {
             ════════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
               {/* Card 1: Pedidos por canal de entrada */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle title="Pedidos por canal" hint={`WhatsApp y mostrador · ${etiquetaRango}`} />
 
@@ -860,7 +860,7 @@ export const AnaliticaPage = observer(() => {
                 <button
                   type="button"
                   onClick={() => setVista("lista")}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <span>Ver los pedidos del periodo</span>
                   <span aria-hidden="true">→</span>
@@ -868,7 +868,7 @@ export const AnaliticaPage = observer(() => {
               </div>
 
               {/* Card 2: Pedidos por modalidad de entrega */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle
                     title="Modalidades de entrega"
@@ -901,7 +901,7 @@ export const AnaliticaPage = observer(() => {
                 <button
                   type="button"
                   onClick={() => setVista("lista")}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-2xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
                 >
                   <span>Ver los pedidos del periodo</span>
                   <span aria-hidden="true">→</span>
@@ -909,7 +909,7 @@ export const AnaliticaPage = observer(() => {
               </div>
 
               {/* Card 3: Pedidos en curso (estado vivo del tablero) */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle
                     title="Pedidos en curso"
@@ -918,8 +918,8 @@ export const AnaliticaPage = observer(() => {
 
                   <div className="mt-3 flex items-center gap-2">
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A]/70 opacity-75" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500/70 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500" />
                     </span>
                     <span className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
                       {num(enCurso)}
@@ -957,7 +957,7 @@ export const AnaliticaPage = observer(() => {
             ════════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
               {/* Card 1: Pedidos por estado (barras apiladas por día) */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-7 dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs xl:col-span-7 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle
                     title="Pedidos por estado"
@@ -995,7 +995,7 @@ export const AnaliticaPage = observer(() => {
               </div>
 
               {/* Card 2: Estado de pago (donut) */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-2xs xl:col-span-5 dark:border-gray-800 dark:bg-white/[0.03]">
+              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs xl:col-span-5 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle title="Estado de pago" hint={`Pagado y pendiente · ${etiquetaRango}`} />
 
@@ -1070,7 +1070,7 @@ export const AnaliticaPage = observer(() => {
                         onClick={() => alternarOrden(c.key)}
                         aria-label={`Ordenar por ${c.label}`}
                         className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-gray-700 dark:hover:text-gray-200 ${
-                          orden.columna === c.key ? "text-emerald-600 dark:text-emerald-400" : ""
+                          orden.columna === c.key ? "text-success-600 dark:text-success-400" : ""
                         } ${c.align === "right" ? "ml-auto" : ""}`}
                       >
                         {c.label}

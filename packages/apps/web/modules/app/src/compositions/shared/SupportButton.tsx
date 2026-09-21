@@ -30,11 +30,11 @@ export function SupportButton({ className = "" }: { className?: string }) {
       title="Soporte"
       onClick={() => navigate("/soporte")}
       className={cn(
-        "group flex h-10 flex-none cursor-pointer items-center gap-2.5 rounded-full border border-gray-200 bg-white px-3.5 text-gray-600 shadow-xs transition-all duration-200 hover:border-public-500/50 hover:bg-gray-50 hover:shadow-sm active:scale-[0.98] sm:h-11 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-public-500/50 dark:hover:bg-gray-800/70",
+        "group flex h-10 flex-none cursor-pointer items-center gap-2.5 rounded-full border border-gray-200 bg-white px-3.5 text-gray-600 shadow-theme-xs transition-all duration-200 hover:border-brand-500/50 hover:bg-gray-50 hover:shadow-theme-sm active:scale-[0.98] sm:h-11 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-brand-500/50 dark:hover:bg-gray-800/70",
         className
       )}
     >
-      <LifeBuoy className="h-4 w-4 flex-none stroke-[2.2] text-gray-400 transition-colors group-hover:text-public-500" />
+      <LifeBuoy className="h-4 w-4 flex-none stroke-[2.2] text-gray-400 transition-colors group-hover:text-brand-500" />
       <span className="hidden text-theme-sm font-medium text-gray-500 transition-colors group-hover:text-gray-800 lg:inline dark:text-gray-400 dark:group-hover:text-gray-200">
         Soporte
       </span>

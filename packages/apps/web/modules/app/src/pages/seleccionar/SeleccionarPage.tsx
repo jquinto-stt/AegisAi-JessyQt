@@ -94,7 +94,7 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
       className={`h-full transition-all ${
         selected
           ? "border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/30 dark:border-brand-400 dark:bg-brand-500/10"
-          : "hover:border-brand-300 hover:shadow-2xs dark:hover:border-brand-500/40"
+          : "hover:border-brand-300 hover:shadow-theme-xs dark:hover:border-brand-500/40"
       }`}
     >
       {/* IconCard blueprint: contenedor de ícono h-14 max-w-14 rounded-[10.5px] */}
@@ -200,7 +200,7 @@ export const SeleccionarPage = observer(() => {
           {/* Marca */}
           <div className="mb-8 flex flex-col items-center text-center">
             <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">
               {esOperador ? "Solicita tu acceso" : "¿Cómo vas a entrar?"}
             </h1>
             <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">

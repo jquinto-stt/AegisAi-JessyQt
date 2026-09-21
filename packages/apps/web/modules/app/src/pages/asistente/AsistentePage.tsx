@@ -61,7 +61,7 @@ export const AsistentePage = observer(() => {
         {/* Encabezado general de la pantalla */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Asistente IA</h1>
+            <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Asistente IA</h1>
             <span className="rounded-full border border-gray-200 px-3 py-0.5 text-xs font-medium text-gray-600 dark:border-gray-700 dark:text-gray-300">
               Necto
             </span>
@@ -114,7 +114,7 @@ export const AsistentePage = observer(() => {
         <div className="flex min-h-[calc(100vh-14rem)] gap-5 sm:gap-6 items-stretch overflow-x-clip">
           {/* ── Tarjeta Izquierda (Chat con contorno redondeado) ── */}
           <div
-            className={`flex min-w-0 flex-col rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
+            className={`flex min-w-0 flex-col rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs transition-all duration-300 dark:border-gray-800 dark:bg-gray-900 ${
               activeArtifact
                 ? "w-full lg:w-1/2 xl:w-[48%]"
                 : "flex-1"
@@ -198,7 +198,7 @@ export const AsistentePage = observer(() => {
              */
             <aside
               key={activeArtifact.id}
-              className="paneo-entrada flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-2xl border border-gray-200/80 bg-white shadow-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900"
+              className="paneo-entrada flex min-w-0 w-full lg:w-1/2 xl:w-[52%] flex-col rounded-2xl border border-gray-200/80 bg-white shadow-theme-xs overflow-hidden dark:border-gray-800 dark:bg-gray-900"
             >
               <ArtifactCanvas
                 artifact={activeArtifact}
@@ -211,7 +211,7 @@ export const AsistentePage = observer(() => {
           ) : (
             hayMensajes &&
             ultimaEvidencia && (
-              <aside className="hidden w-80 lg:w-96 shrink-0 flex-col overflow-y-auto rounded-2xl border border-gray-200/80 bg-white p-5 shadow-xs lg:flex dark:border-gray-800 dark:bg-gray-900">
+              <aside className="hidden w-80 lg:w-96 shrink-0 flex-col overflow-y-auto rounded-2xl border border-gray-200/80 bg-white p-5 shadow-theme-xs lg:flex dark:border-gray-800 dark:bg-gray-900">
                 <FactsPanel evidence={ultimaEvidencia} />
               </aside>
             )
@@ -258,7 +258,7 @@ const SuggestionCard = ({
     data-sugerencia={toolId}
     onClick={onClick}
     style={{ animationDelay: retardo }}
-    className="animate-entrada-lista cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-2xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
+    className="animate-entrada-lista cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
   >
     <p className="text-sm font-bold text-gray-800 dark:text-white/90">{titulo}</p>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>

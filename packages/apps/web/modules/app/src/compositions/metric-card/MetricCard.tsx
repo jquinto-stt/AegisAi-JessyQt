@@ -100,7 +100,7 @@ export function MetricCard({
             </div>
           )}
           <div>
-            <h4 className={`${valueSize || "text-2xl"} font-semibold text-gray-800 dark:text-white/90`}>
+            <h4 className={`${valueSize || "text-2xl"} font-semibold text-ink-title dark:text-white/90`}>
               {value}
             </h4>
             {badgeWithComparison ? (
@@ -123,7 +123,7 @@ export function MetricCard({
       // CRM style: value on top, title + badge below
       return (
         <Card className={cn("rounded-2xl md:p-6", className)}>
-          <h4 className={`font-semibold text-gray-800 ${valueSize || "text-title-sm"} dark:text-white/90`}>
+          <h4 className={`font-semibold text-ink-title ${valueSize || "text-title-sm"} dark:text-white/90`}>
             {value}
           </h4>
           <div className="flex items-end justify-between mt-4 sm:mt-5">
@@ -142,7 +142,7 @@ export function MetricCard({
           {title}
         </p>
         <div className="flex items-end justify-between mt-3">
-          <h4 className={`${valueSize || "text-2xl"} font-semibold text-gray-800 dark:text-white/90`}>
+          <h4 className={`${valueSize || "text-2xl"} font-semibold text-ink-title dark:text-white/90`}>
             {value}
           </h4>
           {badgeWithComparison}
@@ -164,7 +164,7 @@ export function MetricCard({
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {title}
           </span>
-          <h4 className={`mt-2 font-semibold text-gray-800 ${valueSize || "text-title-sm"} dark:text-white/90`}>
+          <h4 className={`mt-2 font-semibold text-ink-title ${valueSize || "text-title-sm"} dark:text-white/90`}>
             {value}
           </h4>
         </div>

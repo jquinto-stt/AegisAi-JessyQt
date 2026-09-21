@@ -35,7 +35,7 @@ export const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
               onClick={() => reachable && onSelect && onSelect(s.num)}
               className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                 active
-                  ? "bg-brand-500 shadow-sm shadow-brand-500/30"
+                  ? "bg-brand-500 shadow-theme-sm shadow-brand-500/30"
                   : done
                   ? "bg-brand-500/50"
                   : "bg-gray-200 dark:bg-gray-800"

@@ -438,7 +438,7 @@ export const OperadorRegistroPage = observer(() => {
               {/* Encabezado centrado */}
               <div className="mb-8 flex flex-col items-center text-center">
                 <img src="/images/logo/necto-icon.svg" alt="NECTO" className="mb-4 h-10 w-10" />
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+                <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">
                   Solicita tu acceso como operador
                 </h1>
                 <p className="mt-2 max-w-md text-sm text-gray-500 dark:text-gray-400">
@@ -586,7 +586,7 @@ export const OperadorRegistroPage = observer(() => {
                 <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success-50 text-success-500 dark:bg-success-500/10">
                   <CheckCircleIcon />
                 </span>
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">
+                <h2 className="text-xl font-bold text-ink-title dark:text-white/90">
                   Tu solicitud fue enviada
                 </h2>
                 <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">

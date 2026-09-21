@@ -36,13 +36,13 @@ export const MenuSectionHeader: React.FC<MenuSectionHeaderProps> = observer(({
       <button
         type="button"
         onClick={onToggle}
-        className="mb-3 w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-200 transition-colors group cursor-pointer select-none text-left"
+        className="mb-3 w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors group cursor-pointer select-none text-left"
         aria-expanded={!isCollapsed}
         title={isCollapsed ? `Expandir ${title}` : `Colapsar ${title}`}
       >
         <span>{title}</span>
         <ChevronDownIcon
-          className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 group-hover:text-gray-300 ${
+          className={`w-3.5 h-3.5 text-gray-500 transition-transform duration-200 group-hover:text-gray-700 dark:group-hover:text-gray-300 ${
             isCollapsed ? "-rotate-90" : "rotate-0"
           }`}
         />

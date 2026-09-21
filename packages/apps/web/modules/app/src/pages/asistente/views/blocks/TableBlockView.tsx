@@ -60,7 +60,7 @@ export const TableBlockView = ({ block }: { block: TableBlock }) => {
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-3 flex items-center justify-between gap-2">
         {block.title ? (
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+          <h4 className="text-sm font-semibold text-ink-title dark:text-white/90">
             {block.title}
           </h4>
         ) : (

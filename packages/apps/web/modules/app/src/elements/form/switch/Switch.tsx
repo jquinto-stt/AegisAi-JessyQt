@@ -185,7 +185,7 @@ const Switch: React.FC<SwitchProps> = ({
           }`}
         ></div>
         <div
-          className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow-2xs duration-150 ease-linear transform ${switchColors.knob}`}
+          className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow-theme-xs duration-150 ease-linear transform ${switchColors.knob}`}
         ></div>
       </div>
       {label}

@@ -205,8 +205,8 @@ const Alert: React.FC<AlertProps> = ({
     },
     info: {
       container:
-        "border-blue-light-500 bg-blue-light-50 dark:border-blue-light-500/30 dark:bg-blue-light-500/15",
-      icon: "text-blue-light-500",
+        "border-accent-500 bg-accent-50 dark:border-accent-500/30 dark:bg-accent-500/15",
+      icon: "text-accent-500",
     },
   };
 
@@ -306,7 +306,7 @@ const Alert: React.FC<AlertProps> = ({
         </div>
 
         <div className="flex-1">
-          <h4 className="mb-1 text-sm font-semibold text-gray-800 dark:text-white/90">
+          <h4 className="mb-1 text-sm font-semibold text-ink-title dark:text-white/90">
             {title}
           </h4>
 

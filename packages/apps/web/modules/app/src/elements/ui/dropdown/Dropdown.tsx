@@ -178,7 +178,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       // animación tiene que crecer DESDE ese ancla. Con el origen por defecto
       // (centro) el panel parece despegarse del botón al que pertenece.
       className={cn(
-        "absolute z-40 right-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark",
+        "absolute z-40 right-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-theme-lg dark:border-gray-800 dark:bg-gray-900",
         "origin-top-right",
         saliendo ? "animate-salida-menu pointer-events-none" : "animate-entrada-menu",
         className

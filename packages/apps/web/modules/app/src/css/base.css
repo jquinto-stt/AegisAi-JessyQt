@@ -110,7 +110,8 @@
   .animate-entrada-panel,
   .animate-entrada-menu,
   .animate-salida-menu,
-  .animate-entrada-lista {
+  .animate-entrada-lista,
+  .necto-escalonado > * {
     animation: none;
   }
 }

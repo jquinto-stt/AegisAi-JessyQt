@@ -245,7 +245,7 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#efeae2] px-4 py-6 dark:bg-gray-800/40">
         <div className="mx-auto flex max-w-2xl flex-col gap-2">
           {items.length === 0 ? (
-            <p className="mx-auto rounded-full bg-white/70 px-3 py-1 text-center text-xs text-gray-500 shadow-2xs dark:bg-gray-900/70 dark:text-gray-400">
+            <p className="mx-auto rounded-full bg-white/70 px-3 py-1 text-center text-xs text-gray-500 shadow-theme-xs dark:bg-gray-900/70 dark:text-gray-400">
               Aún no hay mensajes. Escribe para empezar la conversación.
             </p>
           ) : (
@@ -335,7 +335,7 @@ const Burbuja = ({ m }: { m: Mensaje }) => {
   return (
     <div className={`flex ${esCliente ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-2xs ${
+        className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-theme-xs ${
           esCliente
             ? "rounded-br-sm bg-[#d9fdd3] text-gray-800 dark:bg-brand-500/30 dark:text-white/90"
             : "rounded-bl-sm bg-white text-gray-800 dark:bg-gray-900 dark:text-white/90"
@@ -357,7 +357,7 @@ const Burbuja = ({ m }: { m: Mensaje }) => {
 
 /** Evento de sistema: anotación centrada, diferenciada de las burbujas (Req 2.4). */
 const LineaSistema = ({ e }: { e: EventoSistema }) => (
-  <p className="mx-auto my-1 rounded-full bg-white/70 px-3 py-1 text-center text-xs text-gray-500 shadow-2xs dark:bg-gray-900/70 dark:text-gray-400">
+  <p className="mx-auto my-1 rounded-full bg-white/70 px-3 py-1 text-center text-xs text-gray-500 shadow-theme-xs dark:bg-gray-900/70 dark:text-gray-400">
     {e.texto}
   </p>
 );

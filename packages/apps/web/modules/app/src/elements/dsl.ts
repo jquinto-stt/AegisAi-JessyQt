@@ -89,7 +89,7 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
  *   nodeId: 'necto.el.button',
  *   intent: ['action.generic'],
  *   base: 'inline-flex items-center rounded-xl font-bold',
- *   variants: { primary: 'bg-[#FF3F1A] text-white', outline: 'border' },
+ *   variants: { primary: 'bg-brand-500 text-white', outline: 'border' },
  *   render: ({ nodeId, intent, className, props, children }) => (
  *     <button data-node-id={nodeId} data-intent={intent} className={className} {...props}>
  *       {children}

@@ -27,7 +27,7 @@ export type BadgeSize = "xs" | "sm" | "md" | "lg";
  * - `"success"` — Green (`success-500`) — completed, active, approved, positive outcome
  * - `"error"` — Red (`error-500`) — failed, rejected, critical issue in the view
  * - `"warning"` — Orange (`warning-500`) — caution, pending review, needs attention
- * - `"info"` — Blue (`blue-light-500`) — informational, neutral update, FYI
+ * - `"info"` — Celeste (`accent-500`) — informational, neutral update, FYI
  * - `"light"` — Gray (`gray-100`/`gray-400`) — neutral, disabled, archived
  * - `"dark"` — Dark gray (`gray-500`/`gray-700`) — strong neutral, inverted context
  * @kgId 646ae04780fb
@@ -173,8 +173,8 @@ const Badge: React.FC<BadgeProps> = ({
       error:
         "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500",
       warning:
-        "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-orange-400",
-      info: "bg-blue-light-50 text-blue-light-500 dark:bg-blue-light-500/15 dark:text-blue-light-500",
+        "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
+      info: "bg-accent-50 text-accent-500 dark:bg-accent-500/15 dark:text-accent-500",
       light: "bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80",
       dark: "bg-gray-500 text-white dark:bg-white/5 dark:text-white",
     },
@@ -183,7 +183,7 @@ const Badge: React.FC<BadgeProps> = ({
       success: "bg-success-500 text-white dark:text-white",
       error: "bg-error-500 text-white dark:text-white",
       warning: "bg-warning-500 text-white dark:text-white",
-      info: "bg-blue-light-500 text-white dark:text-white",
+      info: "bg-accent-500 text-white dark:text-white",
       light: "bg-gray-400 dark:bg-white/5 text-white dark:text-white/80",
       dark: "bg-gray-700 text-white dark:text-white",
     },

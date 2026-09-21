@@ -43,7 +43,7 @@ export const ModalEspecificaciones: React.FC<ModalEspecificacionesProps> = obser
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                   Especificaciones
                 </span>
-                <h3 className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
+                <h3 className="mt-1 text-xl font-bold text-ink-title dark:text-white">
                   {modulo.nombre}
                 </h3>
                 <p className="mt-0.5 text-xs font-medium text-brand-600 dark:text-brand-400">
@@ -98,7 +98,7 @@ export const ModalEspecificaciones: React.FC<ModalEspecificacionesProps> = obser
                     onClose();
                     navigate("/configuracion?tab=modulos");
                   }}
-                  className="rounded-full bg-brand-500 text-xs font-bold text-white shadow-sm shadow-brand-500/20 hover:bg-brand-600"
+                  className="rounded-full bg-brand-500 text-xs font-bold text-white shadow-theme-sm shadow-brand-500/20 hover:bg-brand-600"
                 >
                   Ir a configuración de módulos
                 </Button>

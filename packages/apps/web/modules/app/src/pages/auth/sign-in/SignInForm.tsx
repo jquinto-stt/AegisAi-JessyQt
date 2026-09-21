@@ -80,7 +80,7 @@ export default function SignInForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Inicia sesion</h1>
+            <h1 className="mb-2 font-semibold text-ink-title text-title-sm dark:text-white/90 sm:text-title-md">Inicia sesion</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Ingresa tus credenciales para acceder a tu panel de control.</p>
           </div>
           <div>

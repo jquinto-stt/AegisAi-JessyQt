@@ -91,7 +91,7 @@ export const ModalNovedadEntrega = observer(
             <AlertIcon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">
               Reportar novedad de entrega
             </h2>
             <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">

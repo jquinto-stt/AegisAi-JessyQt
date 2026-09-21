@@ -137,7 +137,7 @@ export const RolesTab = observer(() => {
       {/* ── LISTA DE ROLES (SIDEBAR IZQUIERDO) ─────────────────────────────── */}
       <div>
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+          <h2 className="text-sm font-bold text-ink-title dark:text-white">
             Roles ({rolesStore.roles.length})
           </h2>
           <Button size="sm" variant="outline" onClick={nuevoRol}>
@@ -159,7 +159,7 @@ export const RolesTab = observer(() => {
                 onClick={() => setSeleccionadoId(r.id)}
                 className={`group relative flex items-center justify-between w-full rounded-xl border p-3.5 text-left transition-all cursor-pointer ${
                   esSeleccionado
-                    ? "border-brand-500 bg-brand-50/70 shadow-xs dark:border-brand-500 dark:bg-brand-500/10"
+                    ? "border-brand-500 bg-brand-50/70 shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
                     : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
                 }`}
               >
@@ -207,7 +207,7 @@ export const RolesTab = observer(() => {
                   className={
                     r.sistema
                       ? "flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 cursor-not-allowed dark:text-gray-600"
-                      : "flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 opacity-70 group-hover:opacity-100 transition-all cursor-pointer"
+                      : "flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-error-50 hover:text-error-600 dark:hover:bg-error-950/30 dark:hover:text-error-400 opacity-70 group-hover:opacity-100 transition-all cursor-pointer"
                   }
                 >
                   {r.sistema ? (
@@ -246,7 +246,7 @@ export const RolesTab = observer(() => {
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-warning-50 text-warning-500 dark:bg-warning-500/10">
             <AlertIcon className="h-7 w-7" />
           </span>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-bold text-ink-title dark:text-white">
             No se puede eliminar el rol
           </h3>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -292,7 +292,7 @@ export const RolesTab = observer(() => {
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-error-50 text-error-500 dark:bg-error-500/10">
             <TrashBinIcon className="h-7 w-7" />
           </span>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-bold text-ink-title dark:text-white">
             ¿Eliminar «{aConfirmar?.nombre}»?
           </h3>
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -426,7 +426,7 @@ const RolEditor = observer(({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-bold text-ink-title dark:text-white">
               {nombre || "Rol sin nombre"}
             </h2>
             {rol.sistema ? (
@@ -444,7 +444,7 @@ const RolEditor = observer(({
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {guardado && (
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mr-1">
+            <span className="text-xs font-semibold text-success-600 dark:text-success-400 mr-1">
               Guardado
             </span>
           )}
@@ -480,7 +480,7 @@ const RolEditor = observer(({
             className={
               soloLectura
                 ? "inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 px-3.5 text-sm font-medium text-gray-300 dark:border-gray-800 dark:text-gray-600"
-                : "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-red-200 px-3.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                : "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-error-200 px-3.5 text-sm font-medium text-error-600 transition-colors hover:bg-error-50 dark:border-error-800 dark:text-error-400 dark:hover:bg-error-950/30"
             }
           >
             {soloLectura ? (
@@ -553,7 +553,7 @@ const RolEditor = observer(({
       <div className="space-y-4 pt-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-ink-title dark:text-white">
               Reglas y Permisos del Rol
             </h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -575,7 +575,7 @@ const RolEditor = observer(({
             >
               <CheckCircleIcon
                 className={`h-3.5 w-3.5 flex-shrink-0 ${
-                  errorCapacidades ? "text-error-500" : "text-emerald-500"
+                  errorCapacidades ? "text-error-500" : "text-success-500"
                 }`}
               />
               <span>{capacidades.length} de 18 activas</span>
@@ -738,7 +738,7 @@ const RolEditor = observer(({
       {/* Botón inferior para guardar */}
       <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
         {guardado && (
-          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          <span className="text-xs font-semibold text-success-600 dark:text-success-400">
             Cambios guardados correctamente
           </span>
         )}

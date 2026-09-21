@@ -15,7 +15,7 @@ export const ListBlockView = ({ block }: { block: ListBlock }) => {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       {block.title && (
-        <h4 className="mb-3 text-sm font-semibold text-gray-800 dark:text-white/90">
+        <h4 className="mb-3 text-sm font-semibold text-ink-title dark:text-white/90">
           {block.title}
         </h4>
       )}

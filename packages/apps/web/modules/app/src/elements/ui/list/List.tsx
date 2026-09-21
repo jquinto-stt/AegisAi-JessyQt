@@ -535,7 +535,7 @@ function RadioListInner({
                   <span
                     className={cn(
                       "h-1.5 w-1.5 rounded-full",
-                      selectedValue === item.value ? "bg-white" : "bg-white dark:bg-[#1e2636]"
+                      selectedValue === item.value ? "bg-white" : "bg-white dark:bg-gray-900"
                     )}
                   ></span>
                 </span>

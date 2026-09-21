@@ -235,7 +235,7 @@ const FilaEquipo = observer(
       userTypeConfig = {
         label: "Admin",
         variant: "solid",
-        color: "primary", // Necto Brand Orange (#FF3F1A)
+        color: "primary", // Necto Brand Orange (#FF3C10)
       };
     } else if (op.rolId === "supervisor_pedidos") {
       userTypeConfig = {
@@ -294,7 +294,7 @@ const FilaEquipo = observer(
               size="medium"
               status={esPendiente ? "busy" : op.estado === "activo" ? "online" : "none"}
               alt={op.nombre}
-              className="ring-2 ring-gray-100 dark:ring-gray-800 shadow-xs flex-shrink-0"
+              className="ring-2 ring-gray-100 dark:ring-gray-800 shadow-theme-xs flex-shrink-0"
             />
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
@@ -392,7 +392,7 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   operadoresStore.aprobar(op.id);
                 }}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer"
+                className="h-8 px-3 rounded-lg text-xs font-semibold bg-success-600 hover:bg-success-700 text-white transition-colors cursor-pointer"
               >
                 Aprobar
               </button>
@@ -431,7 +431,7 @@ const FilaEquipo = observer(
               <Dropdown
                 isOpen={isMenuOpen}
                 onClose={onCloseMenu}
-                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-lg border border-gray-100 dark:border-white/5"
+                className="right-0 top-full mt-1 w-48 text-left z-20 shadow-theme-lg border border-gray-100 dark:border-white/5"
               >
                 <DropdownItem
                   onClick={verComo}

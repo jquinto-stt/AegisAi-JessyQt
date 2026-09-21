@@ -136,10 +136,10 @@ export const OrganizacionOnboardingPage = observer(() => {
             <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
               Paso 2 de 2 — {subPaso} / 2 Personaliza tu organización
             </span>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
               Personaliza tu organización
             </h1>
-            <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1.5 text-sm text-ink-body dark:text-gray-400">
               {subPaso === 1
                 ? "Configura tu empresa para ti y los miembros que se unan más adelante."
                 : "Agrega el logo de tu empresa para que todos tus reportes y clientes la reconozcan."}
@@ -189,7 +189,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                     id="countrySelect"
                     value={pais}
                     onChange={(e) => setPais(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {Object.keys(PAISES_CONFIG).map((pKey) => (
                       <option key={pKey} value={pKey}>
@@ -219,7 +219,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                     id="companyType"
                     value={tipoEmpresa}
                     onChange={(e) => setTipoEmpresa(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {TIPOS_EMPRESA.map((tipo) => (
                       <option key={tipo} value={tipo}>
@@ -244,7 +244,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                     id="teamStrength"
                     value={tamanoEquipo}
                     onChange={(e) => setTamanoEquipo(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {TAMANOS_EQUIPO.map((tam) => (
                       <option key={tam} value={tam}>
@@ -271,7 +271,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                 </Button>
                 <Button
                   type="submit"
-                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
                 >
                   Continuar
                   <ArrowRight className="size-4 ml-1.5 inline" />
@@ -292,7 +292,7 @@ export const OrganizacionOnboardingPage = observer(() => {
               />
 
               {/* Círculo central con borde e ícono o previsualización */}
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-brand-500 bg-brand-50/40 p-2 shadow-inner dark:border-brand-400 dark:bg-brand-500/10">
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-brand-500 bg-brand-50/40 p-2 shadow-theme-inner dark:border-brand-400 dark:bg-brand-500/10">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
@@ -349,7 +349,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                 <Button
                   type="button"
                   onClick={handleFinalizarOrganizacion}
-                  className="w-full rounded-xl py-3 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+                  className="w-full rounded-xl py-3 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
                 >
                   Continuar
                 </Button>

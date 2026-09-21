@@ -151,8 +151,8 @@ const variantStyles = {
     icon: <CheckCircleIcon />,
   },
   info: {
-    borderColor: "border-blue-light-500",
-    iconBg: "bg-blue-light-50 text-blue-light-500",
+    borderColor: "border-accent-500",
+    iconBg: "bg-accent-50 text-accent-500",
     icon: <InfoIcon />,
   },
   warning: {
@@ -189,7 +189,7 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
 
   return (
     <div
-      className={cn("flex items-center justify-between gap-3 w-full sm:max-w-[340px] rounded-md border-b-4 p-3 shadow-2xs dark:bg-[#1E2634]", borderColor, className)}
+      className={cn("flex items-center justify-between gap-3 w-full sm:max-w-[340px] rounded-md border-b-4 p-3 shadow-theme-xs dark:bg-gray-900", borderColor, className)}
     >
       <div className="flex items-center gap-4">
         <div
@@ -198,7 +198,7 @@ const ToastNotification: React.FC<NotificationToastProps> = ({
           {icon}
         </div>
         <div>
-          <h4 className="text-sm text-gray-800 sm:text-base dark:text-white/90">
+          <h4 className="text-sm text-ink-title sm:text-base dark:text-white/90">
             {title}
           </h4>
           {description && (
@@ -230,7 +230,7 @@ const BannerNotification: React.FC<NotificationBannerProps> = ({
   className,
 }) => {
   return (
-    <div className={cn("w-full max-w-[607px] rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-[#1E2634]", className)}>
+    <div className={cn("w-full max-w-[607px] rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900", className)}>
       <div className="flex items-start gap-3">
         {icon && <div className="text-brand-500">{icon}</div>}
         <div className="flex flex-col items-center gap-5 sm:flex-row">
@@ -287,7 +287,7 @@ const ConsentNotification: React.FC<NotificationConsentProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={cn("relative w-full max-w-[577px] rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-[#1E2634]", className)}>
+    <div className={cn("relative w-full max-w-[577px] rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900", className)}>
       <button
         className="absolute text-gray-400 right-3 top-3 hover:text-gray-800 dark:hover:text-white/90"
         onClick={handleClose}

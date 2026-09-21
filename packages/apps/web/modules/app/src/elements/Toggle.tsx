@@ -24,7 +24,7 @@ export interface ToggleProps extends ElementBaseProps {
  *
  * Reemplaza los switches manuales del proyecto (canales, pausa, sonido,
  * preferencias). Renderiza un <button role="switch"> con aria-checked, track
- * y thumb; el track vira a #FF3F1A cuando está activo. Emite data-node-id y
+ * y thumb; el track vira a #FF3C10 cuando está activo. Emite data-node-id y
  * data-intent, y data-state="on|off" para trazabilidad/tests.
  */
 export const Toggle = ui_dsl<ToggleProps>({

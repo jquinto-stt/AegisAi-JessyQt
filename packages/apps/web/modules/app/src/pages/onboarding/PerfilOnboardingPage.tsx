@@ -69,10 +69,10 @@ export const PerfilOnboardingPage = observer(() => {
             <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
               Paso 1 de 2 — Perfil
             </span>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
               ¡Te damos la bienvenida a Necto!
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
               Selecciona tu país de residencia para completar tu perfil personal.
             </p>
           </div>
@@ -87,7 +87,7 @@ export const PerfilOnboardingPage = observer(() => {
                   id="pais"
                   value={pais}
                   onChange={(e) => setPais(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                  className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                 >
                   {Object.keys(PAISES_CONFIG).map((pKey) => (
                     <option key={pKey} value={pKey}>
@@ -113,7 +113,7 @@ export const PerfilOnboardingPage = observer(() => {
               </span>
               <Button
                 type="submit"
-                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 cursor-pointer"
+                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
               >
                 Continuar a Organización
                 <svg

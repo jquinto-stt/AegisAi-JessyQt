@@ -4,6 +4,10 @@ import { Avatar } from "@/elements/ui/avatar";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon, EyeIcon, ArrowRightIcon } from "@/icons";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import {
+  claseSegmentoActivo,
+  claseSegmentoInactivo,
+} from "@/pages/config-layout";
 import type { Mensaje } from "@/stores/conversaciones.types";
 import { integracionesStore } from "@/stores/integraciones.store";
 import type { ModuloIntegrable } from "@/stores/integraciones.store";
@@ -118,7 +122,7 @@ export const ChatView = observer(({
               aria-label={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 !bandejaExpandida
-                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-2xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -151,7 +155,7 @@ export const ChatView = observer(({
             status={statusDe(conv.estado)}
           />
           <div>
-            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+            <h4 className="text-sm font-semibold text-ink-title dark:text-white/90">
               {conv.contacto.nombre}
             </h4>
             <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -174,7 +178,7 @@ export const ChatView = observer(({
               aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
               className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-all ${
                 panelExpandido
-                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-2xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -221,7 +225,7 @@ export const ChatView = observer(({
                     conversacionesStore.cerrar(conv.id);
                     setMenuOpen(false);
                   }}
-                  className="text-xs text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                  className="text-xs text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
                   Cerrar conversación
                 </DropdownItem>
@@ -318,7 +322,7 @@ export const ChatView = observer(({
                     />
                   </div>
                   <div className="max-w-[85%] sm:max-w-md">
-                    <div className="rounded-2xl rounded-tl-sm bg-[#f4f5f7] px-4 py-3 text-sm text-gray-800 shadow-2xs dark:bg-white/[0.07] dark:text-white/90">
+                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 text-sm text-gray-800 shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
                       <p className="mb-1 text-xs font-semibold text-gray-900 dark:text-white">
                         {conv.contacto.nombre}
                       </p>
@@ -345,14 +349,14 @@ export const ChatView = observer(({
 
                   <div className="max-w-[85%] flex-1 sm:max-w-lg">
                     {/* Tarjeta de Trazabilidad / Intención IA */}
-                    <div className="rounded-xl border border-dashed border-violet-300/80 bg-violet-50/40 p-3 shadow-2xs dark:border-violet-700/60 dark:bg-violet-950/20">
+                    <div className="rounded-xl border border-dashed border-secondary-300/80 bg-secondary-50/40 p-3 shadow-theme-xs dark:border-secondary-700/60 dark:bg-secondary-950/20">
                       {/* Cabecera de la traza: Nombre del bot + Ojo con hora */}
                       <div className="mb-1.5 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-violet-900 dark:text-violet-200">
+                          <span className="text-xs font-semibold text-secondary-900 dark:text-secondary-200">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
+                          <span className="inline-flex items-center rounded-full bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium text-secondary-700 dark:bg-secondary-900/50 dark:text-secondary-300">
                             IA
                           </span>
                         </div>
@@ -378,7 +382,7 @@ export const ChatView = observer(({
                     </div>
 
                     {/* Conector punteado tipo codo hacia la burbuja */}
-                    <div className="flex items-center py-0.5 pl-4 text-violet-400 dark:text-violet-600">
+                    <div className="flex items-center py-0.5 pl-4 text-secondary-400 dark:text-secondary-600">
                       <svg
                         className="h-3.5 w-3.5 overflow-visible"
                         viewBox="0 0 16 16"
@@ -394,32 +398,32 @@ export const ChatView = observer(({
                     </div>
 
                     {/* Burbuja de respuesta del bot: lavanda suave */}
-                    <div className="rounded-2xl rounded-tl-sm border border-violet-200/70 bg-[#f4f2ff] px-4 py-3 text-sm text-gray-800 shadow-2xs dark:border-violet-800/40 dark:bg-violet-950/30 dark:text-violet-100">
+                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-sm text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
                       <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
 
                       {/* Acción interactiva si hay módulo conectado o pedido */}
                       {traza.accion ? (
-                        <div className="mt-3 flex items-center justify-between border-t border-violet-200/60 pt-2.5 dark:border-violet-800/40">
+                        <div className="mt-3 flex items-center justify-between border-t border-secondary-200/60 pt-2.5 dark:border-secondary-800/40">
                           {puedeIrModulo ? (
                             <button
                               type="button"
                               onClick={() => setVista(traza.modulo!)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-violet-200 bg-white px-2.5 py-1 text-xs font-semibold text-violet-700 shadow-2xs transition-colors hover:bg-violet-50 dark:border-violet-700 dark:bg-violet-900/60 dark:text-violet-200 dark:hover:bg-violet-800/60"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-secondary-200 dark:hover:bg-secondary-800/60"
                             >
                               <span>{traza.accion}</span>
                               <ArrowRightIcon className="h-3 w-3" />
                             </button>
                           ) : (
-                            <span className="text-xs font-medium text-violet-600 dark:text-violet-300">
+                            <span className="text-xs font-medium text-secondary-600 dark:text-secondary-300">
                               {traza.accion}
                             </span>
                           )}
-                          <span className="text-[11px] text-violet-400 dark:text-violet-400/80">
+                          <span className="text-[11px] text-secondary-400 dark:text-secondary-400/80">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
                       ) : (
-                        <p className="mt-1 text-right text-[11px] text-violet-400 dark:text-violet-400/80">
+                        <p className="mt-1 text-right text-[11px] text-secondary-400 dark:text-secondary-400/80">
                           {horaDe(m.timestamp)}
                         </p>
                       )}
@@ -429,14 +433,14 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo vibrante #465fff ──
+            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #15008B ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">
                 <div className="max-w-[80%] sm:max-w-md text-right">
-                  <div className="rounded-2xl rounded-tr-sm bg-[#465fff] px-4 py-3 text-left text-sm text-white shadow-xs">
+                  <div className="rounded-2xl rounded-tr-sm bg-secondary-600 px-4 py-3 text-left text-sm text-white shadow-theme-xs">
                     {/* Distintivo claro de Asesor Humano */}
                     <div className="mb-1 flex items-center justify-end gap-1.5 text-[11px] font-semibold text-white/90">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-300" />
                       <span>Asesor Humano</span>
                     </div>
                     <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
@@ -496,11 +500,21 @@ function TabContexto({
       role="tab"
       aria-selected={activo}
       onClick={onClick}
+      // ── La pestana ACTIVA va en el naranja de marca ──────────────────
+      //
+      // Estaba en `bg-gray-100 text-gray-900`: sobre la barra, la activa se
+      // leia como «la fila resaltada», no como «la que estas viendo». Y era
+      // incoherente con el resto del producto, que ya marca la seleccion en
+      // naranja (`elements/SegmentedControl` con su `tone="accent"` por
+      // defecto, las pildoras de filtro de `HistorialAtencionPage`, y ahora
+      // el conmutador de vistas de este mismo modulo).
+      //
+      // Se reutiliza `claseSegmentoActivo` de `@/pages/config-layout` en vez
+      // de escribir el par de clases otra vez: una pestaña-pildora y un
+      // segmento son la misma forma, y el color se declara una sola vez.
       className={
         "shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors " +
-        (activo
-          ? "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-white"
-          : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.04] dark:hover:text-gray-200")
+        (activo ? claseSegmentoActivo : claseSegmentoInactivo)
       }
     >
       {children}
@@ -525,7 +539,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Verificación de menú + [Catálogo de pedidos] + Validación operativa",
       tag: "+Pedidos",
       tagClass:
-        "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40",
+        "bg-success-50 text-success-700 border-success-200/80 dark:bg-success-950/40 dark:text-success-300 dark:border-success-800/40",
       modulo: "pedidos",
       accion: m.payload?.pedidoId ? `Ver pedido #${m.payload.pedidoId}` : "Ver catálogo de pedidos",
     };
@@ -538,7 +552,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Consulta de existencias + [Stock en tiempo real] + Validación de almacén",
       tag: "+Inventario",
       tagClass:
-        "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/40",
+        "bg-accent-50 text-accent-700 border-accent-200/80 dark:bg-accent-950/40 dark:text-accent-300 dark:border-accent-800/40",
       modulo: "inventario",
       accion: "Consultar en Inventario",
     };
@@ -555,7 +569,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Derivación asistida + [Mesa de ayuda] + Solicitud de handoff",
       tag: "+Handoff",
       tagClass:
-        "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40",
+        "bg-warning-50 text-warning-700 border-warning-200/80 dark:bg-warning-950/40 dark:text-warning-300 dark:border-warning-800/40",
     };
   }
 
@@ -565,7 +579,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
     flujo: "Atención inteligente + [Base de conocimiento] + Respuesta conversacional",
     tag: "+FAQ",
     tagClass:
-      "bg-violet-50 text-violet-700 border-violet-200/80 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-800/40",
+      "bg-secondary-50 text-secondary-700 border-secondary-200/80 dark:bg-secondary-950/40 dark:text-secondary-300 dark:border-secondary-800/40",
   };
 }
 
@@ -575,7 +589,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
 function BotAvatar() {
   return (
     <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10">
-      <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-violet-100 to-indigo-100 text-violet-700 shadow-2xs ring-1 ring-violet-200 dark:from-violet-950/60 dark:to-indigo-950/60 dark:text-violet-300 dark:ring-violet-800/50">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-secondary-100 to-secondary-100 text-secondary-700 shadow-theme-xs ring-1 ring-secondary-200 dark:from-secondary-950/60 dark:to-secondary-950/60 dark:text-secondary-300 dark:ring-secondary-800/50">
         <svg
           width="20"
           height="20"
@@ -594,7 +608,7 @@ function BotAvatar() {
         </svg>
       </div>
       <div
-        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-white shadow-xs ring-2 ring-white dark:ring-gray-900"
+        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-secondary-600 text-white shadow-theme-xs ring-2 ring-white dark:ring-gray-900"
         title="Agente IA de atención"
       >
         <svg

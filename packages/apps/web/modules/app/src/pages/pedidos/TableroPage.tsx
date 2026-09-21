@@ -190,12 +190,12 @@ const PedidoCard = observer(
     // Determinar tag visual suave según modalidad u origen
     const tagModalidad = () => {
       if (pedido.modalidad === "domicilio") {
-        return { label: "Delivery", bg: "bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300" };
+        return { label: "Delivery", bg: "bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-300" };
       }
       if (pedido.modalidad === "en_sitio") {
-        return { label: "En Mesa", bg: "bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300" };
+        return { label: "En Mesa", bg: "bg-secondary-50 text-secondary-600 dark:bg-secondary-900/30 dark:text-secondary-300" };
       }
-      return { label: "Pickup", bg: "bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300" };
+      return { label: "Pickup", bg: "bg-warning-50 text-warning-600 dark:bg-warning-900/30 dark:text-warning-300" };
     };
     const tag = tagModalidad();
 
@@ -231,19 +231,19 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-xs transition-all duration-200 hover:shadow-md hover:border-brand-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
           urgente
-            ? "border-rose-300 dark:border-rose-800"
+            ? "border-error-300 dark:border-error-800"
             : "border-gray-100 dark:border-gray-800"
         }`}
       >
         {/* Cabecera de la tarjeta: Título + Avatar del responsable / cliente */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm sm:text-base font-semibold text-[#1E293B] dark:text-white line-clamp-2 leading-snug">
+            <h3 className="text-sm sm:text-base font-semibold text-ink-title dark:text-white line-clamp-2 leading-snug">
               {pedido.items[0]?.nombre ? pedido.items[0].nombre : `Pedido ${pedido.numero}`}
             </h3>
-            <p className="mt-0.5 text-xs text-[#64748B] dark:text-gray-400 font-medium truncate">
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
               {pedido.numero} · {pedido.cliente}
             </p>
           </div>
@@ -252,14 +252,14 @@ const PedidoCard = observer(
             <img
               src={avatarUrl}
               alt={pedido.cliente}
-              className="size-7 sm:size-8 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 shadow-2xs"
+              className="size-7 sm:size-8 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 shadow-theme-xs"
             />
           </div>
         </div>
 
         {/* Descripción secundaria / notas */}
         {descripcionItems && (
-          <p className="mt-2.5 text-xs text-[#64748B] dark:text-gray-400 leading-relaxed line-clamp-2">
+          <p className="mt-2.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
             {descripcionItems}
           </p>
         )}
@@ -276,26 +276,26 @@ const PedidoCard = observer(
         )}
 
         {/* Metadatos inferiores: Fecha/Tiempo, Comentarios (items), Enlaces (chat), y Tag */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-[#94A3B8] dark:text-gray-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-gray-400 dark:text-gray-400">
           <div className="flex items-center gap-3 font-medium">
             <div className="flex items-center gap-1.5">
-              <Calendar className="size-3.5 text-[#94A3B8]" />
-              <span className="text-[11px] sm:text-xs text-[#475569] dark:text-gray-300">
+              <Calendar className="size-3.5 text-gray-400" />
+              <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
                 {fechaAmigable()}
               </span>
             </div>
 
             <div className="flex items-center gap-1">
-              <MessageSquare className="size-3.5 text-[#94A3B8]" />
-              <span className="text-[11px] text-[#64748B] dark:text-gray-400">
+              <MessageSquare className="size-3.5 text-gray-400" />
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">
                 {pedido.items.length}
               </span>
             </div>
 
             {pedido.direccionEntrega && (
               <div className="flex items-center gap-1" title={pedido.direccionEntrega.calle}>
-                <Paperclip className="size-3.5 text-[#94A3B8]" />
-                <span className="text-[11px] text-[#64748B] dark:text-gray-400">1</span>
+                <Paperclip className="size-3.5 text-gray-400" />
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">1</span>
               </div>
             )}
           </div>
@@ -317,7 +317,7 @@ const PedidoCard = observer(
                 <button
                   type="button"
                   onClick={handleAvanzar}
-                  className="rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+                  className="rounded-lg bg-brand-500 hover:bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
                 >
                   {pedidosStore.estadoLabel(siguiente)} →
                 </button>
@@ -327,7 +327,7 @@ const PedidoCard = observer(
                 <button
                   type="button"
                   onClick={onChat}
-                  className="flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 px-2.5 py-1.5 text-xs font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 rounded-lg border border-success-200 bg-success-50/70 hover:bg-success-100/80 px-2.5 py-1.5 text-xs font-medium text-success-700 dark:border-success-800 dark:bg-success-950/40 dark:text-success-300 transition-colors cursor-pointer"
                 >
                   <WhatsAppIcon />
                   <span>Chat</span>
@@ -339,7 +339,7 @@ const PedidoCard = observer(
               <button
                 type="button"
                 onClick={onCancelar}
-                className="text-[11px] font-medium text-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
+                className="text-[11px] font-medium text-error-500 hover:text-error-600 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -385,7 +385,7 @@ const DetalleModal = observer(
         {/* Encabezado: título + estado debajo. pr-12 reserva espacio para la X. */}
         <div className="mb-5 pr-12">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">{pedido.numero}</h2>
+            <h2 className="text-xl font-semibold text-ink-title dark:text-white/90">{pedido.numero}</h2>
             <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
               {pedidosStore.estadoLabel(pedido.estado)}
             </Badge>
@@ -454,7 +454,7 @@ const DetalleModal = observer(
                 )}
               </div>
             ) : (
-              <p className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+              <p className="mt-1 flex items-center gap-1 text-xs text-warning-600 dark:text-warning-400">
                 <AlertTriangleIcon className="h-3.5 w-3.5 shrink-0" />
                 Sin dirección registrada para este domicilio.
               </p>
@@ -559,7 +559,7 @@ const DetalleModal = observer(
             </div>
             <div>
               <span className="text-gray-400">Estado: </span>
-              <span className={pedido.pagado ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+              <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
                 {pedido.pagado ? "Pagado" : "Pendiente de pago"}
               </span>
             </div>
@@ -573,7 +573,7 @@ const DetalleModal = observer(
                   ${pedido.pagaCon.toLocaleString()}
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between font-semibold text-emerald-600 dark:text-emerald-400">
+              <div className="mt-1 flex items-center justify-between font-semibold text-success-600 dark:text-success-400">
                 <span>Cambio / Vuelto a entregar:</span>
                 <span>${cambio.toLocaleString()}</span>
               </div>
@@ -590,7 +590,7 @@ const DetalleModal = observer(
 
         <div className="flex items-center justify-end gap-3">
           {puedeEscribirCliente() && (
-            <Button size="sm" variant="ghost" startIcon={<WhatsAppIcon />} onClick={onChat} className="!text-[#17b363] hover:!bg-[#17b363]/10">
+            <Button size="sm" variant="ghost" startIcon={<WhatsAppIcon />} onClick={onChat} className="!text-[#25D366] hover:!bg-[#25D366]/10">
               WhatsApp
             </Button>
           )}
@@ -638,7 +638,7 @@ const CancelarModal = observer(
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">Cancelar {pedido.numero}</h2>
+            <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">Cancelar {pedido.numero}</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Esta acción es irreversible. El pedido pasará a <strong>Cancelado</strong>.
             </p>
@@ -690,7 +690,7 @@ const EntregaModal = observer(
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-white/90">Marcar como entregado</h2>
+            <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">Marcar como entregado</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {pedido.numero} · {pedido.cliente}. Al entregar, el pedido sale del tablero y pasa al historial.
             </p>
@@ -833,13 +833,13 @@ const ProgramadosSection = observer(
     const restantes = programados.length - visibles.length;
 
     return (
-      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-2xs dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-gray-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Próximos programados</h2>
+            <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Próximos programados</h2>
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               {programados.length}
             </span>
@@ -916,7 +916,7 @@ const ProgramadosModal = observer(
     return (
       <Modal isOpen onClose={onClose} className="max-w-3xl p-6 sm:p-8">
         <div className="mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">Pedidos programados</h2>
+          <h2 className="text-xl font-semibold text-ink-title dark:text-white/90">Pedidos programados</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {pedidosStore.programados.length} en total · ordenados por proximidad
           </p>
@@ -1040,7 +1040,7 @@ const AccionesMenu = observer(
               <button
                 type="button"
                 onClick={run(() => onChat(pedido.id))}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#17b363] hover:bg-[#17b363]/10"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#25D366] hover:bg-[#25D366]/10"
               >
                 <WhatsAppIcon />
                 Abrir WhatsApp
@@ -1194,7 +1194,7 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
           className={
             "flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer select-none whitespace-nowrap " +
             (vista === o.id
-              ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white"
+              ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
               : "text-gray-500 hover:text-gray-700 dark:text-gray-400")
           }
           aria-pressed={vista === o.id}
@@ -1378,13 +1378,13 @@ export const TableroPage = observer(() => {
       {/* ── BARRA SUPERIOR DE FILTROS Y ACCIONES (Idéntica a la Maqueta) ── */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between min-w-0">
         {/* Pestañas / Pills agrupadas con contador en badge suave */}
-        <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-[#F8FAFC] dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-gray-50 dark:bg-gray-800/40 p-1.5 border border-gray-200/70 dark:border-gray-800/60 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-w-0">
           <button
             type="button"
             onClick={() => setColumnaFiltroActiva("all")}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition-all cursor-pointer select-none whitespace-nowrap shrink-0 ${
               columnaFiltroActiva === "all"
-                ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white"
+                ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
                 : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             }`}
           >
@@ -1392,7 +1392,7 @@ export const TableroPage = observer(() => {
             <span
               className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                 columnaFiltroActiva === "all"
-                  ? "bg-[#EEF2FF] text-[#4F46E5] dark:bg-indigo-950 dark:text-indigo-400"
+                  ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950 dark:text-secondary-400"
                   : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
               }`}
             >
@@ -1410,7 +1410,7 @@ export const TableroPage = observer(() => {
                 onClick={() => setColumnaFiltroActiva(activa ? "all" : estado)}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
                   activa
-                    ? "bg-white text-gray-900 shadow-2xs dark:bg-gray-900 dark:text-white font-semibold"
+                    ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 }`}
               >
@@ -1418,7 +1418,7 @@ export const TableroPage = observer(() => {
                 <span
                   className={`flex size-5.5 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
                     activa
-                      ? "bg-[#EEF2FF] text-[#4F46E5] dark:bg-indigo-950 dark:text-indigo-400 font-bold"
+                      ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950 dark:text-secondary-400 font-bold"
                       : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   }`}
                 >
@@ -1439,7 +1439,7 @@ export const TableroPage = observer(() => {
             <button
               type="button"
               onClick={() => setMenuFilterOpen((v) => !v)}
-              className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap"
+              className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap"
             >
               <SlidersHorizontal className="size-4 text-gray-600 dark:text-gray-300 shrink-0" />
               <span>Filter & Sort</span>
@@ -1447,7 +1447,7 @@ export const TableroPage = observer(() => {
 
             {menuFilterOpen && (
               <div
-                className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-100 bg-white p-2 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+                className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-100 bg-white p-2 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
                 onClick={(e) => e.stopPropagation()}
               >
                 <p className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
@@ -1466,7 +1466,7 @@ export const TableroPage = observer(() => {
                     }}
                     className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
                       criterioOrden === op.id
-                        ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400 font-semibold"
+                        ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400 font-semibold"
                         : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -1482,7 +1482,7 @@ export const TableroPage = observer(() => {
           <button
             type="button"
             onClick={() => navigate("/pedidos/crear")}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] px-4 text-xs sm:text-sm font-semibold text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <span>Add New Task</span>
             <Plus className="size-4 stroke-[2.5] shrink-0" />
@@ -1532,15 +1532,15 @@ export const TableroPage = observer(() => {
                     pedidosStore.moverAColumna(id, estado);
                   }
                 }}
-                className="flex flex-col rounded-3xl bg-[#F8FAFC]/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 min-h-[480px] transition-colors"
+                className="flex flex-col rounded-3xl bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 min-h-[480px] transition-colors"
               >
                 {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos ... */}
                 <div className="mb-4 flex items-center justify-between px-1.5 pt-1 relative">
                   <div className="flex items-center gap-2.5">
-                    <h2 className="text-sm sm:text-base font-bold text-[#1E293B] dark:text-white">
+                    <h2 className="text-sm sm:text-base font-bold text-ink-title dark:text-white">
                       {pedidosStore.estadoLabel(estado)}
                     </h2>
-                    <span className="flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-gray-700 shadow-2xs border border-gray-100 dark:border-gray-700/80 dark:bg-gray-800 dark:text-gray-200">
+                    <span className="flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-gray-700 shadow-theme-xs border border-gray-100 dark:border-gray-700/80 dark:bg-gray-800 dark:text-gray-200">
                       {items.length}
                     </span>
                   </div>
@@ -1560,7 +1560,7 @@ export const TableroPage = observer(() => {
 
                     {menuColumnaId === estado && (
                       <div
-                        className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl dark:border-gray-800 dark:bg-gray-900"
+                        className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button
@@ -1620,9 +1620,9 @@ export const TableroPage = observer(() => {
                             setMenuColumnaId(null);
                             pedidosStore.eliminarColumna(estado);
                           }}
-                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 cursor-pointer"
+                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer"
                         >
-                          <Trash2 className="size-3.5 text-rose-500" />
+                          <Trash2 className="size-3.5 text-error-500" />
                           <span>Eliminar columna</span>
                         </button>
                       </div>
@@ -1720,7 +1720,7 @@ export const TableroPage = observer(() => {
       {/* Modal Crear Columna */}
       {modalNuevaColumna && (
         <Modal isOpen onClose={() => setModalNuevaColumna(false)} className="max-w-md p-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Nueva Columna</h3>
+          <h3 className="text-lg font-bold text-ink-title dark:text-white">Nueva Columna</h3>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Define un nuevo estado para organizar el flujo de trabajo en el tablero.
           </p>
@@ -1737,7 +1737,7 @@ export const TableroPage = observer(() => {
                 }
               }}
               placeholder="Ej: En Control de Calidad, Empacando..."
-              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:text-white"
+              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 dark:border-gray-700 dark:text-white"
             />
           </div>
           <div className="mt-5 flex justify-end gap-2.5">
@@ -1757,7 +1757,7 @@ export const TableroPage = observer(() => {
                   setModalNuevaColumna(false);
                 }
               }}
-              className="rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+              className="rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
             >
               Crear columna
             </button>
@@ -1768,7 +1768,7 @@ export const TableroPage = observer(() => {
       {/* Modal Renombrar Columna */}
       {modalRenombrar && (
         <Modal isOpen onClose={() => setModalRenombrar(null)} className="max-w-md p-6">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Renombrar Columna</h3>
+          <h3 className="text-lg font-bold text-ink-title dark:text-white">Renombrar Columna</h3>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Cambia el nombre de la columna "{modalRenombrar.label}".
           </p>
@@ -1785,7 +1785,7 @@ export const TableroPage = observer(() => {
                 }
               }}
               placeholder="Nuevo nombre de columna..."
-              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-gray-700 dark:text-white"
+              className="h-10 w-full rounded-xl border border-gray-300 bg-transparent px-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:ring-2 focus:ring-secondary-500/20 dark:border-gray-700 dark:text-white"
             />
           </div>
           <div className="mt-5 flex justify-end gap-2.5">
@@ -1805,7 +1805,7 @@ export const TableroPage = observer(() => {
                   setModalRenombrar(null);
                 }
               }}
-              className="rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-colors cursor-pointer"
+              className="rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 py-2 text-xs font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
             >
               Guardar
             </button>

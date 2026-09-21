@@ -15,18 +15,18 @@ const ChannelCard: React.FC<{ channel: SupportChannel }> = ({ channel }) => {
   const { icon: Icon, title, description, action, to, href } = channel;
 
   const className =
-    "group flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 text-left transition-colors hover:border-public-500/50 hover:bg-public-500/[0.04] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-public-500/50 dark:hover:bg-public-500/[0.06]";
+    "group flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 text-left transition-colors hover:border-brand-500/50 hover:bg-brand-500/[0.04] dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500/50 dark:hover:bg-brand-500/[0.06]";
 
   const body = (
     <>
-      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-public-500/10 text-public-700 transition-colors group-hover:bg-public-500 group-hover:text-white dark:text-public-500">
+      <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-500/10 text-brand-700 transition-colors group-hover:bg-brand-500 group-hover:text-white dark:text-brand-500">
         <Icon className="h-5 w-5" strokeWidth={2} />
       </span>
-      <span className="text-base font-bold text-secondary-600 dark:text-white">{title}</span>
+      <span className="text-base font-bold text-gray-900 dark:text-white">{title}</span>
       <span className="text-theme-sm leading-relaxed text-gray-500 dark:text-gray-400">
         {description}
       </span>
-      <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-theme-sm font-semibold text-public-700 dark:text-public-500">
+      <span className="mt-auto inline-flex items-center gap-1.5 pt-1 text-theme-sm font-semibold text-brand-700 dark:text-brand-500">
         {action}
         <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
       </span>
@@ -59,7 +59,7 @@ export const SupportChannels: React.FC = () => (
   <section aria-labelledby="support-channels">
     <h2
       id="support-channels"
-      className="text-2xl font-bold tracking-tight text-secondary-600 dark:text-white"
+      className="text-2xl font-bold tracking-tight text-ink-title dark:text-white"
     >
       Canales de contacto
     </h2>

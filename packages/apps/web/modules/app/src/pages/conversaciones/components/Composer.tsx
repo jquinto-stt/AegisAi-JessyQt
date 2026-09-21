@@ -121,7 +121,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             type="submit"
             disabled={!puedeEnviar}
             title="Enviar mensaje"
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#465fff] text-white shadow-xs transition-colors hover:bg-[#3b51e6] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary-600 text-white shadow-theme-xs transition-colors hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperPlaneIcon className="h-4 w-4 fill-current" />
           </button>

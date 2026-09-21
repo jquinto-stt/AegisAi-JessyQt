@@ -22,7 +22,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
   noCard = false,
 }) => {
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 xl:flex">
+    <div className="necto-lienzo min-h-screen xl:flex">
       {sidebar}
       <Backdrop />
       <div
@@ -42,7 +42,7 @@ export const BaseAppShell: React.FC<BaseAppShellProps> = observer(({
               {children}
             </div>
           ) : (
-            <div className="min-h-full rounded-2xl bg-white p-6 shadow-2xs dark:bg-gray-900">
+            <div className="necto-panel animate-aparecer min-h-full p-6">
               {children}
             </div>
           )}

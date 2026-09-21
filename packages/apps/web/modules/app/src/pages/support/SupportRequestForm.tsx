@@ -88,7 +88,7 @@ export const SupportRequestForm: React.FC = () => {
     <section aria-labelledby="support-request" id="solicitud" className="scroll-mt-24">
       <h2
         id="support-request"
-        className="text-2xl font-bold tracking-tight text-secondary-600 dark:text-white"
+        className="text-2xl font-bold tracking-tight text-ink-title dark:text-white"
       >
         Cuéntanos qué necesitas
       </h2>
@@ -228,15 +228,15 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
   return (
     <div
       data-support-sent
-      className="mt-7 rounded-2xl border border-public-500/40 bg-public-500/[0.06] p-6 sm:p-8"
+      className="mt-7 rounded-2xl border border-brand-500/40 bg-brand-500/[0.06] p-6 sm:p-8"
     >
       <div className="flex items-start gap-4">
-        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-public-500 text-white">
+        <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-500 text-white">
           <CheckCircle2 className="h-5.5 w-5.5" />
         </span>
 
         <div className="min-w-0 flex-1 space-y-4">
-          <h3 className="text-lg font-bold text-secondary-600 dark:text-white">
+          <h3 className="text-lg font-bold text-ink-title dark:text-white">
             Solicitud registrada
           </h3>
 
@@ -244,7 +244,7 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
             Tu referencia es{" "}
             <span
               data-support-reference
-              className="font-mono text-theme-sm font-bold text-public-700 dark:text-public-500"
+              className="font-mono text-theme-sm font-bold text-brand-700 dark:text-brand-500"
             >
               {request.reference}
             </span>

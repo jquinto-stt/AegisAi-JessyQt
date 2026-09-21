@@ -341,23 +341,30 @@ export const ConfigPage = observer(() => {
         </div>
       )}
 
-      {/*
-        El formulario entero es un <fieldset>: deshabilitarlo desactiva
-        NATIVAMENTE todos los inputs, switches y textareas de dentro sin cablear
-        `disabled` en cada control. `min-w-0` neutraliza el `min-inline-size` por
-        defecto del fieldset, que rompería el layout de dos columnas.
-      */}
-      <fieldset disabled={soloLectura} className="m-0 min-w-0 border-0 p-0">
-        <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-          {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-          <ConfigSectionNav
-            grupos={grupos}
-            activa={seccion}
-            onSeleccionar={(k) => setSeccion(k as SeccionCanal)}
-            ariaLabel="Secciones de configuración del canal"
-          />
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        {/* ═══════════ Navegación vertical de secciones ═══════════ */}
+        {/* Va FUERA del `<fieldset>` a propósito: navegar entre secciones no es
+            editar. Metido dentro, `fieldset disabled` desactiva sus botones y en
+            modo solo lectura el usuario no podría ni cambiar de sección para
+            consultar. */}
+        <ConfigSectionNav
+          grupos={grupos}
+          activa={seccion}
+          onSeleccionar={(k) => setSeccion(k as SeccionCanal)}
+          ariaLabel="Secciones de configuración del canal"
+        />
 
-          {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
+        {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
+        {/*
+          El panel es un <fieldset>: deshabilitarlo desactiva NATIVAMENTE todos
+          los inputs, switches y textareas de dentro sin cablear `disabled` en
+          cada control. `min-w-0` neutraliza el `min-inline-size` por defecto del
+          fieldset, que rompería el layout de dos columnas.
+
+          Envuelve SOLO el panel, NO la navegación: `fieldset disabled` también
+          desactiva los `<button>` de dentro, y la nav es navegación, no edición.
+        */}
+        <fieldset disabled={soloLectura} className="m-0 min-w-0 flex-1 border-0 p-0">
           {/* El `key={seccion}` es lo que dispara el fundido: al cambiar de
               sección React desmonta el panel entero y monta uno nuevo, y el
               nuevo reproduce `animate-aparecer`. Sin la key reutilizaría el
@@ -528,17 +535,17 @@ export const ConfigPage = observer(() => {
                         return (
                           <div
                             key={id}
-                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
+                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-theme-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
                           >
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                               <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-xs dark:bg-brand-500/10 dark:text-brand-400">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
                                   <CartIcon className="h-6 w-6" />
                                 </div>
 
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2.5">
-                                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                    <h3 className="text-base font-semibold text-ink-title dark:text-white">
                                       Módulo de Pedidos
                                     </h3>
                                     <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
@@ -583,7 +590,7 @@ export const ConfigPage = observer(() => {
                                     key={capacidad}
                                     className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/70 px-2.5 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
                                   >
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                                    <CheckCircleIcon className="h-3.5 w-3.5 text-success-500 shrink-0" />
                                     {capacidad}
                                   </span>
                                 ))}
@@ -615,23 +622,23 @@ export const ConfigPage = observer(() => {
                         return (
                           <div
                             key={id}
-                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
+                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-theme-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
                           >
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                               <div className="flex items-start gap-4">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 shadow-xs dark:bg-amber-500/10 dark:text-amber-400">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning-50 text-warning-600 shadow-theme-xs dark:bg-warning-500/10 dark:text-warning-400">
                                   <BoxCubeIcon className="h-6 w-6" />
                                 </div>
 
                                 <div className="min-w-0">
                                   <div className="flex flex-wrap items-center gap-2.5">
-                                    <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                    <h3 className="text-base font-semibold text-ink-title dark:text-white">
                                       Módulo de Inventario
                                     </h3>
                                     <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
                                       {ESTADO_INTEGRACION_LABEL[estado]}
                                     </Badge>
-                                    <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                    <span className="rounded-md bg-warning-50 px-2 py-0.5 text-[11px] font-medium text-warning-700 dark:bg-warning-500/10 dark:text-warning-300">
                                       En desarrollo · Próximamente
                                     </span>
                                   </div>
@@ -1064,8 +1071,8 @@ export const ConfigPage = observer(() => {
                 </Card>
               )}
           </ConfigShell>
-        </div>
-      </fieldset>
+        </fieldset>
+      </div>
     </>
   );
 });

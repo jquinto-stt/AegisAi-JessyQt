@@ -10,7 +10,7 @@ import { cn } from "@/utils";
  * - `"danger"` — Red (`text-error-500`) — destructive or warning navigation
  * - `"warning"` — Orange (`text-warning-500`) — caution, attention-needed links
  * - `"gray"` — Gray (`text-gray-500`) — neutral, secondary navigation *(default)*
- * - `"blue-light"` — Light blue (`text-blue-light-500`) — informational links
+ * - `"accent"` — Celeste (`text-accent-500`) — informational links
  * - `"dark"` — Dark gray (`text-gray-800`) — high-contrast, prominent links
  * @kgId 765733ff037f
  */
@@ -21,7 +21,7 @@ export type LinkVariant =
   | "danger"
   | "warning"
   | "gray"
-  | "blue-light"
+  | "accent"
   | "dark";
 
 /**
@@ -211,7 +211,7 @@ const Link: React.FC<LinkProps> = ({
     success: "text-success-500",
     danger: "text-error-500",
     warning: "text-warning-500",
-    "blue-light": "text-blue-light-500",
+    "accent": "text-accent-500",
     gray: "text-gray-500 dark:text-gray-400",
     dark: "text-gray-800 dark:text-white/90",
   };

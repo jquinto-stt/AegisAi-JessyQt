@@ -97,10 +97,10 @@ export const OnboardingModulosPage = observer(() => {
             <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
               Paso 3 de 3 — Módulos · {org?.nombre || "Mi Organización"}
             </span>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
               Elige los módulos para tu negocio
             </h1>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
               Necto es modular. Puedes agregar Pedidos ahora para gestionar tus ventas y entregas, o explorar tu organización primero.
             </p>
           </div>
@@ -118,7 +118,7 @@ export const OnboardingModulosPage = observer(() => {
                 key={modulo.id}
                 className={
                   modulo.disponible
-                    ? "flex flex-col justify-between rounded-2xl border border-brand-500/40 bg-white p-5 shadow-sm hover:border-brand-500 hover:shadow-md transition-all dark:border-brand-500/30 dark:bg-gray-800/80"
+                    ? "flex flex-col justify-between rounded-2xl border border-brand-500/40 bg-white p-5 shadow-theme-sm hover:border-brand-500 hover:shadow-theme-md transition-all dark:border-brand-500/30 dark:bg-gray-800/80"
                     : "flex flex-col justify-between rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 opacity-70 dark:border-gray-800 dark:bg-gray-800/40"
                 }
               >
@@ -127,7 +127,7 @@ export const OnboardingModulosPage = observer(() => {
                     <div
                       className={
                         modulo.disponible
-                          ? "flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white shadow-md shadow-brand-500/20"
+                          ? "flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 text-white shadow-theme-md shadow-brand-500/20"
                           : "flex h-11 w-11 items-center justify-center rounded-xl bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
                       }
                     >
@@ -147,7 +147,7 @@ export const OnboardingModulosPage = observer(() => {
                   <h3
                     className={
                       modulo.disponible
-                        ? "mt-3 text-base font-bold text-gray-900 dark:text-white"
+                        ? "mt-3 text-base font-bold text-ink-title dark:text-white"
                         : "mt-3 text-base font-bold text-gray-600 dark:text-gray-300"
                     }
                   >
@@ -184,7 +184,7 @@ export const OnboardingModulosPage = observer(() => {
                     <Button
                       size="sm"
                       onClick={() => navigate(PASO_ONBOARDING[modulo.id]!)}
-                      className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-brand-500/20 cursor-pointer"
+                      className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-sm shadow-brand-500/20 cursor-pointer"
                     >
                       Agregar este módulo →
                     </Button>

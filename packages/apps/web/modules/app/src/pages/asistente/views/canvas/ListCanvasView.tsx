@@ -17,14 +17,14 @@ export const ListCanvasView = ({ list }: ListCanvasViewProps) => {
         {items.map((item, idx) => (
           <div
             key={idx}
-            className="flex items-start gap-3.5 rounded-xl border border-gray-200 bg-gray-50/50 p-4 transition-all hover:bg-white hover:shadow-2xs dark:border-gray-800 dark:bg-gray-800/30 dark:hover:bg-gray-800/70"
+            className="flex items-start gap-3.5 rounded-xl border border-gray-200 bg-gray-50/50 p-4 transition-all hover:bg-white hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-800/30 dark:hover:bg-gray-800/70"
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-semibold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
               {idx + 1}
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                <h4 className="text-sm font-semibold text-ink-title dark:text-white truncate">
                   {item.primary}
                 </h4>
                 {item.trailing && (

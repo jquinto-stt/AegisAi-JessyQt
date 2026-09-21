@@ -369,7 +369,7 @@ export const CrearPedidoPage = observer(() => {
       <>
         <PageMeta title="Pedido creado" description="Pedido creado con éxito" />
         <div className="mx-auto max-w-lg">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex flex-col items-center gap-3 bg-success-50 px-8 py-8 text-center dark:bg-success-500/10">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-500 text-white">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-7 w-7">
@@ -459,7 +459,7 @@ export const CrearPedidoPage = observer(() => {
           </svg>
         </span>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Crear pedido</h1>
+          <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Crear pedido</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Registra un pedido manualmente. El bot de WhatsApp usa este mismo contrato.
           </p>
@@ -495,10 +495,10 @@ export const CrearPedidoPage = observer(() => {
         {/* ══ Columna izquierda: formulario por pasos ══ */}
         <div className="space-y-6">
           {/* Paso 1 · Cliente */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge n={1} />
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Datos del cliente</h2>
+              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Datos del cliente</h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
@@ -527,10 +527,10 @@ export const CrearPedidoPage = observer(() => {
           </section>
 
           {/* Paso 2 · Modalidad (tarjetas seleccionables) */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge n={2} />
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Modalidad de entrega</h2>
+              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Modalidad de entrega</h2>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {modalidadesDisponibles.map((m) => {
@@ -559,10 +559,10 @@ export const CrearPedidoPage = observer(() => {
 
           {/* Paso 3 (Condicional) · Dirección de entrega (si es domicilio) */}
           {modalidad === "domicilio" && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
               <div className="mb-4 flex items-center gap-2">
                 <StepBadge n={3} />
-                <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Dirección y despacho</h2>
+                <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Dirección y despacho</h2>
               </div>
 
               {direccionesGuardadas.length > 0 && (
@@ -667,10 +667,10 @@ export const CrearPedidoPage = observer(() => {
 
           {/* Paso 3 (Condicional) · Consumo en salón / Mesa (si es en_sitio y tiene table_service) */}
           {modalidad === "en_sitio" && pedidosStore.tieneCapacidad("table_service") && (
-            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
               <div className="mb-4 flex items-center gap-2">
                 <StepBadge n={3} />
-                <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">
                   Ubicación en salón / Mesa
                 </h2>
               </div>
@@ -690,7 +690,7 @@ export const CrearPedidoPage = observer(() => {
           )}
 
           {/* Paso · Items */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             {(() => {
               const perfilActivo = pedidosStore.config.perfilComercial ?? "food";
               const perfilPreset = BUSINESS_PROFILES[perfilActivo] ?? BUSINESS_PROFILES.food;
@@ -704,7 +704,7 @@ export const CrearPedidoPage = observer(() => {
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <StepBadge n={stepItems} />
-                      <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                      <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">
                         {perfilPreset.labels.itemPlural}
                       </h2>
                     </div>
@@ -795,7 +795,7 @@ export const CrearPedidoPage = observer(() => {
                                     onClick={() => setItem(idx, { variante: v })}
                                     className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-all ${
                                       selected
-                                        ? "bg-brand-500 text-white shadow-2xs"
+                                        ? "bg-brand-500 text-white shadow-theme-xs"
                                         : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
                                     }`}
                                   >
@@ -820,7 +820,7 @@ export const CrearPedidoPage = observer(() => {
           </section>
 
           {/* Paso · Método de pago */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge
                 n={
@@ -830,7 +830,7 @@ export const CrearPedidoPage = observer(() => {
                     : 4
                 }
               />
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Método de pago</h2>
+              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Método de pago</h2>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
@@ -899,10 +899,10 @@ export const CrearPedidoPage = observer(() => {
           </section>
 
           {/* Paso · Notas + programación */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="mb-4 flex items-center gap-2">
               <StepBadge n={modalidad === "domicilio" ? 6 : 5} />
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Detalles finales</h2>
+              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Detalles finales</h2>
             </div>
 
             <div>
@@ -971,9 +971,9 @@ export const CrearPedidoPage = observer(() => {
 
         {/* ══ Columna derecha: resumen en vivo (sticky) ══ */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
-          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs dark:border-gray-800 dark:bg-gray-900">
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-              <h2 className="text-sm font-semibold text-gray-800 dark:text-white/90">Resumen del pedido</h2>
+              <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Resumen del pedido</h2>
             </div>
 
             <div className="space-y-4 px-5 py-5">

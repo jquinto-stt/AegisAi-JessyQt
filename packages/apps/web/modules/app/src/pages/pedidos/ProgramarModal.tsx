@@ -116,7 +116,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
     <Modal isOpen onClose={onClose} className="max-w-4xl p-6 sm:p-8">
       {/* Encabezado */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white/90">Programar pedido</h2>
+        <h2 className="text-2xl font-bold text-ink-title dark:text-white/90">Programar pedido</h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Elige el día y luego la hora de activación.
         </p>
@@ -128,7 +128,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
           <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
             {/* Nav de mes */}
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">{MESES[month]} {year}</h3>
+              <h3 className="text-lg font-semibold text-ink-title dark:text-white/90">{MESES[month]} {year}</h3>
               <div className="flex gap-2">
                 {/* El nombre accesible va como HIJO, no como `aria-label`: el
                     `Button` del catálogo tiene la interfaz de props cerrada y no
@@ -201,7 +201,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
         {/* Panel del día seleccionado */}
         <div className="lg:col-span-1">
           <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h3 className="text-sm font-semibold capitalize text-gray-800 dark:text-white/90">{fechaLegible(selected)}</h3>
+            <h3 className="text-sm font-semibold capitalize text-ink-title dark:text-white/90">{fechaLegible(selected)}</h3>
             <p className="mt-0.5 text-xs text-gray-400">
               {programadosDia.length} {programadosDia.length === 1 ? "pedido programado" : "pedidos programados"}
             </p>

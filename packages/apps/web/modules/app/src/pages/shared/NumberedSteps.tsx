@@ -32,7 +32,7 @@ interface NumberedStepsProps {
  */
 export const NumberedSteps: React.FC<NumberedStepsProps> = ({ id, heading, steps }) => (
   <section aria-labelledby={id}>
-    <h2 id={id} className="text-2xl font-bold tracking-tight text-secondary-600 dark:text-white">
+    <h2 id={id} className="text-2xl font-bold tracking-tight text-ink-title dark:text-white">
       {heading}
     </h2>
 
@@ -50,12 +50,12 @@ export const NumberedSteps: React.FC<NumberedStepsProps> = ({ id, heading, steps
               />
             )}
 
-            <span className="relative z-10 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-success-500 text-theme-sm font-bold text-white shadow-xs">
+            <span className="relative z-10 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-success-500 text-theme-sm font-bold text-white shadow-theme-xs">
               {step.num}
             </span>
 
             <div className="min-w-0 space-y-1.5 pt-0.5">
-              <h3 className="text-base font-bold text-secondary-600 dark:text-white">
+              <h3 className="text-base font-bold text-ink-title dark:text-white">
                 {step.title}
               </h3>
               <p className="max-w-2xl text-theme-sm leading-relaxed text-gray-500 dark:text-gray-400">

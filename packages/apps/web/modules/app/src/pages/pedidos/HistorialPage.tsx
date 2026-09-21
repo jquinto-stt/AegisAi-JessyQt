@@ -136,7 +136,7 @@ const AccionesMenu = observer(
                     onClick={run(() =>
                       abrirConversacionDe(pedido.telefono, navigate),
                     )}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#17b363] hover:bg-[#17b363]/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-[#25D366] hover:bg-[#25D366]/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                   >
                     <WhatsAppIcon />
                     Abrir conversación
@@ -312,7 +312,7 @@ const HeatmapActividad = observer(
       {/* Encabezado: título + selector de rango + leyenda */}
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">Actividad diaria</h3>
+          <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">Actividad diaria</h3>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
             <span className="font-medium text-brand-600 dark:text-brand-400">Simulación anual</span>
             {" · "}
@@ -464,7 +464,7 @@ export const HistorialPage = observer(() => {
       <PageMeta title="Historial de pedidos" description="Pedidos entregados y cancelados" />
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">Historial</h1>
+        <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Historial</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Pedidos ya cerrados: entregados y cancelados.
         </p>
@@ -631,7 +631,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
       {/* Encabezado: título + estado debajo. pr-12 reserva espacio para la X. */}
       <div className="mb-5 pr-12">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">{pedido.numero}</h2>
+          <h2 className="text-xl font-semibold text-ink-title dark:text-white/90">{pedido.numero}</h2>
           <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="sm">
             {pedidosStore.estadoLabel(pedido.estado)}
           </Badge>
@@ -688,7 +688,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
               )}
             </div>
           ) : (
-            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <p className="mt-1 flex items-center gap-1 text-xs text-warning-600 dark:text-warning-400">
               <AlertTriangleIcon className="h-3.5 w-3.5 shrink-0" />
               Sin dirección registrada.
             </p>
@@ -751,7 +751,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
           </div>
           <div>
             <span className="text-gray-400">Estado: </span>
-            <span className={pedido.pagado ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+            <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
               {pedido.pagado ? "Pagado" : "Pendiente"}
             </span>
           </div>
@@ -759,7 +759,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
         {pedido.metodoPago === "efectivo" && pedido.pagaCon !== undefined && (
           <div className="mt-2 flex items-center justify-between border-t border-gray-200/60 pt-2 text-gray-600 dark:border-gray-800 dark:text-gray-400">
             <span>Abonó con: ${pedido.pagaCon.toLocaleString()}</span>
-            {cambio > 0 && <span className="font-semibold text-emerald-600">Cambio: ${cambio.toLocaleString()}</span>}
+            {cambio > 0 && <span className="font-semibold text-success-600">Cambio: ${cambio.toLocaleString()}</span>}
           </div>
         )}
       </div>

@@ -10,7 +10,7 @@ export default function ResetPasswordForm() {
     <div className="flex flex-col flex-1 w-full lg:w-1/2">
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6">
         <div className="mb-5 sm:mb-8">
-          <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">Olvidaste tu contrasena?</h1>
+          <h1 className="mb-2 font-semibold text-ink-title text-title-sm dark:text-white/90 sm:text-title-md">Olvidaste tu contrasena?</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Ingresa el correo electronico asociado a tu cuenta y te enviaremos un enlace para recuperar tu contrasena.
           </p>

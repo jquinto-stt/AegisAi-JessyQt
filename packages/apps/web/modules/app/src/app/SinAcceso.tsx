@@ -30,10 +30,10 @@ export const SinAcceso = ({ titulo, mensaje }: SinAccesoProps) => {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-      <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-orange-400">
+      <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
         <LockIcon />
       </span>
-      <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">{titulo}</h2>
+      <h2 className="text-xl font-bold text-ink-title dark:text-white/90">{titulo}</h2>
       <p className="mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">{mensaje}</p>
       <Button size="sm" className="mt-6" onClick={() => navigate(sessionStore.homePathActual)}>
         Volver al inicio

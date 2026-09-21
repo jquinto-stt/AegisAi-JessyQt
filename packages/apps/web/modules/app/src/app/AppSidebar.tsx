@@ -58,11 +58,27 @@ const TOOLTIP_LANZADOR = "Volver al selector de módulos";
  */
 const Logo = () => (
   <Link to={RUTA_LANZADOR} className="flex items-center">
+    {/*
+      Dos archivos, no uno: el lockup lleva «grow together» en índigo (#15008B),
+      que sobre el panel oscuro (`gray-900`, #1A1A1A) es prácticamente invisible.
+      CSS no puede repintar el interior de un `<img>`, así que el cambio se hace
+      con `dark:hidden` / `dark:block` y la caja queda idéntica en los dos temas.
+
+      `h-8` y no `h-5`: el lockup del manual es APILADO —wordmark arriba,
+      «grow together» debajo—, así que la altura del archivo se reparte entre
+      los dos bloques. A `h-5` el wordmark quedaba en ~10 px y no se leía.
+    */}
     <img
       src="/images/logo/necto-full.svg"
       alt="NECTO"
       title={TOOLTIP_LANZADOR}
-      className="h-5 w-auto"
+      className="h-8 w-auto dark:hidden"
+    />
+    <img
+      src="/images/logo/necto-full-white.svg"
+      alt="NECTO"
+      title={TOOLTIP_LANZADOR}
+      className="hidden h-8 w-auto dark:block"
     />
   </Link>
 );
@@ -163,7 +179,7 @@ const SimulacionBanner = observer(() => {
     <div className="mb-4 rounded-lg border border-warning-300 bg-warning-50 p-3 dark:border-warning-500/40 dark:bg-warning-500/10">
       {showExpanded ? (
         <>
-          <p className="text-xs font-semibold uppercase tracking-wider text-warning-600 dark:text-orange-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-warning-600 dark:text-warning-400">
             Viendo como
           </p>
           <p className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-white/90">{rol}</p>
@@ -172,7 +188,7 @@ const SimulacionBanner = observer(() => {
           )}
           <button
             onClick={salir}
-            className="mt-2 text-xs font-medium text-warning-600 underline hover:text-warning-700 dark:text-orange-400"
+            className="mt-2 text-xs font-medium text-warning-600 underline hover:text-warning-700 dark:text-warning-400"
           >
             Salir de vista
           </button>
@@ -181,7 +197,7 @@ const SimulacionBanner = observer(() => {
         <button
           onClick={salir}
           aria-label={`Salir de vista (${rol})`}
-          className="flex w-full items-center justify-center text-warning-600 dark:text-orange-400"
+          className="flex w-full items-center justify-center text-warning-600 dark:text-warning-400"
           title={`Viendo como ${rol} — salir`}
         >
           <ArrowRightIcon />

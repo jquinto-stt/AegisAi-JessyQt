@@ -216,7 +216,7 @@ export const EquipoTab = observer(() => {
                 onClick={() => setTab("todos")}
                 className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                   tab === "todos"
-                    ? "bg-brand-500 text-white shadow-2xs"
+                    ? "bg-brand-500 text-white shadow-theme-xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 }`}
               >
@@ -227,7 +227,7 @@ export const EquipoTab = observer(() => {
                 onClick={() => setTab("pendientes")}
                 className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
                   tab === "pendientes"
-                    ? "bg-brand-500 text-white shadow-2xs"
+                    ? "bg-brand-500 text-white shadow-theme-xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 }`}
               >
@@ -276,7 +276,7 @@ export const EquipoTab = observer(() => {
 
       {/* Modal: invitar miembro */}
       <Modal isOpen={modalOpen} onClose={cerrarModal} className="max-w-md p-6">
-        <h2 className="mb-1 text-lg font-semibold text-gray-800 dark:text-white/90">Invitar miembro</h2>
+        <h2 className="mb-1 text-lg font-semibold text-ink-title dark:text-white/90">Invitar miembro</h2>
         <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
           Se añadirá al equipo como <span className="font-medium">activo</span>, con el rol que elijas.
           Podrá entrar de inmediato y ajustar sus permisos desde su perfil.

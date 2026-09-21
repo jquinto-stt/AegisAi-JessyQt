@@ -7,6 +7,11 @@ import { BandejaLista } from "@/pages/conversaciones/components/BandejaLista";
 import { ChatView } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
+import {
+  claseSegmentoActivo,
+  claseSegmentoInactivo,
+  claseSegmentoTrack,
+} from "@/pages/config-layout";
 
 export const ConversacionesPage = observer(() => {
   const navigate = useNavigate();
@@ -51,20 +56,24 @@ export const ConversacionesPage = observer(() => {
         description="Consola de mensajería y WhatsApp — bandeja, chat y contexto del contacto"
       />
 
-      {/* Conmutador Chat en vivo / Historial de atención */}
+      {/* Conmutador Chat en vivo / Historial de atención.
+          Las tres cadenas de color salen de `@/pages/config-layout`: el estado
+          activo se pinta igual aqui que en el `Segmentado` de las pantallas de
+          configuración. Antes eran literales duplicados y el activo iba en
+          blanco. */}
       <div className="mb-3 flex items-center justify-between">
-        <div className="inline-flex rounded-lg bg-gray-100 p-0.5 dark:bg-gray-900">
+        <div className={claseSegmentoTrack}>
           <button
             type="button"
             aria-current="page"
-            className="rounded-md bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-900 shadow-theme-xs dark:bg-gray-800 dark:text-white"
+            className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors ${claseSegmentoActivo}`}
           >
             Chat en vivo
           </button>
           <button
             type="button"
             onClick={() => navigate("/conversaciones/historial")}
-            className="rounded-md px-3.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${claseSegmentoInactivo}`}
           >
             Historial de atención
           </button>
@@ -76,7 +85,7 @@ export const ConversacionesPage = observer(() => {
         {/* ── Columna izquierda: ChatSidebar (Bandeja colapsable y retráctil) ── */}
         <aside
           aria-label="Bandeja de chats"
-          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
+          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             bandejaExpandida
               ? "flex w-full sm:w-[310px] xl:w-[330px] 2xl:w-[360px] border border-gray-200 opacity-100 mr-0 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -mr-4 sm:-mr-5"
@@ -91,7 +100,7 @@ export const ConversacionesPage = observer(() => {
         </aside>
 
         {/* ── Columna central: ChatBox (Cabecera, Mensajes y Composer) ── */}
-        <section className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
+        <section className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
           {seleccionadaId !== null ? (
             <>
               {/* La `key` es lo que hace VISIBLE el cambio de conversación. Sin ella React
@@ -124,7 +133,7 @@ export const ConversacionesPage = observer(() => {
         {/* ── Columna derecha: Panel de Contexto (Colapsable y retráctil) ── */}
         <aside
           aria-label="Panel de información del contacto"
-          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-2xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
+          className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             panelExpandido && seleccionadaId !== null
               ? "flex w-80 border border-gray-200 p-4 opacity-100 2xl:w-96 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -ml-4 sm:-ml-5"
@@ -140,7 +149,7 @@ export const ConversacionesPage = observer(() => {
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
+                  <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
                     Información del contacto
                   </h3>
                 </div>

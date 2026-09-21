@@ -168,10 +168,10 @@ export const PedidosOnboardingPage = observer(() => {
                   <span className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
                     Paso 1 de 2 — Rubro y Perfil Comercial
                   </span>
-                  <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
                     ¿Qué vende tu negocio?
                   </h1>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
                     Selecciona tu perfil comercial. Esto adapta las capacidades, campos de producto y terminología sin cambiar el núcleo de tus pedidos.
                   </p>
                 </div>
@@ -186,8 +186,8 @@ export const PedidosOnboardingPage = observer(() => {
                         onClick={() => setPerfilElegido(perfil.id)}
                         className={`flex flex-col justify-between rounded-3xl border p-5 transition-all cursor-pointer ${
                           seleccionado
-                            ? "border-brand-500 bg-white dark:bg-gray-900 shadow-md ring-2 ring-brand-500/20 dark:border-brand-400"
-                            : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-gray-700"
+                            ? "border-brand-500 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20 dark:border-brand-400"
+                            : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-theme-sm dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
                         }`}
                       >
                         <div>
@@ -216,7 +216,7 @@ export const PedidosOnboardingPage = observer(() => {
                             </div>
                           </div>
 
-                          <h3 className="mt-3 text-sm font-bold text-gray-900 dark:text-white">
+                          <h3 className="mt-3 text-sm font-bold text-ink-title dark:text-white">
                             {perfil.name}
                           </h3>
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
@@ -248,10 +248,10 @@ export const PedidosOnboardingPage = observer(() => {
                   <span className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
                     Paso 2 de 2 — Agentes y Automatización
                   </span>
-                  <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
                     ¿Quieres habilitar WhatsApp Agent o Necto Agent?
                   </h1>
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
                     Activa los agentes inteligentes para automatizar la recepción de pedidos, el estado para clientes y la asistencia operativa.
                   </p>
                 </div>
@@ -262,17 +262,17 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarWhatsApp(!habilitarWhatsApp)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarWhatsApp
-                        ? "border-emerald-500/50 bg-white dark:bg-gray-900 shadow-md ring-2 ring-emerald-500/20"
+                        ? "border-brand-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-2xl">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366] text-2xl">
                         💬
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-base font-bold text-ink-title dark:text-white">
                             WhatsApp Agent
                           </h3>
                           {habilitarWhatsApp && (
@@ -299,17 +299,17 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarIA(!habilitarIA)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarIA
-                        ? "border-purple-500/50 bg-white dark:bg-gray-900 shadow-md ring-2 ring-purple-500/20"
+                        ? "border-brand-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 text-2xl">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-700 dark:text-accent-300 text-2xl">
                         🤖
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-base font-bold text-ink-title dark:text-white">
                             Necto Agent (IA)
                           </h3>
                           {habilitarIA && (
@@ -380,7 +380,7 @@ export const PedidosOnboardingPage = observer(() => {
               <Button
                 type="button"
                 onClick={() => setPaso(2)}
-                className="rounded-full px-7 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+                className="rounded-full px-7 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20"
               >
                 Continuar a Agentes
                 <svg
@@ -400,7 +400,7 @@ export const PedidosOnboardingPage = observer(() => {
               <Button
                 type="button"
                 onClick={handleFinalizar}
-                className="rounded-full px-7 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20"
+                className="rounded-full px-7 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20"
               >
                 Terminar y entrar a Pedidos
                 <svg

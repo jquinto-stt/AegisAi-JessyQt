@@ -8,7 +8,7 @@ import { sessionStore, organizacionStore } from "@/stores";
 /**
  * UserDropdown
  * Trigger y menú desplegable del perfil de usuario.
- * Diseño: [Iniciales con halo lila] [Nombre] [Chevron]
+ * Diseño: [Iniciales con halo celeste] [Nombre] [Chevron]
  *
  * La identidad se lee de `organizacionStore.usuario`. Antes estaba escrita a mano
  * —«Musharof», «Musharof Chowdhury», `randomuser@pimjo.com` y la foto
@@ -68,9 +68,14 @@ const UserDropdown = observer(() => {
         className="flex items-center gap-2 text-gray-800 dark:text-gray-100 hover:opacity-85 transition-opacity cursor-pointer select-none"
         aria-expanded={isOpen}
       >
-        {/* Avatar circular con halo lila suave. Sin `avatarUrl` en el modelo se
-            pintan iniciales; si no hay sesión de usuario, un glifo genérico. */}
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E0E2FD] dark:bg-indigo-950/60 p-0.5 overflow-hidden">
+        {/* Avatar circular con halo celeste de marca.
+            El halo era `#E0E2FD`, un lila escrito a mano que no existe en
+            `Esencia_necto` —ni en `theme.css`— y que por tanto no cambiaba con
+            el tema. Ahora es el celeste de la guía (`accent-200`), que sí es
+            token y tiene su variante oscura.
+            Sin `avatarUrl` en el modelo se pintan iniciales; si no hay sesión
+            de usuario, un glifo genérico. */}
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-200 p-0.5 overflow-hidden dark:bg-accent-500/25">
           <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
             {iniciales || <User className="size-4 text-gray-400" />}
           </span>
@@ -103,7 +108,7 @@ const UserDropdown = observer(() => {
       <ShellDropdown
         isOpen={isOpen}
         onClose={closeDropdown}
-        className="absolute right-0 mt-[14px] flex w-[270px] flex-col rounded-2xl border border-gray-200 bg-white p-3.5 shadow-xl dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-in fade-in slide-in-from-top-2"
+        className="absolute right-0 mt-[14px] flex w-[270px] flex-col rounded-2xl border border-gray-200 bg-white p-3.5 shadow-theme-lg dark:border-gray-800 dark:bg-gray-900 z-50 font-sans animate-entrada-menu"
       >
         {/* Cabecera del usuario. Sin `usuario` no se inventa un correo: la línea
             simplemente no se pinta. */}

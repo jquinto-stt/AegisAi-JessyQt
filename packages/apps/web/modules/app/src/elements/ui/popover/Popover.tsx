@@ -82,7 +82,7 @@ export interface PopoverProps {
  * ```tsx
  * <Popover position="bottom" trigger={<Button>Details</Button>}>
  *   <div className="p-4">
- *     <h4 className="font-medium text-gray-800">Popover Title</h4>
+ *     <h4 className="font-medium text-ink-title">Popover Title</h4>
  *     <p className="text-sm text-gray-500">Description text.</p>
  *   </div>
  * </Popover>
@@ -171,10 +171,10 @@ export default function Popover({ position, trigger, children, className, onOpen
           ref={popoverRef}
           className={cn("absolute w-[300px] z-99999", positionClasses[position], className)}
         >
-          <div className="w-full bg-white rounded-xl shadow-theme-lg dark:bg-[#1E2634]">
+          <div className="w-full bg-white rounded-xl shadow-theme-lg dark:bg-gray-900">
             {children}
             <div
-              className={cn("absolute w-3 h-3 bg-white shadow-theme-lg dark:bg-[#1E2634]", arrowClasses[position])}
+              className={cn("absolute w-3 h-3 bg-white shadow-theme-lg dark:bg-gray-900", arrowClasses[position])}
             ></div>
           </div>
         </div>

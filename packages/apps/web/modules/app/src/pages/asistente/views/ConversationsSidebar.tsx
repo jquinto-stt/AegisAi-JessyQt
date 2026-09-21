@@ -97,9 +97,9 @@ export const ConversationsSidebar = observer(({ onClose }: { onClose: () => void
       {confirmando && activa ? (
         <div
           data-confirmar-eliminar="si"
-          className="mx-2 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 dark:border-red-900/50 dark:bg-red-950/30"
+          className="mx-2 mb-2 rounded-lg border border-error-200 bg-error-50 px-3 py-2.5 dark:border-error-900/50 dark:bg-error-950/30"
         >
-          <p className="text-xs text-red-700 dark:text-red-300">
+          <p className="text-xs text-error-700 dark:text-error-300">
             ¿Eliminar «{activa.titulo}»? No se puede deshacer.
           </p>
           <div className="mt-2 flex gap-2">
@@ -110,7 +110,7 @@ export const ConversationsSidebar = observer(({ onClose }: { onClose: () => void
                 assistantStore.eliminarConversacion(activa.id);
                 setConfirmando(false);
               }}
-              className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700"
+              className="rounded-md bg-error-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-error-700"
             >
               Eliminar
             </button>
