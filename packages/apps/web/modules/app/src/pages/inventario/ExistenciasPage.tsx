@@ -20,13 +20,7 @@ import {
   type EstadoStock,
   type UnidadMedida,
 } from "@/stores";
-import {
-  cantidad,
-  etiquetaVariante,
-  filtrarArticulos,
-  money,
-  tieneVariantes,
-} from "./inventario.utils";
+import { cantidad, filtrarArticulos, money } from "./inventario.utils";
 import { CabeceraPagina, EstadoBadge, SinResultados } from "./inventario.widgets";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -37,15 +31,12 @@ import { CabeceraPagina, EstadoBadge, SinResultados } from "./inventario.widgets
 // los artículos, con filtros. El panel de llegada responde a la misma pregunta
 // pero solo para lo que exige atención.
 //
-// ── Dos decisiones de lectura ─────────────────────────────────────────────
+// ── Una decisión de lectura ───────────────────────────────────────────────
 //
-// 1. **El selector de bodega cambia la columna de existencia, no la lista.** Un
-//    artículo agotado en una bodega sigue siendo un artículo: filtrar la lista
-//    por bodega escondería justo lo que hay que ver (que no está). La columna
-//    dice de dónde es el número, y se rotula en el encabezado.
-// 2. **Las variantes se despliegan, no se suman en silencio.** Un artículo con
-//    tallas enseña su total y, al desplegarlo, el desglose real. Enseñar solo el
-//    total haría creer que hay 4 camisetas M cuando puede haber 0.
+// **El selector de bodega cambia la columna de existencia, no la lista.** Un
+// artículo agotado en una bodega sigue siendo un artículo: filtrar la lista por
+// bodega escondería justo lo que hay que ver (que no está). La columna dice de
+// dónde es el número, y se rotula en el encabezado.
 //
 // ── Escritura ─────────────────────────────────────────────────────────────
 //
@@ -66,7 +57,8 @@ import { CabeceraPagina, EstadoBadge, SinResultados } from "./inventario.widgets
  * **Un centinela de UI no puede llegar crudo a una función pura.** `"__todas__"`
  * es una cadena *truthy*, y `filtrarArticulos` interpreta «hay categoría» como
  * «filtra por ella»: comparaba `"Ropa" !== "__todas__"` y descartaba el catálogo
- * entero. La pantalla mostraba «0 de 8 artículos» y «Ningún artículo coincide»
+ * entero. La pantalla mostraba «0 de 8 artículos» (el seed tenía ocho entonces)
+ * y «Ningún artículo coincide»
  * con los filtros vacíos.
  *
  * No lo vio nadie porque la función está probada con `categoria: null` y con
@@ -102,8 +94,6 @@ export const ExistenciasPage = observer(() => {
   const [categoria, setCategoria] = useState<string>(TODAS);
   const [bodegaId, setBodegaId] = useState<string>(TODAS);
   const [estado, setEstado] = useState<EstadoStock | typeof TODAS>(TODAS);
-  const [desplegados, setDesplegados] = useState<ReadonlySet<string>>(new Set());
-
   // ── Modales ──
   const [creando, setCreando] = useState(false);
   const [borrador, setBorrador] = useState<BorradorArticulo>(() =>
@@ -154,15 +144,6 @@ export const ExistenciasPage = observer(() => {
     (acc, a) => acc + existenciaEnAmbito(a.id) * a.costoUnitario,
     0,
   );
-
-  const toggleDespliegue = (id: string) => {
-    setDesplegados((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   // ── Alta ──
   const abrirAlta = () => {
@@ -342,58 +323,12 @@ export const ExistenciasPage = observer(() => {
                 </TableHeader>
                 <TableBody>
                   {filas.map((a) => {
-                    const abierto = desplegados.has(a.id);
-                    const variantes = inventarioStore.existenciasPorVariante(a.id);
                     const existencia = existenciaEnAmbito(a.id);
 
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium text-gray-800 dark:text-white/90">
-                          <span className="flex items-start gap-2">
-                            {tieneVariantes(a) && (
-                              <button
-                                type="button"
-                                onClick={() => toggleDespliegue(a.id)}
-                                aria-expanded={abierto}
-                                aria-label={`${abierto ? "Ocultar" : "Ver"} variantes de ${a.nombre}`}
-                                className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border border-gray-200 text-xs text-gray-500 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03]"
-                              >
-                                {abierto ? "−" : "+"}
-                              </button>
-                            )}
-                            <span className="min-w-0">
-                              {a.nombre}
-
-                              {/* Desglose por variante, DENTRO de la celda.
-                                  No como filas hijas: `TableCell` del catálogo no
-                                  admite `colSpan`, y una fila con seis celdas
-                                  vacías se lee como una fila rota.
-
-                                  Se listan TODAS las variantes, incluidas las que
-                                  están a cero: esconder la talla agotada es
-                                  esconder justo la que hay que reponer. */}
-                              {abierto && variantes.length > 0 && (
-                                <ul className="mt-2 space-y-1">
-                                  {variantes.map((v) => (
-                                    <li
-                                      key={`${a.id}-${v.variante}`}
-                                      className="flex flex-wrap items-center gap-2 text-xs font-normal text-gray-500 dark:text-gray-400"
-                                    >
-                                      <span className="min-w-10 font-medium text-gray-600 dark:text-gray-300">
-                                        {etiquetaVariante(v.variante)}
-                                      </span>
-                                      <span className="tabular-nums">
-                                        {cantidad(v.cantidad, a.unidad)}
-                                      </span>
-                                      <EstadoBadge
-                                        estado={inventarioStore.estadoDeVariante(a.id, v.variante)}
-                                      />
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </span>
-                          </span>
+                          {a.nombre}
                         </TableCell>
                         <TableCell className="tabular-nums text-gray-500 dark:text-gray-400">
                           {a.sku}

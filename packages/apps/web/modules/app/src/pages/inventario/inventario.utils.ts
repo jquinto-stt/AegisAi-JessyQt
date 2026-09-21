@@ -21,7 +21,13 @@
  * sería la segunda fuente de verdad que la invariante I1 prohíbe.
  */
 
-import { UNIDAD_MEDIDA_LABEL, type Articulo, type EstadoStock, type UnidadMedida } from "@/stores";
+import {
+  UNIDAD_MEDIDA_LABEL,
+  type Articulo,
+  type EstadoStock,
+  type UnidadMedida,
+} from "@/stores";
+import { normalizarTexto } from "@/domain/inventario/inventario.domain";
 
 /** Importe en pesos, sin decimales. El locale del proyecto es `es-CO`. */
 export const money = (n: number) => `$${Math.round(n).toLocaleString("es-CO")}`;
@@ -52,23 +58,6 @@ export function cantidad(n: number, unidad: UnidadMedida): string {
 /** Etiqueta larga de la unidad (para el formulario, no para la tabla). */
 export function unidadLarga(unidad: UnidadMedida): string {
   return UNIDAD_MEDIDA_LABEL[unidad];
-}
-
-/**
- * Etiqueta de una variante. `undefined` **no es** la variante «vacía»: es un
- * artículo sin variantes, y se rotula con una raya para que no parezca un dato
- * que falta. Confundir «no aplica» con «falta» es cómo se acaba pintando un
- * hueco como si fuera un error.
- */
-export const SIN_VARIANTE = "—";
-
-export function etiquetaVariante(variante?: string): string {
-  return variante ?? SIN_VARIANTE;
-}
-
-/** ¿El artículo se lleva por variantes? */
-export function tieneVariantes(a: Articulo): boolean {
-  return (a.variantes?.length ?? 0) > 0;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -105,7 +94,7 @@ export function etiquetaFecha(iso: string, ahora: Date = new Date()): string {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export interface FiltroArticulos {
-  /** Texto libre: casa contra nombre y SKU, sin distinguir mayúsculas. */
+  /** Texto libre: casa contra nombre y SKU, sin distinguir mayúsculas ni acentos. */
   texto?: string;
   categoria?: string | null;
 }
@@ -116,14 +105,17 @@ export interface FiltroArticulos {
  * El texto casa contra **nombre y SKU** porque son las dos formas en que un
  * operador busca: quien conoce el código lo teclea, quien no, escribe el nombre.
  * Buscar solo por nombre obligaría a abrir la ficha para confirmar un SKU.
+ *
+ * El plegado de acentos es el MISMO que usa el asistente (`normalizarTexto`):
+ * la misma consulta tiene que encontrar lo mismo en la tabla y en el chat.
  */
 export function filtrarArticulos(articulos: Articulo[], filtro: FiltroArticulos): Articulo[] {
-  const texto = filtro.texto?.trim().toLowerCase() ?? "";
+  const texto = normalizarTexto(filtro.texto?.trim() ?? "");
   return articulos.filter((a) => {
     if (filtro.categoria && a.categoria !== filtro.categoria) return false;
     if (!texto) return true;
     return (
-      a.nombre.toLowerCase().includes(texto) || a.sku.toLowerCase().includes(texto)
+      normalizarTexto(a.nombre).includes(texto) || normalizarTexto(a.sku).includes(texto)
     );
   });
 }

@@ -39,7 +39,6 @@ const mov = (
 ): Movimiento => ({
   id: parcial.id ?? "m-1",
   articuloId: parcial.articuloId ?? "art-1",
-  variante: parcial.variante,
   tipo: parcial.tipo,
   cantidad: parcial.cantidad,
   origenId: parcial.origenId ?? null,
@@ -106,19 +105,6 @@ describe("derivación de existencias (I1)", () => {
   it("un artículo desconocido tiene existencia 0, no undefined", () => {
     expect(stockDe(movs, "no-existe", BODEGA_A)).toBe(0);
     expect(stockTotalDe(movs, "no-existe")).toBe(0);
-  });
-
-  it("filtra por variante cuando se indica, y no filtra cuando se omite", () => {
-    const conVariantes: Movimiento[] = [
-      mov({ id: "v1", tipo: "entrada", cantidad: 10, destinoId: BODEGA_A, variante: "M" }),
-      mov({ id: "v2", tipo: "entrada", cantidad: 4, destinoId: BODEGA_A, variante: "L" }),
-    ];
-    expect(stockDe(conVariantes, "art-1", BODEGA_A, "M")).toBe(10);
-    expect(stockDe(conVariantes, "art-1", BODEGA_A, "L")).toBe(4);
-    // Sin variante: el total del artículo en esa bodega.
-    expect(stockDe(conVariantes, "art-1", BODEGA_A)).toBe(14);
-    expect(stockTotalDe(conVariantes, "art-1", "M")).toBe(10);
-    expect(stockTotalDe(conVariantes, "art-1")).toBe(14);
   });
 });
 
@@ -306,15 +292,6 @@ describe("valorInventario y movimientosDe", () => {
     ];
     expect(movimientosDe(movs, "art-1").map((m) => m.id)).toEqual(["m3", "m1"]);
   });
-
-  it("movimientosDe filtra por variante cuando se indica", () => {
-    const movs: Movimiento[] = [
-      mov({ id: "m1", articuloId: "art-1", tipo: "entrada", cantidad: 1, destinoId: BODEGA_A, variante: "M" }),
-      mov({ id: "m2", articuloId: "art-1", tipo: "entrada", cantidad: 1, destinoId: BODEGA_A, variante: "L" }),
-    ];
-    expect(movimientosDe(movs, "art-1", "M").map((m) => m.id)).toEqual(["m1"]);
-    expect(movimientosDe(movs, "art-1")).toHaveLength(2);
-  });
 });
 
 describe("I1/I3 sobre el FUENTE: el tipo no declara cantidad ni estado", () => {
@@ -334,9 +311,9 @@ describe("I1/I3 sobre el FUENTE: el tipo no declara cantidad ni estado", () => {
    * Quita comentarios de bloque y de línea.
    *
    * Necesario porque lo que se afirma es «no declara un CAMPO», y el cuerpo
-   * incluye docblocks: la primera versión de este test se puso roja por la
-   * palabra «stock» escrita en la explicación de `variantes`, no por un campo.
-   * Un test que mira prosa acaba midiendo la redacción, no el contrato.
+   * incluye docblocks: la primera versión de este test se puso roja por una
+   * palabra escrita en la explicación, no por un campo. Un test que mira prosa
+   * acaba midiendo la redacción, no el contrato.
    */
   const sinComentarios = (s: string): string =>
     s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
@@ -360,5 +337,18 @@ describe("I1/I3 sobre el FUENTE: el tipo no declara cantidad ni estado", () => {
   it("Articulo no declara ningún campo de estado: agotado/bajo_minimo se derivan", () => {
     const cuerpo = sinComentarios(cuerpoDe("Articulo"));
     expect(cuerpo).not.toMatch(/\bestado\b/);
+  });
+
+  // Las variantes se retiraron de v1 (deuda declarada en el docblock del tipo).
+  // El pin es una ausencia, y una ausencia se cumple sola cuando nadie mira: por
+  // eso se afirma sobre el CUERPO sin comentarios —donde la palabra sí aparece,
+  // explicando la deuda— y no sobre el archivo entero.
+  it("Articulo no declara variantes, y la deuda está escrita", () => {
+    expect(sinComentarios(cuerpoDe("Articulo"))).not.toMatch(/\bvariante/);
+    expect(fuente).toMatch(/Deuda declarada: variantes/);
+  });
+
+  it("Movimiento no declara variante: el kárdex no tiene esa dimensión", () => {
+    expect(sinComentarios(cuerpoDe("Movimiento"))).not.toMatch(/\bvariante/);
   });
 });

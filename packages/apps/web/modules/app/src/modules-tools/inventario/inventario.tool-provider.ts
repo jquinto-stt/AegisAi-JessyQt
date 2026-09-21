@@ -32,6 +32,7 @@
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
+import { normalizarTexto } from "@/domain/inventario/inventario.domain";
 import { inventarioStore, UNIDAD_MEDIDA_LABEL, TIPO_MOVIMIENTO_LABEL } from "@/stores";
 import type { Articulo, Movimiento, TipoMovimiento } from "@/stores";
 import type {
@@ -72,14 +73,13 @@ const formatCantidad = (n: number, unidad: Articulo["unidad"]): string =>
 /**
  * Normaliza texto para comparar: minúsculas y sin acentos.
  *
- * Sin esto, «cafe» no encuentra «Café» y «analitica» no encuentra «Analítica» —
- * y quien escribe una pregunta al asistente no pone tildes.
+ * El plegado vive en el dominio (`normalizarTexto`) y no aquí porque la
+ * búsqueda de la tabla tiene que plegar igual que esta: dos plegados distintos
+ * harían que «salmon» encontrara el artículo en el chat y no en `/inventario`.
+ * Sin plegar, «cafe» no encuentra «Café» — y quien escribe una pregunta al
+ * asistente no pone tildes.
  */
-const normalizar = (s: string): string =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+const normalizar = normalizarTexto;
 
 /**
  * Busca artículos por nombre, SKU o categoría.

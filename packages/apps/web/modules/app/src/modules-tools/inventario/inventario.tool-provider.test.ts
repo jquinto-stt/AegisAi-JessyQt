@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { ToolRegistry } from "@/assistant/registry/tool-registry";
 import { inventarioStore } from "@/stores";
+// Import de TEST, y a propósito: el único modo de afirmar que la búsqueda del
+// asistente y la de la tabla pliegan igual es medir las dos en el mismo test.
+// No crea dependencia de producción (`modules-tools` no importa `pages`).
+import { filtrarArticulos } from "@/pages/inventario/inventario.utils";
 
 import {
   InventarioToolProvider,
@@ -110,11 +114,11 @@ describe("inventario.getExistencias", () => {
   });
 
   it("busca también por SKU", async () => {
-    const res = await getExistencias.run({ articulo: "SKU-4002" });
+    const res = await getExistencias.run({ articulo: "SKU-4001" });
     const tabla = res.blocks?.find((b) => b.kind === "table");
     const filas = tabla && tabla.kind === "table" ? tabla.rows : [];
     expect(filas.length).toBeGreaterThan(0);
-    expect(filas.every((f) => f[1] === "SKU-4002")).toBe(true);
+    expect(filas.every((f) => f[1] === "SKU-4001")).toBe(true);
   });
 
   it("sin argumento devuelve el almacén entero", async () => {
@@ -130,11 +134,30 @@ describe("inventario.getExistencias", () => {
     expect(res.facts[0].value).toBe(0);
   });
 
-  it("normaliza acentos y mayúsculas: «cafe» encuentra «Café tostado»", async () => {
-    const res = await getExistencias.run({ articulo: "CAFE" });
-    const tabla = res.blocks?.find((b) => b.kind === "table");
-    const filas = tabla && tabla.kind === "table" ? tabla.rows : [];
-    expect(filas.some((f) => f[0] === "Café tostado")).toBe(true);
+  it("normaliza acentos y mayúsculas: «proteinas» encuentra la categoría «Proteínas»", async () => {
+    // La consulta se prueba contra la CATEGORÍA y no contra «Salmón», que es el
+    // único nombre con tilde del seed: `getExistencias` omite las filas a cero a
+    // propósito, y Salmón está agotado, así que nunca aparecería en la tabla.
+    const sinTilde = await getExistencias.run({ articulo: "PROTEINAS" });
+    const conTilde = await getExistencias.run({ articulo: "Proteínas" });
+    const filas = (res: Awaited<ReturnType<typeof getExistencias.run>>): unknown[][] => {
+      const t = res.blocks?.find((b) => b.kind === "table");
+      return t && t.kind === "table" ? (t.rows as unknown[][]) : [];
+    };
+    expect(filas(sinTilde).length).toBeGreaterThan(0);
+    expect(filas(sinTilde)).toEqual(filas(conTilde));
+    expect(filas(sinTilde).some((f) => f[0] === "Pechuga de pollo")).toBe(true);
+  });
+
+  it("la tabla pliega los acentos con el mismo criterio", async () => {
+    // El buscador de la tabla casa nombre y SKU (la categoría tiene su propio
+    // `select`, así que no se busca por texto de categoría — de ahí que este
+    // caso use un nombre). Lo que se afirma es el PLEGADO: «salmon» sin tilde
+    // tiene que encontrar «Salmón», igual que en el chat.
+    const sinTilde = filtrarArticulos(inventarioStore.articulos, { texto: "salmon" });
+    const conTilde = filtrarArticulos(inventarioStore.articulos, { texto: "Salmón" });
+    expect(sinTilde.map((a) => a.id)).toEqual(conTilde.map((a) => a.id));
+    expect(sinTilde.map((a) => a.nombre)).toEqual(["Salmón"]);
   });
 });
 

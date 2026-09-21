@@ -17,6 +17,7 @@ import {
   TrashBinIcon,
 } from "@/icons";
 import {
+  CAPACIDADES,
   CAPACIDAD_GRUPOS,
   CAPACIDAD_LABEL,
   operadoresStore,
@@ -177,7 +178,10 @@ export const RolesTab = observer(() => {
                     {r.sistema && <Badge color="light" size="xs">Sistema</Badge>}
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {r.capacidades.length} de 18 capacidades · {asignados}{" "}
+                    {/* El total sale del catálogo, NUNCA escrito a mano: decía
+                        «de 18» con 22 capacidades declaradas, así que la pantalla
+                        le contaba al usuario un denominador que no existía. */}
+                    {r.capacidades.length} de {CAPACIDADES.length} capacidades · {asignados}{" "}
                     {asignados === 1 ? "miembro" : "miembros"}
                   </p>
                 </div>

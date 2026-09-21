@@ -2,15 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { Articulo, EstadoStock } from "@/stores";
 import {
-  SIN_VARIANTE,
   cantidad,
   conExistencia,
   etiquetaFecha,
-  etiquetaVariante,
   filtrarArticulos,
   money,
   ordenarPorUrgencia,
-  tieneVariantes,
 } from "./inventario.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -31,10 +28,10 @@ const articulo = (over: Partial<Articulo> & { id: string }): Articulo => ({
   ...over,
 });
 
-const CAMISA = articulo({ id: "a1", sku: "SKU-1001", nombre: "Camiseta oversize", categoria: "Ropa", variantes: ["S", "M"] });
-const JEAN = articulo({ id: "a2", sku: "SKU-1002", nombre: "Jean recto", categoria: "Ropa" });
-const CAFE = articulo({ id: "a3", sku: "SKU-2001", nombre: "Café tostado", categoria: "Insumos", unidad: "kg" });
-const TODOS = [CAMISA, JEAN, CAFE];
+const SALMON = articulo({ id: "a1", sku: "SKU-1003", nombre: "Salmón", categoria: "Proteínas", unidad: "kg" });
+const HARINA = articulo({ id: "a2", sku: "SKU-3002", nombre: "Harina de trigo", categoria: "Insumos", unidad: "kg" });
+const JUGO = articulo({ id: "a3", sku: "SKU-4001", nombre: "Jugo de naranja", categoria: "Bebidas", unidad: "l" });
+const TODOS = [SALMON, HARINA, JUGO];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FORMATO
@@ -60,24 +57,6 @@ describe("formato de importes y cantidades", () => {
     // El control que evita la regresión: la etiqueta del `<select>` no debe
     // colarse en una celda de tabla.
     expect(cantidad(5, "kg")).not.toContain("Kilogramo");
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// VARIANTES
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("variantes: «no aplica» no es «falta»", () => {
-  it("un artículo sin variantes se rotula con una raya, no con un hueco", () => {
-    expect(etiquetaVariante(undefined)).toBe(SIN_VARIANTE);
-    expect(etiquetaVariante("")).toBe("");
-  });
-
-  it("distingue un artículo con variantes de uno sin ellas", () => {
-    expect(tieneVariantes(CAMISA)).toBe(true);
-    expect(tieneVariantes(JEAN)).toBe(false);
-    // Un array VACÍO es «sin variantes», no «con cero variantes».
-    expect(tieneVariantes(articulo({ id: "a4", variantes: [] }))).toBe(false);
   });
 });
 
@@ -117,19 +96,23 @@ describe("filtrarArticulos", () => {
     expect(filtrarArticulos(TODOS, {})).toHaveLength(3);
   });
 
-  it("busca por nombre sin distinguir mayúsculas ni acentos de teclado", () => {
-    expect(filtrarArticulos(TODOS, { texto: "camiseta" }).map((a) => a.id)).toEqual(["a1"]);
-    expect(filtrarArticulos(TODOS, { texto: "CAMISETA" }).map((a) => a.id)).toEqual(["a1"]);
+  it("busca por nombre sin distinguir mayúsculas NI ACENTOS", () => {
+    // Las dos formas de la misma búsqueda: quien escribe rápido teclea «salmon»
+    // sin tilde, y el artículo se llama «Salmón». El plegado es el mismo que usa
+    // el asistente (`normalizarTexto`), así que la tabla y el chat coinciden.
+    expect(filtrarArticulos(TODOS, { texto: "salmon" }).map((a) => a.id)).toEqual(["a1"]);
+    expect(filtrarArticulos(TODOS, { texto: "SALMÓN" }).map((a) => a.id)).toEqual(["a1"]);
   });
 
   it("busca también por SKU, que es como busca quien conoce el código", () => {
-    expect(filtrarArticulos(TODOS, { texto: "1002" }).map((a) => a.id)).toEqual(["a2"]);
-    expect(filtrarArticulos(TODOS, { texto: "sku-2001" }).map((a) => a.id)).toEqual(["a3"]);
+    expect(filtrarArticulos(TODOS, { texto: "3002" }).map((a) => a.id)).toEqual(["a2"]);
+    expect(filtrarArticulos(TODOS, { texto: "sku-4001" }).map((a) => a.id)).toEqual(["a3"]);
   });
 
   it("combina texto y categoría (las dos condiciones, no una)", () => {
-    expect(filtrarArticulos(TODOS, { texto: "a", categoria: "Insumos" }).map((a) => a.id)).toEqual(["a3"]);
-    expect(filtrarArticulos(TODOS, { texto: "camiseta", categoria: "Insumos" })).toEqual([]);
+    expect(filtrarArticulos(TODOS, { texto: "harina", categoria: "Insumos" }).map((a) => a.id)).toEqual(["a2"]);
+    // El texto casa, pero la categoría no: se exigen las DOS.
+    expect(filtrarArticulos(TODOS, { texto: "harina", categoria: "Bebidas" })).toEqual([]);
   });
 
   it("un texto en blanco no filtra nada", () => {

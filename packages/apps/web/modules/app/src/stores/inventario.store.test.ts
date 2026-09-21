@@ -22,9 +22,10 @@ import type { Articulo, Movimiento } from "@/domain/inventario/inventario.domain
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-const BOD_CENTRAL = "bod-central";
-const BOD_TIENDA = "bod-tienda";
+const BOD_COCINA = "bod-cocina";
 const BOD_FRIA = "bod-fria";
+/** Tercera bodega del escenario sintético, para probar transferencias. */
+const BOD_SECA = "bod-seca";
 
 /** Escenario mínimo y explícito, para leer los números sin depender del seed. */
 function escenario(): DatosInventario {
@@ -37,7 +38,6 @@ function escenario(): DatosInventario {
       unidad: "unidad",
       minimo: 5,
       costoUnitario: 100,
-      variantes: ["M", "L"],
     },
     {
       id: "a2",
@@ -50,19 +50,18 @@ function escenario(): DatosInventario {
     },
   ];
   const bodegas = [
-    { id: BOD_CENTRAL, nombre: "Central", principal: true },
-    { id: BOD_TIENDA, nombre: "Tienda", principal: false },
-    { id: BOD_FRIA, nombre: "Fría", principal: false },
+    { id: BOD_COCINA, nombre: "Cocina principal", principal: true },
+    { id: BOD_FRIA, nombre: "Bodega fría", principal: false },
+    { id: BOD_SECA, nombre: "Bodega seca", principal: false },
   ];
   const movimientos: Movimiento[] = [
     {
       id: "x1",
       articuloId: "a1",
-      variante: "M",
       tipo: "entrada",
       cantidad: 10,
       origenId: null,
-      destinoId: BOD_CENTRAL,
+      destinoId: BOD_COCINA,
       fecha: "2026-09-01T09:00:00.000Z",
       actor: "d0",
     },
@@ -78,7 +77,7 @@ describe("seed — el kárdex de arranque", () => {
     // dejaría esa frase mintiendo.
     expect(store.bodegas.length).toBeGreaterThanOrEqual(2);
     expect(store.bodegas.filter((b) => b.principal)).toHaveLength(1);
-    expect(store.bodegaPrincipal?.id).toBe(BOD_CENTRAL);
+    expect(store.bodegaPrincipal?.id).toBe(BOD_COCINA);
   });
 
   it("no tiene SKUs repetidos", () => {
@@ -95,20 +94,22 @@ describe("seed — el kárdex de arranque", () => {
 
   it("toda existencia del seed es la suma de sus movimientos", () => {
     // Los números, explícitos. Si el kárdex deja de cuadrar, aquí se ve cuánto.
-    expect(store.existenciaDe("art-postre", BOD_CENTRAL)).toBe(10);
-    expect(store.existenciaDe("art-postre", BOD_TIENDA)).toBe(4);
-    expect(store.existenciaDe("art-postre", BOD_FRIA)).toBe(6);
-    expect(store.existenciaTotal("art-postre")).toBe(20);
+    expect(store.existenciaDe("art-pollo", BOD_COCINA)).toBe(12);
+    expect(store.existenciaTotal("art-pollo")).toBe(12);
 
-    expect(store.existenciaTotal("art-vaso")).toBe(0);
-    expect(store.existenciaTotal("art-azucar")).toBe(8);
-    expect(store.existenciaTotal("art-leche")).toBe(20);
+    expect(store.existenciaDe("art-jugo", BOD_COCINA)).toBe(4);
+    expect(store.existenciaDe("art-jugo", BOD_FRIA)).toBe(10);
+    expect(store.existenciaTotal("art-jugo")).toBe(14);
+
+    expect(store.existenciaTotal("art-salmon")).toBe(0);
+    expect(store.existenciaTotal("art-harina")).toBe(9);
+    expect(store.existenciaTotal("art-crema")).toBe(2);
   });
 
   it("clasifica el mínimo como «ok» y el agotado como «agotado»", () => {
-    expect(store.estadoDe("art-leche")).toBe("ok"); // 20 de mínimo 20
-    expect(store.estadoDe("art-azucar")).toBe("bajo_minimo"); // 8 de mínimo 10
-    expect(store.estadoDe("art-vaso")).toBe("agotado"); // 0 de mínimo 6
+    expect(store.estadoDe("art-mozzarella")).toBe("ok"); // 5 de mínimo 2
+    expect(store.estadoDe("art-harina")).toBe("bajo_minimo"); // 9 de mínimo 10
+    expect(store.estadoDe("art-salmon")).toBe("agotado"); // 0 de mínimo 2
   });
 
   it("valora el inventario a costo con un número positivo y explicable", () => {
@@ -124,30 +125,62 @@ describe("seed — el kárdex de arranque", () => {
     expect(fechas).toEqual(ordenadas);
   });
 
-  it("expone las variantes declaradas con su existencia", () => {
-    const variantes = store.existenciasPorVariante("art-camisa");
-    expect(variantes.map((v) => v.variante)).toEqual(["S", "M", "L"]);
-    // Un artículo sin variantes devuelve una lista vacía, no una variante «undefined».
-    expect(store.existenciasPorVariante("art-cafe")).toEqual([]);
+  it("cubre el kárdex que exige la demo: transferencias, ajustes con motivo y actores distintos", () => {
+    // El seed no es decorativo: es el escenario que el arnés de navegador
+    // comprueba en pantalla. Si pierde una transferencia o un ajuste, las
+    // pantallas dejan de ejercitar esos caminos sin que nada avise.
+    expect(store.movimientos.filter((m) => m.tipo === "transferencia").length).toBeGreaterThanOrEqual(1);
+    const ajustes = store.movimientos.filter((m) => m.tipo === "ajuste");
+    expect(ajustes.length).toBeGreaterThanOrEqual(1);
+    expect(ajustes.every((m) => (m.motivo ?? "").trim() !== "")).toBe(true);
+    // Los dos sentidos del ajuste: uno suma y otro resta.
+    expect(ajustes.some((m) => m.destinoId !== null)).toBe(true);
+    expect(ajustes.some((m) => m.origenId !== null)).toBe(true);
+
+    const actores = new Set(store.movimientos.map((m) => m.actor));
+    expect(actores.size).toBeGreaterThanOrEqual(2);
+    // Y todos los actores son operadores reales del seed de Pedidos.
+    for (const actor of actores) expect(["d0", "d1", "d2", "d3"]).toContain(actor);
+  });
+
+  it("el kárdex entero cabe en los últimos siete días", () => {
+    // Desde la medianoche de hace 7 días, no desde «ahora menos 168 horas»: el
+    // seed fija la hora a las 09:00, y a las 11:00 esa resta ya dejaría fuera al
+    // movimiento más antiguo por dos horas de reloj.
+    const desde = new Date();
+    desde.setDate(desde.getDate() - 7);
+    desde.setHours(0, 0, 0, 0);
+
+    for (const m of store.movimientos) {
+      const t = new Date(m.fecha).getTime();
+      expect(t).toBeGreaterThanOrEqual(desde.getTime());
+      expect(t).toBeLessThanOrEqual(Date.now() + 60_000);
+    }
+  });
+
+  it("no queda ninguna dimensión de variante en el kárdex (deuda declarada)", () => {
+    // Se retiraron en v1: una variante sin SKU ni kárdex propios daría la misma
+    // existencia a dos tallas distintas. El pin es sobre el seed real.
+    expect(store.movimientos.every((m) => !("variante" in m))).toBe(true);
+    expect(store.articulos.every((a) => !("variantes" in a))).toBe(true);
   });
 });
 
 describe("registrarMovimiento — el único camino por el que entra un movimiento", () => {
   it("registra una entrada válida y la existencia sube", () => {
     const store = new InventarioStore(escenario());
-    const antes = store.existenciaDe("a1", BOD_CENTRAL, "M");
+    const antes = store.existenciaDe("a1", BOD_COCINA);
 
     const r = store.registrarMovimiento({
       articuloId: "a1",
-      variante: "M",
       tipo: "entrada",
       cantidad: 5,
       origenId: null,
-      destinoId: BOD_CENTRAL,
+      destinoId: BOD_COCINA,
     });
 
     expect(r.ok).toBe(true);
-    expect(store.existenciaDe("a1", BOD_CENTRAL, "M")).toBe(antes + 5);
+    expect(store.existenciaDe("a1", BOD_COCINA)).toBe(antes + 5);
     if (!r.ok) throw new Error("debía aceptar");
     // `id`, `fecha` y `actor` los pone el store, no el llamador.
     expect(r.movimiento.id).toBeTruthy();
@@ -161,31 +194,29 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
 
     const r = store.registrarMovimiento({
       articuloId: "a1",
-      variante: "M",
       tipo: "transferencia",
       cantidad: 4,
-      origenId: BOD_CENTRAL,
-      destinoId: BOD_TIENDA,
+      origenId: BOD_COCINA,
+      destinoId: BOD_SECA,
     });
 
     expect(r.ok).toBe(true);
     expect(store.movimientos.length).toBe(antes + 1);
-    expect(store.existenciaDe("a1", BOD_CENTRAL, "M")).toBe(6);
-    expect(store.existenciaDe("a1", BOD_TIENDA, "M")).toBe(4);
-    expect(store.existenciaTotal("a1", "M")).toBe(10); // el total no cambia
+    expect(store.existenciaDe("a1", BOD_COCINA)).toBe(6);
+    expect(store.existenciaDe("a1", BOD_SECA)).toBe(4);
+    expect(store.existenciaTotal("a1")).toBe(10); // el total no cambia
   });
 
   it("CONTROL NEGATIVO: un movimiento inválido NO entra en el store", () => {
     const store = new InventarioStore(escenario());
     const movsAntes = store.movimientos.length;
-    const stockAntes = store.existenciaDe("a1", BOD_CENTRAL, "M");
+    const stockAntes = store.existenciaDe("a1", BOD_COCINA);
 
     const r = store.registrarMovimiento({
       articuloId: "a1",
-      variante: "M",
       tipo: "salida",
       cantidad: 999,
-      origenId: BOD_CENTRAL,
+      origenId: BOD_COCINA,
       destinoId: null,
     });
 
@@ -194,18 +225,17 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
     expect(r.motivo).toMatch(/insuficiente/i);
     // Ni el kárdex ni la existencia se movieron.
     expect(store.movimientos.length).toBe(movsAntes);
-    expect(store.existenciaDe("a1", BOD_CENTRAL, "M")).toBe(stockAntes);
+    expect(store.existenciaDe("a1", BOD_COCINA)).toBe(stockAntes);
   });
 
   it("valida contra la bodega de ORIGEN, no contra el total del artículo", () => {
     const store = new InventarioStore(escenario());
-    // El total del artículo es 10, pero la bodega de tienda está VACÍA.
+    // El total del artículo es 10, pero la bodega seca está VACÍA.
     const r = store.registrarMovimiento({
       articuloId: "a1",
-      variante: "M",
       tipo: "salida",
       cantidad: 5,
-      origenId: BOD_TIENDA,
+      origenId: BOD_SECA,
       destinoId: null,
     });
     expect(r.ok).toBe(false);
@@ -213,7 +243,7 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
     expect(r.motivo).toContain("0");
   });
 
-  it("rechaza un artículo, una bodega o una variante que no existen", () => {
+  it("rechaza un artículo o una bodega que no existen", () => {
     const store = new InventarioStore(escenario());
     expect(
       store.registrarMovimiento({
@@ -221,7 +251,7 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
         tipo: "entrada",
         cantidad: 1,
         origenId: null,
-        destinoId: BOD_CENTRAL,
+        destinoId: BOD_COCINA,
       }).ok,
     ).toBe(false);
     expect(
@@ -233,16 +263,15 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
         destinoId: "no-existe",
       }).ok,
     ).toBe(false);
-    const r = store.registrarMovimiento({
-      articuloId: "a1",
-      variante: "XL",
-      tipo: "entrada",
-      cantidad: 1,
-      origenId: null,
-      destinoId: BOD_CENTRAL,
-    });
-    expect(r.ok).toBe(false);
-    expect(r.ok === false && r.motivo).toContain("XL");
+    expect(
+      store.registrarMovimiento({
+        articuloId: "a1",
+        tipo: "transferencia",
+        cantidad: 1,
+        origenId: BOD_COCINA,
+        destinoId: BOD_COCINA,
+      }).ok,
+    ).toBe(false);
   });
 
   it("exige motivo en un ajuste y no lo exige en una entrada", () => {
@@ -253,7 +282,7 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
         tipo: "ajuste",
         cantidad: 3,
         origenId: null,
-        destinoId: BOD_CENTRAL,
+        destinoId: BOD_COCINA,
       }).ok,
     ).toBe(false);
     expect(
@@ -262,7 +291,7 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
         tipo: "ajuste",
         cantidad: 3,
         origenId: null,
-        destinoId: BOD_CENTRAL,
+        destinoId: BOD_COCINA,
         motivo: "Conteo físico",
       }).ok,
     ).toBe(true);
@@ -272,8 +301,8 @@ describe("registrarMovimiento — el único camino por el que entra un movimient
 describe("bodegas — I6 se sostiene desde las acciones, no desde la UI", () => {
   it("marcarPrincipal deja exactamente una en true", () => {
     const store = new InventarioStore(escenario());
-    expect(store.marcarPrincipal(BOD_TIENDA).ok).toBe(true);
-    expect(store.bodegas.filter((b) => b.principal).map((b) => b.id)).toEqual([BOD_TIENDA]);
+    expect(store.marcarPrincipal(BOD_SECA).ok).toBe(true);
+    expect(store.bodegas.filter((b) => b.principal).map((b) => b.id)).toEqual([BOD_SECA]);
   });
 
   it("crear una bodega principal degrada la anterior", () => {
@@ -286,13 +315,15 @@ describe("bodegas — I6 se sostiene desde las acciones, no desde la UI", () => 
   it("crear una bodega sin marcar principal no cambia cuál es", () => {
     const store = new InventarioStore(escenario());
     store.crearBodega({ nombre: "Secundaria" });
-    expect(store.bodegaPrincipal?.id).toBe(BOD_CENTRAL);
+    expect(store.bodegaPrincipal?.id).toBe(BOD_COCINA);
   });
 
   it("rechaza un nombre repetido y uno vacío", () => {
     const store = new InventarioStore(escenario());
     expect(store.crearBodega({ nombre: "  " }).ok).toBe(false);
-    expect(store.crearBodega({ nombre: "central" }).ok).toBe(false);
+    // La comparación de nombres no distingue mayúsculas: «cocina principal» ya
+    // existe como «Cocina principal».
+    expect(store.crearBodega({ nombre: "cocina principal" }).ok).toBe(false);
     expect(store.bodegas).toHaveLength(3);
   });
 
@@ -300,7 +331,7 @@ describe("bodegas — I6 se sostiene desde las acciones, no desde la UI", () => 
     const store = new InventarioStore(escenario());
     expect(store.eliminarBodega(BOD_FRIA).ok).toBe(true);
     expect(store.bodegas).toHaveLength(2);
-    expect(store.bodegaPrincipal?.id).toBe(BOD_CENTRAL);
+    expect(store.bodegaPrincipal?.id).toBe(BOD_COCINA);
   });
 
   it("al eliminar la PRINCIPAL, promueve otra: nunca queda sin principal", () => {
@@ -322,7 +353,7 @@ describe("bodegas — I6 se sostiene desde las acciones, no desde la UI", () => 
 
   it("rechaza eliminar una bodega con kárdex, con el motivo escrito", () => {
     const store = new InventarioStore(escenario());
-    const r = store.eliminarBodega(BOD_CENTRAL);
+    const r = store.eliminarBodega(BOD_COCINA);
     expect(r.ok).toBe(false);
     expect(r.ok === false && r.motivo).toMatch(/kárdex|kardex/i);
     expect(store.bodegas).toHaveLength(3);
@@ -381,10 +412,10 @@ describe("kárdex — filtros y lectura", () => {
 
   it("filtrar por bodega incluye las ENTRADAS a esa bodega, no solo las salidas", () => {
     // Filtrar por `origenId` a secas escondería medio kárdex.
-    const central = store.movimientosFiltrados({ bodegaId: BOD_CENTRAL });
+    const central = store.movimientosFiltrados({ bodegaId: BOD_COCINA });
     expect(central.length).toBeGreaterThan(0);
     expect(
-      central.every((m) => m.origenId === BOD_CENTRAL || m.destinoId === BOD_CENTRAL),
+      central.every((m) => m.origenId === BOD_COCINA || m.destinoId === BOD_COCINA),
     ).toBe(true);
     // Hay al menos una entrada pura (origen null) a la bodega central.
     expect(central.some((m) => m.origenId === null)).toBe(true);
@@ -395,13 +426,20 @@ describe("kárdex — filtros y lectura", () => {
     expect(ajustes).toHaveLength(2);
     expect(ajustes.every((m) => m.tipo === "ajuste")).toBe(true);
 
-    const dePostre = store.movimientosFiltrados({ articuloId: "art-postre", tipo: "transferencia" });
-    expect(dePostre).toHaveLength(2);
+    // Las dos condiciones se exigen juntas: el artículo tiene tres movimientos y
+    // solo uno de ellos es la transferencia.
+    expect(store.movimientosFiltrados({ articuloId: "art-jugo" })).toHaveLength(3);
+    const transferenciasDeJugo = store.movimientosFiltrados({
+      articuloId: "art-jugo",
+      tipo: "transferencia",
+    });
+    expect(transferenciasDeJugo).toHaveLength(1);
+    expect(transferenciasDeJugo[0].tipo).toBe("transferencia");
   });
 
   it("nombra el exterior como «Exterior» y no con un guion", () => {
     expect(store.etiquetaBodega(null)).toBe("Exterior");
-    expect(store.etiquetaBodega(BOD_CENTRAL)).toBe("Bodega central");
+    expect(store.etiquetaBodega(BOD_COCINA)).toBe("Cocina principal");
     const entrada = store.kardex.find((m) => m.tipo === "entrada")!;
     expect(store.trayecto(entrada)).toMatch(/^Exterior → /);
   });

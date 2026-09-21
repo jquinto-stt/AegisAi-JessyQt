@@ -21,7 +21,7 @@ import {
   type Movimiento,
   type TipoMovimiento,
 } from "@/stores";
-import { cantidad, etiquetaFecha, etiquetaVariante } from "./inventario.utils";
+import { cantidad, etiquetaFecha } from "./inventario.utils";
 import { CabeceraPagina, SinResultados } from "./inventario.widgets";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,8 +62,6 @@ type SentidoAjuste = "alta" | "baja";
 interface BorradorMovimiento {
   tipo: TipoMovimiento;
   articuloId: string;
-  /** Cadena vacía = artículo sin variante. */
-  variante: string;
   cantidad: string;
   bodegaId: string;
   /** Solo para transferencia. */
@@ -117,7 +115,6 @@ export const MovimientosPage = observer(() => {
   const [borrador, setBorrador] = useState<BorradorMovimiento>(() => ({
     tipo: "entrada",
     articuloId: inventarioStore.articulos[0]?.id ?? "",
-    variante: "",
     cantidad: "",
     bodegaId: inventarioStore.bodegaPrincipal?.id ?? inventarioStore.bodegas[0]?.id ?? "",
     bodegaDestinoId: inventarioStore.bodegas.find((b) => !b.principal)?.id ?? "",
@@ -156,7 +153,6 @@ export const MovimientosPage = observer(() => {
   );
 
   const articuloBorrador = inventarioStore.articuloPorId(borrador.articuloId);
-  const variantesBorrador = articuloBorrador?.variantes ?? [];
   const esTransferencia = borrador.tipo === "transferencia";
   const esAjuste = borrador.tipo === "ajuste";
 
@@ -204,7 +200,6 @@ export const MovimientosPage = observer(() => {
 
     const res = inventarioStore.registrarMovimiento({
       articuloId: borrador.articuloId,
-      variante: borrador.variante === "" ? undefined : borrador.variante,
       tipo: borrador.tipo,
       cantidad: cantidadNum,
       origenId,
@@ -332,7 +327,6 @@ export const MovimientosPage = observer(() => {
                   <TableRow>
                     <TableCell header>Fecha</TableCell>
                     <TableCell header>Artículo</TableCell>
-                    <TableCell header>Variante</TableCell>
                     <TableCell header>Tipo</TableCell>
                     <TableCell header>Trayecto</TableCell>
                     <TableCell header className="text-right">Cantidad</TableCell>
@@ -350,9 +344,6 @@ export const MovimientosPage = observer(() => {
                         </TableCell>
                         <TableCell className="font-medium text-gray-800 dark:text-white/90">
                           {art?.nombre ?? "Artículo eliminado"}
-                        </TableCell>
-                        <TableCell className="text-gray-500 dark:text-gray-400">
-                          {etiquetaVariante(m.variante)}
                         </TableCell>
                         <TableCell>
                           <Badge color="light" size="sm">
@@ -426,29 +417,11 @@ export const MovimientosPage = observer(() => {
                 key={`fart-${borrador.articuloId}-${inventarioStore.articulos.length}`}
                 options={opcionesArticulo}
                 defaultValue={borrador.articuloId}
-                onChange={(v) => setBorrador((p) => ({ ...p, articuloId: v, variante: "" }))}
+                onChange={(v) => setBorrador((p) => ({ ...p, articuloId: v }))}
                 aria-label="Artículo del movimiento"
               />
             </div>
           </div>
-
-          {/* La variante solo se ofrece si el artículo las declara. El store
-              rechazaría una variante inexistente; ofrecer el selector siempre
-              sería ofrecer un campo que a veces no aplica. */}
-          {variantesBorrador.length > 0 && (
-            <div>
-              <Label>Variante</Label>
-              <div className="mt-1.5">
-                <Select
-                  key={`fvar-${borrador.articuloId}-${borrador.variante}`}
-                  options={variantesBorrador.map((v) => ({ value: v, label: v }))}
-                  defaultValue={borrador.variante || variantesBorrador[0]}
-                  onChange={(v) => setBorrador((p) => ({ ...p, variante: v }))}
-                  aria-label="Variante del artículo"
-                />
-              </div>
-            </div>
-          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

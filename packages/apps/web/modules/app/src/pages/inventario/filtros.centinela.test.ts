@@ -16,8 +16,8 @@ import { inventarioSeed, type Articulo } from "@/stores";
 //     filtro.categoria && a.categoria !== filtro.categoria   →   false
 //
 // Con `categoria === "__todas__"` TODOS los artículos se descartan. La pantalla
-// mostraba «0 de 8 artículos» y «Ningún artículo coincide» con los filtros
-// vacíos, en el camino por defecto de la página.
+// mostraba «0 de 8 artículos» (el seed tenía ocho entonces) y «Ningún artículo
+// coincide» con los filtros vacíos, en el camino por defecto de la página.
 //
 // Nadie lo vio durante la implementación porque `inventario.utils.test.ts` prueba
 // la función con `categoria: null` y con categorías reales — nunca con el
@@ -55,9 +55,9 @@ describe("`filtrarArticulos` · el centinela de UI NO es una categoría", () => 
   });
 
   it("con una categoría real sí filtra", () => {
-    const ropa = filtrarArticulos(ARTICULOS, { categoria: "Ropa" });
-    expect(ropa.length).toBeGreaterThan(0);
-    expect(ropa.every((a) => a.categoria === "Ropa")).toBe(true);
+    const proteinas = filtrarArticulos(ARTICULOS, { categoria: "Proteínas" });
+    expect(proteinas.length).toBeGreaterThan(0);
+    expect(proteinas.every((a) => a.categoria === "Proteínas")).toBe(true);
   });
 
   it("⚠️ con el centinela de la superficie descarta TODO: es la trampa", () => {

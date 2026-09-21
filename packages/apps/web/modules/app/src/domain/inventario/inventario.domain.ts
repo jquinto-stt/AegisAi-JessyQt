@@ -59,6 +59,14 @@ export type UnidadMedida =
  *
  * Tampoco declara el estado (`agotado`/`bajo_minimo`): se deriva con
  * `estadoDeStock()` (invariante I3).
+ *
+ * ── Variantes: fuera de v1, deuda declarada ───────────────────────────────
+ * **Deuda declarada: variantes (talla/color) se omiten en v1.** Una variante
+ * real necesita SKU propio y stock propio — no es un `string[]`. Declarar
+ * `variantes: ["M", "L"]` sin darle a cada una su propia identidad y su propio
+ * kárdex produciría un dato **incorrecto**: dos tallas distintas compartirían
+ * una única cifra de existencia, y esa cifra no describiría ninguna de las dos.
+ * Disparador: cuando el negocio necesite distinguir stock por variante.
  */
 export interface Articulo {
   id: string;
@@ -76,14 +84,6 @@ export interface Articulo {
    * desde aquí (D1/D2).
    */
   costoUnitario: number;
-  /**
-   * Variantes (talla/color). Opcional: un artículo sin variantes no las declara.
-   *
-   * ⚠️ Simplificación declarada: una variante real tendría SKU propio y stock
-   * propio. Aquí es una etiqueta dentro del mismo artículo. Se resuelve cuando
-   * haya un caso de uso, no antes.
-   */
-  variantes?: string[];
 }
 
 /** Bodega (o almacén) — un sitio físico donde puede haber mercancía. */
@@ -127,7 +127,6 @@ export type TipoMovimiento = "entrada" | "salida" | "ajuste" | "transferencia";
 export interface Movimiento {
   id: string;
   articuloId: string;
-  variante?: string;
   tipo: TipoMovimiento;
   /** Siempre positivo. El signo lo determina el par origen/destino. */
   cantidad: number;
@@ -145,6 +144,27 @@ export interface Movimiento {
 
 /** Estado de existencias derivado. Nunca se persiste (invariante I3). */
 export type EstadoStock = "agotado" | "bajo_minimo" | "ok";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEXTO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Pliega texto para comparar: minúsculas y sin acentos.
+ *
+ * Vive en el dominio, y no en cada superficie, porque **la tabla y el asistente
+ * tienen que plegar igual**. Si la búsqueda de `/inventario` y la de la
+ * herramienta del chat difirieran, «salmon» encontraría el artículo en un sitio
+ * y no en el otro, y quien lo buscara concluiría que el dato no existe.
+ *
+ * Quien escribe una búsqueda no pone tildes: «salmon», «cafe», «analitica».
+ */
+export function normalizarTexto(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FUNCIONES PURAS
@@ -170,10 +190,6 @@ export function efectoEnBodega(m: Movimiento, bodegaId: string): number {
  * efectos de sus movimientos. No hay ningún campo que guardar ni que
  * desincronizar (invariante I1).
  *
- * @param variante Si se indica, solo cuenta los movimientos de esa variante.
- *                 Si se omite, cuenta **todos** los del artículo (es el total
- *                 del artículo en esa bodega, sumando variantes).
- *
  * Coste O(n) por lectura sobre el número de movimientos. Es despreciable en un
  * mock (decenas de artículos, cientos de movimientos) y MobX memoiza el
  * `computed` mientras nada cambie.
@@ -182,12 +198,10 @@ export function stockDe(
   movs: readonly Movimiento[],
   articuloId: string,
   bodegaId: string,
-  variante?: string,
 ): number {
   let total = 0;
   for (const m of movs) {
     if (m.articuloId !== articuloId) continue;
-    if (variante !== undefined && m.variante !== variante) continue;
     total += efectoEnBodega(m, bodegaId);
   }
   return total;
@@ -195,19 +209,11 @@ export function stockDe(
 
 /**
  * Existencia total de un artículo sumando todas las bodegas.
- *
- * @param variante Si se indica, solo cuenta esa variante. Si se omite, cuenta
- *                 todas.
  */
-export function stockTotalDe(
-  movs: readonly Movimiento[],
-  articuloId: string,
-  variante?: string,
-): number {
+export function stockTotalDe(movs: readonly Movimiento[], articuloId: string): number {
   let total = 0;
   for (const m of movs) {
     if (m.articuloId !== articuloId) continue;
-    if (variante !== undefined && m.variante !== variante) continue;
     total += (m.destinoId !== null ? m.cantidad : 0) - (m.origenId !== null ? m.cantidad : 0);
   }
   return total;
@@ -231,9 +237,11 @@ export function estadoDeStock(disponible: number, minimo: number): EstadoStock {
  * Valor del inventario **a costo**: existencias totales × costo unitario,
  * sumando artículos y bodegas.
  *
- * Valora el total del artículo (todas sus variantes) para no contar dos veces
- * la misma mercancía: valorar por variante y además por «todas las variantes»
- * duplicaría el número.
+ * Valoración a costo de referencia del artículo. **No es FIFO ni promedio
+ * ponderado**: el módulo no guarda el costo de cada entrada, así que no puede
+ * decir qué unidad concreta se consumió. Es el costo vigente del artículo
+ * aplicado a la existencia total, que es la cifra útil para una demo y una
+ * aproximación declarada para contabilidad.
  */
 export function valorInventario(
   movs: readonly Movimiento[],
@@ -252,17 +260,10 @@ export function valorInventario(
 /**
  * Los movimientos de un artículo, **más reciente primero** — el orden en que se
  * lee un kárdex.
- *
- * @param variante Si se indica, solo esa variante. Si se omite, todas.
  */
-export function movimientosDe(
-  movs: readonly Movimiento[],
-  articuloId: string,
-  variante?: string,
-): Movimiento[] {
+export function movimientosDe(movs: readonly Movimiento[], articuloId: string): Movimiento[] {
   return movs
     .filter((m) => m.articuloId === articuloId)
-    .filter((m) => variante === undefined || m.variante === variante)
     .slice()
     .sort((a, b) => b.fecha.localeCompare(a.fecha));
 }

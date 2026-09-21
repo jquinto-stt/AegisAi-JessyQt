@@ -72,12 +72,16 @@ describe("capacidad assistant.use", () => {
 });
 
 describe("catálogo de roles", () => {
-  it("incluye el rol de administrador con las 18 capacidades", async () => {
+  it("incluye el rol de administrador con TODAS las capacidades del catálogo", async () => {
     const { rolesStore, CAPACIDADES, ROL_ADMIN } = await freshRolesStore();
 
     const admin = rolesStore.porId(ROL_ADMIN);
     expect(admin?.nombre).toBe("Administrador de tienda");
     expect(admin?.sistema).toBe(true);
+    // Se compara contra `CAPACIDADES.length` y no contra un número escrito: el
+    // rol administrador se define como `[...CAPACIDADES]`, así que un 22 fijo
+    // aquí sería un segundo dato que envejece por su cuenta. El número vive en
+    // el pin de arriba, que es el único sitio donde debe estar.
     expect(admin?.capacidades).toHaveLength(CAPACIDADES.length);
   });
 

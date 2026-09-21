@@ -233,17 +233,21 @@ function persistConfig(cfg: InventarioConfig): void {
 // SEED — el kárdex de arranque
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Nace con TRES bodegas a propósito: el catálogo de la plataforma promete
+// Nace con DOS bodegas a propósito: el catálogo de la plataforma promete
 // «Multi-almacén» (`CATALOGO_MODULOS.inventario.destacados`). Un módulo que
 // naciera con una sola bodega dejaría esa frase mintiendo, y la alternativa
 // —retirar el destacado— es empobrecer el producto por no sembrar un dato.
 //
-// Los tres estados de existencias están representados en el seed (`ok`,
-// `bajo_minimo` y `agotado`) para que las pantallas se vean con datos reales y
-// no solo con el camino feliz.
+// El negocio del seed es el MISMO que el de Pedidos: **comida**. Un almacén de
+// ropa junto a un catálogo de «Combo clásico / Bebida 350ml / Postre del día»
+// es un demo incoherente: dos módulos del mismo negocio contando dos negocios.
+//
+// Los tres estados de existencias están representados (`ok`, `bajo_minimo` y
+// `agotado`) para que las pantallas se vean con datos reales y no solo con el
+// camino feliz. Las cantidades están elegidas para que el final de cada
+// artículo caiga en el estado que se quiere mostrar, no al azar.
 
-const BOD_CENTRAL = "bod-central";
-const BOD_TIENDA = "bod-tienda";
+const BOD_COCINA = "bod-cocina";
 const BOD_FRIA = "bod-fria";
 
 /** ISO de `diasAtras` días atrás, a una hora fija (determinismo del seed). */
@@ -266,12 +270,11 @@ function movimiento(
   cantidad: number,
   origenId: string | null,
   destinoId: string | null,
-  extra: { variante?: string; motivo?: string; actor?: string } = {},
+  extra: { motivo?: string; actor?: string } = {},
 ): Movimiento {
   return {
     id,
     articuloId,
-    variante: extra.variante,
     tipo,
     cantidad,
     origenId,
@@ -285,148 +288,163 @@ function movimiento(
 /** Datos de arranque del módulo. Puro y determinista salvo por las fechas. */
 export function seed(): DatosInventario {
   const bodegas: Bodega[] = [
-    { id: BOD_CENTRAL, nombre: "Bodega central", principal: true },
-    { id: BOD_TIENDA, nombre: "Almacén de tienda", principal: false },
-    { id: BOD_FRIA, nombre: "Cuarto frío", principal: false },
+    { id: BOD_COCINA, nombre: "Cocina principal", principal: true },
+    { id: BOD_FRIA, nombre: "Bodega fría", principal: false },
   ];
 
   const articulos: Articulo[] = [
+    // ── Proteínas ─────────────────────────────────────────────────────────
     {
-      id: "art-camisa",
+      id: "art-pollo",
       sku: "SKU-1001",
-      nombre: "Camiseta oversize",
-      categoria: "Ropa",
-      unidad: "unidad",
-      minimo: 12,
-      costoUnitario: 32000,
-      variantes: ["S", "M", "L"],
-    },
-    {
-      id: "art-jean",
-      sku: "SKU-1002",
-      nombre: "Jean recto",
-      categoria: "Ropa",
-      unidad: "unidad",
-      minimo: 8,
-      costoUnitario: 58000,
-      variantes: ["30", "32", "34"],
-    },
-    {
-      id: "art-cafe",
-      sku: "SKU-2001",
-      nombre: "Café tostado",
-      categoria: "Insumos",
+      nombre: "Pechuga de pollo",
+      categoria: "Proteínas",
       unidad: "kg",
       minimo: 5,
-      costoUnitario: 24000,
+      costoUnitario: 12000,
     },
     {
-      id: "art-leche",
+      id: "art-carne-molida",
+      sku: "SKU-1002",
+      nombre: "Carne molida",
+      categoria: "Proteínas",
+      unidad: "kg",
+      minimo: 3,
+      costoUnitario: 18000,
+    },
+    {
+      id: "art-salmon",
+      sku: "SKU-1003",
+      nombre: "Salmón",
+      categoria: "Proteínas",
+      unidad: "kg",
+      minimo: 2,
+      costoUnitario: 35000,
+    },
+
+    // ── Lácteos ───────────────────────────────────────────────────────────
+    {
+      id: "art-mozzarella",
+      sku: "SKU-2001",
+      nombre: "Queso mozzarella",
+      categoria: "Lácteos",
+      unidad: "kg",
+      minimo: 2,
+      costoUnitario: 22000,
+    },
+    {
+      id: "art-crema",
       sku: "SKU-2002",
-      nombre: "Leche entera",
+      nombre: "Crema de leche",
+      categoria: "Lácteos",
+      unidad: "l",
+      minimo: 3,
+      costoUnitario: 8000,
+    },
+
+    // ── Insumos ───────────────────────────────────────────────────────────
+    {
+      id: "art-aceite",
+      sku: "SKU-3001",
+      nombre: "Aceite de oliva",
       categoria: "Insumos",
       unidad: "l",
-      minimo: 20,
-      costoUnitario: 4200,
+      minimo: 2,
+      costoUnitario: 15000,
     },
     {
-      id: "art-azucar",
-      sku: "SKU-2003",
-      nombre: "Azúcar",
+      id: "art-harina",
+      sku: "SKU-3002",
+      nombre: "Harina de trigo",
       categoria: "Insumos",
       unidad: "kg",
       minimo: 10,
-      costoUnitario: 3800,
+      costoUnitario: 3500,
     },
+
+    // ── Bebidas ───────────────────────────────────────────────────────────
     {
-      id: "art-vaso",
-      sku: "SKU-3001",
-      nombre: "Vaso 12 oz",
-      categoria: "Empaques",
-      unidad: "caja",
-      minimo: 6,
+      id: "art-jugo",
+      sku: "SKU-4001",
+      nombre: "Jugo de naranja",
+      categoria: "Bebidas",
+      unidad: "l",
+      minimo: 5,
+      costoUnitario: 6000,
+    },
+
+    // ── Postres ───────────────────────────────────────────────────────────
+    {
+      id: "art-chocolate",
+      sku: "SKU-5001",
+      nombre: "Chocolate",
+      categoria: "Postres",
+      unidad: "kg",
+      minimo: 1,
       costoUnitario: 28000,
     },
     {
-      id: "art-torta",
-      sku: "SKU-4001",
-      nombre: "Porción de torta",
-      categoria: "Producto terminado",
-      unidad: "porcion",
-      minimo: 24,
-      costoUnitario: 3200,
-    },
-    {
-      id: "art-postre",
-      sku: "SKU-4002",
-      nombre: "Postre del día",
-      categoria: "Producto terminado",
-      unidad: "porcion",
-      minimo: 18,
-      costoUnitario: 3000,
+      id: "art-fresas",
+      sku: "SKU-5002",
+      nombre: "Fresas",
+      categoria: "Postres",
+      unidad: "kg",
+      minimo: 2,
+      costoUnitario: 14000,
     },
   ];
 
   const movimientos: Movimiento[] = [
-    // ── Camiseta oversize (min 12) — termina «ok» ─────────────────────────
-    movimiento("mv-001", 12, "art-camisa", "entrada", 40, null, BOD_CENTRAL, { variante: "M" }),
-    movimiento("mv-002", 12, "art-camisa", "entrada", 25, null, BOD_CENTRAL, { variante: "S" }),
-    movimiento("mv-003", 12, "art-camisa", "entrada", 20, null, BOD_CENTRAL, { variante: "L" }),
-    movimiento("mv-004", 9, "art-camisa", "transferencia", 10, BOD_CENTRAL, BOD_TIENDA, { variante: "M" }),
-    movimiento("mv-005", 9, "art-camisa", "transferencia", 6, BOD_CENTRAL, BOD_TIENDA, { variante: "S" }),
-    movimiento("mv-006", 3, "art-camisa", "salida", 4, BOD_TIENDA, null, { variante: "M", actor: "d2" }),
-    movimiento("mv-007", 2, "art-camisa", "salida", 2, BOD_CENTRAL, null, { variante: "L", actor: "d2" }),
+    // ── Pechuga de pollo (min 5 kg) — termina «ok» con 12 ─────────────────
+    movimiento("mv-001", 6, "art-pollo", "entrada", 20, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-002", 2, "art-pollo", "salida", 8, BOD_COCINA, null, { actor: "d2" }),
 
-    // ── Jean recto (min 8) — termina «ok» ─────────────────────────────────
-    movimiento("mv-008", 11, "art-jean", "entrada", 20, null, BOD_CENTRAL, { variante: "32" }),
-    movimiento("mv-009", 11, "art-jean", "entrada", 12, null, BOD_CENTRAL, { variante: "30" }),
-    movimiento("mv-010", 8, "art-jean", "transferencia", 8, BOD_CENTRAL, BOD_TIENDA, { variante: "32" }),
-    movimiento("mv-011", 4, "art-jean", "salida", 3, BOD_TIENDA, null, { variante: "32", actor: "d2" }),
+    // ── Carne molida (min 3 kg) — termina «ok» con 8 ──────────────────────
+    movimiento("mv-003", 6, "art-carne-molida", "entrada", 12, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-004", 1, "art-carne-molida", "salida", 4, BOD_COCINA, null, { actor: "d2" }),
 
-    // ── Café tostado (min 5 kg) — termina «ok» ────────────────────────────
-    movimiento("mv-012", 14, "art-cafe", "entrada", 30, null, BOD_CENTRAL, { actor: "d0" }),
-    movimiento("mv-013", 10, "art-cafe", "transferencia", 8, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-014", 5, "art-cafe", "salida", 6, BOD_TIENDA, null, { actor: "d2" }),
-    movimiento("mv-015", 2, "art-cafe", "salida", 12, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Salmón (min 2 kg) — termina AGOTADO: es el caso que enseña que el
+    //    stock se deriva y que 0 es un estado, no un artículo ausente.
+    movimiento("mv-005", 5, "art-salmon", "entrada", 5, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-006", 3, "art-salmon", "transferencia", 2, BOD_COCINA, BOD_FRIA, { actor: "d1" }),
+    movimiento("mv-007", 1, "art-salmon", "salida", 3, BOD_COCINA, null, { actor: "d2" }),
+    movimiento("mv-008", 0, "art-salmon", "salida", 2, BOD_FRIA, null, { actor: "d2" }),
 
-    // ── Leche entera (min 20 l) — termina EXACTAMENTE en el mínimo: «ok» ──
-    //    Es el caso límite a propósito: estar en el mínimo no es estar mal.
-    movimiento("mv-016", 13, "art-leche", "entrada", 60, null, BOD_CENTRAL),
-    movimiento("mv-017", 8, "art-leche", "transferencia", 12, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-018", 5, "art-leche", "salida", 10, BOD_TIENDA, null, { actor: "d2" }),
-    movimiento("mv-019", 2, "art-leche", "salida", 30, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Queso mozzarella (min 2 kg) — termina «ok» con 5 ──────────────────
+    movimiento("mv-009", 6, "art-mozzarella", "entrada", 5, null, BOD_COCINA, { actor: "d1" }),
 
-    // ── Azúcar (min 10 kg) — termina «bajo mínimo» ────────────────────────
-    movimiento("mv-020", 13, "art-azucar", "entrada", 20, null, BOD_CENTRAL),
-    movimiento("mv-021", 7, "art-azucar", "transferencia", 5, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-022", 3, "art-azucar", "salida", 12, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Crema de leche (min 3 l) — termina BAJO MÍNIMO con 2 ──────────────
+    movimiento("mv-010", 7, "art-crema", "entrada", 10, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-011", 1, "art-crema", "salida", 8, BOD_COCINA, null, { actor: "d2" }),
 
-    // ── Vaso 12 oz (min 6 cajas) — termina «agotado» ──────────────────────
-    movimiento("mv-023", 12, "art-vaso", "entrada", 5, null, BOD_CENTRAL),
-    movimiento("mv-024", 9, "art-vaso", "transferencia", 2, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-025", 6, "art-vaso", "salida", 2, BOD_TIENDA, null, { actor: "d2" }),
-    movimiento("mv-026", 4, "art-vaso", "salida", 3, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Aceite de oliva (min 2 l) — termina «ok» con 6 ────────────────────
+    movimiento("mv-012", 7, "art-aceite", "entrada", 6, null, BOD_COCINA, { actor: "d1" }),
 
-    // ── Porción de torta (min 24) — termina «bajo mínimo» ─────────────────
-    movimiento("mv-027", 9, "art-torta", "entrada", 60, null, BOD_CENTRAL),
-    movimiento("mv-028", 6, "art-torta", "transferencia", 20, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-029", 3, "art-torta", "salida", 18, BOD_TIENDA, null, { actor: "d2" }),
-    movimiento("mv-030", 1, "art-torta", "salida", 30, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Harina de trigo (min 10 kg) — termina BAJO MÍNIMO con 9 ───────────
+    //    9 contra un mínimo de 10: el caso límite por un solo kilo.
+    movimiento("mv-013", 7, "art-harina", "entrada", 9, null, BOD_COCINA, { actor: "d1" }),
 
-    // ── Postre del día (min 18) — «ok», con los dos sentidos del ajuste ───
-    movimiento("mv-031", 10, "art-postre", "entrada", 40, null, BOD_CENTRAL),
-    movimiento("mv-032", 8, "art-postre", "transferencia", 12, BOD_CENTRAL, BOD_TIENDA),
-    movimiento("mv-033", 7, "art-postre", "transferencia", 6, BOD_CENTRAL, BOD_FRIA),
-    movimiento("mv-034", 6, "art-postre", "salida", 8, BOD_TIENDA, null, { actor: "d2" }),
-    movimiento(
-      "mv-035", 4, "art-postre", "ajuste", 4, null, BOD_CENTRAL,
-      { motivo: "Conteo físico: diferencia a favor" },
-    ),
-    movimiento(
-      "mv-036", 3, "art-postre", "ajuste", 6, BOD_CENTRAL, null,
-      { motivo: "Merma por vencimiento" },
-    ),
-    movimiento("mv-037", 1, "art-postre", "salida", 10, BOD_CENTRAL, null, { actor: "d2" }),
+    // ── Jugo de naranja (min 5 l) — termina «ok» con 14, repartido ────────
+    movimiento("mv-014", 6, "art-jugo", "entrada", 30, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-015", 4, "art-jugo", "transferencia", 10, BOD_COCINA, BOD_FRIA, { actor: "d1" }),
+    movimiento("mv-016", 2, "art-jugo", "salida", 16, BOD_COCINA, null, { actor: "d2" }),
+
+    // ── Chocolate (min 1 kg) — «ok», con el ajuste AL ALZA ────────────────
+    //    Un conteo físico que encuentra más de lo que el sistema creía.
+    movimiento("mv-017", 6, "art-chocolate", "entrada", 8, null, BOD_COCINA, { actor: "d1" }),
+    movimiento("mv-018", 1, "art-chocolate", "ajuste", 1, null, BOD_COCINA, {
+      motivo: "Conteo físico: diferencia a favor",
+      actor: "d3",
+    }),
+
+    // ── Fresas (min 2 kg) — «ok», con el ajuste A LA BAJA ─────────────────
+    //    El único movimiento del módulo que destruye existencia sin que salga
+    //    de ningún sitio: por eso exige motivo (I5).
+    movimiento("mv-019", 5, "art-fresas", "entrada", 10, null, BOD_FRIA, { actor: "d1" }),
+    movimiento("mv-020", 1, "art-fresas", "ajuste", 7, BOD_FRIA, null, {
+      motivo: "Merma por vencimiento",
+      actor: "d3",
+    }),
   ];
 
   return { articulos, bodegas, movimientos };
@@ -498,23 +516,13 @@ export class InventarioStore {
   // ── Existencias (derivadas, I1) ───────────────────────────────────────────
 
   /** Existencia de un artículo en una bodega. Derivada del kárdex. */
-  existenciaDe(articuloId: string, bodegaId: string, variante?: string): number {
-    return stockDe(this.movimientos, articuloId, bodegaId, variante);
+  existenciaDe(articuloId: string, bodegaId: string): number {
+    return stockDe(this.movimientos, articuloId, bodegaId);
   }
 
   /** Existencia total de un artículo, sumando bodegas. Derivada del kárdex. */
-  existenciaTotal(articuloId: string, variante?: string): number {
-    return stockTotalDe(this.movimientos, articuloId, variante);
-  }
-
-  /** Existencia total de cada variante declarada de un artículo. */
-  existenciasPorVariante(articuloId: string): { variante: string; cantidad: number }[] {
-    const articulo = this.articuloPorId(articuloId);
-    if (!articulo?.variantes?.length) return [];
-    return articulo.variantes.map((variante) => ({
-      variante,
-      cantidad: this.existenciaTotal(articuloId, variante),
-    }));
+  existenciaTotal(articuloId: string): number {
+    return stockTotalDe(this.movimientos, articuloId);
   }
 
   /** Estado de existencias de un artículo (derivado, I3). */
@@ -522,13 +530,6 @@ export class InventarioStore {
     const articulo = this.articuloPorId(articuloId);
     if (!articulo) return "agotado";
     return estadoDeStock(this.existenciaTotal(articuloId), articulo.minimo);
-  }
-
-  /** Estado de existencias de una variante concreta. */
-  estadoDeVariante(articuloId: string, variante: string): EstadoStock {
-    const articulo = this.articuloPorId(articuloId);
-    if (!articulo) return "agotado";
-    return estadoDeStock(this.existenciaTotal(articuloId, variante), articulo.minimo);
   }
 
   /** Artículos por debajo de su punto de reorden, de menor a mayor existencia. */
@@ -595,8 +596,8 @@ export class InventarioStore {
   // ── Kárdex ────────────────────────────────────────────────────────────────
 
   /** Movimientos de un artículo, más reciente primero. */
-  movimientosDe(articuloId: string, variante?: string): Movimiento[] {
-    return movimientosDe(this.movimientos, articuloId, variante);
+  movimientosDe(articuloId: string): Movimiento[] {
+    return movimientosDe(this.movimientos, articuloId);
   }
 
   /** Todo el kárdex, más reciente primero. */
@@ -653,14 +654,6 @@ export class InventarioStore {
     if (!articulo) {
       return { ok: false, motivo: "El artículo no existe." };
     }
-    if (datos.variante !== undefined) {
-      if (!articulo.variantes?.includes(datos.variante)) {
-        return {
-          ok: false,
-          motivo: `El artículo no declara la variante «${datos.variante}».`,
-        };
-      }
-    }
     if (datos.origenId !== null && !this.bodegaPorId(datos.origenId)) {
       return { ok: false, motivo: "La bodega de origen no existe." };
     }
@@ -668,18 +661,14 @@ export class InventarioStore {
       return { ok: false, motivo: "La bodega de destino no existe." };
     }
 
-    // La existencia contra la que se valida es la de la bodega de ORIGEN, con
-    // la variante del movimiento. Validar contra el total del artículo dejaría
-    // retirar de una bodega vacía lo que sobra en otra.
-    const stockOrigen =
-      datos.origenId === null
-        ? 0
-        : this.existenciaDe(datos.articuloId, datos.origenId, datos.variante);
+    // La existencia contra la que se valida es la de la bodega de ORIGEN.
+    // Validar contra el total del artículo dejaría retirar de una bodega vacía
+    // lo que sobra en otra.
+    const stockOrigen = datos.origenId === null ? 0 : this.existenciaDe(datos.articuloId, datos.origenId);
 
     const validacion = validarMovimiento(
       {
         articuloId: datos.articuloId,
-        variante: datos.variante,
         tipo: datos.tipo,
         cantidad: datos.cantidad,
         origenId: datos.origenId,
@@ -693,7 +682,6 @@ export class InventarioStore {
     const movimiento: Movimiento = {
       id: crypto.randomUUID(),
       articuloId: datos.articuloId,
-      variante: datos.variante,
       tipo: datos.tipo,
       cantidad: datos.cantidad,
       origenId: datos.origenId,
