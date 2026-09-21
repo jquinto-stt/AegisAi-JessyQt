@@ -4,7 +4,12 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { organizacionStore } from "@/stores/organizacion.store";
-import { plataformaStore, CATALOGO_MODULOS, type IdModuloNegocio } from "@/stores/plataforma.store";
+import { sessionStore, modulosOperablesDeSesion } from "@/stores/session.store";
+import {
+  plataformaStore,
+  type IdModuloNegocio,
+  type InfoModuloNegocio,
+} from "@/stores/plataforma.store";
 import { OnboardingLayout } from "./OnboardingLayout";
 
 // Aquí se importaban `ThemeToggleButton`, `OnboardingStepper` y
@@ -47,6 +52,49 @@ export const OnboardingModulosPage = observer(() => {
 
   const handleOmitir = () => {
     navigate("/onboarding/encuesta?redirect=/modulos");
+  };
+
+  /**
+   * Agrega un módulo desde el alta. Tres casos, y el tercero es el que faltaba:
+   *
+   *   · **no `disponible`** → no se ofrece (botón deshabilitado);
+   *   · **`disponible` con onboarding** → se va a su paso, que configura rubro y
+   *     conectores ANTES de instalar;
+   *   · **`disponible` sin onboarding** → **se instala directo**. Un módulo no
+   *     necesita un asistente para existir: Inventario es una decisión, no un
+   *     hueco.
+   *
+   * El tercer caso pintaba «En desarrollo» con el botón muerto, así que Inventario
+   * —`disponible: true`, con cuatro rutas vivas— aparecía como futuro y **no se
+   * podía agregar desde el alta**. `ConfiguracionModulosPage` ya resolvía lo mismo
+   * bien (`{mod.rutaOnboarding ? "Configurar e instalar" : "Instalar"}`); esto
+   * copia su criterio en vez de inventar un segundo.
+   */
+  const handleAgregar = (modulo: InfoModuloNegocio) => {
+    if (!modulo.disponible) return;
+
+    if (modulo.rutaOnboarding) {
+      navigate(modulo.rutaOnboarding);
+      return;
+    }
+
+    organizacionStore.instalarModulo(modulo.id);
+
+    // La sesión nace sin módulos (el alta la configura con `[]`), así que hay que
+    // re-derivarla —`Sesión ⊆ Organización`— preservando el tipo. Mismo idioma que
+    // `ModulosPage`: sin tipo de sesión o simulando, no se toca la sesión.
+    const tipoActual = sessionStore.accessContext.tipoSesion;
+    if (!sessionStore.isSimulando && tipoActual) {
+      sessionStore.configurar(
+        modulosOperablesDeSesion(organizacionStore.modulosActivos),
+        tipoActual,
+      );
+    }
+
+    // Continúa el alta por el paso final, igual que hacen Módulos («Omitir») y
+    // Pedidos al terminar. `redirect` apunta a la entrada del módulo recién
+    // instalado, que es lo que hace útil haberlo instalado.
+    navigate(`/onboarding/encuesta?redirect=${modulo.rutaPrincipal}`);
   };
 
   return (
@@ -168,17 +216,17 @@ export const OnboardingModulosPage = observer(() => {
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  {/* El botón exige las DOS cosas: que el módulo exista hoy
-                      (`disponible`) y que tenga un paso de onboarding al que ir.
-                      Un módulo disponible sin paso no puede pintar «Agregar»:
-                      no hay a dónde llevarlo sin instalar otro módulo. */}
-                  {modulo.disponible && modulo.rutaOnboarding ? (
+                  {/* «En desarrollo» queda SOLO para lo que de verdad no existe
+                      hoy (`disponible: false`). Un módulo disponible sin paso de
+                      onboarding se instala directo: antes caía en esta rama y se
+                      anunciaba como futuro teniendo rutas vivas. */}
+                  {modulo.disponible ? (
                     <Button
                       size="sm"
-                      onClick={() => navigate(modulo.rutaOnboarding!)}
+                      onClick={() => handleAgregar(modulo)}
                       className="w-full rounded-full font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-sm shadow-brand-500/20 cursor-pointer"
                     >
-                      Agregar este módulo →
+                      {modulo.rutaOnboarding ? "Agregar este módulo →" : "Instalar"}
                     </Button>
                   ) : (
                     <Button

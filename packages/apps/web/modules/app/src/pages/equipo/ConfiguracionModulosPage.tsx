@@ -150,13 +150,14 @@ const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
   },
   inventario: {
     logo: <InventoryBrandLogo />,
-    // Las cuatro rutas reales del módulo. Antes estaba VACÍO con un comentario que
+    // Las CINCO rutas reales del módulo. Antes estaba VACÍO con un comentario que
     // decía que `/inventario` no existía — y era verdad entonces: el modal de
     // detalles mostraba un módulo sin ninguna ruta, que es la mitad de una ficha.
     rutasHabilitadas: [
       "/inventario/inicio",
       "/inventario",
       "/inventario/movimientos",
+      "/inventario/auditoria",
       "/inventario/config",
     ],
     rolesRequeridos: "inventory.read, inventory.manage, inventory.move, inventory.adjust",
@@ -164,6 +165,8 @@ const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
       "Existencias derivadas del kárdex: entradas, salidas, transferencias y ajustes",
       "Multi-almacén con una bodega principal y transferencias entre bodegas",
       "Catálogo de artículos con variantes, punto de reorden y valoración a costo",
+      "Trazabilidad por lotes con vencimientos y despacho FEFO",
+      "Conteo físico con conciliación de diferencias contra el kárdex",
     ],
   },
 };

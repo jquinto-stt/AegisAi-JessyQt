@@ -122,11 +122,18 @@ export const EncuestaOnboardingPage = observer(() => {
         description="Cuéntanos cómo conociste la plataforma"
       />
 
+      {/* Sin «Volver» a propósito. Esta pantalla tiene TRES entradas —
+          Organización (que salta los módulos), Módulos («Omitir por ahora») y
+          Pedidos (al terminar su onboarding)— y el paso anterior es distinto en
+          cada una. Estuvo fijo a `/onboarding/organizacion`, que solo es correcto
+          para la primera: desde las otras dos retrocedía dos o tres pasos y se
+          saltaba justo la pantalla donde el usuario acababa de estar. Un destino
+          fijo no puede ser el anterior de tres orígenes, así que el paso final no
+          ofrece retroceso: se termina o se cierra. */}
       <OnboardingLayout
         pasoActual={2}
         totalPasos={2}
         pasoLabel="Paso final"
-        onBack={() => navigate("/onboarding/organizacion")}
         brandMessages={BRAND_MESSAGES_ENCUESTA}
         brandSummary={{
           eyebrow: "Encuesta de bienvenida",

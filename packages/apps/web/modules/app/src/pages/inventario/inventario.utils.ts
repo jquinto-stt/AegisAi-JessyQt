@@ -27,7 +27,7 @@ import {
   type EstadoStock,
   type UnidadMedida,
 } from "@/stores";
-import { normalizarTexto } from "@/domain/inventario/inventario.domain";
+import { diasParaVencer, normalizarTexto, type TipoMovimiento } from "@/domain/inventario/inventario.domain";
 
 /** Importe en pesos, sin decimales. El locale del proyecto es `es-CO`. */
 export const money = (n: number) => `$${Math.round(n).toLocaleString("es-CO")}`;
@@ -89,6 +89,31 @@ export function etiquetaFecha(iso: string, ahora: Date = new Date()): string {
   return `${f.getDate()} ${MESES[f.getMonth()]}`;
 }
 
+/**
+ * Vencimiento en palabras: «vence en 3 días», «vence hoy», «venció hace 2 días».
+ *
+ * Es una etiqueta distinta de `etiquetaFecha` a propósito: un vencimiento no se
+ * lee como una fecha del kárdex. «Hoy 09:00» describe un movimiento; de un lote
+ * lo que importa es cuánto le queda, y «hoy» sin más ya dice que hay que
+ * moverlo.
+ *
+ * `diasParaVencer` devuelve `null` con una fecha ilegible, y aquí se pinta una
+ * raya —igual que en `etiquetaFecha`—: «—» es «no se sabe», que es distinto de
+ * «vence hoy».
+ */
+export function etiquetaVencimiento(
+  fechaVencimiento: string,
+  hoy: Date = new Date(),
+): string {
+  const dias = diasParaVencer(fechaVencimiento, hoy);
+  if (dias === null) return "—";
+  if (dias === 0) return "vence hoy";
+  if (dias === 1) return "vence mañana";
+  if (dias === -1) return "venció ayer";
+  if (dias > 0) return `vence en ${dias} días`;
+  return `venció hace ${Math.abs(dias)} días`;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FILTROS Y ORDEN
 // ═══════════════════════════════════════════════════════════════════════════
@@ -133,11 +158,18 @@ export function conExistencia(
   return articulos.filter((a) => existenciaDe(a.id) > 0);
 }
 
-/** Gravedad de un estado, para ordenar. Menor = más urgente. */
+/**
+ * Gravedad de un estado, para ordenar. Menor = más urgente.
+ *
+ * `reorden` va DESPUÉS de `bajo_minimo` y antes de `ok`: es la misma llamada que
+ * «bajo mínimo» en su grado temprano, así que ordena por detrás de ella. La lista
+ * de trabajo del panel pone primero lo que ya se quedó sin margen.
+ */
 const GRAVEDAD: Record<EstadoStock, number> = {
   agotado: 0,
   bajo_minimo: 1,
-  ok: 2,
+  reorden: 2,
+  ok: 3,
 };
 
 /**
@@ -157,4 +189,139 @@ export function ordenarPorUrgencia(
     if (g !== 0) return g;
     return a.nombre.localeCompare(b.nombre, "es");
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FORMULARIO DE MOVIMIENTOS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Sentido de un ajuste: aparece mercancía (al alza) o desaparece (a la baja). */
+export type SentidoAjuste = "alta" | "baja";
+
+/**
+ * Traduce el formulario al par origen/destino del dominio.
+ *
+ * **Vive aquí, y no en `MovimientosPage.tsx`, porque tiene que poder probarse.**
+ * Estuvo en la página con un docblock que decía que se probaba sola; no era
+ * cierto: ningún test del repo importa un `.tsx`, así que esa promesa era
+ * incumplible por construcción. Es la única lógica del formulario que puede
+ * estar mal sin que se note —una transferencia con el origen y el destino
+ * invertidos resta donde debería sumar, y el dominio **no lo detecta**: los dos
+ * extremos siguen siendo bodegas distintas y válidas— y por eso se prueba sola.
+ *
+ * `null` significa «el exterior»: no es una bodega vacía, es la ausencia de
+ * bodega, y es lo que distingue una compra de una transferencia.
+ */
+export function extremosDe(
+  tipo: TipoMovimiento,
+  bodegaId: string,
+  bodegaDestinoId: string,
+  sentido: SentidoAjuste,
+): { origenId: string | null; destinoId: string | null } {
+  switch (tipo) {
+    case "entrada":
+      return { origenId: null, destinoId: bodegaId };
+    case "salida":
+      return { origenId: bodegaId, destinoId: null };
+    case "transferencia":
+      // El traslado: la bodega elegida es el ORIGEN y la segunda el destino. Si
+      // estos dos se invirtieran, la mercancía se movería en sentido contrario y
+      // ninguna existencia cuadraría con su bodega.
+      return { origenId: bodegaId, destinoId: bodegaDestinoId };
+    case "ajuste":
+      // Al alza: aparece mercancía que el sistema no tenía.
+      // A la baja: desaparece mercancía que el sistema sí tenía.
+      return sentido === "alta"
+        ? { origenId: null, destinoId: bodegaId }
+        : { origenId: bodegaId, destinoId: null };
+  }
+}
+
+/**
+ * ¿Este movimiento **retira** de la bodega elegida? Es la pregunta que decide
+ * si el formulario tiene que enseñar cuánto hay disponible ahí.
+ *
+ * Se deriva de `extremosDe` en vez de repetir la tabla: una segunda lista de
+ * «qué tipos restan» podría discrepar de la primera, y entonces la pantalla
+ * enseñaría un disponible para un movimiento que no retira nada, o —peor— no lo
+ * enseñaría para uno que sí.
+ */
+export function retiraDeBodega(
+  tipo: TipoMovimiento,
+  bodegaId: string,
+  bodegaDestinoId: string,
+  sentido: SentidoAjuste,
+): boolean {
+  return extremosDe(tipo, bodegaId, bodegaDestinoId, sentido).origenId !== null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTEO FÍSICO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Lo que se entendió de la casilla de conteo: un número, un vacío, o un «no». */
+export type ConteoDigitado =
+  | { valido: true; conteoFisico: number | null }
+  | { valido: false; motivo: string };
+
+/** Una cifra con un solo separador decimal: `12`, `12.5`, `0,75`. */
+const CONTEO_SIMPLE = /^\d+(?:[.,]\d+)?$/;
+
+/**
+ * Un separador seguido de **exactamente tres dígitos**, que en `es-CO` es la
+ * marca de millares (`1.000` = mil).
+ */
+const CONTEO_AMBIGUO = /^\d{1,3}(?:[.,]\d{3})+$/;
+
+/**
+ * Traduce lo tecleado en la casilla de conteo a lo que espera el dominio.
+ *
+ * ── Vacío es `null`, y `null` no es `0` ───────────────────────────────────
+ * Una casilla en blanco significa «todavía no conté», que es un estado real del
+ * conteo —el seed tiene una línea así a propósito—. Convertirla en `0` haría que
+ * la auditoría se pudiera conciliar dando por contadas las líneas que nadie
+ * miró, y ajustaría a cero mercancía que sí está en el estante.
+ *
+ * ── `1.000` se RECHAZA en vez de adivinar ─────────────────────────────────
+ * El locale del proyecto es `es-CO`: ahí `1.000` es mil y `1,5` es uno y medio.
+ * Pero `Number("1.000")` en JavaScript da `1`, y `Number("1,5")` da `NaN`. Las
+ * dos lecturas son plausibles y no hay forma de saber cuál quiso el operador.
+ * **Ante una cifra ambigua se pregunta, no se elige**: registrar 1 kg donde
+ * había 1000 es un error que el kárdex ya no puede deshacer, y pedir que se
+ * teclee `1000` o `1.5` cuesta dos segundos.
+ *
+ * Un cero **sí** es válido: contar cero es un conteo, y es justo lo que hace
+ * falta cuando el sistema cree que hay algo y el estante está vacío.
+ */
+export function interpretarConteo(texto: string): ConteoDigitado {
+  const limpio = texto.trim();
+  if (limpio === "") return { valido: true, conteoFisico: null };
+  if (!CONTEO_SIMPLE.test(limpio)) {
+    return { valido: false, motivo: "Escribe solo el número, sin unidades ni texto." };
+  }
+  if (CONTEO_AMBIGUO.test(limpio)) {
+    return {
+      valido: false,
+      motivo: "Esa cifra es ambigua: escríbela sin separador de millares.",
+    };
+  }
+  const n = Number(limpio.replace(",", "."));
+  if (!Number.isFinite(n)) {
+    return { valido: false, motivo: "Esa cifra no es un número." };
+  }
+  return { valido: true, conteoFisico: n };
+}
+
+/**
+ * Cantidad con signo explícito, para la columna de diferencia: `+2 kg`, `−1 kg`.
+ *
+ * El signo se escribe siempre —también en el `+`— porque una columna de
+ * diferencias donde unas cifras llevan signo y otras no obliga a leer el número
+ * entero para saber de qué lado está. Y se usa el signo menos tipográfico (−,
+ * U+2212), no el guion: en una columna de cifras el guion se lee como un
+ * separador.
+ */
+export function cantidadConSigno(n: number, unidad: UnidadMedida): string {
+  const signo = n > 0 ? "+" : n < 0 ? "−" : "";
+  return `${signo}${cantidad(Math.abs(n), unidad)}`;
 }

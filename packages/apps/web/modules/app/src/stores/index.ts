@@ -26,7 +26,13 @@ export {
   TIPOS_MOVIMIENTO,
   ESTADO_STOCK_LABEL,
   ESTADO_STOCK_BADGE,
+  ESTADO_AUDITORIA_LABEL,
+  ESTADO_AUDITORIA_BADGE,
+  ESTADO_LINEA_LABEL,
+  ESTADO_LINEA_BADGE,
   SEVERIDAD_ALERTA_LABEL,
+  URGENCIA_VENCIMIENTO_LABEL,
+  URGENCIA_VENCIMIENTO_BADGE,
   UNIDAD_MEDIDA_LABEL,
   UNIDADES_MEDIDA,
 } from '@/stores/inventario.store';
@@ -36,6 +42,9 @@ export type {
   NuevoMovimiento,
   ResultadoRegistro,
   ResultadoAccion,
+  ResultadoApertura,
+  ResultadoConciliacion,
+  LineaAuditoria,
   SeveridadAlerta,
 } from '@/stores/inventario.store';
 export type {
@@ -45,6 +54,14 @@ export type {
   TipoMovimiento,
   UnidadMedida,
   EstadoStock,
+  NivelStock,
+  LoteArticulo,
+  LoteDisponible,
+  UrgenciaVencimiento,
+  AuditoriaInventario,
+  EstadoAuditoria,
+  EstadoLinea,
+  ItemAuditoria,
 } from '@/domain/inventario/inventario.domain';
 
 export { sessionStore, SessionStore, modulosOperablesDeSesion } from '@/stores/session.store';

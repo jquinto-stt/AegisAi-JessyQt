@@ -18,7 +18,20 @@ import { Link } from "react-router";
 
 import { Badge } from "@/elements/ui/badge";
 import { Card } from "@/elements/ui/card";
-import { ESTADO_STOCK_BADGE, ESTADO_STOCK_LABEL, type EstadoStock } from "@/stores";
+import {
+  ESTADO_AUDITORIA_BADGE,
+  ESTADO_AUDITORIA_LABEL,
+  ESTADO_LINEA_BADGE,
+  ESTADO_LINEA_LABEL,
+  ESTADO_STOCK_BADGE,
+  ESTADO_STOCK_LABEL,
+  URGENCIA_VENCIMIENTO_BADGE,
+  URGENCIA_VENCIMIENTO_LABEL,
+  type EstadoAuditoria,
+  type EstadoLinea,
+  type EstadoStock,
+  type UrgenciaVencimiento,
+} from "@/stores";
 
 /**
  * Estado de existencias, siempre por el catálogo.
@@ -31,6 +44,55 @@ export function EstadoBadge({ estado }: { estado: EstadoStock }) {
   return (
     <Badge color={ESTADO_STOCK_BADGE[estado]} size="sm">
       {ESTADO_STOCK_LABEL[estado]}
+    </Badge>
+  );
+}
+
+/**
+ * Urgencia de vencimiento de un lote.
+ *
+ * Igual que `EstadoBadge`: etiqueta y color salen de los mapas del store, que son
+ * `Record<UrgenciaVencimiento, …>` — añadir una banda sin darle texto y color es
+ * un error de compilación, no un badge en blanco.
+ *
+ * Es una pieza distinta de `EstadoBadge` a propósito: un artículo puede estar
+ * «ok» de existencias y tener todo su stock vencido, y son dos juicios
+ * independientes que no deben compartir badge.
+ */
+export function VencimientoBadge({ urgencia }: { urgencia: UrgenciaVencimiento }) {
+  return (
+    <Badge color={URGENCIA_VENCIMIENTO_BADGE[urgencia]} size="sm">
+      {URGENCIA_VENCIMIENTO_LABEL[urgencia]}
+    </Badge>
+  );
+}
+
+/**
+ * Estado de una auditoría: en proceso, conciliada o cancelada.
+ *
+ * Mismo contrato que los otros dos badges —etiqueta y color del `Record`
+ * exhaustivo del store— y por eso vive aquí y no en la página del conteo.
+ */
+export function EstadoAuditoriaBadge({ estado }: { estado: EstadoAuditoria }) {
+  return (
+    <Badge color={ESTADO_AUDITORIA_BADGE[estado]} size="sm">
+      {ESTADO_AUDITORIA_LABEL[estado]}
+    </Badge>
+  );
+}
+
+/**
+ * En qué quedó una línea del conteo: sin contar, coincide, sobra o falta.
+ *
+ * Es un cuarto badge y no una reutilización de `EstadoBadge` porque mide otra
+ * cosa: `EstadoBadge` juzga existencias contra un mínimo, y esto juzga un conteo
+ * contra una foto. Un artículo puede estar «Disponible» de existencias y «Falta»
+ * en el conteo sin ninguna contradicción.
+ */
+export function EstadoLineaBadge({ estado }: { estado: EstadoLinea }) {
+  return (
+    <Badge color={ESTADO_LINEA_BADGE[estado]} size="sm">
+      {ESTADO_LINEA_LABEL[estado]}
     </Badge>
   );
 }

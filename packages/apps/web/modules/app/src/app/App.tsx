@@ -15,6 +15,7 @@ import {
   InventarioInicioPage,
   ExistenciasPage,
   MovimientosPage,
+  AuditoriaPage,
   InventarioConfigPage,
 } from "@/pages/inventario";
 import { ConfiguracionPage } from "@/pages/configuracion";
@@ -109,6 +110,13 @@ export default function App() {
         <Route path="/inventario/inicio" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><InventarioInicioPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventario" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><ExistenciasPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventario/movimientos" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><MovimientosPage /></CapabilityGuard></ModuloGuard>} />
+        {/* El conteo físico se MIRA con `inventory.read` y se ESCRIBE con
+            `inventory.adjust`, que es la misma capacidad que ya protege el
+            ajuste manual del kárdex. La compuerta de la ruta es la de lectura a
+            propósito: negar la pantalla a quien no puede conciliar escondería
+            las discrepancias que esa persona necesita ver. Lo que se apaga es el
+            botón, con su motivo escrito. */}
+        <Route path="/inventario/auditoria" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><AuditoriaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventario/config" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="settings.read"><InventarioConfigPage /></CapabilityGuard></ModuloGuard>} />
 
         {/* Organización — UNA sola pantalla de configuración, con tres pestañas

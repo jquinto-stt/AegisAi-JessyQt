@@ -99,7 +99,15 @@ describe("ExistenciasPage · traduce el centinela antes de filtrar", () => {
   it("`categoriaSel` está en las dependencias del memo", () => {
     // Sin esto el filtro se recalcularía con la categoría anterior y la tabla
     // mostraría una lista que ya no corresponde al selector.
-    expect(codigo).toMatch(/\[texto, categoriaSel, estado,/);
+    //
+    // ── La aserción se quedó mirando un nombre que ya no existe (21/09) ──────
+    // Decía `[texto, categoriaSel, estado,` y la tercera dependencia pasó a
+    // llamarse `nivel` cuando el filtro dejó de ser por estado fino y pasó a ser
+    // por nivel. **Nadie la vio ponerse roja: la suite no se ejecutó.** Lo que
+    // este test tiene que fijar es que `categoriaSel` esté en las dependencias
+    // —de eso va el centinela—, no cómo se llama el filtro que va detrás, así
+    // que la aserción se corta antes del nombre que cambia.
+    expect(codigo).toMatch(/\[texto, categoriaSel,/);
   });
 });
 

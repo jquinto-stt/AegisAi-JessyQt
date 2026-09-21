@@ -21,7 +21,7 @@ import {
   type Movimiento,
   type TipoMovimiento,
 } from "@/stores";
-import { cantidad, etiquetaFecha } from "./inventario.utils";
+import { cantidad, etiquetaFecha, extremosDe, retiraDeBodega, type SentidoAjuste } from "./inventario.utils";
 import { CabeceraPagina, SinResultados } from "./inventario.widgets";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -56,9 +56,6 @@ import { CabeceraPagina, SinResultados } from "./inventario.widgets";
 
 const SIN_FILTRO = "__todos__";
 
-/** Sentido de un ajuste: aparece mercancía (al alza) o desaparece (a la baja). */
-type SentidoAjuste = "alta" | "baja";
-
 interface BorradorMovimiento {
   tipo: TipoMovimiento;
   articuloId: string;
@@ -71,37 +68,16 @@ interface BorradorMovimiento {
 }
 
 /**
- * Traduce el formulario al par origen/destino del dominio.
+ * Traduce el formulario al par origen/destino del dominio — `extremosDe`, en
+ * `inventario.utils.ts`.
  *
- * Es una función pura y exportada a propósito: es la única lógica del formulario
- * que puede estar mal sin que se note —una transferencia con el origen y el
- * destino invertidos resta donde debería sumar y el dominio no lo detecta— y por
- * eso se prueba sola en vez de dentro del JSX.
- *
- * `null` significa «el exterior»: no es una bodega vacía, es la ausencia de
- * bodega, y es lo que distingue una compra de una transferencia.
+ * Se movió allí porque es la única lógica del formulario que puede estar mal sin
+ * que se note: una transferencia con el origen y el destino invertidos resta
+ * donde debería sumar, y el dominio **no lo detecta** (los dos extremos siguen
+ * siendo bodegas distintas y válidas). Un `.tsx` no lo puede importar ningún
+ * test —la suite corre en `environment: 'node'` y ningún test del repo importa
+ * un `.tsx`—, así que aquí no era probable.
  */
-export function extremosDe(
-  tipo: TipoMovimiento,
-  bodegaId: string,
-  bodegaDestinoId: string,
-  sentido: SentidoAjuste,
-): { origenId: string | null; destinoId: string | null } {
-  switch (tipo) {
-    case "entrada":
-      return { origenId: null, destinoId: bodegaId };
-    case "salida":
-      return { origenId: bodegaId, destinoId: null };
-    case "transferencia":
-      return { origenId: bodegaId, destinoId: bodegaDestinoId };
-    case "ajuste":
-      // Al alza: aparece mercancía que el sistema no tenía.
-      // A la baja: desaparece mercancía que el sistema sí tenía.
-      return sentido === "alta"
-        ? { origenId: null, destinoId: bodegaId }
-        : { origenId: bodegaId, destinoId: null };
-  }
-}
 
 export const MovimientosPage = observer(() => {
   // ── Filtros ──
@@ -156,6 +132,32 @@ export const MovimientosPage = observer(() => {
   const esTransferencia = borrador.tipo === "transferencia";
   const esAjuste = borrador.tipo === "ajuste";
 
+  /**
+   * ¿Este movimiento retira de la bodega elegida? Decide si el formulario
+   * enseña el disponible de ahí. Se pregunta a `retiraDeBodega` —que se deriva
+   * de la misma tabla que traduce el formulario— en vez de repetir la lista de
+   * tipos que restan: una segunda lista podría discrepar de la primera y la
+   * pantalla enseñaría un disponible para un movimiento que no retira nada.
+   */
+  const retira = retiraDeBodega(
+    borrador.tipo,
+    borrador.bodegaId,
+    borrador.bodegaDestinoId,
+    borrador.sentido,
+  );
+
+  /**
+   * Existencia ACTUAL de la bodega de origen, leída del store.
+   *
+   * **No es una segunda validación.** Es el mismo número contra el que el store
+   * va a validar —`existenciaDe` deriva del kárdex, igual que la guarda— así que
+   * no puede discrepar del real; lo que hace es enseñarlo ANTES de enviar, en
+   * vez de dejar que el operador escriba 50 contra 14 y descubra el error al
+   * pulsar Registrar. Quien decide sigue siendo el dominio.
+   */
+  const disponibleOrigen =
+    retira && borrador.bodegaId ? inventarioStore.existenciaDe(borrador.articuloId, borrador.bodegaId) : 0;
+
   const abrirFormulario = () => {
     setError(null);
     setBorrador((p) => ({
@@ -204,7 +206,12 @@ export const MovimientosPage = observer(() => {
       cantidad: cantidadNum,
       origenId,
       destinoId,
-      motivo: esAjuste ? borrador.motivo : undefined,
+      // El motivo viaja en el ajuste —donde el dominio lo EXIGE— y en la
+      // transferencia, donde es opcional pero es lo único que distingue «se
+      // movió al punto de venta» de «se movió porque sobraba sitio». Se manda
+      // en crudo: quien decide si un motivo en blanco sirve es el dominio, no
+      // esta pantalla, y para un ajuste lo rechaza con su propio mensaje.
+      motivo: esAjuste || esTransferencia ? borrador.motivo : undefined,
     });
 
     if (!res.ok) {
@@ -431,7 +438,25 @@ export const MovimientosPage = observer(() => {
                   key={`fbod-${borrador.bodegaId}-${bodegas.map((b) => b.id).join("|")}`}
                   options={opcionesBodega}
                   defaultValue={borrador.bodegaId}
-                  onChange={(v) => setBorrador((p) => ({ ...p, bodegaId: v }))}
+                  onChange={(v) =>
+                    setBorrador((p) => ({
+                      ...p,
+                      bodegaId: v,
+                      // Si el destino elegido era justo la bodega que se acaba
+                      // de escoger como origen, el `<select>` de destino lo
+                      // filtra de su lista y el navegador cae a la primera
+                      // opción: la pantalla enseñaría «Cocina principal →
+                      // Bodega fría» mientras el borrador sigue diciendo
+                      // destino = Bodega fría = origen, y al registrar saldría
+                      // «el origen y el destino no pueden ser la misma bodega»
+                      // sobre dos bodegas que se ven distintas. Se adelanta el
+                      // destino a otra bodega para que el control no mienta.
+                      bodegaDestinoId:
+                        p.bodegaDestinoId === v
+                          ? (bodegas.find((b) => b.id !== v)?.id ?? "")
+                          : p.bodegaDestinoId,
+                    }))
+                  }
                   aria-label={rotuloBodega}
                 />
               </div>
@@ -449,6 +474,19 @@ export const MovimientosPage = observer(() => {
               </div>
             </div>
           </div>
+
+          {/* Cuánto hay en la bodega de la que este movimiento retira.
+              Solo aparece cuando el movimiento RETIRA de verdad: en una entrada
+              —o en un ajuste al alza— la bodega elegida recibe, y enseñar ahí un
+              «disponible» sugeriría un límite que no existe. */}
+          {retira && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {`Hay ${cantidad(disponibleOrigen, articuloBorrador?.unidad ?? "unidad")} en ${inventarioStore.etiquetaBodega(borrador.bodegaId)}. `}
+              {disponibleOrigen <= 0
+                ? "Está en cero: no hay nada que retirar de aquí."
+                : "No se puede retirar más que esa cifra."}
+            </p>
+          )}
 
           {esTransferencia && (
             <div>
@@ -470,38 +508,51 @@ export const MovimientosPage = observer(() => {
           )}
 
           {esAjuste && (
-            <>
-              <div>
-                <Label>Sentido del ajuste</Label>
-                <div className="mt-1.5">
-                  <Select
-                    key={`fsent-${borrador.sentido}`}
-                    options={[
-                      { value: "alta", label: "Aparece mercancía (conteo al alza)" },
-                      { value: "baja", label: "Desaparece mercancía (conteo a la baja)" },
-                    ]}
-                    defaultValue={borrador.sentido}
-                    onChange={(v) => setBorrador((p) => ({ ...p, sentido: v as SentidoAjuste }))}
-                    aria-label="Sentido del ajuste de existencias"
-                  />
-                </div>
+            <div>
+              <Label>Sentido del ajuste</Label>
+              <div className="mt-1.5">
+                <Select
+                  key={`fsent-${borrador.sentido}`}
+                  options={[
+                    { value: "alta", label: "Aparece mercancía (conteo al alza)" },
+                    { value: "baja", label: "Desaparece mercancía (conteo a la baja)" },
+                  ]}
+                  defaultValue={borrador.sentido}
+                  onChange={(v) => setBorrador((p) => ({ ...p, sentido: v as SentidoAjuste }))}
+                  aria-label="Sentido del ajuste de existencias"
+                />
               </div>
-              <div>
-                <Label htmlFor="mv-motivo">Motivo</Label>
-                <div className="mt-1.5">
-                  <Input
-                    id="mv-motivo"
-                    value={borrador.motivo}
-                    onChange={(e) => setBorrador((p) => ({ ...p, motivo: e.target.value }))}
-                    placeholder="Conteo físico, merma por vencimiento…"
-                  />
-                </div>
-                <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                  Obligatorio. Un ajuste reescribe lo que el sistema cree que hay sin un hecho
-                  externo que lo respalde: sin motivo sería una escritura sin explicación.
-                </p>
+            </div>
+          )}
+
+          {/* El motivo lo pide también el traslado, donde es OPCIONAL.
+              El ajuste lo exige porque reescribe lo que el sistema cree que hay
+              sin un hecho externo que lo respalde; un traslado sí tiene ese
+              hecho —la mercancía se movió de verdad—, así que exigirlo sería
+              fricción sin invariante. Opcional, pero se pide: es lo único que
+              seis meses después distingue «se movió al punto de venta» de «se
+              movió porque sobraba sitio». */}
+          {(esAjuste || esTransferencia) && (
+            <div>
+              <Label htmlFor="mv-motivo">Motivo</Label>
+              <div className="mt-1.5">
+                <Input
+                  id="mv-motivo"
+                  value={borrador.motivo}
+                  onChange={(e) => setBorrador((p) => ({ ...p, motivo: e.target.value }))}
+                  placeholder={
+                    esTransferencia
+                      ? "Reposición del punto de venta, sobraba espacio…"
+                      : "Conteo físico, merma por vencimiento…"
+                  }
+                />
               </div>
-            </>
+              <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                {esTransferencia
+                  ? "Opcional. Un traslado no reescribe nada —la mercancía se movió de verdad—, así que no se exige."
+                  : "Obligatorio. Un ajuste reescribe lo que el sistema cree que hay sin un hecho externo que lo respalde: sin motivo sería una escritura sin explicación."}
+              </p>
+            </div>
           )}
 
           {error && <Alert variant="error" title="No se pudo registrar" message={error} />}

@@ -17,11 +17,20 @@ import {
   UNIDAD_MEDIDA_LABEL,
   UNIDADES_MEDIDA,
   type Articulo,
-  type EstadoStock,
+  type NivelStock,
   type UnidadMedida,
 } from "@/stores";
-import { cantidad, filtrarArticulos, money } from "./inventario.utils";
-import { CabeceraPagina, EstadoBadge, SinResultados } from "./inventario.widgets";
+import { cantidad, etiquetaFecha, etiquetaVencimiento, filtrarArticulos, money } from "./inventario.utils";
+import { CabeceraPagina, EstadoBadge, SinResultados, VencimientoBadge } from "./inventario.widgets";
+// Dos funciones puras del dominio, importadas directamente y no por el barrel:
+// el barrel re-exporta los TIPOS de inventario, no sus funciones. La pantalla
+// necesita la urgencia de cada lote para pintar su badge y el total disponible
+// para el resumen, y ninguna de las dos es una regla que esta capa pueda
+// redefinir.
+import {
+  totalDisponibleDe,
+  urgenciaDeVencimiento,
+} from "@/domain/inventario/inventario.domain";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // EXISTENCIAS — el catálogo con lo que hay de cada cosa
@@ -93,7 +102,11 @@ export const ExistenciasPage = observer(() => {
   const [texto, setTexto] = useState("");
   const [categoria, setCategoria] = useState<string>(TODAS);
   const [bodegaId, setBodegaId] = useState<string>(TODAS);
-  const [estado, setEstado] = useState<EstadoStock | typeof TODAS>(TODAS);
+  // El filtro es por NIVEL (`ok` · `reorden` · `critico`), no por estado fino:
+  // el operador decide con tres opciones, y «crítico» agrupa los dos grados de
+  // lo mismo —bajo mínimo y agotado— sin repetir aquí la definición. El estado
+  // fino sigue visible fila a fila en su badge.
+  const [nivel, setNivel] = useState<NivelStock | typeof TODAS>(TODAS);
   // ── Modales ──
   const [creando, setCreando] = useState(false);
   const [borrador, setBorrador] = useState<BorradorArticulo>(() =>
@@ -102,6 +115,14 @@ export const ExistenciasPage = observer(() => {
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
   const [porEliminar, setPorEliminar] = useState<Articulo | null>(null);
   const [errorBaja, setErrorBaja] = useState<string | null>(null);
+  /**
+   * El artículo cuya ficha de lotes está abierta.
+   *
+   * Se guarda el ARTÍCULO, no su id: la ficha necesita nombre, SKU y unidad, y
+   * guardando el id habría que volver a buscarlo en cada render para algo que ya
+   * se tenía al pulsar. Es la misma decisión que `porEliminar`.
+   */
+  const [lotesDe, setLotesDe] = useState<Articulo | null>(null);
 
   // ── Autorización ──
   const puedeAdministrar = puede("inventory.manage");
@@ -134,11 +155,11 @@ export const ExistenciasPage = observer(() => {
       texto,
       categoria: categoriaSel,
     });
-    if (estado === TODAS) return base;
-    return base.filter((a) => inventarioStore.estadoDe(a.id) === estado);
+    if (nivel === TODAS) return base;
+    return base.filter((a) => inventarioStore.nivelDe(a.id) === nivel);
     // `inventarioStore.articulos` y los filtros son las dependencias reales. El
     // store es observable, así que MobX re-ejecuta al registrar un movimiento.
-  }, [texto, categoriaSel, estado, inventarioStore.articulos, inventarioStore.movimientos]);
+  }, [texto, categoriaSel, nivel, inventarioStore.articulos, inventarioStore.movimientos]);
 
   const valorFiltrado = filas.reduce(
     (acc, a) => acc + existenciaEnAmbito(a.id) * a.costoUnitario,
@@ -204,14 +225,26 @@ export const ExistenciasPage = observer(() => {
     ...bodegas.map((b) => ({ value: b.id, label: b.nombre })),
   ];
 
-  const opcionesEstado = [
+  const opcionesNivel = [
     { value: TODAS, label: "Todos los estados" },
-    { value: "agotado", label: "Agotados" },
-    { value: "bajo_minimo", label: "Bajo mínimo" },
+    { value: "critico", label: "Stock crítico" },
+    { value: "reorden", label: "En reorden" },
     { value: "ok", label: "Disponibles" },
   ];
 
   const rotuloExistencia = bodegaSel ? `Existencia · ${bodegaSel.nombre}` : "Existencia total";
+
+  // ── Lotes del artículo abierto ──
+  //
+  // Se derivan del store en cada render en vez de copiarse al estado: el kárdex
+  // es la fuente, y una copia se quedaría vieja en cuanto entrara un movimiento
+  // con la ficha abierta. `lotesDe` viene ordenado por vencimiento, así que el
+  // primero de `lotesEnAviso` es el más urgente.
+  const lotesAbiertos = lotesDe ? inventarioStore.lotesDe(lotesDe.id) : [];
+  const lotesDespachables = lotesDe ? inventarioStore.lotesDespachablesDe(lotesDe.id) : [];
+  const lotesEnAviso = lotesDe ? inventarioStore.lotesPorVencerDe(lotesDe.id) : [];
+  /** Posición de cada lote en la secuencia de despacho. Ausente = no se despacha. */
+  const ordenFEFO = new Map(lotesDespachables.map((l, i) => [l.id, i + 1]));
 
   return (
     <>
@@ -280,10 +313,10 @@ export const ExistenciasPage = observer(() => {
             <Label>Estado</Label>
             <div className="mt-1.5">
               <Select
-                key={`est-${estado}`}
-                options={opcionesEstado}
-                defaultValue={estado}
-                onChange={(v) => setEstado(v as EstadoStock | typeof TODAS)}
+                key={`nivel-${nivel}`}
+                options={opcionesNivel}
+                defaultValue={nivel}
+                onChange={(v) => setNivel(v as NivelStock | typeof TODAS)}
                 aria-label="Filtrar por estado de existencias"
               />
             </div>
@@ -324,11 +357,33 @@ export const ExistenciasPage = observer(() => {
                 <TableBody>
                   {filas.map((a) => {
                     const existencia = existenciaEnAmbito(a.id);
+                    // Dos lecturas del store por fila, y son O(lotes): con nueve
+                    // lotes en el seed es despreciable, igual que la
+                    // `existenciaEnAmbito` que ya se hace aquí. Se prefieren dos
+                    // llamadas al store antes que repetir en la página el filtro
+                    // de «qué está en banda de aviso», que ya vive en
+                    // `lotesPorVencerDe`.
+                    const lotesFila = inventarioStore.lotesDe(a.id);
+                    const enAviso = inventarioStore.lotesPorVencerDe(a.id);
 
                     return (
                       <TableRow key={a.id}>
                         <TableCell className="font-medium text-gray-800 dark:text-white/90">
-                          {a.nombre}
+                          <span className="flex flex-wrap items-center gap-2">
+                            {a.nombre}
+                            {/* El aviso de vencimiento va aquí, junto al nombre, y
+                                no en una columna nueva: no es una propiedad más
+                                del artículo, es una llamada de atención sobre él.
+                                Se pinta el lote MÁS urgente de los que están en
+                                banda —`lotesDe` viene ordenado por vencimiento—
+                                porque un artículo con dos lotes en aviso no
+                                necesita dos badges en la misma fila. */}
+                            {enAviso.length > 0 && (
+                              <VencimientoBadge
+                                urgencia={urgenciaDeVencimiento(enAviso[0].fechaVencimiento)}
+                              />
+                            )}
+                          </span>
                         </TableCell>
                         <TableCell className="tabular-nums text-gray-500 dark:text-gray-400">
                           {a.sku}
@@ -349,17 +404,24 @@ export const ExistenciasPage = observer(() => {
                           {money(existencia * a.costoUnitario)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!puedeAdministrar}
-                            onClick={() => {
-                              setErrorBaja(null);
-                              setPorEliminar(a);
-                            }}
-                          >
-                            Eliminar
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Siempre accionable, también sin permiso de
+                                administración: mirar los lotes no escribe nada. */}
+                            <Button size="sm" variant="ghost" onClick={() => setLotesDe(a)}>
+                              {lotesFila.length > 0 ? `Lotes (${lotesFila.length})` : "Lotes"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={!puedeAdministrar}
+                              onClick={() => {
+                                setErrorBaja(null);
+                                setPorEliminar(a);
+                              }}
+                            >
+                              Eliminar
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -430,7 +492,11 @@ export const ExistenciasPage = observer(() => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="alta-minimo">Punto de reorden</Label>
+              {/* «Stock mínimo», no «Punto de reorden»: este campo es el SUELO.
+                  El punto de reorden es otro nivel, por encima, y vive en
+                  `Articulo.puntoReorden` — que hoy solo trae la semilla. La
+                  etiqueta anterior nombraba un campo distinto del que edita. */}
+              <Label htmlFor="alta-minimo">Stock mínimo</Label>
               <div className="mt-1.5">
                 <Input
                   id="alta-minimo"
@@ -495,6 +561,128 @@ export const ExistenciasPage = observer(() => {
           </Button>
           <Button variant="destructive" onClick={confirmarBaja}>
             Eliminar
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── Modal de lotes ────────────────────────────────────────────────── */}
+      <Modal
+        isOpen={lotesDe !== null}
+        onClose={() => setLotesDe(null)}
+        className="max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900"
+      >
+        <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">
+          Lotes de {lotesDe?.nombre}
+        </h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Cada lote vence por su cuenta. La columna «Orden» es la secuencia de despacho: primero el
+          que vence antes, y solo lo que se puede despachar.
+        </p>
+
+        {lotesAbiertos.length === 0 ? (
+          <div className="mt-5">
+            {/* Un artículo sin lotes no está incompleto: no todo se rastrea por
+                vencimiento. Se dice, en vez de dejar el modal en blanco. */}
+            <SinResultados
+              titulo="Este artículo no se rastrea por lote"
+              mensaje="Sus existencias salen del kárdex igual que las de los demás, pero sin separar por vencimiento. Un artículo con lotes es el que los tiene declarados."
+            />
+          </div>
+        ) : (
+          <>
+            <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+              {lotesAbiertos.length} {lotesAbiertos.length === 1 ? "lote" : "lotes"} ·{" "}
+              <span className="font-medium tabular-nums text-gray-700 dark:text-gray-300">
+                {cantidad(totalDisponibleDe(lotesAbiertos), lotesDe?.unidad ?? "unidad")}
+              </span>{" "}
+              en el almacén ·{" "}
+              <span className="font-medium tabular-nums text-gray-700 dark:text-gray-300">
+                {lotesDespachables.length}
+              </span>{" "}
+              {lotesDespachables.length === 1 ? "despachable" : "despachables"}
+            </p>
+
+            {lotesEnAviso.length > 0 && (
+              <div className="mt-4">
+                <Alert
+                  variant="warning"
+                  title={
+                    lotesEnAviso.length === 1
+                      ? "1 lote en banda de aviso"
+                      : `${lotesEnAviso.length} lotes en banda de aviso`
+                  }
+                  message="Alguno vence dentro del mes, de quince días o de una semana — o ya venció. Lo vencido sigue contando como existencia mientras esté en el almacén, pero no se despacha."
+                />
+              </div>
+            )}
+
+            <div className="mt-4 overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableCell header className="text-right">
+                      Orden
+                    </TableCell>
+                    <TableCell header>Lote</TableCell>
+                    <TableCell header>Bodega</TableCell>
+                    <TableCell header>Vence</TableCell>
+                    <TableCell header className="text-right">
+                      Disponible
+                    </TableCell>
+                    <TableCell header className="text-right">
+                      Inicial
+                    </TableCell>
+                    <TableCell header>Vencimiento</TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {lotesAbiertos.map((l) => {
+                    const orden = ordenFEFO.get(l.id);
+                    return (
+                      <TableRow key={l.id}>
+                        {/* Una raya, no un hueco: «no entra en el despacho» no es
+                            «falta el número». */}
+                        <TableCell className="text-right tabular-nums text-gray-500 dark:text-gray-400">
+                          {orden ?? "—"}
+                        </TableCell>
+                        <TableCell className="font-medium text-gray-800 dark:text-white/90">
+                          {l.codigoLote}
+                        </TableCell>
+                        <TableCell className="text-gray-500 dark:text-gray-400">
+                          {inventarioStore.etiquetaBodega(l.almacenId)}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-gray-500 dark:text-gray-400">
+                          {etiquetaFecha(l.fechaVencimiento)} ·{" "}
+                          {etiquetaVencimiento(l.fechaVencimiento)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-gray-800 dark:text-white/90">
+                          {cantidad(l.disponible, lotesDe?.unidad ?? "unidad")}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-gray-500 dark:text-gray-400">
+                          {cantidad(l.cantidadInicial, lotesDe?.unidad ?? "unidad")}
+                        </TableCell>
+                        <TableCell>
+                          <VencimientoBadge urgencia={urgenciaDeVencimiento(l.fechaVencimiento)} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {lotesDespachables.length === 0 && (
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Ningún lote es despachable: o venció, o no le queda existencia, o su fecha no se
+                puede leer. La mercancía sigue contando como existencia mientras esté en el almacén.
+              </p>
+            )}
+          </>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <Button variant="outline" onClick={() => setLotesDe(null)}>
+            Cerrar
           </Button>
         </div>
       </Modal>
