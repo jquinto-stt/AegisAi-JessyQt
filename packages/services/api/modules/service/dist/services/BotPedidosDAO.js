@@ -376,29 +376,35 @@ export async function leerConversacion(sb, conversacionId) {
     const f = data;
     const r = f.estado_respuesta;
     const obj = r && typeof r === 'object' ? r : null;
+    const borrador = borradorDe(obj?.enCurso);
+    let estadoFlujo = obj?.estado_flujo;
+    if (!estadoFlujo) {
+        if (borrador && borrador.lineas?.length > 0) {
+            estadoFlujo = borrador.paso === 'confirmando' ? 'CONFIRMANDO_PEDIDO'
+                : (borrador.paso === 'eligiendo_direccion' || borrador.modalidad) ? 'SOLICITANDO_ENTREGA'
+                : 'CARRITO_EN_CONSTRUCCION';
+        } else if (obj?.catalogo_mostrado) {
+            estadoFlujo = 'CATALOGO_ACTIVO';
+        } else {
+            estadoFlujo = 'IDLE';
+        }
+    }
     return {
         modo: f.modo_atencion ?? null,
         estado: f.estado ?? null,
         respuesta: obj,
-        enCurso: borradorDe(obj?.enCurso),
+        enCurso: borrador,
+        estadoFlujo,
+        catalogoMostrado: Boolean(obj?.catalogo_mostrado),
+        intencionPendiente: obj?.intencion_pendiente ?? null,
+        ultimoPedidoId: obj?.ultimo_pedido_id ?? null,
+        ultimoIntent: obj?.ultimo_intent ?? null,
     };
 }
 /**
- * Guarda el borrador de pedido en la conversación.
- *
- * ── Se lee antes de escribir, y a propósito ───────────────────────────────
- *
- * Un `update` con el objeto entero pisaría `eventoId` —la marca de
- * idempotencia— y el bot volvería a contestar un reintento de Zernio: un
- * mensaje duplicado al cliente. Por eso se lee lo que hay y se escribe el
- * objeto completo, conservando las claves de `marcarRespondido`.
- *
- * Si la lectura falla, NO se escribe un objeto vacío: se devuelve error. Un
- * borrador que se pierde silenciosamente deja al cliente a mitad de un
- * formulario que el bot ya no recuerda, contestando «no entendí» a cada
- * mensaje siguiente.
+ * Guarda el estado conversacional completo en estado_respuesta de la conversación.
  */
-export async function guardarEnCurso(sb, conversacionId, borrador) {
+export async function guardarEstadoConversacion(sb, conversacionId, cambios) {
     const { data, error: errLectura } = await t(sb, 'conversacion')
         .select('estado_respuesta')
         .eq('id', conversacionId)
@@ -408,17 +414,29 @@ export async function guardarEnCurso(sb, conversacionId, borrador) {
     const previo = data && typeof data.estado_respuesta === 'object'
         ? (data.estado_respuesta ?? {})
         : {};
-    const siguiente = { ...previo };
-    if (borrador)
-        siguiente.enCurso = borrador;
-    else
+    const siguiente = { ...previo, ...cambios };
+    if (cambios.enCurso === null) {
         delete siguiente.enCurso;
+    }
     const { error } = await t(sb, 'conversacion')
         .update({ estado_respuesta: siguiente, actualizada_en: new Date().toISOString() })
         .eq('id', conversacionId);
     if (error)
         return { ok: false, error: error.message };
     return { ok: true };
+}
+/**
+ * Guarda el borrador de pedido en la conversación.
+ */
+export async function guardarEnCurso(sb, conversacionId, borrador) {
+    return guardarEstadoConversacion(sb, conversacionId, {
+        enCurso: borrador,
+        estado_flujo: borrador && borrador.lineas?.length > 0
+            ? (borrador.paso === 'confirmando' ? 'CONFIRMANDO_PEDIDO'
+               : (borrador.paso === 'eligiendo_direccion' || borrador.modalidad) ? 'SOLICITANDO_ENTREGA'
+               : 'CARRITO_EN_CONSTRUCCION')
+            : 'IDLE'
+    });
 }
 /** Lee `modo_atencion` de la conversación. `null` si no se pudo saber. */
 export async function modoAtencionDe(sb, conversacionId) {
@@ -809,10 +827,11 @@ export async function procesarEntrante(m, deps = {}) {
         frases: config.frases,
         catalogo: config.catalogo,
         enCurso: lectura?.enCurso ?? null,
+        estadoFlujo: lectura?.estadoFlujo ?? 'IDLE',
+        catalogoMostrado: lectura?.catalogoMostrado ?? false,
     });
 
     // ── 4a. Inteligencia Artificial (Azure OpenAI GPT-4o) ────────────────────
-    // Consultamos a Azure OpenAI GPT-4o con el contexto del catálogo, pedidos y negocio para procesamiento dinámico de lenguaje natural.
     try {
         const resIA = await generarRespuestaIA({
             mensajeTexto: m.texto,
@@ -821,54 +840,49 @@ export async function procesarEntrante(m, deps = {}) {
             catalogo: config.catalogo,
             horarios: config.horarios,
             pedidosActivos: pedidos,
-            borradorEnCurso: lectura?.enCurso ?? null
+            borradorEnCurso: decision.borrador ?? lectura?.enCurso ?? null,
+            historial: []
         });
         if (resIA.ok && resIA.texto) {
             decision.texto = resIA.texto;
-            decision.botones = resIA.botones;
+            if (Array.isArray(resIA.botones)) decision.botones = resIA.botones;
+            if (resIA.listButtonText) decision.listButtonText = resIA.listButtonText;
+            if (resIA.secciones) decision.secciones = resIA.secciones;
+
             if (resIA.solicitaHumano) {
                 decision.accion = 'handoff';
                 decision.motivo = 'pide_asesor';
-            } else {
-                decision.accion = 'responder';
-                decision.motivo = 'ia_generada';
             }
+            // NOTA: La IA NUNCA sobrescribe la acción determinista, ni el borrador, ni el estado del flujo.
         }
     } catch (e) {
         console.error('[BotPedidosDAO] Excepción invocando Azure OpenAI:', e);
     }
-    // ── 4b. Los dos caminos que ESCRIBEN un pedido ──────────────────────────
-    //
-    // `tomarPedido` solo guarda el borrador en la conversación: nada de esto
-    // toca `necto.pedido` todavía. `crearPedido` es el único sitio donde se
-    // escribe un pedido de verdad, y solo se llega a él tras una confirmación
-    // explícita del cliente.
-    let textoFinal = decision.texto;
-    if (decision.accion === 'tomarPedido') {
-        const guardado = await guardarEnCurso(sb, conv.conversacionId, decision.borrador);
-        if (!guardado.ok) {
-            return {
-                ok: false,
-                accion: decision.accion,
-                error: `no se pudo guardar el pedido en curso: ${guardado.error}`,
-            };
+    // ── 4b. Resolución de Estado Conversacional y Creación de Pedido ─────────
+    let borradorFinal = decision.borrador !== undefined ? decision.borrador : (lectura?.enCurso ?? null);
+    let estadoFlujoFinal = decision.estadoFlujo;
+    if (!estadoFlujoFinal) {
+        if (borradorFinal && borradorFinal.lineas?.length > 0) {
+            estadoFlujoFinal = borradorFinal.paso === 'confirmando' ? 'CONFIRMANDO_PEDIDO'
+                : (borradorFinal.paso === 'eligiendo_modalidad' || borradorFinal.paso === 'eligiendo_direccion') ? 'SOLICITANDO_ENTREGA'
+                : 'CARRITO_EN_CONSTRUCCION';
+        } else if (decision.catalogoMostrado || lectura?.catalogoMostrado) {
+            estadoFlujoFinal = 'CATALOGO_ACTIVO';
+        } else {
+            estadoFlujoFinal = 'IDLE';
         }
     }
-    if (decision.accion === 'crearPedido') {
-        // `esMensajePropio` filtra ecos, pero el cliente pudo escribir con el
-        // contacto sin `nombre`. Se usa el que el webhook trajo y, si no hay,
-        // «Cliente WhatsApp» — nunca una cadena vacía que oculte el pedido.
+    let ultimoPedidoIdFinal = lectura?.ultimoPedidoId ?? null;
+
+    let textoFinal = decision.texto;
+    if (decision.accion === 'crearPedido' && borradorFinal && borradorFinal.lineas.length > 0) {
         const creado = await crearPedido(sb, {
             organizacionId: org.org.organizacionId,
             telefono: m.telefonoNorm,
             cliente: m.nombre ?? 'Cliente WhatsApp',
-            borrador: decision.borrador,
+            borrador: borradorFinal,
         });
         if (!creado.ok) {
-            // No se le dice al cliente que quedó registrado si no quedó. El bot
-            // reconoce que no pudo y pasa el hilo a una persona CON el pedido a
-            // medias AÚN guardado, para que quien atienda lo vea en el resumen.
-            // Borrar el borrador aquí perdería el trabajo del cliente.
             const disculpa = 'No pude registrar tu pedido automáticamente. Te paso con una persona del equipo ' +
                 'para que lo tome — tu pedido no se perdió.';
             const envio = await (deps.enviar ?? (await import('./ZernioEnvio.js')).enviarTexto)(m.zernioConversationId, m.accountId, disculpa, { replyTo: m.plataformaMessageId || m.wamidCitables || undefined });
@@ -886,50 +900,23 @@ export async function procesarEntrante(m, deps = {}) {
         textoFinal = decision.texto.replace('{numero}', creado.numero ?? '');
         const refLink = (creado.numero ?? 'WEB-0001').toLowerCase().replace(/[^a-z0-9]/g, '');
         textoFinal += `\n\n💳 *Link de Pago Seguro (Simulado):*\nhttps://necto.io/pagos/pay_${refLink}\n\n*(Acepta Nequi, Daviplata, Tarjetas y PSE. Una vez registrado el pago procedemos a despachar tu pedido)*`;
-        // El borrador se descarta SOLO después de que el pedido se escribió: si se
-        // borrara antes y la escritura fallara, el cliente perdería todo lo elegido
-        // y no habría ni pedido ni resumen que reenviar.
-        await guardarEnCurso(sb, conv.conversacionId, null);
+        borradorFinal = null;
+        estadoFlujoFinal = 'PEDIDO_CREADO';
+        ultimoPedidoIdFinal = creado.numero ?? creado.id;
+    } else if (decision.accion === 'handoff' && (decision.motivo === 'ciclo_cancelado' || decision.motivo === 'pide_asesor' || decision.intent === 'cancelar_borrador')) {
+        borradorFinal = null;
+        estadoFlujoFinal = 'IDLE';
     }
-    // ── 4c. El borrador que se abandona A PROPÓSITO ─────────────────────────
-    //
-    // ── El defecto, medido el 22/09 ─────────────────────────────────────────
-    //
-    // `decidirEnCiclo` devuelve `accion:'descartar'` cuando el cliente escribe
-    // «cancelar» o pide un asesor, y su comentario dice «Se abandona el
-    // borrador». Pero el único efecto era cambiar la ACCIÓN a `handoff`: nadie
-    // llamaba a `guardarEnCurso(..., null)` y el borrador seguía en la fila.
-    //
-    // Consecuencia real: el cliente cancelaba, recibía «listo, cancelé el
-    // pedido», y en su siguiente mensaje el bot le preguntaba «¿cuántas unidades
-    // quieres?» — el pedido a medias resucitaba solo. Igual tras pedir una
-    // persona: el operador atendía el hilo, el hilo volvía a modo bot, y el bot
-    // retomaba un formulario que el cliente ya había abandonado.
-    //
-    // ── Qué motivos limpian, y por qué NO todos ─────────────────────────────
-    //
-    //   - `ciclo_cancelado` — el cliente escribió «cancelar» DENTRO del ciclo.
-    //     Limpia.
-    //   - `pide_asesor` — «quiero hablar con una persona». Llega por `pideHumano`
-    //     antes de entrar al ciclo, así que el motivo no es `ciclo_cancelado`
-    //     aunque el efecto sobre el borrador sea el mismo. Limpia: quien pidió
-    //     una persona no está rellenando un formulario.
-    //
-    // NO limpian, y es deliberado:
-    //
-    //   - `no_se_pudo_crear_pedido` — el sistema falló al escribir. El borrador
-    //     SE CONSERVA (ver el bloque de `crearPedido`) para que quien atienda vea
-    //     lo que el cliente eligió.
-    //   - `no_entendido`, `sin_texto`, `no_es_consulta` — el bot no supo qué
-    //     quería, pero el cliente sigue en el formulario. Borrar aquí perdería su
-    //     trabajo por un mensaje ambiguo.
-    //
-    // Se borra ANTES del envío, igual que en `crearPedido`, para que no quede un
-    // borrador vivo si la escritura posterior falla.
-    const MOTIVOS_QUE_ABANDONAN = ['ciclo_cancelado', 'pide_asesor'];
-    if (decision.accion === 'handoff' && MOTIVOS_QUE_ABANDONAN.includes(decision.motivo)) {
-        await guardarEnCurso(sb, conv.conversacionId, null);
-    }
+
+    // Persistir el estado conversacional completo en Supabase estado_respuesta
+    await guardarEstadoConversacion(sb, conv.conversacionId, {
+        enCurso: borradorFinal,
+        estado_flujo: estadoFlujoFinal,
+        catalogo_mostrado: Boolean(decision.catalogoMostrado || lectura?.catalogoMostrado),
+        ultimo_intent: decision.intent ?? decision.motivo ?? 'desconocido',
+        ultimo_pedido_id: ultimoPedidoIdFinal,
+        intencion_pendiente: decision.intencionPendiente ?? null,
+    });
     // 5. Enviar
     const enviar = deps.enviar ?? (await import('./ZernioEnvio.js')).enviarTexto;
     const envio = await enviar(m.zernioConversationId, m.accountId, textoFinal, {

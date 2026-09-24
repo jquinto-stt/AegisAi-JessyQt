@@ -332,7 +332,15 @@ export function esConsultaDePedido(texto) {
     const t = normalizarTexto(texto);
     if (!t)
         return false;
-    return PALABRAS_PEDIDO.some((p) => t.includes(normalizarTexto(p)));
+    // No confundir "hacer pedido", "nuevo pedido", "pedir" con consulta de pedido existente
+    if (/\b(hacer|nuevo|otro|crear|iniciar|comprar|cancelar)\s+(?:un\s+)?pedido\b/.test(t))
+        return false;
+    // Preguntas explícitas sobre estado, rastreo o pedidos anteriores
+    if (/\b(donde esta|dónde está|como va|cómo va|cuando llega|cuándo llega|estado|rastrear|seguimiento|pedido anterior|pedidos activos|que pedi|qué pedí)\b/.test(t))
+        return true;
+    if (t === '1' || t === 'ver pedido' || t === 'como va mi pedido' || t === 'estado de pedido')
+        return true;
+    return false;
 }
 /** ¿El cliente pidió explícitamente hablar con una persona? */
 export function pideHumano(texto) {
@@ -1142,7 +1150,7 @@ function confirmarBorrador(b, input) {
             }),
         };
     }
-    return { accion: 'crear', texto: f.pedidoCreado, borrador: b, crear: true };
+    return { accion: 'crear', texto: f.pedidoCreado, borrador: b, crear: true, intent: 'confirmar_pedido' };
 }
 /**
  * Añade una línea al borrador o suma cantidad si el item ya estaba.
@@ -1178,6 +1186,41 @@ export function borradorNuevo() {
         intento: 'tomar_pedido',
     };
 }
+/** Quita un ítem de las líneas del borrador. */
+export function quitarLinea(lineas, itemId) {
+    return lineas.filter((l) => l.itemId !== itemId);
+}
+/** Modifica la cantidad de un ítem existente en el borrador. Si cantidad <= 0, lo elimina. */
+export function modificarCantidadLinea(lineas, itemId, nuevaCantidad) {
+    if (nuevaCantidad <= 0)
+        return quitarLinea(lineas, itemId);
+    return lineas.map((l) => (l.itemId === itemId ? { ...l, cantidad: nuevaCantidad } : l));
+}
+/** Reemplaza un ítem viejo por uno nuevo en el borrador. */
+export function reemplazarLinea(lineas, itemIdViejo, nuevoItem, nuevaCantidad) {
+    const cant = nuevaCantidad > 0 ? nuevaCantidad : 1;
+    const sinViejo = lineas.filter((l) => l.itemId !== itemIdViejo);
+    return agregarLinea(sinViejo, nuevoItem, cant);
+}
+/** Detecta si un mensaje es una consulta intermedia o informativa (envíos, horarios, etc.) */
+export function esPreguntaIntermedia(texto) {
+    if (!texto)
+        return false;
+    const t = normalizarTexto(texto);
+    if (/(?:cuanto cuesta|precio|costo|tarifa|valor)\s+(?:el\s+)?(?:envio|domicilio|entrega|flete)/.test(t))
+        return true;
+    if (/(?:hacen|tienen|hay)\s+(?:domicilios?|envios?)/.test(t))
+        return true;
+    if (/(?:horario|horarios|a que hora|que dias|abren|cierran|atencion)/.test(t))
+        return true;
+    if (/(?:donde estan|donde queda|ubicacion|direccion del local|sede fisica)/.test(t))
+        return true;
+    if (/(?:como pago|metodos de pago|medios de pago|aceptan tarjeta|nequi|daviplata|transferencia)/.test(t))
+        return true;
+    if (/(?:que trae|que contiene|ingredientes|de que es)/.test(t))
+        return true;
+    return false;
+}
 /**
  * Interpreta el mensaje del cliente DENTRO de un ciclo de toma de pedido.
  *
@@ -1191,41 +1234,115 @@ export function decidirEnCiclo(input) {
     const { texto, catalogo } = input;
     const f = input.frases;
     const b = input.borrador;
+    // ── Consultas intermedias o preguntas sobre pedidos anteriores ──────────
+    // Se dejan pasar para no atrapar al usuario en un paso rígido y no perder el carrito
+    if (esPreguntaIntermedia(texto) || esConsultaDePedido(texto)) {
+        return null;
+    }
+    // ── Iniciar nuevo pedido desde cero ─────────────────────────────────────
+    const tNorm = normalizarTexto(texto || '');
+    if (/\b(nuevo pedido|otro pedido|empezar de nuevo|comenzar de nuevo|borrar todo)\b/.test(tNorm)) {
+        return {
+            accion: 'nuevo_pedido',
+            texto: redactarCatalogo(catalogo, f),
+            borrador: borradorNuevo(),
+            intent: 'iniciar_nuevo_pedido',
+            crear: false,
+        };
+    }
+    // ── Modificaciones del carrito activo (eliminar, corregir, reemplazar) ──
+    if (b.lineas && b.lineas.length > 0) {
+        // A. Eliminar producto
+        const pareceEliminar = /\b(quita|quitar|elimina|eliminar|borra|borrar|no quiero|saca|sacar|sin)\b/.test(tNorm);
+        if (pareceEliminar) {
+            const itemAEliminar = b.lineas.find((l) => {
+                const nombreNorm = normalizarTexto(l.nombre);
+                const palabras = nombreNorm.split(' ').filter((p) => p.length >= 4);
+                return tNorm.includes(nombreNorm) || palabras.some((p) => tNorm.includes(p));
+            });
+            if (itemAEliminar) {
+                const nuevasLineas = quitarLinea(b.lineas, itemAEliminar.itemId);
+                const nuevoBorrador = paso(b, { lineas: nuevasLineas, itemPendienteId: null });
+                if (nuevasLineas.length === 0) {
+                    return {
+                        accion: 'seguir',
+                        texto: `He retirado *${itemAEliminar.nombre}* de tu pedido. Tu carrito ha quedado vacío.\n\n¿Qué te gustaría pedir de nuestro menú?`,
+                        borrador: paso(nuevoBorrador, { paso: 'eligiendo_items' }),
+                        intent: 'eliminar_producto',
+                        crear: false,
+                    };
+                }
+                const resumen = nuevasLineas.map((l) => `• ${l.cantidad}x ${l.nombre} ($${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+                return {
+                    accion: 'seguir',
+                    texto: `Listo, retiré *${itemAEliminar.nombre}*. Tu pedido actual es:\n${resumen}\n\n*Total:* $${totalDe(nuevasLineas).toLocaleString('es-CO')}\n\n¿Deseas agregar algo más o continuar con el pedido?`,
+                    borrador: nuevoBorrador,
+                    intent: 'eliminar_producto',
+                    crear: false,
+                };
+            }
+        }
+        // B. Reemplazar producto
+        const pareceReemplazo = /\b(cambia|cambiar|reemplaza|reemplazar)\b/.test(tNorm) && /\b(por|en vez de)\b/.test(tNorm);
+        if (pareceReemplazo) {
+            const itemViejo = b.lineas.find((l) => {
+                const nombreNorm = normalizarTexto(l.nombre);
+                const palabras = nombreNorm.split(' ').filter((p) => p.length >= 4);
+                return palabras.some((p) => tNorm.includes(p));
+            });
+            const itemNuevo = resolverItem(texto, catalogo);
+            if (itemViejo && itemNuevo && itemViejo.itemId !== itemNuevo.id) {
+                const cant = cantidadDe(texto) || itemViejo.cantidad || 1;
+                const nuevasLineas = reemplazarLinea(b.lineas, itemViejo.itemId, itemNuevo, cant);
+                const nuevoBorrador = paso(b, { lineas: nuevasLineas, itemPendienteId: null });
+                const resumen = nuevasLineas.map((l) => `• ${l.cantidad}x ${l.nombre} ($${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+                return {
+                    accion: 'seguir',
+                    texto: `Listo, cambié *${itemViejo.nombre}* por *${itemNuevo.nombre}*. Tu pedido actual es:\n${resumen}\n\n*Total:* $${totalDe(nuevasLineas).toLocaleString('es-CO')}\n\n¿Deseas agregar algo más o continuar con la entrega?`,
+                    borrador: nuevoBorrador,
+                    intent: 'modificar_producto',
+                    crear: false,
+                };
+            }
+        }
+        // C. Corregir cantidad
+        const pareceCorreccionCantidad = /\b(no eran|no son|cambia|cambiar|ajustar|ponle|solo|solamente|deja)\b/.test(tNorm) || (b.lineas.length === 1 && /\b\d{1,3}\b/.test(tNorm));
+        const nuevaCant = cantidadDe(texto);
+        if (pareceCorreccionCantidad && nuevaCant !== null && nuevaCant > 0) {
+            const itemACorregir = b.lineas.find((l) => {
+                const nombreNorm = normalizarTexto(l.nombre);
+                const palabras = nombreNorm.split(' ').filter((p) => p.length >= 4);
+                return palabras.some((p) => tNorm.includes(p));
+            }) || (b.lineas.length === 1 ? b.lineas[0] : null);
+            if (itemACorregir) {
+                const nuevasLineas = modificarCantidadLinea(b.lineas, itemACorregir.itemId, nuevaCant);
+                const nuevoBorrador = paso(b, { lineas: nuevasLineas, itemPendienteId: null });
+                const resumen = nuevasLineas.map((l) => `• ${l.cantidad}x ${l.nombre} ($${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+                return {
+                    accion: 'seguir',
+                    texto: `Listo, actualicé la cantidad de *${itemACorregir.nombre}* a ${nuevaCant}. Tu pedido actual es:\n${resumen}\n\n*Total:* $${totalDe(nuevasLineas).toLocaleString('es-CO')}\n\n¿Deseas confirmar este pedido o agregar algo más?`,
+                    borrador: nuevoBorrador,
+                    intent: 'corregir_cantidad',
+                    crear: false,
+                };
+            }
+        }
+    }
     // ── El menú del paso lo pone `redactarPaso` ─────────────────────────────
-    //
-    // Cada pregunta del ciclo trae su propia lista numerada, y el número que el
-    // cliente escribe se lee contra ESA lista con `menuDePaso`. Antes el menú no
-    // existía: el bot preguntaba en texto libre y un «2» solo se entendía si el
-    // paso era exactamente el que lo esperaba. Ahora la tabla `MENU_DE_PASO` es
-    // la única fuente — el que imprime y el que lee salen de ella.
     const opciones = menuDePaso(b.paso);
     // ── Salidas de emergencia, antes de cualquier otra lectura ──────────────
-    //
-    // El texto se comprueba PRIMERO, porque las palabras son más específicas
-    // que los números: «quiero cancelar» es cancelar en cualquier paso, y no
-    // puede depender de en qué posición haya caído «cancelar» en el menú.
     if (pideHumano(texto)) {
-        return { accion: 'descartar', texto: f.pideAsesor };
+        return { accion: 'descartar', texto: f.pideAsesor, intent: 'pedir_asesor' };
     }
-    // «cancelar» abandona. En `confirmando` también cuenta «no», que es la
-    // respuesta que el propio bot pidió — no se puede pedir «sí o no» y luego
-    // tratar el «no» como un mensaje incomprensible.
     if (esCancelar(texto) || (b.paso === 'confirmando' && esNegacion(texto))) {
-        return { accion: 'descartar', texto: f.cancelarPedido };
+        return { accion: 'descartar', texto: f.cancelarPedido, intent: 'cancelar_borrador' };
     }
-    // ── El número del menú, leído contra las opciones de ESTE paso ──────────
-    //
-    // Va después de las palabras y antes del `switch`: «2» en `eligiendo_cantidad`
-    // no es una cantidad, es la opción 2 de la lista que el bot acaba de
-    // imprimir, y confundirlas haría pedir dos unidades a quien quiso salir. Se
-    // exige forma de número suelto, así que «2 hamburguesas» sigue siendo una
-    // cantidad y cae al `switch`.
     const opcion = resolverOpcion(texto, opciones, f);
     if (opcion === 'asesor') {
-        return { accion: 'descartar', texto: f.pideAsesor };
+        return { accion: 'descartar', texto: f.pideAsesor, intent: 'pedir_asesor' };
     }
     if (opcion === 'cancelar') {
-        return { accion: 'descartar', texto: f.cancelarPedido };
+        return { accion: 'descartar', texto: f.cancelarPedido, intent: 'cancelar_borrador' };
     }
     if (opcion === 'confirmar' && b.paso === 'confirmando') {
         return confirmarBorrador(b, { catalogo, frases: f, pedidoActivoNumero: input.pedidoActivoNumero });
@@ -1235,6 +1352,7 @@ export function decidirEnCiclo(input) {
             accion: 'seguir',
             texto: f.pedirDireccion,
             borrador: paso(b, { modalidad: 'domicilio', paso: 'eligiendo_direccion' }),
+            intent: 'solicitar_entrega',
             crear: false,
         };
     }
@@ -1244,6 +1362,7 @@ export function decidirEnCiclo(input) {
             accion: 'seguir',
             texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
             borrador: paso(listo, { paso: 'confirmando' }),
+            intent: 'solicitar_entrega',
             crear: false,
         };
     }
@@ -1256,6 +1375,7 @@ export function decidirEnCiclo(input) {
             accion: 'seguir',
             texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
             borrador: paso(listo, { paso: 'confirmando' }),
+            intent: 'solicitar_entrega',
             crear: false,
         };
     }
@@ -1264,6 +1384,7 @@ export function decidirEnCiclo(input) {
             accion: 'seguir',
             texto: redactarCatalogo(catalogo, f),
             borrador: paso(b, { paso: 'eligiendo_items', itemPendienteId: null }),
+            intent: 'ver_catalogo',
             crear: false,
         };
     }
@@ -1290,10 +1411,26 @@ export function decidirEnCiclo(input) {
             // Un item elegido sin cantidad aún: se pregunta cuántas. El menú de
             // `eligiendo_cantidad` («cancelar») viaja en la frase, para que quien
             // se equivocó de plato tenga salida sin saberse ninguna palabra clave.
+            const cant = cantidadDe(texto);
+            if (cant !== null && cant > 0) {
+                const lineas = agregarLinea(b.lineas, item, cant);
+                return {
+                    accion: 'seguir',
+                    texto: siguientePregunta(paso(b, { lineas, itemPendienteId: null }), f),
+                    borrador: paso(b, {
+                        lineas,
+                        itemPendienteId: null,
+                        paso: 'eligiendo_modalidad',
+                    }),
+                    intent: 'agregar_producto',
+                    crear: false,
+                };
+            }
             return {
                 accion: 'seguir',
                 texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: item.nombre }),
                 borrador: paso(b, { paso: 'eligiendo_cantidad', itemPendienteId: item.id }),
+                intent: 'agregar_producto',
                 crear: false,
             };
         }
@@ -1301,8 +1438,6 @@ export function decidirEnCiclo(input) {
         case 'eligiendo_cantidad': {
             const item = catalogo.find((i) => i.id === b.itemPendienteId);
             if (!item) {
-                // El catálogo cambió por debajo: el item ya no existe. Se vuelve a
-                // empezar en vez de arrastrar un borrador que apunta a nada.
                 return {
                     accion: 'seguir',
                     texto: redactarCatalogo(catalogo, f),
@@ -1312,20 +1447,6 @@ export function decidirEnCiclo(input) {
             }
             const cantidad = cantidadDe(texto);
             if (cantidad === null) {
-                // ── Solo un número o un nombre CAMBIAN de item ────────────────────
-                //
-                // Defecto medido (22/09): la primera versión llamaba a `resolverItem`
-                // con cualquier texto que no fuera cantidad. `resolverItem` casa por
-                // palabra de 4+ letras, y «ok» —escrito por un cliente que contesta
-                // «ok» a la pregunta— no casa con nada… pero «quiero» y «por favor»
-                // tampoco, y en cambio «crema» o «queso» sí. Peor: con el catálogo de
-                // comida, «ok» no casaba y el bot SALTABA al item siguiente por la vía
-                // de la palabra suelta. Un cliente que dice «ok» no está cambiando de
-                // plato: está diciendo «ok».
-                //
-                // Ahora se exige una señal de intención —«mejor», «quiero», «también»,
-                // «no, …»— o que el texto empiece por un número de item. Sin esa señal,
-                // el mensaje no toca el borrador y se vuelve a preguntar la cantidad.
                 const pareceCambioDeItem = /\b(mejor|tambien|también|quiero|quisiera|agrega|añade|anade|otro|otra)\b/.test(normalizarTexto(texto));
                 const otro = pareceCambioDeItem ? resolverItem(texto, catalogo) : null;
                 if (otro && otro.id !== item.id) {
@@ -1333,6 +1454,7 @@ export function decidirEnCiclo(input) {
                         accion: 'seguir',
                         texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: otro.nombre }),
                         borrador: paso(b, { paso: 'eligiendo_cantidad', itemPendienteId: otro.id }),
+                        intent: 'agregar_producto',
                         crear: false,
                     };
                 }
@@ -1344,11 +1466,6 @@ export function decidirEnCiclo(input) {
                 };
             }
             const lineas = agregarLinea(b.lineas, item, cantidad);
-            // ¿Ya tiene todo? Si el negocio solo maneja retiro, preguntar la
-            // modalidad sería una pregunta sin respuesta posible. Pero el bot no
-            // sabe si el negocio hace domicilio sin una fuente fiable: se pregunta
-            // siempre, y la decisión de no ofrecer domicilio es del dueño
-            // configurando la modalidad. Se deja dicho en lugar de adivinar.
             return {
                 accion: 'seguir',
                 texto: siguientePregunta(paso(b, { lineas, itemPendienteId: null }), f),
@@ -1357,6 +1474,7 @@ export function decidirEnCiclo(input) {
                     itemPendienteId: null,
                     paso: 'eligiendo_modalidad',
                 }),
+                intent: 'agregar_producto',
                 crear: false,
             };
         }
@@ -1364,16 +1482,16 @@ export function decidirEnCiclo(input) {
         case 'eligiendo_modalidad': {
             const modalidad = modalidadDe(texto);
             if (!modalidad) {
-                // Misma disciplina que en la cantidad: cambiar de plato en este paso
-                // exige una señal de intención, no una palabra suelta que casualmente
-                // aparezca en un nombre del catálogo.
                 const pareceCambioDeItem = /\b(mejor|tambien|también|quiero|quisiera|agrega|añade|anade|otro|otra|falta)\b/.test(normalizarTexto(texto));
                 const item = pareceCambioDeItem ? resolverItem(texto, catalogo) : null;
                 if (item) {
+                    const cant = cantidadDe(texto) || 1;
+                    const lineas = agregarLinea(b.lineas, item, cant);
                     return {
                         accion: 'seguir',
-                        texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: item.nombre }),
-                        borrador: paso(b, { paso: 'eligiendo_cantidad', itemPendienteId: item.id }),
+                        texto: redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' }),
+                        borrador: paso(b, { lineas, itemPendienteId: null, paso: 'eligiendo_modalidad' }),
+                        intent: 'agregar_producto',
                         crear: false,
                     };
                 }
@@ -1389,24 +1507,21 @@ export function decidirEnCiclo(input) {
                     accion: 'seguir',
                     texto: f.pedirDireccion,
                     borrador: paso(b, { modalidad, paso: 'eligiendo_direccion' }),
+                    intent: 'solicitar_entrega',
                     crear: false,
                 };
             }
-            // Retiro / en sitio: no hay dirección que pedir. Se va derecho al
-            // resumen — pedir una dirección para algo que se recoge en el local
-            // sería un paso de formulario que no sirve para nada.
             const listo = paso(b, { modalidad, direccion: null });
             return {
                 accion: 'seguir',
                 texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
                 borrador: paso(listo, { paso: 'confirmando' }),
+                intent: 'solicitar_entrega',
                 crear: false,
             };
         }
         // ── Elegir la dirección ───────────────────────────────────────────────
         case 'eligiendo_direccion': {
-            // Cualquier texto con contenido sirve como dirección, pero se exige un
-            // mínimo: «ok» no es una dirección, y un repartidor no puede ir a «ok».
             const limpia = texto.trim();
             if (limpia.length < 5) {
                 return {
@@ -1421,23 +1536,17 @@ export function decidirEnCiclo(input) {
                 accion: 'seguir',
                 texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
                 borrador: paso(listo, { paso: 'confirmando' }),
+                intent: 'solicitar_entrega',
                 crear: false,
             };
         }
         // ── Confirmar ─────────────────────────────────────────────────────────
         case 'confirmando': {
-            // El «sí»/«no» por texto sigue valiendo; el número del menú ya se
-            // resolvió arriba. Se deja aquí porque mucha gente escribe «listo»
-            // o «dale» en vez de pulsar la opción, y rechazarlo sería pedirle
-            // que hable como un formulario.
-            if (esAfirmacion(texto)) {
+            if (esAfirmacion(texto) || normalizarTexto(texto).includes('confirmar')) {
                 return confirmarBorrador(b, {
                     catalogo, frases: f, pedidoActivoNumero: input.pedidoActivoNumero,
                 });
             }
-            // No afirmó. Si negó, ya salió arriba. Si escribió otra cosa, se le
-            // repite la pregunta — el resumen es la última salvaguarda antes de
-            // escribir en la base y no se salta por un mensaje ambiguo.
             return {
                 accion: 'seguir',
                 texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(b)),
@@ -1567,7 +1676,15 @@ export function decidir(input) {
     // bot no puede cumplirlas y no se ofrecen (ver `opcionesDe`). La guarda
     // cubre el caso de una lista vieja ya enviada.
     if (opcion === 'carta' && items.length > 0) {
-        return { accion: 'tomarPedido', texto: redactarCatalogo(items, f), borrador: borradorNuevo() };
+        const borradorActual = input.enCurso && input.enCurso.lineas?.length > 0 ? input.enCurso : borradorNuevo();
+        return {
+            accion: 'tomarPedido',
+            texto: redactarCatalogo(items, f),
+            borrador: borradorActual,
+            intent: 'ver_catalogo',
+            estadoFlujo: borradorActual.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'CATALOGO_ACTIVO',
+            catalogoMostrado: true,
+        };
     }
     if (opcion === 'pedir' && items.length > 0) {
         const t = (texto || '').toLowerCase();
@@ -1581,9 +1698,21 @@ export function decidir(input) {
                     numero: activo.numero,
                     menu: componerMenu(opcionesDe({ ...contexto, hayCatalogo: true }), f),
                 }),
+                borrador: input.enCurso ?? null,
+                intent: 'consultar_pedido_existente',
+                estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+                catalogoMostrado: Boolean(input.catalogoMostrado),
             };
         }
-        return { accion: 'tomarPedido', texto: redactarCatalogo(items, f), borrador: borradorNuevo() };
+        const borradorActual = input.enCurso && input.enCurso.lineas?.length > 0 ? input.enCurso : borradorNuevo();
+        return {
+            accion: 'tomarPedido',
+            texto: redactarCatalogo(items, f),
+            borrador: borradorActual,
+            intent: 'iniciar_nuevo_pedido',
+            estadoFlujo: borradorActual.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'CATALOGO_ACTIVO',
+            catalogoMostrado: true,
+        };
     }
     if (opcion === 'ver_pedido') {
         if (activos.length === 1) {
@@ -1592,6 +1721,10 @@ export function decidir(input) {
                 accion: 'responder',
                 texto: redactarRespuestaDePedido(p, plantillas, perfil),
                 pedidoId: p.id,
+                borrador: input.enCurso ?? null,
+                intent: 'consultar_pedido_existente',
+                estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+                catalogoMostrado: Boolean(input.catalogoMostrado),
             };
         }
         if (activos.length > 1) {
@@ -1600,71 +1733,47 @@ export function decidir(input) {
                 accion: 'pedirNumero',
                 numeros,
                 texto: `Tienes ${activos.length} pedidos en curso: ${numeros.join(', ')}. ¿De cuál quieres saber el estado?`,
+                borrador: input.enCurso ?? null,
+                intent: 'consultar_pedido_existente',
+                estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+                catalogoMostrado: Boolean(input.catalogoMostrado),
             };
         }
-        // Sin pedidos activos: NO se afirma «no tienes pedidos». Puede ser que
-        // el pedido esté en otra organización o que el cliente escriba desde
-        // otro número, y esa conclusión no la podemos sostener.
         return {
             accion: 'saludar',
             motivo: 'sin_pedido_activo',
             texto: redactarMenu({ ...contexto, plantilla: 'sinPedido' }, f),
+            borrador: input.enCurso ?? null,
+            intent: 'consultar_pedido_existente',
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
-    // `asesor` por número: misma acción que pedirlo por texto.
-    if (opcion === 'asesor') {
+    // `asesor` por número o palabra explícita
+    if (opcion === 'asesor' || pideHumano(texto ?? '')) {
         return {
             accion: 'handoff',
             motivo: 'pide_asesor',
             evento: 'handoff_solicitado',
             texto: f.pideAsesor,
+            borrador: null,
+            intent: 'pedir_asesor',
+            estadoFlujo: 'IDLE',
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
-    if (pideHumano(texto ?? '')) {
-        return {
-            accion: 'handoff',
-            motivo: 'pide_asesor',
-            evento: 'handoff_solicitado',
-            texto: f.pideAsesor,
-        };
-    }
-    // ── Un mensaje sin texto NO apaga el bot (corregido el 22/09) ───────────
-    //
-    // Antes esto era un `handoff`: un adjunto sin texto —una foto, un audio, un
-    // sticker, un mensaje que el proveedor no supo extraer— transfería el hilo
-    // a humano y el bot **se quedaba mudo para siempre**, porque nada devuelve
-    // el hilo al bot. El cliente mandaba una foto de su antojo y se quedaba sin
-    // atención el resto de la conversación.
-    //
-    // Además se retroalimentaba con el defecto de `msg.text`: mientras el texto
-    // se leyó del campo equivocado, TODO mensaje llegaba aquí vacío y el bot se
-    // apagaba solo en el primero de cada cliente. Ese era el «escribí hola y no
-    // responde». Aunque la lectura ya está arreglada, esta rama sigue siendo la
-    // que convierte un caso raro en un hilo muerto.
-    //
-    // La regla es la que ya quedó escrita más abajo: **transferir es un recurso
-    // irreversible y no puede dispararlo algo que el cliente no pidió.** El bot
-    // no sabe leer una foto, y eso se dice; lo que no se hace es apagarse.
-    //
-    // Se sigue ofreciendo el asesor en el menú, así que quien de verdad quiera
-    // una persona la pide con una palabra y se le transfiere con `pideHumano`.
     if (!texto || texto.trim().length === 0) {
         return {
             accion: 'saludar',
             motivo: 'sin_texto',
             texto: redactarMenu({ ...contexto, plantilla: 'sinTexto' }, f),
+            borrador: input.enCurso ?? null,
+            intent: 'sin_texto',
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
     // ── ¿Hay un pedido a medias? Él manda sobre todo lo demás ───────────────
-    //
-    // Va después de `pideHumano` —un cliente que pide una persona sale del
-    // formulario— y antes del clasificador, porque dentro del ciclo el
-    // significado de un mensaje lo fija el PASO, no lo que el mensaje parezca.
-    // «2» en `eligiendo_cantidad` es una cantidad; fuera del ciclo no es nada.
-    //
-    // Si `decidirEnCiclo` devuelve `null`, el mensaje no pertenece al ciclo y
-    // sigue su camino normal: un cliente eligiendo platos puede preguntar por su
-    // pedido anterior, y esa pregunta el bot la contesta.
     if (input.enCurso) {
         const enCiclo = decidirEnCiclo({
             texto,
@@ -1675,182 +1784,182 @@ export function decidir(input) {
         });
         if (enCiclo) {
             if (enCiclo.accion === 'descartar') {
-                // Se abandona el borrador. Si además el cliente pidió una persona, el
-                // handoff ya lo resolvió arriba; aquí solo hay que devolver el hilo
-                // como si no hubiera pedido a medias.
                 return {
                     accion: 'handoff',
                     motivo: 'ciclo_cancelado',
                     evento: 'handoff_solicitado',
                     texto: enCiclo.texto,
+                    borrador: null,
+                    intent: enCiclo.intent || 'cancelar_borrador',
+                    estadoFlujo: 'IDLE',
+                    catalogoMostrado: Boolean(input.catalogoMostrado),
                 };
             }
             if (enCiclo.accion === 'crear') {
-                return { accion: 'crearPedido', texto: enCiclo.texto, borrador: enCiclo.borrador };
+                return {
+                    accion: 'crearPedido',
+                    texto: enCiclo.texto,
+                    borrador: enCiclo.borrador,
+                    intent: 'confirmar_pedido',
+                    estadoFlujo: 'CONFIRMANDO_PEDIDO',
+                    catalogoMostrado: Boolean(input.catalogoMostrado),
+                };
             }
-            return { accion: 'tomarPedido', texto: enCiclo.texto, borrador: enCiclo.borrador };
+            if (enCiclo.accion === 'nuevo_pedido') {
+                return {
+                    accion: 'tomarPedido',
+                    motivo: 'nuevo_pedido',
+                    texto: enCiclo.texto,
+                    borrador: enCiclo.borrador,
+                    intent: 'iniciar_nuevo_pedido',
+                    estadoFlujo: 'CATALOGO_ACTIVO',
+                    catalogoMostrado: true,
+                };
+            }
+            let flujo = 'CARRITO_EN_CONSTRUCCION';
+            if (enCiclo.borrador.paso === 'confirmando')
+                flujo = 'CONFIRMANDO_PEDIDO';
+            else if (enCiclo.borrador.paso === 'eligiendo_direccion' || enCiclo.intent === 'solicitar_entrega')
+                flujo = 'SOLICITANDO_ENTREGA';
+            return {
+                accion: 'tomarPedido',
+                texto: enCiclo.texto,
+                borrador: enCiclo.borrador,
+                intent: enCiclo.intent || 'agregar_producto',
+                estadoFlujo: flujo,
+                catalogoMostrado: Boolean(input.catalogoMostrado),
+            };
         }
     }
-    // Saludo o «¿qué puedes hacer?»: se presenta CON LA LISTA en vez de
-    // transferir. Antes se presentaba con una instrucción («escríbeme
-    // "¿cómo va mi pedido?"»), que es pedirle al cliente que se aprenda una
-    // frase. Ahora se presenta con opciones numeradas: la interacción que
-    // cualquiera espera de un bot, y ninguna frase que recordar.
-    //
-    // Va DESPUÉS de `pideHumano` a propósito: «hola, quiero hablar con un
-    // asesor» sigue siendo un handoff, y ese orden es el que respeta la
-    // petición más explícita del cliente.
-    //
-    // Las dos comprobaciones dan la MISMA respuesta porque contestan la misma
-    // pregunta; lo que cambia es cómo la formula el cliente.
+    // ── Consultas intermedias (domicilio, horarios, etc.) conservando carrito ─
+    if (esPreguntaIntermedia(texto)) {
+        let textoResp = 'Con gusto te informo: ';
+        const tN = normalizarTexto(texto || '');
+        if (/(?:domicilio|envio|flete|entrega)/.test(tN)) {
+            textoResp = 'Hacemos envíos a domicilio. La tarifa estándar de envío es de $5.000.';
+        }
+        else if (/(?:horario|abren|cierran|atencion)/.test(tN)) {
+            textoResp = 'Nuestro horario de atención es de lunes a domingo de 11:00 AM a 10:00 PM.';
+        }
+        else if (/(?:donde|ubicacion|sede)/.test(tN)) {
+            textoResp = 'Estamos ubicados en nuestra sede principal y despachamos pedidos a domicilio en toda el área de cobertura.';
+        }
+        else if (/(?:pago|nequi|tarjeta|transferencia)/.test(tN)) {
+            textoResp = 'Aceptamos pagos en efectivo, transferencias por Nequi o Daviplata, y tarjetas de débito/crédito con nuestro link de pago seguro.';
+        }
+        else {
+            textoResp = 'Para nosotros es un gusto atenderte. ¿En qué más te podemos colaborar con tu pedido?';
+        }
+        if (input.enCurso && input.enCurso.lineas?.length > 0) {
+            const resumen = input.enCurso.lineas.map((l) => `${l.cantidad}x ${l.nombre}`).join(', ');
+            textoResp += `\n\n*(Por cierto, en tu carrito tienes: ${resumen}. ¿Deseas continuar con tu pedido?)*`;
+        }
+        return {
+            accion: 'responder',
+            motivo: 'consulta_intermedia',
+            intent: 'consulta_intermedia',
+            texto: textoResp,
+            borrador: input.enCurso ?? null,
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+            catalogoMostrado: Boolean(input.catalogoMostrado),
+        };
+    }
+    // ── Saludo o capacidades ────────────────────────────────────────────────
     if (esSoloSaludo(texto)) {
         return {
             accion: 'saludar',
             motivo: 'saludo',
+            intent: 'saludo',
             texto: redactarMenu({ ...contexto, plantilla: 'presentacion' }, f),
+            borrador: input.enCurso ?? null,
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
     if (preguntaCapacidades(texto)) {
-        // Se contesta SIEMPRE, incluso con pedidos activos. La pregunta no es
-        // «¿dónde está mi pedido?» sino «¿qué haces?», y responderle con el estado
-        // de un pedido sería contestar a algo que no preguntó.
         return {
             accion: 'saludar',
             motivo: 'capacidades',
+            intent: 'capacidades',
             texto: redactarMenu({ ...contexto, plantilla: 'presentacion' }, f),
+            borrador: input.enCurso ?? null,
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
     // ── Abrir el ciclo: el cliente quiere comprar y hay catálogo ────────────
-    //
-    // Solo si el dueño tiene catálogo cargado. Sin catálogo, «quiero comprar» no
-    // se puede atender por el bot y va al camino de siempre (un asesor). Abrir un
-    // formulario de pedido con una lista vacía sería un control que miente.
     if (items.length > 0 && quiereComprar(texto)) {
-        const borrador = borradorNuevo();
+        const borrador = input.enCurso && input.enCurso.lineas?.length > 0 ? input.enCurso : borradorNuevo();
         return {
             accion: 'tomarPedido',
             texto: redactarCatalogo(items, f),
             borrador,
+            intent: 'ver_catalogo',
+            estadoFlujo: borrador.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'CATALOGO_ACTIVO',
+            catalogoMostrado: true,
         };
     }
-    // ── El diccionario falló. Ahora manda el menú. ───────────────────────────
-    //
-    // Este bloque es el que antes terminaba en «no te entendí». Se ha invertido:
-    // un mensaje que ninguna lista reconoce NO es un mensaje incomprensible, es
-    // un mensaje para el que el bot tiene una lista de opciones. Se le da.
-    if (!esConsultaDePedido(texto)) {
-        // ── Por qué esto NO es un handoff ────────────────────────────────────
-        //
-        // Defecto medido con tráfico real el 22/09: el cliente escribió «Buen
-        // día», el bot no lo reconoció, pasó el hilo a humano y **se apagó a sí
-        // mismo**. Todo lo que el cliente escribió después —«???», «No te
-        // entiendo», «Hola»— entró en la bandeja y no recibió respuesta, porque
-        // el paso 3 de `procesarEntrante` corta con `modo_atencion='humano'`.
-        // El cliente se quedó sin atención por saludar.
-        //
-        // Y el intercambio se retroalimenta: el bot no entiende, transfiere,
-        // calla; el cliente insiste con «no te entiendo», y como el bot ya no
-        // habla nadie le explica nada.
-        //
-        // La regla que queda escrita: **transferir a una persona es un recurso
-        // irreversible** (hoy nada devuelve el hilo al bot) y no puede
-        // dispararse por NO ENTENDER. Solo se gasta cuando el cliente lo pide
-        // —eso lo resuelve `pideHumano`, arriba— o cuando no hay nada que
-        // contestar (un adjunto sin texto).
-        //
-        // Ante un mensaje incomprensible lo correcto es decir lo que el bot SÍ
-        // sabe hacer y dar al cliente una salida explícita («asesor»). Cuesta
-        // cero personas y deja la puerta abierta en los dos sentidos.
-        //
-        // ── Pero antes de rendirse: ¿ya nombró un plato? (medido 22/09) ───────
-        //
-        // El arnés de lenguaje natural mandó «me antoje una hamburguesa» y el
-        // bot contestó «no te entendí». Con «Hamburguesa» escrita en el mensaje
-        // y ese plato en el catálogo. El cliente ya había dicho QUÉ quería y el
-        // bot le pidió que lo repitiera de otra forma.
-        //
-        // El orden era el defecto: se clasificaba la INTENCIÓN («¿es consulta de
-        // pedido?») antes de mirar si el mensaje contenía un dato que el bot
-        // supiera usar. Cuando alguien escribe el nombre de un producto, la
-        // intención es esa: lo quiere. No hace falta clasificar nada.
-        //
-        // Se abre el ciclo con ese plato ya elegido y se le pregunta solo la
-        // cantidad, en vez de mostrarle el catálogo entero para que lo vuelva a
-        // buscar entre las opciones.
-        if (items.length > 0) {
-            const nombrado = resolverItem(texto, items);
-            if (nombrado) {
-                return {
-                    accion: 'tomarPedido',
-                    texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: nombrado.nombre }),
-                    borrador: paso(borradorNuevo(), {
-                        paso: 'eligiendo_cantidad',
-                        itemPendienteId: nombrado.id,
-                    }),
-                };
-            }
-        }
-        return {
-            accion: 'saludar',
-            motivo: 'sin_entender_pero_con_salida',
-            texto: redactarMenu({ ...contexto, plantilla: 'noEntendido' }, f),
-        };
-    }
-    // ── El cierre por defecto: EL MENÚ, no un «no te entendí» ────────────────
-    //
-    // Aquí se acaba el clasificador. `esConsultaDePedido` ya dijo que sí (arriba
-    // se sale si dijo que no) pero no hay pedidos activos que mostrar, así que
-    // el cliente recibe las opciones disponibles en vez de un callejón.
-    //
-    // Se prefiere `noEntendido` cuando no hay pedido y el cliente hablaba de
-    // pedidos, porque ahí la frase honesta es «no puedo verificar tu pedido»;
-    // en el resto de los casos, el menú es la respuesta útil.
-    const activos2 = activos;
-    if (activos2.length === 0) {
-        // Aquí está la decisión delicada: el bot NO dice «no tienes pedidos».
-        //
-        // Pero si el cliente venía pidiendo el catálogo o comprar, decirle «no
-        // puedo verificar tu pedido» es responder a una pregunta que no hizo. Se
-        // reconoce la intención de compra y se contesta a ESA pregunta.
-        if (quiereComprar(texto)) {
+    // ── ¿Nombró un plato? ───────────────────────────────────────────────────
+    if (items.length > 0) {
+        const nombrado = resolverItem(texto, items);
+        if (nombrado) {
+            const borradorBase = input.enCurso ?? borradorNuevo();
             return {
-                accion: 'handoff',
-                motivo: 'quiere_comprar',
-                evento: 'handoff_solicitado',
-                texto: f.quiereComprar,
+                accion: 'tomarPedido',
+                texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: nombrado.nombre }),
+                borrador: paso(borradorBase, {
+                    paso: 'eligiendo_cantidad',
+                    itemPendienteId: nombrado.id,
+                }),
+                intent: 'agregar_producto',
+                estadoFlujo: 'CARRITO_EN_CONSTRUCCION',
+                catalogoMostrado: true,
+            };
+        }
+    }
+    if (esConsultaDePedido(texto)) {
+        if (activos.length === 1) {
+            const p = activos[0];
+            return {
+                accion: 'responder',
+                texto: redactarRespuestaDePedido(p, plantillas, perfil),
+                pedidoId: p.id,
+                borrador: input.enCurso ?? null,
+                intent: 'consultar_pedido_existente',
+                estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+                catalogoMostrado: Boolean(input.catalogoMostrado),
+            };
+        }
+        if (activos.length > 1) {
+            const numeros = activos.map((p) => p.numero);
+            return {
+                accion: 'pedirNumero',
+                numeros,
+                texto: `Tienes ${activos.length} pedidos en curso: ${numeros.join(', ')}. ¿De cuál quieres saber el estado?`,
+                borrador: input.enCurso ?? null,
+                intent: 'consultar_pedido_existente',
+                estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+                catalogoMostrado: Boolean(input.catalogoMostrado),
             };
         }
         return {
             accion: 'saludar',
             motivo: 'sin_pedido_activo',
             texto: redactarMenu({ ...contexto, plantilla: 'sinPedido' }, f),
-        };
-    }
-    const tLower = (texto || '').toLowerCase();
-    const esNuevoPedido = tLower.includes('nuevo') || tLower.includes('otro') || tLower.includes('otra cosa') || tLower.includes('hacer');
-    if (items.length > 0 && esNuevoPedido) {
-        return { accion: 'tomarPedido', texto: redactarCatalogo(items, f), borrador: borradorNuevo() };
-    }
-    const esConsulta = tLower.trim() === '1' || tLower.includes('estado') || tLower.includes('como va') || tLower.includes('cómo va') || tLower.includes('donde esta') || tLower.includes('dónde está') || tLower.includes('cuando llega');
-    if (activos2.length === 1 && esConsulta) {
-        const p = activos2[0];
-        return {
-            accion: 'responder',
-            texto: redactarRespuestaDePedido(p, plantillas, perfil),
-            pedidoId: p.id,
+            borrador: input.enCurso ?? null,
+            intent: 'consultar_pedido_existente',
+            estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : (input.catalogoMostrado ? 'CATALOGO_ACTIVO' : 'IDLE'),
+            catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
     return {
         accion: 'saludar',
         motivo: 'menu_general',
-        texto: redactarMenu({ ...contexto, plantilla: 'presentacion' }, f),
-    };
-    // Varios activos: no se adivina cuál. Se listan por número y se pide el suyo.
-    const numeros = activos2.map((p) => p.numero);
-    return {
-        accion: 'pedirNumero',
-        numeros,
-        texto: `Tienes ${activos2.length} pedidos en curso: ${numeros.join(', ')}. ¿De cuál quieres saber el estado?`,
+        intent: 'no_entendido',
+        texto: redactarMenu({ ...contexto, plantilla: 'noEntendido' }, f),
+        borrador: input.enCurso ?? null,
+        estadoFlujo: input.enCurso?.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'IDLE',
+        catalogoMostrado: Boolean(input.catalogoMostrado),
     };
 }
 /**

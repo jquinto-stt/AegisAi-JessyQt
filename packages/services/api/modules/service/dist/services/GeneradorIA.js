@@ -259,6 +259,18 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
       const nombresStr = itemsList.map(c => c.nombre).join(', ');
 
       replyText = `¡Con gusto, ${clienteNombreRef}! 🍔 Aquí tienes nuestro menú oficial de ${marca}:\n\n${listaTexto}\n\n¿Cuál de estos platillos se te antoja hoy? Puedes tocar un botón rápido abajo o seleccionar la lista desplegable:\n\n[DESPLEGABLE: Ver el menú | ${nombresStr}]\n\n[BOTON: Pedir Combo 🍔] [BOTON: Pedir Papas 🍟] [BOTON: Hablar con Asesor 👤]`;
+    } else if (textLower.includes('hacer pedido') || textLower.includes('iniciar pedido') || textLower.includes('ordenar') || textLower.includes('quiero pedir')) {
+      replyText = `¡Excelente, ${clienteNombreRef}! Vamos a armar tu pedido. 🛒\n\nPuedes decirme qué producto deseas ordenar y en qué cantidad, o elegir una de nuestras opciones disponibles:\n\n[BOTON: Pedir Combo 🍔] [BOTON: Pedir Papas 🍟] [BOTON: Hablar con Asesor 👤]`;
+    } else if (textLower.includes('me equivoqu') || textLower.includes('no quiero') || textLower.includes('cambiar') || textLower.includes('cambia')) {
+      replyText = `Entendido, ${clienteNombreRef}. He actualizado tu pedido con las opciones corregidas. 🍟\n\n¿Deseas confirmar este pedido a tu dirección o agregar algo más?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Ver Catálogo 📜] [BOTON: Cancelar ❌]`;
+    } else if (textLower.includes('anterior') || textLower.includes('pasado') || textLower.includes('ayer')) {
+      if (Array.isArray(pedidosActivos) && pedidosActivos.length > 0) {
+        replyText = `Hola ${clienteNombreRef}, en tu pedido anterior registraste el pedido #${pedidosActivos[0].numero} en estado "${pedidosActivos[0].estado}".\n\nConservamos tu carrito actual si deseas continuar ordenando:\n\n[BOTON: Continuar Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
+      } else {
+        replyText = `Hola ${clienteNombreRef}, no encontramos pedidos anteriores registrados en tu cuenta.\n\n[BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
+      }
+    } else if (textLower.includes('no entiendo') || textLower.includes('confunde') || textLower.includes('frustrado') || textLower.includes('irme') || textLower.includes('ayuda')) {
+      replyText = `Entiendo perfectamente, ${clienteNombreRef}. Te lo simplifico al instante:\n\n1. Elige qué producto deseas de nuestro catálogo.\n2. Indícanos tu dirección de entrega.\n3. Te enviamos el resumen y el link de pago seguro.\n\n¿Deseas que un asesor humano te atienda personalmente por aquí?\n\n[BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('hamburguesa') || textLower.includes('combo') || textLower.includes('papa') || textLower.includes('gaseosa') || textLower.includes('postre') || textLower.includes('cheesecake') || textLower === '1' || textLower === '2' || textLower === '3' || textLower === '4' || textLower.includes('comprar')) {
       replyText = `¡Excelente elección, ${clienteNombreRef}! 🎉\n\n🍔 *Combo Hamburguesa Clásica*\nPrecio: *$25.000*\nIncluye: Carne 100% de res, queso cheddar fundido, papas rústicas y salsa de la casa.\n\n¿Deseas confirmar este pedido a tu dirección?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Cambiar Producto ✏️] [BOTON: Cancelar ❌]`;
     } else if (textLower.includes('confirmar') || textLower.includes('confirmar pedido')) {
@@ -270,7 +282,7 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
       } else {
         replyText = `Hola ${clienteNombreRef}, no tienes ningún pedido activo registrado en este momento.\n\n[BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]`;
       }
-    } else if (textLower.includes('asesor') || textLower.includes('humano') || textLower.includes('soporte') || textLower.includes('ayuda')) {
+    } else if (textLower.includes('asesor') || textLower.includes('humano') || textLower.includes('soporte')) {
       replyText = `Entendido ${clienteNombreRef}. En este momento te comunico con uno de nuestros asesores para atenderte personalmente. [SOLICITA_HUMANO]`;
     } else {
       replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[BOTON: Ver Menú 📜] [BOTON: Estado de Pedido 📦] [BOTON: Hablar con Asesor 👤]`;
