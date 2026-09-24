@@ -133,14 +133,12 @@ class ZernioWebhook {
         // descarta `direction: outgoing`, pero un bot que se responde a sí mismo
         // gasta saldo real y le escribe al cliente en bucle.
         const esPropio = esMensajePropio('incoming', null);
-        let bot = null;
         if (!esPropio) {
-            try {
-                bot = await procesarEntrante(lectura.mensaje, { mensajeYaGuardado: res.duplicado });
-            }
-            catch (e) {
-                bot = { ok: false, error: `excepción en el bot: ${e.message}` };
-            }
+            setImmediate(() => {
+                procesarEntrante(lectura.mensaje, { mensajeYaGuardado: res.duplicado }).catch((e) => {
+                    console.error(`[ZernioWebhook] Excepción en procesamiento asíncrono del bot: ${e.message}`);
+                });
+            });
         }
         return new HttpResponseOK({
             recibido: true,
@@ -148,14 +146,7 @@ class ZernioWebhook {
             contactoId: res.contactoId,
             conversacionId: res.conversacionId,
             mensajeId: res.mensajeId,
-            // Bloque informativo. `accion` dice qué hizo el bot: `responder`,
-            // `pedirNumero`, `handoff`, `silencio` (ya contestado, o lo tomó un
-            // humano). Ausente si no se intentó (mensaje propio).
-            bot: bot
-                ? bot.ok
-                    ? { ok: true, accion: bot.accion, motivo: bot.motivo, mensajeId: bot.mensajeId }
-                    : { ok: false, error: bot.error }
-                : null,
+            bot: { ok: true, procesando: !esPropio }
         });
     }
 }
