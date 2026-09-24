@@ -15,7 +15,7 @@ export async function generarRespuestaIA(input) {
       if (fs.existsSync(envPath)) {
         const content = fs.readFileSync(envPath, 'utf8');
         const m = content.match(/AZURE_OPENAI_KEY=(.+)/);
-        if (m) apiKey = m[1].trim();
+        if (m) apiKey = m[1].replace(/[\r\n]/g, '').trim();
       }
     } catch (_) {}
   }
