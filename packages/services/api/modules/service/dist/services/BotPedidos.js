@@ -163,90 +163,6 @@ const ETIQUETA_ESTADO = {
     entregado: 'entregado',
     cancelado: 'cancelado',
 };
-/**
- * Mínimo léxico para reconocer una consulta de pedido.
- *
- * ── Lo que este clasificador aprendió del tráfico real (22/09) ────────────
- *
- * La primera versión era una lista de **sustantivos** (`pedido`, `domicilio`,
- * `camino`…) y con ella el bot recibió en pruebas dos mensajes de cliente que
- * NO reconoció:
- *
- *   · «Hola»                          → `no_es_consulta` → handoff
- *   · «Muéstrame el catálogo de productos» → `no_es_consulta` → handoff
- *
- * Los dos comportamientos eran los escritos, pero el segundo revela el defecto
- * de fondo: **los clientes no escriben sustantivos, escriben preguntas.**
- * «¿ya salió?», «¿cuánto falta?», «¿a qué hora llega?», «¿dónde va mi
- * domicilio?» no contienen ni una de las palabras de la lista original, así
- * que *toda* consulta formulada de forma natural terminaba en un humano.
- *
- * Por eso ahora hay tres familias:
- *
- *   1. **Sustantivo** — `pedido`, `domicilio`, `repartidor`. La familia
- *      original, útil cuando el cliente nombra el objeto.
- *   2. **Interrogativo de estado** — `falta`, `llega`, `demora`, `sale`,
- *      `envia`. El vocabulario con el que se pregunta por algo en curso.
- *   3. **Intención de compra** — `comprar`, `catalogo`, `menu`, `precio`,
- *      `producto`. Un cliente pidiendo el catálogo está, con altísima
- *      probabilidad, preguntando por su pedido o por cómo hacer uno; mandarlo
- *      a un asesor humano por decir «quiero comprar» es tirar una venta.
- *
- * Sigue siendo deliberadamente simple —un clasificador de verdad es la
- * evolución natural— y sigue **fallando hacia el humano** ante lo que no
- * entiende. Lo que cambió es la cobertura, no la prudencia.
- */
-const PALABRAS_PEDIDO = [
-    // 1. El objeto
-    'pedido',
-    'pedidos',
-    'orden',
-    'ordenes',
-    'órdenes',
-    'domicilio',
-    'envio',
-    'envío',
-    'repartidor',
-    'mensajero',
-    'paquete',
-    // 2. La pregunta por el estado
-    'llegar',
-    'llega',
-    'demora',
-    'demorar',
-    'tarda',
-    'tardar',
-    'estado',
-    'listo',
-    'preparando',
-    'preparacion',
-    'preparación',
-    'camino',
-    'cuanto',
-    'cuánto',
-    'falta',
-    'sale',
-    'salio',
-    'salió',
-    'saliendo',
-    'despacho',
-    'despachado',
-    'rastrear',
-    'seguimiento',
-    // 3. La intención de compra
-    'comprar',
-    'compra',
-    'catalogo',
-    'catálogo',
-    'menu',
-    'menú',
-    'precio',
-    'precios',
-    'producto',
-    'productos',
-    'disponible',
-    'disponibles',
-];
 /** Señales claras de que quiere un humano, sin pasar por el clasificador. */
 const PALABRAS_HUMANO = [
     'asesor',
@@ -259,74 +175,7 @@ const PALABRAS_HUMANO = [
     'reclamo',
 ];
 /**
- * Señales de intención de compra.
- *
- * Se mantienen separadas de `PALABRAS_PEDIDO` aunque el clasificador las use
- * juntas: sirven para **redactar**. Un cliente que pidió el catálogo y no tiene
- * pedidos activos no debe recibir «no puedo verificar tu pedido» — preguntó
- * otra cosa. La distinción entre «reconozco esto» y «sé de qué habla» es la
- * diferencia entre contestar y responder.
- */
-const PALABRAS_COMPRA = [
-    'comprar',
-    'compra',
-    'catalogo',
-    'catálogo',
-    'carta',
-    'menu',
-    'menú',
-    'precio',
-    'precios',
-    'producto',
-    'productos',
-    'disponible',
-    'pedir',
-    'quisiera',
-    'queria',
-    'quería',
-    // ── Formas que faltaban y que un cliente escribe de verdad (medido 22/09) ─
-    //
-    // El arnés de lenguaje natural mandó «q tienen?» y «que me recomiendas» y
-    // las dos cayeron en `no_entendido`: el bot contestaba «no te entendí» a un
-    // cliente que estaba pidiendo la carta con las palabras más naturales que
-    // existen para eso. Ninguna de las dos frases contiene «catálogo» ni
-    // «menú», así que la lista era correcta y el cliente quedaba sin atender.
-    //
-    // Lo que se añade no son sinónimos de diccionario, son las formas que
-    // aparecen en un chat real: «qué tienen», «qué hay», «recomiéndame»,
-    // «antójame», el típico «algo para comer». Preguntar por el surtido ES
-    // pedir la carta, aunque no se nombre la carta.
-    'tienen',
-    'tiene',
-    'hay',
-    'recomienda',
-    'recomiendas',
-    'recomendacion',
-    'recomendación',
-    'recomiendame',
-    'recomiéndame',
-    'sugerencia',
-    'sugerencias',
-    'sugiere',
-    'antoja',
-    'antoje',
-    'antojé',
-    'antojos',
-    'vender',
-    'venden',
-    'ofrecen',
-    'surte',
-    'surtido',
-    'almuerzo',
-    'almuerzos',
-    'comida',
-    'comidas',
-];
-/**
  * ¿Parece una consulta sobre un pedido?
- *
- * Se normaliza sin tildes para que «envío» y «envio» cuenten igual: el cliente
- * escribe desde el móvil y exigirle tildes sería absurdo.
  */
 export function esConsultaDePedido(texto) {
     const t = normalizarTexto(texto);
@@ -351,15 +200,12 @@ export function pideHumano(texto) {
 }
 /**
  * ¿El cliente está intentando comprar o ver el catálogo?
- *
- * No decide por sí sola: `decidir` la consulta solo cuando ya sabe que hay
- * consulta y no hay pedido activo, para elegir con qué frase derivar.
  */
 export function quiereComprar(texto) {
     const t = normalizarTexto(texto);
     if (!t)
         return false;
-    return PALABRAS_COMPRA.some((p) => t.includes(normalizarTexto(p)));
+    return /\b(comprar|compra|catalogo|catálogo|carta|menu|menú|precio|precios|producto|productos|disponible|pedir|quisiera|queria|quería|tienen|tiene|hay|recomienda|recomiendas|recomendacion|recomendación|recomiendame|recomiéndame|sugerencia|sugerencias|sugiere|antoja|antoje|antojé|antojos|vender|venden|ofrecen|almuerzo|comida)\b/i.test(t);
 }
 /**
  * Saludos y aperturas de conversación.
@@ -775,29 +621,12 @@ export function preguntaCapacidades(texto) {
  * intención la tienen que clasificar las otras listas.
  */
 export function esSoloSaludo(texto) {
-    const t = normalizarTexto(texto).replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
+    const t = sinPuntuacion(texto);
     if (!t)
         return false;
-    const palabras = t.split(' ');
-    // ── 1. El mensaje entero es exactamente un saludo de la lista ────────────
-    if (PALABRAS_SALUDO.includes(t))
-        return true;
-    // ── 2. Está formado SOLO por piezas saludables (y relleno) ──────────────
-    //
-    // Aquí es donde entran «Hola, buenos días», «buen día» y «q tal». Antes
-    // fallaban por dos motivos distintos:
-    //
-    //   · `PALABRAS_SALUDO` tiene la frase «buenos dias» y el cliente escribe
-    //     «buen día» (singular). No casa, y cae a handoff: un saludo apaga el
-    //     bot. Medido con tráfico real el 22/09 a las 12:21:20.
-    //   · El `every` anterior exigía que CADA palabra fuera un saludo completo
-    //     de la lista, y `buenos` no lo es (solo existe la frase «buenos
-    //     dias»). Así que «hola, buenos días» —el saludo más normal que hay—
-    //     tampoco entraba.
-    //
-    // El tope de 4 palabras útiles es lo que mantiene esto prudente: un mensaje
-    // largo nunca se confunde con un saludo, porque el cliente que saluda y
-    // además pregunta escribe más y su intención la clasifican las otras listas.
+    const palabras = t.split(' ').filter(Boolean);
+    if (palabras.length === 0 || palabras.length > 5)
+        return false;
     let utiles = 0;
     for (const p of palabras) {
         if (RUIDO_DE_SALUDO.has(p))
@@ -806,7 +635,7 @@ export function esSoloSaludo(texto) {
             return false;
         utiles++;
     }
-    return utiles > 0 && utiles <= 4;
+    return utiles > 0;
 }
 /** Minúsculas y sin diacríticos. `normalize('NFD')` separa la tilde y se filtra. */
 export function normalizarTexto(texto) {
