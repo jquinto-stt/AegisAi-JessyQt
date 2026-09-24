@@ -214,6 +214,17 @@ export function resolverOpcion(texto, opciones, frases) {
         const idx = Number(conNumero[1]) - 1;
         return opciones[idx] ?? null;
     }
+
+    // Resolución semántica natural según opciones disponibles en el paso
+    const norm = normalizarTexto(texto);
+    if (opciones.includes('domicilio') && modalidadDe(texto) === 'domicilio') return 'domicilio';
+    if (opciones.includes('retiro') && modalidadDe(texto) === 'retiro') return 'retiro';
+    if (opciones.includes('confirmar') && (esAfirmacion(texto) || norm.includes('confirmar'))) return 'confirmar';
+    if (opciones.includes('cancelar') && esCancelar(texto)) return 'cancelar';
+    if (opciones.includes('asesor') && pideHumano(texto)) return 'asesor';
+    if (opciones.includes('carta') && pideCarta(texto)) return 'carta';
+    if (opciones.includes('agregar_otro') && /\b(agregar|anadir|añadir|otro|otra|mas|más|ver catalogo|ver carta|ver menu)\b/.test(norm)) return 'agregar_otro';
+
     const f = frases ?? {};
     const TEXTO_DE = {
         ver_pedido: f.opcionVerPedido ?? 'Cómo va mi pedido',

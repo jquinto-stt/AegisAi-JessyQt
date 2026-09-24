@@ -222,11 +222,11 @@ export const CONVERSACION_POR_DEFECTO = {
     // el cliente nunca tenga que hacer scroll hacia arriba a buscar la lista.
     presentacion: '¡Hola! Soy el asistente virtual. Puedo ayudarte con esto:\n' +
         '{menu}\n\n' +
-        'Escríbeme el número de la opción que quieras.',
+        'Escríbeme el número o dime qué deseas.',
     pideAsesor: 'Claro, te comunico con un asesor. En un momento te atiende.',
     noEntendido: 'Perdona, no te entendí. Elige una opción:\n' +
         '{menu}\n\n' +
-        'Escríbeme solo el número, por ejemplo «2».',
+        'Puedes escribir el número o tu consulta directamente.',
     // Antes decía «Te lee un asesor en un momento», y era verdad mientras esta
     // rama transfería. Al dejar de transferir —un adjunto no puede apagar el
     // hilo— la frase pasó a ser una promesa que nadie cumple: el cliente
@@ -234,7 +234,7 @@ export const CONVERSACION_POR_DEFECTO = {
     sinTexto: 'No pude leer eso. Escríbeme lo que necesitas y te ayudo:',
     sinPedido: 'No tengo a la vista un pedido en curso con este número. Vamos a resolverlo:\n' +
         '{menu}\n\n' +
-        'Escríbeme el número de la opción que quieras.',
+        'Elige una opción o dime cómo te puedo colaborar.',
     quiereComprar: 'Con gusto te ayudo con tu compra. Te comunico con un asesor para que lo tome contigo.',
     // ── Toma de pedido ──────────────────────────────────────────────────────
     // Los textos de aquí son los que ve un cliente cuando el dueño no configuró
@@ -242,33 +242,33 @@ export const CONVERSACION_POR_DEFECTO = {
     // dicen «ya está en cocina», dicen «quedó registrado».
     itemCatalogo: '{n}. {nombre} — {precio}',
     pedirCatalogo: 'Con gusto. Esto es lo que tenemos:\n{total}\n\n' +
-        'Escríbeme el número del que quieras.',
+        'Escríbeme el número o el producto que quieras.',
     pedirCantidad: '¿Cuántas unidades de *{item}* quieres?\n\n' +
-        'Escríbeme solo el número, por ejemplo «2».{siguiente}',
+        'Indícame la cantidad (ej: «2»).{siguiente}',
     // El paso de cantidad NO lleva lista numerada —ver `MENU_DE_PASO`— y en su
     // lugar lleva este pie: dice cómo cambiar de plato o salir sin ofrecer un
     // dígito que el cliente podría confundir con una cantidad. Antes de esto, el
     // único camino de salida era escribir «cancelar» a secas, que nadie adivina.
     pieCantidad: ' Si quieres otro producto escríbeme «otro», y si prefieres dejarlo escríbeme «cancelar».',
-    cantidadInvalida: 'No entendí la cantidad de *{item}*. Escríbeme solo un número, por ejemplo «2».',
+    cantidadInvalida: 'No entendí la cantidad de *{item}*. Indícame el número de unidades (ej: «2»).',
     // Las modalidades también se numeran: «¿cómo lo quieres?» con la respuesta
     // libre obligaba al cliente a adivinar el vocabulario que el bot acepta.
-    pedirModalidad: '¿Cómo lo quieres?\n\n' +
+    pedirModalidad: '¿Cómo prefieres recibir tu pedido?\n\n' +
         '{menu}\n\n' +
-        'Escríbeme el número.',
+        'Elige una opción o indícamelo en un mensaje.',
     pedirDireccion: '¿A qué dirección te lo llevamos? Escríbela con el barrio o una referencia para que el repartidor la encuentre.',
     resumenPedido: 'Esto es tu pedido:\n{lineas}\n\nEntrega: {modalidad}.{direccion}\nTotal: *{total}*\n\n' +
         '{menu}\n\n' +
-        'Escríbeme el número.',
+        'Escríbeme «confirmar» o el número de la opción.',
     cancelarPedido: 'Listo, dejé el pedido sin confirmar. Cuando quieras empezamos de nuevo.',
     pedidoCreado: '¡Listo! Tu pedido quedó registrado con el número *{numero}* y ya lo está viendo el equipo. ' +
         'Te escribo cuando avance.',
     yaTienesPedido: 'Veo que ya tienes el pedido *{numero}* en curso.\n\n' +
         '{menu}\n\n' +
-        'Escríbeme el número.',
+        'Elige una opción o dime qué necesitas.',
     itemNoEncontrado: 'No encontré «{texto}» en el catálogo.\n\n' +
         '{menu}\n\n' +
-        'Escríbeme el número de la opción que quieras.',
+        'Elige una opción del menú o dime qué producto buscas.',
     // ── Menú numerado: las opciones de contexto ─────────────────────────────
     //
     // `{menu}` se compone con `componerMenu`, que renumera lo que realmente se
