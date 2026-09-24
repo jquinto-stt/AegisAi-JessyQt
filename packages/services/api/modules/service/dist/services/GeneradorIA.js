@@ -6,7 +6,19 @@ export async function generarRespuestaIA(input) {
   const { mensajeTexto, nombreCliente, nombreOrganizacion, catalogo, horarios, pedidosActivos, borradorEnCurso, historial } = input;
 
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT || 'https://oai-nectoia-prod-d80b2.openai.azure.com/';
-  const apiKey = process.env.AZURE_OPENAI_KEY || '';
+  let apiKey = process.env.AZURE_OPENAI_KEY || '';
+  if (!apiKey) {
+    try {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const envPath = path.resolve(process.cwd(), '.env');
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8');
+        const m = content.match(/AZURE_OPENAI_KEY=(.+)/);
+        if (m) apiKey = m[1].trim();
+      }
+    } catch (_) {}
+  }
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
   const openaiKey = process.env.OPENAI_API_KEY || '';
 
