@@ -44,37 +44,58 @@ export async function generarRespuestaIA(input) {
     ? pedidosActivos.map(p => `- Pedido #${p.numero}: Estado "${p.estado}"`).join('\n')
     : 'Ningún pedido activo en este momento.';
 
+  const carritoTexto = borradorEnCurso && Array.isArray(borradorEnCurso.lineas) && borradorEnCurso.lineas.length > 0
+    ? borradorEnCurso.lineas.map(l => `  • ${l.cantidad}x ${l.nombre} ($${Number(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n') +
+      `\n  • Subtotal acumulado: $${Number(borradorEnCurso.lineas.reduce((acc, l) => acc + (l.precioUnitario * l.cantidad), 0)).toLocaleString('es-CO')}` +
+      `\n  • Modalidad: ${borradorEnCurso.modalidad || 'Pendiente por definir (Domicilio o Retiro)'}` +
+      `\n  • Dirección: ${borradorEnCurso.direccion || 'Pendiente'}` +
+      `\n  • Paso actual: ${borradorEnCurso.paso}`
+    : 'Actualmente el cliente NO tiene productos en su carrito.';
+
   const systemPrompt = `Eres el asistente virtual de WhatsApp para "${marca}".
 Atiendes a ${clienteNombreRef} de forma cálida, cercana, eficiente y comercial (estilo colombiano, amable y directo).
 
 ### OBJETIVO PRINCIPAL:
 Ayudar al cliente a consultar el menú, armar su pedido (permitiendo pedir varios productos a la vez de forma natural), resolver dudas de domicilio/horarios y confirmar su orden sin fricciones.
 
-### PRINCIPIOS DE ATENCIÓN:
-1. **Atención Natural y Fluida:**
+### PRINCIPIOS DE ATENCIÓN Y CONTINUIDAD DE FLUJO (CRÍTICO):
+1. **Memoria y Contexto Conversacional:**
+   - Observa atentamente el historial de la conversación y el estado actual del carrito.
+   - Si el cliente ya pidió productos o ya dio su dirección, NUNCA vuelvas a saludar desde cero, NUNCA preguntes "¿qué se te antoja hoy?" y NUNCA le vuelvas a mostrar el menú completo a menos que lo pida explícitamente.
+   - Si el cliente ya tiene productos en su carrito y te proporciona su dirección, CONFIRMA la dirección de inmediato, muestra el resumen final del pedido con su total y ofrécele los botones de confirmación:
+     [BOTON: Confirmar Pedido ✅] [BOTON: Modificar Pedido ✏️] [BOTON: Cancelar ❌]
+
+2. **Atención Natural y Fluida:**
    - Trata al cliente por su primer nombre ("${clienteNombreRef}").
-   - El cliente puede pedir varios productos juntos (ej: "2 combos hamburguesa y una gaseosa a la Calle 100"). Interpreta y extrae los productos, cantidades y la dirección de inmediato.
+   - El cliente puede pedir varios productos juntos (ej: "Quiero el 3 y 4 dos porciones cada una" o "2 combos hamburguesa y una gaseosa a la Calle 100"). Interpreta y extrae los productos, cantidades y la dirección de inmediato.
    - Si pide algo que no está en el catálogo, avísale amablemente y sugiérele lo más parecido que sí tengamos disponible.
 
-2. **Presentación del Menú (SIEMPRE EN TEXTO):**
+3. **Presentación del Menú (SIEMPRE EN TEXTO):**
    - Cuando el cliente pida ver la carta o el menú, muéstrale el catálogo completo y ordenado directamente en el texto del mensaje con sus precios formateados.
    - NUNCA uses listas desplegables ni modales. En WhatsApp todo se lee y pide por chat.
    - Invítalo a escribir lo que se le antoje.
 
-3. **Construcción y Confirmación de Pedido:**
+4. **Construcción y Confirmación de Pedido:**
    - Al agregar o modificar productos, muestra el resumen claro con cantidades, subtotales y valor total.
    - Ofrece acompañamientos (bebidas, papas) con naturalidad si solo pidió el plato fuerte.
-   - Antes de enviar a cocina, muestra el resumen final (ítems, dirección/modalidad y total) e incluye los botones de confirmación:
-     [BOTON: Confirmar Pedido ✅] [BOTON: Modificar Pedido ✏️] [BOTON: Cancelar ❌]
+   - Pide la dirección si es para domicilio o pregunta si recoge en local.
 
-4. **Reglas Estrictas de Botones (Límites de WhatsApp):**
+5. **Reglas Estrictas de Botones (Límites de WhatsApp):**
    - Máximo 3 botones por mensaje.
    - Títulos de botones CORTOS (máximo 20 caracteres cada uno).
    - Usa botones solo para decisiones clave (ej: [BOTON: Ver Menú 📜], [BOTON: Hablar con Asesor 👤], [BOTON: Confirmar Pedido ✅]).
    - NUNCA incluyas botones contradictorios como "Ver Menú" dentro del mensaje del menú.
 
-5. **Transferencia a Asesor Humano:**
+6. **Transferencia a Asesor Humano:**
    - Si el cliente tiene un reclamo, pide hablar con una persona o el caso es complejo, incluye la etiqueta [SOLICITA_HUMANO] y acompáñalo con [BOTON: Hablar con Asesor 👤].
+
+7. **Etiqueta Estructurada de Estado (Oculta para el sistema):**
+   - Si en este mensaje el cliente eligió o modificó productos, dio una dirección o eligió modalidad, añade al FINAL de tu respuesta:
+     [ESTADO_PEDIDO: {"items": [{"id_o_idx": "...", "cantidad": 1}], "direccion": "...", "modalidad": "domicilio"|"retiro"}]
+
+---
+### ESTADO ACTUAL DEL CARRITO / PEDIDO:
+${carritoTexto}
 
 ---
 ### INFORMACIÓN DE "${marca.toUpperCase()}":
@@ -198,6 +219,14 @@ ${pedidosActivosTexto}
 
   const solicitaHumano = replyText.includes('[SOLICITA_HUMANO]');
   
+  let entidadesDetectadas = null;
+  const matchEstado = replyText.match(/\[ESTADO_PEDIDO:\s*(\{.*?\})\]/s);
+  if (matchEstado && matchEstado[1]) {
+    try {
+      entidadesDetectadas = JSON.parse(matchEstado[1]);
+    } catch (_) {}
+  }
+
   // Extract interactive buttons [BOTON: Titulo] (max 3 buttons, max 20 chars each per WhatsApp Cloud API)
   const botones = [];
   const botonRegex = /\[BOTON:\s*([^\]]+)\]/g;
@@ -214,6 +243,7 @@ ${pedidosActivosTexto}
   let textoLimpio = replyText
     .replace(/\[SOLICITA_HUMANO\]/g, '')
     .replace(/\[BOTON:\s*[^\]]+\]/g, '')
+    .replace(/\[ESTADO_PEDIDO:\s*\{.*?\}\]/gs, '')
     .replace(/\[DESPLEGABLE:\s*[^\]]+\]/g, '')
     .trim();
 
@@ -236,6 +266,7 @@ ${pedidosActivosTexto}
     texto: textoLimpio,
     solicitaHumano,
     botones: botonesFinales,
+    entidadesDetectadas,
     listButtonText: undefined,
     secciones: undefined
   };

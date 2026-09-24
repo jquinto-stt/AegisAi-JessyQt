@@ -18,7 +18,9 @@ import {
     cantidadDe,
     resolverItem,
     resolverOpcion,
-    parsearMensaje
+    parsearMensaje,
+    extraerDireccion,
+    resolverMultiplesItems
 } from './BotParser.js';
 
 export {
@@ -37,7 +39,9 @@ export {
     cantidadDe,
     resolverItem,
     resolverOpcion,
-    parsearMensaje
+    parsearMensaje,
+    extraerDireccion,
+    resolverMultiplesItems
 };
 
 //
@@ -676,7 +680,7 @@ function confirmarBorrador(b, input) {
  * pedido de 3, no dos líneas del mismo plato. El resumen que lee el cliente
  * tiene que coincidir con lo que pidió.
  */
-function agregarLinea(lineas, item, cantidad) {
+export function agregarLinea(lineas, item, cantidad) {
     const ya = lineas.findIndex((l) => l.itemId === item.id);
     if (ya >= 0) {
         const copia = [...lineas];
@@ -689,7 +693,7 @@ function agregarLinea(lineas, item, cantidad) {
     ];
 }
 /** El borrador con el paso y las líneas que se quieran cambiar. */
-function paso(borrador, cambios) {
+export function paso(borrador, cambios) {
     return { ...borrador, ...cambios };
 }
 /** Borrador vacío, listo para empezar a elegir items. */
@@ -903,7 +907,26 @@ export function decidirEnCiclo(input) {
             if (pideCarta(texto)) {
                 return { accion: 'seguir', texto: redactarCatalogo(catalogo, f), borrador: b, crear: false };
             }
-            const item = resolverItem(texto, catalogo);
+            const multiples = resolverMultiplesItems(texto, catalogo);
+            if (multiples.length > 1) {
+                let lineas = [...b.lineas];
+                for (const m of multiples) {
+                    lineas = agregarLinea(lineas, m.item, m.cantidad);
+                }
+                const nuevoBorrador = paso(b, {
+                    lineas,
+                    itemPendienteId: null,
+                    paso: 'eligiendo_modalidad',
+                });
+                return {
+                    accion: 'seguir',
+                    texto: siguientePregunta(nuevoBorrador, f),
+                    borrador: nuevoBorrador,
+                    intent: 'agregar_producto',
+                    crear: false,
+                };
+            }
+            const item = multiples.length === 1 ? multiples[0].item : resolverItem(texto, catalogo);
             if (!item) {
                 // Un mensaje que no es ni un número ni el nombre de un producto: se
                 // deja pasar al clasificador. Puede ser una pregunta legítima.
@@ -917,10 +940,8 @@ export function decidirEnCiclo(input) {
                 }
                 return null;
             }
-            // Un item elegido sin cantidad aún: se pregunta cuántas. El menú de
-            // `eligiendo_cantidad` («cancelar») viaja en la frase, para que quien
-            // se equivocó de plato tenga salida sin saberse ninguna palabra clave.
-            const cant = cantidadDe(texto);
+            // Un item elegido: comprobar si ya traía cantidad
+            const cant = (multiples.length === 1 ? multiples[0].cantidad : null) || cantidadDe(texto);
             if (cant !== null && cant > 0) {
                 const lineas = agregarLinea(b.lineas, item, cant);
                 return {
@@ -989,12 +1010,25 @@ export function decidirEnCiclo(input) {
         }
         // ── Elegir la modalidad ───────────────────────────────────────────────
         case 'eligiendo_modalidad': {
+            const dirDirecta = extraerDireccion(texto);
+            if (dirDirecta) {
+                const listo = paso(b, { modalidad: 'domicilio', direccion: dirDirecta, direccionSugerida: null });
+                return {
+                    accion: 'seguir',
+                    texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                    borrador: paso(listo, { paso: 'confirmando' }),
+                    intent: 'solicitar_entrega',
+                    crear: false,
+                };
+            }
             const modalidad = modalidadDe(texto);
             if (!modalidad) {
-                const item = resolverItem(texto, catalogo);
-                if (item) {
-                    const cant = cantidadDe(texto) || 1;
-                    const lineas = agregarLinea(b.lineas, item, cant);
+                const multiples = resolverMultiplesItems(texto, catalogo);
+                if (multiples.length > 0) {
+                    let lineas = [...b.lineas];
+                    for (const m of multiples) {
+                        lineas = agregarLinea(lineas, m.item, m.cantidad);
+                    }
                     const nuevoBorrador = paso(b, { lineas, itemPendienteId: null, paso: 'eligiendo_modalidad' });
                     return {
                         accion: 'seguir',
@@ -1104,6 +1138,17 @@ export function decidirEnCiclo(input) {
         }
         // ── Confirmar ─────────────────────────────────────────────────────────
         case 'confirmando': {
+            const dirCambio = extraerDireccion(texto);
+            if (dirCambio) {
+                const actualizado = paso(b, { direccion: dirCambio });
+                return {
+                    accion: 'seguir',
+                    texto: `Listo, anoté tu dirección: 📍 *${dirCambio}*.\n\n` + redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(actualizado)),
+                    borrador: actualizado,
+                    intent: 'solicitar_entrega',
+                    crear: false,
+                };
+            }
             if (esAfirmacion(texto) || normalizarTexto(texto).includes('confirmar')) {
                 return confirmarBorrador(b, {
                     catalogo, frases: f, pedidoActivoNumero: input.pedidoActivoNumero,
@@ -1432,12 +1477,33 @@ export function decidir(input) {
             catalogoMostrado: true,
         };
     }
-    // ── ¿Nombró un plato? ───────────────────────────────────────────────────
+    // ── ¿Nombró uno o varios platos? ─────────────────────────────────────────
     if (items.length > 0) {
-        const nombrado = resolverItem(texto, items);
+        const multiples = resolverMultiplesItems(texto, items);
+        if (multiples.length > 1) {
+            const borradorBase = input.enCurso ?? borradorNuevo();
+            let lineas = [...borradorBase.lineas];
+            for (const m of multiples) {
+                lineas = agregarLinea(lineas, m.item, m.cantidad);
+            }
+            const nuevoBorrador = paso(borradorBase, {
+                lineas,
+                itemPendienteId: null,
+                paso: 'eligiendo_modalidad',
+            });
+            return {
+                accion: 'tomarPedido',
+                texto: siguientePregunta(nuevoBorrador, f),
+                borrador: nuevoBorrador,
+                intent: 'agregar_producto',
+                estadoFlujo: 'CARRITO_EN_CONSTRUCCION',
+                catalogoMostrado: true,
+            };
+        }
+        const nombrado = multiples.length === 1 ? multiples[0].item : resolverItem(texto, items);
         if (nombrado) {
             const borradorBase = input.enCurso ?? borradorNuevo();
-            const cant = cantidadDe(texto);
+            const cant = (multiples.length === 1 ? multiples[0].cantidad : null) || cantidadDe(texto);
             if (cant !== null && cant > 0) {
                 const lineas = agregarLinea(borradorBase.lineas, nombrado, cant);
                 const nuevoBorrador = paso(borradorBase, {

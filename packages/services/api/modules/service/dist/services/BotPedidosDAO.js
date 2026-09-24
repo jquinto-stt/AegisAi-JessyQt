@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { telefonoBuscable, } from './ZernioWebhook.js';
-import { decidir, esMensajePropio, } from './BotPedidos.js';
+import { decidir, esMensajePropio, borradorNuevo, agregarLinea, paso } from './BotPedidos.js';
 import { generarRespuestaIA } from './GeneradorIA.js';
 // ═══════════════════════════════════════════════════════════════════════════
 // ACCESO A LA BASE PARA EL BOT DE PEDIDOS
@@ -836,6 +836,23 @@ export async function procesarEntrante(m, deps = {}) {
     });
 
     // ── 4a. Inteligencia Artificial (Azure OpenAI GPT-4o) ────────────────────
+    let historial = [];
+    try {
+        const { data: ultimosMsgs } = await t(sb, 'mensaje')
+            .select('autor, contenido, enviado_en')
+            .eq('conversacion_id', conv.conversacionId)
+            .order('enviado_en', { ascending: false })
+            .limit(8);
+        if (ultimosMsgs && ultimosMsgs.length > 0) {
+            historial = ultimosMsgs.reverse().map((msg) => ({
+                esCliente: msg.autor === 'cliente',
+                texto: msg.contenido?.texto || ''
+            })).filter((msg) => Boolean(msg.texto));
+        }
+    } catch (eH) {
+        console.warn('[BotPedidosDAO] Excepción leyendo historial de mensajes:', eH);
+    }
+
     try {
         const resIA = await generarRespuestaIA({
             mensajeTexto: m.texto,
@@ -845,7 +862,7 @@ export async function procesarEntrante(m, deps = {}) {
             horarios: config.horarios,
             pedidosActivos: pedidos,
             borradorEnCurso: decision.borrador ?? lectura?.enCurso ?? null,
-            historial: []
+            historial
         });
         if (resIA.ok && resIA.texto) {
             decision.texto = resIA.texto;
@@ -857,7 +874,41 @@ export async function procesarEntrante(m, deps = {}) {
                 decision.accion = 'handoff';
                 decision.motivo = 'pide_asesor';
             }
-            // NOTA: La IA NUNCA sobrescribe la acción determinista, ni el borrador, ni el estado del flujo.
+
+            // Sincronización bidireccional: Si la IA detectó entidades y el determinista no tenía borrador
+            if (resIA.entidadesDetectadas) {
+                const ent = resIA.entidadesDetectadas;
+                let b = decision.borrador ?? lectura?.enCurso ?? null;
+                if (!b && Array.isArray(ent.items) && ent.items.length > 0) {
+                    b = borradorNuevo();
+                }
+                if (b && Array.isArray(ent.items) && ent.items.length > 0) {
+                    for (const it of ent.items) {
+                        const numIdx = Number(it.id_o_idx || it.idx || it.id);
+                        const catItem = (!isNaN(numIdx) && numIdx >= 1 && numIdx <= config.catalogo.length)
+                            ? config.catalogo[numIdx - 1]
+                            : config.catalogo.find(c => c.id === it.id_o_idx || c.nombre.toLowerCase().includes(String(it.nombre || it.id_o_idx).toLowerCase()));
+                        if (catItem) {
+                            const cant = Number(it.cantidad) || 1;
+                            b.lineas = agregarLinea(b.lineas, catItem, cant);
+                        }
+                    }
+                    if (b.lineas.length > 0 && b.paso === 'eligiendo_items') {
+                        b.paso = 'eligiendo_modalidad';
+                    }
+                }
+                if (b && ent.direccion && typeof ent.direccion === 'string' && ent.direccion.trim().length >= 4) {
+                    b.direccion = ent.direccion.trim();
+                    b.modalidad = 'domicilio';
+                    b.paso = 'confirmando';
+                }
+                if (b && ent.modalidad) {
+                    b.modalidad = ent.modalidad;
+                }
+                if (b && b.lineas.length > 0) {
+                    decision.borrador = b;
+                }
+            }
         }
     } catch (e) {
         console.error('[BotPedidosDAO] Excepción invocando Azure OpenAI:', e);

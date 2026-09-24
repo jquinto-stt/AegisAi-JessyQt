@@ -194,9 +194,84 @@ export function resolverItem(texto, catalogo) {
     const palabras = t.split(' ').filter((p) => p.length >= 4);
     const porPalabra = catalogo.filter((i) => {
         const propias = sinPuntuacion(i.nombre).split(' ').filter((p) => p.length >= 4);
-        return propias.some((p) => palabras.includes(p));
+        return propias.some((propia) =>
+            palabras.some((palabra) => {
+                const raizP = palabra.slice(0, Math.min(5, palabra.length - 1));
+                const raizPropia = propia.slice(0, Math.min(5, propia.length - 1));
+                return propia === palabra || (raizP.length >= 4 && raizPropia.startsWith(raizP)) || (raizPropia.length >= 4 && raizP.startsWith(raizPropia));
+            })
+        );
     });
     return porPalabra.length === 1 ? porPalabra[0] : null;
+}
+
+/** Extrae una dirección de entrega si el texto parece contener nomenclatura colombiana o indicación explícita. */
+export function extraerDireccion(texto) {
+    if (!texto) return null;
+    const t = texto.trim();
+    const mExplicito = t.match(/(?:mi\s+direcci[oó]n(?:\s+es)?|direcci[oó]n|enviar\s+a|para\s+la|llevar\s+a)\s*[:]?\s*(.+)/i);
+    if (mExplicito && mExplicito[1].trim().length >= 4) {
+        return mExplicito[1].trim();
+    }
+    if (/\b(?:calle|cll|carrera|cra|kr|diagonal|diag|transversal|transv|tv|avenida|av|autopista|circular)\b.*?\d+/i.test(t)) {
+        return t;
+    }
+    return null;
+}
+
+/** Resuelve múltiples ítems y cantidades en un solo mensaje natural (ej: "3 y 4 dos porciones cada una", "2 combos y 1 gaseosa"). */
+export function resolverMultiplesItems(texto, catalogo) {
+    if (!catalogo || catalogo.length === 0 || !texto) return [];
+    const norm = normalizarTexto(texto);
+
+    // 1. Cantidad compartida (ej: "dos porciones cada una", "2 de cada uno", "cada una")
+    let cantidadCompartida = null;
+    const mCadaUna = norm.match(/(?:(\d+|un|una|uno|dos|tres|cuatro|cinco|seis)\s*(?:porciones|unidades)?\s*)?cada\s+un[ao]/i);
+    if (mCadaUna) {
+        if (mCadaUna[1]) {
+            cantidadCompartida = cantidadDe(mCadaUna[1]) || 1;
+        } else {
+            cantidadCompartida = cantidadDe(texto) || 1;
+        }
+    }
+
+    // 2. Patrón de lista de números conectados por 'y' o ',' (ej: "el 3 y 4", "3 y el 4", "1, 2 y 3")
+    const matchConectados = texto.match(/(?:(?:el|la|los|las)\s+)?(\d{1,2})\s*(?:y|,|e)\s*(?:(?:el|la|los|las)\s+)?(\d{1,2})(?:\s*(?:y|,|e)\s*(?:(?:el|la|los|las)\s+)?(\d{1,2}))?/i);
+    if (matchConectados && !extraerDireccion(texto)) {
+        const nums = [matchConectados[1], matchConectados[2], matchConectados[3]].filter(Boolean).map(Number);
+        const validos = nums.filter(n => n >= 1 && n <= catalogo.length);
+        if (validos.length >= 2) {
+            return validos.map(n => ({
+                item: catalogo[n - 1],
+                cantidad: cantidadCompartida || 1
+            }));
+        }
+    }
+
+    // 3. Segmentos separados por comas o "y"
+    const partes = texto.split(/\s*(?:,|;|\by\b|\be\b|\bademas\b|\badem[aá]s\b)\s*/i);
+    if (partes.length > 1) {
+        const encontrados = [];
+        for (const parte of partes) {
+            const item = resolverItem(parte, catalogo);
+            if (item) {
+                const cant = cantidadDe(parte) || cantidadCompartida || 1;
+                encontrados.push({ item, cantidad: cant });
+            }
+        }
+        if (encontrados.length >= 2) {
+            return encontrados;
+        }
+    }
+
+    // 4. Un solo item
+    const single = resolverItem(texto, catalogo);
+    if (single) {
+        const cant = cantidadDe(texto) || 1;
+        return [{ item: single, cantidad: cant }];
+    }
+
+    return [];
 }
 
 /** Traduce el número o texto a una opción del menú contextual. */
