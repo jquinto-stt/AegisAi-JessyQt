@@ -700,6 +700,7 @@ export function borradorNuevo() {
         itemPendienteId: null,
         modalidad: null,
         direccion: null,
+        direccionSugerida: null,
         intento: 'tomar_pedido',
     };
 }
@@ -847,6 +848,15 @@ export function decidirEnCiclo(input) {
         return confirmarBorrador(b, { catalogo, frases: f, pedidoActivoNumero: input.pedidoActivoNumero });
     }
     if (opcion === 'domicilio' && b.paso === 'eligiendo_modalidad') {
+        if (input.direccionPrevia) {
+            return {
+                accion: 'seguir',
+                texto: `¿Te lo enviamos a tu dirección habitual?\n📍 *${input.direccionPrevia}*\n\n1. Sí, a esa dirección\n2. Enviar a otra dirección`,
+                borrador: paso(b, { modalidad: 'domicilio', direccionSugerida: input.direccionPrevia, paso: 'confirmando_direccion_previa' }),
+                intent: 'solicitar_entrega',
+                crear: false,
+            };
+        }
         return {
             accion: 'seguir',
             texto: f.pedirDireccion,
@@ -868,8 +878,8 @@ export function decidirEnCiclo(input) {
     // Un cliente que pidió domicilio y ahora dice «mejor lo recojo»: sale de la
     // dirección sin abandonar el carrito. La alternativa —obligarlo a escribir
     // la dirección de todos modos— sería pedir un dato que ya no hace falta.
-    if (opcion === 'retiro' && b.paso === 'eligiendo_direccion') {
-        const listo = paso(b, { modalidad: 'retiro', direccion: null });
+    if (opcion === 'retiro' && (b.paso === 'eligiendo_direccion' || b.paso === 'confirmando_direccion_previa')) {
+        const listo = paso(b, { modalidad: 'retiro', direccion: null, direccionSugerida: null });
         return {
             accion: 'seguir',
             texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
@@ -1002,6 +1012,15 @@ export function decidirEnCiclo(input) {
                 };
             }
             if (modalidad === 'domicilio') {
+                if (input.direccionPrevia) {
+                    return {
+                        accion: 'seguir',
+                        texto: `¿Te lo enviamos a tu dirección habitual?\n📍 *${input.direccionPrevia}*\n\n1. Sí, a esa dirección\n2. Enviar a otra dirección`,
+                        borrador: paso(b, { modalidad: 'domicilio', direccionSugerida: input.direccionPrevia, paso: 'confirmando_direccion_previa' }),
+                        intent: 'solicitar_entrega',
+                        crear: false,
+                    };
+                }
                 return {
                     accion: 'seguir',
                     texto: f.pedirDireccion,
@@ -1016,6 +1035,50 @@ export function decidirEnCiclo(input) {
                 texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
                 borrador: paso(listo, { paso: 'confirmando' }),
                 intent: 'solicitar_entrega',
+                crear: false,
+            };
+        }
+        // ── Confirmar dirección habitual ──────────────────────────────────────
+        case 'confirmando_direccion_previa': {
+            const tNorm = normalizarTexto(texto);
+            const esSi = esAfirmacion(texto) || texto.trim() === '1' || tNorm.includes('esa') || tNorm.includes('habitual') || tNorm.includes('misma');
+            if (esSi) {
+                const dir = b.direccionSugerida || input.direccionPrevia;
+                const listo = paso(b, { direccion: dir, direccionSugerida: null });
+                return {
+                    accion: 'seguir',
+                    texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                    borrador: paso(listo, { paso: 'confirmando' }),
+                    intent: 'solicitar_entrega',
+                    crear: false,
+                };
+            }
+            const esNo = esNegacion(texto) || texto.trim() === '2' || tNorm.includes('otra') || tNorm.includes('cambiar') || tNorm.includes('nueva');
+            if (esNo) {
+                return {
+                    accion: 'seguir',
+                    texto: f.pedirDireccion,
+                    borrador: paso(b, { direccionSugerida: null, paso: 'eligiendo_direccion' }),
+                    intent: 'solicitar_entrega',
+                    crear: false,
+                };
+            }
+            // Si el cliente escribió directamente una dirección nueva de 5+ caracteres:
+            const limpia = texto.trim();
+            if (limpia.length >= 5) {
+                const listo = paso(b, { direccion: limpia, direccionSugerida: null });
+                return {
+                    accion: 'seguir',
+                    texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                    borrador: paso(listo, { paso: 'confirmando' }),
+                    intent: 'solicitar_entrega',
+                    crear: false,
+                };
+            }
+            return {
+                accion: 'seguir',
+                texto: `¿Te lo enviamos a tu dirección habitual?\n📍 *${b.direccionSugerida || input.direccionPrevia}*\n\n1. Sí, a esa dirección\n2. Enviar a otra dirección`,
+                borrador: b,
                 crear: false,
             };
         }
@@ -1250,6 +1313,7 @@ export function decidir(input) {
             catalogo: items,
             frases: f,
             pedidoActivoNumero: pedidos.find((p) => !ESTADOS_CERRADOS.has(p.estado))?.numero ?? null,
+            direccionPrevia: input.direccionPrevia ?? null,
         });
         if (enCiclo) {
             if (enCiclo.accion === 'descartar') {
@@ -1288,7 +1352,7 @@ export function decidir(input) {
             let flujo = 'CARRITO_EN_CONSTRUCCION';
             if (enCiclo.borrador.paso === 'confirmando')
                 flujo = 'CONFIRMANDO_PEDIDO';
-            else if (enCiclo.borrador.paso === 'eligiendo_direccion' || enCiclo.intent === 'solicitar_entrega')
+            else if (enCiclo.borrador.paso === 'eligiendo_direccion' || enCiclo.borrador.paso === 'confirmando_direccion_previa' || enCiclo.intent === 'solicitar_entrega')
                 flujo = 'SOLICITANDO_ENTREGA';
             return {
                 accion: 'tomarPedido',
@@ -1373,6 +1437,23 @@ export function decidir(input) {
         const nombrado = resolverItem(texto, items);
         if (nombrado) {
             const borradorBase = input.enCurso ?? borradorNuevo();
+            const cant = cantidadDe(texto);
+            if (cant !== null && cant > 0) {
+                const lineas = agregarLinea(borradorBase.lineas, nombrado, cant);
+                const nuevoBorrador = paso(borradorBase, {
+                    lineas,
+                    itemPendienteId: null,
+                    paso: 'eligiendo_modalidad',
+                });
+                return {
+                    accion: 'tomarPedido',
+                    texto: siguientePregunta(nuevoBorrador, f),
+                    borrador: nuevoBorrador,
+                    intent: 'agregar_producto',
+                    estadoFlujo: 'CARRITO_EN_CONSTRUCCION',
+                    catalogoMostrado: true,
+                };
+            }
             return {
                 accion: 'tomarPedido',
                 texto: redactarPaso(f.pedirCantidad, 'eligiendo_cantidad', f, { item: nombrado.nombre }),

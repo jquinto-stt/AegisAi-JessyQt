@@ -226,7 +226,7 @@ export async function pedidosDelCliente(sb, organizacionId, telefonoNorm) {
     if (!buscable)
         return [];
     const { data, error } = await t(sb, 'pedido')
-        .select('id, numero, cliente, estado, modalidad, estado_desde, programado_para')
+        .select('id, numero, cliente, estado, modalidad, estado_desde, programado_para, direccion_entrega')
         .eq('organizacion_id', organizacionId)
         .eq('telefono_norm', buscable)
         .order('creado_en', { ascending: false })
@@ -241,6 +241,7 @@ export async function pedidosDelCliente(sb, organizacionId, telefonoNorm) {
         modalidad: String(p.modalidad ?? ''),
         estadoDesde: String(p.estado_desde ?? ''),
         programadoPara: p.programado_para ? String(p.programado_para) : null,
+        direccionEntrega: p.direccion_entrega?.texto ?? null,
         // `pedido` no tiene columna de minutos estimados: el DDL no la declara. El
         // tipo la admite como opcional y aquí se dice `null` en vez de inventar un
         // número — prometer un tiempo que nadie configuró sería mentir.
@@ -362,6 +363,7 @@ function borradorDe(bruto) {
         itemPendienteId: typeof o.itemPendienteId === 'string' ? o.itemPendienteId : null,
         modalidad: typeof o.modalidad === 'string' ? o.modalidad : null,
         direccion: typeof o.direccion === 'string' ? o.direccion : null,
+        direccionSugerida: typeof o.direccionSugerida === 'string' ? o.direccionSugerida : null,
         intento: typeof o.intento === 'string' ? o.intento : 'tomar_pedido',
     };
 }
@@ -819,6 +821,7 @@ export async function procesarEntrante(m, deps = {}) {
         pedidosDelCliente(sb, org.org.organizacionId, m.telefonoNorm),
         configDe(sb, org.org.organizacionId),
     ]);
+    const direccionPrevia = lectura?.respuesta?.ultima_direccion || pedidos.find((p) => p.direccionEntrega)?.direccionEntrega || null;
     const decision = decidir({
         texto: m.texto,
         pedidos,
@@ -829,6 +832,7 @@ export async function procesarEntrante(m, deps = {}) {
         enCurso: lectura?.enCurso ?? null,
         estadoFlujo: lectura?.estadoFlujo ?? 'IDLE',
         catalogoMostrado: lectura?.catalogoMostrado ?? false,
+        direccionPrevia,
     });
 
     // ── 4a. Inteligencia Artificial (Azure OpenAI GPT-4o) ────────────────────
@@ -909,6 +913,7 @@ export async function procesarEntrante(m, deps = {}) {
     }
 
     // Persistir el estado conversacional completo en Supabase estado_respuesta
+    const ultimaDireccion = decision.borrador?.direccion || borradorFinal?.direccion || lectura?.respuesta?.ultima_direccion || direccionPrevia || null;
     await guardarEstadoConversacion(sb, conv.conversacionId, {
         enCurso: borradorFinal,
         estado_flujo: estadoFlujoFinal,
@@ -916,6 +921,7 @@ export async function procesarEntrante(m, deps = {}) {
         ultimo_intent: decision.intent ?? decision.motivo ?? 'desconocido',
         ultimo_pedido_id: ultimoPedidoIdFinal,
         intencion_pendiente: decision.intencionPendiente ?? null,
+        ultima_direccion: ultimaDireccion,
     });
     // 5. Enviar
     const enviar = deps.enviar ?? (await import('./ZernioEnvio.js')).enviarTexto;
