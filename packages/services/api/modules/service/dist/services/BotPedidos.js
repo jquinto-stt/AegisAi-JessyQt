@@ -1,6 +1,45 @@
 // ═══════════════════════════════════════════════════════════════════════════
 // BOT DE PEDIDOS — lógica pura, sin red y sin base de datos
 // ═══════════════════════════════════════════════════════════════════════════
+
+import {
+    normalizarTexto,
+    sinPuntuacion,
+    pideHumano,
+    esConsultaDePedido,
+    quiereComprar,
+    esSoloSaludo,
+    preguntaCapacidades,
+    esCancelar,
+    esAfirmacion,
+    pideCarta,
+    esPreguntaIntermedia,
+    modalidadDe,
+    cantidadDe,
+    resolverItem,
+    resolverOpcion,
+    parsearMensaje
+} from './BotParser.js';
+
+export {
+    normalizarTexto,
+    sinPuntuacion,
+    pideHumano,
+    esConsultaDePedido,
+    quiereComprar,
+    esSoloSaludo,
+    preguntaCapacidades,
+    esCancelar,
+    esAfirmacion,
+    pideCarta,
+    esPreguntaIntermedia,
+    modalidadDe,
+    cantidadDe,
+    resolverItem,
+    resolverOpcion,
+    parsearMensaje
+};
+
 //
 // Qué es esto, y qué NO es
 // ────────────────────────
@@ -163,100 +202,6 @@ const ETIQUETA_ESTADO = {
     entregado: 'entregado',
     cancelado: 'cancelado',
 };
-/** Señales claras de que quiere un humano, sin pasar por el clasificador. */
-const PALABRAS_HUMANO = [
-    'asesor',
-    'humano',
-    'persona',
-    'agente',
-    'hablar con alguien',
-    'operador',
-    'queja',
-    'reclamo',
-];
-/**
- * ¿Parece una consulta sobre un pedido?
- */
-export function esConsultaDePedido(texto) {
-    const t = normalizarTexto(texto);
-    if (!t)
-        return false;
-    // No confundir "hacer pedido", "nuevo pedido", "pedir" con consulta de pedido existente
-    if (/\b(hacer|nuevo|otro|crear|iniciar|comprar|cancelar)\s+(?:un\s+)?pedido\b/.test(t))
-        return false;
-    // Preguntas explícitas sobre estado, rastreo o pedidos anteriores
-    if (/\b(donde esta|dónde está|como va|cómo va|cuando llega|cuándo llega|estado|rastrear|seguimiento|pedido anterior|pedidos activos|que pedi|qué pedí)\b/.test(t))
-        return true;
-    if (t === '1' || t === 'ver pedido' || t === 'como va mi pedido' || t === 'estado de pedido')
-        return true;
-    return false;
-}
-/** ¿El cliente pidió explícitamente hablar con una persona? */
-export function pideHumano(texto) {
-    const t = normalizarTexto(texto);
-    if (!t)
-        return false;
-    return PALABRAS_HUMANO.some((p) => t.includes(normalizarTexto(p)));
-}
-/**
- * ¿El cliente está intentando comprar o ver el catálogo?
- */
-export function quiereComprar(texto) {
-    const t = normalizarTexto(texto);
-    if (!t)
-        return false;
-    return /\b(comprar|compra|catalogo|catálogo|carta|menu|menú|precio|precios|producto|productos|disponible|pedir|quisiera|queria|quería|tienen|tiene|hay|recomienda|recomiendas|recomendacion|recomendación|recomiendame|recomiéndame|sugerencia|sugerencias|sugiere|antoja|antoje|antojé|antojos|vender|venden|ofrecen|almuerzo|comida)\b/i.test(t);
-}
-/**
- * Saludos y aperturas de conversación.
- *
- * ── Por qué esto existe, medido ───────────────────────────────────────────
- *
- * «Hola» es, con diferencia, el mensaje más frecuente de WhatsApp y fue el
- * primer mensaje real que recibió este bot. Con el clasificador solo, caía en
- * `no_es_consulta` → handoff: el bot contestaba «voy a pasar tu mensaje a un
- * asesor» y **apagaba el hilo** (`modo_atencion='humano'`). Un saludo consumía
- * una persona y dejaba la conversación sin bot para los mensajes siguientes.
- *
- * Un saludo no es una consulta sin entender: es el inicio de una. La respuesta
- * correcta no es transferir, es **presentarse y decir qué sabe hacer**, para
- * que el cliente escriba algo que el bot pueda resolver. Eso es más útil que
- * un handoff y cuesta cero personas.
- *
- * Se comparan por palabra completa tras normalizar (sin tildes, minúsculas) y
- * tras quitar la puntuación, porque «¡Hola!» y «hola» son el mismo mensaje.
- * La lista es corta a propósito: solo aperturas que no contienen ninguna otra
- * intención. «Hola, ¿dónde está mi pedido?» NO entra aquí — contiene una
- * consulta y el orden de `decidir` la manda por el camino de pedido.
- */
-const PALABRAS_SALUDO = [
-    'hola', 'holaa', 'holas', 'buenas', 'buenos', 'buenos dias', 'buen dia', 'buen dias',
-    'buenas tardes', 'buena tarde', 'buenas noches', 'buena noche', 'que tal', 'q tal', 'saludos',
-];
-/**
- * Palabras que, por sí solas, son un saludo válido dentro de un mensaje corto.
- *
- * ── Por qué hay DOS listas y no una ───────────────────────────────────────
- *
- * `PALABRAS_SALUDO` son frases (para comparar el mensaje ENTERO). Esta lista
- * son piezas, y se usa con la regla de al lado: un mensaje de 1 a 4 palabras
- * formado SOLO por piezas saludables es un saludo. Eso cubre las combinaciones
- * que la comparación exacta no puede: «Hola, buenos días», «buen día», «hola
- * buenas», «q tal» — todas medían `false` antes.
- *
- * El límite de 4 palabras es lo que impide que esto se coma mensajes con
- * contenido: «hola quiero hacer un pedido» tiene 5 palabras, así que no entra
- * aquí y sigue su camino (correcto: quiere comprar). Los conectores van en
- * `RUIDO_DE_SALUDO` y no cuentan para ese límite — «hola, muy buenos días
- * señor» es un saludo de cinco palabras con dos de relleno.
- */
-const PIEZAS_DE_SALUDO = new Set([
-    'hola', 'holaa', 'holas', 'buenas', 'buenos', 'buen', 'buena', 'dia', 'dias', 'tarde',
-    'tardes', 'noche', 'noches', 'saludos', 'que', 'q', 'tal', 'señor', 'senor', 'señora',
-    'senora', 'don', 'doña', 'parce', 'parcero', 'amigo',
-]);
-/** Relleno que no convierte un saludo en otra cosa. */
-const RUIDO_DE_SALUDO = new Set(['muy', 'y', 'o', 'el', 'la', 'los', 'las', 'de', 'del', 'a']);
 /**
  * Respaldo. Es el último nivel de precedencia: si el dueño no configuró nada,
  * el bot habla con esto. Existe para que un bot sin configuración NO se quede
@@ -484,77 +429,6 @@ export function redactarMenu(input, frases) {
     return rellenar(plantilla, { menu: componerMenu(opcionesDe(input), f) });
 }
 /**
- * Traduce el número (o el texto) que escribió el cliente a una opción del menú.
- *
- * ── Por qué esto es lo que faltaba ────────────────────────────────────────
- *
- * Hasta ahora un «2» suelto, fuera de un ciclo de pedido, se leía como
- * `no_entendido` — el bot acababa de imprimir una lista numerada y no entendía
- * el número de la lista. Eso es el defecto completo: pedir una interacción y
- * no reconocer la respuesta.
- *
- * Se acepta el número («2») y también el texto de la opción, porque hay quien
- * escribe «hablar con una persona» en vez de «4». El número manda: si el
- * cliente escribe «2» y la opción 2 es «hacer un pedido», eso es lo que quiere
- * aunque el número no signifique nada por sí solo.
- *
- * Devuelve `null` si el mensaje no es una opción del menú, y entonces el
- * llamante sigue su camino. `opciones` es la MISMA lista que se imprimió.
- */
-export function resolverOpcion(texto, opciones, frases) {
-    const f = frases ?? CONVERSACION_POR_DEFECTO;
-    const t = sinPuntuacion(texto);
-    if (!t || opciones.length === 0)
-        return null;
-    // 1) El número solo. Es la vía principal.
-    const soloNumero = texto.trim().match(/^(\d{1,2})$/);
-    if (soloNumero) {
-        const idx = Number(soloNumero[1]) - 1;
-        return opciones[idx] ?? null;
-    }
-    // 2) El número al principio de una frase corta («2 por favor», «opcion 3»).
-    //    Se exige que quede poco texto detrás: «2 hamburguesas» a mitad de un
-    //    pedido NO es elegir la opción 2 del menú, es pedir dos unidades.
-    //
-    //    ── El artículo delante (medido 22/09) ────────────────────────────────
-    //
-    //    «la 2» no se entendía. Es una forma corriente de elegir —«dame la 2»,
-    //    «la del medio», «quiero la 3»— y el `^(?:opcion\s+)?` no la cubría. Con
-    //    el artículo, el texto caía hasta el paso 3, donde «la 2» no casa con
-    //    ninguna etiqueta, y el bot volvía a preguntar lo mismo que acababa de
-    //    preguntar. Al cliente le da la impresión de que el bot no lo escucha.
-    //
-    //    Se admite el artículo definido —`el`, `la`, `los`, `las`— porque en un
-    //    menú numerado es exactamente a lo que se refiere. Sigue siendo estricto
-    //    en lo demás: un texto largo detrás descarta esta vía.
-    const conNumero = t.match(/^(?:opcion\s+|(?:el|la|los|las)\s+)?(\d{1,2})(?:\s+(?:por favor|gracias|si|ok))?$/);
-    if (conNumero) {
-        const idx = Number(conNumero[1]) - 1;
-        return opciones[idx] ?? null;
-    }
-    // 3) El texto de la opción. Por inclusión en los dos sentidos, para que
-    //    «quiero hablar con una persona» encuentre «Hablar con una persona».
-    const TEXTO_DE = {
-        ver_pedido: f.opcionVerPedido,
-        pedir: f.opcionPedir,
-        carta: f.opcionCarta,
-        asesor: f.opcionAsesor,
-        confirmar: f.opcionConfirmar,
-        cancelar: f.opcionCancelar,
-        domicilio: f.opcionDomicilio,
-        retiro: f.opcionRetiro,
-        agregar_otro: f.opcionAgregarOtro,
-    };
-    const candidatas = opciones.filter((o) => typeof TEXTO_DE[o] === 'string' && TEXTO_DE[o].length > 0);
-    const porTexto = candidatas.filter((o) => {
-        const etiqueta = sinPuntuacion(TEXTO_DE[o]);
-        return etiqueta.length >= 4 && (t.includes(etiqueta) || etiqueta.includes(t));
-    });
-    // Solo si es inequívoco: con dos candidatas se vuelve a preguntar en vez de
-    // adivinar. Elegir mal aquí abre un pedido que el cliente no pidió.
-    return porTexto.length === 1 ? porTexto[0] : null;
-}
-/**
  * Mezcla lo configurado sobre el respaldo, campo a campo.
  *
  * Campo a campo y no `{...defecto, ...configurado}` a secas, porque el dueño
@@ -572,78 +446,6 @@ export function frasesDe(configurado) {
             out[k] = v;
     }
     return out;
-}
-/**
- * Frases con las que el cliente pregunta qué sabe hacer el bot.
- *
- * ── Por qué existe esta lista ─────────────────────────────────────────────
- *
- * Medido: el usuario escribió **«Que puedes hacer?»** a las 05:29:03 y el bot
- * contestó «voy a pasar tu mensaje a un asesor». Es el peor final posible para
- * la pregunta más razonable que puede hacer un cliente: pide saber de qué
- * sirve el asistente y la respuesta es «no sirvo, te paso con alguien».
- *
- * No es un caso raro — es la primera pregunta de cualquiera que escriba a un
- * número de negocio. Y la respuesta es la única del bot que **no depende de
- * ningún dato**: sabe perfectamente lo que sabe hacer. Contestarla no cuesta
- * ni una consulta a la base ni una persona.
- *
- * Se compara por inclusión sobre texto normalizado, así que cubre «qué puedes
- * hacer», «que puede hacer», «para qué sirves», «qué ofreces».
- */
-const PALABRAS_CAPACIDADES = [
-    'que puedes hacer',
-    'que puede hacer',
-    'que sabes hacer',
-    'que hace',
-    'para que sirves',
-    'para que sirve',
-    'en que me puedes ayudar',
-    'en que puedes ayudar',
-    'que ofreces',
-    'que servicios',
-    'ayuda',
-    'opciones',
-    'comandos',
-];
-/** ¿El cliente está preguntando qué sabe hacer el bot? */
-export function preguntaCapacidades(texto) {
-    const t = normalizarTexto(texto);
-    if (!t)
-        return false;
-    return PALABRAS_CAPACIDADES.some((p) => t.includes(normalizarTexto(p)));
-}
-/**
- * ¿Es el mensaje un saludo y NADA más?
- *
- * Devuelve `false` en cuanto hay cualquier otra palabra además del saludo: un
- * mensaje con más contenido tiene más intención que la de saludar, y esa
- * intención la tienen que clasificar las otras listas.
- */
-export function esSoloSaludo(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return false;
-    const palabras = t.split(' ').filter(Boolean);
-    if (palabras.length === 0 || palabras.length > 5)
-        return false;
-    let utiles = 0;
-    for (const p of palabras) {
-        if (RUIDO_DE_SALUDO.has(p))
-            continue;
-        if (!PIEZAS_DE_SALUDO.has(p))
-            return false;
-        utiles++;
-    }
-    return utiles > 0;
-}
-/** Minúsculas y sin diacríticos. `normalize('NFD')` separa la tilde y se filtra. */
-export function normalizarTexto(texto) {
-    return texto
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
 }
 /**
  * Elige la plantilla del estado.
@@ -749,121 +551,7 @@ function formatearFecha(iso) {
 // en `pedido_item.precio_unitario`. Mismo criterio que el frontend: los items
 // guardan snapshots, no punteros.
 // ═══════════════════════════════════════════════════════════════════════════
-/** Palabras que abandonan un borrador en cualquier paso. */
-const PALABRAS_CANCELAR = ['cancelar', 'cancela', 'olvidalo', 'olvidalo', 'dejalo', 'dejemos', 'salir', 'atras'];
-/** Afirmaciones. En `confirmando`, solo estas cierran el pedido. */
-const PALABRAS_SI = ['si', 'sip', 'claro', 'confirmo', 'confirmar', 'dale', 'listo', 'ok', 'okey', 'vale', 'correcto', 'asi es', 'de acuerdo'];
-/** Peticiones de volver a ver el catálogo, sin salir del ciclo. */
-const PALABRAS_CARTA = ['carta', 'catalogo', 'catálogo', 'menu', 'menú', 'productos', 'opciones', 'que tienen'];
-/**
- * Modalidades reconocibles y su vocabulario en la calle.
- *
- * ── Por qué la clave es `mesa` y no `en_sitio` ────────────────────────────
- *
- * El frontend llama `en_sitio` a comer en el local, pero **la base no**:
- * `pedido_modalidad_check` solo admite `('retiro','domicilio','mesa')`. El bot
- * escribe en `necto.pedido`, así que usa el vocabulario de la base; traducirlo
- * en el camino sería un sitio más donde equivocarse. Queda anotado porque la
- * deriva `en_sitio` (frontend) ↔ `mesa` (base) es real y algún día habrá que
- * alinearla.
- */
-const MODALIDADES = {
-    domicilio: ['domicilio', 'envio', 'envío', 'llevar', 'traer', 'delivery', 'a la casa', 'a mi casa', 'reparto'],
-    retiro: ['retiro', 'retirar', 'recoger', 'recojo', 'paso', 'voy', 'local', 'tienda', 'mostrador'],
-    mesa: ['en sitio', 'mesa', 'aqui', 'aquí', 'comer alli', 'comer allí', 'en el local'],
-};
-/**
- * ¿El texto pide cancelar?
- *
- * Compara por palabra completa sobre texto normalizado y sin puntuación: el
- * bot no puede confundir «cancela» con «cancelaron» escrito por el cliente en
- * otro contexto, pero tampoco debe exigir que escriba «cancelar» a secas.
- * Se compara contra el texto entero o contra el final, que es donde aparece
- * («no, cancelar», «mejor cancelar»).
- */
-function esCancelar(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return false;
-    return PALABRAS_CANCELAR.some((p) => t === p || t.endsWith(` ${p}`) || t.startsWith(`${p} `));
-}
-/** ¿El texto es una afirmación? Misma disciplina que `esCancelar`. */
-function esAfirmacion(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return false;
-    return PALABRAS_SI.some((p) => t === p || t.split(' ').includes(p));
-}
-/** ¿El cliente quiere volver a ver el catálogo? */
-function pideCarta(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return false;
-    return PALABRAS_CARTA.some((p) => t === p || t.includes(p));
-}
-/** Minúsculas, sin diacríticos, sin puntuación, espacios colapsados. */
-function sinPuntuacion(texto) {
-    return normalizarTexto(texto)
-        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-/**
- * Reconoce la modalidad que el cliente escribió.
- *
- * `null` si no se reconoce — y ese `null` NO se convierte en una modalidad por
- * defecto. Inventar «domicilio» porque no se entendió mandaría a un repartidor
- * a una casa a la que nadie pidió ir.
- */
-export function modalidadDe(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return null;
-    for (const [modalidad, palabras] of Object.entries(MODALIDADES)) {
-        if (palabras.some((p) => t.includes(normalizarTexto(p))))
-            return modalidad;
-    }
-    return null;
-}
-/**
- * Lee una cantidad escrita por un cliente.
- *
- * Acepta dígitos («2») y las palabras que la gente escribe de verdad («dos»,
- * «una»). Rechaza cero, negativos, decimales y cualquier cosa que no sea un
- * entero en un rango razonable.
- *
- * El tope de 999 no es una regla de negocio: es una guarda contra el dedo
- * pegado al teclado. Un cliente que pide 5000 hamburguesas por WhatsApp no
- * quiere 5000 hamburguesas.
- */
-export function cantidadDe(texto) {
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return null;
-    // ── El signo se mira ANTES de buscar dígitos ─────────────────────────────
-    //
-    // Defecto medido con el arnés (22/09): buscar `/\d+/` sobre «-3» devuelve
-    // `3`, y el bot aceptaba «-3» como tres unidades. Un cliente escribiendo
-    // «-3» no está pidiendo tres de nada: o se equivocó de tecla o está
-    // corrigiendo algo, y en los dos casos lo correcto es volver a preguntar.
-    // `sinPuntuacion` ya convirtió el `-` en espacio, así que el signo se
-    // comprueba sobre el texto normalizado sin limpiar.
-    const crudo = normalizarTexto(texto);
-    if (/-\s*\d/.test(crudo))
-        return null;
-    const PALABRAS = {
-        un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6,
-        siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
-    };
-    // Primero dígitos: es como escribe casi todo el mundo.
-    const m = t.match(/\b(\d+)\b/);
-    if (m) {
-        const n = Number(m[1]);
-        return Number.isInteger(n) && n > 0 && n <= 999 ? n : null;
-    }
-    const palabra = t.split(' ').find((p) => PALABRAS[p] !== undefined);
-    return palabra ? PALABRAS[palabra] : null;
-}
+
 /** Formatea un precio en pesos colombianos, sin decimales. */
 export function precioLegible(precio) {
     const n = Math.round(precio);
@@ -1031,25 +719,7 @@ export function reemplazarLinea(lineas, itemIdViejo, nuevoItem, nuevaCantidad) {
     const sinViejo = lineas.filter((l) => l.itemId !== itemIdViejo);
     return agregarLinea(sinViejo, nuevoItem, cant);
 }
-/** Detecta si un mensaje es una consulta intermedia o informativa (envíos, horarios, etc.) */
-export function esPreguntaIntermedia(texto) {
-    if (!texto)
-        return false;
-    const t = normalizarTexto(texto);
-    if (/(?:cuanto cuesta|precio|costo|tarifa|valor)\s+(?:el\s+)?(?:envio|domicilio|entrega|flete)/.test(t))
-        return true;
-    if (/(?:hacen|tienen|hay)\s+(?:domicilios?|envios?)/.test(t))
-        return true;
-    if (/(?:horario|horarios|a que hora|que dias|abren|cierran|atencion)/.test(t))
-        return true;
-    if (/(?:donde estan|donde queda|ubicacion|direccion del local|sede fisica)/.test(t))
-        return true;
-    if (/(?:como pago|metodos de pago|medios de pago|aceptan tarjeta|nequi|daviplata|transferencia)/.test(t))
-        return true;
-    if (/(?:que trae|que contiene|ingredientes|de que es)/.test(t))
-        return true;
-    return false;
-}
+
 /**
  * Interpreta el mensaje del cliente DENTRO de un ciclo de toma de pedido.
  *
@@ -1405,45 +1075,7 @@ function esNegacion(texto) {
 function siguientePregunta(_borrador, f) {
     return redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' });
 }
-/**
- * Encuentra el item del catálogo al que se refiere el cliente.
- *
- * Acepta el NÚMERO («2») y el NOMBRE («papas rústicas»). El número es la vía
- * principal —por eso el catálogo se imprime numerado— y el nombre es la red
- * para quien escribe «quiero una hamburguesa» de corrido.
- *
- * El nombre se compara por inclusión normalizada en los dos sentidos: «papas»
- * encuentra «Papas Rústicas con Queso», y «papas rusticas con queso por favor»
- * también.
- */
-export function resolverItem(texto, catalogo) {
-    if (catalogo.length === 0)
-        return null;
-    // «1» y también «la 1», que es como se elige de una lista numerada.
-    const soloNumero = texto.trim().match(/^(?:(?:el|la|los|las)\s+)?(\d{1,3})$/);
-    if (soloNumero) {
-        const idx = Number(soloNumero[1]) - 1;
-        return catalogo[idx] ?? null;
-    }
-    const t = sinPuntuacion(texto);
-    if (!t)
-        return null;
-    // Nombre completo contenido en el mensaje.
-    const exacto = catalogo.find((i) => t.includes(sinPuntuacion(i.nombre)));
-    if (exacto)
-        return exacto;
-    // Alguna palabra significativa del nombre (>= 4 letras) presente en el
-    // mensaje. Se descartan las cortas porque «con», «de», «la» aparecen en
-    // cualquier frase y harían que todo casara con todo.
-    const palabras = t.split(' ').filter((p) => p.length >= 4);
-    const porPalabra = catalogo.filter((i) => {
-        const propias = sinPuntuacion(i.nombre).split(' ').filter((p) => p.length >= 4);
-        return propias.some((p) => palabras.includes(p));
-    });
-    // Solo si es inequívoco. Con dos candidatos no se adivina: mandar el plato
-    // equivocado es peor que volver a preguntar.
-    return porPalabra.length === 1 ? porPalabra[0] : null;
-}
+
 /**
  * Decide qué hacer con el texto del cliente.
  *
