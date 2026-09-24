@@ -389,7 +389,7 @@ export function opcionesDe(input) {
 const MENU_DE_PASO = {
     eligiendo_items: [],
     eligiendo_cantidad: [],
-    eligiendo_modalidad: ['domicilio', 'retiro', 'cancelar'],
+    eligiendo_modalidad: ['domicilio', 'retiro', 'agregar_otro', 'cancelar'],
     // La dirección espera texto libre, así que su menú NO incluye «retiro»
     // como opción numerada: un «1» pegado por inercia cambiaría la modalidad
     // por accidente. Quien quiera cambiar a retiro lo escribe, que es
@@ -981,22 +981,22 @@ export function decidirEnCiclo(input) {
         case 'eligiendo_modalidad': {
             const modalidad = modalidadDe(texto);
             if (!modalidad) {
-                const pareceCambioDeItem = /\b(mejor|tambien|también|quiero|quisiera|agrega|añade|anade|otro|otra|falta)\b/.test(normalizarTexto(texto));
-                const item = pareceCambioDeItem ? resolverItem(texto, catalogo) : null;
+                const item = resolverItem(texto, catalogo);
                 if (item) {
                     const cant = cantidadDe(texto) || 1;
                     const lineas = agregarLinea(b.lineas, item, cant);
+                    const nuevoBorrador = paso(b, { lineas, itemPendienteId: null, paso: 'eligiendo_modalidad' });
                     return {
                         accion: 'seguir',
-                        texto: redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' }),
-                        borrador: paso(b, { lineas, itemPendienteId: null, paso: 'eligiendo_modalidad' }),
+                        texto: siguientePregunta(nuevoBorrador, f),
+                        borrador: nuevoBorrador,
                         intent: 'agregar_producto',
                         crear: false,
                     };
                 }
                 return {
                     accion: 'seguir',
-                    texto: redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' }),
+                    texto: siguientePregunta(b, f),
                     borrador: b,
                     crear: false,
                 };
@@ -1072,7 +1072,15 @@ function esNegacion(texto) {
  * Hoy es siempre la modalidad, y el parámetro existe para que añadir un paso
  * (variante de talla, nota de preparación) no obligue a tocar la llamada.
  */
-function siguientePregunta(_borrador, f) {
+function siguientePregunta(b, f) {
+    if (b && b.lineas && b.lineas.length > 0) {
+        const lineasTxt = b.lineas
+            .map((l) => `· ${l.cantidad} × ${l.nombre} — ${precioLegible(l.precioUnitario * l.cantidad)}`)
+            .join('\n');
+        const totalTxt = precioLegible(totalDe(b.lineas));
+        const menu = componerMenu(menuDePaso('eligiendo_modalidad'), f);
+        return `Agregado a tu pedido:\n${lineasTxt}\n\n*Total:* ${totalTxt}\n\n¿Deseas agregar algo más (bebida, papas) o cómo lo quieres recibir?\n\n${menu}\n\nEscríbeme el número o tu opción.`;
+    }
     return redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' });
 }
 
