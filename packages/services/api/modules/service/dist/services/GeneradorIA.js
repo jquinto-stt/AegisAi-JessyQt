@@ -26,6 +26,16 @@ export async function generarRespuestaIA(input) {
   const primerNombre = nombreCliente ? nombreCliente.trim().split(' ')[0] : '';
   const clienteNombreRef = primerNombre || nombreCliente || 'amigo/a';
 
+  // Limpieza de citas multilínea de botones de WhatsApp
+  let mensajeTextoLimpio = (mensajeTexto || '').trim();
+  if (mensajeTextoLimpio.includes('\n')) {
+    const lineas = mensajeTextoLimpio.split('\n').map(l => l.trim()).filter(Boolean);
+    const ultimaLinea = lineas[lineas.length - 1];
+    if (ultimaLinea && ultimaLinea.length < 60) {
+      mensajeTextoLimpio = ultimaLinea;
+    }
+  }
+
   const systemPrompt = `Sos el agente inteligente Necto AI de WhatsApp para la empresa "${marca}".
 Atendés a ${nombreCliente || 'el cliente'} representando a "${marca}" de forma muy cercana, cálida, personalizada, amigable y servicial.
 
@@ -157,7 +167,8 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     }
   }
 
-  messages.push({ role: 'user', content: mensajeTexto });
+  messages.push({ role: 'user', content: mensajeTextoLimpio });
+
 
   let replyText = '';
 
@@ -224,7 +235,7 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
 
   // Generación Inteligente Local en caso de indisponibilidad de la API de IA
   if (!replyText) {
-    const textLower = (mensajeTexto || '').toLowerCase().trim();
+    const textLower = (mensajeTextoLimpio || '').toLowerCase().trim();
 
     if (textLower === 'hola' || textLower === 'buenas' || textLower === 'inicio' || textLower === 'saludo' || (Array.isArray(historial) && historial.length === 0)) {
       replyText = `¡Hola ${clienteNombreRef}! En ${marca} siempre buscamos formas de ayudarte a encontrar los mejores productos y antojos. 🔒 Ten en cuenta que tu información está segura con nosotros. Nunca la compartiremos con nadie. 🚀 ¿Listo para aprender más y realizar tu pedido?\n\n[BOTON: Sí, ¡por favor!] [BOTON: No]`;
