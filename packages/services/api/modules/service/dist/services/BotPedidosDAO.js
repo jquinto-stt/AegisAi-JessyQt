@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { telefonoBuscable, } from './ZernioWebhook.js';
 import { decidir, esMensajePropio, borradorNuevo, agregarLinea, paso } from './BotPedidos.js';
 import { generarRespuestaIA } from './GeneradorIA.js';
+import { extraerDireccion, esAfirmacion } from './BotParser.js';
 // ═══════════════════════════════════════════════════════════════════════════
 // ACCESO A LA BASE PARA EL BOT DE PEDIDOS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -343,7 +344,7 @@ function borradorDe(bruto) {
     if (!bruto || typeof bruto !== 'object')
         return null;
     const o = bruto;
-    const PASOS = ['eligiendo_items', 'eligiendo_cantidad', 'eligiendo_modalidad', 'eligiendo_direccion', 'confirmando'];
+    const PASOS = ['eligiendo_items', 'eligiendo_cantidad', 'eligiendo_modalidad', 'confirmando_direccion_previa', 'eligiendo_direccion', 'confirmando'];
     if (typeof o.paso !== 'string' || !PASOS.includes(o.paso))
         return null;
     const lineas = Array.isArray(o.lineas)
@@ -809,12 +810,18 @@ export async function procesarEntrante(m, deps = {}) {
     }
     // 3. ¿Le toca al bot?
     if (lectura?.modo !== 'bot') {
-        return {
-            ok: true,
-            accion: 'silencio',
-            motivo: `modo_atencion=${lectura?.modo ?? 'desconocido'}`,
-            mensajeId: undefined,
-        };
+        const norm = (m.texto || '').toLowerCase();
+        const quiereBot = /\b(bot|menu|menú|pedido|pedir|hola|buenas|catalogo|catálogo|otro pedido|nuevo pedido|volver)\b/.test(norm);
+        if (quiereBot) {
+            await volverAlBot(sb, conv.conversacionId);
+        } else {
+            return {
+                ok: true,
+                accion: 'silencio',
+                motivo: `modo_atencion=${lectura?.modo ?? 'desconocido'}`,
+                mensajeId: undefined,
+            };
+        }
     }
     // 4. Decidir
     const [pedidos, config] = await Promise.all([
@@ -874,47 +881,28 @@ export async function procesarEntrante(m, deps = {}) {
                 decision.accion = 'handoff';
                 decision.motivo = 'pide_asesor';
             }
-
-            // Sincronización bidireccional: Si la IA detectó entidades y el determinista no tenía borrador
-            if (resIA.entidadesDetectadas) {
-                const ent = resIA.entidadesDetectadas;
-                let b = decision.borrador ?? lectura?.enCurso ?? null;
-                if (!b && Array.isArray(ent.items) && ent.items.length > 0) {
-                    b = borradorNuevo();
-                }
-                if (b && Array.isArray(ent.items) && ent.items.length > 0) {
-                    for (const it of ent.items) {
-                        const numIdx = Number(it.id_o_idx || it.idx || it.id);
-                        const catItem = (!isNaN(numIdx) && numIdx >= 1 && numIdx <= config.catalogo.length)
-                            ? config.catalogo[numIdx - 1]
-                            : config.catalogo.find(c => c.id === it.id_o_idx || c.nombre.toLowerCase().includes(String(it.nombre || it.id_o_idx).toLowerCase()));
-                        if (catItem) {
-                            const cant = Number(it.cantidad) || 1;
-                            b.lineas = agregarLinea(b.lineas, catItem, cant);
-                        }
-                    }
-                    if (b.lineas.length > 0 && b.paso === 'eligiendo_items') {
-                        b.paso = 'eligiendo_modalidad';
-                    }
-                }
-                if (b && ent.direccion && typeof ent.direccion === 'string' && ent.direccion.trim().length >= 4) {
-                    b.direccion = ent.direccion.trim();
-                    b.modalidad = 'domicilio';
-                    b.paso = 'confirmando';
-                }
-                if (b && ent.modalidad) {
-                    b.modalidad = ent.modalidad;
-                }
-                if (b && b.lineas.length > 0) {
-                    decision.borrador = b;
-                }
-            }
         }
     } catch (e) {
         console.error('[BotPedidosDAO] Excepción invocando Azure OpenAI:', e);
     }
     // ── 4b. Resolución de Estado Conversacional y Creación de Pedido ─────────
+    const dirDirecta = extraerDireccion(m.texto);
+    if (dirDirecta) {
+        let bActual = decision.borrador ?? lectura?.enCurso ?? null;
+        if (bActual && bActual.lineas && bActual.lineas.length > 0) {
+            bActual.direccion = dirDirecta;
+            bActual.modalidad = 'domicilio';
+            bActual.paso = 'confirmando';
+            decision.borrador = bActual;
+            decision.estadoFlujo = 'CONFIRMANDO_PEDIDO';
+        }
+    }
     let borradorFinal = decision.borrador !== undefined ? decision.borrador : (lectura?.enCurso ?? null);
+    const normMsg = (m.texto || '').toLowerCase().trim();
+    const esConfirmacion = esAfirmacion(m.texto) || normMsg.includes('confirmar') || (normMsg === '1' && borradorFinal?.paso === 'confirmando');
+    if (esConfirmacion && borradorFinal && borradorFinal.lineas?.length > 0 && (borradorFinal.direccion || borradorFinal.modalidad === 'retiro')) {
+        decision.accion = 'crearPedido';
+    }
     let estadoFlujoFinal = decision.estadoFlujo;
     if (!estadoFlujoFinal) {
         if (borradorFinal && borradorFinal.lineas?.length > 0) {
@@ -952,12 +940,26 @@ export async function procesarEntrante(m, deps = {}) {
                 error: `no se pudo crear el pedido: ${creado.error}`,
             };
         }
-        textoFinal = decision.texto.replace('{numero}', creado.numero ?? '');
-        const refLink = (creado.numero ?? 'WEB-0001').toLowerCase().replace(/[^a-z0-9]/g, '');
-        textoFinal += `\n\n💳 *Link de Pago Seguro (Simulado):*\nhttps://necto.io/pagos/pay_${refLink}\n\n*(Acepta Nequi, Daviplata, Tarjetas y PSE. Una vez registrado el pago procedemos a despachar tu pedido)*`;
+        const numPedido = creado.numero ?? 'WEB-0001';
+        const refLink = numPedido.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const totalPedido = Number(borradorFinal.lineas.reduce((acc, l) => acc + (l.precioUnitario * l.cantidad), 0)).toLocaleString('es-CO');
+        const resumenLineas = borradorFinal.lineas.map(l => `• ${l.cantidad}x ${l.nombre} ($${Number(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+        const entregaInfo = borradorFinal.modalidad === 'domicilio' 
+            ? `Domicilio 🛵 (Dirección: *${borradorFinal.direccion || 'Confirmada'}*)`
+            : 'Retiro en local 🛍️';
+
+        textoFinal = `¡Muchas gracias, ${m.nombre ? m.nombre.split(' ')[0] : 'amigo/a'}! 🎉 Tu pedido ha sido registrado con éxito.\n\n` +
+            `🧾 *Pedido #${numPedido}*\n` +
+            `${resumenLineas}\n\n` +
+            `*Total:* $${totalPedido}\n` +
+            `*Entrega:* ${entregaInfo}\n\n` +
+            `💳 *Link de Pago Seguro:*\nhttps://necto.io/pagos/pay_${refLink}\n\n` +
+            `*(Acepta Nequi, Daviplata, Tarjetas y PSE. Una vez confirmado el pago procedemos a despachar tu pedido)*`;
+
+        decision.botones = ['Estado de Pedido 📦', 'Hacer Otro Pedido 🛒', 'Hablar con Asesor 👤'];
         borradorFinal = null;
         estadoFlujoFinal = 'PEDIDO_CREADO';
-        ultimoPedidoIdFinal = creado.numero ?? creado.id;
+        ultimoPedidoIdFinal = numPedido;
     } else if (decision.accion === 'handoff' && (decision.motivo === 'ciclo_cancelado' || decision.motivo === 'pide_asesor' || decision.intent === 'cancelar_borrador')) {
         borradorFinal = null;
         estadoFlujoFinal = 'IDLE';

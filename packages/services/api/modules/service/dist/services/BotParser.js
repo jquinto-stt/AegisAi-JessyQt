@@ -162,10 +162,17 @@ export function modalidadDe(texto) {
 
 /** Lee una cantidad escrita por el cliente (dígitos o palabras 'dos', 'tres', etc.). */
 export function cantidadDe(texto) {
-    const t = sinPuntuacion(texto);
+    if (!texto) return null;
+    let parte = texto;
+    // Si contiene una dirección colombiana o indicación de envío, buscar la cantidad antes de la dirección
+    const mDir = texto.match(/\b(?:calle|cll|carrera|cra|kr|diagonal|diag|transversal|transv|tv|avenida|av|para llevar a|enviar a|direcci[oó]n)\b/i);
+    if (mDir && mDir.index > 0) {
+        parte = texto.slice(0, mDir.index);
+    }
+    const t = sinPuntuacion(parte);
     if (!t) return null;
-    const crudo = normalizarTexto(texto);
-    if (/-\s*\d/.test(crudo)) return null;
+    const crudo = normalizarTexto(parte);
+    if (/(?:^|\s)-\s*\d+/.test(crudo)) return null;
     const PALABRAS = {
         un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6,
         siete: 7, ocho: 8, nueve: 9, diez: 10, once: 11, doce: 12,
@@ -213,8 +220,9 @@ export function extraerDireccion(texto) {
     if (mExplicito && mExplicito[1].trim().length >= 4) {
         return mExplicito[1].trim();
     }
-    if (/\b(?:calle|cll|carrera|cra|kr|diagonal|diag|transversal|transv|tv|avenida|av|autopista|circular)\b.*?\d+/i.test(t)) {
-        return t;
+    const mCalle = t.match(/\b((?:calle|cll|carrera|cra|kr|diagonal|diag|transversal|transv|tv|avenida|av|autopista|circular)\b.*?\d+.*)/i);
+    if (mCalle && mCalle[1].trim().length >= 4) {
+        return mCalle[1].trim();
     }
     return null;
 }

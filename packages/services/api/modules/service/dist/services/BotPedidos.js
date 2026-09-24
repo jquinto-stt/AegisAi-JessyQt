@@ -662,15 +662,7 @@ function confirmarBorrador(b, input) {
             crear: false,
         };
     }
-    if (pedidoActivoNumero) {
-        return {
-            accion: 'descartar',
-            texto: rellenar(f.yaTienesPedido, {
-                numero: pedidoActivoNumero,
-                menu: componerMenu(['ver_pedido', 'asesor'], f),
-            }),
-        };
-    }
+    // Se permite crear un nuevo pedido aunque ya exista uno activo previo
     return { accion: 'crear', texto: f.pedidoCreado, borrador: b, crear: true, intent: 'confirmar_pedido' };
 }
 /**
@@ -809,8 +801,23 @@ export function decidirEnCiclo(input) {
                 };
             }
         }
-        // C. Corregir cantidad
-        const pareceCorreccionCantidad = /\b(no eran|no son|cambia|cambiar|ajustar|ponle|solo|solamente|deja)\b/.test(tNorm) || (b.lineas.length === 1 && /\b\d{1,3}\b/.test(tNorm));
+        // C. Captura directa de dirección si ya hay productos en el carrito (prioridad sobre números de calle)
+        const dirDirecta = extraerDireccion(texto);
+        if (dirDirecta) {
+            const listo = paso(b, { modalidad: 'domicilio', direccion: dirDirecta, direccionSugerida: null, paso: 'confirmando' });
+            return {
+                accion: 'seguir',
+                texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                borrador: listo,
+                intent: 'solicitar_entrega',
+                crear: false,
+            };
+        }
+        // D. Corregir cantidad (solo si no es dirección y hay palabras clave explícitas o solo el número aislado)
+        const pareceCorreccionCantidad = !dirDirecta && b.paso !== 'eligiendo_direccion' && (
+            /\b(no eran|no son|cambia|cambiar|ajustar|ponle|solo|solamente|deja|corregir)\b/.test(tNorm) || 
+            (b.lineas.length === 1 && /^\s*\d{1,2}\s*$/.test(tNorm))
+        );
         const nuevaCant = cantidadDe(texto);
         if (pareceCorreccionCantidad && nuevaCant !== null && nuevaCant > 0) {
             const itemACorregir = b.lineas.find((l) => {
@@ -1187,7 +1194,7 @@ function siguientePregunta(b, f) {
             .join('\n');
         const totalTxt = precioLegible(totalDe(b.lineas));
         const menu = componerMenu(menuDePaso('eligiendo_modalidad'), f);
-        return `Agregado a tu pedido:\n${lineasTxt}\n\n*Total:* ${totalTxt}\n\n¿Deseas agregar algo más (bebida, papas) o cómo lo quieres recibir?\n\n${menu}\n\nEscríbeme el número o tu opción.`;
+        return `Agregado a tu pedido:\n${lineasTxt}\n\n*Total:* ${totalTxt}\n\n¿Cómo prefieres recibir tu pedido?\n\n${menu}\n\nEscríbeme el número o tu opción.`;
     }
     return redactarPaso(f.pedirModalidad, 'eligiendo_modalidad', f, { opciones: 'domicilio o retiro' });
 }
@@ -1350,6 +1357,20 @@ export function decidir(input) {
             catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
+    // Si el cliente pide explícitamente hacer otro pedido o nuevo pedido:
+    const normTexto = normalizarTexto(texto ?? '');
+    if (/\b(otro pedido|nuevo pedido|hacer otro|pedir de nuevo|otra orden|volver a pedir)\b/.test(normTexto)) {
+        return {
+            accion: 'tomarPedido',
+            motivo: 'nuevo_pedido',
+            texto: redactarCatalogo(items, f),
+            borrador: borradorNuevo(),
+            intent: 'iniciar_nuevo_pedido',
+            estadoFlujo: 'CATALOGO_ACTIVO',
+            catalogoMostrado: true,
+        };
+    }
+
     // ── ¿Hay un pedido a medias? Él manda sobre todo lo demás ───────────────
     if (input.enCurso) {
         const enCiclo = decidirEnCiclo({
@@ -1465,26 +1486,34 @@ export function decidir(input) {
             catalogoMostrado: Boolean(input.catalogoMostrado),
         };
     }
-    // ── Abrir el ciclo: el cliente quiere comprar y hay catálogo ────────────
-    if (items.length > 0 && quiereComprar(texto)) {
-        const borrador = input.enCurso && input.enCurso.lineas?.length > 0 ? input.enCurso : borradorNuevo();
-        return {
-            accion: 'tomarPedido',
-            texto: redactarCatalogo(items, f),
-            borrador,
-            intent: 'ver_catalogo',
-            estadoFlujo: borrador.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'CATALOGO_ACTIVO',
-            catalogoMostrado: true,
-        };
-    }
+
     // ── ¿Nombró uno o varios platos? ─────────────────────────────────────────
     if (items.length > 0) {
         const multiples = resolverMultiplesItems(texto, items);
+        const dirEnMensaje = extraerDireccion(texto);
         if (multiples.length > 1) {
             const borradorBase = input.enCurso ?? borradorNuevo();
             let lineas = [...borradorBase.lineas];
             for (const m of multiples) {
                 lineas = agregarLinea(lineas, m.item, m.cantidad);
+            }
+            if (dirEnMensaje) {
+                const listo = paso(borradorBase, {
+                    lineas,
+                    itemPendienteId: null,
+                    modalidad: 'domicilio',
+                    direccion: dirEnMensaje,
+                    direccionSugerida: null,
+                    paso: 'confirmando',
+                });
+                return {
+                    accion: 'tomarPedido',
+                    texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                    borrador: listo,
+                    intent: 'solicitar_entrega',
+                    estadoFlujo: 'CONFIRMANDO_PEDIDO',
+                    catalogoMostrado: true,
+                };
             }
             const nuevoBorrador = paso(borradorBase, {
                 lineas,
@@ -1506,6 +1535,24 @@ export function decidir(input) {
             const cant = (multiples.length === 1 ? multiples[0].cantidad : null) || cantidadDe(texto);
             if (cant !== null && cant > 0) {
                 const lineas = agregarLinea(borradorBase.lineas, nombrado, cant);
+                if (dirEnMensaje) {
+                    const listo = paso(borradorBase, {
+                        lineas,
+                        itemPendienteId: null,
+                        modalidad: 'domicilio',
+                        direccion: dirEnMensaje,
+                        direccionSugerida: null,
+                        paso: 'confirmando',
+                    });
+                    return {
+                        accion: 'tomarPedido',
+                        texto: redactarPaso(f.resumenPedido, 'confirmando', f, valoresDeResumen(listo)),
+                        borrador: listo,
+                        intent: 'solicitar_entrega',
+                        estadoFlujo: 'CONFIRMANDO_PEDIDO',
+                        catalogoMostrado: true,
+                    };
+                }
                 const nuevoBorrador = paso(borradorBase, {
                     lineas,
                     itemPendienteId: null,
@@ -1532,6 +1579,18 @@ export function decidir(input) {
                 catalogoMostrado: true,
             };
         }
+    }
+    // ── Abrir el ciclo: el cliente quiere comprar en general y no nombró plato específico ──
+    if (items.length > 0 && quiereComprar(texto)) {
+        const borrador = input.enCurso && input.enCurso.lineas?.length > 0 ? input.enCurso : borradorNuevo();
+        return {
+            accion: 'tomarPedido',
+            texto: redactarCatalogo(items, f),
+            borrador,
+            intent: 'ver_catalogo',
+            estadoFlujo: borrador.lineas?.length > 0 ? 'CARRITO_EN_CONSTRUCCION' : 'CATALOGO_ACTIVO',
+            catalogoMostrado: true,
+        };
     }
     if (esConsultaDePedido(texto)) {
         if (activos.length === 1) {

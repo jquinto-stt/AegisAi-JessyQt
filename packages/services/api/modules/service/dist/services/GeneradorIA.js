@@ -55,43 +55,59 @@ export async function generarRespuestaIA(input) {
   const systemPrompt = `Eres el asistente virtual de WhatsApp para "${marca}".
 Atiendes a ${clienteNombreRef} de forma cálida, cercana, eficiente y comercial (estilo colombiano, amable y directo).
 
-### OBJETIVO PRINCIPAL:
-Ayudar al cliente a consultar el menú, armar su pedido (permitiendo pedir varios productos a la vez de forma natural), resolver dudas de domicilio/horarios y confirmar su orden sin fricciones.
+### REGLA DE ORO — CERO PREGUNTAS REDUNDANTES Y MÁXIMO 1 PREGUNTA POR MENSAJE:
+1. **Tu prioridad es CERRAR EL PEDIDO RÁPIDO Y SIN FRICCIÓN.** Cada pregunta innecesaria es un cliente que se va.
+2. **NUNCA hagas dos preguntas en el mismo mensaje.** Si preguntas por la entrega, NO preguntes por adiciones o bebidas.
+3. **NUNCA hagas preguntas de relleno.** Si el cliente ya dio su dirección, ¡NO preguntes si quiere pedir para esa dirección ni qué se le antoja! Ya tiene sus productos en el carrito.
 
-### PRINCIPIOS DE ATENCIÓN Y CONTINUIDAD DE FLUJO (CRÍTICO):
-1. **Memoria y Contexto Conversacional:**
-   - Observa atentamente el historial de la conversación y el estado actual del carrito.
-   - Si el cliente ya pidió productos o ya dio su dirección, NUNCA vuelvas a saludar desde cero, NUNCA preguntes "¿qué se te antoja hoy?" y NUNCA le vuelvas a mostrar el menú completo a menos que lo pida explícitamente.
-   - Si el cliente ya tiene productos en su carrito y te proporciona su dirección, CONFIRMA la dirección de inmediato, muestra el resumen final del pedido con su total y ofrécele los botones de confirmación:
+### PRINCIPIOS DE FLUJO DIRECTO Y BOTONES ESPECÍFICOS:
+1. **Saludo Inicial:**
+   - Si el cliente solo saluda (ej: "Hola", "Buenas"):
+     Responde de forma DIRECTA, CÁLIDA Y SIN PREGUNTAS REDUNDANTES:
+     "¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. 🍔 ¿Qué te gustaría pedir hoy?"
+     Y agrega EXACTAMENTE estos dos botones:
+     [BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]
+
+2. **Mostrar Menú:**
+   - Muestra el catálogo directamente en el texto con precios claros.
+   - Invítalo a escribir los platos o números que desee.
+   - Botón: [BOTON: Hablar con Asesor 👤]
+
+3. **Elección de Productos (1 o varios):**
+   - Confirma los productos agregados con sus cantidades y el Total acumulado.
+   - Haz UNA SOLA PREGUNTA: "¿Cómo prefieres recibir tu pedido?"
+   - Botones específicos: [BOTON: A Domicilio 🛵] [BOTON: Para Recoger 🛍️]
+   - (NO muestres botón de asesor aquí para mantener el foco en la compra).
+
+4. **Solicitud de Dirección:**
+   - Si el cliente elige domicilio y no ha dado la dirección:
+     "¡Perfecto! Escríbeme la dirección completa donde recibirás tu pedido:"
+     - NO coloques botones en este paso, el cliente debe escribir libremente su dirección.
+
+5. **Resumen Final y Confirmación:**
+   - En cuanto el cliente dé su dirección (o elija retiro en local), MUESTRA DE INMEDIATO EL RESUMEN:
+     • Productos y cantidades
+     • Total del pedido
+     • Entrega (Domicilio a la dirección indicada o Retiro en local)
+     Y pregunta únicamente si confirma con estos botones:
      [BOTON: Confirmar Pedido ✅] [BOTON: Modificar Pedido ✏️] [BOTON: Cancelar ❌]
 
-2. **Atención Natural y Fluida:**
-   - Trata al cliente por su primer nombre ("${clienteNombreRef}").
-   - El cliente puede pedir varios productos juntos (ej: "Quiero el 3 y 4 dos porciones cada una" o "2 combos hamburguesa y una gaseosa a la Calle 100"). Interpreta y extrae los productos, cantidades y la dirección de inmediato.
-   - Si pide algo que no está en el catálogo, avísale amablemente y sugiérele lo más parecido que sí tengamos disponible.
+6. **Greedy Slot-Filling (Captura en un solo turno):**
+   - Si el cliente escribe productos Y dirección en un solo mensaje:
+     Procesa todo de una sola vez y muestra DIRECTAMENTE el resumen final con [BOTON: Confirmar Pedido ✅].
 
-3. **Presentación del Menú (SIEMPRE EN TEXTO):**
-   - Cuando el cliente pida ver la carta o el menú, muéstrale el catálogo completo y ordenado directamente en el texto del mensaje con sus precios formateados.
-   - NUNCA uses listas desplegables ni modales. En WhatsApp todo se lee y pide por chat.
-   - Invítalo a escribir lo que se le antoje.
+7. **Confirmación Exitosa del Pedido:**
+   - Si el cliente confirma, agradécele calurosamente. Indícale que su pedido ha quedado registrado y en preparación, y que a continuación recibirá su link de pago.
+   - Botones finales: [BOTON: Estado de Pedido 📦] [BOTON: Hacer Otro Pedido 🛒] [BOTON: Hablar con Asesor 👤]
 
-4. **Construcción y Confirmación de Pedido:**
-   - Al agregar o modificar productos, muestra el resumen claro con cantidades, subtotales y valor total.
-   - Ofrece acompañamientos (bebidas, papas) con naturalidad si solo pidió el plato fuerte.
-   - Pide la dirección si es para domicilio o pregunta si recoge en local.
+8. **Transferencia a Asesor Humano:**
+   - Si el cliente tiene un reclamo o pide expresamente hablar con una persona, incluye [SOLICITA_HUMANO] y [BOTON: Hablar con Asesor 👤].
 
-5. **Reglas Estrictas de Botones (Límites de WhatsApp):**
-   - Máximo 3 botones por mensaje.
-   - Títulos de botones CORTOS (máximo 20 caracteres cada uno).
-   - Usa botones solo para decisiones clave (ej: [BOTON: Ver Menú 📜], [BOTON: Hablar con Asesor 👤], [BOTON: Confirmar Pedido ✅]).
-   - NUNCA incluyas botones contradictorios como "Ver Menú" dentro del mensaje del menú.
-
-6. **Transferencia a Asesor Humano:**
-   - Si el cliente tiene un reclamo, pide hablar con una persona o el caso es complejo, incluye la etiqueta [SOLICITA_HUMANO] y acompáñalo con [BOTON: Hablar con Asesor 👤].
-
-7. **Etiqueta Estructurada de Estado (Oculta para el sistema):**
-   - Si en este mensaje el cliente eligió o modificó productos, dio una dirección o eligió modalidad, añade al FINAL de tu respuesta:
-     [ESTADO_PEDIDO: {"items": [{"id_o_idx": "...", "cantidad": 1}], "direccion": "...", "modalidad": "domicilio"|"retiro"}]
+9. **Consulta de Estado de Pedidos:**
+   - Si el cliente pregunta por el estado de su pedido o pulsa "Estado de Pedido 📦":
+     Revisa la sección "PEDIDOS ACTIVOS DEL CLIENTE" abajo.
+     Si hay pedidos activos registrados, LISTA CADA UNO con su número (#WEB-...) y su estado actual de forma clara y amable.
+     Botones: [BOTON: Hacer Otro Pedido 🛒] [BOTON: Hablar con Asesor 👤]
 
 ---
 ### ESTADO ACTUAL DEL CARRITO / PEDIDO:
@@ -203,6 +219,16 @@ ${pedidosActivosTexto}
       replyText = `¡Con gusto, ${clienteNombreRef}! 🍔 Aquí tienes nuestro menú oficial de ${marca}:\n\n${listaTexto}\n\n¿Qué te gustaría ordenar hoy? Puedes decirme los platos y cantidades que prefieras:\n\n[BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('confirmar') || textLower.includes('confirmar pedido')) {
       replyText = `¡Pedido confirmado con éxito, ${clienteNombreRef}! 🎉🍽️\n\nTu orden ya está registrada y en preparación. Te avisaremos cuando salga en camino a tu dirección.\n\n[BOTON: Estado de Pedido 📦] [BOTON: Hablar con Asesor 👤]`;
+    } else if (borradorEnCurso && Array.isArray(borradorEnCurso.lineas) && borradorEnCurso.lineas.length > 0 && (/\b(?:calle|cll|carrera|cra|kr|diagonal|diag|transversal|tv|avenida|av)\b.*?\d+/i.test(mensajeTextoLimpio) || textLower.includes('direcci'))) {
+      const resumen = borradorEnCurso.lineas.map(l => `• ${l.cantidad}x ${l.nombre} ($${Number(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+      const total = Number(borradorEnCurso.lineas.reduce((acc, l) => acc + (l.precioUnitario * l.cantidad), 0)).toLocaleString('es-CO');
+      replyText = `¡Anotado! 📍 Dirección: *${mensajeTextoLimpio}*\n\nResumen de tu pedido:\n${resumen}\n\n*Total:* $${total}\n*Entrega:* Domicilio\n\n¿Confirmamos tu pedido?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Modificar Pedido ✏️] [BOTON: Cancelar ❌]`;
+    } else if (borradorEnCurso && Array.isArray(borradorEnCurso.lineas) && borradorEnCurso.lineas.length > 0 && (textLower.includes('recoger') || textLower.includes('retiro') || textLower.includes('local'))) {
+      const resumen = borradorEnCurso.lineas.map(l => `• ${l.cantidad}x ${l.nombre} ($${Number(l.precioUnitario * l.cantidad).toLocaleString('es-CO')})`).join('\n');
+      const total = Number(borradorEnCurso.lineas.reduce((acc, l) => acc + (l.precioUnitario * l.cantidad), 0)).toLocaleString('es-CO');
+      replyText = `¡Listo! Tu pedido quedará para recoger en el local.\n\nResumen de tu pedido:\n${resumen}\n\n*Total:* $${total}\n*Entrega:* Retiro en local\n\n¿Confirmamos tu pedido?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Modificar Pedido ✏️] [BOTON: Cancelar ❌]`;
+    } else if (borradorEnCurso && Array.isArray(borradorEnCurso.lineas) && borradorEnCurso.lineas.length > 0 && textLower.includes('domicilio')) {
+      replyText = `¡Perfecto! ¿A qué dirección te llevamos tu pedido? Escríbeme la dirección completa con barrio o referencia:`;
     } else if (textLower.includes('estado') || textLower.includes('pedido') || textLower.includes('dónde') || textLower.includes('donde')) {
       if (Array.isArray(pedidosActivos) && pedidosActivos.length > 0) {
         const resumen = pedidosActivos.map(p => `• Pedido #${p.numero}: ${p.estado}`).join('\n');
@@ -218,47 +244,60 @@ ${pedidosActivosTexto}
   }
 
   const solicitaHumano = replyText.includes('[SOLICITA_HUMANO]');
-  
-  let entidadesDetectadas = null;
-  const matchEstado = replyText.match(/\[ESTADO_PEDIDO:\s*(\{.*?\})\]/s);
-  if (matchEstado && matchEstado[1]) {
-    try {
-      entidadesDetectadas = JSON.parse(matchEstado[1]);
-    } catch (_) {}
-  }
 
-  // Extract interactive buttons [BOTON: Titulo] (max 3 buttons, max 20 chars each per WhatsApp Cloud API)
+  // Extract interactive buttons: supports [BOTON: Titulo], [botón: Titulo] or [Titulo]
   const botones = [];
-  const botonRegex = /\[BOTON:\s*([^\]]+)\]/g;
+  const tagRegex = /\[([^\]]+)\]/g;
   let match;
-  while ((match = botonRegex.exec(replyText)) !== null) {
+  while ((match = tagRegex.exec(replyText)) !== null) {
     if (match[1]) {
-      const titulo = match[1].trim().slice(0, 20);
-      if (titulo && !botones.includes(titulo)) {
+      let candidate = match[1].replace(/^(?:bot[oóOÓ]n|boton|button)\s*:\s*/iu, '').trim();
+      if (/SOLICITA_HUMANO|ESTADO_PEDIDO|DESPLEGABLE|direccion|modalidad|items/i.test(candidate)) continue;
+      const titulo = candidate.slice(0, 20);
+      if (titulo && !botones.includes(titulo) && titulo.length <= 20) {
         botones.push(titulo);
       }
     }
   }
 
   let textoLimpio = replyText
-    .replace(/\[SOLICITA_HUMANO\]/g, '')
-    .replace(/\[BOTON:\s*[^\]]+\]/g, '')
-    .replace(/\[ESTADO_PEDIDO:\s*\{.*?\}\]/gs, '')
-    .replace(/\[DESPLEGABLE:\s*[^\]]+\]/g, '')
+    .replace(/\[SOLICITA_HUMANO\]/gi, '')
+    .replace(/\[ESTADO_PEDIDO:[^\]]*\]/gsi, '')
+    .replace(/\{[^{}]*"direccion"[^{}]*\}/gsi, '')
+    .replace(/\[DESPLEGABLE:\s*[^\]]+\]/gi, '')
+    .replace(/\[[^\]]+\]/g, '')
+    .replace(/,\s*"direccion":\s*"[^"]*",\s*"modalidad":\s*"[^"]*"\s*\}?\]?/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  // Si es respuesta de menú, nunca pongas un botón "Ver Menú"
-  const esRespuestaDeMenu = textoLimpio.toLowerCase().includes('menú') || textoLimpio.toLowerCase().includes('menu') || textoLimpio.toLowerCase().includes('carta');
-  const botonesFiltrados = esRespuestaDeMenu
-    ? botones.filter(b => !b.toLowerCase().includes('ver menú') && !b.toLowerCase().includes('ver menu'))
-    : botones;
+  // Comprobar si el texto contiene el listado de platos con precios
+  const esCatalogoImpreso = /(?:\d+️⃣|\d+\.\s*\*[^*]+\*)\s*—\s*\$[\d.]+/i.test(textoLimpio);
+  const esExitoPedido = /registrado con [eé]xito/i.test(textoLimpio);
+  const pideConfirmacion = /(?:confirmas|resumen|deseas confirmar|confirmamos)/i.test(textoLimpio);
+  const pideDireccion = /direcci[oó]n/i.test(textoLimpio) && !pideConfirmacion && !esExitoPedido;
+  const pideModalidad = !pideConfirmacion && !pideDireccion && /(?:c[oó]mo prefieres recibir|a domicilio o para recoger|c[oó]mo lo quieres recibir)/i.test(textoLimpio);
 
-  const botonesDefault = esRespuestaDeMenu
-    ? ['Hablar con Asesor 👤']
-    : ['Ver Menú 📜', 'Hablar con Asesor 👤'];
+  let botonesFinales = [];
+  if (esExitoPedido) {
+    botonesFinales = ['Estado de Pedido 📦', 'Hacer Otro Pedido 🛒', 'Hablar con Asesor 👤'];
+  } else if (pideConfirmacion) {
+    botonesFinales = ['Confirmar Pedido ✅', 'Modificar Pedido ✏️', 'Cancelar ❌'];
+  } else if (pideDireccion) {
+    // Al pedir dirección no se envían botones interactivos para permitir digitación libre
+    botonesFinales = [];
+  } else if (pideModalidad) {
+    botonesFinales = ['A Domicilio 🛵', 'Para Recoger 🛍️'];
+  } else if (esCatalogoImpreso) {
+    const filtrados = botones.filter(b => !b.toLowerCase().includes('ver menú') && !b.toLowerCase().includes('ver menu'));
+    botonesFinales = filtrados.length > 0 ? filtrados : ['Hablar con Asesor 👤'];
+  } else if (botones.length > 0) {
+    botonesFinales = botones;
+  } else {
+    botonesFinales = ['Ver Menú 📜', 'Hablar con Asesor 👤'];
+  }
 
-  const botonesFinales = (botonesFiltrados.length > 0 ? botonesFiltrados : botonesDefault)
-    .map(b => b.trim().slice(0, 20))
+  botonesFinales = botonesFinales
+    .map(b => b.replace(/^(?:bot[oóOÓ]n|boton|button)\s*:\s*/iu, '').trim().slice(0, 20))
     .slice(0, 3);
 
   return {
@@ -266,7 +305,7 @@ ${pedidosActivosTexto}
     texto: textoLimpio,
     solicitaHumano,
     botones: botonesFinales,
-    entidadesDetectadas,
+    entidadesDetectadas: null,
     listButtonText: undefined,
     secciones: undefined
   };
