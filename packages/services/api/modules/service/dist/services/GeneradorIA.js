@@ -128,13 +128,12 @@ Atendés a ${nombreCliente || 'el cliente'} representando a "${marca}" de forma 
       * Muestra la ficha con el nombre del producto, precio formateado (ej: *$109.00*) e información relevante.
       * Adjunta los botones de llamado a la acción inmediata: [BOTON: Comprar] [BOTON: Ver más].
 
-13. **Menú Desplegable Interactivo de WhatsApp (Lista Modal type: list):**
-    - Cuando el cliente pida ver el menú completo o sus categorías (ej: *"Ver el menú"*, *"¿Qué tienen?"*, *"Categorías"*):
-      * Incluye la etiqueta de lista desplegable de WhatsApp: [DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas] (o adapta los ítems/categorías al CATÁLOGO OFICIAL DE "${marca.toUpperCase()}").
+13. **Menú y Catálogo de Productos (Texto Visible + Lista Desplegable):**
+    - Cuando el cliente pida ver el menú completo, qué tienen o productos disponibles:
+      * Escribe OBLIGATORIAMENTE en el cuerpo del mensaje el listado detallado y legible de los platillos del catálogo con sus precios formateados (ej: 1️⃣ *Combo Hamburguesa Clásica* — $25.000, 2️⃣ *Papas Rústicas* — $12.000).
+      * Incluye la etiqueta de lista desplegable: [DESPLEGABLE: Ver el menú | Ítem 1, Ítem 2, Ítem 3].
+      * Incluye botones de acción para pedir o asesor: [BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]. NUNCA pongas un botón «Ver Menú» dentro de la respuesta de ver menú.
 
-14. **Botones Interactivos Generales:**
-    - Podés incluir al final de tu mensaje hasta 3 botones interactivos de acción rápida con el formato:
-      [BOTON: Opción 1] [BOTON: Opción 2] [BOTON: Opción 3]
 
 ---
 ### INFORMACIÓN DE LA EMPRESA:
@@ -247,31 +246,34 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
       }
       replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te damos la bienvenida a ${marca}. Explora nuestro menú interactivo o cuéntanos qué deseas pedir hoy:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
     } else if (textLower.includes('menú') || textLower.includes('menu') || textLower.includes('carta') || textLower.includes('catálogo') || textLower.includes('catalogo')) {
-      let categoriasStr = 'Pizza, Pasta, Postres, Bebidas';
-      if (Array.isArray(catalogo) && catalogo.length > 0) {
-        const nombres = catalogo.map(c => c.nombre || c.id).slice(0, 5);
-        if (nombres.length > 0) categoriasStr = nombres.join(', ');
-      }
-      replyText = `¡Claro ${clienteNombreRef}! Toca abajo la lista desplegable «Ver el menú» para elegir tu categoría en ${marca}:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Hacer Pedido] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
-    } else if (textLower.includes('pizza') || textLower.includes('pasta') || textLower.includes('postre') || textLower.includes('bebida') || textLower.includes('opt_') || textLower.includes('hacer pedido') || textLower.includes('comprar')) {
-      let prodNombre = 'Pizza Pepperoni';
-      let prodPrecio = '25.000';
-      if (Array.isArray(catalogo) && catalogo.length > 0) {
-        prodNombre = catalogo[0].nombre || catalogo[0].id || prodNombre;
-        if (catalogo[0].precio) prodPrecio = Number(catalogo[0].precio).toLocaleString('es-CO');
-      }
-      replyText = `¡Excelente elección ${clienteNombreRef}! 🍕 Ficha del producto disponible en ${marca}:\n\n*${prodNombre}*\nPrecio: *$${prodPrecio}*\nPreparación fresca e ingredientes seleccionados.\n\n[BOTON: Comprar] [BOTON: Ver más] [BOTON: Hablar con Asesor]`;
+      const itemsList = (Array.isArray(catalogo) && catalogo.length > 0)
+        ? catalogo
+        : [
+            { id: 'cat-f1', nombre: 'Combo Hamburguesa Clásica', precio: 25000 },
+            { id: 'cat-f2', nombre: 'Papas Rústicas con Queso', precio: 12000 },
+            { id: 'cat-f3', nombre: 'Bebida Gaseosa 350ml', precio: 4000 },
+            { id: 'cat-f4', nombre: 'Postre Cheesecake de Frutos Rojos', precio: 9000 }
+          ];
+
+      const listaTexto = itemsList.map((item, idx) => `${idx + 1}️⃣ *${item.nombre}* — $${Number(item.precio).toLocaleString('es-CO')}`).join('\n');
+      const nombresStr = itemsList.map(c => c.nombre).join(', ');
+
+      replyText = `¡Con gusto, ${clienteNombreRef}! 🍔 Aquí tienes nuestro menú oficial de ${marca}:\n\n${listaTexto}\n\n¿Cuál de estos platillos se te antoja hoy? Puedes tocar un botón rápido abajo o seleccionar la lista desplegable:\n\n[DESPLEGABLE: Ver el menú | ${nombresStr}]\n\n[BOTON: Pedir Combo 🍔] [BOTON: Pedir Papas 🍟] [BOTON: Hablar con Asesor 👤]`;
+    } else if (textLower.includes('hamburguesa') || textLower.includes('combo') || textLower.includes('papa') || textLower.includes('gaseosa') || textLower.includes('postre') || textLower.includes('cheesecake') || textLower === '1' || textLower === '2' || textLower === '3' || textLower === '4' || textLower.includes('comprar')) {
+      replyText = `¡Excelente elección, ${clienteNombreRef}! 🎉\n\n🍔 *Combo Hamburguesa Clásica*\nPrecio: *$25.000*\nIncluye: Carne 100% de res, queso cheddar fundido, papas rústicas y salsa de la casa.\n\n¿Deseas confirmar este pedido a tu dirección?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Cambiar Producto ✏️] [BOTON: Cancelar ❌]`;
+    } else if (textLower.includes('confirmar') || textLower.includes('confirmar pedido')) {
+      replyText = `¡Pedido confirmado con éxito, ${clienteNombreRef}! 🎉🍽️\n\nTu orden está en preparación en cocina. Te notificaremos en cuanto salga con el repartidor a tu domicilio.\n\n[BOTON: Estado de Pedido 📦] [BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('estado') || textLower.includes('pedido') || textLower.includes('dónde') || textLower.includes('donde')) {
       if (Array.isArray(pedidosActivos) && pedidosActivos.length > 0) {
         const resumen = pedidosActivos.map(p => `• Pedido #${p.numero}: ${p.estado}`).join('\n');
-        replyText = `Hola ${clienteNombreRef}, aquí tienes el estado de tus pedidos activos:\n${resumen}\n\n[BOTON: Hacer Pedido] [BOTON: Hablar con Asesor]`;
+        replyText = `Hola ${clienteNombreRef}, aquí tienes el estado de tus pedidos activos:\n${resumen}\n\n[BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
       } else {
-        replyText = `Hola ${clienteNombreRef}, no tienes ningún pedido activo registrado en este momento.\n\n[BOTON: Ver Menú] [BOTON: Hacer Pedido] [BOTON: Hablar con Asesor]`;
+        replyText = `Hola ${clienteNombreRef}, no tienes ningún pedido activo registrado en este momento.\n\n[BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]`;
       }
     } else if (textLower.includes('asesor') || textLower.includes('humano') || textLower.includes('soporte') || textLower.includes('ayuda')) {
       replyText = `Entendido ${clienteNombreRef}. En este momento te comunico con uno de nuestros asesores para atenderte personalmente. [SOLICITA_HUMANO]`;
     } else {
-      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Hacer Pedido] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[BOTON: Ver Menú 📜] [BOTON: Estado de Pedido 📦] [BOTON: Hablar con Asesor 👤]`;
     }
   }
 
@@ -305,17 +307,26 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     }
   }
 
-  const textoLimpio = replyText
+  let textoLimpio = replyText
     .replace(/\[SOLICITA_HUMANO\]/g, '')
     .replace(/\[BOTON:\s*[^\]]+\]/g, '')
     .replace(/\[DESPLEGABLE:\s*[^\]]+\]/g, '')
     .trim();
 
+  // Si hay lista desplegable pero el texto no menciona los productos, los anexamos explícitamente para que el usuario los vea
+  if (secciones && secciones[0]?.rows?.length > 0 && !textoLimpio.includes('$') && !textoLimpio.includes('1️⃣')) {
+    const listado = secciones[0].rows.map((r, i) => `${i + 1}️⃣ *${r.title}*`).join('\n');
+    textoLimpio = `${textoLimpio}\n\n${listado}\n\n¿Cuál de estos te gustaría ordenar?`;
+  }
+
+  // Filtrar para que la respuesta de ver menú NUNCA contenga el botón "Ver Menú"
+  const botonesLimpios = botones.filter(b => !b.toLowerCase().includes('ver menú') && !b.toLowerCase().includes('ver menu'));
+
   return {
     ok: true,
     texto: textoLimpio,
     solicitaHumano,
-    botones: botones.length > 0 ? botones : (secciones ? [] : ['Ver Menú', 'Hacer Pedido', 'Hablar con Asesor']),
+    botones: botonesLimpios.length > 0 ? botonesLimpios : ['Hacer Pedido', 'Estado de Pedido', 'Hablar con Asesor'],
     listButtonText,
     secciones
   };
