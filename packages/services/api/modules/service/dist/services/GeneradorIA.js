@@ -118,10 +118,12 @@ Atendés a ${nombreCliente || 'el cliente'} representando a "${marca}" de forma 
    - **Confirmación de Entrega por el Cliente ("Ya recibí el pedido")**: Responde con alegría y gratitud.
    - **Reclamos o Incidencias ("Me llegó mal", "Me faltó un producto")**: Muestra disculpas sinceras e incluye la etiqueta [SOLICITA_HUMANO] para transferir a soporte humano.
 
-11. **Mensaje de Términos, Privacidad y Bienvenida (Consentimiento de Opt-In):**
+11. **Bienvenida Fluida y Privacidad Natural (Sin Fricción):**
     - Cuando un cliente saluda por primera vez o inicia conversación:
-      * Saluda cordialmente y presenta la política de privacidad y valor del servicio: *"¡Hola ${clienteNombreRef}! En ${marca} siempre buscamos formas de ayudarte a encontrar los mejores productos y antojos. 🔒 Ten en cuenta que tu información está segura con nosotros. Nunca la compartiremos con nadie. 🚀 ¿Listo para aprender más y realizar tu pedido?"*
-      * Incluye SIEMPRE los botones de consentimiento directo de 1-tap: [BOTON: Sí, ¡por favor!] [BOTON: No].
+      * Saluda con calidez y energía comercial: *"¡Hola ${clienteNombreRef}! Bienvenido(a) a ${marca}. 🍔 ¿Qué se te antoja ordenar hoy o en qué te podemos ayudar?"*
+      * Al final del mensaje incluye de forma sutil la nota de tratamiento de datos sin bloquear al usuario: "_(Al ordenar aceptas nuestras políticas de privacidad y datos)_".
+      * Presenta botones limpios de acción inmediata (máximo 20 caracteres cada uno): [BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤].
+      * NUNCA pongas una muralla de "¿Listo para aprender más? [Sí/No]". El cliente vino a pedir o consultar, no a llenar encuestas legales.
 
 12. **Tarjetas de Producto Visuales (Fichas con Imagen y Acciones):**
     - Cuando el cliente pida ver un producto en detalle o recomendaciones:
@@ -237,14 +239,14 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     const textLower = (mensajeTextoLimpio || '').toLowerCase().trim();
 
     if (textLower === 'hola' || textLower === 'buenas' || textLower === 'inicio' || textLower === 'saludo' || (Array.isArray(historial) && historial.length === 0)) {
-      replyText = `¡Hola ${clienteNombreRef}! En ${marca} siempre buscamos formas de ayudarte a encontrar los mejores productos y antojos. 🔒 Ten en cuenta que tu información está segura con nosotros. Nunca la compartiremos con nadie. 🚀 ¿Listo para aprender más y realizar tu pedido?\n\n[BOTON: Sí, ¡por favor!] [BOTON: No]`;
+      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. 🍔 ¿Qué se te antoja pedir hoy?\n\nExplora nuestro menú para empezar o pregúntame lo que necesites.\n\n_(Al ordenar aceptas nuestras políticas de privacidad)_\n\n[BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('sí') || textLower.includes('si') || textLower.includes('favor') || textLower.includes('aceptar') || textLower.includes('conforme')) {
       let categoriasStr = 'Pizza, Pasta, Postres, Bebidas';
       if (Array.isArray(catalogo) && catalogo.length > 0) {
         const nombres = catalogo.map(c => c.nombre || c.id).slice(0, 5);
         if (nombres.length > 0) categoriasStr = nombres.join(', ');
       }
-      replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te damos la bienvenida a ${marca}. Explora nuestro menú interactivo o cuéntanos qué deseas pedir hoy:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+      replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te muestro nuestras opciones de ${marca}. ¿Qué deseas pedir hoy?\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('menú') || textLower.includes('menu') || textLower.includes('carta') || textLower.includes('catálogo') || textLower.includes('catalogo')) {
       const itemsList = (Array.isArray(catalogo) && catalogo.length > 0)
         ? catalogo
@@ -270,7 +272,7 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
         replyText = `Hola ${clienteNombreRef}, no encontramos pedidos anteriores registrados en tu cuenta.\n\n[BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
       }
     } else if (textLower.includes('no entiendo') || textLower.includes('confunde') || textLower.includes('frustrado') || textLower.includes('irme') || textLower.includes('ayuda')) {
-      replyText = `Entiendo perfectamente, ${clienteNombreRef}. Te lo simplifico al instante:\n\n1. Elige qué producto deseas de nuestro catálogo.\n2. Indícanos tu dirección de entrega.\n3. Te enviamos el resumen y el link de pago seguro.\n\n¿Deseas que un asesor humano te atienda personalmente por aquí?\n\n[BOTON: Hacer Pedido 🛒] [BOTON: Hablar con Asesor 👤]`;
+      replyText = `Entiendo perfectamente, ${clienteNombreRef}. Te lo simplifico al instante:\n\n1. Elige qué producto deseas de nuestro catálogo.\n2. Indícanos tu dirección de entrega.\n3. Te enviamos el resumen y el link de pago seguro.\n\n¿Deseas que un asesor humano te atienda personalmente por aquí?\n\n[BOTON: Ver Menú 📜] [BOTON: Hablar con Asesor 👤]`;
     } else if (textLower.includes('hamburguesa') || textLower.includes('combo') || textLower.includes('papa') || textLower.includes('gaseosa') || textLower.includes('postre') || textLower.includes('cheesecake') || textLower === '1' || textLower === '2' || textLower === '3' || textLower === '4' || textLower.includes('comprar')) {
       replyText = `¡Excelente elección, ${clienteNombreRef}! 🎉\n\n🍔 *Combo Hamburguesa Clásica*\nPrecio: *$25.000*\nIncluye: Carne 100% de res, queso cheddar fundido, papas rústicas y salsa de la casa.\n\n¿Deseas confirmar este pedido a tu dirección?\n\n[BOTON: Confirmar Pedido ✅] [BOTON: Cambiar Producto ✏️] [BOTON: Cancelar ❌]`;
     } else if (textLower.includes('confirmar') || textLower.includes('confirmar pedido')) {
@@ -291,12 +293,17 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
 
   const solicitaHumano = replyText.includes('[SOLICITA_HUMANO]');
   
-  // Extract interactive buttons [BOTON: Titulo]
+  // Extract interactive buttons [BOTON: Titulo] (max 3 buttons, max 20 chars each per WhatsApp Cloud API)
   const botones = [];
   const botonRegex = /\[BOTON:\s*([^\]]+)\]/g;
   let match;
   while ((match = botonRegex.exec(replyText)) !== null) {
-    if (match[1]) botones.push(match[1].trim());
+    if (match[1]) {
+      const titulo = match[1].trim().slice(0, 20);
+      if (titulo && !botones.includes(titulo)) {
+        botones.push(titulo);
+      }
+    }
   }
 
   // Extract interactive dropdown list [DESPLEGABLE: BotonTexto | Op1, Op2, Op3]
@@ -331,14 +338,21 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     textoLimpio = `${textoLimpio}\n\n${listado}\n\n¿Cuál de estos te gustaría ordenar?`;
   }
 
-  // Filtrar para que la respuesta de ver menú NUNCA contenga el botón "Ver Menú"
-  const botonesLimpios = botones.filter(b => !b.toLowerCase().includes('ver menú') && !b.toLowerCase().includes('ver menu'));
+  // Filtrar para que la respuesta de ver menú NUNCA contenga el botón redundante "Ver Menú"
+  const esRespuestaDeMenu = !!secciones || (textoLimpio.toLowerCase().includes('menú oficial') || textoLimpio.toLowerCase().includes('aquí tienes nuestro menú'));
+  const botonesFiltrados = esRespuestaDeMenu
+    ? botones.filter(b => !b.toLowerCase().includes('ver menú') && !b.toLowerCase().includes('ver menu'))
+    : botones;
+
+  const botonesFinales = (botonesFiltrados.length > 0 ? botonesFiltrados : ['Ver Menú 📜', 'Hablar con Asesor 👤'])
+    .map(b => b.trim().slice(0, 20))
+    .slice(0, 3);
 
   return {
     ok: true,
     texto: textoLimpio,
     solicitaHumano,
-    botones: botonesLimpios.length > 0 ? botonesLimpios : ['Hacer Pedido', 'Estado de Pedido', 'Hablar con Asesor'],
+    botones: botonesFinales,
     listButtonText,
     secciones
   };
