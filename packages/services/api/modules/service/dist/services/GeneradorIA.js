@@ -162,7 +162,7 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
   let replyText = '';
 
   const url = `${endpoint.replace(/\/$/, '')}/openai/deployments/${deployment}/chat/completions?api-version=2024-08-01-preview`;
-  for (let intento = 1; intento <= 4; intento++) {
+  for (let intento = 1; intento <= 2; intento++) {
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -184,12 +184,11 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
       } else {
         const errText = await res.text();
         console.warn(`[GeneradorIA] Warning/RateLimit Azure OpenAI (Intento ${intento}):`, res.status, errText);
-        if (res.status === 429 && intento < 4) {
-          await new Promise(r => setTimeout(r, 5000 * intento));
-        }
+        if (res.status === 429) break; // Si hay 429, no bloquear con retardo largo y pasar al fallback rápido
       }
     } catch (err) {
       console.warn('[GeneradorIA] Excepción Azure OpenAI:', err.message);
+      break;
     }
   }
 
@@ -223,8 +222,33 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     }
   }
 
+  // Generación Inteligente Local en caso de indisponibilidad de la API de IA
   if (!replyText) {
-    replyText = `¡Hola ${clienteNombreRef}! 😊 Estoy recibiendo muchas consultas en este momento. Por favor dime qué deseas pedir o elige una de las opciones: [BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+    const textLower = (mensajeTexto || '').toLowerCase().trim();
+
+    if (textLower === 'hola' || textLower === 'buenas' || textLower === 'inicio' || textLower === 'saludo' || (Array.isArray(historial) && historial.length === 0)) {
+      replyText = `¡Hola ${clienteNombreRef}! En ${marca} siempre buscamos formas de ayudarte a encontrar los mejores productos y antojos. 🔒 Ten en cuenta que tu información está segura con nosotros. Nunca la compartiremos con nadie. 🚀 ¿Listo para aprender más y realizar tu pedido?\n\n[BOTON: Sí, ¡por favor!] [BOTON: No]`;
+    } else if (textLower.includes('sí') || textLower.includes('si') || textLower.includes('favor') || textLower.includes('aceptar') || textLower.includes('conforme')) {
+      replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te damos la bienvenida a ${marca}. ¿Qué te gustaría pedir hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+    } else if (textLower.includes('menú') || textLower.includes('menu') || textLower.includes('carta') || textLower.includes('catálogo') || textLower.includes('catalogo')) {
+      let categoriasStr = 'Pizza, Pasta, Postres, Bebidas';
+      if (Array.isArray(catalogo) && catalogo.length > 0) {
+        const nombres = catalogo.map(c => c.nombre || c.id).slice(0, 5);
+        if (nombres.length > 0) categoriasStr = nombres.join(', ');
+      }
+      replyText = `¡Claro ${clienteNombreRef}! Aquí tienes nuestro menú interactivo de opciones disponibles en ${marca}:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+    } else if (textLower.includes('estado') || textLower.includes('pedido') || textLower.includes('dónde') || textLower.includes('donde')) {
+      if (Array.isArray(pedidosActivos) && pedidosActivos.length > 0) {
+        const resumen = pedidosActivos.map(p => `• Pedido #${p.numero}: ${p.estado}`).join('\n');
+        replyText = `Hola ${clienteNombreRef}, aquí tienes el estado de tus pedidos activos:\n${resumen}\n\n[BOTON: Ver Menú] [BOTON: Hablar con Asesor]`;
+      } else {
+        replyText = `Hola ${clienteNombreRef}, no tienes ningún pedido activo registrado en este momento.\n\n[BOTON: Ver Menú] [BOTON: Hacer Pedido] [BOTON: Hablar con Asesor]`;
+      }
+    } else if (textLower.includes('asesor') || textLower.includes('humano') || textLower.includes('soporte') || textLower.includes('ayuda')) {
+      replyText = `Entendido ${clienteNombreRef}. En este momento te comunico con uno de nuestros asesores para atenderte personalmente. [SOLICITA_HUMANO]`;
+    } else {
+      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+    }
   }
 
   const solicitaHumano = replyText.includes('[SOLICITA_HUMANO]');
