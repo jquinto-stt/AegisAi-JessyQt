@@ -240,25 +240,38 @@ ${Array.isArray(pedidosActivos) && pedidosActivos.length > 0
     if (textLower === 'hola' || textLower === 'buenas' || textLower === 'inicio' || textLower === 'saludo' || (Array.isArray(historial) && historial.length === 0)) {
       replyText = `¡Hola ${clienteNombreRef}! En ${marca} siempre buscamos formas de ayudarte a encontrar los mejores productos y antojos. 🔒 Ten en cuenta que tu información está segura con nosotros. Nunca la compartiremos con nadie. 🚀 ¿Listo para aprender más y realizar tu pedido?\n\n[BOTON: Sí, ¡por favor!] [BOTON: No]`;
     } else if (textLower.includes('sí') || textLower.includes('si') || textLower.includes('favor') || textLower.includes('aceptar') || textLower.includes('conforme')) {
-      replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te damos la bienvenida a ${marca}. ¿Qué te gustaría pedir hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+      let categoriasStr = 'Pizza, Pasta, Postres, Bebidas';
+      if (Array.isArray(catalogo) && catalogo.length > 0) {
+        const nombres = catalogo.map(c => c.nombre || c.id).slice(0, 5);
+        if (nombres.length > 0) categoriasStr = nombres.join(', ');
+      }
+      replyText = `¡Excelente ${clienteNombreRef}! 🎉 Te damos la bienvenida a ${marca}. Explora nuestro menú interactivo o cuéntanos qué deseas pedir hoy:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
     } else if (textLower.includes('menú') || textLower.includes('menu') || textLower.includes('carta') || textLower.includes('catálogo') || textLower.includes('catalogo')) {
       let categoriasStr = 'Pizza, Pasta, Postres, Bebidas';
       if (Array.isArray(catalogo) && catalogo.length > 0) {
         const nombres = catalogo.map(c => c.nombre || c.id).slice(0, 5);
         if (nombres.length > 0) categoriasStr = nombres.join(', ');
       }
-      replyText = `¡Claro ${clienteNombreRef}! Aquí tienes nuestro menú interactivo de opciones disponibles en ${marca}:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+      replyText = `¡Claro ${clienteNombreRef}! Toca abajo la lista desplegable «Ver el menú» para elegir tu categoría en ${marca}:\n\n[DESPLEGABLE: Ver el menú | ${categoriasStr}]\n\n[BOTON: Hacer Pedido] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+    } else if (textLower.includes('pizza') || textLower.includes('pasta') || textLower.includes('postre') || textLower.includes('bebida') || textLower.includes('opt_') || textLower.includes('hacer pedido') || textLower.includes('comprar')) {
+      let prodNombre = 'Pizza Pepperoni';
+      let prodPrecio = '25.000';
+      if (Array.isArray(catalogo) && catalogo.length > 0) {
+        prodNombre = catalogo[0].nombre || catalogo[0].id || prodNombre;
+        if (catalogo[0].precio) prodPrecio = Number(catalogo[0].precio).toLocaleString('es-CO');
+      }
+      replyText = `¡Excelente elección ${clienteNombreRef}! 🍕 Ficha del producto disponible en ${marca}:\n\n*${prodNombre}*\nPrecio: *$${prodPrecio}*\nPreparación fresca e ingredientes seleccionados.\n\n[BOTON: Comprar] [BOTON: Ver más] [BOTON: Hablar con Asesor]`;
     } else if (textLower.includes('estado') || textLower.includes('pedido') || textLower.includes('dónde') || textLower.includes('donde')) {
       if (Array.isArray(pedidosActivos) && pedidosActivos.length > 0) {
         const resumen = pedidosActivos.map(p => `• Pedido #${p.numero}: ${p.estado}`).join('\n');
-        replyText = `Hola ${clienteNombreRef}, aquí tienes el estado de tus pedidos activos:\n${resumen}\n\n[BOTON: Ver Menú] [BOTON: Hablar con Asesor]`;
+        replyText = `Hola ${clienteNombreRef}, aquí tienes el estado de tus pedidos activos:\n${resumen}\n\n[BOTON: Hacer Pedido] [BOTON: Hablar con Asesor]`;
       } else {
         replyText = `Hola ${clienteNombreRef}, no tienes ningún pedido activo registrado en este momento.\n\n[BOTON: Ver Menú] [BOTON: Hacer Pedido] [BOTON: Hablar con Asesor]`;
       }
     } else if (textLower.includes('asesor') || textLower.includes('humano') || textLower.includes('soporte') || textLower.includes('ayuda')) {
       replyText = `Entendido ${clienteNombreRef}. En este momento te comunico con uno de nuestros asesores para atenderte personalmente. [SOLICITA_HUMANO]`;
     } else {
-      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Ver Menú] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
+      replyText = `¡Hola ${clienteNombreRef}! Te doy la bienvenida a ${marca}. ¿En qué te podemos colaborar hoy?\n\n[DESPLEGABLE: Ver el menú | Pizza, Pasta, Postres, Bebidas]\n\n[BOTON: Hacer Pedido] [BOTON: Estado de Pedido] [BOTON: Hablar con Asesor]`;
     }
   }
 
