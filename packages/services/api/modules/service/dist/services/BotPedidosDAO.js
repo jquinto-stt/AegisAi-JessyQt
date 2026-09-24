@@ -935,6 +935,9 @@ export async function procesarEntrante(m, deps = {}) {
     const envio = await enviar(m.zernioConversationId, m.accountId, textoFinal, {
         replyTo: m.plataformaMessageId || m.wamidCitables || undefined,
         botones: decision.botones,
+        secciones: decision.secciones,
+        listButtonText: decision.listButtonText,
+        interactive: decision.interactive,
     });
     if (!envio.ok) {
         // El handoff SÍ se aplica aunque el envío falle: si el bot no pudo hablar,
