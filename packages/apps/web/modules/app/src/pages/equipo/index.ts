@@ -1,14 +1,15 @@
 /**
- * Módulo transversal "Equipo y Roles" (Organización).
+ * Módulo transversal "Equipo y perfiles" (Organización).
  *
  * Gestiona personas con un rol (y sus excepciones) con capacidades atómicas.
  *
- * `EquipoTab` y `ModulosTab` son PESTAÑAS de `/configuracion`, no páginas: se
- * exportan desde aquí porque es donde viven sus archivos, no porque su sitio
- * conceptual sea este. `PerfilOperadorPage` sí sigue siendo una página con ruta
- * propia (`/equipo/:id`).
+ * `EquipoPage` es una PÁGINA con ruta propia (`/equipo`), hermana de
+ * Configuración de la organización en el menú lateral. `ModulosTab` sigue siendo
+ * una pestaña de `/configuracion`, porque encender un módulo es un ajuste de una
+ * vez, no una tarea recurrente. `PerfilOperadorPage` también es página
+ * (`/equipo/:id`).
  */
-export { EquipoTab } from "./EquipoPage";
+export { EquipoPage } from "./EquipoPage";
 export { PerfilOperadorPage } from "./PerfilOperadorPage";
 export { ModulosTab } from "./ConfiguracionModulosPage";
 

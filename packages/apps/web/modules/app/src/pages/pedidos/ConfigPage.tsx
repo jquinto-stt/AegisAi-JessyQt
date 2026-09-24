@@ -55,12 +55,21 @@ const MODALIDAD_INFO: Record<Modalidad, { label: string; desc: string }> = {
   },
 };
 
-const ESTADOS_CONFIG: { id: EstadoConfigurable; label: string }[] = [
-  { id: "nuevo", label: "Nuevo" },
-  { id: "confirmado", label: "Confirmado" },
-  { id: "en_preparacion", label: "En preparación" },
-  { id: "listo", label: "Listo" },
-  { id: "en_camino", label: "En camino" },
+/**
+ * Los cinco estados cuyo nombre el negocio puede reescribir.
+ *
+ * La etiqueta se lee de `pedidosStore.estadoLabel()`, que ya resuelve alias y
+ * columnas personalizadas. Aquí vivía una tercera copia literal de las cinco
+ * etiquetas, en paralelo a `ESTADO_LABEL` del store y a las que pinta el
+ * tablero: el sitio natural para desincronizarse, porque es la pantalla donde
+ * el usuario ESCRIBE esos nombres.
+ */
+const ESTADOS_CONFIG: EstadoConfigurable[] = [
+  "nuevo",
+  "confirmado",
+  "en_preparacion",
+  "listo",
+  "en_camino",
 ];
 
 const DIAS_SEMANA: { d: number; label: string; largo: string }[] = [
@@ -544,19 +553,25 @@ export const ConfigPage = observer(() => {
                         Estados en tablero
                       </h3>
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                        {ESTADOS_CONFIG.map(({ id, label }) => (
-                          <div key={id}>
-                            <Label htmlFor={`alias-e-${id}`} className="text-xs">
-                              {label}
-                            </Label>
-                            <Input
-                              id={`alias-e-${id}`}
-                              placeholder={label}
-                              value={draft.aliasEstados[id] ?? ""}
-                              onChange={(e) => setAliasEstado(id, e.target.value)}
-                            />
-                          </div>
-                        ))}
+                        {ESTADOS_CONFIG.map((id) => {
+                          // La etiqueta de referencia es la del store: si el
+                          // negocio ya renombró un estado, el campo muestra SU
+                          // nombre como referencia y no el del sistema.
+                          const label = pedidosStore.estadoLabel(id);
+                          return (
+                            <div key={id}>
+                              <Label htmlFor={`alias-e-${id}`} className="text-xs">
+                                {label}
+                              </Label>
+                              <Input
+                                id={`alias-e-${id}`}
+                                placeholder={label}
+                                value={draft.aliasEstados[id] ?? ""}
+                                onChange={(e) => setAliasEstado(id, e.target.value)}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -747,25 +762,28 @@ export const ConfigPage = observer(() => {
                   </p>
 
                   <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                    {ESTADOS_CONFIG.map(({ id, label }) => (
-                      <div key={id}>
-                        <Label htmlFor={`sla-${id}`} className="text-xs">
-                          {label}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={`sla-${id}`}
-                            type="number"
-                            min="0"
-                            value={draft.tiemposObjetivo[id] ?? 0}
-                            onChange={(e) => setTiempoObjetivo(id, Math.max(0, Number(e.target.value) || 0))}
-                            className="text-right font-semibold"
-                            aria-label={`Minutos objetivo ${label}`}
-                          />
-                          <span className="text-xs font-medium text-gray-400">min</span>
+                    {ESTADOS_CONFIG.map((id) => {
+                      const label = pedidosStore.estadoLabel(id);
+                      return (
+                        <div key={id}>
+                          <Label htmlFor={`sla-${id}`} className="text-xs">
+                            {label}
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id={`sla-${id}`}
+                              type="number"
+                              min="0"
+                              value={draft.tiemposObjetivo[id] ?? 0}
+                              onChange={(e) => setTiempoObjetivo(id, Math.max(0, Number(e.target.value) || 0))}
+                              className="text-right font-semibold"
+                              aria-label={`Minutos objetivo ${label}`}
+                            />
+                            <span className="text-xs font-medium text-gray-400">min</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </Card>
               </div>

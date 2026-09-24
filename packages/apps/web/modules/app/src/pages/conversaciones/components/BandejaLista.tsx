@@ -5,7 +5,7 @@ import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon } from "@/icons";
 import { retardoEscalonado } from "@/utils";
-import { conversacionesStore } from "@/stores/conversaciones.store";
+import { conversacionesStore, etiquetaEstado } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import type { FiltroBandeja, FiltroIntencion } from "@/stores/conversaciones.types";
 import {
@@ -246,9 +246,14 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                           {INTENCION_LABEL[intencion]}
                         </Badge>
                         {conversacionesStore.requiereAtencionHumana(conv) && (
-                          <span title="Requiere atención humana">
+                          // El rótulo es el del ESTADO, no una palabra propia de
+                          // esta lista. Decía «Asesor» mientras el filtro de
+                          // arriba decía «Requieren atención» y el badge del
+                          // historial decía «En espera»: tres nombres para el
+                          // mismo estado en la misma pantalla.
+                          <span title={etiquetaEstado("en_espera")}>
                             <Badge size="xs" color="warning">
-                              Asesor
+                              {etiquetaEstado("en_espera")}
                             </Badge>
                           </span>
                         )}

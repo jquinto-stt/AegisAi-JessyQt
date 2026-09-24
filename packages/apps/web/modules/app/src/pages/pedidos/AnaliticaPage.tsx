@@ -14,7 +14,7 @@ import { Input } from "@/elements/form/input";
 import { Select } from "@/elements/form/select";
 import { DatePicker } from "@/elements/form/date-picker";
 import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, MoreDotIcon, CalenderIcon, ShootingStarIcon } from "@/icons";
-import { uiStore, pedidosStore } from "@/stores";
+import { uiStore, pedidosStore, ETIQUETA_PAGO } from "@/stores";
 import { puede } from "@/stores/acceso.utils";
 import { retardoEscalonado } from "@/utils";
 import type { PedidoEstado } from "@/stores";
@@ -454,7 +454,10 @@ export const AnaliticaPage = observer(() => {
   const donutOptions: ApexOptions = {
     chart: { type: "donut", fontFamily: "Outfit, Inter, system-ui, sans-serif" },
     colors: [COLOR_PAGO.pagado, COLOR_PAGO.pendiente],
-    labels: ["Pagado", "Pendiente"],
+    // Las etiquetas del pago salen de la constante del store, no de literales:/n    // el mismo hueco se rotulaba «Pendiente» aquí y «Pendiente de pago» en el
+    // tablero. «Pendiente» a secas está tomado por el estado del hilo y por la
+    // etapa del CRM, así que el gráfico no puede reutilizarlo.
+    labels: [ETIQUETA_PAGO.pagado, ETIQUETA_PAGO.sinPagar],
     plotOptions: { pie: { donut: { size: "74%" } } },
     dataLabels: { enabled: false },
     stroke: { width: 0 },
@@ -471,14 +474,14 @@ export const AnaliticaPage = observer(() => {
   const leyendaPago = [
     {
       clave: "pagado",
-      etiqueta: "Pagado",
+      etiqueta: ETIQUETA_PAGO.pagado,
       color: COLOR_PAGO.pagado,
       total: porPago.pagado,
       cuota: cuotasPago[0] ?? 0,
     },
     {
       clave: "pendiente",
-      etiqueta: "Pendiente",
+      etiqueta: ETIQUETA_PAGO.sinPagar,
       color: COLOR_PAGO.pendiente,
       total: porPago.pendiente,
       cuota: cuotasPago[1] ?? 0,

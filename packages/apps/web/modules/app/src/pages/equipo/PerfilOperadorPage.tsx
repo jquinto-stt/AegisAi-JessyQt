@@ -96,7 +96,7 @@ export const PerfilOperadorPage = observer(() => {
               Puede que se haya eliminado de la organización.
             </p>
             <Link
-              to="/configuracion?tab=equipo"
+              to="/equipo"
               className="mt-4 inline-block text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
             >
               Volver al equipo
@@ -287,7 +287,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
     if (confirmacion === "eliminar") {
       operadoresStore.eliminar(op.id);
       cerrarConfirmacion();
-      navigate("/configuracion?tab=equipo");
+      navigate("/equipo");
       return;
     }
     if (confirmacion === "suspender") operadoresStore.desactivar(op.id);
@@ -320,7 +320,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
       {/* Navegación hacia atrás */}
       <Link
-        to="/configuracion?tab=equipo"
+        to="/equipo"
         className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
@@ -564,7 +564,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               className="border-error-200 text-error-600 hover:bg-error-50 dark:border-error-800 dark:text-error-400"
               onClick={() => {
                 operadoresStore.rechazar(op.id);
-                navigate("/configuracion?tab=equipo");
+                navigate("/equipo");
               }}
             >
               Rechazar

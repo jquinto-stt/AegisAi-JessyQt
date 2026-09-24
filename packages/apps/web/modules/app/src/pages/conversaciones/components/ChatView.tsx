@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon, EyeIcon, ArrowRightIcon } from "@/icons";
-import { conversacionesStore } from "@/stores/conversaciones.store";
+import { conversacionesStore, etiquetaEstado, ETIQUETA_RESOLVER } from "@/stores/conversaciones.store";
 import {
   claseSegmentoActivo,
   claseSegmentoInactivo,
@@ -64,8 +64,33 @@ export const ChatView = observer(({
   // los módulos conectados al asistente.
   const [vista, setVista] = useState<VistaChat>("conversacion");
 
+  // Paginación y control de scroll
+  const [limiteMensajes, setLimiteMensajes] = useState(25);
+  const [mostrarBotonBajar, setMostrarBotonBajar] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const conv = conversacionesStore.getConversacion(convId);
   const items = conversacionesStore.lineaDeTiempo(convId);
+
+  const itemsVisibles = items.slice(-limiteMensajes);
+  const hayMasMensajes = items.length > limiteMensajes;
+
+  // Auto-scroll al final cuando entra un mensaje o cambia la conversación
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [convId, items.length]);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const estaLejosDelFinal = scrollHeight - scrollTop - clientHeight > 150;
+    setMostrarBotonBajar(estaLejosDelFinal);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   // ── Pestañas de contexto ─────────────────────────────────────────────────
   //
@@ -227,11 +252,12 @@ export const ChatView = observer(({
                   }}
                   className="text-xs text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
                 >
-                  Cerrar conversación
+                  {/* El mismo rótulo que el historial: es la misma acción. */}
+                  {ETIQUETA_RESOLVER}
                 </DropdownItem>
               ) : (
                 <div className="px-3 py-1.5 text-xs text-gray-400">
-                  Conversación cerrada
+                  {etiquetaEstado("cerrada")}
                 </div>
               )}
             </Dropdown>
@@ -277,8 +303,22 @@ export const ChatView = observer(({
       <div
         role="tabpanel"
         aria-label="Conversación"
-        className="flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6"
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="relative flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6"
       >
+        {hayMasMensajes && (
+          <div className="flex justify-center py-2">
+            <button
+              type="button"
+              onClick={() => setLimiteMensajes((prev) => prev + 25)}
+              className="rounded-full bg-brand-50 border border-brand-200 px-4 py-1.5 text-xs font-semibold text-brand-600 shadow-xs hover:bg-brand-100 transition-colors dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-400"
+            >
+              ↑ Cargar {items.length - limiteMensajes} mensajes anteriores
+            </button>
+          </div>
+        )}
+
         {items.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <p className="rounded-full bg-gray-100 px-4 py-2 text-center text-xs text-gray-400 dark:bg-white/5 dark:text-gray-500">
@@ -286,7 +326,7 @@ export const ChatView = observer(({
             </p>
           </div>
         ) : (
-          items.map((item) => {
+          itemsVisibles.map((item) => {
             // Cada ítem entra con `animate-entrada-lista` (fundido + 6 px de subida).
             // Sin escalonado a propósito: en un chat los mensajes no llegan juntos, y
             // retrasarlos por índice haría que el último en llegar esperase medio segundo
@@ -452,6 +492,16 @@ export const ChatView = observer(({
               </div>
             );
           })
+        )}
+        <div ref={messagesEndRef} />
+        {mostrarBotonBajar && (
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
+          >
+            ↓ Nuevos mensajes
+          </button>
         )}
       </div>
       ) : (

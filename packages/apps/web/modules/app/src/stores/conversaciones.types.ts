@@ -9,8 +9,50 @@
 
 // ── Identificadores y enumeraciones ──────────────────────────────────────────
 
-/** Estado del hilo de conversación (máquina de estados del handoff). */
+// ── LA MÁQUINA DE ESTADOS DEL HILO ───────────────────────────────────────────
+//
+// Un hilo de conversación tiene CUATRO estados y ni uno más. Este tipo es el
+// ÚNICO vocabulario de estado del hilo en todo el frontend: no se declara un
+// quinto valor en ninguna vista, ni se cubre un estado con una cadena suelta.
+//
+//   abierta   ── el bot lo lleva y nadie lo ha reclamado
+//   en_espera ── el cliente PIDIÓ un asesor y aún nadie lo ha tomado
+//   atendida  ── un operador lo está trabajando
+//   cerrada   ── resuelto; es el ÚNICO terminal
+//
+// Transiciones (los cuatro verbos del store, y no hay más):
+//
+//   solicitarHumano()  abierta   → en_espera     (el cliente pide un humano)
+//   tomar()            abierta   → atendida      (un operador lo reclama)
+//                      en_espera → atendida
+//   devolver()         atendida  → abierta       (vuelve al bot)
+//   cerrar()           *        → cerrada        (resuelto)
+//
+// Los tres predicados de lectura —`estaResuelta` / `estaPendiente` /
+// `estaEnProgreso` en el store— son exhaustivos y mutuamente excluyentes sobre
+// este tipo: cada hilo cae en exactamente uno. Cualquier selector nuevo que
+// necesite preguntar «¿requiere atención?» debe ser una RESTRICCIÓN de uno de
+// esos tres (`en_espera`) y no una partición paralela; ver
+// `requiereAtencionHumana` en el store para el porqué de ese matiz.
+//
+// El vocabulario de PRESENTACIÓN de estos cuatro valores (etiqueta, color de
+// badge y punto de presencia) vive en un solo sitio:
+// `ESTADO_CONVERSACION_META` en `@/stores/conversaciones.store`. Ninguna
+// superficie escribe la etiqueta como literal.
+/**
+ * Estado del hilo de conversación (máquina de estados del handoff).
+ *
+ * @see La máquina de estados del hilo, arriba, para las transiciones válidas.
+ */
 export type EstadoConversacion = "abierta" | "en_espera" | "atendida" | "cerrada";
+
+/**
+ * Presencia del contacto en la lista, derivada del estado del hilo.
+ *
+ * Es una VISTA del estado, no un eje propio: se deriva de `EstadoConversacion`
+ * con `presenciaDe()` y no se almacena ni se escribe a mano en una fila.
+ */
+export type PresenciaContacto = "online" | "busy" | "offline";
 
 /** Quién atiende ahora mismo la conversación. */
 export type ModoAtencion = "bot" | "humano";

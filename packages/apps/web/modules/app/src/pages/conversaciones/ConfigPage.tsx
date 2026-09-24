@@ -32,6 +32,7 @@ import {
   pedidosStore,
   uiStore,
   ATENCION_LABEL,
+  etiquetaEstado,
   MODULOS_INTEGRABLES,
   ORDEN_MODULOS_INTEGRABLES,
   type ModuloIntegrable,
@@ -541,12 +542,17 @@ export const ConfigPage = observer(() => {
 
                       <div className={filaBase}>
                         <Label2
-                          titulo="Clientes esperando"
+                          titulo={`Hilos ${etiquetaEstado("en_espera").toLowerCase()}`}
                           descripcion="Hilos que pidieron un asesor humano y siguen sin respuesta."
                         />
                         {/* Selector del store, no un conteo en la vista. Es el
                             MISMO valor que muestra la tarjeta de Inicio: si se
-                            contara aquí, dos superficies podrían discrepar. */}
+                            contara aquí, dos superficies podrían discrepar.
+
+                            El rótulo usa la etiqueta CANÓNICA del estado en vez
+                            de «Clientes esperando», que era un cuarto nombre
+                            para el mismo `en_espera`. Así la cifra del filtro,
+                            la del badge y la de esta fila dicen lo mismo. */}
                         <Badge
                           color={
                             conversacionesStore.totalRequierenAtencion > 0 ? "warning" : "success"

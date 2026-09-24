@@ -30,11 +30,18 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   const puedeResponder = puedeResponderConversacion();
   const excedido = texto.length > LIMITE_TEXTO;
   const vacio = texto.trim() === "";
-  const puedeEnviar = puedeResponder && !esModoBot && !vacio && !excedido;
+  // `enviando` bloquea el botón mientras el mensaje va camino de WhatsApp: sin
+  // esto, dos Enters seguidos mandan el mensaje dos veces y le cuestan al
+  // cliente dos notificaciones por un solo texto.
+  const enviando = conversacionesStore.enviandoMensaje;
+  const puedeEnviar = puedeResponder && !esModoBot && !vacio && !excedido && !enviando;
 
   const enviar = () => {
     if (!puedeEnviar) return;
-    conversacionesStore.enviarComoNegocio(convId, texto);
+    void conversacionesStore.enviarComoNegocio(convId, texto);
+    // El campo se vacía al momento: el texto ya está en vuelo y el aviso de
+    // fallo aparece debajo. Dejarlo puesto invitaría a un segundo Enter que
+    // enviaría lo mismo otra vez.
     setTexto("");
   };
 
@@ -142,6 +149,30 @@ export const Composer = observer(({ convId }: { convId: string }) => {
         <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
           La atención la lleva el bot. Pulsa «Tomar chat» para responder tú.
         </p>
+      )}
+
+      {/* El envío NO llegó a WhatsApp. Es el aviso que faltaba: antes el mensaje
+          se pintaba en el hilo igual, así que el operador creía haber respondido
+          y el cliente nunca lo leyó. */}
+      {conversacionesStore.ultimoErrorEnvio && (
+        <div
+          role="alert"
+          className="mt-1.5 flex items-start gap-2 rounded-lg border border-red-300/60 bg-red-50 px-2.5 py-1.5 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200/90"
+        >
+          <span className="mt-px shrink-0" aria-hidden="true">
+            ⚠
+          </span>
+          <span className="flex-1">{conversacionesStore.ultimoErrorEnvio}</span>
+          <button
+            type="button"
+            onClick={() => {
+              conversacionesStore.ultimoErrorEnvio = null;
+            }}
+            className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+          >
+            Descartar
+          </button>
+        </div>
       )}
     </div>
   );

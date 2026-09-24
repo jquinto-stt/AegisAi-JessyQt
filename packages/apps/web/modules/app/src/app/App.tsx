@@ -10,7 +10,7 @@ import {
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
-import { PerfilOperadorPage } from "@/pages/equipo";
+import { PerfilOperadorPage, EquipoPage } from "@/pages/equipo";
 import {
   InventarioInicioPage,
   ExistenciasPage,
@@ -21,7 +21,7 @@ import {
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
-import { ConversacionesPage, HistorialAtencionPage, ConversacionesConfigPage } from "@/pages/conversaciones";
+import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
@@ -44,10 +44,48 @@ import {
 } from "@/pages/onboarding";
 import ProfilePage from "@/pages/ProfilePage";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
+import { bootstrapConversaciones } from "@/lib/db.bootstrap";
+import { activarModoDemo, modoDemoActivo } from "@/lib/modo-demo";
 
 // Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
 // rutas, antes de la primera pregunta. `bootstrapAssistant` es idempotente.
 bootstrapAssistant();
+
+// Conecta Conversaciones con `necto`: asegura sesión, comprueba la cadena de
+// permisos y hace la primera lectura real. Idempotente (guarda interna, segura
+// bajo el doble montaje de StrictMode).
+//
+// Va aquí y no en el constructor del store a propósito: los stores son
+// singleton de import, así que hacer I/O en el constructor convertiría un
+// `import` en un efecto de red —y un test que importe el store dispararía dos
+// peticiones. Mismo patrón y mismo motivo que `bootstrapAssistant()`.
+//
+// No se espera el resultado: `conversacionesStore.origenDatos` empieza en
+// `seed`, pasa por `cargando` y termina en `real` o vuelve a `seed` con el
+// motivo escrito. La UI decide qué decir con eso; bloquear el primer render
+// dejaría la app en blanco durante la ida y vuelta a la red.
+void bootstrapConversaciones();
+
+// ── Por qué Conversaciones necesita el modo demo y Pedidos no ───────────────
+//
+// `ModuloGuard modulo="conversaciones"` lee `organizacionStore.estaActivo()`,
+// que para este módulo delega en `tieneConectorActivo("whatsapp")`. Y ese
+// conector NO se puede encender suelto: `IdModuloNegocio` es
+// `"pedidos" | "inventario"`, y `tieneConectorActivo` recorre esas claves
+// buscando una con el conector encendido. Con el estado de fábrica (ningún
+// módulo instalado) no hay ninguna clave donde ponerlo.
+//
+// Consecuencia real: con el canal enlazado en `necto.integracion_canal`
+// (`proveedor='whatsapp'`, `conectado=true`) y mensajes del bot ya escritos en
+// `necto.mensaje`, la app redirigía a `/configuracion?tab=modulos` — y el
+// operador concluía «el módulo no está» cuando nadie había escrito la fila
+// local. Ver `@/lib/modo-demo` para el razonamiento completo.
+//
+// Se siembra la pertenencia SOLO si no hay ninguna: en una organización con
+// módulos ya configurados no se toca nada.
+if (modoDemoActivo()) {
+  activarModoDemo();
+}
 
 const RedireccionViendoComo = () => (
   <Navigate
@@ -119,24 +157,30 @@ export default function App() {
         <Route path="/inventario/auditoria" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><AuditoriaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventario/config" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="settings.read"><InventarioConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Organización — UNA sola pantalla de configuración, con tres pestañas
-            (`?tab=general|modulos|equipo`).
+        {/* Organización — DOS pantallas hermanas: configuración de la
+            organización y equipo. Las dos exigen `team.manage`.
+
+            ── Por qué están separadas ──────────────────────────────────────
+            `/configuracion` agrupa lo que se ajusta UNA VEZ: identidad, región
+            y qué módulos están encendidos. `/equipo` agrupa lo que se hace
+            CADA SEMANA: invitar a alguien, aprobar una solicitud, cambiar un
+            rol. Estuvieron unidas como pestañas de una sola pantalla y el
+            usuario las buscaba por separado: enterrar una tarea recurrente
+            dentro de «Configuración» obliga a dos clics y a saber de antemano
+            que está ahí. El sidebar las muestra seguidas.
 
             `/configuracion` es la ruta canónica, frente a las configs por módulo
             (`/pedidos/config`, `/conversaciones/config`, `/asistente/config`).
-            Antes `/configuracion` renderizaba un `PlaceholderPage` vacío mientras
-            la página real vivía en `/organizacion/configuracion`: dos rutas, una
-            de ellas mintiendo.
 
-            `/equipo` era una segunda pantalla con su propia lista de personas. Se
-            retira como página y pasa a ser la pestaña «Equipo y permisos», pero
-            **sigue existiendo como ruta que redirige**: hay enlaces guardados y
-            enlaces internos que apuntan ahí, y romperlos sería cobrarle al usuario
-            una reorganización nuestra. Es un `<Navigate>`, no un duplicado.
-            `/equipo/:id` sí sigue siendo una ruta real: el perfil de una persona
-            es una pantalla con su propia dirección. */}
+            ── Compatibilidad ──────────────────────────────────────────────
+            `/configuracion?tab=equipo` era la pestaña de equipo y ahora
+            redirige a `/equipo` (la guarda vive en `ConfiguracionPage`, porque
+            resolverla aquí exigiría leer el query string en la tabla de rutas).
+            `/configuracion?tab=general` y `?tab=modulos` siguen funcionando.
+            `/equipo/:id` es el perfil de una persona, que se abre desde la
+            tabla de equipo. */}
         <Route path="/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionPage /></CapabilityGuard>} />
-        <Route path="/equipo" element={<Navigate to="/configuracion?tab=equipo" replace />} />
+        <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
         <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
         <Route path="/organizacion/configuracion" element={<Navigate to="/configuracion?tab=modulos" replace />} />
         <Route path="/organizacion/modulos" element={<Navigate to="/configuracion?tab=modulos" replace />} />
@@ -155,6 +199,7 @@ export default function App() {
         {/* Plugin Canales WhatsApp */}
         <Route path="/conversaciones" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/conversaciones/analitica" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><AnaliticaConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/dashboard" element={<Navigate to="/pedidos/inicio" replace />} />
         <Route path="/profile" element={<ProfilePage />} />

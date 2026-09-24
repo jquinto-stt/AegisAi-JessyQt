@@ -8,6 +8,7 @@ import { Modal } from "@/elements/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import {
   pedidosStore,
+  ETIQUETA_PAGO,
   puedeMoverA,
   puedeCancelarPedido,
   puedeEscribirCliente,
@@ -546,7 +547,7 @@ const DetalleModal = observer(
               }}
               className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
             >
-              {pedido.pagado ? "✓ Marcar como Pendiente" : "Marcar como Pagado"}
+              {pedido.pagado ? `Marcar como ${ETIQUETA_PAGO.sinPagar.toLowerCase()}` : `Marcar como ${ETIQUETA_PAGO.pagado.toLowerCase()}`}
             </button>
           </div>
 
@@ -558,9 +559,11 @@ const DetalleModal = observer(
               </span>
             </div>
             <div>
-              <span className="text-gray-400">Estado: </span>
+              {/* «Pago», no «Estado»: el badge de estado del pedido está arriba
+                  y este campo es el estado de PAGO, un eje distinto. */}
+              <span className="text-gray-400">Pago: </span>
               <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
-                {pedido.pagado ? "Pagado" : "Pendiente de pago"}
+                {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
               </span>
             </div>
           </div>

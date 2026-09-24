@@ -14,6 +14,24 @@ outputs/
 tailadmin-free-tailwind-dashboard-template-main/
 copia de la copia/
 
+# ══════════════════════════════════════════════════════════════════════════
+# EXCEPCIÓN DELIBERADA: el dist/ del servicio es la FUENTE DE FACTO del bot
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Esto NO es un artefacto regenerable. Los fuentes TypeScript de estas piezas
+# NO existen en el repo: `ZernioWebhook`, `ZernioDAO`, `BotPedidos`,
+# `BotPedidosDAO` y `ZernioEnvio` solo existen compilados aquí. No hay
+# `tsconfig.json` en el paquete ni script de build.
+#
+# Medido el 22/09/2026: `git clean -xdf` habría borrado el receptor de WhatsApp
+# entero, sin backup ni fuente desde la que recompilarlo. Hasta que esos `.ts`
+# se reconstruyan desde los `.js`+`.d.ts`, este directorio se versiona.
+#
+# NO borrar estas líneas. NO regenerar este `dist/` desde `src/`: fallaría con
+# módulos inexistentes y se llevaría por delante la única copia.
+!packages/services/api/modules/service/dist/
+!packages/services/api/modules/service/dist/**
+
 # Temporary test/audit build outputs
 packages/apps/web/modules/cn-*
 packages/apps/web/modules/hub-*

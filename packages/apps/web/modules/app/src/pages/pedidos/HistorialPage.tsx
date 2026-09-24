@@ -11,7 +11,7 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { DatePicker } from "@/elements/form/date-picker";
-import { pedidosStore, puedeEscribirCliente } from "@/stores";
+import { pedidosStore, ETIQUETA_PAGO, puedeEscribirCliente } from "@/stores";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import type { Pedido } from "@/stores/pedidos.store";
 import { abrirConversacionDe } from "@/pages/conversaciones/conversaciones.navegacion";
@@ -750,9 +750,13 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
             </span>
           </div>
           <div>
-            <span className="text-gray-400">Estado: </span>
+            {/* «Pago», no «Estado»: el badge de estado del pedido está justo
+                arriba y este campo es el estado de PAGO, un eje distinto. Dos
+                campos rotulados «Estado» en la misma tarjeta obligan a adivinar
+                cuál es cuál. */}
+            <span className="text-gray-400">Pago: </span>
             <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
-              {pedido.pagado ? "Pagado" : "Pendiente"}
+              {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
             </span>
           </div>
         </div>

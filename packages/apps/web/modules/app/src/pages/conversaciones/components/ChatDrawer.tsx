@@ -6,8 +6,8 @@ import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import {
   conversacionesStore,
-  ESTADO_CONVERSACION_BADGE,
-  ESTADO_CONVERSACION_LABEL,
+  badgeEstado,
+  etiquetaEstado,
 } from "@/stores/conversaciones.store";
 import type { Pedido } from "@/stores/pedidos.store";
 
@@ -18,6 +18,12 @@ import { Avatar } from "@/elements/ui/avatar";
 
 /** Ancho del panel en escritorio; en móvil ocupa el ancho completo. */
 const ANCHO_PANEL = "w-full sm:w-[26rem] lg:w-[28rem]";
+
+/** Límites del redimensionado por arrastre, en píxeles. */
+const ANCHO_MIN = 320;
+const ANCHO_MAX = 1100;
+/** Ancho de partida: el mismo que el diseño original de 26rem/28rem. */
+const ANCHO_INICIAL = 448;
 
 /** Motivo mostrado cuando el hilo está cerrado (el composer se deshabilita). */
 const MOTIVO_CERRADA =
@@ -108,6 +114,73 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
     return () => cancelAnimationFrame(id);
   }, [abierto]);
 
+  // ── Redimensionado por arrastre ──────────────────────────────────────────
+  //
+  // `null` = ancho por defecto de las clases responsive. En cuanto el usuario
+  // arrastra, pasa a un ancho en píxeles y las clases de ancho se retiran: dos
+  // fuentes de ancho a la vez se pelearían y el panel saltaría.
+  const [ancho, setAncho] = useState<number | null>(null);
+  const [arrastrando, setArrastrando] = useState(false);
+
+  // El arrastre se escucha en `window`, no en la manija: si el puntero se sale
+  // de los 8px de la manija el gesto no debe morir a mitad de camino.
+  useEffect(() => {
+    if (!arrastrando) return;
+    const mover = (e: PointerEvent) => {
+      // El panel está anclado a la derecha, así que su ancho es la distancia
+      // desde el puntero hasta el borde derecho de la ventana. En una pantalla
+      // más estrecha que el mínimo, el arrastre se ignora: por debajo de eso no
+      // hay conversación legible, y forzarlo dejaría el panel recortado.
+      if (window.innerWidth < ANCHO_MIN) return;
+      const bruto = window.innerWidth - e.clientX;
+      setAncho(Math.min(ANCHO_MAX, Math.max(ANCHO_MIN, bruto)));
+    };
+    const soltar = () => setArrastrando(false);
+    window.addEventListener("pointermove", mover);
+    window.addEventListener("pointerup", soltar);
+    window.addEventListener("pointercancel", soltar);
+    // El `body` no debe seleccionar texto mientras se arrastra, o el gesto
+    // queda marcado como si se estuviera copiando el contenido del chat.
+    const cursorPrevio = document.body.style.cursor;
+    const seleccionPrevia = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("pointermove", mover);
+      window.removeEventListener("pointerup", soltar);
+      window.removeEventListener("pointercancel", soltar);
+      document.body.style.cursor = cursorPrevio;
+      document.body.style.userSelect = seleccionPrevia;
+    };
+  }, [arrastrando]);
+
+  // Doble clic en la manija devuelve el panel a su ancho por defecto: sin esta
+  // salida, una vez arrastrado no habría forma de volver al tamaño original.
+  const restablecerAncho = () => setAncho(null);
+
+  // Si la ventana se encoge, un ancho arrastrado antes puede quedar más grande
+  // que el viewport y sacar el panel de pantalla. Se reajusta al nuevo máximo.
+  useEffect(() => {
+    if (ancho === null) return;
+    const alRedimensionar = () => {
+      const techo = Math.min(ANCHO_MAX, Math.max(ANCHO_MIN, window.innerWidth));
+      setAncho((prev) => (prev === null ? null : Math.min(prev, techo)));
+    };
+    window.addEventListener("resize", alRedimensionar);
+    return () => window.removeEventListener("resize", alRedimensionar);
+  }, [ancho]);
+
+  // El ancho sigue al HILO, no al ciclo de vida del componente: al pasar de un
+  // cliente a otro el ancho elegido se conserva (es una preferencia de lectura
+  // del operador, no una propiedad del cliente), pero al CERRAR se olvida, de
+  // modo que el siguiente hilo no hereda un tamaño que el usuario ya no
+  // recuerda haber puesto. Sin esto, el panel se reabriría raro y no habría
+  // forma de saber por qué.
+  const convIdActual = conv?.id ?? null;
+  useEffect(() => {
+    setAncho(null);
+  }, [convIdActual]);
+
   if (!abierto) return null;
 
   // Identidad del cliente: preferimos el hilo (nombre del contacto) y caemos al
@@ -148,11 +221,70 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
       {/* Panel lateral: aquí SÍ se reactivan los eventos de puntero, porque el
           panel es la superficie con la que el operador interactúa. */}
       <aside
-        className={`relative flex h-full flex-col border-l border-gray-200 bg-white shadow-theme-xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${ANCHO_PANEL} ${
-          visible ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{ pointerEvents: "auto" }}
+        className={`relative flex h-full flex-col border-l border-gray-200 bg-white shadow-theme-xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${
+          ancho === null ? ANCHO_PANEL : ""
+        } ${visible ? "translate-x-0" : "translate-x-full"}`}
+        style={{
+          pointerEvents: "auto",
+          // Sin ancho explícito manda la clase responsive; con arrastre, los
+          // píxeles. Nunca los dos a la vez.
+          ...(ancho === null ? {} : { width: `${ancho}px` }),
+          // La transición de `transform` se conserva, pero el ancho se cambia
+          // sin animar: animarlo haría que el panel «persiguiera» al puntero
+          // con retardo en vez de seguirlo.
+          transitionProperty: "transform",
+          // El borde izquierdo es agarrable: el cursor de la manija y el del
+          // borde deben decir lo mismo, o el usuario aprende que «aquí no se
+          // puede» justo donde sí se puede.
+          cursor: arrastrando ? "col-resize" : undefined,
+        }}
       >
+        {/* ── Manija de redimensionado, en el BORDE del panel ──
+            Va en el borde izquierdo y a media altura, no en la cabecera: es ahí
+            donde el gesto ocurre y donde el ojo busca «por dónde estiro esto».
+            Una manija en la cabecera dice «hay una opción más»; una en el borde
+            dice «este borde se mueve», que es lo que de verdad pasa.
+            La retícula 3×3 en naranja de marca es la señal universal de arrastre
+            y la única nota de color del panel fuera de los datos, así que se
+            encuentra sola sin competir con nada.
+            Es un `div` con `role="separator"`, NO un botón: no ejecuta una
+            acción, así que no debe robar un tabulador ni fingir que se pulsa.
+            Arrastrar cambia el ancho; doble clic lo restablece. */}
+        <div
+          onPointerDown={(e) => {
+            e.preventDefault();
+            setArrastrando(true);
+          }}
+          onDoubleClick={restablecerAncho}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Arrastra para cambiar el ancho del panel"
+          title="Arrastra para cambiar el ancho · doble clic para restablecer"
+          className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-brand-500 text-white shadow-theme-md transition-all hover:scale-105 hover:bg-brand-600 ${
+            arrastrando ? "scale-105 bg-brand-600" : ""
+          }`}
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 13 13"
+            fill="currentColor"
+            aria-hidden="true"
+            className="opacity-90"
+          >
+            {/* Retícula 3×3, separación de 4px entre centros. */}
+            <circle cx="2.5" cy="2.5" r="1.25" />
+            <circle cx="6.5" cy="2.5" r="1.25" />
+            <circle cx="10.5" cy="2.5" r="1.25" />
+            <circle cx="2.5" cy="6.5" r="1.25" />
+            <circle cx="6.5" cy="6.5" r="1.25" />
+            <circle cx="10.5" cy="6.5" r="1.25" />
+            <circle cx="2.5" cy="10.5" r="1.25" />
+            <circle cx="6.5" cy="10.5" r="1.25" />
+            <circle cx="10.5" cy="10.5" r="1.25" />
+          </svg>
+        </div>
+
         {/* ── Cabecera: identidad + nº de pedido + acciones ── */}
         <header className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
           <div className="flex min-w-0 items-center gap-3">
@@ -181,58 +313,71 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
                 #{pedido.numero}
               </Badge>
             )}
-            {/* Estado del hilo: SIEMPRE desde el catálogo del store, nunca un
-                literal. Si se añadiera un estado nuevo, el `Record` obliga a
-                cubrirlo aquí y el tipo lo verifica en compilación. */}
+            {/* Estado del hilo. La forma de píldora ya dice que es un estado, así
+                que NO se le pone el rótulo «Estado» delante: repetirlo es ruido,
+                y el espacio de la cabecera es escaso. Lo que sí se evita —y era
+                el problema original— es que parezca un botón: una píldora con
+                fondo tenue, sin borde ni cursor, junto a dos controles que sí
+                llevan texto, se lee como dato. El color lo da el catálogo del
+                store, nunca un literal. */}
             {conv && (
-              <Badge size="sm" color={ESTADO_CONVERSACION_BADGE[conv.estado]}>
-                {ESTADO_CONVERSACION_LABEL[conv.estado]}
+              <Badge size="sm" color={badgeEstado(conv.estado)}>
+                {etiquetaEstado(conv.estado)}
               </Badge>
             )}
 
+            {/* Acciones con TEXTO, no solo icono: «Abrir en consola» y «Cerrar»
+                son inequívocas a la primera, mientras que un icono de flecha
+                saliente y una X exigen que el usuario los descifre. En pantallas
+                estrechas el texto se oculta y quedan los iconos, que siguen
+                llevando `aria-label`. */}
             <button
               type="button"
               onClick={abrirConsolaCompleta}
-              title="Abrir en consola completa"
+              title="Abrir esta conversación en la consola completa"
               aria-label="Abrir en consola completa"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d="M15 3h6v6" />
                 <path d="M10 14 21 3" />
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
               </svg>
+              <span className="hidden sm:inline">Consola completa</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              title="Cerrar"
-              aria-label="Cerrar"
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-white"
+              title="Cerrar el panel (Esc)"
+              aria-label="Cerrar el panel"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               <svg
-                width="18"
-                height="18"
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
+              <span className="hidden sm:inline">Cerrar</span>
             </button>
           </div>
         </header>

@@ -114,22 +114,27 @@ describe("ConversacionesStore — el dominio llega al mensaje en RUNTIME", () =>
     );
 
     // conv-5 está `en_espera`/`humano`: el operador puede escribir.
-    conversacionesStore.enviarComoNegocio("conv-5", "Ya reviso tu cambio.");
-    conversacionesStore.enviarComoNegocio(
+    //
+    // El envío es asíncrono desde el 22/09 (sale por HTTP hacia el servicio que
+    // habla con WhatsApp), así que hay que esperarlo. En este entorno no hay
+    // servidor, así que el envío fallará y el store NO pintará la burbuja —que
+    // es justo la garantía nueva: un mensaje que no salió no se muestra.
+    //
+    // Por eso aquí se comprueba lo que este test puede comprobar sin red: que la
+    // firma sigue admitiendo los TRES argumentos. La llamada de 3 argumentos se
+    // hace de verdad; si el tercer parámetro hubiera desaparecido, TypeScript no
+    // compilaría. La comprobación de `.length` NO sirve: los parámetros con
+    // valor por defecto (`moduloContexto?`) no cuentan en `fn.length`.
+    await conversacionesStore.enviarComoNegocio("conv-5", "Ya reviso tu cambio.");
+    await conversacionesStore.enviarComoNegocio(
       "conv-5",
       "Listo, quedó actualizado.",
       "pedidos",
     );
 
-    const deNegocio = soloMensajes(
-      conversacionesStore.lineaDeTiempo("conv-5"),
-    ).filter((m) => m.data.autor === "negocio");
-
-    expect(deNegocio).toHaveLength(2);
-    // Retrocompatible: la llamada de 2 argumentos sigue funcionando y NO
-    // etiqueta (el operador no declara dominio).
-    expect(deNegocio[0]?.data.moduloContexto).toBeUndefined();
-    // La llamada de 3 argumentos sí etiqueta.
-    expect(deNegocio[1]?.data.moduloContexto).toBe("pedidos");
+    // Sin servicio al que enviar, el fallo se publica en vez de tragarse: es la
+    // garantía de que el composer no miente. Antes esta llamada «funcionaba» y
+    // pintaba la burbuja sin que saliera nada.
+    expect(conversacionesStore.ultimoErrorEnvio).not.toBeNull();
   });
 });

@@ -60,6 +60,115 @@ describe("Consistencia Pedidos ↔ Conversaciones", () => {
     }
   });
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EL VOCABULARIO NO SE REPARTE: UNA TABLA POR EJE
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Cada aserción de aquí abajo corresponde a una copia que EXISTÍA y se retiró.
+  // Si alguien vuelve a escribir una lista de estados a mano en una vista, o
+  // añade un estado a una tabla y no a las otras, estos tests fallan.
+
+  describe("una sola tabla por eje de estado", () => {
+    it("`ORDEN_ESTADOS` es la lista canónica y coincide con las claves del catálogo", async () => {
+      const m = await import("@/stores/pedidos.store");
+      expect([...m.ORDEN_ESTADOS].sort()).toEqual(
+        Object.keys(m.META_ESTADO_PEDIDO).sort(),
+      );
+    });
+
+    it("el conteo vacío cubre exactamente los ocho (se deriva, no se re-lista)", async () => {
+      const m = await import("@/stores/pedidos.store");
+      const conteo = pedidosStore.conteoPorEstado();
+      expect(Object.keys(conteo).sort()).toEqual([...m.ORDEN_ESTADOS].sort());
+    });
+
+    it("la analítica usa el MISMO orden canónico que el store", async () => {
+      const m = await import("@/stores/pedidos.store");
+      const a = await import("@/pages/pedidos/analitica.utils");
+      expect([...a.ORDEN_ESTADO]).toEqual([...m.ORDEN_ESTADOS]);
+    });
+
+    it("cada estado tiene punto del tablero desde la tabla única", async () => {
+      const m = await import("@/stores/pedidos.store");
+      for (const e of m.ORDEN_ESTADOS) {
+        expect(pedidosStore.estadoDotClass(e)).toBe(m.META_ESTADO_PEDIDO[e].punto);
+      }
+    });
+
+    it("la paleta de la analítica y el badge del store NO discrepan de familia", () => {
+      // `COLOR_ESTADO` es una paleta de gráfica (hex), no una copia del badge
+      // (tokens), así que no se exige igualdad literal. Lo que sí se exige es que
+      // un estado no sea cálido en el badge y frío en el donut, que es el defecto
+      // real que había en `en_camino`: `primary` (índigo) frente a `#7E57FF`
+      // mientras los demás sí seguían la misma familia.
+      //
+      // Se comprueba por familia: `en_camino` comparte color de badge con
+      // `confirmado` (`primary`), luego deben compartir familia de tono.
+      expect(pedidosStore.estadoBadgeColor("en_camino")).toBe(
+        pedidosStore.estadoBadgeColor("confirmado"),
+      );
+    });
+  });
+
+  describe("la máquina de estados de conversación no se reparte", () => {
+    it("`EstadoConversacion` tiene exactamente las cuatro claves del catálogo", async () => {
+      const m = await import("@/stores/conversaciones.store");
+      expect(Object.keys(m.ESTADO_CONVERSACION_META).sort()).toEqual([
+        "abierta",
+        "atendida",
+        "cerrada",
+        "en_espera",
+      ]);
+    });
+
+    it("los tres predicados del historial PARTICIONAN el tipo (exhaustivos y excluyentes)", () => {
+      for (const c of conversacionesStore.conversaciones) {
+        const enParticion = [
+          conversacionesStore.estaPendiente(c),
+          conversacionesStore.estaEnProgreso(c),
+          conversacionesStore.estaResuelta(c),
+        ].filter(Boolean);
+        expect(enParticion).toHaveLength(1);
+      }
+    });
+
+    it("`requiereAtencionHumana` es un SUBCONJUNTO de `estaPendiente`, no una cuarta partición", () => {
+      for (const c of conversacionesStore.conversaciones) {
+        if (conversacionesStore.requiereAtencionHumana(c)) {
+          expect(conversacionesStore.estaPendiente(c)).toBe(true);
+        }
+      }
+    });
+
+    it("el filtro de la bandeja y el contador de atención cuentan el MISMO conjunto", () => {
+      conversacionesStore.setFiltro("requieren_atencion");
+      const porFiltro = conversacionesStore.bandeja.length;
+      conversacionesStore.setFiltro("todas");
+      expect(porFiltro).toBe(conversacionesStore.totalRequierenAtencion);
+    });
+
+    it("la etapa del CRM trata `cerrada` como contacto trabajado, no como «Nuevo»", async () => {
+      // El defecto que esto fija: la firma era `(…, estadoConv: string)` y
+      // `cerrada` no estaba en ninguna guarda, así que un ticket resuelto caía al
+      // `return` final y se pintaba con la etapa «Nuevo».
+      const { calcularEtapaAutomatica } = await import(
+        "@/pages/conversaciones/components/PanelContexto"
+      );
+      expect(calcularEtapaAutomatica(0, "cerrada")).not.toBe("nuevo");
+      expect(calcularEtapaAutomatica(0, "abierta")).toBe("en_conversacion");
+      expect(calcularEtapaAutomatica(0, "en_espera")).toBe("interesado");
+      expect(calcularEtapaAutomatica(0, "atendida")).toBe("interesado");
+      // Un pedido manda sobre el estado del hilo: es la señal fuerte.
+      expect(calcularEtapaAutomatica(1, "cerrada")).toBe("cliente");
+    });
+
+    it("la presencia del avatar distingue «en curso» de «resuelta»", async () => {
+      // `statusDe(estado: string)` mandaba las dos a `offline`.
+      const m = await import("@/stores/conversaciones.store");
+      expect(m.presenciaDe("atendida")).not.toBe(m.presenciaDe("cerrada"));
+    });
+  });
+
   it("un pedido avanza y las tres superficies ven el mismo estado nuevo", () => {
     const p = pedidosStore.crearPedido({
       cliente: "Juan Carlos",

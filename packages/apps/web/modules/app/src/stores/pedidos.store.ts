@@ -1,4 +1,5 @@
 import { makeAutoObservable } from "mobx";
+import { getSupabase, ESQUEMA } from "../lib/supabase";
 import {
   BUSINESS_PROFILES,
   type BusinessProfile,
@@ -25,6 +26,22 @@ import type { OrderCore } from "../domain/pedidos/pedidos.domain.js";
  * configuración del módulo. `en_camino` además solo aplica a pedidos con
  * modalidad `domicilio`.
  */
+/**
+ * Estado del pedido en el pipeline. OCHO valores y ni uno más.
+ *
+ * Este tipo es el ÚNICO vocabulario de estado de pedido del frontend, y coincide
+ * 1:1 con el `check` de `necto.pedido.estado` en la base — el único vocabulario
+ * del proyecto alineado entre las dos capas.
+ *
+ * `programado` y `cancelado` están FUERA de la secuencia lineal: el primero es
+ * un pedido con fecha futura que aún no ha entrado al pipeline, y el segundo
+ * puede alcanzarse desde cualquier punto.
+ *
+ * La presentación de los ocho —etiqueta, color de badge y clase del punto— vive
+ * en UNA tabla: `META_ESTADO_PEDIDO`. Todo lo demás (conteos, analítica,
+ * columnas del tablero) se DERIVA de `ORDEN_ESTADOS` o de esa tabla, para que
+ * añadir un estado no exija tocar siete listas a mano.
+ */
 export type PedidoEstado =
   | "programado"
   | "nuevo"
@@ -34,6 +51,63 @@ export type PedidoEstado =
   | "en_camino"
   | "entregado"
   | "cancelado";
+
+/**
+ * Orden canónico de los estados en cualquier superficie que los recorra:
+ * programado primero (aún no entró) y cancelado último (fuera del flujo).
+ *
+ * Es la ÚNICA lista ordenada de los ocho. `conteoPorEstadoVacio`,
+ * `conteoPorEstado` y el orden de columnas del tablero se derivan de aquí, y
+ * `ORDEN_ESTADO` de la analítica también.
+ */
+export const ORDEN_ESTADOS: readonly PedidoEstado[] = [
+  "programado",
+  "nuevo",
+  "confirmado",
+  "en_preparacion",
+  "listo",
+  "en_camino",
+  "entregado",
+  "cancelado",
+];
+
+/** Color semántico del Badge (Elements) para un estado de pedido. */
+type ColorEstadoPedido =
+  | "info"
+  | "primary"
+  | "warning"
+  | "success"
+  | "light"
+  | "error";
+
+/**
+ * LA TABLA de presentación de los ocho estados de pedido.
+ *
+ * `label` es la etiqueta del sistema y NO la que se pinta: `estadoLabel()` la
+ * sustituye por el alias o la columna personalizada que el negocio haya
+ * configurado. El color y el punto no son configurables.
+ *
+ * `en_camino` es `primary` (índigo) y no `warning`: iba en la rampa naranja, que
+ * es el color de la MARCA, y un estado en tránsito —lo normal— se leía como una
+ * alerta. `en_preparacion` sí es `warning`: hay una tarea en curso que reclama al
+ * operador.
+ *
+ * El `Record<PedidoEstado, …>` ancla la cobertura al tipo: un estado sin sus tres
+ * caras es un error de compilación, no una celda que alguien descubre en pantalla.
+ */
+export const META_ESTADO_PEDIDO: Record<
+  PedidoEstado,
+  { label: string; badge: ColorEstadoPedido; punto: string }
+> = {
+  programado: { label: "Programado", badge: "light", punto: "bg-gray-400" },
+  nuevo: { label: "Nuevo", badge: "info", punto: "bg-accent-500" },
+  confirmado: { label: "Confirmado", badge: "primary", punto: "bg-brand-500" },
+  en_preparacion: { label: "En preparación", badge: "warning", punto: "bg-warning-500" },
+  listo: { label: "Listo", badge: "success", punto: "bg-success-500" },
+  en_camino: { label: "En camino", badge: "primary", punto: "bg-brand-500" },
+  entregado: { label: "Entregado", badge: "success", punto: "bg-success-600" },
+  cancelado: { label: "Cancelado", badge: "error", punto: "bg-error-500" },
+};
 
 /** Modalidad de entrega del pedido (genérica, sin identidad de negocio). */
 export type Modalidad = "retiro" | "domicilio" | "en_sitio";
@@ -214,6 +288,25 @@ export interface ColumnaPersonalizada {
   color?: string;
 }
 
+/**
+ * Rótulo del estado de PAGO de un pedido, en un solo sitio.
+ *
+ * El pago es un eje aparte de `PedidoEstado` (un pedido puede estar «En camino»
+ * y sin pagar), y por eso tiene su propio par de etiquetas — pero solo uno. La
+ * misma casilla se pintaba como «Pendiente» en el historial y en el panel de
+ * contexto, como «Pendiente de pago» en el tablero y como «Pendiente» en la
+ * analítica: dos nombres para el mismo hueco, en cuatro pantallas.
+ *
+ * NO se llama «Pendiente» a secas porque esa palabra ya significa otra cosa en
+ * el dominio —está tomada por el estado del hilo y por la etapa del CRM—, y una
+ * casilla que dice «Pendiente» junto a un badge de estado que también dice
+ * «Pendiente» no distingue qué está pendiente.
+ */
+export const ETIQUETA_PAGO = {
+  pagado: "Pagado",
+  sinPagar: "Pendiente de pago",
+} as const;
+
 /** Configuración de la alerta sonora de "requieren atención". */
 export interface AlertaAtencion {
   /** ¿Suena de forma recurrente cuando hay clientes que requieren atención? */
@@ -239,16 +332,16 @@ const PIPELINE_FULL: PedidoEstado[] = [
 /** Estados terminales (no admiten avance). */
 const TERMINALES: PedidoEstado[] = ["entregado", "cancelado"];
 
-const ESTADO_LABEL: Record<PedidoEstado, string> = {
-  programado: "Programado",
-  nuevo: "Nuevo",
-  confirmado: "Confirmado",
-  en_preparacion: "En preparación",
-  listo: "Listo",
-  en_camino: "En camino",
-  entregado: "Entregado",
-  cancelado: "Cancelado",
-};
+/**
+ * Etiquetas del sistema por estado, DERIVADAS de la tabla única.
+ *
+ * Existía como una lista propia de ocho literales, en paralelo a los mapas de
+ * color y de punto. Ahora es una proyección de `META_ESTADO_PEDIDO`, así que no
+ * puede desincronizarse de ella.
+ */
+const ESTADO_LABEL: Record<PedidoEstado, string> = Object.fromEntries(
+  ORDEN_ESTADOS.map((e) => [e, META_ESTADO_PEDIDO[e].label])
+) as Record<PedidoEstado, string>;
 
 const MODALIDAD_LABEL: Record<Modalidad, string> = {
   retiro: "Retiro",
@@ -411,12 +504,53 @@ function loadConfig(): PedidosConfig {
   };
 }
 
-/** Persiste la config en localStorage. */
+/** Persiste la config en localStorage y sincroniza con Supabase. */
 function persistConfig(cfg: PedidosConfig): void {
   try {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
   } catch {
     // Sin localStorage: no-op (mock).
+  }
+  sincronizarConfigSupabase(cfg);
+}
+
+async function sincronizarConfigSupabase(cfg: PedidosConfig): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+
+  try {
+    let orgId: string | null = null;
+    const { data: orgData } = await sb.schema(ESQUEMA).rpc("mi_organizacion");
+    if (orgData) {
+      orgId = typeof orgData === "string" ? orgData : (orgData as any).id || orgData;
+    }
+
+    if (!orgId) {
+      const { data: orgList } = await sb.schema(ESQUEMA).from("organizacion").select("id").limit(1);
+      if (orgList && orgList.length > 0) {
+        orgId = orgList[0].id;
+      }
+    }
+
+    if (!orgId) return;
+
+    const payload = {
+      organizacion_id: orgId,
+      perfil_comercial: cfg.perfilComercial ?? "food",
+      capacidades_activas: cfg.capacidadesActivas ?? [],
+      catalogo: cfg.catalogo ?? [],
+      plantillas_whatsapp: cfg.plantillas ?? {},
+      horarios: cfg.horario ?? {}
+    };
+
+    const { error } = await sb.schema(ESQUEMA).from("config_pedidos").upsert(payload, { onConflict: "organizacion_id" });
+    if (error) {
+      console.warn("[pedidosStore] Error al sincronizar config_pedidos en Supabase:", error.message);
+    } else {
+      console.log("[pedidosStore] ✅ Configuración de perfil y catálogo sincronizada en Supabase:", cfg.perfilComercial);
+    }
+  } catch (err) {
+    console.warn("[pedidosStore] Excepción al sincronizar config_pedidos con Supabase:", err);
   }
 }
 
@@ -496,21 +630,14 @@ const recorrerDias = <T>(
 /**
  * Registro de conteo por estado con las **8 claves** de `PedidoEstado` a 0.
  * Devuelve un objeto NUEVO en cada llamada, para que nadie comparta un acumulador
- * por accidente. Existe para que los tres métodos que cuentan por estado
- * (`conteoPorEstado`, `conteoPorEstadoEnRango`, `seriePorEstado*`) declaren la
- * misma forma una sola vez: si mañana se añade un estado al pipeline, hay un
- * único sitio donde añadirlo.
+ * por accidente. Se DERIVA de `ORDEN_ESTADOS`, que es la lista única: añadir un
+ * estado se hace en un solo sitio y las tres formas que lo cuentan lo recogen.
  */
-const conteoPorEstadoVacio = (): Record<PedidoEstado, number> => ({
-  programado: 0,
-  nuevo: 0,
-  confirmado: 0,
-  en_preparacion: 0,
-  listo: 0,
-  en_camino: 0,
-  entregado: 0,
-  cancelado: 0,
-});
+const conteoPorEstadoVacio = (): Record<PedidoEstado, number> =>
+  Object.fromEntries(ORDEN_ESTADOS.map((e) => [e, 0])) as Record<
+    PedidoEstado,
+    number
+  >;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // MEMORIA CRM DE DIRECCIONES (por teléfono normalizado)
@@ -1158,6 +1285,22 @@ export class PedidosStore {
     ).length;
   }
 
+  /**
+   * Pedidos RECIBIDOS en un día concreto ("YYYY-MM-DD" local, por `createdAt`),
+   * del más antiguo al más reciente.
+   *
+   * Es la lista de la que `volumenEntre` da solo el conteo: el calendario del
+   * Inicio necesita las dos cosas (el número para el punto del día y las filas
+   * para el panel del día), y contarlas por separado serían dos criterios que
+   * pueden discrepar. Aquí el criterio es uno: `ymdLocal(createdAt) === ymd`,
+   * el mismo que usa `volumenEntre`.
+   */
+  recibidosEnDia(ymd: string): Pedido[] {
+    return this.pedidos
+      .filter((p) => ymdLocal(p.createdAt) === ymd)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
   /** Total de pedidos en curso (no terminales y ya activos). */
   get totalEnCurso(): number {
     return this.enCurso().length;
@@ -1258,20 +1401,10 @@ export class PedidosStore {
    * ninguno). Puro: no muta `this.pedidos`. Útil para donut/barras por estado.
    */
   conteoPorEstado(): Record<PedidoEstado, number> {
-    const base: Record<PedidoEstado, number> = {
-      programado: 0,
-      nuevo: 0,
-      confirmado: 0,
-      en_preparacion: 0,
-      listo: 0,
-      en_camino: 0,
-      entregado: 0,
-      cancelado: 0,
-    };
     return this.pedidos.reduce((acc, p) => {
       acc[p.estado] += 1;
       return acc;
-    }, base);
+    }, conteoPorEstadoVacio());
   }
 
   /**
@@ -1900,32 +2033,12 @@ export class PedidosStore {
 
   /** Color semántico del Badge (Elements) según el estado. */
   estadoBadgeColor(e: PedidoEstado): "info" | "primary" | "warning" | "success" | "light" | "error" {
-    const mapa: Record<string, "info" | "primary" | "warning" | "success" | "light" | "error"> = {
-      programado: "light",
-      nuevo: "info",
-      confirmado: "primary",
-      en_preparacion: "warning",
-      listo: "success",
-      en_camino: "primary",
-      entregado: "success",
-      cancelado: "error",
-    };
-    return mapa[e] ?? "primary";
+    return META_ESTADO_PEDIDO[e].badge;
   }
 
   /** Color del punto/acento de columna del tablero según el estado. */
   estadoDotClass(e: PedidoEstado): string {
-    const mapa: Record<string, string> = {
-      programado: "bg-gray-400",
-      nuevo: "bg-accent-500",
-      confirmado: "bg-brand-500",
-      en_preparacion: "bg-warning-500",
-      listo: "bg-success-500",
-      en_camino: "bg-brand-500",
-      entregado: "bg-success-600",
-      cancelado: "bg-error-500",
-    };
-    return mapa[e] ?? "bg-brand-500";
+    return META_ESTADO_PEDIDO[e].punto;
   }
 }
 

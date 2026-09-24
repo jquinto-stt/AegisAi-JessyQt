@@ -23,12 +23,20 @@ export const AVATAR_MAP: Record<string, string> = {
   "conv-8": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=128&h=128&fit=crop&crop=faces",
 };
 
-/** Mapea el estado de conversación a la presencia del Avatar */
-export const statusDe = (estado: string): "online" | "busy" | "offline" => {
-  if (estado === "abierta") return "online";
-  if (estado === "en_espera") return "busy";
-  return "offline";
-};
+/**
+ * Mapea el estado de conversación a la presencia del Avatar.
+ *
+ * Delegación al catálogo canónico `ESTADO_CONVERSACION_META`, que declara la
+ * presencia junto a la etiqueta y el color del mismo estado. Aquí vivía una
+ * escala propia sin tipar (`(estado: string)`) que mandaba `atendida` Y
+ * `cerrada` a `offline`: un hilo que un operador tenía entre manos se veía
+ * igual que uno ya resuelto. Al ser una vista del estado, y no un eje propio,
+ * no puede tener su propia tabla.
+ *
+ * Se reexporta con el nombre histórico para no romper a los cuatro
+ * consumidores; el nombre nuevo es `presenciaDe` y vive en el store.
+ */
+export { presenciaDe as statusDe } from "@/stores/conversaciones.store";
 
 /** Formatea una fecha ISO a tiempo relativo legible tipo chat ("ahora", "15 min", "2 h", "1 d") */
 export const tiempoRelativo = (iso: string): string => {

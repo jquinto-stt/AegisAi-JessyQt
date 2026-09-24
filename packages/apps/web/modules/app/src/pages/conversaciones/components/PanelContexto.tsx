@@ -8,12 +8,14 @@ import { conversacionesStore } from "@/stores/conversaciones.store";
 import { sessionStore } from "@/stores/session.store";
 import {
   pedidosStore,
+  ETIQUETA_PAGO,
   type Pedido,
   type Modalidad,
   type MetodoPago,
   type DireccionEntrega,
 } from "@/stores/pedidos.store";
 import { puedeCrearPedido, puedeMoverA } from "@/stores/acceso.utils";
+import type { EstadoConversacion } from "@/stores/conversaciones.types";
 import { avanzarPedido } from "@/pages/pedidos/pedidos.notificaciones";
 import { AVATAR_MAP, inicialesDe, statusDe } from "../conversaciones.utils";
 
@@ -41,14 +43,27 @@ export const ETAPAS_CRM: ReadonlyArray<EtapaConfig> = [
   { id: "perdido", label: "Perdido" },
 ];
 
+/**
+ * Etapa del CRM que se deduce del hilo cuando nadie la ha fijado a mano.
+ *
+ * Recibe `EstadoConversacion` y NO `string`: la firma anterior sin tipar dejaba
+ * pasar cualquier cadena, y `cerrada` no estaba en ninguna guarda, así que caía
+ * al `return` final y un ticket RESUELTO se pintaba con la etapa «Nuevo» —
+ * justo el estado que el CRM usa para un contacto que no ha hablado todavía.
+ *
+ * El orden de las guardas importa: un pedido existente es señal más fuerte que
+ * el punto del hilo (`cliente` gana), y de ahí hacia abajo se lee el estado.
+ * `cerrada` se trata explícitamente: un hilo resuelto es un contacto ya
+ * trabajado, no uno nuevo.
+ */
 export function calcularEtapaAutomatica(
   pedidosCount: number,
-  estadoConv: string
+  estadoConv: EstadoConversacion
 ): EtapaCrmCliente {
   if (pedidosCount > 0) return "cliente";
   if (estadoConv === "atendida" || estadoConv === "en_espera") return "interesado";
   if (estadoConv === "abierta") return "en_conversacion";
-  return "nuevo";
+  return "cliente"; // cerrada: hubo conversación y se resolvió
 }
 
 export function getPasoProgreso(
@@ -508,7 +523,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             color={pagado ? "success" : "warning"}
             size="xs"
           >
-            {pagado ? "Pagado" : "Pendiente"}
+            {pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
           </Badge>
           {pedido.metodoPago && (
             <span className="rounded-md border border-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 capitalize dark:border-gray-700 dark:text-gray-400">
@@ -547,6 +562,37 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
 
   const conv = convId ? conversacionesStore.getConversacion(convId) : undefined;
 
+  // ── TODO hook va ARRIBA de la salida temprana ───────────────────────────
+  //
+  // `etapaManual` y su `useEffect` vivían DESPUÉS del `if (!conv) return …`, y
+  // el número de hooks dependía de si había conversación. Con datos reales el
+  // primer render entra por la salida (la conversación aún no está cargada), y
+  // el siguiente ya no: React aborta con
+  //
+  //   Error: Rendered fewer hooks than expected. This may be caused by an
+  //   accidental early return statement.
+  //
+  // y desmonta el árbol entero — la bandeja se queda con CERO botones y el
+  // hilo real nunca se pinta. El orden de hooks es por POSICIÓN, no por
+  // condición, así que la única forma correcta es no saltarse ninguno.
+  //
+  // El `?? null` conserva el comportamiento previo: sin `telefono` no hay nada
+  // guardado que leer.
+  const telefonoActual = conv ? conv.contacto.telefono : null;
+  const [etapaManual, setEtapaManual] = useState<EtapaCrmCliente | null>(() => {
+    if (!telefonoActual) return null;
+    return (localStorage.getItem(`crm_etapa_${telefonoActual}`) as EtapaCrmCliente) || null;
+  });
+
+  useEffect(() => {
+    if (!telefonoActual) {
+      setEtapaManual(null);
+      return;
+    }
+    const guardada = localStorage.getItem(`crm_etapa_${telefonoActual}`) as EtapaCrmCliente | null;
+    setEtapaManual(guardada);
+  }, [telefonoActual]);
+
   if (!conv || !convId) {
     return (
       <div className="flex h-full items-center justify-center p-6 text-center text-xs text-gray-400">
@@ -566,14 +612,9 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
     );
   }, 0);
 
-  const [etapaManual, setEtapaManual] = useState<EtapaCrmCliente | null>(() => {
-    return (localStorage.getItem(`crm_etapa_${telefono}`) as EtapaCrmCliente) || null;
-  });
-
-  useEffect(() => {
-    const guardada = localStorage.getItem(`crm_etapa_${telefono}`) as EtapaCrmCliente | null;
-    setEtapaManual(guardada);
-  }, [telefono]);
+  // `etapaManual` y su `useEffect` se movieron ARRIBA de la salida temprana.
+  // Ver el bloque de TODO hook va ARRIBA: aquí vivían y el número de hooks
+  // dependía de si había conversación, lo que rompía el render con datos reales.
 
   const etapaActiva: EtapaCrmCliente =
     etapaManual ?? calcularEtapaAutomatica(pedidos.length, conv.estado);
@@ -640,7 +681,11 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
     }
 
     if (mensaje) {
-      conversacionesStore.enviarComoNegocio(convId, mensaje);
+      // `void` porque el envío es asíncrono: la plantilla ya está elegida y el
+      // resultado —enviado o fallo— lo publica el store en `ultimoErrorEnvio`,
+      // que el Composer pinta. La confirmación visual de aquí es solo la del
+      // gesto (el tick de 2 s), no la del envío.
+      void conversacionesStore.enviarComoNegocio(convId, mensaje);
       setPlantillaEnviada(tipo);
       setTimeout(() => setPlantillaEnviada(null), 2000);
     }

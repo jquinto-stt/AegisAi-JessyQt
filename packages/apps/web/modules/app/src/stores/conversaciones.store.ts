@@ -9,6 +9,10 @@ import type { BadgeColor } from "@/elements/ui/badge";
 // unidireccional (store → adaptador → núcleo del asistente + tipos), por lo que
 // no se forma ningún ciclo de imports y no hace falta inyección diferida.
 import { conversacionesBotAdapter } from "@/pages/conversaciones/bot/conversaciones-bot.adapter";
+import { cargarMensajes, cargarTodo } from "@/lib/conversaciones.repo";
+import { convertirFilaMensaje } from "@/lib/db.adapters";
+import { cambiarModoAtencion } from "@/lib/atencion.repo";
+import { enviarMensajeOperador } from "@/lib/envio.repo";
 import {
   CONVERSACIONES_SEED,
   type ConversacionesSeed,
@@ -22,6 +26,7 @@ import type {
   Mensaje,
   ModoAtencion,
   ModuloDestino,
+  PresenciaContacto,
 } from "@/stores/conversaciones.types";
 
 // NOTA DE ENCAPSULAMIENTO (invariante D2 / Req 10.5): este archivo NO importa
@@ -55,39 +60,118 @@ const nowIso = () => new Date().toISOString();
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Etiqueta legible de un estado de conversación, para el badge del historial.
+ * CATÁLOGO DE PRESENTACIÓN DEL ESTADO — la ÚNICA tabla de los cuatro estados.
  *
- * Es el vocabulario de presentación del estado y vive AQUÍ, junto al tipo que lo
- * define, para que ninguna superficie escriba la etiqueta como literal. Dos
- * pantallas que rotulan el mismo estado con cadenas distintas escritas a mano es
- * un defecto de vocabulario, no una variación estilística.
+ * Etiqueta, color de badge y presencia del contacto son TRES caras del mismo
+ * dato, así que viven en UNA tabla y no en tres mapas paralelos que pueden
+ * divergir. Antes había `ESTADO_CONVERSACION_LABEL`, `ESTADO_CONVERSACION_BADGE`
+ * y un `statusDe()` en `conversaciones.utils` con su propia escala: tres
+ * estructuras que había que mantener sincronizadas a mano, y un cuarto estado
+ * obligaba a tocar las tres.
  *
- * Por qué "In progress" y no "Open" para `atendida`: el diseño canónico muestra
- * tres categorías —resuelto, pendiente y en curso—, y `atendida` es el único
- * estado en el que hay un operador trabajándolo (`atendida ⟹ humano ∧ operador≠null`).
- * `abierta` es el ticket que lleva el bot y nadie ha reclamado: eso es "Open".
+ * El `Record<EstadoConversacion, …>` ancla la cobertura al tipo: añadir un
+ * estado sin darle las tres caras es un error de COMPILACIÓN, no una celda
+ * vacía que alguien descubre en pantalla.
+ *
+ * ── Por qué las etiquetas están en ESPAÑOL (Revisión de 22/09) ──────────────
+ *
+ * Eran `Open`/`Pending`/`In progress`/`Solved`. Una píldora roja con la palabra
+ * «Open» justo al lado de una X, en la cabecera de un panel, no se lee como un
+ * dato sino como una ACCIÓN DE CIERRE, y un operador inexperto la interpreta
+ * como el botón para terminar la conversación. El vocabulario pasa a describir
+ * el hilo en el idioma de la interfaz.
+ *
+ * `abierta` es el ticket que lleva el bot y nadie ha reclamado: «Sin atender» lo
+ * dice sin ambigüedad, frente al «Open» anterior, que se confundía con «abrir».
+ * `atendida` es el único estado con un operador trabajándolo: «En curso».
+ *
+ * ── Por qué estos colores ──────────────────────────────────────────────────
+ *
+ * `success` = resuelto, `primary` = un operador lo está trabajando, `info` = lo
+ * lleva el bot, `light` = en espera (neutro, sin dueño claro).
+ *
+ * `abierta` NO es `warning`: `warning` se pinta con la rampa naranja, y el
+ * naranja `#FF3C10` es el color PRIMARIO DE LA MARCA. Un badge de estado en
+ * naranja compite con la marca y, peor, convierte un estado normal (el bot
+ * atendiendo) en una alarma. La urgencia real —un cliente pidiendo un asesor—
+ * ya la comunica el estado `en_espera`, que sí tiene su propio tratamiento de
+ * urgencia en la lista. Aquí el badge solo describe, así que va en colores que
+ * no gritan.
+ *
+ * ── Por qué `presencia` vive aquí y no en un `statusDe()` aparte ────────────
+ *
+ * La presencia del avatar es una cuarta codificación del mismo estado. Tenía su
+ * propio mapeo sin tipar (`(estado: string)`), y por eso `atendida` y `cerrada`
+ * acababan pintando ambas «offline»: un hilo que un operador tiene entre manos
+ * se veía igual que uno resuelto. Con la presencia en la tabla, cada estado
+ * declara la suya y `cerrada` puede bajar el contacto a `offline` sin arrastrar
+ * consigo a `atendida`.
  */
-export const ESTADO_CONVERSACION_LABEL: Record<EstadoConversacion, string> = {
-  abierta: "Open",
-  en_espera: "Pending",
-  atendida: "In progress",
-  cerrada: "Solved",
+export const ESTADO_CONVERSACION_META: Record<
+  EstadoConversacion,
+  { label: string; badge: BadgeColor; presencia: PresenciaContacto }
+> = {
+  abierta: { label: "Sin atender", badge: "info", presencia: "online" },
+  en_espera: { label: "En espera", badge: "light", presencia: "busy" },
+  atendida: { label: "En curso", badge: "primary", presencia: "online" },
+  cerrada: { label: "Resuelta", badge: "success", presencia: "offline" },
 };
 
 /**
- * Color de badge (vocabulario de `Badge`) para cada estado de conversación.
+ * Etiqueta legible de un estado de conversación.
  *
- * `success` = resuelto, `warning` = esperando a un humano, `info` = en curso con
- * un operador, `primary` = el bot lo lleva. El tipo se ancla a `BadgeColor` vía
- * el `Record`, de modo que añadir un color inexistente es un error de compilación
- * y no una clase que Tailwind descarta en silencio.
+ * Atajo de lectura sobre el catálogo. Existe para que las superficies no
+ * escriban `ESTADO_CONVERSACION_META[e].label` a mano en cada celda de tabla,
+ * que es donde nacen las copias.
  */
-export const ESTADO_CONVERSACION_BADGE: Record<EstadoConversacion, BadgeColor> = {
-  abierta: "primary",
-  en_espera: "warning",
-  atendida: "info",
-  cerrada: "success",
-};
+export const etiquetaEstado = (e: EstadoConversacion): string =>
+  ESTADO_CONVERSACION_META[e].label;
+
+/** Color de badge de un estado de conversación. Atajo de lectura del catálogo. */
+export const badgeEstado = (e: EstadoConversacion): BadgeColor =>
+  ESTADO_CONVERSACION_META[e].badge;
+
+/**
+ * Presencia del contacto en la lista para un estado del hilo.
+ *
+ * Es lo que consume el `Avatar` de la bandeja, el chat y el panel de contexto.
+ * Recibe `EstadoConversacion` y no `string` a propósito: la versión anterior sin
+ * tipar dejaba pasar cualquier cadena y devolvía `offline` en silencio.
+ */
+export const presenciaDe = (e: EstadoConversacion): PresenciaContacto =>
+  ESTADO_CONVERSACION_META[e].presencia;
+
+/**
+ * EL CONJUNTO «REQUIERE ATENCIÓN», y solo este.
+ *
+ * Un hilo requiere atención humana en el eje de conversación si y solo si está
+ * `en_espera`: el cliente pidió un asesor y nadie lo ha tomado. Es el ÚNICO
+ * estado que significa eso, y esta constante existe para que no se re-derive
+ * con un literal suelto en una vista.
+ *
+ * No confundir con las dos preguntas vecinas, que son DISTINTAS a propósito:
+ *
+ *   ¿requiere atención?  → `en_espera`                        (esta constante)
+ *   ¿está pendiente?     → `abierta` ∨ `en_espera`            (`estaPendiente`)
+ *   ¿está en curso?      → `atendida`                         (`estaEnProgreso`)
+ *
+ * «Pendiente» es «ni resuelto ni en curso»; «requiere atención» es «alguien está
+ * esperando una respuesta mía». Un hilo que lleva el bot está pendiente y NO
+ * requiere atención. Eran el mismo rótulo para dos conjuntos distintos en dos
+ * pantallas, y de ahí salían dos cifras discrepantes con la misma pregunta.
+ */
+const ESTADOS_CON_ATENCION: readonly EstadoConversacion[] = ["en_espera"];
+
+/**
+ * Rótulo de la acción que resuelve un hilo (`cerrar()`), en UN solo sitio.
+ *
+ * La misma operación se ofrecía como «Marcar como resuelto» en el menú de la
+ * tabla del historial y como «Cerrar conversación» en el menú del chat: dos
+ * nombres para un solo verbo, en dos pantallas del mismo módulo. Vive aquí, junto
+ * al método que la ejecuta, siguiendo el vocabulario del estado al que lleva
+ * (`cerrada` → «Resuelta»).
+ */
+export const ETIQUETA_RESOLVER = "Marcar como resuelta";
 
 /**
  * Etiqueta de ATENCIÓN de una conversación: QUIÉN la lleva ahora mismo.
@@ -295,6 +379,161 @@ export class ConversacionesStore {
     this.eventosPorConv = agruparPorConversacion(seed.eventos);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DATOS REALES (Supabase) — convive con el seed, no lo sustituye a ciegas
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * De dónde salieron los datos que se están mostrando.
+   *
+   * Existe para que la UI pueda decir la verdad. Antes, «la bandeja está
+   * poblada» podía significar dos cosas indistinguibles: datos reales o el seed
+   * de ejemplo. Un operador mirando la bandeja no tenía forma de saber si
+   * estaba viendo a sus clientes o una maqueta, y eso es exactamente el tipo de
+   * superficie que miente que no se debe entregar.
+   *
+   *   `cargando`  hay una lectura en curso
+   *   `real`      son filas de `necto`, y puede haber cero
+   *   `seed`      no se pudo leer y se muestra el ejemplo (con motivo)
+   */
+  origenDatos: "seed" | "real" | "cargando" = "seed";
+
+  /** Por qué se está en `seed`, en lenguaje llano. Vacío si `origen` es `real`. */
+  motivoSeed = "";
+
+  /**
+   * Último fallo al empujar `modo_atencion` a la base, en lenguaje llano.
+   *
+   * Existe porque «Tomar chat» y «Devolver al bot» cambian de aspecto al
+   * pulsarlos y, si la escritura no llega, la bandeja mostraría un modo que la
+   * base no tiene — y quien atiende creería que el bot está apagado cuando sigue
+   * hablando, o al revés. Este campo es lo que convierte ese engaño en un aviso.
+   */
+  ultimoErrorModo: string | null = null;
+
+  /**
+   * Último fallo al enviar un mensaje del asesor, en lenguaje llano.
+   *
+   * `enviarComoNegocio` pinta la burbuja SOLO cuando WhatsApp aceptó el envío.
+   * Pero hay un caso peor que el fallo limpio: el mensaje salió y no se pudo
+   * guardar en la bandeja. Ahí el cliente lo tiene en el teléfono y el hilo no
+   * lo muestra hasta que se recargue. Ese caso se dice, no se espera a que el
+   * operador lo note al refrescar.
+   */
+  ultimoErrorEnvio: string | null = null;
+
+  /**
+   * Hay un envío en vuelo. Se expone para que el composer pueda deshabilitar el
+   * botón: sin esto, dos Enters seguidos mandan el mensaje dos veces y le
+   * cuestan al cliente dos notificaciones.
+   */
+  enviandoMensaje = false;
+
+  /**
+   * Carga el estado desde Supabase.
+   *
+   * NO bloquea el render y NO lanza: si no hay configuración o no hay sesión,
+   * deja el seed puesto y anota el motivo. La app arranca siempre; lo que cambia
+   * es lo que dice de sí misma.
+   *
+   * Idempotente. Se llama UNA vez tras configurar el cliente, nunca desde el
+   * constructor: los stores son singletons de import, y hacer I/O en un
+   * constructor convierte un `import` en un efecto de red.
+   */
+  async cargarDesdeBase(): Promise<void> {
+    this.origenDatos = "cargando";
+    const res = await cargarTodo();
+
+    switch (res.estado) {
+      case "ok":
+        this.conversaciones = res.datos.conversaciones;
+        this.mensajesPorConv = res.datos.mensajesPorConv;
+        // Los eventos de sistema no existen en la base todavía: se vacían para
+        // que no queden mezclados los del seed con datos reales. Mezclar los dos
+        // orígenes sería peor que no tener eventos: una línea de tiempo con
+        // anotaciones inventadas sobre conversaciones reales.
+        this.eventosPorConv = new Map();
+        this.origenDatos = "real";
+        this.motivoSeed = "";
+        break;
+
+      case "sin_configuracion":
+        this.origenDatos = "seed";
+        this.motivoSeed = "Sin configuración de Supabase: mostrando datos de ejemplo.";
+        break;
+
+      case "sin_sesion":
+        this.origenDatos = "seed";
+        this.motivoSeed =
+          "Sin sesión autenticada: las políticas RLS filtran a cero y la bandeja no puede leer. Mostrando datos de ejemplo.";
+        break;
+
+      case "sin_permiso":
+        this.origenDatos = "seed";
+        this.motivoSeed = `Sin permiso para leer conversaciones. ${res.detalle}`;
+        break;
+
+      case "error":
+        this.origenDatos = "seed";
+        this.motivoSeed = `Error al leer de la base: ${res.detalle}`;
+        break;
+    }
+
+    // Se persiste igual que tras cualquier otra mutación, para que el estado que
+    // ve la UI y el que se guarda no diverjan.
+    this.persistir();
+  }
+
+  /**
+   * Lee de la base los mensajes de la conversación seleccionada.
+   *
+   * Se pide por conversación y no todo de golpe porque `cargarDesdeBase` ya trae
+   * los mensajes de todas: esto existe para refrescar un hilo abierto sin
+   * recargar la bandeja entera.
+   */
+  async refrescarMensajes(convId: string): Promise<void> {
+    const res = await cargarMensajes(convId);
+    if (res.estado !== "ok") return;
+    const actuales = this.mensajesPorConv.get(convId) ?? [];
+    const porId = new Map(actuales.map((m) => [m.id, m]));
+    for (const m of res.datos) porId.set(m.id, m);
+    // Se reemplaza por la lista fresca conservando solo lo que no vino de la
+    // base (mensajes locales aún sin persistir). Ordenar por timestamp mantiene
+    // la línea de tiempo coherente cuando se mezclan.
+    this.mensajesPorConv.set(
+      convId,
+      [...porId.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+    );
+  }
+
+  /**
+   * Recibe una fila de mensaje cruda desde Supabase Realtime y la incorpora
+   * instantáneamente a la memoria y a la UI en tiempo real (0 ms delay).
+   */
+  procesarMensajeRealtime(fila: any): void {
+    const m = convertirFilaMensaje(fila);
+    if (!m) return;
+
+    const convId = m.conversacionId;
+    const actuales = this.mensajesPorConv.get(convId) ?? [];
+
+    if (actuales.some((item) => item.id === m.id)) return;
+
+    const nuevos = [...actuales, m].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    this.mensajesPorConv.set(convId, nuevos);
+
+    // Actualizar previsualización de última actividad
+    const conv = this.conversaciones.find((c) => c.id === convId);
+    if (conv) {
+      conv.ultimaActividad = m.timestamp;
+      if (m.autor === "cliente" && this.seleccionadaId !== convId) {
+        conv.noLeidos = (conv.noLeidos || 0) + 1;
+      }
+    }
+
+    this.persistir();
+  }
+
   /**
    * Persiste el estado completo en `localStorage` bajo `STORAGE_KEY`, con
    * `try/catch` silencioso y fallback a memoria si no hay `localStorage`
@@ -373,9 +612,12 @@ export class ConversacionesStore {
    * señales de actividad, no de petición. Un hilo con mensajes sin leer que
    * lleva el bot NO requiere un humano, y tratarlo como tal produciría una
    * bandeja de urgencias falsa.
+   *
+   * Y NO es lo mismo que `estaPendiente()`: aquel abarca también `abierta`. Ver
+   * `ESTADOS_CON_ATENCION` para por qué las dos preguntas son distintas.
    */
   requiereAtencionHumana(conv: Conversacion): boolean {
-    return conv.estado === "en_espera";
+    return ESTADOS_CON_ATENCION.includes(conv.estado);
   }
 
   /**
@@ -450,7 +692,10 @@ export class ConversacionesStore {
         case "no_leidas":
           return c.noLeidos > 0;
         case "requieren_atencion":
-          return c.estado === "en_espera";
+          // Delega en el predicado canónico. Escribir aquí `c.estado ===
+          // "en_espera"` era una SEGUNDA implementación del mismo conjunto: con
+          // el predicado cambiado, el filtro y el contador divergían en silencio.
+          return this.requiereAtencionHumana(c);
         case "cerradas":
           return c.estado === "cerrada";
         default:
@@ -508,13 +753,18 @@ export class ConversacionesStore {
    * "pendiente" para el historial: `abierta` (la atiende el bot, nadie la ha
    * resuelto) o `en_espera` (el cliente pidió un asesor y sigue esperando).
    *
-   * `atendida` NO es pendiente: hay un operador trabajándola. Esos tickets no se
-   * cuentan en "Pending" ni en "Solved" — aparecen en la tabla como "In Progress".
-   * Y `cerrada` es el único estado resuelto.
+   * `atendida` NO es pendiente: hay un operador trabajándola. Y `cerrada` es el
+   * único estado resuelto.
    *
-   * Los tres predicados (`estaResuelta`, `estaPendiente`, `estaEnProgreso`) son
-   * exhaustivos y mutuamente excluyentes sobre `EstadoConversacion`: cada
-   * conversación cae en exactamente uno.
+   * LOS TRES PREDICADOS SON LA PARTICIÓN CANÓNICA de `EstadoConversacion`:
+   * `estaResuelta`, `estaPendiente` y `estaEnProgreso` son exhaustivos y
+   * mutuamente excluyentes — cada hilo cae en exactamente uno, y
+   * `pendientes + enProgreso + resueltas === totalTickets`.
+   *
+   * `requiereAtencionHumana` NO forma parte de esta partición: pregunta otra
+   * cosa y su conjunto (`en_espera`) es un SUBCONJUNTO de `estaPendiente`. Un
+   * selector nuevo que necesite preguntar por urgencia debe restringir estos
+   * tres, no añadir una cuarta partición que los contradiga.
    */
   estaPendiente(conv: Conversacion): boolean {
     return conv.estado === "abierta" || conv.estado === "en_espera";
@@ -523,31 +773,34 @@ export class ConversacionesStore {
   /**
    * ¿Está esta conversación en curso con un operador? `atendida` es el único
    * estado no terminal con un humano asignado (`atendida ⟹ humano ∧ operador≠null`,
-   * Property 2 / Req 4.9). Es el eje que el diseño canónico llama "In Progress".
+   * Property 2 / Req 4.9).
    */
   estaEnProgreso(conv: Conversacion): boolean {
     return conv.estado === "atendida";
   }
 
-  /** Nº de tickets resueltos (estado terminal `cerrada`). Tarjeta "Solved". */
+  /** Nº de tickets resueltos (estado terminal `cerrada`). */
   get ticketsResueltos(): number {
     return this.conversaciones.filter((c) => this.estaResuelta(c)).length;
   }
 
   /**
-   * Nº de tickets pendientes (ni resueltos ni en curso). Tarjeta "Pending".
+   * Nº de tickets pendientes: ni resueltos ni en curso. Tarjeta "Pendientes".
    *
    * Es el complemento exacto de `ticketsResueltos`: `pendientes + resueltos +
    * enProgreso === totalTickets`. La tabla del historial muestra las tres
-   * categorías, por lo que mostrar solo dos tarjetas haría que sus números no
-   * cuadraran con el total — de ahí que las tres se deriven de los mismos
-   * predicados y no de conteos independientes.
+   * categorías, por lo que las tres se derivan de los mismos predicados y no de
+   * conteos independientes.
+   *
+   * NO se confunde con `totalRequierenAtencion`, que cuenta solo `en_espera`.
+   * Son dos cifras legítimamente distintas: «pendiente» incluye lo que lleva el
+   * bot; «requiere atención» no.
    */
   get ticketsPendientes(): number {
     return this.conversaciones.filter((c) => this.estaPendiente(c)).length;
   }
 
-  /** Nº de tickets en curso con un operador (`atendida`). Tarjeta "In Progress". */
+  /** Nº de tickets en curso con un operador (`atendida`). Tarjeta "En curso". */
   get ticketsEnProgreso(): number {
     return this.conversaciones.filter((c) => this.estaEnProgreso(c)).length;
   }
@@ -743,40 +996,69 @@ export class ConversacionesStore {
   /**
    * El operador responde (desde `/conversaciones`). Autor `"negocio"` (Req 3.3):
    * agrega el mensaje como el más reciente y actualiza `ultimaActividad`, SIN
-   * incrementar `noLeidos` (Req 3.6). Rechaza sin mutar estado si la
-   * conversación no existe, si el texto es vacío/solo espacios (Req 3.4) o si
-   * excede los 4096 caracteres (Req 3.5). El gating de capacidad vive en la UI.
+   * incrementar `noLeidos` (Req 3.6).
+   *
+   * ── Lo que cambió el 22/09 ────────────────────────────────────────────────
+   *
+   * Antes esto insertaba el mensaje en `mensajesPorConv` y llamaba a
+   * `persistir()` (localStorage). Es decir: la burbuja aparecía en el hilo y
+   * **el cliente no recibía nada**. El operador veía su mensaje en pantalla y
+   * creía haber respondido. Un control que miente, que es justo lo que este
+   * proyecto no acepta entregar.
+   *
+   * Ahora envía de verdad, por tres razones:
+   *
+   *  1. Se pide el envío a la API (`enviarMensajeOperador`), que es la única que
+   *     puede hablar con Zernio porque es la única que tiene la clave.
+   *  2. La burbuja se pinta DESPUÉS de que WhatsApp aceptó. Al revés —pintar
+   *     primero y corregir después— es lo que hacía que un fallo dejara el hilo
+   *     diciendo algo que el cliente nunca leyó.
+   *  3. Si el envío falla, NO se pinta y se avisa por `ultimoErrorEnvio`. El
+   *     fallo se ve; el silencio no.
+   *
+   * Rechaza sin mutar estado si la conversación no existe, si el texto es
+   * vacío/solo espacios (Req 3.4) o si excede los 4096 caracteres (Req 3.5). El
+   * gating de capacidad vive en la UI y, además, lo re-verifica el servicio con
+   * la identidad del operador: aquí no se duplica esa decisión.
    *
    * Guarda de MODO DE ATENCIÓN: no-op si la conversación la lleva el bot. Es la
    * simétrica de la guarda `atencion !== "bot"` de `simularRespuestaBot`, y
    * existe por la misma razón: el autor del mensaje debe corresponder con quién
-   * atiende el hilo. Sin ella, escribir estando el hilo devuelto al bot persiste
-   * un `autor:"negocio"` que el hilo rotula como "Asesor Humano" — dos fuentes
-   * de verdad sobre quién habla. La UI ya bloquea el campo; esta guarda es la
-   * defensa en profundidad para cualquier otro llamador.
-   *
-   * `moduloContexto` es OPCIONAL y aditivo (retrocompatible con las llamadas de
-   * 2 argumentos). Existe por SIMETRÍA con `agregarMensajeBot`, no para que la UI
-   * etiquete a mano: el dominio de un mensaje del bot lo declara la tool que
-   * respondió, y el de un mensaje del operador no lo declara nadie. Etiquetar
-   * desde la UI sería triage manual disfrazado, que es justo lo que el diseño
-   * descarta por quedar obsoleto en cuanto el hilo evoluciona. Se deja la puerta
-   * abierta sin abrirla.
+   * atiende el hilo. La UI ya bloquea el campo; esta guarda es la defensa en
+   * profundidad para cualquier otro llamador.
    */
-  enviarComoNegocio(
+  async enviarComoNegocio(
     convId: string,
     texto: string,
     moduloContexto?: ModuloDestino,
-  ): void {
+  ): Promise<void> {
     const conv = this.getConversacion(convId);
     if (!conv) return;
     if (conv.atencion !== "humano") return; // el bot lleva el hilo: no hay emisor humano
     if (texto.trim() === "") return; // vacío / solo espacios: no-op (Req 3.4)
     if (texto.length > LIMITE_TEXTO_NEGOCIO) return; // excede límite (Req 3.5)
+    if (this.enviandoMensaje) return; // ya hay un envío en vuelo
 
-    this.agregarMensaje(convId, "negocio", texto, moduloContexto);
-    conv.ultimaActividad = nowIso();
-    this.persistir();
+    this.enviandoMensaje = true;
+    this.ultimoErrorEnvio = null;
+    try {
+      const res = await enviarMensajeOperador(convId, texto);
+
+      if (!res.ok) {
+        // NO se pinta la burbuja: el mensaje no salió, así que mostrarlo sería
+        // afirmar algo falso. Se avisa y se deja el texto donde estaba.
+        this.ultimoErrorEnvio = res.detalle;
+        return;
+      }
+
+      // Salido y guardado: ahora sí, la burbuja es verdad.
+      this.agregarMensaje(convId, "negocio", texto, moduloContexto);
+      conv.ultimaActividad = res.enviadoEn;
+      this.persistir();
+      void this.refrescarMensajes(convId);
+    } finally {
+      this.enviandoMensaje = false;
+    }
   }
 
   /**
@@ -849,6 +1131,38 @@ export class ConversacionesStore {
   }
 
   /**
+   * Empuja a la BASE el modo de atención que se acaba de cambiar en memoria.
+   *
+   * ── Por qué esto no es opcional ───────────────────────────────────────────
+   *
+   * `modo_atencion` es la puerta del bot: si está en `humano`, el paso 3 de
+   * `procesarEntrante` devuelve `silencio` y el bot no contesta. Escribirlo solo
+   * en `localStorage` —lo que hacía este store— significaba que pulsar «Tomar
+   * chat» o «Devolver al bot» **no cambiaba nada real**: la bandeja se veía
+   * distinta y el bot seguía mudo o seguía hablando. Un control que miente.
+   *
+   * Se llama DESPUÉS de mutar el estado local para que la UI responda al
+   * instante, y el resultado se propaga por `ultimoErrorModo` en vez de
+   * tragarse: si la escritura no llegó, la pantalla lo dice y el operador se
+   * entera. Lo peor que puede pasar aquí es un cambio que solo existe en el
+   * navegador, y para eso está el aviso.
+   */
+  private async empujarModo(convId: string, modo: ModoAtencion): Promise<void> {
+    this.ultimoErrorModo = null;
+    const res = await cambiarModoAtencion(convId, modo);
+    if (!res.ok) {
+      // No se revierte el estado local: la UI debe mostrar lo que el operador
+      // pidió, junto al motivo de que no se aplicó. Revertirlo en silencio
+      // dejaría al operador creyendo que pulsó y no pasó nada.
+      this.ultimoErrorModo = `No se pudo cambiar el modo en la base: ${res.detalle}`;
+      return;
+    }
+    // El tiempo real ya recarga la fila; este refresco es por si el canal está
+    // caído y para que la marca de `/conversaciones` no dependa de él.
+    void this.refrescarMensajes(convId);
+  }
+
+  /**
    * El operador toma la conversación. Transición `en_espera|abierta → atendida`
    * (Req 4.2): fija Estado_Conversacion en `atendida`, Modo_De_Atencion en
    * `humano`, asigna `operadorAsignadoId`, actualiza `ultimaActividad` y
@@ -877,6 +1191,7 @@ export class ConversacionesStore {
       operadorId,
     );
     this.persistir();
+    void this.empujarModo(convId, "humano");
   }
 
   /**
@@ -902,6 +1217,39 @@ export class ConversacionesStore {
     conv.ultimaActividad = nowIso();
     this.registrarEvento(convId, "devuelta", "Conversación devuelta al bot");
     this.persistir();
+    void this.empujarModo(convId, "bot");
+  }
+
+  /**
+   * Devuelve al bot un hilo que está en `humano` **sin** haber sido tomado.
+   *
+   * Es el estado en el que deja el hilo un handoff del bot: `modo_atencion` en
+   * `humano`, pero `estado` en `abierta` y sin operador asignado — porque nadie
+   * lo tomó, lo transfirió el bot.
+   *
+   * ── Por qué no basta con `devolver` ───────────────────────────────────────
+   *
+   * `devolver` exige `estado === "atendida"`. En este caso el estado es
+   * `abierta`, así que la guarda lo rechaza y no pasa nada: desde la bandeja no
+   * había manera de encender el bot sin antes «tomar» el chat, que asigna un
+   * operador que nunca lo atendió. Dos pasos para deshacer uno, y con un estado
+   * intermedio que miente.
+   *
+   * Aquí no hay transición de estado que hacer —el hilo ya está `abierta`—,
+   * solo devolver la atención al bot. Es la operación que faltaba.
+   */
+  devolverAlBot(convId: string): void {
+    const conv = this.getConversacion(convId);
+    if (!conv) return;
+    if (conv.estado === "cerrada") return;
+    if (conv.atencion !== "humano") return; // ya lo lleva el bot
+
+    conv.atencion = "bot";
+    conv.operadorAsignadoId = null;
+    conv.ultimaActividad = nowIso();
+    this.registrarEvento(convId, "devuelta", "Conversación devuelta al bot");
+    this.persistir();
+    void this.empujarModo(convId, "bot");
   }
 
   /**
@@ -919,7 +1267,7 @@ export class ConversacionesStore {
 
     conv.estado = "cerrada";
     conv.ultimaActividad = nowIso();
-    this.registrarEvento(convId, "cerrada", "Conversación cerrada");
+    this.registrarEvento(convId, "cerrada", "Conversación resuelta");
     this.persistir();
   }
 

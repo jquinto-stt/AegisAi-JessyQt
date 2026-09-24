@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import type { ReactNode } from "react";
+import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 
 import { PageMeta } from "@/shell/meta";
@@ -8,7 +9,6 @@ import { Badge } from "@/elements/ui/badge";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
 import { Avatar } from "@/elements/ui/avatar";
-import { LineChart } from "@/elements/ui/line-chart";
 import { PieChart } from "@/elements/ui/pie-chart";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
 import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
@@ -17,11 +17,10 @@ import {
   sessionStore,
   conversacionesStore,
   normalizarTelefono,
-  ESTADO_CONVERSACION_LABEL,
+  etiquetaEstado,
   ATENCION_LABEL,
   puedeEscribirCliente,
   puedeCrearPedido,
-  puedeGestionarEquipo,
   motivoSinPermiso,
   puedeGuardarConfig,
 } from "@/stores";
@@ -46,44 +45,71 @@ import {
   UrgentChatsWidget,
   PrepQueueWidget,
   LogisticsDeliveryWidget,
+  CalendarioInicioModal,
+  ResumenDiaWidget,
 } from "./widgets";
 import {
-  VISTA_META,
-  esVistaInicio,
-  hayMasDeUnaVista,
-  vistaPorDefecto,
-  vistasDisponibles,
-  type VistaInicio,
-} from "./inicio.vistas";
+  esHoy,
+  fechaCorta,
+  hoyYmd,
+  mesActual,
+  mesDeYmd,
+  mismoMes,
+  rangoDelMesHastaHoy,
+  ymdDeMesDia,
+  type MesCalendario,
+} from "./inicio.calendario";
+import { SECCIONES, seccionesDisponibles } from "./inicio.composicion";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// INICIO — panel adaptativo por rol
+// INICIO — agenda, resumen y las secciones del perfil
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// La pantalla deja de ser un panel único y pasa a ofrecer CUATRO vistas. Cuál se
-// pinta se decide en `inicio.vistas.ts`, y la regla es una sola: **por capacidad,
-// nunca por nombre de rol**. Ese archivo explica por qué; aquí se aplica.
+// ── Qué cambió, y por qué ─────────────────────────────────────────────────
 //
-// ── La vista NO es un permiso ─────────────────────────────────────────────
+// Esta pantalla tenía un **conmutador de vistas** en la cabecera (ejecutiva /
+// atención / preparación / logística) que se ofrecía a quien pudiera gestionar
+// equipo. Se retiró: era un control de navegación disfrazado de ajuste, y su
+// efecto era esconder tres cuartas partes de la pantalla tras un clic.
 //
-// El conmutador cambia QUÉ SE PINTA. Nada más. Cada botón de cada widget vuelve
-// a preguntar por su capacidad con `puede(...)`. Un administrador que abre la
-// vista de preparación ve la cola de trabajo y, como tiene `preparation.manage`,
-// puede operarla; quien no la tenga verá el botón apagado con el motivo. Es la
-// misma comprobación en los dos casos: no hay una rama que pueda mentir.
+// En su lugar hay un **calendario**, que cumple un papel distinto: no elige qué
+// se pinta, elige QUÉ DÍA se mira. El día seleccionado recorre la página: el
+// gráfico de volumen mide el mes que se está viendo y el panel del día enseña
+// las filas de la fecha elegida.
 //
-// ── El conmutador exige `team.manage` ─────────────────────────────────────
+// ── Retirar el conmutador NO fue «todos ven todo» ─────────────────────────
 //
-// Es la compuerta que pide la especificación, y se combina con una segunda
-// condición —que haya más de una vista— porque un botón que abre una lista de
-// un solo elemento no es un control. Quien no puede gestionar equipo entra
-// directo a la vista de su rol, sin conmutador: la pantalla se adapta sola, que
-// es el objetivo de todo esto.
+// La primera versión de este cambio apiló las cuatro vistas antiguas en un solo
+// flujo **para todo el mundo**, y eso mezcló el trabajo de todos los perfiles.
+// Medido con la sonda de perfiles (`outputs/inicio-perfiles-probe.mjs`): el rol
+// `vendedor`, que no tiene NINGUNA capacidad `preparation.*`, recibía la cola de
+// preparación, su contexto y la hoja de ruta de envíos — cinco bloques que no
+// puede operar, en su pantalla de inicio. Los tres perfiles alcanzables veían
+// exactamente las mismas doce tarjetas.
+//
+// La composición correcta está en `inicio.composicion.ts`: **secciones que
+// dependen de la capacidad**, sin ningún control que las cambie. Lo que el
+// perfil no puede operar no se pinta; lo que sí, se agrupa bajo un rótulo para
+// que se lea como secciones y no como una pila.
+//
+// ── Una sección NO es un permiso ─────────────────────────────────────────
+//
+// Esto decide QUÉ SE PINTA, nunca QUÉ SE PUEDE HACER. Cada botón de cada widget
+// vuelve a preguntar por su capacidad con `puede(...)` y se deshabilita con su
+// motivo. Es la misma comprobación en los dos casos: no hay una rama que pueda
+// mentir. Un administrador ve las cinco secciones; un `vendedor` ve tres y sigue
+// pudiendo crear pedidos, porque tiene `orders.create`.
+//
+// ── El calendario es estado de la PÁGINA, no del widget ───────────────────
+//
+// `mes` y `dia` viven aquí porque los consumen tres piezas (el calendario, el
+// panel del día y el gráfico). Si los guardara el widget, los otros dos no
+// podrían responder a la elección y el calendario sería decorativo.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ── Paleta y utilidades locales ────────────────────────────────────────────
-// `ORANGE`/`INDIGO`/`CELESTE`/`money`/`relativo` viven ahora en
+// `ORANGE`/`INDIGO`/`CELESTE`/`money`/`relativo` viven en
 // `widgets/widgets.comunes` y se importan, para que la serie del gráfico y la
 // del KPI no puedan divergir de color.
 
@@ -307,7 +333,7 @@ const ClienteRow = observer(
 
     const subtitulo = pedido
       ? `${pedidosStore.estadoLabel(pedido.estado)} · ${pedidosStore.modalidadLabel(pedido.modalidad)}`
-      : `${ESTADO_CONVERSACION_LABEL[conv.estado]} · ${ATENCION_LABEL[conv.atencion]}`;
+      : `${etiquetaEstado(conv.estado)} · ${ATENCION_LABEL[conv.atencion]}`;
 
     return (
       <button
@@ -438,7 +464,7 @@ const ClientesModal = observer(
   },
 );
 
-const ClientesCard = observer(({ onAbrir }: { onAbrir: () => void }) => {
+const ClientesCard = observer(({ onAbrir, onChat }: { onAbrir: () => void; onChat: (convId: string) => void }) => {
   const filas = filasDeClientes();
   const urgentes = filas
     .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
@@ -466,7 +492,7 @@ const ClientesCard = observer(({ onAbrir }: { onAbrir: () => void }) => {
       ) : (
         <div className="space-y-1">
           {items.map((f) => (
-            <ClienteRow key={f.conv.id} fila={f} onClick={onAbrir} />
+            <ClienteRow key={f.conv.id} fila={f} onClick={() => onChat(f.conv.id)} />
           ))}
         </div>
       )}
@@ -475,320 +501,174 @@ const ClientesCard = observer(({ onAbrir }: { onAbrir: () => void }) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONMUTADOR DE VISTA (cabecera)
+// BLOQUES DE TRABAJO
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Selector de vista. Solo se pinta con `team.manage` Y más de una vista.
+ * Pedidos en curso: la tabla viva del negocio.
  *
- * No es un `Select` del catálogo sino un grupo de píldoras: son cuatro opciones
- * visibles a la vez y verlas todas es justamente lo que enseña que la pantalla
- * tiene varias caras. Un desplegable las escondería.
+ * NO se filtra por el día del calendario a propósito. «En curso» es un estado
+ * presente —lo que está abierto ahora mismo—, y acotarlo a una fecha pasada
+ * daría una lista que ya no se puede operar. El día seleccionado manda en el
+ * panel del día y en el gráfico, que sí son medidas de un periodo.
  */
-const ConmutadorVista = observer(
-  ({
-    actual,
-    disponibles,
-    onElegir,
-  }: {
-    actual: VistaInicio;
-    disponibles: VistaInicio[];
-    onElegir: (v: VistaInicio) => void;
-  }) => (
-    <div
-      role="group"
-      aria-label="Vista del panel"
-      className="inline-flex flex-wrap rounded-lg bg-gray-100 p-0.5 dark:bg-gray-800"
-    >
-      {disponibles.map((v) => {
-        const activa = v === actual;
-        return (
-          <button
-            key={v}
-            type="button"
-            aria-pressed={activa}
-            onClick={() => onElegir(v)}
-            className={
-              "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-              (activa
-                ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-700 dark:text-white"
-                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200")
-            }
-          >
-            {VISTA_META[v].label}
-          </button>
-        );
-      })}
-    </div>
-  ),
-);
+const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string) => void }) => {
+  const navigate = useNavigate();
+  const tabla = pedidosStore.enCurso().slice(0, 5);
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PANELES POR VISTA
-// ═══════════════════════════════════════════════════════════════════════════
+  return (
+    <Card className="p-0 sm:p-0">
+      <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
+        <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">Pedidos en curso</h3>
+        <button
+          type="button"
+          onClick={() => navigate("/pedidos")}
+          aria-label="Ver el tablero"
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h16m0 0l-6-6m6 6l-6 6" />
+          </svg>
+        </button>
+      </div>
+      {tabla.length === 0 ? (
+        <div className="px-5 py-8">
+          <ListaVacia>Sin pedidos en curso.</ListaVacia>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableCell header>Pedido</TableCell>
+                <TableCell header>Cliente</TableCell>
+                <TableCell header>Modalidad</TableCell>
+                <TableCell header>Total</TableCell>
+                <TableCell header>Estado</TableCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tabla.map((p) => (
+                <TableRow
+                  key={p.id}
+                  onClick={() => onVerPedido(p.id)}
+                  className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                >
+                  <TableCell className="font-medium text-gray-800 dark:text-white/90">{p.numero}</TableCell>
+                  <TableCell className="text-gray-500 dark:text-gray-400">{p.cliente}</TableCell>
+                  <TableCell className="text-gray-500 dark:text-gray-400">
+                    {pedidosStore.modalidadLabel(p.modalidad)}
+                  </TableCell>
+                  <TableCell className="text-gray-500 dark:text-gray-400">
+                    {pedidosStore.totalPedido(p) > 0 ? money(pedidosStore.totalPedido(p)) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
+                      {pedidosStore.estadoLabel(p.estado)}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+});
 
-/**
- * Vista ejecutiva: KPIs, tendencia, distribución y la tabla de trabajo vivo.
- *
- * Es la vista más ancha, así que conserva lo que ya hacía la pantalla: el gráfico
- * de tendencia, el donut de distribución y la tabla de pedidos en curso, que
- * son la materia prima de un resumen.
- */
-const PanelEjecutiva = observer(
-  ({ onAbrirClientes }: { onAbrirClientes: () => void }) => {
-    const navigate = useNavigate();
+/** Distribución del histórico: en curso, entregados y cancelados. */
+const DistribucionCard = observer(() => {
+  const entregados = pedidosStore.historial.filter((p) => p.estado === "entregado").length;
+  const enCurso = pedidosStore.totalEnCurso;
+  const cancelados = pedidosStore.historial.filter((p) => p.estado === "cancelado").length;
+  const total = enCurso + entregados + cancelados;
 
-    const entregados = pedidosStore.historial.filter((p) => p.estado === "entregado").length;
-    const enCurso = pedidosStore.totalEnCurso;
-    const cancelados = pedidosStore.historial.filter((p) => p.estado === "cancelado").length;
-    const total = enCurso + entregados + cancelados;
-
-    const donutOptions: ApexOptions = {
-      colors: [INDIGO, ORANGE, CELESTE],
-      labels: ["En curso", "Entregados", "Cancelados"],
-      chart: { fontFamily: "DM Sans, sans-serif" },
-      stroke: { show: false },
-      legend: { position: "bottom", horizontalAlign: "center" },
-      plotOptions: {
-        pie: {
-          donut: {
-            size: "65%",
-            labels: {
-              show: true,
-              total: { show: true, label: "Total", formatter: () => String(total) },
-            },
+  const donutOptions: ApexOptions = {
+    colors: [INDIGO, ORANGE, CELESTE],
+    labels: ["En curso", "Entregados", "Cancelados"],
+    chart: { fontFamily: "DM Sans, sans-serif" },
+    stroke: { show: false },
+    legend: { position: "bottom", horizontalAlign: "center" },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "65%",
+          labels: {
+            show: true,
+            total: { show: true, label: "Total", formatter: () => String(total) },
           },
         },
       },
-      dataLabels: { enabled: false },
-    };
+    },
+    dataLabels: { enabled: false },
+  };
 
-    const tabla = pedidosStore.enCurso().slice(0, 5);
-
-    return (
-      <div className="space-y-6">
-        <KpiExecutiveWidget />
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <SalesTrendChartWidget />
+  return (
+    <Card>
+      <CabeceraWidget titulo="Distribución" />
+      <div className="mt-2 flex justify-center">
+        {total === 0 ? (
+          <div className="w-full">
+            <SinDatos que="pedidos" alto={300} />
           </div>
-          <ClientesCard onAbrir={onAbrirClientes} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <Card className="p-0 sm:p-0 lg:col-span-2">
-            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-gray-800">
-              <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
-                Pedidos en curso
-              </h3>
-              <button
-                type="button"
-                onClick={() => navigate("/pedidos")}
-                aria-label="Ver el tablero"
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h16m0 0l-6-6m6 6l-6 6" />
-                </svg>
-              </button>
-            </div>
-            {tabla.length === 0 ? (
-              <div className="px-5 py-8">
-                <ListaVacia>Sin pedidos en curso.</ListaVacia>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableCell header>Pedido</TableCell>
-                      <TableCell header>Cliente</TableCell>
-                      <TableCell header>Modalidad</TableCell>
-                      <TableCell header>Total</TableCell>
-                      <TableCell header>Estado</TableCell>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tabla.map((p) => (
-                      <TableRow
-                        key={p.id}
-                        onClick={() => navigate(`/pedidos?detalle=${p.id}`)}
-                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-white/[0.03]"
-                      >
-                        <TableCell className="font-medium text-gray-800 dark:text-white/90">{p.numero}</TableCell>
-                        <TableCell className="text-gray-500 dark:text-gray-400">{p.cliente}</TableCell>
-                        <TableCell className="text-gray-500 dark:text-gray-400">
-                          {pedidosStore.modalidadLabel(p.modalidad)}
-                        </TableCell>
-                        <TableCell className="text-gray-500 dark:text-gray-400">
-                          {pedidosStore.totalPedido(p) > 0 ? money(pedidosStore.totalPedido(p)) : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
-                            {pedidosStore.estadoLabel(p.estado)}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </Card>
-
-          <Card>
-            <CabeceraWidget titulo="Distribución" />
-            <div className="mt-2 flex justify-center">
-              {total === 0 ? (
-                <div className="w-full">
-                  <SinDatos que="pedidos" alto={300} />
-                </div>
-              ) : (
-                <PieChart series={[enCurso, entregados, cancelados]} options={donutOptions} height={300} />
-              )}
-            </div>
-          </Card>
-        </div>
+        ) : (
+          <PieChart series={[enCurso, entregados, cancelados]} options={donutOptions} height={300} />
+        )}
       </div>
-    );
-  },
-);
+    </Card>
+  );
+});
 
 /**
- * Vista de atención: lo urgente primero, más el atajo a crear pedido.
+ * Encabezado de sección.
  *
- * El botón de crear va aquí y no en la cabecera general porque es la acción
- * propia de este puesto: quien atiende es quien abre órdenes a mano.
+ * Existe para que la pantalla se lea como «las secciones del trabajo de este
+ * perfil» y no como una pila de tarjetas sin relación — que es exactamente lo
+ * que se veía cuando las cuatro vistas antiguas se apilaron sin agrupar.
+ *
+ * El rótulo va en gris y en versalitas, como la marca de letra del manual
+ * (`#535250`), **no en naranja**: es mobiliario de página, no acento de marca.
+ * Y el filete que cierra la línea es el mismo recurso de composición del manual
+ * (la columna de etiqueta separada del contenido por un trazo fino).
  */
-const PanelVentas = observer(
-  ({ onAbrirClientes }: { onAbrirClientes: () => void }) => {
-    const navigate = useNavigate();
-    const puedeCrear = puedeCrearPedido();
-
-    const hoyYmd = new Date().toISOString().slice(0, 10);
-    const creadosHoy = pedidosStore.pedidos.filter((p) => p.createdAt.slice(0, 10) === hoyYmd).length;
-    const urgentes = pedidosStore.urgentes.length;
-
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <UrgentChatsWidget max={6} />
-          </div>
-
-          <div className="space-y-5">
-            {/* Atajo a crear pedido. Se deshabilita con el motivo si el rol no
-                puede, en vez de ocultarse: quien atiende necesita saber que la
-                acción existe y por qué no la tiene. */}
-            <Card>
-              <CabeceraWidget titulo="Acciones" />
-              <div title={puedeCrear ? undefined : motivoSinPermiso("orders.create")}>
-                <Button
-                  size="sm"
-                  className="w-full"
-                  disabled={!puedeCrear}
-                  onClick={() => navigate("/pedidos/crear")}
-                >
-                  Crear pedido
-                </Button>
-              </div>
-              <button
-                type="button"
-                onClick={onAbrirClientes}
-                className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
-              >
-                Ver todos los clientes
-              </button>
-            </Card>
-
-            <Card>
-              <CabeceraWidget titulo="Hoy" />
-              <div className="space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Órdenes creadas</span>
-                  <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                    {creadosHoy}
-                  </span>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Sin responder</span>
-                  <span
-                    className={
-                      "text-xl font-semibold tabular-nums " +
-                      (urgentes > 0
-                        ? "text-error-600 dark:text-error-400"
-                        : "text-gray-800 dark:text-white/90")
-                    }
-                  >
-                    {urgentes}
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-
-        <ClientesCard onAbrir={onAbrirClientes} />
-      </div>
-    );
-  },
+const Seccion = ({ titulo, children }: { titulo: string; children: ReactNode }) => (
+  <section className="space-y-5">
+    <div className="flex items-center gap-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        {titulo}
+      </h2>
+      <span className="h-px flex-1 bg-gray-200 dark:bg-gray-800" />
+    </div>
+    {children}
+  </section>
 );
 
-/**
- * Vista de preparación: la cola manda, y ocupa todo el ancho.
- *
- * La cola va a una columna (tarjetas grandes, que es lo que se lee de lejos en
- * una cocina) y los KPI de contexto al lado. En móvil se apila.
- */
-const PanelPreparacion = observer(() => (
-  <div className="space-y-6">
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-      <div className="lg:col-span-2">
-        <PrepQueueWidget columnas={1} />
+/** Contexto de la cola: cuánto hay en cada tramo de la preparación. */
+const ContextoPreparacionCard = observer(() => (
+  <Card>
+    <CabeceraWidget titulo="Contexto" />
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">En preparación</span>
+        <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
+          {pedidosStore.pedidos.filter((p) => p.estado === "en_preparacion").length}
+        </span>
       </div>
-      <div className="space-y-5">
-        <KpiProgramadosWidget />
-        <Card>
-          <CabeceraWidget titulo="Contexto" />
-          <div className="space-y-3">
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">En preparación</span>
-              <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                {pedidosStore.pedidos.filter((p) => p.estado === "en_preparacion").length}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Listos para salir</span>
-              <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                {pedidosStore.pedidos.filter((p) => p.estado === "listo").length}
-              </span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Confirmados en espera</span>
-              <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                {pedidosStore.pedidos.filter((p) => p.estado === "confirmado").length}
-              </span>
-            </div>
-          </div>
-        </Card>
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Listos para salir</span>
+        <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
+          {pedidosStore.pedidos.filter((p) => p.estado === "listo").length}
+        </span>
+      </div>
+      <div className="flex items-baseline justify-between">
+        <span className="text-xs text-gray-500 dark:text-gray-400">Confirmados en espera</span>
+        <span className="text-xl font-semibold tabular-nums text-gray-800 dark:text-white/90">
+          {pedidosStore.pedidos.filter((p) => p.estado === "confirmado").length}
+        </span>
       </div>
     </div>
-  </div>
-));
-
-/**
- * Vista logística: la hoja de ruta y el recaudo.
- *
- * Se reutiliza la cola de preparación en su forma de dos columnas para que quien
- * reparte vea también lo que va a salir, que es lo que necesita para planificar
- * el viaje.
- */
-const PanelLogistica = observer(() => (
-  <div className="space-y-6">
-    <LogisticsDeliveryWidget />
-    <PrepQueueWidget columnas={2} />
-  </div>
+  </Card>
 ));
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -796,40 +676,54 @@ const PanelLogistica = observer(() => (
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const InicioPage = observer(() => {
+  const navigate = useNavigate();
   const operador = sessionStore.operadorSimulado;
   const esOperador = !!operador && operador.modulo === "pedidos";
 
   const [clientesOpen, setClientesOpen] = useState(false);
   const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
 
-  // ── Vista derivada de las capacidades REALES de la sesión ────────────────
+  // ── Estado del calendario: mes visible y día seleccionado ────────────────
   //
-  // `sessionStore.hasPermission` es la única fuente de autorización (contrato
-  // §2), y de ahí sale el conjunto con el que se decide la vista. No se lee el
-  // nombre del rol en ningún sitio.
-  const capacidades = sessionStore.accessContext.capacidades;
-  const permitidas = vistasDisponibles(capacidades);
-  const porDefecto = vistaPorDefecto(capacidades);
+  // El calendario está **guardado**: la pantalla no empieza con un mes entero
+  // ocupando el ancho. Se abre desde el botón de la cabecera, que además
+  // enseña qué día está elegido — si el control estuviera escondido sin decir
+  // sobre qué fecha informa todo lo de abajo, el usuario no tendría forma de
+  // saberlo.
+  //
+  // Arranca en hoy, que es lo que se viene a mirar. No vive en la URL: el día
+  // es una posición de lectura, no un destino, y un enlace a «el 3 de
+  // septiembre» no es algo que nadie comparta.
+  const [calendarioOpen, setCalendarioOpen] = useState(false);
+  const [mes, setMes] = useState<MesCalendario>(() => mesActual());
+  const [dia, setDia] = useState<string>(() => hoyYmd());
 
-  // La vista elegida vive en la URL: así un enlace puede apuntar a una vista
-  // concreta, y `?vista=` sobrevive a una recarga. El valor lo escribe el
-  // usuario, así que un invento NO puede dejar la pantalla en blanco: se cae a
-  // la de por defecto. Y solo se acepta si además ESTÁ PERMITIDA — un
-  // `?vista=preparacion` a mano no puede abrir una vista que el rol no tiene.
-  const [searchParams, setSearchParams] = useSearchParams();
-  const pedida = searchParams.get("vista");
-  const vista: VistaInicio =
-    esVistaInicio(pedida) && permitidas.includes(pedida) ? pedida : porDefecto;
-
-  const elegirVista = (v: VistaInicio) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("vista", v);
-    setSearchParams(next, { replace: true });
+  /**
+   * Cambia de mes y **arrastra la selección**.
+   *
+   * Si el día elegido no está en el mes nuevo, dejarlo seleccionado mostraría
+   * un panel de un día que ya no se ve en la rejilla —un número que no
+   * corresponde a nada de lo que hay en pantalla—. Se mueve a hoy si hoy cae en
+   * el mes destino, y si no, al día 1.
+   */
+  const cambiarMes = (m: MesCalendario) => {
+    setMes(m);
+    const mesDelDia = mesDeYmd(dia);
+    if (!mismoMes(mesDelDia, m)) {
+      const hoy = hoyYmd();
+      setDia(mismoMes(mesDeYmd(hoy), m) ? hoy : ymdDeMesDia(m, 1));
+    }
   };
 
-  // El conmutador exige `team.manage` (compuerta de la especificación) Y que
-  // haya algo que conmutar. Sin lo segundo, un botón abriría una lista de uno.
-  const mostrarConmutador = puedeGestionarEquipo() && hayMasDeUnaVista(capacidades);
+  const irAHoy = () => {
+    setMes(mesActual());
+    setDia(hoyYmd());
+  };
+
+  // El gráfico mide el mes que se está viendo, hasta hoy. Ver
+  // `rangoDelMesHastaHoy`: un mes en curso no ha terminado, y rellenar de ceros
+  // la parte que aún no ha pasado se lee como una caída de ventas.
+  const rangoGrafico = rangoDelMesHastaHoy(mes);
 
   // ── Alerta sonora recurrente ─────────────────────────────────────────────
   const alerta = pedidosStore.config.alertaAtencion;
@@ -848,54 +742,167 @@ export const InicioPage = observer(() => {
     return () => detenerCampanita();
   }, [alertaActiva, cadaSegundos]);
 
-  const meta = VISTA_META[vista];
+  // Una sola ruta para «abrir el chat de este cliente», la pidan la tarjeta o
+  // el modal. La tarjeta antes llamaba a `onAbrir` (el listado) y el clic en un
+  // cliente terminaba en el filtro en vez de en su conversación.
+  const abrirChat = (id: string) => {
+    setClientesOpen(false);
+    setChatDrawerConvId(id);
+  };
+
+  /** Abre un pedido en el tablero. Único destino de «ver este pedido». */
+  const verPedido = (id: string) => navigate(`/pedidos?detalle=${id}`);
+
+  // ── Composición por capacidad ────────────────────────────────────────────
+  //
+  // `sessionStore.accessContext` es la única fuente de autorización (contrato
+  // §2), y de ahí sale el conjunto con el que se decide qué secciones entran.
+  // **No se lee el nombre del rol en ningún sitio**: un rol personalizado
+  // funciona el primer día y a un rol al que se le quite una capacidad deja de
+  // ofrecérsele la sección sola.
+  const capacidades = sessionStore.accessContext.capacidades;
+  const disponibles = seccionesDisponibles(capacidades);
+
+  const tituloDe = (id: string) => SECCIONES.find((s) => s.id === id)?.titulo ?? "";
+
+  // La acción primaria de la página. Vive en la cabecera y no en una tarjeta
+  // «Acciones»: es la acción del módulo, no la de un bloque concreto. Se
+  // deshabilita con el motivo si el perfil no puede crear, en vez de ocultarse
+  // — quien atiende necesita saber que la acción existe y por qué no la tiene.
+  const puedeCrear = puedeCrearPedido();
 
   return (
     <>
       <PageMeta
-        title={`Inicio · Pedidos`}
-        description={`${meta.titulo} — ${meta.hint}`}
+        title="Inicio · Pedidos"
+        description="Agenda, resumen del negocio y las secciones de trabajo del perfil."
       />
 
-      {/* Cabecera: saludo + título de la vista, y el conmutador a la derecha. */}
+      {/* Cabecera: saludo + qué es esta pantalla, y las dos acciones de página.
+          El conmutador de vistas que vivía aquí a la derecha se retiró; su sitio
+          lo ocupan ahora «Crear pedido» y el botón del calendario. */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">
-              {esOperador ? `Hola, ${operador!.nombre}` : meta.titulo}
+              {esOperador ? `Hola, ${operador!.nombre}` : "Inicio"}
             </h1>
             <CampanitaAtencion onClick={() => setClientesOpen(true)} />
           </div>
+          {/* Decir que la página se compone es información útil, no adorno:
+              explica por qué esta pantalla no es igual a la de otro perfil, y
+              evita que se lea como «faltan cosas». */}
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {esOperador ? `${meta.titulo} · ${meta.hint}` : meta.hint}
+            Solo aparecen las secciones que tu perfil puede operar. El calendario elige el día que
+            informan la agenda y el resumen del día.
           </p>
         </div>
 
-        {mostrarConmutador && (
-          <div className="shrink-0">
-            <ConmutadorVista actual={vista} disponibles={permitidas} onElegir={elegirVista} />
+        <div className="flex shrink-0 items-center gap-2">
+          <div title={puedeCrear ? undefined : motivoSinPermiso("orders.create")}>
+            <Button size="sm" disabled={!puedeCrear} onClick={() => navigate("/pedidos/crear")}>
+              Crear pedido
+            </Button>
           </div>
+
+          {/* El botón ENUNCIA la fecha elegida, no solo la acción de abrir: es
+              la única señal de sobre qué día habla la agenda. */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setCalendarioOpen(true)}
+            startIcon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            }
+          >
+            <span className="capitalize">{esHoy(dia) ? "Hoy" : fechaCorta(dia)}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-10">
+        {/* ── Agenda: el mes que se está mirando y el día elegido ────────── */}
+        {disponibles.includes("agenda") && (
+          <Seccion titulo={tituloDe("agenda")}>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <SalesTrendChartWidget rango={rangoGrafico} />
+              </div>
+              <div className="space-y-5">
+                {/* `key` remonta el panel al cambiar de día: así el fundido de
+                    entrada confirma que la elección hizo algo, en vez de
+                    sustituir el contenido de golpe sin que se note. */}
+                <div key={dia} className="animate-aparecer">
+                  <ResumenDiaWidget ymd={dia} onVerPedido={verPedido} />
+                </div>
+                {/* Los programados son materia de agenda, no de preparación: van
+                    con el calendario porque es ahí donde se ven las fechas. Se
+                    autodescarta sin `scheduled.read`. */}
+                <KpiProgramadosWidget />
+              </div>
+            </div>
+          </Seccion>
+        )}
+
+        {/* ── Resumen del negocio: KPIs, curso y distribución ───────────── */}
+        {disponibles.includes("resumen") && (
+          <Seccion titulo={tituloDe("resumen")}>
+            <KpiExecutiveWidget />
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <PedidosEnCursoCard onVerPedido={verPedido} />
+              </div>
+              <DistribucionCard />
+            </div>
+          </Seccion>
+        )}
+
+        {/* ── Atención: lo que espera respuesta y el directorio de clientes ─ */}
+        {disponibles.includes("atencion") && (
+          <Seccion titulo={tituloDe("atencion")}>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <UrgentChatsWidget max={6} />
+              </div>
+              <ClientesCard onAbrir={() => setClientesOpen(true)} onChat={abrirChat} />
+            </div>
+          </Seccion>
+        )}
+
+        {/* ── Preparación: la cola y su contexto ─────────────────────────── */}
+        {disponibles.includes("preparacion") && (
+          <Seccion titulo={tituloDe("preparacion")}>
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <PrepQueueWidget columnas={1} />
+              </div>
+              <ContextoPreparacionCard />
+            </div>
+          </Seccion>
+        )}
+
+        {/* ── Logística: la hoja de ruta, a todo el ancho ─────────────────── */}
+        {disponibles.includes("logistica") && (
+          <Seccion titulo={tituloDe("logistica")}>
+            <LogisticsDeliveryWidget />
+          </Seccion>
         )}
       </div>
 
-      {/* El panel remonta al cambiar de vista: `key` fuerza el fundido de
-          entrada en vez de sustituir los nodos de golpe. */}
-      <div key={vista} className="animate-aparecer">
-        {vista === "ejecutiva" && <PanelEjecutiva onAbrirClientes={() => setClientesOpen(true)} />}
-        {vista === "ventas" && <PanelVentas onAbrirClientes={() => setClientesOpen(true)} />}
-        {vista === "preparacion" && <PanelPreparacion />}
-        {vista === "logistica" && <PanelLogistica />}
-      </div>
-
-      {clientesOpen && (
-        <ClientesModal
-          onClose={() => setClientesOpen(false)}
-          onChat={(id) => {
-            setClientesOpen(false);
-            setChatDrawerConvId(id);
-          }}
+      {calendarioOpen && (
+        <CalendarioInicioModal
+          mes={mes}
+          seleccion={dia}
+          onSeleccion={setDia}
+          onMes={cambiarMes}
+          onHoy={irAHoy}
+          onClose={() => setCalendarioOpen(false)}
         />
       )}
+
+      {clientesOpen && <ClientesModal onClose={() => setClientesOpen(false)} onChat={abrirChat} />}
 
       <ChatDrawer convId={chatDrawerConvId} onClose={() => setChatDrawerConvId(null)} />
     </>

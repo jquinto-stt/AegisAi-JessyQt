@@ -1,3 +1,27 @@
 .sst
 .env
-dist
+
+# `dist` se ignora aquí porque el build de infraestructura es desechable.
+#
+# EXCEPCIÓN DELIBERADA: el `dist/` de `modules/service` NO es desechable — es la
+# única copia del bot de pedidos. Sus fuentes TypeScript (`ZernioWebhook`,
+# `ZernioDAO`, `BotPedidos`, `BotPedidosDAO`, `ZernioEnvio`, `EnvioOperador`) no
+# existen en el repo. Ver el `.gitignore` de ese paquete antes de tocar nada.
+#
+# ── Por qué NO se escribe `dist` a secas (defecto medido el 22/09) ─────────
+#
+# Con `dist` suelto, git marca el DIRECTORIO como excluido y **no desciende a
+# mirar dentro**. Las dos negaciones siguientes quedaban decorativas: un archivo
+# NUEVO dentro de `dist/` no aparecía en `git status` (`check-ignore` lo
+# confirmaba: `!modules/service/dist/**` como regla que lo *ignora*). El efecto
+# era el peor posible: los archivos ya versionados seguían ahí, así que parecía
+# que el dist sí se versionaba, pero cualquier archivo nuevo se perdía en
+# silencio. Un `EnvioOperador.js` sin commitear = 404 en producción sin causa
+# visible.
+#
+# La forma correcta es anclar a la raíz (`/dist/`) y excluir el contenido con
+# `/*`, de modo que el directorio en sí no quede excluido y las negaciones sí
+# alcancen a los hijos.
+/dist/*
+!/modules/service/dist/
+!/modules/service/dist/**

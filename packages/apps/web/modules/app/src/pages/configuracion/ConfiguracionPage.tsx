@@ -1,9 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { useSearchParams } from "react-router";
+import { Navigate, useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
 import { Badge } from "@/elements/ui/badge";
-import { GridIcon, GroupIcon, PlugInIcon } from "@/icons";
+import { GridIcon, PlugInIcon } from "@/icons";
 import { organizacionStore } from "@/stores";
 import {
   ConfigHeader,
@@ -11,17 +11,27 @@ import {
   ConfigShell,
   type GrupoNav,
 } from "@/pages/config-layout";
-import { EquipoTab, ModulosTab } from "@/pages/equipo";
+import { ModulosTab } from "@/pages/equipo";
 import { GeneralOrgTab } from "./GeneralOrgTab";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN DE LA ORGANIZACIÓN — /configuracion
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Una sola pantalla para todo lo que es de la organización. Antes estaba
-// partida en dos (`/equipo` y `/configuracion`) y los datos generales no tenían
-// sitio ninguno: el onboarding los pedía una vez y no había forma de corregir un
-// nombre mal escrito.
+// Una sola pantalla para los ajustes que son de la organización: identidad y
+// módulos encendidos. Antes estaba partida en dos (`/equipo` y
+// `/configuracion`) y los datos generales no tenían sitio ninguno: el onboarding
+// los pedía una vez y no había forma de corregir un nombre mal escrito.
+//
+// ── Por qué «Equipo» YA NO es una pestaña de aquí ─────────────────────────
+//
+// Configuración agrupa lo que se ajusta UNA VEZ: el nombre del negocio, su
+// región, qué módulos están encendidos. Gestionar personas es una tarea
+// RECURRENTE —se invita, se aprueba, se cambia un rol— y enterrarla aquí
+// obligaba a dos clics y a saber de antemano que estaba dentro. Ahora vive en
+// `/equipo` como hermana de esta pantalla, y el sidebar las muestra seguidas.
+// `?tab=equipo` sigue resolviendo (ver la guarda de abajo) para no romper
+// enlaces guardados.
 //
 // ── La pestaña activa vive en la URL (`?tab=`) ────────────────────────────
 //
@@ -42,9 +52,9 @@ import { GeneralOrgTab } from "./GeneralOrgTab";
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Claves de pestaña. Son también los valores válidos de `?tab=`. */
-type ClaveTab = "general" | "modulos" | "equipo";
+type ClaveTab = "general" | "modulos";
 
-const CLAVES_TAB: ClaveTab[] = ["general", "modulos", "equipo"];
+const CLAVES_TAB: ClaveTab[] = ["general", "modulos"];
 
 /**
  * ¿Es `v` una pestaña conocida?
@@ -71,14 +81,6 @@ const META_TAB: Record<
     hint: "Qué tiene encendido la organización y qué conectores usa cada módulo.",
     icono: PlugInIcon,
   },
-  equipo: {
-    label: "Equipo y permisos",
-    // La sección dice a qué alcanza: el listado son las personas del módulo
-    // Pedidos, no toda la organización. Un equipo a medias sin decirlo es una
-    // media verdad.
-    hint: "Personas del módulo de Pedidos, sus roles y qué puede hacer cada una.",
-    icono: GroupIcon,
-  },
 };
 
 export const ConfiguracionPage = observer(() => {
@@ -104,17 +106,27 @@ export const ConfiguracionPage = observer(() => {
 
   const nombreOrg = organizacionStore.organizacion?.nombre;
 
+  // ── Enlaces guardados a la pestaña que ya no existe ───────────────────────
+  //
+  // `?tab=equipo` era la pestaña de equipo. Al sacarla a `/equipo`, un marcador
+  // viejo caería en `general` y el usuario vería datos que no pidió, sin
+  // entender por qué. Se redirige a su sitio nuevo. Es una guarda, no una
+  // pestaña oculta: no se pinta nada de equipo aquí.
+  if (searchParams.get("tab") === "equipo") {
+    return <Navigate to="/equipo" replace />;
+  }
+
   return (
     <>
       <PageMeta
         title="Configuración de la organización"
-        description="Datos generales, módulos, integraciones y equipo de la organización"
+        description="Datos generales, módulos e integraciones de la organización"
       />
 
       <div className="mb-5">
         <ConfigHeader
           titulo="Configuración"
-          descripcion="Los datos de tu organización, los módulos que tiene encendidos y quién puede operarlos."
+          descripcion="Los datos de tu organización y los módulos que tiene encendidos. Para gestionar personas, usa Equipo y perfiles."
           // El nombre en la cabecera responde «¿de quién es esta configuración?»
           // sin obligar a bajar a la pestaña General. Si no hay organización, no
           // se pinta un hueco: no hay nada que nombrar.
@@ -142,7 +154,6 @@ export const ConfiguracionPage = observer(() => {
         <ConfigShell seccionKey={tab} titulo={meta.label} hint={meta.hint}>
           {tab === "general" && <GeneralOrgTab />}
           {tab === "modulos" && <ModulosTab />}
-          {tab === "equipo" && <EquipoTab />}
         </ConfigShell>
       </div>
     </>

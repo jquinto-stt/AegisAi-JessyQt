@@ -14,6 +14,7 @@ import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils
 import { Settings } from "lucide-react";
 import {
   GridIcon,
+  GroupIcon,
   TaskIcon,
   ListIcon,
   PlugInIcon,
@@ -340,18 +341,16 @@ const SidebarContent = observer(() => {
   const esRutaConHijas = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
 
   /**
-   * La entrada «Configuración» cubre DOS rutas, no una.
+   * Cada entrada del grupo «Organización» marca su propia ruta.
    *
-   * `/configuracion` —con cualquier `?tab=`, que no cambia el `pathname`— y
-   * `/equipo/:id`, el perfil de una persona, que se abre desde la pestaña de
-   * equipo. Sin lo segundo, el ítem se apagaría justo mientras estás dentro de lo
-   * que gobierna, que es la forma más barata de que el sidebar parezca roto.
-   *
-   * `/equipo` a secas no hace falta nombrarla: es un `<Navigate>` a
-   * `/configuracion?tab=equipo` y nunca llega a pintarse.
+   * `esRutaConHijas` y no una igualdad estricta porque las dos gobiernan
+   * subrutas reales: `/equipo/:id` es el perfil de una persona y se abre desde
+   * la tabla de equipo. Sin cubrirla, el ítem se apagaría justo mientras estás
+   * dentro de lo que gobierna, que es la forma más barata de que el sidebar
+   * parezca roto.
    */
-  const esRutaOrganizacion = (path: string) =>
-    esRutaConHijas(path) || esRutaConHijas("/equipo");
+  const esRutaConfiguracion = (path: string) => esRutaConHijas(path);
+  const esRutaEquipo = (path: string) => esRutaConHijas(path);
 
   // Las dos preguntas que decide cada sección transversal, separadas a propósito:
   // «¿el rol puede?» (permiso) y «¿la organización lo tiene encendido?» (config).
@@ -514,16 +513,22 @@ const SidebarContent = observer(() => {
           );
         })}
 
-        {/* Organización — UNA sola entrada para UNA sola pantalla.
-            Antes eran dos («Equipo» y «Configuración de Módulos») porque eran dos
-            pantallas distintas; ahora son dos pestañas de `/configuracion`, así que
-            dos enlaces al mismo sitio serían dos caminos sin ninguna razón para
-            elegir uno. El icono es el mismo que usa el menú de usuario para este
-            destino (`UserDropdown`), que es lo que hace que dos accesos al mismo
-            sitio se lean como el mismo sitio.
+        {/* Organización — DOS entradas para DOS pantallas.
+            Antes era un solo enlace porque equipo vivía como pestaña dentro de
+            Configuración; al sacarlo, dos enlaces al mismo sitio serían dos
+            caminos sin razón para elegir uno. Ahora cada uno lleva a su
+            pantalla, y van seguidas para que se lean como lo que son: lo que se
+            ajusta una vez, y las personas con las que se trabaja cada día.
 
-            Sigue siendo el ÚNICO enlace del sidebar a `/configuracion`: el del pie
-            se retiró porque lo veía todo el mundo y la ruta exige `team.manage`. */}
+            «Equipo y perfiles» va DEBAJO de «Configuración» a propósito: es la
+            que más se usa, y en una lista vertical lo más usado va lo más cerca
+            de la mano. El icono de equipo es el mismo que usa el menú de usuario
+            para perfiles, que es lo que hace que dos accesos al mismo sitio se
+            lean como el mismo sitio.
+
+            El grupo entero solo se pinta con `team.manage`: las dos rutas lo
+            exigen, así que un enlace visible sería una promesa que la ruta
+            rompe al primer clic. */}
         {puedeGestionarEquipo && (
           <div>
             <MenuSectionHeader
@@ -542,7 +547,13 @@ const SidebarContent = observer(() => {
                   icon={<Settings className="size-5" />}
                   name="Configuración"
                   path="/configuracion"
-                  isActive={esRutaOrganizacion}
+                  isActive={esRutaConfiguracion}
+                />
+                <MenuItem
+                  icon={<GroupIcon className="size-5" />}
+                  name="Equipo y perfiles"
+                  path="/equipo"
+                  isActive={esRutaEquipo}
                 />
               </ul>
             </div>

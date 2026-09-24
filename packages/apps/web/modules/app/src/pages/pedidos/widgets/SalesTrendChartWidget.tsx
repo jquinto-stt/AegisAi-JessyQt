@@ -116,9 +116,28 @@ const RangoCalendarioModal = ({
 // ── Widget ─────────────────────────────────────────────────────────────────
 
 export const SalesTrendChartWidget = observer(
-  ({ alto = 300 }: { alto?: number }) => {
-    const [rango, setRango] = useState<{ desde: string; hasta: string } | null>(null);
+  ({
+    alto = 300,
+    rango: rangoControlado,
+  }: {
+    alto?: number;
+    /**
+     * Tramo que debe medir el gráfico, impuesto desde FUERA (el calendario del
+     * Inicio).
+     *
+     * Pasar la prop —incluido `null`— vuelve el widget **controlado**: deja de
+     * ofrecer su propio selector y su botón «Volver a esta semana», porque dos
+     * controles sobre el mismo tramo acaban discrepando y uno de los dos miente
+     * sobre lo que se está midiendo. No pasarla (`undefined`) lo deja como
+     * estaba, con su selector propio.
+     */
+    rango?: { desde: string; hasta: string } | null;
+  }) => {
+    const [rangoInterno, setRangoInterno] = useState<{ desde: string; hasta: string } | null>(null);
     const [calendarioOpen, setCalendarioOpen] = useState(false);
+
+    const controlado = rangoControlado !== undefined;
+    const rango = controlado ? rangoControlado : rangoInterno;
 
     // Granularidad adaptativa, decidida por el RANGO y no por el usuario:
     //  · un solo día       → por HORA (la curva del día)
@@ -159,6 +178,12 @@ export const SalesTrendChartWidget = observer(
         axisTicks: { show: false },
         tooltip: { enabled: false },
         crosshairs: { show: true, stroke: { color: "#94a3b8", width: 1, dashArray: 4 } },
+        // Un mes entero son ~22 categorías: ApexCharts las rota a 90° cuando no
+        // caben, y una fila de etiquetas giradas no se lee. `rotate: 0` con
+        // `hideOverlappingLabels` deja las que caben y **oculta las que se
+        // pisarían**, que es lo que hace legible un eje denso. Con 7 puntos
+        // (la vista por defecto) no cambia nada porque no hay solape.
+        labels: { rotate: 0, hideOverlappingLabels: true },
       },
       grid: { yaxis: { lines: { show: true } } },
       legend: { show: false },
@@ -173,10 +198,18 @@ export const SalesTrendChartWidget = observer(
 
     return (
       <Card>
+        {/* Controlado: el tramo lo fija el calendario, así que aquí solo se
+            ENUNCIA. Un botón que abriera un selector para pisar la elección del
+            calendario dejaría dos fuentes de verdad para el mismo eje. */}
         <CabeceraWidget
           titulo="Volumen de pedidos"
-          accion={etiquetaRango}
-          onAccion={() => setCalendarioOpen(true)}
+          extra={
+            controlado ? (
+              <span className="text-xs text-gray-400 dark:text-gray-500">{etiquetaRango}</span>
+            ) : undefined
+          }
+          accion={controlado ? undefined : etiquetaRango}
+          onAccion={controlado ? undefined : () => setCalendarioOpen(true)}
         />
 
         {vacio ? (
@@ -185,21 +218,21 @@ export const SalesTrendChartWidget = observer(
           <LineChart series={[{ name: "Pedidos", data: real }]} options={options} height={alto} />
         )}
 
-        {rango && (
+        {!controlado && rango && (
           <button
             type="button"
-            onClick={() => setRango(null)}
+            onClick={() => setRangoInterno(null)}
             className="mt-2 text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             Volver a esta semana
           </button>
         )}
 
-        {calendarioOpen && (
+        {!controlado && calendarioOpen && (
           <RangoCalendarioModal
             onClose={() => setCalendarioOpen(false)}
             onAplicar={(desde, hasta) => {
-              setRango({ desde, hasta });
+              setRangoInterno({ desde, hasta });
               setCalendarioOpen(false);
             }}
           />

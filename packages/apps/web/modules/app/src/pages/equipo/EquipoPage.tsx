@@ -8,6 +8,8 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { operadoresStore, rolesStore, type Operador, type OperadorEstado } from "@/stores";
+import { PageMeta } from "@/shell/meta";
+import { ConfigHeader } from "@/pages/config-layout";
 import { PlusIcon } from "@/icons";
 import { EquipoTabla } from "./EquipoTabla";
 import { RolesTab } from "./RolesTab";
@@ -20,12 +22,18 @@ import {
 import { validarAlta, type AltaPersona } from "./equipo.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PESTAÑA "EQUIPO Y PERMISOS" (Organización / Transversal)
+// PÁGINA "EQUIPO Y PERFILES" (Organización / Transversal)
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Era una PÁGINA servida en `/equipo`. Ahora es una pestaña de la configuración
-// de la organización, así que ya no pinta su `<h1>` ni su `PageMeta`: el
-// `ConfigShell` que la aloja pone el título y el consejo de la sección.
+// Era una PESTAÑA de `/configuracion` (`?tab=equipo`). Vuelve a ser PÁGINA, en
+// `/equipo`, porque Configuración de la organización agrupa lo que se ajusta
+// UNA VEZ (nombre, región, módulos encendidos), mientras que gestionar personas
+// es una tarea RECURRENTE que el admin hace cada semana. Enterrarla dentro de
+// Configuración obligaba a dos clics y a saber de antemano que estaba ahí.
+//
+// Ahora el sidebar muestra las dos entradas seguidas —«Configuración» y
+// «Equipo y perfiles»—, que es como el usuario las piensa: dos pantallas
+// distintas, no una dentro de otra.
 //
 // Características principales:
 //   1. Se gestionan PERSONAS con un rol. El listado es el del módulo Pedidos
@@ -33,8 +41,7 @@ import { validarAlta, type AltaPersona } from "./equipo.presentacion";
 //      un equipo que solo muestra parte de la organización sin avisar es una
 //      media verdad.
 //   2. Sub-vista de ROLES: los paquetes de capacidades se definen una vez y se
-//      reutilizan. Es un nivel INTERNO de esta pestaña, no una pestaña más: el
-//      `ConfigSectionNav` de la página no lo conoce.
+//      reutilizan. Es un nivel INTERNO de esta página.
 //   3. El perfil de cada persona es una RUTA (`/equipo/:id`), que sigue viva.
 //   4. "Ver como" (impersonación) vive aquí.
 //
@@ -63,7 +70,7 @@ const FORM_VACIO: PersonaForm = {
   rolId: "",
 };
 
-export const EquipoTab = observer(() => {
+export const EquipoPage = observer(() => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
   const [tab, setTab] = useState<"todos" | "pendientes">("todos");
   const [busqueda, setBusqueda] = useState("");
@@ -161,9 +168,28 @@ export const EquipoTab = observer(() => {
 
   return (
     <>
-      {/* Contexto y acciones de la sub-vista. El título de la sección lo pinta el
-          `ConfigShell` que aloja esta pestaña; aquí solo va lo que cambia entre
-          «personas» y «roles», más los botones. */}
+      <PageMeta
+        title="Equipo y perfiles"
+        description="Personas del módulo de Pedidos, sus roles y qué puede hacer cada una"
+      />
+
+      {/* Encabezado de la página. Lo pone la propia página porque ya no vive
+          dentro de un `ConfigShell`: al salir de Configuración recupera su
+          `<h1>` y su descripción, que es lo que le dice al usuario dónde está
+          sin depender del menú lateral.
+          Sin badge de pendientes aquí: el contador ya vive junto a la pestaña
+          «Pendientes», que es donde se actúa sobre él. Repetirlo en dos sitios
+          a la vez es ruido, no énfasis. */}
+      <div className="mb-5">
+        <ConfigHeader
+          titulo="Equipo y perfiles"
+          descripcion="Las personas de tu negocio, el rol de cada una y qué puede hacer. El rol define los permisos; el perfil los muestra en detalle."
+        />
+      </div>
+
+      {/* Contexto y acciones de la sub-vista. El título de sección vive en el
+          encabezado; aquí solo va lo que cambia entre «personas» y «roles»,
+          más los botones. */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -378,4 +404,4 @@ export const EquipoTab = observer(() => {
   );
 });
 
-export default EquipoTab;
+export default EquipoPage;

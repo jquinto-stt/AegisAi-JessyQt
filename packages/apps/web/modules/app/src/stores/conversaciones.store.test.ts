@@ -384,31 +384,100 @@ describe("ConversacionesStore — selectores del historial de atención", () => 
   });
 
   describe("catálogo de presentación del estado", () => {
-    it("ESTADO_CONVERSACION_LABEL cubre los cuatro estados con las etiquetas canónicas", () => {
-      expect(mod.ESTADO_CONVERSACION_LABEL).toEqual({
-        abierta: "Open",
-        en_espera: "Pending",
-        atendida: "In progress",
-        cerrada: "Solved",
-      });
+    it("ESTADO_CONVERSACION_META cubre los cuatro estados con las etiquetas canónicas", () => {
+      expect(mod.etiquetaEstado("abierta")).toBe("Sin atender");
+      expect(mod.etiquetaEstado("en_espera")).toBe("En espera");
+      expect(mod.etiquetaEstado("atendida")).toBe("En curso");
+      expect(mod.etiquetaEstado("cerrada")).toBe("Resuelta");
     });
 
-    it("ESTADO_CONVERSACION_BADGE es una correspondencia total de los cuatro estados", () => {
-      expect(Object.keys(mod.ESTADO_CONVERSACION_BADGE).sort()).toEqual(
+    it("el catálogo es una correspondencia total de los cuatro estados", () => {
+      expect(Object.keys(mod.ESTADO_CONVERSACION_META).sort()).toEqual(
         ["abierta", "atendida", "cerrada", "en_espera"].sort(),
       );
     });
 
+    it("cada estado declara etiqueta, badge y presencia (ninguna cara a medias)", () => {
+      for (const meta of Object.values(mod.ESTADO_CONVERSACION_META)) {
+        expect(typeof meta.label).toBe("string");
+        expect(meta.label.trim()).not.toBe("");
+        expect(typeof meta.badge).toBe("string");
+        expect(typeof meta.presencia).toBe("string");
+      }
+    });
+
     it("`cerrada` es el único estado con badge de éxito (resuelto)", () => {
-      const exitosos = Object.entries(mod.ESTADO_CONVERSACION_BADGE)
-        .filter(([, color]) => color === "success")
+      const exitosos = Object.entries(mod.ESTADO_CONVERSACION_META)
+        .filter(([, meta]) => meta.badge === "success")
         .map(([estado]) => estado);
       expect(exitosos).toEqual(["cerrada"]);
     });
 
     it("los cuatro estados tienen colores DISTINTOS (no hay dos estados que se vean igual)", () => {
-      const colores = Object.values(mod.ESTADO_CONVERSACION_BADGE);
+      const colores = Object.values(mod.ESTADO_CONVERSACION_META).map((m) => m.badge);
       expect(new Set(colores).size).toBe(colores.length);
+    });
+
+    it("`atendida` y `cerrada` NO comparten presencia: en curso no es lo mismo que resuelta", () => {
+      // El defecto que esto fija: `statusDe` mandaba ambas a `offline`, así que
+      // un hilo que un operador tenía entre manos se pintaba igual que uno ya
+      // despachado.
+      expect(mod.presenciaDe("atendida")).not.toBe(mod.presenciaDe("cerrada"));
+    });
+
+    it("solo `abierta` y `atendida` se ven como contacto disponible", () => {
+      const enLinea = Object.entries(mod.ESTADO_CONVERSACION_META)
+        .filter(([, meta]) => meta.presencia === "online")
+        .map(([estado]) => estado)
+        .sort();
+      expect(enLinea).toEqual(["abierta", "atendida"]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LA PARTICIÓN CANÓNICA Y EL CONJUNTO DE ATENCIÓN
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Dos preguntas vecinas que durante un tiempo fueron el MISMO rótulo en dos
+  // pantallas y daban cifras distintas. Esta sección fija que son distintas a
+  // propósito, y CUÁLES son cada una.
+
+  describe("«requiere atención» vs «pendiente»", () => {
+    it("el conjunto de atención es exactamente `en_espera`", () => {
+      const deAtencion = store.conversaciones
+        .filter((c) => store.requiereAtencionHumana(c))
+        .map((c) => c.estado);
+      expect(new Set(deAtencion)).toEqual(new Set(["en_espera"]));
+    });
+
+    it("toda conversación que requiere atención está TAMBIÉN pendiente (es un subconjunto)", () => {
+      for (const c of store.conversaciones) {
+        if (store.requiereAtencionHumana(c)) {
+          expect(store.estaPendiente(c)).toBe(true);
+        }
+      }
+    });
+
+    it("pero no toda pendiente requiere atención: lo que lleva el bot está pendiente y no espera a nadie", () => {
+      const pendienteSinAtencion = store.conversaciones.filter(
+        (c) => store.estaPendiente(c) && !store.requiereAtencionHumana(c),
+      );
+      expect(pendienteSinAtencion.length).toBeGreaterThan(0);
+      for (const c of pendienteSinAtencion) {
+        expect(c.estado).toBe("abierta");
+      }
+    });
+
+    it("`totalRequierenAtencion` cuenta lo mismo que el filtro de la bandeja", () => {
+      // Eran dos implementaciones del mismo conjunto: el predicado y el `switch`
+      // del filtro. Si vuelven a divergir, esto falla.
+      store.setFiltro("requieren_atencion");
+      expect(store.bandeja.length).toBe(store.totalRequierenAtencion);
+      store.setFiltro("todas");
+    });
+
+    it("`ticketsPendientes` es la pregunta ANCHA y no coincide con la de atención", () => {
+      expect(store.ticketsPendientes).toBeGreaterThan(store.totalRequierenAtencion);
     });
   });
 });

@@ -22,6 +22,7 @@ import {
   ChevronLeftIcon,
   ListIcon,
   MoreDotIcon,
+  PieChartIcon,
   TimeIcon,
 } from "@/icons";
 import {
@@ -32,8 +33,9 @@ import {
 import {
   conversacionesStore,
   pedidosStore,
-  ESTADO_CONVERSACION_BADGE,
-  ESTADO_CONVERSACION_LABEL,
+  badgeEstado,
+  etiquetaEstado,
+  ETIQUETA_RESOLVER,
   puedeResponderConversacion,
 } from "@/stores";
 import type { ConversacionCanal } from "@/stores";
@@ -50,16 +52,28 @@ import {
   getPasoProgreso,
 } from "@/pages/conversaciones/components/PanelContexto";
 
-const ETAPA_CRM_BADGE: Record<
+/**
+ * Color de badge por etapa del CRM.
+ *
+ * Solo el COLOR: la etiqueta se lee de `ETAPAS_CRM`, que es donde vive el
+ * vocabulario de las etapas. Esta tabla tenía su propia copia de las cinco
+ * etiquetas («En conversación», «Interesado»…) — dos fuentes para el mismo
+ * texto, que es justo lo que el catálogo del CRM existe para evitar.
+ */
+const ETAPA_CRM_COLOR: Record<
   EtapaCrmCliente,
-  { label: string; color: "primary" | "info" | "warning" | "success" | "error" }
+  "primary" | "info" | "warning" | "success" | "error"
 > = {
-  nuevo: { label: "Nuevo", color: "info" },
-  en_conversacion: { label: "En conversación", color: "primary" },
-  interesado: { label: "Interesado", color: "warning" },
-  cliente: { label: "Cliente", color: "success" },
-  perdido: { label: "Perdido", color: "error" },
+  nuevo: "info",
+  en_conversacion: "primary",
+  interesado: "warning",
+  cliente: "success",
+  perdido: "error",
 };
+
+/** Etiqueta canónica de una etapa del CRM, leída de `ETAPAS_CRM`. */
+const etiquetaEtapaCrm = (etapa: EtapaCrmCliente): string =>
+  ETAPAS_CRM.find((e) => e.id === etapa)?.label ?? etapa;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Historial de Atención (Support Tickets)
@@ -86,19 +100,26 @@ const POR_PAGINA = 10;
  *  muestra todas las que haya y el paginador refleja el total real. */
 
 /**
- * Eje de filtrado rápido de la tabla. NO reutiliza `FiltroBandeja`: aquel eje
- * (`todas`/`no_leidas`/`requieren_atencion`/`cerradas`) responde a "qué necesita
- * mi atención ahora" en la bandeja lateral, mientras que este responde a "cómo
- * terminó el ticket". Son preguntas distintas y mezclarlas daría un filtro que
- * miente en una de las dos superficies.
+ * Eje de filtrado rápido de la tabla.
+ *
+ * NO reutiliza el valor `FiltroBandeja` porque son dos preguntas distintas —la
+ * bandeja pregunta «¿qué necesita mi atención ahora?» y esto «¿cómo está el
+ * ticket?»—, pero sus ETIQUETAS sí siguen el vocabulario canónico del estado:
+ * cada pestaña lleva el nombre del estado o de la categoría que filtra, y no una
+ * palabra inventada para la misma selección.
+ *
+ * Las tres categorías son la partición canónica del store
+ * (`estaPendiente`/`estaEnProgreso`/`estaResuelta`), así que las pestañas y las
+ * tarjetas KPI cuentan necesariamente lo mismo: una fila de la pestaña
+ * «Pendientes» es exactamente lo que suma la tarjeta «Pendientes».
  */
 type FiltroHistorial = "todos" | "resueltos" | "pendientes" | "en_progreso";
 
 const TABS: ReadonlyArray<{ valor: FiltroHistorial; etiqueta: string }> = [
   { valor: "todos", etiqueta: "Todos" },
-  { valor: "resueltos", etiqueta: "Resueltos" },
   { valor: "pendientes", etiqueta: "Pendientes" },
   { valor: "en_progreso", etiqueta: "En curso" },
+  { valor: "resueltos", etiqueta: "Resueltos" },
 ];
 
 /**
@@ -146,7 +167,7 @@ const KpiIcono = ({
   tono,
   children,
 }: {
-  tono: "brand" | "warning" | "success";
+  tono: "brand" | "warning" | "success" | "neutral";
   children: React.ReactNode;
 }) => {
   const tonos: Record<typeof tono, string> = {
@@ -156,6 +177,11 @@ const KpiIcono = ({
       "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
     success:
       "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400",
+    // «En curso» es trabajo en marcha, no una alerta ni un logro: va en el gris
+    // neutro. `brand` (naranja) competiría con el naranja de la marca y
+    // `warning` es la misma rampa, así que convertiría una cifra normal en alarma.
+    neutral:
+      "bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400",
   };
   return (
     <span
@@ -363,11 +389,22 @@ export const HistorialAtencionPage = observer(() => {
           >
             Historial de atención
           </button>
+          <button
+            type="button"
+            onClick={() => navigate("/conversaciones/analitica")}
+            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${claseSegmentoInactivo}`}
+          >
+            Analítica
+          </button>
         </div>
       </div>
 
-      {/* ── Tres tarjetas KPI ── */}
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {/* ── Cuatro tarjetas KPI: una por categoría, más el total ──
+          Son CUATRO y no tres porque las pestañas de la tabla son cuatro: con
+          tres tarjetas, la pestaña «En curso» no tenía cifra, y las tres que
+          había no cuadraban visualmente con las cuatro pestañas. Cada tarjeta
+          cuenta exactamente lo que filtra su pestaña. */}
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <div className="flex items-center gap-4">
             <KpiIcono tono="brand">
@@ -395,6 +432,22 @@ export const HistorialAtencionPage = observer(() => {
               </p>
               <p className="text-2xl font-bold text-gray-800 dark:text-white/90">
                 {conversacionesStore.ticketsPendientes}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-4">
+            <KpiIcono tono="neutral">
+              <PieChartIcon className="h-5 w-5" />
+            </KpiIcono>
+            <div className="min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Tickets en curso
+              </p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-white/90">
+                {conversacionesStore.ticketsEnProgreso}
               </p>
             </div>
           </div>
@@ -611,9 +664,9 @@ export const HistorialAtencionPage = observer(() => {
                     <TableCell>
                       <Badge
                         size="sm"
-                        color={ESTADO_CONVERSACION_BADGE[conv.estado]}
+                        color={badgeEstado(conv.estado)}
                       >
-                        {ESTADO_CONVERSACION_LABEL[conv.estado]}
+                        {etiquetaEstado(conv.estado)}
                       </Badge>
                     </TableCell>
 
@@ -623,10 +676,9 @@ export const HistorialAtencionPage = observer(() => {
                         const guardada = localStorage.getItem(`crm_etapa_${tel}`) as EtapaCrmCliente | null;
                         const pedidos = pedidosStore.porTelefono(tel);
                         const etapa = guardada ?? calcularEtapaAutomatica(pedidos.length, conv.estado);
-                        const meta = ETAPA_CRM_BADGE[etapa];
                         return (
-                          <Badge size="sm" color={meta.color}>
-                            {meta.label}
+                          <Badge size="sm" color={ETAPA_CRM_COLOR[etapa]}>
+                            {etiquetaEtapaCrm(etapa)}
                           </Badge>
                         );
                       })()}
@@ -675,11 +727,17 @@ export const HistorialAtencionPage = observer(() => {
                           </DropdownItem>
 
                           {/*
-                            "Marcar como resuelto" se OCULTA si el rol no puede
-                            responder el canal (la doctrina prefiere ocultar la
-                            acción que el rol no puede ejecutar antes que
-                            mostrarla deshabilitada) y también si el ticket ya
-                            está resuelto: una acción que no haría nada es ruido.
+                            El rótulo es `ETIQUETA_RESOLVER` y no una cadena
+                            escrita aquí: la MISMA acción (`cerrar()`) se ofrecía
+                            como «Marcar como resuelto» en esta tabla y como
+                            «Cerrar conversación» en el menú del chat, dos
+                            nombres para un solo verbo.
+
+                            Se OCULTA si el rol no puede responder el canal (la
+                            doctrina prefiere ocultar la acción que el rol no
+                            puede ejecutar antes que mostrarla deshabilitada) y
+                            también si el ticket ya está resuelto: una acción que
+                            no haría nada es ruido.
                           */}
                           {puedeResolver && !resuelta && (
                             <DropdownItem
@@ -689,7 +747,7 @@ export const HistorialAtencionPage = observer(() => {
                               }}
                               className="text-xs text-success-600 hover:bg-success-50 dark:text-success-400 dark:hover:bg-success-500/10"
                             >
-                              Marcar como resuelto
+                              {ETIQUETA_RESOLVER}
                             </DropdownItem>
                           )}
                         </Dropdown>
@@ -772,8 +830,8 @@ export const HistorialAtencionPage = observer(() => {
                 {detalle.contacto.nombre} · {detalle.contacto.telefono}
               </p>
             </div>
-            <Badge size="sm" color={ESTADO_CONVERSACION_BADGE[detalle.estado]}>
-              {ESTADO_CONVERSACION_LABEL[detalle.estado]}
+            <Badge size="sm" color={badgeEstado(detalle.estado)}>
+              {etiquetaEstado(detalle.estado)}
             </Badge>
           </div>
 
@@ -918,7 +976,7 @@ export const HistorialAtencionPage = observer(() => {
                   setDetalleId(null);
                 }}
               >
-                Marcar como resuelto
+                {ETIQUETA_RESOLVER}
               </Button>
             )}
           </div>

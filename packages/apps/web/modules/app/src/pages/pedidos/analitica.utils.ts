@@ -1,4 +1,5 @@
 import type { Pedido, PedidoEstado, Modalidad, Origen, RangoFechas } from "@/stores/pedidos.store";
+import { ORDEN_ESTADOS } from "@/stores/pedidos.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PERIODO (filtro temporal de la analítica)
@@ -141,33 +142,41 @@ export function promediosDePedidos(
 // distintos y el orden cambiaría al mover el periodo. Los colores salen de la
 // paleta NECTO y respetan la semántica del badge del store (`estadoBadgeColor`).
 
-/** Orden canónico del pipeline, para leyendas y ejes estables. */
-export const ORDEN_ESTADO: PedidoEstado[] = [
-  "programado",
-  "nuevo",
-  "confirmado",
-  "en_preparacion",
-  "listo",
-  "en_camino",
-  "entregado",
-  "cancelado",
-];
+/** Orden canónico del pipeline, para leyendas y ejes estables.
+ *
+ * Se DERIVA de `ORDEN_ESTADOS`, la lista única del store: aquí vivía una copia
+ * literal de los ocho, que era la séptima del proyecto. Una lista paralela de
+ * los mismos ocho valores no es una decisión de estilo, es una que se queda
+ * atrás.
+ */
+export const ORDEN_ESTADO: readonly PedidoEstado[] = ORDEN_ESTADOS;
 
-/** Color de cada estado del pipeline.
+/** Color de cada estado del pipeline, para los gráficos.
  *
  * El manual NECTO no trae paleta de gráficas: son seis colores y un pipeline
  * necesita ocho series distinguibles. La decisión —escrita para poder
  * discutirla— es recorrer el pipeline como una rampa: del neutro (aún no
  * activo) al naranja profundo (cerrado), pasando por el celeste y el índigo de
  * marca. Nada sale de fuera de las rampas `brand`/`secondary`/`accent`/`gray`,
- * y el rojo de cancelación es el semántico `error-500` del tema. */
+ * y el rojo de cancelación es el semántico `error-500` del tema.
+ *
+ * Es una PALETA DE GRÁFICA, no una copia del badge: los gráficos necesitan hex
+ * y el badge usa tokens semánticos. Pero la SEMÁNTICA tiene que coincidir con la
+ * del badge —un estado que se ve cálido en la tabla no puede salir frío en el
+ * donut—, y por eso `en_camino` es aquí un índigo suave, igual que su badge es
+ * `primary`. Antes esta tabla y el store discrepaban justo en `en_camino`
+ * (`#7E57FF` contra `primary`) mientras el comentario prometía respetarlo.
+ *
+ * Hay un test que cruza las dos tablas y falla si un estado cambia de familia
+ * de color en una sola de ellas.
+ */
 export const COLOR_ESTADO: Record<PedidoEstado, string> = {
   programado: "#A1A1A1", // gray-400: aún no activo
   nuevo: "#45AEBD", // accent-500 (celeste): recién entrado
   confirmado: "#15008B", // secondary-600: el índigo de marca
   en_preparacion: "#FF8F78", // brand-300: en cocina
   listo: "#FF3C10", // brand-500: el naranja de marca
-  en_camino: "#7E57FF", // secondary-300: índigo suave
+  en_camino: "#7E57FF", // secondary-300: índigo suave (badge `primary`)
   entregado: "#BF2810", // brand-700: naranja profundo, cerrado
   cancelado: "#F04438", // error-500
 };

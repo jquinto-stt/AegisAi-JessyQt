@@ -3,7 +3,7 @@ export { uiStore, UIStore } from '@/shell/stores';
 export type { Theme, UIPreferences } from '@/shell/stores';
 
 // Domain stores
-export { pedidosStore, PedidosStore } from '@/stores/pedidos.store';
+export { pedidosStore, PedidosStore, ETIQUETA_PAGO, META_ESTADO_PEDIDO, ORDEN_ESTADOS } from '@/stores/pedidos.store';
 export type {
   Pedido,
   PedidoEstado,
@@ -94,14 +94,18 @@ export {
   conversacionesStore,
   ConversacionesStore,
   normalizarTelefono,
-  ESTADO_CONVERSACION_LABEL,
-  ESTADO_CONVERSACION_BADGE,
+  ESTADO_CONVERSACION_META,
+  etiquetaEstado,
+  badgeEstado,
+  presenciaDe,
+  ETIQUETA_RESOLVER,
   ATENCION_LABEL,
   ATENCION_BADGE,
 } from '@/stores/conversaciones.store';
 export type {
   Conversacion as ConversacionCanal,
   EstadoConversacion,
+  PresenciaContacto,
   ModoAtencion,
   Mensaje as MensajeCanal,
   EventoSistema,

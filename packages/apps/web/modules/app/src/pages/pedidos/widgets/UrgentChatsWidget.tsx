@@ -8,7 +8,7 @@ import { Avatar } from "@/elements/ui/avatar";
 import { Modal } from "@/elements/ui/modal";
 import { pedidosStore, conversacionesStore, sessionStore } from "@/stores";
 import { puede, puedeResponderConversacion, motivoSinPermiso } from "@/stores/acceso.utils";
-import { ATENCION_LABEL, ESTADO_CONVERSACION_LABEL } from "@/stores";
+import { ATENCION_LABEL, etiquetaEstado, presenciaDe } from "@/stores";
 import type { ConversacionCanal } from "@/stores";
 import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
 import { CabeceraWidget, ListaVacia, relativo } from "./widgets.comunes";
@@ -41,11 +41,16 @@ import { CabeceraWidget, ListaVacia, relativo } from "./widgets.comunes";
 const avatarUrl = (nombre: string) =>
   `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
-/** Hilos que piden un asesor, el más antiguo primero. */
+/**
+ * Hilos que piden un asesor, el más antiguo primero.
+ *
+ * Delega en `conversacionesStore.requierenAtencion`, que ya aplica el predicado
+ * canónico Y el orden ascendente por `ultimaActividad`. Aquí se re-implementaba
+ * el `filter` + `sort` a mano: dos sitios con la misma regla, y el día que
+ * cambie la definición de «requiere atención» solo uno se enteraría.
+ */
 function urgentes(): ConversacionCanal[] {
-  return conversacionesStore.conversaciones
-    .filter((c) => conversacionesStore.requiereAtencionHumana(c))
-    .sort((a, b) => a.ultimaActividad.localeCompare(b.ultimaActividad));
+  return conversacionesStore.requierenAtencion;
 }
 
 // ── Fila ───────────────────────────────────────────────────────────────────
@@ -71,7 +76,11 @@ const FilaUrgente = observer(
             alt={conv.contacto.nombre}
             initials={inicialesDe(conv.contacto.nombre)}
             size="medium"
-            status="busy"
+            // Derivado del catálogo, no fijado: toda fila de este widget está
+            // `en_espera`, así que el valor coincide — pero escribirlo a mano
+            // dejaba a este widget pintando distinto que las otras tres
+            // superficies el día que la presencia cambie.
+            status={presenciaDe(conv.estado)}
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
@@ -80,7 +89,7 @@ const FilaUrgente = observer(
             <p className="truncate text-xs text-gray-400 dark:text-gray-500">
               {pedido
                 ? `${pedidosStore.estadoLabel(pedido.estado)} · ${pedidosStore.modalidadLabel(pedido.modalidad)}`
-                : `${ESTADO_CONVERSACION_LABEL[conv.estado]} · ${ATENCION_LABEL[conv.atencion]}`}
+                : `${etiquetaEstado(conv.estado)} · ${ATENCION_LABEL[conv.atencion]}`}
             </p>
           </div>
         </button>

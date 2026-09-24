@@ -1,1 +1,22 @@
-dist/
+# ══════════════════════════════════════════════════════════════════════════
+# OJO: `dist/` está DELIBERADAMENTE sin ignorar en este paquete.
+# ══════════════════════════════════════════════════════════════════════════
+#
+# Este paquete es una excepción en el repo. En el resto, `dist/` es un artefacto
+# y se ignora. Aquí **no**: es la única copia que existe del bot de pedidos.
+#
+# Medido el 22/09/2026: los fuentes TypeScript de `ZernioWebhook`, `ZernioDAO`,
+# `BotPedidos`, `BotPedidosDAO` y `ZernioEnvio` NO existen en el repo. Solo
+# existen compilados en `dist/`. No hay `tsconfig.json` aquí ni script de build.
+# `git clean -xdf` habría borrado el receptor de WhatsApp entero, sin backup.
+#
+# Antes de volver a poner `dist/` en esta lista:
+#   1. Reconstruir esos `.ts` en `src/` desde sus `.js` + `.d.ts`.
+#   2. Comprobar que una compilación desde `src/` produce un `dist/` equivalente.
+#   3. Solo entonces ignorarlo otra vez.
+#
+# NO regenerar este `dist/` desde el `src/` actual: fallaría con módulos
+# inexistentes y se llevaría por delante la única copia.
+#
+# Respaldo: `outputs/respaldo-dist-2026-09-22/dist/` (fuera de git, verificado
+# por md5sum).
