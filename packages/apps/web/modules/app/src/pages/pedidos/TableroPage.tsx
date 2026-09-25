@@ -139,20 +139,12 @@ const AlertTriangleIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }
 // TARJETA DE PEDIDO
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Helper para avatar de cliente o responsable
-const AVATARES_RESPONSABLES: Record<string, string> = {
-  "0": "/images/user/user-01.jpg",
-  "1": "/images/user/user-02.jpg",
-  "2": "/images/user/user-03.jpg",
-  "3": "/images/user/user-04.jpg",
-  "4": "/images/user/user-05.jpg",
-  "5": "/images/user/user-06.jpg",
-};
-
-const getAvatarForPedido = (id: string): string => {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i)) % 6;
-  return AVATARES_RESPONSABLES[String(hash)] ?? "/images/user/user-01.jpg";
+// Helper para iniciales de avatar de cliente
+const getIniciales = (nombre: string): string => {
+  if (!nombre) return "C";
+  const partes = nombre.trim().split(/\s+/);
+  if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+  return (partes[0][0] + partes[1][0]).toUpperCase();
 };
 
 const PedidoCard = observer(
@@ -211,7 +203,6 @@ const PedidoCard = observer(
 
     // Resumen de items para la descripción estilo maqueta
     const descripcionItems = pedidosStore.resumenItems(pedido);
-    const avatarUrl = getAvatarForPedido(pedido.id);
 
     // Si el pedido tiene portada (por ejemplo, el primer pedido de preparación para replicar el preview de la imagen)
     const tieneCover = pedido.id === "pd-3" || pedido.id === "pd-f3";
@@ -250,11 +241,9 @@ const PedidoCard = observer(
           </div>
 
           <div className="relative shrink-0">
-            <img
-              src={avatarUrl}
-              alt={pedido.cliente}
-              className="size-7 sm:size-8 rounded-full object-cover ring-2 ring-white dark:ring-gray-800 shadow-theme-xs"
-            />
+            <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold text-xs ring-2 ring-white dark:bg-brand-900/40 dark:text-brand-300 dark:ring-gray-800 shadow-theme-xs">
+              {getIniciales(pedido.cliente)}
+            </div>
           </div>
         </div>
 
