@@ -1241,8 +1241,6 @@ export const TableroPage = observer(() => {
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
   const [menuFilterOpen, setMenuFilterOpen] = useState(false);
   const [busquedaTablero, setBusquedaTablero] = useState("");
-  const [busquedaExpandida, setBusquedaExpandida] = useState(false);
-  const busquedaActiva = busquedaExpandida || busquedaTablero.length > 0;
 
   // Gestión dinámica de columnas
   const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
@@ -1443,67 +1441,62 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: Buscador + VistaToggle + Filter & Sort + Add New Task */}
+        {/* Acciones derechas: VistaToggle + Filter & Sort (con buscador integrado) + Add New Task */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
-          {/* Buscador de Tarjetas desplegable (icono -> input) */}
-          <div className="relative flex items-center">
-            {!busquedaActiva ? (
-              <button
-                type="button"
-                onClick={() => setBusquedaExpandida(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-600 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                title="Buscar tarjetas"
-              >
-                <Search className="size-4" />
-              </button>
-            ) : (
-              <div className="relative flex items-center animate-aparecer">
-                <Search className="absolute left-3 size-4 text-gray-400 pointer-events-none" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={busquedaTablero}
-                  onChange={(e) => setBusquedaTablero(e.target.value)}
-                  onBlur={() => {
-                    if (!busquedaTablero.trim()) setBusquedaExpandida(false);
-                  }}
-                  placeholder="Buscar cliente, # pedido..."
-                  className="h-10 w-48 sm:w-60 rounded-xl border border-gray-200/90 bg-white pl-9 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500 transition-all shadow-theme-xs"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBusquedaTablero("");
-                    setBusquedaExpandida(false);
-                  }}
-                  className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
-          {/* Botón y menú Filter & Sort */}
+          {/* Botón y menú Filter & Sort con Buscador */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setMenuFilterOpen((v) => !v)}
-              className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer whitespace-nowrap"
+              className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 sm:px-4 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                busquedaTablero.trim() || criterioOrden !== "reciente"
+                  ? "border-brand-300 bg-brand-50/60 text-brand-700 dark:border-brand-700 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
+                  : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+              }`}
             >
-              <SlidersHorizontal className="size-4 text-gray-600 dark:text-gray-300 shrink-0" />
+              <SlidersHorizontal className="size-4 shrink-0" />
               <span>Filter & Sort</span>
+              {(busquedaTablero.trim() || criterioOrden !== "reciente") && (
+                <span className="size-2 rounded-full bg-brand-500 shrink-0" />
+              )}
             </button>
 
             {menuFilterOpen && (
               <div
-                className="absolute right-0 top-full mt-2 z-50 w-52 rounded-2xl border border-gray-100 bg-white p-2 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
+                className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-gray-100 bg-white p-3 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
                 onClick={(e) => e.stopPropagation()}
               >
-                <p className="px-3 py-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
+                {/* Campo de búsqueda integrado */}
+                <div className="mb-2.5">
+                  <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Buscar tarjetas</p>
+                  <div className="relative flex items-center">
+                    <Search className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      autoFocus
+                      value={busquedaTablero}
+                      onChange={(e) => setBusquedaTablero(e.target.value)}
+                      placeholder="Cliente, # pedido, producto..."
+                      className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
+                    />
+                    {busquedaTablero && (
+                      <button
+                        type="button"
+                        onClick={() => setBusquedaTablero("")}
+                        className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
+
+                <p className="px-1 mb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
                 {[
                   { id: "reciente", label: "Más reciente" },
                   { id: "antiguo", label: "Más antiguo" },
