@@ -1,6 +1,7 @@
 import { makeAutoObservable } from "mobx";
 import type { Modulo } from "@/stores/session.store";
 import type { Capacidad } from "@/stores/roles.store";
+import { organizacionStore } from "@/stores/organizacion.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -320,20 +321,39 @@ export class OperadoresStore {
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
+  get operadoresConNombreSincronizado(): Operador[] {
+    const usr = organizacionStore.usuario;
+    const nombreAdmin = usr?.nombre
+      ? `${usr.nombre} ${usr.apellido || ""}`.trim() + " (Tú)"
+      : "Tailor Davis (Tú)";
+    const emailAdmin = usr?.email || "tailor.davis@negocio.com";
+
+    return this.operadores.map((op) => {
+      if (op.id === "d0") {
+        return {
+          ...op,
+          nombre: nombreAdmin,
+          email: emailAdmin,
+        };
+      }
+      return op;
+    });
+  }
+
   /** Operadores de un módulo (lista independiente). */
   porModulo(modulo: Modulo): Operador[] {
-    return this.operadores.filter((o) => o.modulo === modulo);
+    return this.operadoresConNombreSincronizado.filter((o) => o.modulo === modulo);
   }
 
   /** Un operador por id, o undefined. */
   porId(id: string | null | undefined): Operador | undefined {
     if (!id) return undefined;
-    return this.operadores.find((o) => o.id === id);
+    return this.operadoresConNombreSincronizado.find((o) => o.id === id);
   }
 
   /** Cantidad de solicitudes pendientes de aprobar en un módulo. */
   pendientesCount(modulo: Modulo): number {
-    return this.operadores.filter((o) => o.modulo === modulo && o.estado === "pendiente").length;
+    return this.operadoresConNombreSincronizado.filter((o) => o.modulo === modulo && o.estado === "pendiente").length;
   }
 
   // ── Acciones ────────────────────────────────────────────────────────────────
