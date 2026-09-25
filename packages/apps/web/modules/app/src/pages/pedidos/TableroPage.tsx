@@ -1236,7 +1236,8 @@ export const TableroPage = observer(() => {
   type CriterioOrden = "reciente" | "antiguo" | "monto" | "urgente";
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
   const [menuFilterOpen, setMenuFilterOpen] = useState(false);
-  const [busquedaTablero, setBusquedaTablero] = useState("");
+  const [busquedaExpandida, setBusquedaExpandida] = useState(false);
+  const busquedaActiva = busquedaExpandida || busquedaTablero.length > 0;
 
   // Gestión dinámica de columnas
   const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
@@ -1439,24 +1440,42 @@ export const TableroPage = observer(() => {
 
         {/* Acciones derechas: Buscador + VistaToggle + Filter & Sort + Add New Task */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
-          {/* Buscador de Tarjetas en Tiempo Real */}
+          {/* Buscador de Tarjetas desplegable (icono -> input) */}
           <div className="relative flex items-center">
-            <Search className="absolute left-3 size-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              value={busquedaTablero}
-              onChange={(e) => setBusquedaTablero(e.target.value)}
-              placeholder="Buscar cliente, # pedido..."
-              className="h-10 w-40 sm:w-52 rounded-xl border border-gray-200/90 bg-white pl-9 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500 transition-all shadow-theme-xs"
-            />
-            {busquedaTablero && (
+            {!busquedaActiva ? (
               <button
                 type="button"
-                onClick={() => setBusquedaTablero("")}
-                className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                onClick={() => setBusquedaExpandida(true)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200/90 bg-white text-gray-600 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                title="Buscar tarjetas"
               >
-                <X className="size-3.5" />
+                <Search className="size-4" />
               </button>
+            ) : (
+              <div className="relative flex items-center animate-aparecer">
+                <Search className="absolute left-3 size-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  autoFocus
+                  value={busquedaTablero}
+                  onChange={(e) => setBusquedaTablero(e.target.value)}
+                  onBlur={() => {
+                    if (!busquedaTablero.trim()) setBusquedaExpandida(false);
+                  }}
+                  placeholder="Buscar cliente, # pedido..."
+                  className="h-10 w-48 sm:w-60 rounded-xl border border-gray-200/90 bg-white pl-9 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500 transition-all shadow-theme-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBusquedaTablero("");
+                    setBusquedaExpandida(false);
+                  }}
+                  className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             )}
           </div>
 
