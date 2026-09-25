@@ -804,7 +804,7 @@ const seed = (): Pedido[] => [
  * reglas; `moverEstado` valida que la transición sea coherente con el pipeline.
  */
 export class PedidosStore {
-  pedidos: Pedido[] = [];
+  pedidos: Pedido[] = seed();
   crmDirecciones: Record<string, DireccionEntrega[]> = loadDireccionesCRM();
 
   /** Configuración del módulo (persistida en localStorage). */
@@ -856,50 +856,58 @@ export class PedidosStore {
         .select("*, pedido_item(*)")
         .order("creado_en", { ascending: false });
 
-      if (error || !data) return;
+      if (error || !data || data.length === 0) {
+        if (error) {
+          console.warn("[pedidosStore] Error al cargar pedidos desde Supabase:", error.message);
+        }
+        return;
+      }
 
       const pedidosReales: Pedido[] = data.map((p: any) => {
-        const rawItems = (p.pedido_item as any[]) || [];
+        const rawItems = Array.isArray(p.pedido_item) ? p.pedido_item : [];
         const items: PedidoItem[] = rawItems.map((it: any) => ({
-          nombre: it.nombre || "Producto",
+          nombre: String(it.nombre || it.producto_nombre || "Producto"),
           cantidad: Number(it.cantidad) || 1,
-          precio: Number(it.precio_unitario) || 0,
+          precio: Number(it.precio_unitario || it.precio) || 0,
         }));
 
         const dirObj = p.direccion_entrega
           ? typeof p.direccion_entrega === "object"
-            ? { calle: p.direccion_entrega.texto || p.direccion_entrega.calle || "Dirección registrada" }
+            ? { calle: String(p.direccion_entrega.texto || p.direccion_entrega.calle || "Dirección registrada") }
             : { calle: String(p.direccion_entrega) }
           : undefined;
 
+        const idStr = String(p.id || "");
         return {
-          id: p.id,
-          numero: p.numero || `WEB-${p.id.slice(0, 4)}`,
-          cliente: p.cliente || "Cliente",
-          telefono: p.telefono || p.telefono_norm || "",
+          id: idStr,
+          numero: String(p.numero || (idStr ? `WEB-${idStr.slice(0, 4)}` : "WEB-0000")),
+          cliente: String(p.cliente || "Cliente"),
+          telefono: String(p.telefono || p.telefono_norm || ""),
           modalidad: (p.modalidad as Modalidad) || "domicilio",
           items: items.length > 0 ? items : [{ nombre: "Pedido", cantidad: 1, precio: 0 }],
-          notas: dirObj ? `Dirección: ${dirObj.calle}` : p.notas || undefined,
+          notas: p.notas ? String(p.notas) : (dirObj ? `Dirección: ${dirObj.calle}` : undefined),
           estado: (p.estado as PedidoEstado) || "nuevo",
           origen: (p.origen as Origen) || "whatsapp",
-          pagado: p.estado === "entregado" || p.estado === "listo" || p.metodo_pago === "transferencia" || p.metodo_pago === "tarjeta",
-          createdAt: p.creado_en || nowIso(),
-          estadoDesde: p.estado_desde || p.creado_en || nowIso(),
-          finishedAt: p.finished_at || undefined,
-          programadoPara: p.programado_para || undefined,
+          pagado: Boolean(p.pagado ?? (p.estado === "entregado" || p.estado === "listo" || p.metodo_pago === "transferencia" || p.metodo_pago === "tarjeta")),
+          createdAt: String(p.creado_en || nowIso()),
+          estadoDesde: String(p.estado_desde || p.creado_en || nowIso()),
+          finishedAt: p.finished_at ? String(p.finished_at) : undefined,
+          programadoPara: p.programado_para ? String(p.programado_para) : undefined,
           direccionEntrega: dirObj,
-          costoEnvio: p.modalidad === "domicilio" ? 5000 : 0,
+          costoEnvio: p.costo_envio !== undefined ? Number(p.costo_envio) : (p.modalidad === "domicilio" ? 5000 : 0),
           metodoPago: (p.metodo_pago as MetodoPago) || "efectivo",
           pagaCon: p.pago_con ? Number(p.pago_con) : undefined,
-          repartidor: p.repartidor || undefined,
+          repartidor: p.repartidor ? String(p.repartidor) : undefined,
         };
       });
 
       runInAction(() => {
-        this.pedidos = pedidosReales.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        if (pedidosReales.length > 0) {
+          this.pedidos = pedidosReales.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        }
       });
     } catch (err) {
-      console.warn("[pedidosStore] Error al sincronizar pedidos con Supabase:", err);
+      console.warn("[pedidosStore] Excepción al sincronizar pedidos con Supabase:", err);
     }
   }
 

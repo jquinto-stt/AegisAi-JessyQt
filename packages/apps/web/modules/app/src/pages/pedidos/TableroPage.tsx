@@ -142,11 +142,12 @@ const AlertTriangleIcon = ({ className = "h-3.5 w-3.5" }: { className?: string }
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Helper para iniciales de avatar de cliente
-const getIniciales = (nombre: string): string => {
-  if (!nombre) return "C";
-  const partes = nombre.trim().split(/\s+/);
+const getIniciales = (nombre?: string | null): string => {
+  if (!nombre || typeof nombre !== "string") return "C";
+  const partes = nombre.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return "C";
   if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
-  return (partes[0][0] + partes[1][0]).toUpperCase();
+  return ((partes[0][0] || "") + (partes[1]?.[0] || "")).toUpperCase() || "C";
 };
 
 const PedidoCard = observer(
@@ -209,6 +210,9 @@ const PedidoCard = observer(
     // Si el pedido tiene portada (por ejemplo, el primer pedido de preparación para replicar el preview de la imagen)
     const tieneCover = pedido.id === "pd-3" || pedido.id === "pd-f3";
 
+    const itemsCount = Array.isArray(pedido.items) ? pedido.items.length : 0;
+    const primerItemNombre = pedido.items?.[0]?.nombre;
+
     return (
       <div
         role="button"
@@ -235,10 +239,10 @@ const PedidoCard = observer(
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-sm sm:text-base font-semibold text-ink-title dark:text-white line-clamp-2 leading-snug">
-              {pedido.items[0]?.nombre ? pedido.items[0].nombre : `Pedido ${pedido.numero}`}
+              {primerItemNombre ? primerItemNombre : `Pedido ${pedido.numero || ""}`}
             </h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 font-medium truncate">
-              {pedido.numero} · {pedido.cliente}
+              {pedido.numero || "P-000"} · {pedido.cliente || "Cliente"}
             </p>
           </div>
 
@@ -280,7 +284,7 @@ const PedidoCard = observer(
             <div className="flex items-center gap-1">
               <MessageSquare className="size-3.5 text-gray-400" />
               <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                {pedido.items.length}
+                {itemsCount}
               </span>
             </div>
 
