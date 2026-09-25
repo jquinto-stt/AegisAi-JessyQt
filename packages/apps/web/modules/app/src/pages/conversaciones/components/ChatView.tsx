@@ -358,7 +358,7 @@ export const ChatView = observer(({
             const esCliente = m.autor === "cliente";
             const esBot = m.autor === "bot";
 
-            // ── 1. CLIENTE: SIEMPRE a la IZQUIERDA con Avatar y burbuja gris suave ──
+            // ── 1. CLIENTE: SIEMPRE a la IZQUIERDA con Avatar y burbuja gris suave adaptable ──
             if (esCliente) {
               return (
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
@@ -369,14 +369,14 @@ export const ChatView = observer(({
                       size="medium"
                     />
                   </div>
-                  <div className="max-w-[88%] sm:max-w-xl lg:max-w-2xl xl:max-w-3xl">
-                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
-                      <p className="mb-1.5 text-xs font-semibold text-gray-900 dark:text-white">
+                  <div className="flex flex-col items-start max-w-[85%] sm:max-w-lg lg:max-w-xl">
+                    <div className="w-fit max-w-full rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
+                      <p className="mb-1 text-xs font-semibold text-gray-900 dark:text-white">
                         {conv.contacto.nombre}
                       </p>
                       <TextoMensajeFormateado texto={m.contenido.texto} />
                     </div>
-                    <div className="mt-1.5 flex items-center gap-1.5 pl-1 text-xs text-gray-400 dark:text-gray-500">
+                    <div className="mt-1 flex items-center gap-1.5 pl-1 text-xs text-gray-400 dark:text-gray-500">
                       <EyeIcon className="h-3.5 w-3.5" />
                       <span>{horaDe(m.timestamp)}</span>
                     </div>
@@ -385,7 +385,7 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja Lavanda Limpia + Inspección IA On-Demand + Pedido Inline ──
+            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja Lavanda Adaptable + Inspección IA On-Demand + Pedido Inline ──
             if (esBot) {
               const traza = getBotTrazabilidad(m, conv.estado);
               const puedeIrModulo =
@@ -401,12 +401,12 @@ export const ChatView = observer(({
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
                   <BotAvatar />
 
-                  <div className="max-w-[90%] flex-1 sm:max-w-xl lg:max-w-2xl xl:max-w-3xl">
-                    {/* Burbuja principal del bot: lavanda suave, elegante y limpia */}
-                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
+                  <div className="flex flex-col items-start max-w-[88%] sm:max-w-lg lg:max-w-xl">
+                    {/* Burbuja principal del bot: adaptable (w-fit) para abrazar el contenido y no desperdiciar espacio */}
+                    <div className="w-fit min-w-[210px] max-w-full rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex items-center justify-between gap-2 border-b border-secondary-100/80 pb-2 dark:border-secondary-800/40">
-                        <div className="flex items-center gap-1.5">
+                      <div className="mb-2 flex items-center justify-between gap-3 border-b border-secondary-100/80 pb-1.5 dark:border-secondary-800/40">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-xs font-semibold text-secondary-900 dark:text-secondary-200">
                             {traza.nombreBot}
                           </span>
@@ -430,7 +430,7 @@ export const ChatView = observer(({
 
                       {/* Tarjeta interactiva de pedido asociado si existe */}
                       {pedidoId && (
-                        <div className="mt-3 rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-secondary-800/50 dark:bg-gray-900/80">
+                        <div className="mt-3 w-full rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-secondary-800/50 dark:bg-gray-900/80">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
@@ -462,7 +462,7 @@ export const ChatView = observer(({
                             )}
                           </div>
 
-                          <div className="mt-2.5 flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800/60">
+                          <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-gray-100 pt-2 dark:border-gray-800/60">
                             <span className="text-[11px] text-gray-500 dark:text-gray-400">
                               {pedidoAsociado?.items && pedidoAsociado.items.length > 0
                                 ? `${pedidoAsociado.items.length} ${pedidoAsociado.items.length === 1 ? "artículo" : "artículos"}`
@@ -482,7 +482,7 @@ export const ChatView = observer(({
 
                       {/* Acción contextual si no hay pedido pero sí módulo vinculado */}
                       {!pedidoId && traza.accion && puedeIrModulo && (
-                        <div className="mt-3 flex items-center justify-between border-t border-secondary-200/60 pt-2.5 dark:border-secondary-800/40">
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-secondary-200/60 pt-2 dark:border-secondary-800/40">
                           <button
                             type="button"
                             onClick={() => setVista(traza.modulo!)}
@@ -510,11 +510,11 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #15008B ──
+            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #15008B adaptable ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">
-                <div className="max-w-[88%] sm:max-w-xl lg:max-w-2xl xl:max-w-3xl text-right">
-                  <div className="rounded-2xl rounded-tr-sm bg-secondary-600 px-5 py-3.5 text-left text-[15px] leading-relaxed text-white shadow-theme-xs">
+                <div className="flex flex-col items-end max-w-[85%] sm:max-w-lg lg:max-w-xl">
+                  <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-secondary-600 px-4 py-3 text-left text-[15px] leading-relaxed text-white shadow-theme-xs">
                     {/* Distintivo claro de Asesor Humano */}
                     <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-semibold text-white/90">
                       <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-300" />
@@ -522,7 +522,7 @@ export const ChatView = observer(({
                     </div>
                     <TextoMensajeFormateado texto={m.contenido.texto} />
                   </div>
-                  <p className="mt-1.5 text-right text-xs text-gray-400 dark:text-gray-500">
+                  <p className="mt-1 pr-1 text-right text-xs text-gray-400 dark:text-gray-500">
                     {horaDe(m.timestamp)}
                   </p>
                 </div>
