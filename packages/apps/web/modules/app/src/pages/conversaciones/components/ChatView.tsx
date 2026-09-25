@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
+import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
-import { MoreDotIcon, EyeIcon, ArrowRightIcon } from "@/icons";
+import { Modal } from "@/elements/ui/modal";
+import { MoreDotIcon, EyeIcon, ArrowRightIcon, AiIcon } from "@/icons";
 import { conversacionesStore, etiquetaEstado, ETIQUETA_RESOLVER } from "@/stores/conversaciones.store";
+import { pedidosStore } from "@/stores/pedidos.store";
+import { formatoMoneda } from "@/utils";
 import {
   claseSegmentoActivo,
   claseSegmentoInactivo,
@@ -69,6 +73,10 @@ export const ChatView = observer(({
   // Paginación y control de scroll
   const [limiteMensajes, setLimiteMensajes] = useState(25);
   const [mostrarBotonBajar, setMostrarBotonBajar] = useState(false);
+  const [trazaSeleccionada, setTrazaSeleccionada] = useState<{
+    mensaje: Mensaje;
+    traza: BotTrazabilidad;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -377,21 +385,27 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 2. BOT CON TRAZABILIDAD VISUAL IA: Avatar Robot + Caja Punteada de Intención + Conector + Burbuja Lavanda ──
+            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja Lavanda Limpia + Inspección IA On-Demand + Pedido Inline ──
             if (esBot) {
               const traza = getBotTrazabilidad(m, conv.estado);
               const puedeIrModulo =
                 traza.modulo && modulosContexto.some((mod) => mod.id === traza.modulo);
+
+              const pedidoId = m.payload?.pedidoId;
+              const pedidoAsociado = pedidoId
+                ? pedidosStore.getPedido(pedidoId) ||
+                  pedidosStore.pedidos.find((p) => p.numero === pedidoId || p.id === pedidoId)
+                : undefined;
 
               return (
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
                   <BotAvatar />
 
                   <div className="max-w-[90%] flex-1 sm:max-w-xl lg:max-w-2xl xl:max-w-3xl">
-                    {/* Tarjeta de Trazabilidad / Intención IA */}
-                    <div className="rounded-xl border border-dashed border-secondary-300/80 bg-secondary-50/40 p-3.5 shadow-theme-xs dark:border-secondary-700/60 dark:bg-secondary-950/20">
-                      {/* Cabecera de la traza: Nombre del bot + Ojo con hora */}
-                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                    {/* Burbuja principal del bot: lavanda suave, elegante y limpia */}
+                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
+                      {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
+                      <div className="mb-2 flex items-center justify-between gap-2 border-b border-secondary-100/80 pb-2 dark:border-secondary-800/40">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-semibold text-secondary-900 dark:text-secondary-200">
                             {traza.nombreBot}
@@ -400,72 +414,95 @@ export const ChatView = observer(({
                             IA
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
-                          <EyeIcon className="h-3.5 w-3.5" />
-                          <span>{horaDe(m.timestamp)}</span>
-                        </div>
-                      </div>
-
-                      {/* Línea de intención / flujo de ejecución */}
-                      <p className="text-xs font-medium leading-relaxed text-gray-700 dark:text-gray-300">
-                        {traza.flujo}
-                      </p>
-
-                      {/* Pill de categoría / módulo */}
-                      <div className="mt-2 flex items-center gap-2">
-                        <span
-                          className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold ${traza.tagClass}`}
+                        <button
+                          type="button"
+                          onClick={() => setTrazaSeleccionada({ mensaje: m, traza })}
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-secondary-500/80 transition-colors hover:bg-secondary-100/70 hover:text-secondary-800 dark:text-secondary-400 dark:hover:bg-secondary-900/50 dark:hover:text-secondary-200"
+                          title="Inspeccionar trazabilidad técnica IA"
                         >
-                          {traza.tag}
-                        </span>
+                          <AiIcon className="h-3 w-3" />
+                          <span>Trazabilidad</span>
+                        </button>
                       </div>
-                    </div>
 
-                    {/* Conector punteado tipo codo hacia la burbuja */}
-                    <div className="flex items-center py-0.5 pl-4 text-secondary-400 dark:text-secondary-600">
-                      <svg
-                        className="h-3.5 w-3.5 overflow-visible"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                      >
-                        <path
-                          d="M4 0v8a4 4 0 0 0 4 4h8"
-                          stroke="currentColor"
-                          strokeWidth="1.75"
-                          strokeDasharray="2 2"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* Burbuja de respuesta del bot: lavanda suave */}
-                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
+                      {/* Texto de la respuesta */}
                       <TextoMensajeFormateado texto={m.contenido.texto} />
 
-                      {/* Acción interactiva si hay módulo conectado o pedido */}
-                      {traza.accion ? (
-                        <div className="mt-3 flex items-center justify-between border-t border-secondary-200/60 pt-2.5 dark:border-secondary-800/40">
-                          {puedeIrModulo ? (
+                      {/* Tarjeta interactiva de pedido asociado si existe */}
+                      {pedidoId && (
+                        <div className="mt-3 rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-secondary-800/50 dark:bg-gray-900/80">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
+                                {pedidoAsociado ? pedidoAsociado.numero : `#${pedidoId}`}
+                              </span>
+                              {pedidoAsociado && (
+                                <Badge
+                                  size="xs"
+                                  color={pedidosStore.estadoBadgeColor(pedidoAsociado.estado)}
+                                  variant="light"
+                                >
+                                  {pedidosStore.estadoLabel(pedidoAsociado.estado)}
+                                </Badge>
+                              )}
+                              {pedidoAsociado && (
+                                <Badge
+                                  size="xs"
+                                  color={pedidoAsociado.pagado ? "success" : "warning"}
+                                  variant="light"
+                                >
+                                  {pedidoAsociado.pagado ? "Pagado" : "Pendiente de pago"}
+                                </Badge>
+                              )}
+                            </div>
+                            {pedidoAsociado && (
+                              <span className="text-xs font-semibold tabular-nums text-gray-900 dark:text-white">
+                                {formatoMoneda(pedidosStore.totalPedido(pedidoAsociado))}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="mt-2.5 flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-800/60">
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                              {pedidoAsociado?.items && pedidoAsociado.items.length > 0
+                                ? `${pedidoAsociado.items.length} ${pedidoAsociado.items.length === 1 ? "artículo" : "artículos"}`
+                                : "Detalle del pedido"}
+                            </span>
                             <button
                               type="button"
-                              onClick={() => setVista(traza.modulo!)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-secondary-200 dark:hover:bg-secondary-800/60"
+                              onClick={() => setVista("pedidos")}
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold text-secondary-700 transition-colors hover:bg-secondary-50 dark:text-secondary-300 dark:hover:bg-secondary-900/40"
                             >
-                              <span>{traza.accion}</span>
+                              <span>Ver pedido</span>
                               <ArrowRightIcon className="h-3 w-3" />
                             </button>
-                          ) : (
-                            <span className="text-xs font-medium text-secondary-600 dark:text-secondary-300">
-                              {traza.accion}
-                            </span>
-                          )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Acción contextual si no hay pedido pero sí módulo vinculado */}
+                      {!pedidoId && traza.accion && puedeIrModulo && (
+                        <div className="mt-3 flex items-center justify-between border-t border-secondary-200/60 pt-2.5 dark:border-secondary-800/40">
+                          <button
+                            type="button"
+                            onClick={() => setVista(traza.modulo!)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-secondary-200 dark:hover:bg-secondary-800/60"
+                          >
+                            <span>{traza.accion}</span>
+                            <ArrowRightIcon className="h-3 w-3" />
+                          </button>
                           <span className="text-xs text-secondary-400 dark:text-secondary-400/80">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
-                      ) : (
-                        <p className="mt-1 text-right text-xs text-secondary-400 dark:text-secondary-400/80">
-                          {horaDe(m.timestamp)}
-                        </p>
+                      )}
+
+                      {/* Timestamp del mensaje cuando no hay botón de acción */}
+                      {(pedidoId || !traza.accion || !puedeIrModulo) && (
+                        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-secondary-400 dark:text-secondary-400/80">
+                          <EyeIcon className="h-3.5 w-3.5" />
+                          <span>{horaDe(m.timestamp)}</span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -516,6 +553,100 @@ export const ChatView = observer(({
           <ContextoModulo convId={convId} modulo={vistaActiva} />
         </div>
       )}
+
+      {/* Modal de Trazabilidad e Inspección Técnica IA (On-Demand) */}
+      <Modal
+        isOpen={Boolean(trazaSeleccionada)}
+        onClose={() => setTrazaSeleccionada(null)}
+        className="max-w-md p-6"
+      >
+        {trazaSeleccionada && (
+          <div>
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3.5 dark:border-gray-800">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400">
+                <AiIcon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  Trazabilidad de Inteligencia Artificial
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {trazaSeleccionada.traza.nombreBot} · {horaDe(trazaSeleccionada.mensaje.timestamp)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-3.5 text-xs">
+              <div>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                  Flujo de ejecución e intención
+                </span>
+                <p className="mt-1.5 rounded-lg border border-secondary-100 bg-secondary-25/50 p-2.5 font-medium leading-relaxed text-gray-800 dark:border-secondary-900/50 dark:bg-secondary-950/20 dark:text-gray-200">
+                  {trazaSeleccionada.traza.flujo}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <span className="font-medium text-gray-500 dark:text-gray-400">
+                  Módulo de contexto
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold ${trazaSeleccionada.traza.tagClass}`}
+                >
+                  {trazaSeleccionada.traza.tag}
+                </span>
+              </div>
+
+              {trazaSeleccionada.traza.accion && (
+                <div className="flex items-center justify-between py-1">
+                  <span className="font-medium text-gray-500 dark:text-gray-400">
+                    Acción sugerida
+                  </span>
+                  <span className="font-semibold text-secondary-700 dark:text-secondary-300">
+                    {trazaSeleccionada.traza.accion}
+                  </span>
+                </div>
+              )}
+
+              {trazaSeleccionada.mensaje.payload?.pedidoId && (
+                <div className="flex items-center justify-between py-1">
+                  <span className="font-medium text-gray-500 dark:text-gray-400">
+                    Pedido vinculado
+                  </span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    #{trazaSeleccionada.mensaje.payload.pedidoId}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+              {trazaSeleccionada.traza.modulo &&
+                modulosContexto.some((mod) => mod.id === trazaSeleccionada.traza.modulo) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mod = trazaSeleccionada.traza.modulo!;
+                      setTrazaSeleccionada(null);
+                      setVista(mod);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-secondary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors hover:bg-secondary-700"
+                  >
+                    <span>Abrir módulo {trazaSeleccionada.traza.modulo}</span>
+                    <ArrowRightIcon className="h-3 w-3" />
+                  </button>
+                )}
+              <button
+                type="button"
+                onClick={() => setTrazaSeleccionada(null)}
+                className="rounded-lg border border-gray-200 px-3.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 });
