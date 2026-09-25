@@ -13,6 +13,7 @@ import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.u
 import {
   pedidosStore,
   sessionStore,
+  organizacionStore,
   conversacionesStore,
   normalizarTelefono,
   etiquetaEstado,
@@ -711,7 +712,7 @@ export const InicioPage = observer(() => {
 
   const puedeCrear = puedeCrearPedido();
 
-  const nombreUsuario = sessionStore.operadorSimulado?.nombre || sessionStore.usuario?.nombre || "";
+  const nombreUsuario = sessionStore.operadorSimulado?.nombre || organizacionStore.usuario?.nombre || "";
   const saludoText = nombreUsuario ? `Bienvenido de nuevo, ${nombreUsuario}` : "Bienvenido de nuevo";
   const fechaActualTexto = new Date().toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
 

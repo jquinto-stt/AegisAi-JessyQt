@@ -26,7 +26,17 @@ const UserDropdown = observer(() => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
 
-  const usuario = organizacionStore.usuario;
+  const opSimulado = sessionStore.operadorSimulado;
+  const usuario = opSimulado
+    ? {
+        id: opSimulado.id,
+        nombre: opSimulado.nombre,
+        apellido: "",
+        email: opSimulado.cargo || "",
+        pais: "Colombia",
+        perfilCompletado: true,
+      }
+    : organizacionStore.usuario;
 
   /**
    * «¿el rol puede gestionar la organización?» — la misma capacidad que exige
