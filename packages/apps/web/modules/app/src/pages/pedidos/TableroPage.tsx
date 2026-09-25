@@ -1240,6 +1240,7 @@ export const TableroPage = observer(() => {
   type CriterioOrden = "reciente" | "antiguo" | "monto" | "urgente";
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
   const [menuFilterOpen, setMenuFilterOpen] = useState(false);
+  const [busquedaTablero, setBusquedaTablero] = useState("");
   const [busquedaExpandida, setBusquedaExpandida] = useState(false);
   const busquedaActiva = busquedaExpandida || busquedaTablero.length > 0;
 
