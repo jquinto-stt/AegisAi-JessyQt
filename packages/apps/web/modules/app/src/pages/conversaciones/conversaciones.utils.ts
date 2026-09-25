@@ -64,11 +64,11 @@ export const ultimoTexto = (convId: string): string => {
   for (let i = items.length - 1; i >= 0; i--) {
     const it = items[i];
     if (it.clase === "mensaje" && it.data.contenido.texto) {
-      return it.data.contenido.texto.replace(/\n/g, " ");
+      return it.data.contenido.texto.replace(/<[^>]+>/g, "").replace(/\n/g, " ").trim();
     }
   }
   const last = items[items.length - 1];
   if (!last) return "";
   const t = last.clase === "mensaje" ? last.data.contenido.texto : last.data.texto;
-  return t.replace(/\n/g, " ");
+  return (t || "").replace(/<[^>]+>/g, "").replace(/\n/g, " ").trim();
 };

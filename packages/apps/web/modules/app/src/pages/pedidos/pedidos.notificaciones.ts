@@ -1,5 +1,5 @@
 import { pedidosStore } from "@/stores/pedidos.store";
-import type { Pedido, PedidoEstado } from "@/stores/pedidos.store";
+import type { Pedido, PedidoEstado, MetodoPago } from "@/stores/pedidos.store";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import type { DesenlaceNovedad } from "./novedad.utils";
 
@@ -130,6 +130,18 @@ export function cancelarPedido(id: string): boolean {
     if (pedido) notificarCambioDeEstado(pedido);
   }
   return aplicado;
+}
+
+/**
+ * Confirma el pago de un pedido, lo avanza a confirmado y avisa al cliente con la plantilla.
+ */
+export async function confirmarPagoPedido(id: string, metodo?: MetodoPago): Promise<boolean> {
+  const ok = await pedidosStore.confirmarPago(id, metodo);
+  if (ok) {
+    const pedido = pedidosStore.getPedido(id);
+    if (pedido) notificarCambioDeEstado(pedido);
+  }
+  return ok;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

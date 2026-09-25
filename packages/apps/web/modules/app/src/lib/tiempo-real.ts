@@ -34,6 +34,7 @@
 // Con la ventana correcta llega: `INSERT {"texto":"RT-LARGO-…"}`.
 import { getSupabase, ESQUEMA } from "@/lib/supabase";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { pedidosStore } from "@/stores/pedidos.store";
 
 /** Cada cuánto se aplica lo acumulado en segundo plano, como máximo. */
 export const INTERVALO_MS = 500;
@@ -69,7 +70,10 @@ async function aplicarSiCambio(): Promise<void> {
 
   // `cargarDesdeBase` es quien escribe `origenDatos` y `motivoSeed`; no se
   // duplica esa decisión aquí.
-  await conversacionesStore.cargarDesdeBase();
+  await Promise.all([
+    conversacionesStore.cargarDesdeBase(),
+    pedidosStore.cargarDesdeBase(),
+  ]);
 }
 
 /**
@@ -121,6 +125,11 @@ export function iniciarTiempoReal(): boolean {
     .on(
       "postgres_changes",
       { event: "INSERT", schema: ESQUEMA, table: "conversacion" },
+      marcarCambio
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: ESQUEMA, table: "pedido" },
       marcarCambio
     )
     .subscribe();

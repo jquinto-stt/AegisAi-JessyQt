@@ -211,16 +211,18 @@ export const EquipoPage = observer(() => {
 
         <div className="flex shrink-0 items-center gap-3">
           <Button
-            size="sm"
+            size="md"
             variant={vista === "roles" ? "primary" : "outline"}
+            className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
             onClick={() => setVista((v) => (v === "roles" ? "equipo" : "roles"))}
           >
             {vista === "roles" ? "← Volver a equipo" : "Gestionar roles"}
           </Button>
           {vista === "equipo" && (
             <Button
-              size="sm"
+              size="md"
               startIcon={<PlusIcon className="h-4 w-4" />}
+              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
               onClick={abrirCrear}
             >
               Invitar miembro

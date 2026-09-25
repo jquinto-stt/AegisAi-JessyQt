@@ -618,12 +618,12 @@ export async function crearPedido(sb, args) {
         .insert({
         organizacion_id: organizacionId,
         numero,
-        cliente: cliente || 'Cliente WhatsApp',
+        cliente: cliente || (args.canal === 'telegram' ? 'Cliente Telegram' : 'Cliente WhatsApp'),
         telefono: telefono ?? '',
         // `telefono_norm` NO se escribe: es GENERATED ALWAYS, igual que en
         // `contacto`. Escribirla da «cannot insert a non-DEFAULT value».
         modalidad: borrador.modalidad ?? 'retiro',
-        origen: 'whatsapp',
+        origen: args.canal || (telefono && String(telefono).startsWith('tg:') ? 'telegram' : 'whatsapp'),
         estado: 'nuevo',
         // `metodo_pago` NO se deduce de la modalidad.
         //
@@ -722,7 +722,7 @@ export async function crearPedido(sb, args) {
  * eventos ENTRANTES. Un mensaje saliente no tiene evento de Zernio, y meterle
  * un uuid inventado rompería el índice `mensaje_zernio_evento_uniq`.
  */
-export async function guardarRespuesta(sb, conversacionId, texto, wamid) {
+export async function guardarRespuesta(sb, conversacionId, texto, wamid, canal = 'whatsapp') {
     const { data, error } = await t(sb, 'mensaje')
         .insert({
         conversacion_id: conversacionId,
@@ -731,7 +731,7 @@ export async function guardarRespuesta(sb, conversacionId, texto, wamid) {
         contenido: {
             texto,
             adjuntos: [],
-            plataforma: 'whatsapp',
+            plataforma: canal,
             canal: 'api',
             plataforma_message_id: wamid,
         },
@@ -922,15 +922,16 @@ export async function procesarEntrante(m, deps = {}) {
         const creado = await crearPedido(sb, {
             organizacionId: org.org.organizacionId,
             telefono: m.telefonoNorm,
-            cliente: m.nombre ?? 'Cliente WhatsApp',
+            cliente: m.nombre ?? (m.canal === 'telegram' ? 'Cliente Telegram' : 'Cliente WhatsApp'),
             borrador: borradorFinal,
+            canal: m.canal || 'whatsapp',
         });
         if (!creado.ok) {
             const disculpa = 'No pude registrar tu pedido automáticamente. Te paso con una persona del equipo ' +
                 'para que lo tome — tu pedido no se perdió.';
             const envio = await (deps.enviar ?? (await import('./ZernioEnvio.js')).enviarTexto)(m.zernioConversationId, m.accountId, disculpa, { replyTo: m.plataformaMessageId || m.wamidCitables || undefined });
             if (envio.ok) {
-                await guardarRespuesta(sb, conv.conversacionId, disculpa, envio.messageId ?? null);
+                await guardarRespuesta(sb, conv.conversacionId, disculpa, envio.messageId ?? null, m.canal || 'whatsapp');
                 await marcarRespondido(sb, conv.conversacionId, m.eventId, 'handoff');
                 await pasarAHumano(sb, conv.conversacionId);
             }
@@ -998,7 +999,7 @@ export async function procesarEntrante(m, deps = {}) {
         };
     }
     // 6. Guardar
-    const guardado = await guardarRespuesta(sb, conv.conversacionId, textoFinal, envio.messageId ?? null);
+    const guardado = await guardarRespuesta(sb, conv.conversacionId, textoFinal, envio.messageId ?? null, m.canal || 'whatsapp');
     if (!guardado.ok) {
         // El cliente SÍ recibió la respuesta pero no quedó en la bandeja. Es un
         // fallo real y se devuelve como tal: decir `ok` aquí escondería que la

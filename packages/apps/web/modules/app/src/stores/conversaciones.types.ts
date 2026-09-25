@@ -73,8 +73,8 @@ export type AutorMensaje = "cliente" | "negocio" | "bot";
  */
 export type ModuloDestino = "pedidos" | "inventario" | "general";
 
-/** Canal de comunicación. Hoy solo WhatsApp; preparado para más. */
-export type CanalId = "whatsapp"; // futuro: "instagram" | "webchat" | ...
+/** Canal de comunicación (WhatsApp, Telegram). */
+export type CanalId = "whatsapp" | "telegram";
 
 // ── Contenido del mensaje (preparado para multimodal) ────────────────────────
 
@@ -146,7 +146,7 @@ export interface EventoSistema {
 export interface Contacto {
   telefono: string;
   nombre: string;
-  origen: "whatsapp";
+  origen: "whatsapp" | "telegram";
 }
 
 /**

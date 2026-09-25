@@ -1383,7 +1383,7 @@ export class ConversacionesStore {
     const conv = this.getConversacion(convId);
     if (!conv) return;
     if (texto.trim() === "") return; // sin contenido: no se agrega (Req 5.7)
-    if (conv.canal !== "whatsapp") return; // canal no soportado (Req 10.4)
+    if (conv.canal !== "whatsapp" && (conv.canal as string) !== "telegram") return;
 
     const mensaje: Mensaje = {
       id: generarId(),

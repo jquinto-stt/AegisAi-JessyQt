@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 import { getSupabase, ESQUEMA } from "../lib/supabase";
 import {
   BUSINESS_PROFILES,
@@ -100,7 +100,7 @@ export const META_ESTADO_PEDIDO: Record<
   { label: string; badge: ColorEstadoPedido; punto: string }
 > = {
   programado: { label: "Programado", badge: "light", punto: "bg-gray-400" },
-  nuevo: { label: "Nuevo", badge: "info", punto: "bg-accent-500" },
+  nuevo: { label: "Pendiente de pago", badge: "warning", punto: "bg-warning-500" },
   confirmado: { label: "Confirmado", badge: "primary", punto: "bg-brand-500" },
   en_preparacion: { label: "En preparación", badge: "warning", punto: "bg-warning-500" },
   listo: { label: "Listo", badge: "success", punto: "bg-success-500" },
@@ -487,7 +487,11 @@ function loadConfig(): PedidosConfig {
           ? parsed.capacidadesActivas
           : [...preset.defaultCapabilities],
         columnasPersonalizadas: Array.isArray(parsed.columnasPersonalizadas)
-          ? parsed.columnasPersonalizadas
+          ? parsed.columnasPersonalizadas.map((c) =>
+              c.id === "nuevo" && (c.label === "Nuevo" || !c.label)
+                ? { ...c, label: "Pendiente de pago" }
+                : c
+            )
           : undefined,
       };
     }
@@ -815,6 +819,131 @@ export class PedidosStore {
     makeAutoObservable(this);
   }
 
+  /**
+   * Carga pedidos reales desde la base de datos Supabase (`necto.pedido` y `necto.pedido_item`).
+   */
+  async cargarDesdeBase(): Promise<void> {
+    const sb = getSupabase();
+    if (!sb) return;
+    try {
+      const { data, error } = await sb
+        .schema(ESQUEMA)
+        .from("pedido")
+        .select("*, pedido_item(*)")
+        .order("creado_en", { ascending: false });
+
+      if (error || !data || data.length === 0) return;
+
+      const pedidosReales: Pedido[] = data.map((p: any) => {
+        const rawItems = (p.pedido_item as any[]) || [];
+        const items: PedidoItem[] = rawItems.map((it: any) => ({
+          nombre: it.nombre || "Producto",
+          cantidad: Number(it.cantidad) || 1,
+          precio: Number(it.precio_unitario) || 0,
+        }));
+
+        return {
+          id: p.id,
+          numero: p.numero || `WEB-${p.id.slice(0, 4)}`,
+          cliente: p.cliente || "Cliente",
+          telefono: p.telefono || "",
+          modalidad: (p.modalidad as Modalidad) || "domicilio",
+          items: items.length > 0 ? items : [{ nombre: "Pedido", cantidad: 1, precio: 0 }],
+          notas: p.direccion_entrega?.texto ? `Dirección: ${p.direccion_entrega.texto}` : undefined,
+          estado: (p.estado as PedidoEstado) || "nuevo",
+          origen: (p.origen as Origen) || "whatsapp",
+          pagado: p.estado === "entregado" || p.estado === "listo" || p.metodo_pago === "transferencia" || p.metodo_pago === "tarjeta",
+          createdAt: p.creado_en,
+          estadoDesde: p.estado_desde || p.creado_en,
+          finishedAt: p.finished_at || undefined,
+          programadoPara: p.programado_para || undefined,
+          direccionEntrega: p.direccion_entrega || undefined,
+          costoEnvio: p.modalidad === "domicilio" ? 5000 : 0,
+          metodoPago: (p.metodo_pago as MetodoPago) || "efectivo",
+          pagaCon: p.pago_con ? Number(p.pago_con) : undefined,
+          repartidor: p.repartidor || undefined,
+        };
+      });
+
+      runInAction(() => {
+        // Preservar pedidos existentes que no colisionen en ID
+        const mapa = new Map(pedidosReales.map((p) => [p.id, p]));
+        for (const p of this.pedidos) {
+          if (!mapa.has(p.id)) {
+            pedidosReales.push(p);
+          }
+        }
+        this.pedidos = pedidosReales.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      });
+    } catch (err) {
+      console.warn("[pedidosStore] Error al sincronizar pedidos con Supabase:", err);
+    }
+  }
+
+  /**
+   * Sincroniza un cambio de estado/pago de un pedido hacia Supabase (`necto.pedido`).
+   */
+  async sincronizarPedidoBase(pedido: Pedido): Promise<void> {
+    const sb = getSupabase();
+    if (!sb) return;
+    try {
+      const updates: Record<string, any> = {
+        estado: pedido.estado,
+        estado_desde: pedido.estadoDesde || nowIso(),
+        finished_at: pedido.finishedAt || null,
+        metodo_pago: pedido.metodoPago || "otro",
+      };
+      if (pedido.repartidor !== undefined) updates.repartidor = pedido.repartidor;
+      if (pedido.pagaCon !== undefined) updates.pago_con = pedido.pagaCon;
+
+      const { error } = await sb
+        .schema(ESQUEMA)
+        .from("pedido")
+        .update(updates)
+        .eq("id", pedido.id);
+
+      if (error) {
+        console.warn("[pedidosStore] Error al sincronizar pedido en Supabase:", error.message);
+      }
+    } catch (err) {
+      console.warn("[pedidosStore] Excepción al sincronizar pedido con Supabase:", err);
+    }
+  }
+
+  /**
+   * Marca un pedido como pagado y lo avanza de estado si estaba en 'nuevo'.
+   * Persiste de inmediato tanto en memoria como en Supabase.
+   */
+  async confirmarPago(id: string, metodoPago: MetodoPago = "transferencia"): Promise<boolean> {
+    const p = this.getPedido(id);
+    if (!p) return false;
+    runInAction(() => {
+      p.pagado = true;
+      p.metodoPago = metodoPago;
+      if (p.estado === "nuevo") {
+        p.estado = "confirmado";
+        p.estadoDesde = nowIso();
+      }
+    });
+    await this.sincronizarPedidoBase(p);
+    return true;
+  }
+
+  /**
+   * Conmuta el estado pagado/sin pagar de un pedido y persiste en Supabase.
+   */
+  togglePagado(id: string): void {
+    const p = this.getPedido(id);
+    if (!p) return;
+    runInAction(() => {
+      p.pagado = !p.pagado;
+      if (p.pagado && (p.metodoPago === "otro" || !p.metodoPago)) {
+        p.metodoPago = "transferencia";
+      }
+    });
+    void this.sincronizarPedidoBase(p);
+  }
+
   // ── Config ────────────────────────────────────────────────────────────────
 
   updateConfig(data: Partial<PedidosConfig>): void {
@@ -1086,6 +1215,7 @@ export class PedidosStore {
     if (this.esTerminal(destinoColumna as PedidoEstado)) {
       p.finishedAt = nowIso();
     }
+    void this.sincronizarPedidoBase(p);
     return true;
   }
 
@@ -1163,7 +1293,10 @@ export class PedidosStore {
     const buscado = soloDigitos(telefono);
     if (buscado === "") return [];
     return this.pedidos
-      .filter((p) => soloDigitos(p.telefono) === buscado)
+      .filter((p) => {
+        const telP = soloDigitos(p.telefono);
+        return telP === buscado || telP.endsWith(buscado) || buscado.endsWith(telP);
+      })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
@@ -1911,6 +2044,7 @@ export class PedidosStore {
     p.estado = destino;
     p.estadoDesde = nowIso();
     if (this.esTerminal(destino)) p.finishedAt = nowIso();
+    void this.sincronizarPedidoBase(p);
     return true;
   }
 
@@ -1961,6 +2095,7 @@ export class PedidosStore {
     // mientras figura en la hoja de ruta, y el recaudo del día lo contaría como
     // cerrado hoy.
     delete p.finishedAt;
+    void this.sincronizarPedidoBase(p);
     return true;
   }
 

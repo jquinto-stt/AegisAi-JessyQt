@@ -16,7 +16,7 @@ import {
 } from "@/stores/pedidos.store";
 import { puedeCrearPedido, puedeMoverA } from "@/stores/acceso.utils";
 import type { EstadoConversacion } from "@/stores/conversaciones.types";
-import { avanzarPedido } from "@/pages/pedidos/pedidos.notificaciones";
+import { avanzarPedido, confirmarPagoPedido } from "@/pages/pedidos/pedidos.notificaciones";
 import { AVATAR_MAP, inicialesDe, statusDe } from "../conversaciones.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -449,6 +449,7 @@ const CrearPedidoRapidoModal = observer(
 
 const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
   const pagado = pedido.pagado === true;
+  const esCancelado = pedido.estado === "cancelado";
   const total = pedidosStore.totalPedido(pedido);
   const cambio = pedidosStore.cambioRequerido(pedido);
 
@@ -460,7 +461,11 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
   const puedeAvanzar = siguiente !== null && puedeMoverA(siguiente);
 
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-gray-200/80 bg-white p-3.5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/60">
+    <li className={`flex flex-col gap-2 rounded-xl border p-3.5 shadow-theme-xs transition-all ${
+      esCancelado
+        ? "border-gray-200/50 bg-gray-50/40 opacity-60 dark:border-gray-800/40 dark:bg-white/[0.01]"
+        : "border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900/60"
+    }`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-gray-800 dark:text-white/90">
@@ -518,14 +523,16 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
           <Badge color={pedidosStore.estadoBadgeColor(pedido.estado)} size="xs">
             {pedidosStore.estadoLabel(pedido.estado)}
           </Badge>
-          <Badge
-            variant={pagado ? "solid" : "light"}
-            color={pagado ? "success" : "warning"}
-            size="xs"
-          >
-            {pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
-          </Badge>
-          {pedido.metodoPago && (
+          {!esCancelado && pedido.estado !== "nuevo" && (
+            <Badge
+              variant={pagado ? "solid" : "light"}
+              color={pagado ? "success" : "warning"}
+              size="xs"
+            >
+              {pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
+            </Badge>
+          )}
+          {pedido.metodoPago && !esCancelado && (
             <span className="rounded-md border border-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 capitalize dark:border-gray-700 dark:text-gray-400">
               {pedido.metodoPago.replace("_", " ")}
               {cambio > 0 && ` (Vuelto: ${money(cambio)})`}
@@ -533,16 +540,31 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
           )}
         </div>
 
-        {puedeAvanzar && (
-          <button
-            type="button"
-            onClick={() => avanzarPedido(pedido.id)}
-            title={`Avanzar a ${pedidosStore.estadoLabel(siguiente)}`}
-            className="rounded-lg bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20"
-          >
-            Avanzar →
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {!pagado && !esCancelado && pedido.estado !== "entregado" && (
+            <button
+              type="button"
+              onClick={() => void confirmarPagoPedido(pedido.id)}
+              className="inline-flex items-center gap-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold transition-all cursor-pointer dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-600 dark:hover:text-white active:scale-95"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>Confirmar pago</span>
+            </button>
+          )}
+
+          {puedeAvanzar && !esCancelado && (
+            <button
+              type="button"
+              onClick={() => avanzarPedido(pedido.id)}
+              title={`Avanzar a ${pedidosStore.estadoLabel(siguiente)}`}
+              className="rounded-lg bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20 cursor-pointer"
+            >
+              Avanzar →
+            </button>
+          )}
+        </div>
       </div>
     </li>
   );

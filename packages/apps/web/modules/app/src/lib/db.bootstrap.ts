@@ -27,6 +27,7 @@ import { getSupabase, hayConfiguracion, haySesion } from "@/lib/supabase";
 import { cargarTodo, diagnosticarPermisoCanal } from "@/lib/conversaciones.repo";
 import { iniciarTiempoReal } from "@/lib/tiempo-real";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { pedidosStore } from "@/stores/pedidos.store";
 
 /**
  * Credenciales de la sesión de demostración.
@@ -120,7 +121,10 @@ export async function bootstrapConversaciones(): Promise<void> {
 
   // `cargarDesdeBase` es quien escribe `origenDatos` y `motivoSeed` para los
   // cinco desenlaces de la lectura. No se duplica esa decisión aquí.
-  await conversacionesStore.cargarDesdeBase();
+  await Promise.all([
+    conversacionesStore.cargarDesdeBase(),
+    pedidosStore.cargarDesdeBase(),
+  ]);
 
   // El tiempo real se enciende DESPUÉS de la primera lectura y solo si esa
   // lectura salió bien. Hacerlo antes abriría un canal que puede no tener nada
@@ -144,6 +148,9 @@ export async function refrescarDesdeBase(): Promise<boolean> {
   if (!(await haySesion())) return false;
   const res = await cargarTodo();
   if (res.estado !== "ok") return false;
-  await conversacionesStore.cargarDesdeBase();
+  await Promise.all([
+    conversacionesStore.cargarDesdeBase(),
+    pedidosStore.cargarDesdeBase(),
+  ]);
   return true;
 }

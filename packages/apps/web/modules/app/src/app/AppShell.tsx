@@ -160,12 +160,19 @@ export const AppShell = () => {
     location.pathname.startsWith("/asistente") &&
     !location.pathname.startsWith("/asistente/config");
 
+  const esChatConversaciones =
+    location.pathname === "/conversaciones" ||
+    location.pathname === "/conversaciones/";
+
+  const esPantallaChat = esChatAsistente || esChatConversaciones;
+
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
-      footer={<AppFooter />}
+      footer={esPantallaChat ? undefined : <AppFooter />}
       noCard={esChatAsistente}
+      pantallaFija={esChatConversaciones}
     >
       <Outlet />
     </BaseAppShell>

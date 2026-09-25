@@ -786,7 +786,7 @@ describe("PedidosStore — alias de estados y modalidades (C)", () => {
     expect(store.estadoLabel("en_camino")).toBe("En reparto");
     expect(store.modalidadLabel("en_sitio")).toBe("Comer aquí");
     // Sin alias, cae en la etiqueta por defecto.
-    expect(store.estadoLabel("nuevo")).toBe("Nuevo");
+    expect(store.estadoLabel("nuevo")).toBe("Pendiente de pago");
     expect(store.modalidadLabel("retiro")).toBe("Retiro");
   });
 });

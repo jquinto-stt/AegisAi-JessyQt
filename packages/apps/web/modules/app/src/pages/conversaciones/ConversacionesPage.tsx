@@ -8,6 +8,7 @@ import { BandejaLista } from "@/pages/conversaciones/components/BandejaLista";
 import { ChatView } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
+import { WhatsAppIcon, TelegramIcon } from "@/pages/conversaciones/components/CanalAvatar";
 import {
   claseSegmentoActivo,
   claseSegmentoInactivo,
@@ -44,10 +45,6 @@ export const ConversacionesPage = observer(() => {
     }
   };
 
-  const handleCerrarPanel = () => {
-    setPanelExpandido(false);
-    setBandejaExpandida(true);
-  };
 
   const handleToggleBandeja = () => {
     setBandejaExpandida(!bandejaExpandida);
@@ -61,7 +58,7 @@ export const ConversacionesPage = observer(() => {
   }, [seleccionadaId, bandeja]);
 
   return (
-    <>
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
       <PageMeta
         title="Chat"
         description="Consola de mensajería y WhatsApp — bandeja, chat y contexto del contacto"
@@ -85,7 +82,7 @@ export const ConversacionesPage = observer(() => {
           El conmutador toma sus tres colores de `@/pages/config-layout`, así que
           el estado activo se pinta igual aquí que en el `Segmentado` de las
           pantallas de configuración. */}
-      <div className="mb-3 flex items-center justify-between gap-4">
+      <div className="shrink-0 mb-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
           <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Conversaciones</h1>
           {/* Indicador de tiempo real. NO es un botón: la bandeja se actualiza
@@ -105,6 +102,57 @@ export const ConversacionesPage = observer(() => {
               En vivo
             </span>
           )}
+
+          {/* Botones de acceso directo a los chats en sus respectivas apps */}
+          <div className="flex items-center gap-2 pl-2">
+            <a
+              href="https://wa.me/573145793333"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-[#20ba5a] hover:shadow-md hover:shadow-[#25D366]/20 active:scale-95"
+              title="Abrir chat del bot en WhatsApp (+57 314 5793333)"
+            >
+              <WhatsAppIcon className="h-4 w-4 shrink-0" />
+              <span>WhatsApp</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="opacity-80 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              >
+                <path d="M7 17L17 7M7 7h10v10" />
+              </svg>
+            </a>
+
+            <a
+              href="https://t.me/NectoPedidosBot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-[#1d8bc0] hover:shadow-md hover:shadow-[#229ED9]/20 active:scale-95"
+              title="Abrir chat del bot en Telegram (@NectoPedidosBot)"
+            >
+              <TelegramIcon className="h-4 w-4 shrink-0" />
+              <span>Telegram</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="opacity-80 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              >
+                <path d="M7 17L17 7M7 7h10v10" />
+              </svg>
+            </a>
+          </div>
         </div>
         <div className={claseSegmentoTrack}>
           <button
@@ -147,7 +195,7 @@ export const ConversacionesPage = observer(() => {
       {conversacionesStore.origenDatos !== "real" && (
         <div
           role="status"
-          className={`mb-3 flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs ${
+          className={`shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs ${
             conversacionesStore.origenDatos === "cargando"
               ? "border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
               : "border-amber-300/60 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200/90"
@@ -189,7 +237,7 @@ export const ConversacionesPage = observer(() => {
       {conversacionesStore.ultimoErrorModo && (
         <div
           role="alert"
-          className="mb-3 flex items-start gap-2.5 rounded-xl border border-red-300/60 bg-red-50 px-3.5 py-2.5 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200/90"
+          className="shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-red-300/60 bg-red-50 px-3.5 py-2.5 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠
@@ -208,19 +256,18 @@ export const ConversacionesPage = observer(() => {
       )}
 
       {/* Contenedor principal de 2 columnas + panel lateral opcional */}
-      <div className="flex h-[calc(100vh-8.5rem)] min-h-[620px] items-stretch gap-4 sm:gap-5">
+      <div className="flex flex-1 min-h-0 items-stretch gap-4 sm:gap-5 overflow-hidden">
         {/* ── Columna izquierda: ChatSidebar (Bandeja colapsable y retráctil) ── */}
         <aside
           aria-label="Bandeja de chats"
           className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             bandejaExpandida
-              ? "flex w-full sm:w-[310px] xl:w-[330px] 2xl:w-[360px] border border-gray-200 opacity-100 mr-0 dark:border-gray-800"
+              ? "flex w-full sm:w-[290px] xl:w-[310px] 2xl:w-[330px] border border-gray-200 opacity-100 mr-0 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -mr-4 sm:-mr-5"
           }`}
         >
-          <div className="flex h-full min-w-[310px] xl:min-w-[330px] 2xl:min-w-[360px] flex-col overflow-hidden">
+          <div className="flex h-full min-w-[290px] xl:min-w-[310px] 2xl:min-w-[330px] flex-col overflow-hidden">
             <BandejaLista
-              onToggle={() => setBandejaExpandida(false)}
               bandejaExpandida={bandejaExpandida}
             />
           </div>
@@ -262,12 +309,12 @@ export const ConversacionesPage = observer(() => {
           aria-label="Panel de información del contacto"
           className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             panelExpandido && seleccionadaId !== null
-              ? "flex w-80 border border-gray-200 p-4 opacity-100 2xl:w-96 dark:border-gray-800"
+              ? "flex w-72 border border-gray-200 p-4 opacity-100 2xl:w-80 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -ml-4 sm:-ml-5"
           }`}
         >
           {seleccionadaId !== null && (
-            <div className="flex h-full min-w-[18rem] flex-col overflow-hidden 2xl:min-w-[22rem]">
+            <div className="flex h-full min-w-[17rem] flex-col overflow-hidden 2xl:min-w-[19rem]">
               <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
@@ -280,27 +327,6 @@ export const ConversacionesPage = observer(() => {
                     Información del contacto
                   </h3>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleCerrarPanel}
-                  aria-label="Colapsar información del contacto"
-                  title="Colapsar panel"
-                  className="group flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200/80 bg-gray-50/60 text-gray-400 transition-all hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700/60 dark:bg-white/5 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-white/10 dark:hover:text-white"
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="transition-transform group-hover:translate-x-0.5"
-                  >
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto pt-3 custom-scrollbar">
@@ -310,7 +336,7 @@ export const ConversacionesPage = observer(() => {
           )}
         </aside>
       </div>
-    </>
+    </div>
   );
 });
 

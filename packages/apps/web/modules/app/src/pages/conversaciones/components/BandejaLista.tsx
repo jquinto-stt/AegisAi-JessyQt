@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
+import { CanalAvatar } from "./CanalAvatar";
 import { Badge } from "@/elements/ui/badge";
 import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { MoreDotIcon } from "@/icons";
@@ -69,33 +70,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             )}
           </div>
 
-          <div className="flex items-center gap-1">
-            {onToggle && (
-              <button
-                type="button"
-                onClick={onToggle}
-                title="Colapsar lista de chats"
-                aria-label="Colapsar lista de chats"
-                className="group flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="transition-transform group-hover:-translate-x-0.5"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <path d="M9 3v18" />
-                  <path d="M14 9l-3 3 3 3" />
-                </svg>
-              </button>
-            )}
-
+          <div className="flex items-center">
             <div className="relative inline-block">
               <button
                 type="button"
@@ -224,10 +199,9 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                   }`}
                 >
                   <div className="relative shrink-0">
-                    <Avatar
-                      src={avatarSrc}
-                      alt={conv.contacto.nombre}
-                      initials={inicialesDe(conv.contacto.nombre)}
+                    <CanalAvatar
+                      canal={conv.canal}
+                      nombre={conv.contacto.nombre}
                       size="large"
                       status={statusDe(conv.estado)}
                     />
@@ -262,18 +236,11 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                             módulo no tiene vocabulario propio de estados de pedido. */}
                         {pedidoActivo && (
                           <span
-                            className="flex shrink-0 items-center gap-1"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:text-gray-300"
                             title={`Pedido ${pedidoActivo.numero} · ${pedidosStore.estadoLabel(pedidoActivo.estado)}`}
                           >
-                            <Badge size="xs" color="light" className="tabular-nums">
-                              {pedidoActivo.numero}
-                            </Badge>
-                            <Badge
-                              size="xs"
-                              color={pedidosStore.estadoBadgeColor(pedidoActivo.estado)}
-                            >
-                              {pedidosStore.estadoLabel(pedidoActivo.estado)}
-                            </Badge>
+                            <span className="tabular-nums">{pedidoActivo.numero}</span>
+                            <span className={`size-1.5 rounded-full ${pedidosStore.estadoDotClass(pedidoActivo.estado)}`} />
                           </span>
                         )}
                       </div>

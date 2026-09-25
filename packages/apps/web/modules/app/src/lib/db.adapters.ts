@@ -138,8 +138,9 @@ export function atencionDeBase(v: string): ModoAtencion {
   return v === "humano" ? "humano" : "bot";
 }
 
-/** Canal: hoy solo whatsapp en ambos lados. */
-export function canalDeBase(_v: string): CanalId {
+/** Canal: whatsapp o telegram. */
+export function canalDeBase(v: string): CanalId {
+  if (v === "telegram") return "telegram";
   return "whatsapp";
 }
 
@@ -190,15 +191,21 @@ export function construirConversaciones(
       continue;
     }
 
+    const esTelegram =
+      f.canal === "telegram" ||
+      c.origen === "telegram" ||
+      c.telefono?.startsWith("tg:");
+    const canal: CanalId = esTelegram ? "telegram" : canalDeBase(f.canal);
+
     const contacto: Contacto = {
       telefono: c.telefono,
       nombre: c.nombre ?? c.telefono,
-      origen: "whatsapp",
+      origen: esTelegram ? "telegram" : "whatsapp",
     };
 
     conversaciones.push({
       id: f.id,
-      canal: canalDeBase(f.canal),
+      canal,
       contacto,
       estado: estadoDeBase(f.estado),
       atencion: atencionDeBase(f.modo_atencion),

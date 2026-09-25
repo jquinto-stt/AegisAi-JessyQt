@@ -543,7 +543,7 @@ const DetalleModal = observer(
             <button
               type="button"
               onClick={() => {
-                pedido.pagado = !pedido.pagado;
+                pedidosStore.togglePagado(pedido.id);
               }}
               className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
             >

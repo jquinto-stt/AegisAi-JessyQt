@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 
@@ -8,7 +9,8 @@ import {
   type ModuloIntegrable,
 } from "@/stores/integraciones.store";
 import { conversacionesStore } from "@/stores/conversaciones.store";
-import { pedidosStore } from "@/stores/pedidos.store";
+import { pedidosStore, ETIQUETA_PAGO } from "@/stores/pedidos.store";
+import { confirmarPagoPedido } from "@/pages/pedidos/pedidos.notificaciones";
 import { formatoMoneda } from "@/utils";
 import { tiempoRelativo } from "@/pages/conversaciones/conversaciones.utils";
 
@@ -91,6 +93,11 @@ export default ContextoModulo;
 const ContextoPedidos = observer(
   ({ nombre, telefono }: { nombre: string; telefono: string }) => {
     const navigate = useNavigate();
+
+    useEffect(() => {
+      pedidosStore.cargarDesdeBase();
+    }, [telefono]);
+
     const pedidos = pedidosStore.porTelefono(telefono);
 
     return (
@@ -122,47 +129,85 @@ const ContextoPedidos = observer(
             </p>
           ) : (
             <ul className="space-y-2.5">
-              {pedidos.map((p) => (
-                <li
-                  key={p.id}
-                  className="rounded-xl border border-gray-200 p-3.5 dark:border-gray-800"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
-                        {p.numero}
-                      </span>
-                      <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
-                        {pedidosStore.estadoLabel(p.estado)}
-                      </Badge>
-                      {pedidosStore.esUrgente(p) && (
-                        <Badge color="error" size="xs">
-                          Urgente
+              {pedidos.map((p) => {
+                const esCancelado = p.estado === "cancelado";
+                const esTerminal = p.estado === "cancelado" || p.estado === "entregado";
+                const requiereCobro = !p.pagado && !esTerminal;
+
+                return (
+                  <li
+                    key={p.id}
+                    className={`rounded-xl border p-3.5 transition-all ${
+                      esCancelado
+                        ? "border-gray-200/60 bg-gray-50/40 opacity-60 dark:border-gray-800/40 dark:bg-white/[0.01]"
+                        : "border-gray-200 bg-white shadow-xs dark:border-gray-800 dark:bg-gray-900/60"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-bold tabular-nums text-gray-800 dark:text-white/90">
+                          {p.numero}
+                        </span>
+
+                        {/* Badge de estado del pedido */}
+                        <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
+                          {pedidosStore.estadoLabel(p.estado)}
                         </Badge>
-                      )}
+
+                        {/* Badge de pago SOLO si está pagado o si el estado no es ya 'nuevo' (Pendiente de pago) */}
+                        {!esCancelado && p.estado !== "nuevo" && (
+                          <Badge color={p.pagado ? "success" : "warning"} size="xs">
+                            {p.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
+                          </Badge>
+                        )}
+
+                        {pedidosStore.esUrgente(p) && !esTerminal && (
+                          <Badge color="error" size="xs">
+                            Urgente
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Importe y acción rápida integrada */}
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">
+                          {formatoMoneda(pedidosStore.totalPedido(p))}
+                        </span>
+
+                        {requiereCobro && (
+                          <button
+                            type="button"
+                            onClick={() => void confirmarPagoPedido(p.id)}
+                            title="Confirmar pago y avanzar a Confirmado"
+                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 px-2 py-1 text-xs font-semibold transition-all cursor-pointer dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-600 dark:hover:text-white active:scale-95"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            <span>Confirmar pago</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold tabular-nums text-gray-800 dark:text-white/90">
-                      {formatoMoneda(pedidosStore.totalPedido(p))}
-                    </span>
-                  </div>
 
-                  <p className="mt-1.5 truncate text-xs text-gray-600 dark:text-gray-300">
-                    {p.items
-                      .map((it) => `${it.cantidad}× ${it.nombre}`)
-                      .join(", ")}
-                  </p>
+                    <p className="mt-1.5 truncate text-xs text-gray-600 dark:text-gray-300">
+                      {p.items
+                        .map((it) => `${it.cantidad}× ${it.nombre}`)
+                        .join(", ")}
+                    </p>
 
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
-                    <span>{pedidosStore.modalidadLabel(p.modalidad)}</span>
-                    <span>·</span>
-                    <span>
-                      {p.origen === "whatsapp" ? "Entró por WhatsApp" : "Creado por el equipo"}
-                    </span>
-                    <span>·</span>
-                    <span>{tiempoRelativo(p.createdAt)}</span>
-                  </div>
-                </li>
-              ))}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-gray-400 dark:text-gray-500">
+                      <span>{pedidosStore.modalidadLabel(p.modalidad)}</span>
+                      <span>·</span>
+                      <span>
+                        {p.origen === "whatsapp" ? "Entró por WhatsApp" : "Creado por el equipo"}
+                      </span>
+                      <span>·</span>
+                      <span>{tiempoRelativo(p.createdAt)}</span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

@@ -14,6 +14,8 @@ import type { ModuloIntegrable } from "@/stores/integraciones.store";
 import { puede } from "@/stores/acceso.utils";
 import { BotonHandoff } from "./BotonHandoff";
 import { ContextoModulo } from "./ContextoModulo";
+import { TextoMensajeFormateado } from "./TextoMensajeFormateado";
+import { CanalAvatar } from "./CanalAvatar";
 import {
   AVATAR_MAP,
   inicialesDe,
@@ -132,12 +134,12 @@ export const ChatView = observer(({
   const avatarSrc = AVATAR_MAP[conv.id] || "";
 
   return (
-    <div className="animate-aparecer flex flex-1 flex-col overflow-hidden">
+    <div className="animate-aparecer flex flex-1 min-h-0 flex-col overflow-hidden">
       {/* ── Cabecera del Chat (Estilo Webi.AI Elements / TailAdmin) ──
           Se omite cuando el chat se embebe en el drawer, que ya aporta su propia
           cabecera con la identidad del cliente y el nº de pedido. */}
       {!sinCabecera && (
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3 dark:border-gray-800 dark:bg-transparent xl:px-6">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7">
         <div className="flex items-center gap-3">
           {onToggleBandeja && (
             <button
@@ -172,15 +174,14 @@ export const ChatView = observer(({
             </button>
           )}
 
-          <Avatar
-            src={avatarSrc}
-            alt={conv.contacto.nombre}
-            initials={inicialesDe(conv.contacto.nombre)}
+          <CanalAvatar
+            canal={conv.canal}
+            nombre={conv.contacto.nombre}
             size="large"
             status={statusDe(conv.estado)}
           />
           <div>
-            <h4 className="text-sm font-semibold text-ink-title dark:text-white/90">
+            <h4 className="text-[15px] font-semibold text-ink-title dark:text-white/90">
               {conv.contacto.nombre}
             </h4>
             <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -201,10 +202,10 @@ export const ChatView = observer(({
               onClick={onTogglePanel}
               title={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
               aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
-              className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-all ${
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 panelExpandido
                   ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  : "border-gray-200 bg-white text-gray-500 shadow-theme-xs hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
               <svg
@@ -220,12 +221,11 @@ export const ChatView = observer(({
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M15 3v18" />
                 {panelExpandido ? (
-                  <path d="M10 9l-3 3 3 3" />
+                  <path d="M10 9l3 3-3 3" />
                 ) : (
-                  <path d="M8 9l3 3-3 3" />
+                  <path d="M12 9l-3 3 3 3" />
                 )}
               </svg>
-              <span className="hidden sm:inline">Info</span>
             </button>
           )}
 
@@ -305,7 +305,7 @@ export const ChatView = observer(({
         aria-label="Conversación"
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="relative flex-1 space-y-6 overflow-y-auto p-5 custom-scrollbar xl:space-y-7 xl:p-6"
+        className="relative flex-1 space-y-6 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-6 sm:py-6 xl:space-y-7 xl:px-8 xl:py-7"
       >
         {hayMasMensajes && (
           <div className="flex justify-center py-2">
@@ -354,22 +354,22 @@ export const ChatView = observer(({
             if (esCliente) {
               return (
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
-                  <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full sm:h-10 sm:w-10">
-                    <Avatar
-                      src={avatarSrc}
-                      initials={inicialesDe(conv.contacto.nombre)}
-                      size="large"
+                  <div className="shrink-0">
+                    <CanalAvatar
+                      canal={conv.canal}
+                      nombre={conv.contacto.nombre}
+                      size="medium"
                     />
                   </div>
-                  <div className="max-w-[85%] sm:max-w-md">
-                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-4 py-3 text-sm text-gray-800 shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
-                      <p className="mb-1 text-xs font-semibold text-gray-900 dark:text-white">
+                  <div className="max-w-[88%] sm:max-w-xl lg:max-w-2xl xl:max-w-3xl">
+                    <div className="rounded-2xl rounded-tl-sm bg-gray-100 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
+                      <p className="mb-1.5 text-xs font-semibold text-gray-900 dark:text-white">
                         {conv.contacto.nombre}
                       </p>
-                      <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+                      <TextoMensajeFormateado texto={m.contenido.texto} />
                     </div>
-                    <div className="mt-1 flex items-center gap-1.5 pl-1 text-[11px] text-gray-400 dark:text-gray-500">
-                      <EyeIcon className="h-3 w-3" />
+                    <div className="mt-1.5 flex items-center gap-1.5 pl-1 text-xs text-gray-400 dark:text-gray-500">
+                      <EyeIcon className="h-3.5 w-3.5" />
                       <span>{horaDe(m.timestamp)}</span>
                     </div>
                   </div>
@@ -387,9 +387,9 @@ export const ChatView = observer(({
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
                   <BotAvatar />
 
-                  <div className="max-w-[85%] flex-1 sm:max-w-lg">
+                  <div className="max-w-[90%] flex-1 sm:max-w-xl lg:max-w-2xl xl:max-w-3xl">
                     {/* Tarjeta de Trazabilidad / Intención IA */}
-                    <div className="rounded-xl border border-dashed border-secondary-300/80 bg-secondary-50/40 p-3 shadow-theme-xs dark:border-secondary-700/60 dark:bg-secondary-950/20">
+                    <div className="rounded-xl border border-dashed border-secondary-300/80 bg-secondary-50/40 p-3.5 shadow-theme-xs dark:border-secondary-700/60 dark:bg-secondary-950/20">
                       {/* Cabecera de la traza: Nombre del bot + Ojo con hora */}
                       <div className="mb-1.5 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5">
@@ -400,14 +400,14 @@ export const ChatView = observer(({
                             IA
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
-                          <EyeIcon className="h-3 w-3" />
+                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                          <EyeIcon className="h-3.5 w-3.5" />
                           <span>{horaDe(m.timestamp)}</span>
                         </div>
                       </div>
 
                       {/* Línea de intención / flujo de ejecución */}
-                      <p className="text-xs font-medium leading-snug text-gray-700 dark:text-gray-300">
+                      <p className="text-xs font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                         {traza.flujo}
                       </p>
 
@@ -438,8 +438,8 @@ export const ChatView = observer(({
                     </div>
 
                     {/* Burbuja de respuesta del bot: lavanda suave */}
-                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-sm text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
-                      <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+                    <div className="rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-5 py-3.5 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
+                      <TextoMensajeFormateado texto={m.contenido.texto} />
 
                       {/* Acción interactiva si hay módulo conectado o pedido */}
                       {traza.accion ? (
@@ -458,12 +458,12 @@ export const ChatView = observer(({
                               {traza.accion}
                             </span>
                           )}
-                          <span className="text-[11px] text-secondary-400 dark:text-secondary-400/80">
+                          <span className="text-xs text-secondary-400 dark:text-secondary-400/80">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
                       ) : (
-                        <p className="mt-1 text-right text-[11px] text-secondary-400 dark:text-secondary-400/80">
+                        <p className="mt-1 text-right text-xs text-secondary-400 dark:text-secondary-400/80">
                           {horaDe(m.timestamp)}
                         </p>
                       )}
@@ -476,14 +476,14 @@ export const ChatView = observer(({
             // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #15008B ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">
-                <div className="max-w-[80%] sm:max-w-md text-right">
-                  <div className="rounded-2xl rounded-tr-sm bg-secondary-600 px-4 py-3 text-left text-sm text-white shadow-theme-xs">
+                <div className="max-w-[88%] sm:max-w-xl lg:max-w-2xl xl:max-w-3xl text-right">
+                  <div className="rounded-2xl rounded-tr-sm bg-secondary-600 px-5 py-3.5 text-left text-[15px] leading-relaxed text-white shadow-theme-xs">
                     {/* Distintivo claro de Asesor Humano */}
-                    <div className="mb-1 flex items-center justify-end gap-1.5 text-[11px] font-semibold text-white/90">
+                    <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-semibold text-white/90">
                       <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-300" />
                       <span>Asesor Humano</span>
                     </div>
-                    <p className="whitespace-pre-line leading-relaxed">{m.contenido.texto}</p>
+                    <TextoMensajeFormateado texto={m.contenido.texto} />
                   </div>
                   <p className="mt-1.5 text-right text-xs text-gray-400 dark:text-gray-500">
                     {horaDe(m.timestamp)}
