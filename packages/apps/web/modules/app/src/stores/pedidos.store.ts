@@ -804,19 +804,43 @@ const seed = (): Pedido[] => [
  * reglas; `moverEstado` valida que la transición sea coherente con el pipeline.
  */
 export class PedidosStore {
-  pedidos: Pedido[] = seed();
+  pedidos: Pedido[] = [];
   crmDirecciones: Record<string, DireccionEntrega[]> = loadDireccionesCRM();
 
   /** Configuración del módulo (persistida en localStorage). */
   config: PedidosConfig = loadConfig();
 
-  private seq = seed().length;
+  private seq = 0;
 
   /** Handle del intervalo de activación de programados (solo navegador). */
   private tickHandle: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     makeAutoObservable(this);
+    void this.cargarDesdeBase();
+  }
+
+  /**
+   * Suscribe a cambios en tiempo real en Supabase para la tabla `necto.pedido`.
+   */
+  suscribirRealtime(): () => void {
+    const sb = getSupabase();
+    if (!sb) return () => {};
+
+    const channel = sb
+      .channel("necto:pedido:tablero")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: ESQUEMA, table: "pedido" },
+        () => {
+          void this.cargarDesdeBase();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void sb.removeChannel(channel);
+    };
   }
 
   /**
@@ -832,7 +856,7 @@ export class PedidosStore {
         .select("*, pedido_item(*)")
         .order("creado_en", { ascending: false });
 
-      if (error || !data || data.length === 0) return;
+      if (error || !data) return;
 
       const pedidosReales: Pedido[] = data.map((p: any) => {
         const rawItems = (p.pedido_item as any[]) || [];
@@ -842,22 +866,28 @@ export class PedidosStore {
           precio: Number(it.precio_unitario) || 0,
         }));
 
+        const dirObj = p.direccion_entrega
+          ? typeof p.direccion_entrega === "object"
+            ? { calle: p.direccion_entrega.texto || p.direccion_entrega.calle || "Dirección registrada" }
+            : { calle: String(p.direccion_entrega) }
+          : undefined;
+
         return {
           id: p.id,
           numero: p.numero || `WEB-${p.id.slice(0, 4)}`,
           cliente: p.cliente || "Cliente",
-          telefono: p.telefono || "",
+          telefono: p.telefono || p.telefono_norm || "",
           modalidad: (p.modalidad as Modalidad) || "domicilio",
           items: items.length > 0 ? items : [{ nombre: "Pedido", cantidad: 1, precio: 0 }],
-          notas: p.direccion_entrega?.texto ? `Dirección: ${p.direccion_entrega.texto}` : undefined,
+          notas: dirObj ? `Dirección: ${dirObj.calle}` : p.notas || undefined,
           estado: (p.estado as PedidoEstado) || "nuevo",
           origen: (p.origen as Origen) || "whatsapp",
           pagado: p.estado === "entregado" || p.estado === "listo" || p.metodo_pago === "transferencia" || p.metodo_pago === "tarjeta",
-          createdAt: p.creado_en,
-          estadoDesde: p.estado_desde || p.creado_en,
+          createdAt: p.creado_en || nowIso(),
+          estadoDesde: p.estado_desde || p.creado_en || nowIso(),
           finishedAt: p.finished_at || undefined,
           programadoPara: p.programado_para || undefined,
-          direccionEntrega: p.direccion_entrega || undefined,
+          direccionEntrega: dirObj,
           costoEnvio: p.modalidad === "domicilio" ? 5000 : 0,
           metodoPago: (p.metodo_pago as MetodoPago) || "efectivo",
           pagaCon: p.pago_con ? Number(p.pago_con) : undefined,
@@ -866,13 +896,6 @@ export class PedidosStore {
       });
 
       runInAction(() => {
-        // Preservar pedidos existentes que no colisionen en ID
-        const mapa = new Map(pedidosReales.map((p) => [p.id, p]));
-        for (const p of this.pedidos) {
-          if (!mapa.has(p.id)) {
-            pedidosReales.push(p);
-          }
-        }
         this.pedidos = pedidosReales.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       });
     } catch (err) {

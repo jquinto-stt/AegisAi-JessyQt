@@ -1267,11 +1267,15 @@ export const TableroPage = observer(() => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Activación automática de programados: arranca el tick al montar el tablero
-  // y lo detiene al desmontar (mock: solo con la pestaña abierta).
+  // Activación automática de programados, carga de pedidos desde Supabase y suscripción en tiempo real.
   useEffect(() => {
     pedidosStore.iniciarTick();
-    return () => pedidosStore.detenerTick();
+    void pedidosStore.cargarDesdeBase();
+    const unsub = pedidosStore.suscribirRealtime();
+    return () => {
+      pedidosStore.detenerTick();
+      unsub();
+    };
   }, []);
 
   // Enfoque de un pedido programado al llegar con ?focus=<id> (desde el modal
