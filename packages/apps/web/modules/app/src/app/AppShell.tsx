@@ -164,15 +164,19 @@ export const AppShell = () => {
     location.pathname === "/conversaciones" ||
     location.pathname === "/conversaciones/";
 
-  const esPantallaChat = esChatAsistente || esChatConversaciones;
+  const esTableroKanban =
+    location.pathname === "/pedidos" ||
+    location.pathname === "/pedidos/";
+
+  const esPantallaFija = esChatConversaciones || esTableroKanban;
 
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
-      footer={esPantallaChat ? undefined : <AppFooter />}
-      noCard={esChatAsistente}
-      pantallaFija={esChatConversaciones}
+      footer={esPantallaFija ? undefined : <AppFooter />}
+      noCard={esChatAsistente || esTableroKanban}
+      pantallaFija={esPantallaFija}
     >
       <Outlet />
     </BaseAppShell>

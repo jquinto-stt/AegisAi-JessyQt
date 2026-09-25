@@ -36,6 +36,8 @@ import {
   Edit3,
   Trash2,
   Check,
+  Search,
+  X,
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1234,6 +1236,7 @@ export const TableroPage = observer(() => {
   type CriterioOrden = "reciente" | "antiguo" | "monto" | "urgente";
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>("reciente");
   const [menuFilterOpen, setMenuFilterOpen] = useState(false);
+  const [busquedaTablero, setBusquedaTablero] = useState("");
 
   // Gestión dinámica de columnas
   const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
@@ -1321,6 +1324,15 @@ export const TableroPage = observer(() => {
 
   const pedidosDeColumna = (estado: PedidoEstado): Pedido[] => {
     let list = pedidosStore.porEstado(estado);
+    const q = busquedaTablero.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) => {
+        const clienteMatch = p.cliente?.toLowerCase().includes(q);
+        const numeroMatch = p.numero?.toLowerCase().includes(q);
+        const itemsMatch = p.items?.some((it) => it.nombre.toLowerCase().includes(q));
+        return clienteMatch || numeroMatch || itemsMatch;
+      });
+    }
     if (criterioOrden === "reciente") {
       list = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     } else if (criterioOrden === "antiguo") {
@@ -1425,8 +1437,29 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: VistaToggle + Filter & Sort + Add New Task */}
-        <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-auto">
+        {/* Acciones derechas: Buscador + VistaToggle + Filter & Sort + Add New Task */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+          {/* Buscador de Tarjetas en Tiempo Real */}
+          <div className="relative flex items-center">
+            <Search className="absolute left-3 size-4 text-gray-400 pointer-events-none" />
+            <input
+              type="text"
+              value={busquedaTablero}
+              onChange={(e) => setBusquedaTablero(e.target.value)}
+              placeholder="Buscar cliente, # pedido..."
+              className="h-10 w-40 sm:w-52 rounded-xl border border-gray-200/90 bg-white pl-9 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:placeholder:text-gray-500 transition-all shadow-theme-xs"
+            />
+            {busquedaTablero && (
+              <button
+                type="button"
+                onClick={() => setBusquedaTablero("")}
+                className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
@@ -1500,7 +1533,7 @@ export const TableroPage = observer(() => {
       {/* Tablero — vista Kanban o Lista */}
       {vista === "kanban" ? (
         <div
-          className={`animate-aparecer grid grid-cols-1 gap-6 md:grid-cols-2 ${
+          className={`animate-aparecer flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 md:grid-cols-2 ${
             columnasVisibles.length === 1
               ? "xl:grid-cols-1 max-w-xl mx-auto"
               : columnasVisibles.length === 2
@@ -1528,10 +1561,10 @@ export const TableroPage = observer(() => {
                     pedidosStore.moverAColumna(id, estado);
                   }
                 }}
-                className="flex flex-col rounded-3xl bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 min-h-[480px] transition-colors"
+                className="flex flex-col h-full max-h-full min-h-0 rounded-3xl bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 transition-colors overflow-hidden"
               >
                 {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos ... */}
-                <div className="mb-4 flex items-center justify-between px-1.5 pt-1 relative">
+                <div className="shrink-0 mb-3 flex items-center justify-between px-1.5 pt-1 relative">
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-sm sm:text-base font-bold text-ink-title dark:text-white">
                       {pedidosStore.estadoLabel(estado)}
@@ -1626,8 +1659,8 @@ export const TableroPage = observer(() => {
                   </div>
                 </div>
 
-                {/* Lista de tarjetas Kanban */}
-                <div className="flex flex-col gap-4 flex-1">
+                {/* Lista de tarjetas Kanban con scroll interno independiente */}
+                <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3.5 [scrollbar-width:thin]">
                   {items.map((p, i) => (
                     <div
                       key={p.id}

@@ -960,7 +960,7 @@ export class PedidosStore {
     if (!p) return;
     runInAction(() => {
       p.pagado = !p.pagado;
-      if (p.pagado && (p.metodoPago === "otro" || !p.metodoPago)) {
+      if (p.pagado && !p.metodoPago) {
         p.metodoPago = "transferencia";
       }
     });
