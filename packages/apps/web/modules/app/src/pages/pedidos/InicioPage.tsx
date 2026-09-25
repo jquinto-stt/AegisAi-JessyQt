@@ -711,6 +711,10 @@ export const InicioPage = observer(() => {
 
   const puedeCrear = puedeCrearPedido();
 
+  const nombreUsuario = sessionStore.operadorSimulado?.nombre || sessionStore.usuario?.nombre || "";
+  const saludoText = nombreUsuario ? `Bienvenido de nuevo, ${nombreUsuario}` : "Bienvenido de nuevo";
+  const fechaActualTexto = new Date().toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" });
+
   return (
     <>
       <PageMeta
@@ -718,14 +722,14 @@ export const InicioPage = observer(() => {
         description="Resumen operativo, rendimiento de ventas y tarjeta de chat multicanal."
       />
 
-      {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES (Idéntico a la Maqueta) ── */}
+      {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES ── */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {esOperador ? `Welcome Back, ${operador!.nombre}` : "Welcome Back, John"}
+            {saludoText}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
-            Here's a clear overview of your workforce performance and structure
+            Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
           </p>
         </div>
 
@@ -738,7 +742,7 @@ export const InicioPage = observer(() => {
               className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
             >
               <Plus className="size-4 stroke-[2.5]" />
-              <span>Add Order</span>
+              <span>Crear pedido</span>
             </button>
           </div>
 
@@ -748,19 +752,19 @@ export const InicioPage = observer(() => {
             className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
           >
             <CalendarIcon className="size-4 text-gray-500" />
-            <span>{esHoy(dia) ? "28 Apr, 2026" : fechaCorta(dia)}</span>
+            <span className="capitalize">{esHoy(dia) ? fechaActualTexto : fechaCorta(dia)}</span>
           </button>
         </div>
       </div>
 
-      {/* ── FILA SUPERIOR: 4 TARJETAS KPI (Idénticas a la Maqueta) ── */}
+      {/* ── FILA SUPERIOR: 4 TARJETAS KPI ── */}
       <TopKpiCards />
 
       {/* ── GRID PRINCIPAL DE 2 COLUMNAS (8 de 12 a la izquierda, 4 de 12 a la derecha) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* COLUMNA IZQUIERDA (2/3 del ancho) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Bloque Medio Izquierda: Programación & Tendencia (Meeting Scheduling en la maqueta) */}
+          {/* Bloque Medio Izquierda: Programación & Tendencia */}
           <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between gap-3 mb-5">
               <div>
@@ -774,12 +778,12 @@ export const InicioPage = observer(() => {
                 onClick={() => setCalendarioOpen(true)}
                 className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
               >
-                <span>Today</span>
+                <span>Hoy</span>
                 <ChevronDown className="size-3.5 text-gray-400" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 items-start">
               <div className="xl:col-span-2">
                 <SalesTrendChartWidget rango={rangoGrafico} />
               </div>
@@ -787,12 +791,11 @@ export const InicioPage = observer(() => {
                 <div key={dia} className="animate-aparecer">
                   <ResumenDiaWidget ymd={dia} onVerPedido={verPedido} />
                 </div>
-                <KpiProgramadosWidget />
               </div>
             </div>
           </div>
 
-          {/* Bloque Inferior Izquierda: Pedidos Recientes (Employee List en la maqueta) */}
+          {/* Bloque Inferior Izquierda: Pedidos Recientes */}
           <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>

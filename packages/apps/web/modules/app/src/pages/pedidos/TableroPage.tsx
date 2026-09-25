@@ -1400,7 +1400,7 @@ export const TableroPage = observer(() => {
                 : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
             }`}
           >
-            <span className="whitespace-nowrap">All Tasks</span>
+            <span className="whitespace-nowrap">Todas las tareas</span>
             <span
               className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                 columnaFiltroActiva === "all"
@@ -1441,12 +1441,12 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: VistaToggle + Filter & Sort (con buscador integrado) + Add New Task */}
+        {/* Acciones derechas: VistaToggle + Filtrar y ordenar + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
-          {/* Botón y menú Filter & Sort con Buscador */}
+          {/* Botón y menú Filtrar y ordenar con Buscador */}
           <div className="relative">
             <button
               type="button"
@@ -1458,7 +1458,7 @@ export const TableroPage = observer(() => {
               }`}
             >
               <SlidersHorizontal className="size-4 shrink-0" />
-              <span>Filter & Sort</span>
+              <span>Filtrar y ordenar</span>
               {(busquedaTablero.trim() || criterioOrden !== "reciente") && (
                 <span className="size-2 rounded-full bg-brand-500 shrink-0" />
               )}
