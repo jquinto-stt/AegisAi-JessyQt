@@ -10,13 +10,14 @@ import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import { sessionStore, modulosOperablesDeSesion } from "@/stores/session.store";
 import type { BusinessProfileType } from "@/domain/pedidos/pedidos.profiles";
+import { Utensils, Shirt, Wrench, Package, MessageCircle, Bot } from "lucide-react";
 import { OnboardingStepper } from "./OnboardingStepper";
 import { OnboardingBrandPanel } from "./OnboardingBrandPanel";
 import { OnboardingLayout } from "./OnboardingLayout";
 
 interface PerfilComercialItem {
   id: BusinessProfileType;
-  icon: string;
+  icon: React.ReactNode;
   name: string;
   description: string;
   badges: string[];
@@ -30,7 +31,7 @@ const PEDIDOS_STEPS = [
 const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   {
     id: "food",
-    icon: "🍔",
+    icon: <Utensils className="h-8 w-8 text-orange-500" />,
     name: "Alimentos y Bebidas",
     description:
       "Restaurantes, dark kitchens, cafés y panaderías con cocina o preparación inmediata.",
@@ -43,7 +44,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "fashion",
-    icon: "👕",
+    icon: <Shirt className="h-8 w-8 text-blue-500" />,
     name: "Ropa, Calzado y Accesorios",
     description:
       "Boutiques, tiendas de moda, calzado y confección con variantes de talla, color y envíos.",
@@ -56,7 +57,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "services",
-    icon: "🛠️",
+    icon: <Wrench className="h-8 w-8 text-gray-500" />,
     name: "Servicios y Citas",
     description:
       "Profesionales, barberías, spas, consultorios y talleres con agendamiento.",
@@ -64,7 +65,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "general",
-    icon: "📦",
+    icon: <Package className="h-8 w-8 text-amber-600" />,
     name: "Comercio General / Retail",
     description:
       "Venta de productos físicos estándar, papelería, tecnología u hogar.",
@@ -192,7 +193,9 @@ export const PedidosOnboardingPage = observer(() => {
                       >
                         <div>
                           <div className="flex items-start justify-between gap-3">
-                            <span className="text-3xl">{perfil.icon}</span>
+                            <div className="flex items-center justify-center h-10 w-10">
+                              {perfil.icon}
+                            </div>
                             <div className="flex items-center gap-2">
                               {seleccionado && (
                                 <Badge color="success" size="xs">
@@ -267,8 +270,8 @@ export const PedidosOnboardingPage = observer(() => {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366] text-2xl">
-                        💬
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366]">
+                        <MessageCircle className="h-6 w-6" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -304,8 +307,8 @@ export const PedidosOnboardingPage = observer(() => {
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-700 dark:text-accent-300 text-2xl">
-                        🤖
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-500/10 text-accent-700 dark:text-accent-300">
+                        <Bot className="h-6 w-6" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">

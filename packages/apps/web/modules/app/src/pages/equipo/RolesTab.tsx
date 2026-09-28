@@ -178,11 +178,7 @@ export const RolesTab = observer(() => {
                     {r.sistema && <Badge color="light" size="xs">Sistema</Badge>}
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {/* El total sale del catálogo, NUNCA escrito a mano: decía
-                        «de 18» con 22 capacidades declaradas, así que la pantalla
-                        le contaba al usuario un denominador que no existía. */}
-                    {r.capacidades.length} de {CAPACIDADES.length} capacidades · {asignados}{" "}
-                    {asignados === 1 ? "miembro" : "miembros"}
+                    {r.capacidades.length} de {CAPACIDADES.length} accesos · {asignados} {asignados === 1 ? "usuario" : "usuarios"}
                   </p>
                 </div>
 
@@ -339,7 +335,14 @@ const RolEditor = observer(({
   const [descripcion, setDescripcion] = useState(rol.descripcion);
   const [capacidades, setCapacidades] = useState<Capacidad[]>([...rol.capacidades]);
   const [guardado, setGuardado] = useState(false);
-  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
+    // Por defecto, colapsamos todos los grupos para no abrumar visualmente
+    const inicial: Record<string, boolean> = {};
+    for (const g of CAPACIDAD_GRUPOS) {
+      inicial[g.id] = true;
+    }
+    return inicial;
+  });
   /**
    * Si el admin ya intentó guardar.
    *
@@ -427,7 +430,7 @@ const RolEditor = observer(({
   return (
     <Card className="p-6 space-y-6">
       {/* Cabecera del Editor */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-lg font-bold text-ink-title dark:text-white">
@@ -444,6 +447,11 @@ const RolEditor = observer(({
               ? "Los roles de sistema son predefinidos. Puedes duplicarlo para crear una base personalizada."
               : "Rol editable. Los operadores con este rol recibirán estas capacidades por defecto."}
           </p>
+          {rol.sistema && descripcion && (
+            <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">
+              {descripcion}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -495,63 +503,45 @@ const RolEditor = observer(({
             Eliminar
           </button>
 
-          <Button size="sm" disabled={soloLectura} onClick={guardar}>
-            Guardar cambios
-          </Button>
+          {!soloLectura && (
+            <Button size="sm" onClick={guardar}>
+              Guardar cambios
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Aviso permanente en los roles de sistema: el `title` del botón explica
-          el caso puntual al pasar el ratón, pero quien no pase el ratón merece
-          saber por qué el editor está bloqueado. */}
-      {soloLectura && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 text-xs text-gray-600 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-300">
-          <LockIcon className="mt-px h-3.5 w-3.5 shrink-0 text-gray-400" />
-          <span>
-            Este es un <span className="font-semibold">rol predeterminado del sistema</span> y no se
-            puede editar ni eliminar. {MOTIVO_ROL_SISTEMA} Usa{" "}
-            <span className="font-semibold">Duplicar</span> para crear una versión propia.
-          </span>
+      {/* Datos del rol (Oculto en roles de sistema para evitar ruido de campos deshabilitados) */}
+      {!soloLectura && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="rol-nombre">Nombre del Rol</Label>
+            <Input
+              id="rol-nombre"
+              value={nombre}
+              placeholder="Ej. Supervisor de turno"
+              error={Boolean(errorNombre)}
+              hint={errorNombre}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                setGuardado(false);
+              }}
+            />
+          </div>
+          <div>
+            <Label htmlFor="rol-desc">Descripción</Label>
+            <Input
+              id="rol-desc"
+              value={descripcion}
+              placeholder="Propósito u operativa de este rol"
+              onChange={(e) => {
+                setDescripcion(e.target.value);
+                setGuardado(false);
+              }}
+            />
+          </div>
         </div>
       )}
-
-      {/* Datos del rol */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="rol-nombre">Nombre del Rol</Label>
-          {/*
-            `Input` del catálogo pinta el mensaje de `hint` y lo tiñe rojo si
-            `error`, así que el error se pasa por ahí y no con un `<p>` aparte
-            (duplicaría el texto). El `id` es único y estable por rol porque el
-            editor se remonta con `key={rol.id}`.
-          */}
-          <Input
-            id="rol-nombre"
-            value={nombre}
-            placeholder="Ej. Supervisor de turno"
-            disabled={soloLectura}
-            error={Boolean(errorNombre)}
-            hint={errorNombre}
-            onChange={(e) => {
-              setNombre(e.target.value);
-              setGuardado(false);
-            }}
-          />
-        </div>
-        <div>
-          <Label htmlFor="rol-desc">Descripción</Label>
-          <Input
-            id="rol-desc"
-            value={descripcion}
-            placeholder="Propósito u operativa de este rol"
-            disabled={soloLectura}
-            onChange={(e) => {
-              setDescripcion(e.target.value);
-              setGuardado(false);
-            }}
-          />
-        </div>
-      </div>
 
       {/* ── REGLAS Y PERMISOS DEL ROL (GRID JERÁRQUICO COLAPSABLE) ─────────── */}
       <div className="space-y-4 pt-2">
@@ -561,7 +551,9 @@ const RolEditor = observer(({
               Reglas y Permisos del Rol
             </h3>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              Activa o desactiva las capacidades asignadas al paquete de este rol.
+              {soloLectura 
+                ? "Capacidades incluidas en este rol predeterminado." 
+                : "Activa o desactiva las capacidades asignadas al paquete de este rol."}
             </p>
           </div>
 
@@ -582,7 +574,7 @@ const RolEditor = observer(({
                   errorCapacidades ? "text-error-500" : "text-success-500"
                 }`}
               />
-              <span>{capacidades.length} de 18 activas</span>
+              <span>{capacidades.length} de {CAPACIDADES.length} activas</span>
             </span>
 
             <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-800 dark:bg-gray-900">
@@ -665,7 +657,7 @@ const RolEditor = observer(({
                     }
                   }}
                   className={`flex cursor-pointer select-none items-center justify-between p-4 transition-colors hover:bg-gray-50/75 dark:hover:bg-white/[0.02] ${
-                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800" : ""
+                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800/60 bg-gray-50/30 dark:bg-white/[0.01]" : ""
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
@@ -706,18 +698,18 @@ const RolEditor = observer(({
 
                 {/* Lista limpia y ordenada de capacidades */}
                 {!estaColapsado && (
-                  <div className="p-4 space-y-2.5">
+                  <div className="p-2 space-y-1">
                     {grupo.capacidades.map((cap) => {
                       const activa = tiene(cap);
 
                       return (
                         <div
                           key={cap}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5 transition-colors dark:border-gray-800 dark:bg-white/[0.02]"
+                          className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                         >
                           <span
                             title={cap}
-                            className="truncate text-xs font-medium text-gray-800 dark:text-gray-200"
+                            className="truncate text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
                           >
                             {CAPACIDAD_LABEL[cap]}
                           </span>
@@ -739,17 +731,19 @@ const RolEditor = observer(({
         </div>
       </div>
 
-      {/* Botón inferior para guardar */}
-      <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
-        {guardado && (
-          <span className="text-xs font-semibold text-success-600 dark:text-success-400">
-            Cambios guardados correctamente
-          </span>
-        )}
-        <Button size="sm" disabled={soloLectura} onClick={guardar}>
-          Guardar cambios
-        </Button>
-      </div>
+      {/* Botón inferior para guardar (Oculto si es solo lectura) */}
+      {!soloLectura && (
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+          {guardado && (
+            <span className="text-xs font-semibold text-success-600 dark:text-success-400">
+              Cambios guardados correctamente
+            </span>
+          )}
+          <Button size="sm" onClick={guardar}>
+            Guardar cambios
+          </Button>
+        </div>
+      )}
     </Card>
   );
 });

@@ -10,6 +10,7 @@ import {
   claseSegmentoTrack,
 } from "@/pages/config-layout";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { ultimoTexto } from "./conversaciones.utils";
 
 export const AnaliticaConversacionesPage = observer(() => {
   const navigate = useNavigate();
@@ -27,14 +28,14 @@ export const AnaliticaConversacionesPage = observer(() => {
     let sentimentNegativo = 0;
 
     conversaciones.forEach((c) => {
-      if (c.asignadoAId || c.handoffSolicitado) {
+      if (c.operadorAsignadoId || c.estado === "en_espera" || c.estado === "atendida") {
         handoffs++;
       } else {
         botResueltas++;
       }
 
       // Cálculo heurístico de sentimiento basado en el último mensaje y tags
-      const texto = (c.ultimoMensaje || "").toLowerCase();
+      const texto = (ultimoTexto(c.id) || "").toLowerCase();
       if (texto.includes("gracias") || texto.includes("excelente") || texto.includes("genial") || texto.includes("bueno") || texto.includes("👍") || texto.includes("❤️")) {
         sentimentPositivo++;
       } else if (texto.includes("problema") || texto.includes("mal") || texto.includes("demora") || texto.includes("cancelar") || texto.includes("humano")) {
@@ -310,7 +311,7 @@ export const AnaliticaConversacionesPage = observer(() => {
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             Resumen de Conversaciones Recientes
           </h2>
-          <Badge variant="outline" className="text-xs">
+          <Badge color="light" size="sm">
             {conversaciones.length} activas
           </Badge>
         </div>
@@ -330,13 +331,13 @@ export const AnaliticaConversacionesPage = observer(() => {
               {conversaciones.slice(0, 5).map((conv) => (
                 <tr key={conv.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.01]">
                   <td className="px-4 py-3 font-semibold text-gray-900 dark:text-white">
-                    {conv.clienteNombre || conv.clienteTelefono || "Cliente"}
+                    {conv.contacto.nombre || conv.contacto.telefono || "Cliente"}
                   </td>
                   <td className="px-4 py-3 max-w-xs truncate text-gray-500 dark:text-gray-400">
-                    {conv.ultimoMensaje || "Sin mensajes"}
+                    {ultimoTexto(conv.id) || "Sin mensajes"}
                   </td>
                   <td className="px-4 py-3">
-                    {conv.asignadoAId ? (
+                    {conv.operadorAsignadoId ? (
                       <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 font-medium">
                         👤 Operador
                       </span>
@@ -347,12 +348,12 @@ export const AnaliticaConversacionesPage = observer(() => {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    {conv.handoffSolicitado ? (
-                      <Badge variant="warning" className="text-[10px]">
+                    {conv.estado === "en_espera" || conv.estado === "atendida" ? (
+                      <Badge color="warning" size="xs">
                         Solicitado
                       </Badge>
                     ) : (
-                      <Badge variant="success" className="text-[10px]">
+                      <Badge color="success" size="xs">
                         Automatizado
                       </Badge>
                     )}

@@ -72,7 +72,6 @@ const FORM_VACIO: PersonaForm = {
 
 export const EquipoPage = observer(() => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
-  const [tab, setTab] = useState<"todos" | "pendientes">("todos");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<string>(FILTRO_ESTADO_TODAS);
   const [modalOpen, setModalOpen] = useState(false);
@@ -158,8 +157,7 @@ export const EquipoPage = observer(() => {
   // ── Filtrado ──────────────────────────────────────────────────────────────
   const q = busqueda.trim().toLowerCase();
   const listaFiltrada = equipo.filter((op: Operador) => {
-    if (tab === "pendientes" && op.estado !== "pendiente") return false;
-    if (tab === "todos" && filtroEstado !== FILTRO_ESTADO_TODAS && op.estado !== (filtroEstado as OperadorEstado)) {
+    if (filtroEstado !== FILTRO_ESTADO_TODAS && op.estado !== (filtroEstado as OperadorEstado)) {
       return false;
     }
     if (q && !(op.nombre.toLowerCase().includes(q) || op.email.toLowerCase().includes(q))) return false;
@@ -182,124 +180,74 @@ export const EquipoPage = observer(() => {
           a la vez es ruido, no énfasis. */}
       <div className="mb-5">
         <ConfigHeader
-          titulo="Equipo y perfiles"
-          descripcion="Las personas de tu negocio, el rol de cada una y qué puede hacer. El rol define los permisos; el perfil los muestra en detalle."
+          titulo={vista === "roles" ? "Gestión de Roles" : "Equipo y perfiles"}
+          descripcion={
+            vista === "roles"
+              ? "Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
+              : "Las personas de tu negocio, el rol de cada una y qué puede hacer. El rol define los permisos; el perfil los muestra en detalle."
+          }
         />
       </div>
 
-      {/* Contexto y acciones de la sub-vista. El título de sección vive en el
-          encabezado; aquí solo va lo que cambia entre «personas» y «roles»,
-          más los botones. */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
-              {vista === "roles" ? "Roles y permisos" : "Personas del equipo"}
-            </span>
-            {vista === "equipo" && pendientes > 0 && (
-              <Badge color="warning" size="sm">
-                {pendientes} pendiente{pendientes === 1 ? "" : "s"}
-              </Badge>
-            )}
+      {/* Acciones y Filtros (Barra Única) */}
+      {vista === "equipo" ? (
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
+            <div className="w-full sm:w-64">
+              <Input
+                type="search"
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                placeholder="Buscar por nombre o correo…"
+                aria-label="Buscar personas"
+              />
+            </div>
+            <div className="w-full sm:w-44">
+              <Select
+                options={OPCIONES_FILTRO_ESTADO}
+                defaultValue={FILTRO_ESTADO_TODAS}
+                onChange={setFiltroEstado}
+                aria-label="Filtrar por estado"
+              />
+            </div>
           </div>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {vista === "roles"
-              ? "Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
-              : "Cada persona tiene un rol, y el rol define qué puede hacer. Haz clic en una persona para ver su perfil."}
-          </p>
-        </div>
 
-        <div className="flex shrink-0 items-center gap-3">
-          <Button
-            size="md"
-            variant={vista === "roles" ? "primary" : "outline"}
-            className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
-            onClick={() => setVista((v) => (v === "roles" ? "equipo" : "roles"))}
-          >
-            {vista === "roles" ? "← Volver a equipo" : "Gestionar roles"}
-          </Button>
-          {vista === "equipo" && (
+          <div className="flex shrink-0 items-center gap-3 w-full sm:w-auto justify-end">
+            <Button
+              size="md"
+              variant="outline"
+              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
+              onClick={() => setVista("roles")}
+            >
+              Gestionar roles
+            </Button>
             <Button
               size="md"
               startIcon={<PlusIcon className="h-4 w-4" />}
-              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
+              className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95 bg-brand-500 hover:bg-brand-600 text-white"
               onClick={abrirCrear}
             >
               Invitar miembro
             </Button>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mb-5 flex justify-start">
+          <Button
+            size="md"
+            variant="outline"
+            className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
+            onClick={() => setVista("equipo")}
+          >
+            ← Volver a equipo
+          </Button>
+        </div>
+      )}
 
       {vista === "roles" ? (
         <RolesTab />
       ) : (
-        <>
-          {/* Filtros rápidos y buscador alineados al diseño de Necto */}
-          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* Pestañas tipo pill del sistema */}
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setTab("todos")}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  tab === "todos"
-                    ? "bg-brand-500 text-white shadow-theme-xs"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                }`}
-              >
-                Todos ({equipo.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("pendientes")}
-                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  tab === "pendientes"
-                    ? "bg-brand-500 text-white shadow-theme-xs"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
-                }`}
-              >
-                <span>Pendientes</span>
-                {pendientes > 0 && (
-                  <span
-                    className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      tab === "pendientes"
-                        ? "bg-white text-brand-600"
-                        : "bg-warning-500 text-white"
-                    }`}
-                  >
-                    {pendientes}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            {/* Buscador + filtro de estado */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="w-full sm:w-64">
-                <Input
-                  type="search"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  placeholder="Buscar por nombre o correo…"
-                  aria-label="Buscar personas"
-                />
-              </div>
-              {tab === "todos" && (
-                <div className="w-full sm:w-44">
-                  <Select
-                    options={OPCIONES_FILTRO_ESTADO}
-                    defaultValue={FILTRO_ESTADO_TODAS}
-                    onChange={setFiltroEstado}
-                    aria-label="Filtrar por estado"
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          <EquipoTabla operadores={listaFiltrada} />
-        </>
+        <EquipoTabla operadores={listaFiltrada} />
       )}
 
       {/* Modal: invitar miembro */}

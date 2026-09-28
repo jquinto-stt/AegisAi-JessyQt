@@ -296,7 +296,14 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
   };
 
   // ── Control de colapso de categorías por tarjetas ─────────────────────────
-  const [colapsados, setColapsados] = useState<Record<string, boolean>>({});
+  const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
+    // Por defecto, colapsamos todos los grupos para no abrumar visualmente
+    const inicial: Record<string, boolean> = {};
+    for (const g of CAPACIDAD_GRUPOS) {
+      inicial[g.id] = true;
+    }
+    return inicial;
+  });
 
   const toggleColapso = (grupoId: string) => {
     setColapsados((prev) => ({ ...prev, [grupoId]: !prev[grupoId] }));

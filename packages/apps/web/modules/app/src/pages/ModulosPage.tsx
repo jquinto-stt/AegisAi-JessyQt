@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Layers, Plus, ArrowRight } from "lucide-react";
+import { Layers, Plus, ArrowRight, Utensils, Shirt, Wrench, Package, MessageCircle, Bot } from "lucide-react";
 import { BaseAppHeader } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
@@ -70,6 +70,16 @@ export const ModulosPage = observer(() => {
   // el `observer` de este componente la re-ejecuta cuando el store cambia, así
   // que los números siguen al negocio sin ningún polling.
   const metricas = metricasPedidosHoy();
+
+  const getProfileIcon = (id: BusinessProfileType) => {
+    switch (id) {
+      case "food": return <Utensils className="size-4" />;
+      case "fashion": return <Shirt className="size-4" />;
+      case "services": return <Wrench className="size-4" />;
+      case "general": return <Package className="size-4" />;
+      default: return <Package className="size-4" />;
+    }
+  };
 
   // Solo si el módulo está activo: si la organización no tiene Pedidos
   // instalados, los atajos a sus subrutas son enlaces a un módulo que no está.
@@ -267,18 +277,18 @@ export const ModulosPage = observer(() => {
                     {perfilActual && (
                       <div className="mt-4 rounded-xl border border-success-100 bg-success-50/60 p-3 dark:border-success-500/20 dark:bg-success-500/5">
                         <div className="flex items-center gap-2 text-xs font-semibold text-success-800 dark:text-success-300">
-                          <span>{perfilActual.icon}</span>
+                          <span>{getProfileIcon(perfilActual.id)}</span>
                           <span>Perfil: {perfilActual.name}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {organizacionStore.esConectorActivo("pedidos", "whatsapp") && (
-                            <span className="rounded bg-success-100 px-2 py-0.5 text-[10px] font-medium text-success-800 dark:bg-success-900/50 dark:text-success-300">
-                              💬 WhatsApp Agent
+                            <span className="flex items-center gap-1 rounded bg-success-100 px-2 py-0.5 text-[10px] font-medium text-success-800 dark:bg-success-900/50 dark:text-success-300">
+                              <MessageCircle className="size-3" /> WhatsApp Agent
                             </span>
                           )}
                           {organizacionStore.esConectorActivo("pedidos", "necto_ia") && (
-                            <span className="rounded bg-secondary-100 px-2 py-0.5 text-[10px] font-medium text-secondary-800 dark:bg-secondary-900/50 dark:text-secondary-300">
-                              🤖 Necto Agent (IA)
+                            <span className="flex items-center gap-1 rounded bg-secondary-100 px-2 py-0.5 text-[10px] font-medium text-secondary-800 dark:bg-secondary-900/50 dark:text-secondary-300">
+                              <Bot className="size-3" /> Necto Agent (IA)
                             </span>
                           )}
                         </div>

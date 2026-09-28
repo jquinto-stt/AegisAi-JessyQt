@@ -11,10 +11,12 @@ import {
   MoreDotIcon,
   PencilIcon,
   UserCircleIcon,
+  TrashBinIcon
 } from "@/icons";
 import { operadoresStore, rolesStore, sessionStore, CAPACIDADES, type Operador } from "@/stores";
 import { ESTADO_META } from "./equipo.constants";
 import { inicialesDe, resumenDeAreas } from "./equipo.presentacion";
+import { Switch } from "@/elements/form/switch";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TABLA DEL EQUIPO (Elements UI)
@@ -44,79 +46,48 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
     );
   }
 
-  // Separar operadores pendientes de los aprobados para visibilidad inmediata
-  const pendientesOps = operadores.filter((o) => o.estado === "pendiente");
-  const noPendientes = operadores.filter((o) => o.estado !== "pendiente");
-
-  const grupos: GrupoEquipo[] = [];
-
-  // Grupo prioritario de pendientes de aprobación si existen
-  if (pendientesOps.length > 0) {
-    grupos.push({
-      id: "pendientes",
-      titulo: "Pendientes de aprobación",
-      esPendiente: true,
-      operadores: pendientesOps,
-    });
-  }
-
-  // Agrupación de operadores aprobados / activos / inactivos por rol
-  grupos.push(
-    {
-      id: "admins",
-      titulo: "Administradores",
-      operadores: noPendientes.filter((o) => o.rolId === "admin_tienda"),
-    },
-    {
-      id: "supervisores",
-      titulo: "Supervisores",
-      operadores: noPendientes.filter((o) => o.rolId === "supervisor_pedidos"),
-    },
-    {
-      id: "vendedores",
-      titulo: "Operadores",
-      operadores: noPendientes.filter((o) => o.rolId === "vendedor"),
-    },
-    {
-      id: "otros",
-      titulo: "Otros Miembros",
-      operadores: noPendientes.filter(
-        (o) => o.rolId !== "admin_tienda" && o.rolId !== "supervisor_pedidos" && o.rolId !== "vendedor"
-      ),
-    }
-  );
-
-  const gruposVisibles = grupos.filter((g) => g.operadores.length > 0);
+  // Ordenar: primero pendientes, luego activos, luego inactivos
+  const sorted = [...operadores].sort((a, b) => {
+    if (a.estado === "pendiente" && b.estado !== "pendiente") return -1;
+    if (a.estado !== "pendiente" && b.estado === "pendiente") return 1;
+    if (a.estado === "activo" && b.estado === "inactivo") return -1;
+    if (a.estado === "inactivo" && b.estado === "activo") return 1;
+    return 0;
+  });
 
   return (
-    <Card className="p-0 sm:p-0 overflow-hidden">
+    <Card className="p-0 sm:p-0 overflow-hidden bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border-gray-200/50 dark:border-gray-800/50">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader>
-            <TableRow>
-              <TableCell header className="pl-6">
-                Nombre y Cargo
+          <TableHeader className="bg-transparent">
+            <TableRow className="border-b border-gray-100 dark:border-gray-800/60 hover:bg-transparent">
+              <TableCell header className="pl-6 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Miembro
               </TableCell>
-              <TableCell header>
-                Qué puede hacer
+              <TableCell header className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Rol
               </TableCell>
-              <TableCell header>
-                Rol y Acceso
+              <TableCell header className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Estado
               </TableCell>
-              <TableCell header className="text-right pr-6">
+              <TableCell header className="text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Acceso
+              </TableCell>
+              <TableCell header className="text-right pr-6 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Acciones
               </TableCell>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {gruposVisibles.map((grupo) => (
-              <GrupoSection
-                key={grupo.id}
-                grupo={grupo}
-                menuAbiertoId={menuAbiertoId}
-                onSetMenuAbiertoId={setMenuAbiertoId}
-                onAbrir={(id) => navigate(`/equipo/${id}`)}
+            {sorted.map((op) => (
+              <FilaEquipo
+                key={op.id}
+                op={op}
+                isMenuOpen={menuAbiertoId === op.id}
+                onToggleMenu={() => setMenuAbiertoId(menuAbiertoId === op.id ? null : op.id)}
+                onCloseMenu={() => setMenuAbiertoId(null)}
+                onAbrir={() => navigate(`/equipo/${op.id}`)}
               />
             ))}
           </TableBody>
@@ -125,68 +96,6 @@ export const EquipoTabla = observer(({ operadores }: { operadores: Operador[] })
     </Card>
   );
 });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// SECCIÓN DE GRUPO CON DIVISOR VISUAL
-// ═══════════════════════════════════════════════════════════════════════════
-
-const GrupoSection = observer(
-  ({
-    grupo,
-    menuAbiertoId,
-    onSetMenuAbiertoId,
-    onAbrir,
-  }: {
-    grupo: GrupoEquipo;
-    menuAbiertoId: string | null;
-    onSetMenuAbiertoId: (id: string | null) => void;
-    onAbrir: (id: string) => void;
-  }) => {
-    return (
-      <>
-        {/* Encabezado de grupo acorde a los tokens de Necto */}
-        <tr
-          className={
-            grupo.esPendiente
-              ? "bg-warning-50/15 dark:bg-warning-500/5 border-y border-warning-100 dark:border-warning-500/10"
-              : "bg-gray-50/50 dark:bg-white/[0.015] border-y border-gray-100 dark:border-white/5"
-          }
-        >
-          <td colSpan={4} className="px-6 py-2.5">
-            <div className="flex items-center gap-3">
-              <span
-                className={`text-xs font-semibold uppercase tracking-wider flex items-center gap-2 ${
-                  grupo.esPendiente
-                    ? "text-warning-600 dark:text-warning-400"
-                    : "text-gray-500 dark:text-gray-400"
-                }`}
-              >
-                {grupo.esPendiente && (
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning-500" />
-                )}
-                {grupo.titulo} ({grupo.operadores.length})
-              </span>
-            </div>
-          </td>
-        </tr>
-
-        {/* Filas del grupo */}
-        {grupo.operadores.map((op) => (
-          <FilaEquipo
-            key={op.id}
-            op={op}
-            isMenuOpen={menuAbiertoId === op.id}
-            onToggleMenu={() =>
-              onSetMenuAbiertoId(menuAbiertoId === op.id ? null : op.id)
-            }
-            onCloseMenu={() => onSetMenuAbiertoId(null)}
-            onAbrir={() => onAbrir(op.id)}
-          />
-        ))}
-      </>
-    );
-  }
-);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FILA DE OPERADOR
@@ -225,29 +134,25 @@ const FilaEquipo = observer(
     };
 
     // Determinación del badge de Rol con tokens NECTO
-    let userTypeConfig: { label: string; variant: "solid" | "light"; color: "primary" | "dark" | "light" | "info" } = {
+    let userTypeConfig: { label: string; color: "primary" | "dark" | "light" | "info" } = {
       label: rol?.nombre || "Operador",
-      variant: "solid",
       color: "dark",
     };
 
     if (op.rolId === "admin_tienda") {
       userTypeConfig = {
         label: "Admin",
-        variant: "solid",
         color: "primary", // Necto Brand Orange (#FF3C10)
       };
     } else if (op.rolId === "supervisor_pedidos") {
       userTypeConfig = {
         label: "Supervisor",
-        variant: "solid",
         color: "dark",
       };
     } else if (op.rolId === "vendedor") {
       userTypeConfig = {
         label: "Operador",
-        variant: "light",
-        color: "dark",
+        color: "light",
       };
     }
 
@@ -301,13 +206,6 @@ const FilaEquipo = observer(
                 <span className="font-semibold text-sm text-gray-900 dark:text-white truncate">
                   {op.nombre}
                 </span>
-                <Badge
-                  color={esPendiente ? "warning" : (ESTADO_META[op.estado]?.color ?? "light")}
-                  size="xs"
-                  className={op.estado === "inactivo" ? "font-medium text-gray-500" : "font-medium"}
-                >
-                  {esPendiente ? "Pendiente" : (ESTADO_META[op.estado]?.label ?? op.estado)}
-                </Badge>
               </div>
               <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {op.cargo || op.email}
@@ -316,72 +214,81 @@ const FilaEquipo = observer(
           </div>
         </TableCell>
 
-        {/* Columna 2: Qué puede hacer */}
+        {/* Columna 2: Rol y Permisos */}
         <TableCell className="py-4">
-          <div className="flex flex-wrap items-center gap-1.5 cursor-pointer" onClick={onAbrir}>
-            {esPendiente ? (
-              <span className="text-xs italic text-warning-700 dark:text-warning-400">
-                Se habilitarán al aprobar la solicitud
-              </span>
-            ) : areas.length > 0 ? (
-              <>
-                {areas.map((area) => (
-                  <Badge
-                    key={area.id}
-                    variant="light"
-                    color="light"
-                    size="sm"
-                    className="font-medium"
-                  >
-                    {area.label}
+          <div className="flex flex-col gap-1.5 cursor-pointer" onClick={onAbrir}>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={op.rolId === "admin_tienda" ? "solid" : "light"}
+                color={userTypeConfig.color}
+                size="xs"
+                className="font-medium"
+              >
+                {userTypeConfig.label}
+              </Badge>
+              {ajustes && (
+                <span title="Tiene permisos ajustados a mano respecto a su rol">
+                  <Badge variant="light" color="warning" size="xs" className="font-medium">
+                    Personalizado
                   </Badge>
-                ))}
-                {ajustes && (
-                  <span title="Tiene permisos ajustados a mano respecto a su rol">
-                    <Badge variant="light" color="warning" size="sm" className="font-medium">
-                      Con ajustes
-                    </Badge>
-                  </span>
-                )}
-              </>
+                </span>
+              )}
+            </div>
+            {areas.length > 0 ? (
+              <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                {areas.map(a => a.label).join(", ")}
+              </span>
             ) : (
-              <span className="text-sm text-gray-400">Sin acceso</span>
+              <span className="text-xs text-gray-400">Sin acceso</span>
             )}
           </div>
         </TableCell>
 
-        {/* Columna 3: Rol y Acceso */}
+        {/* Columna 3: Estado */}
         <TableCell className="py-4">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={onAbrir}>
-            {/* Rol de la persona con badge del sistema */}
+          <div className="flex items-center cursor-pointer" onClick={onAbrir}>
             <Badge
-              variant={op.rolId === "admin_tienda" ? "solid" : "light"}
               color={
-                op.rolId === "admin_tienda"
-                  ? "primary"
-                  : op.rolId === "supervisor_pedidos"
-                  ? "dark"
+                esPendiente
+                  ? "warning"
+                  : op.estado === "activo"
+                  ? "success"
                   : "light"
               }
-              size="sm"
-              className="font-medium"
-            >
-              {rol?.nombre || "Operador"}
-            </Badge>
-
-            {/* Acceso */}
-            <Badge
               variant="light"
-              color={accessBadge.color}
               size="sm"
-              className="font-medium"
+              className={op.estado === "inactivo" ? "font-medium text-gray-500" : "font-medium"}
             >
-              {accessBadge.label}
+              {esPendiente ? "Pendiente" : op.estado === "activo" ? "Configurado" : "Sin configurar"}
             </Badge>
           </div>
         </TableCell>
 
-        {/* Columna 4: Acciones */}
+        {/* Columna 4: Acceso (Toggle) */}
+        <TableCell className="py-4 text-center">
+          <div className="flex items-center justify-center">
+            {esPendiente ? (
+               <Switch
+                 checked={false}
+                 disabled={true}
+                 onChange={() => {}}
+               />
+            ) : (
+              <Switch
+                checked={op.estado === "activo"}
+                onChange={(checked) => {
+                  if (checked) {
+                    operadoresStore.activar(op.id);
+                  } else {
+                    operadoresStore.desactivar(op.id);
+                  }
+                }}
+              />
+            )}
+          </div>
+        </TableCell>
+
+        {/* Columna 5: Acciones */}
         <TableCell className="py-4 text-right pr-6">
           <div className="flex items-center justify-end gap-1.5 relative">
             {/* Botón Aprobar si está pendiente (color positivo esmeralda) */}
@@ -392,21 +299,21 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   operadoresStore.aprobar(op.id);
                 }}
-                className="h-8 px-3 rounded-lg text-xs font-semibold bg-success-600 hover:bg-success-700 text-white transition-colors cursor-pointer"
+                className="h-8 px-3 mr-2 rounded-lg text-xs font-semibold bg-success-600 hover:bg-success-700 text-white transition-colors cursor-pointer"
               >
                 Aprobar
               </button>
             )}
 
-            {/* Botón Lapicito: Editar Rol y Capacidades */}
+            {/* Botón Lapicito: Editar */}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onAbrir();
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-              title="Editar capacidades y rol"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-transparent text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
+              title="Editar"
               aria-label="Editar"
             >
               <PencilIcon className="h-4 w-4" />
@@ -451,39 +358,6 @@ const FilaEquipo = observer(
                     }}
                   >
                     <span className="text-error-600 font-medium">Rechazar solicitud</span>
-                  </DropdownItem>
-                )}
-
-                {op.estado === "activo" && (
-                  <DropdownItem
-                    onClick={() => {
-                      operadoresStore.desactivar(op.id);
-                      onCloseMenu();
-                    }}
-                  >
-                    <span className="text-warning-600 font-medium">Suspender operador</span>
-                  </DropdownItem>
-                )}
-
-                {op.estado === "inactivo" && (
-                  <DropdownItem
-                    onClick={() => {
-                      operadoresStore.activar(op.id);
-                      onCloseMenu();
-                    }}
-                  >
-                    <span className="text-success-600 font-medium">Reactivar operador</span>
-                  </DropdownItem>
-                )}
-
-                {op.estado === "inactivo" && (
-                  <DropdownItem
-                    onClick={() => {
-                      operadoresStore.activar(op.id);
-                      onCloseMenu();
-                    }}
-                  >
-                    <span className="text-success-600 font-medium">Activar</span>
                   </DropdownItem>
                 )}
               </Dropdown>

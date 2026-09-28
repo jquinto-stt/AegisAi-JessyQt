@@ -26,7 +26,7 @@
  */
 
 import { observer } from "mobx-react-lite";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Plus, Kanban, BarChart3 } from "lucide-react";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { CartIcon } from "@/icons";
@@ -142,8 +142,8 @@ export interface Atajo {
   to: string;
   /** Capacidad que exige esa ruta en `App.tsx`. */
   capacidad: Parameters<typeof puede>[0];
-  /** Emoji del spec, opcional. */
-  emoji?: string;
+  /** Icono de lucide-react, opcional. */
+  icon?: React.ReactNode;
 }
 
 /**
@@ -155,9 +155,9 @@ export interface Atajo {
  * desfase se ve como un atajo que expulsa al pulsarlo.
  */
 export const ATAJOS_PEDIDOS: Atajo[] = [
-  { label: "Crear Pedido", to: "/pedidos/crear", capacidad: "orders.create", emoji: "➕" },
-  { label: "Tablero Kanban", to: "/pedidos", capacidad: "orders.read", emoji: "📋" },
-  { label: "Analítica", to: "/pedidos/analitica", capacidad: "orders.read", emoji: "📊" },
+  { label: "Crear Pedido", to: "/pedidos/crear", capacidad: "orders.create", icon: <Plus className="size-4" /> },
+  { label: "Tablero Kanban", to: "/pedidos", capacidad: "orders.read", icon: <Kanban className="size-4" /> },
+  { label: "Analítica", to: "/pedidos/analitica", capacidad: "orders.read", icon: <BarChart3 className="size-4" /> },
 ];
 
 /**
@@ -210,7 +210,7 @@ export const AtajosRapidos: React.FC<{ atajos: Atajo[]; onIr: (to: string) => vo
               onClick={() => habilitado && onIr(a.to)}
               className="w-full justify-center rounded-full text-xs font-semibold"
             >
-              {a.emoji && <span aria-hidden="true">{a.emoji}</span>}
+              {a.icon && <span aria-hidden="true" className="mr-1.5 flex items-center justify-center">{a.icon}</span>}
               {a.label}
             </Button>
             {!habilitado && (
