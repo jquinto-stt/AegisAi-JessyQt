@@ -157,7 +157,7 @@ export const ModulosPage = observer(() => {
           {/* Cabecera de la organización */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6 dark:border-gray-800">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 dark:bg-brand-500/10 dark:text-brand-300 mb-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold text-ink-title dark:bg-brand-500/10 dark:text-brand-300 mb-2">
                 <span className="size-2 rounded-full bg-brand-500" />
                 {org?.nombre || "Mi Organización"} · {org?.moneda || "COP"}
               </div>
@@ -203,7 +203,7 @@ export const ModulosPage = observer(() => {
           {/* ESTADO VACÍO (si no hay módulos instalados: BOTÓN EN EL CENTRO) */}
           {!tienePedidos ? (
             <div className="mx-auto my-12 max-w-lg rounded-3xl border border-dashed border-gray-300 bg-white/70 p-10 text-center shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/60 sm:p-14">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-50 text-brand-500 shadow-theme-sm dark:bg-brand-500/10 dark:text-brand-400 mb-6">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-secondary-50 text-secondary-600 shadow-theme-sm dark:bg-brand-500/10 dark:text-brand-400 mb-6">
                 <Layers className="size-10" />
               </div>
 

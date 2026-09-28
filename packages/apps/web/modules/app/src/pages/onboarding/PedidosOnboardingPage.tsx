@@ -166,7 +166,7 @@ export const PedidosOnboardingPage = observer(() => {
           {paso === 1 && (
             <div>
                 <div className="mb-8">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
                     Paso 1 de 2 — Rubro y Perfil Comercial
                   </span>
                   <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -187,7 +187,7 @@ export const PedidosOnboardingPage = observer(() => {
                         onClick={() => setPerfilElegido(perfil.id)}
                         className={`flex flex-col justify-between rounded-3xl border p-5 transition-all cursor-pointer ${
                           seleccionado
-                            ? "border-brand-500 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20 dark:border-brand-400"
+                            ? "border-secondary-500 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20 dark:border-secondary-400"
                             : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-theme-sm dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
                         }`}
                       >
@@ -248,7 +248,7 @@ export const PedidosOnboardingPage = observer(() => {
             {paso === 2 && (
               <div>
                 <div className="mb-8">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
                     Paso 2 de 2 — Agentes y Automatización
                   </span>
                   <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -265,7 +265,7 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarWhatsApp(!habilitarWhatsApp)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarWhatsApp
-                        ? "border-brand-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
+                        ? "border-secondary-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >
@@ -302,7 +302,7 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarIA(!habilitarIA)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarIA
-                        ? "border-brand-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
+                        ? "border-secondary-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >

@@ -617,7 +617,7 @@ export const AnaliticaPage = observer(() => {
                 className="group inline-flex h-9 shrink-0 items-center rounded-full bg-gradient-to-r from-brand-500 via-secondary-300 to-accent-300 bg-[length:200%_100%] bg-[position:0%_50%] p-[1.5px] shadow-theme-md shadow-secondary-300/25 transition-all duration-500 ease-out hover:-translate-y-px hover:bg-[position:100%_50%] hover:shadow-theme-lg hover:shadow-brand-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
               >
                 <span className="flex h-full items-center gap-2 rounded-full bg-white px-3.5 dark:bg-secondary-900">
-                  <ShootingStarIcon className="h-4 w-4 shrink-0 text-brand-500 transition-transform duration-300 ease-out group-hover:rotate-[18deg] group-hover:scale-110 dark:text-brand-400" />
+                  <ShootingStarIcon className="h-4 w-4 shrink-0 text-secondary-600 transition-transform duration-300 ease-out group-hover:rotate-[18deg] group-hover:scale-110 dark:text-brand-400" />
                   <span className="whitespace-nowrap bg-gradient-to-r from-brand-700 via-secondary-400 to-accent-700 bg-clip-text text-xs font-semibold text-transparent dark:from-brand-300 dark:via-secondary-200 dark:to-accent-200">
                     NECTO AI
                   </span>
@@ -730,12 +730,12 @@ export const AnaliticaPage = observer(() => {
                       aria-label="Elegir rango en calendario"
                       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-theme-xs transition-all ${
                         rangoPersonalizado
-                          ? "border-brand-500 bg-brand-500/10 text-brand-500 dark:border-brand-500 dark:bg-brand-500/20"
+                          ? "border-secondary-500 bg-brand-500/10 text-secondary-600 dark:border-secondary-500 dark:bg-brand-500/20"
                           : "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                       }`}
                       title="Seleccionar rango de fechas libremente"
                     >
-                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-brand-500" : "text-gray-500 dark:text-gray-400"}`} />
+                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-secondary-600" : "text-gray-500 dark:text-gray-400"}`} />
                       <span>
                         {rangoPersonalizado
                           ? `${diaCorto(rangoPersonalizado.desde)} - ${diaCorto(rangoPersonalizado.hasta)}`

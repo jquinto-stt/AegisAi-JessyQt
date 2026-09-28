@@ -77,7 +77,7 @@ export const MessageBubble = ({ message }: { message: AssistantMessage }) => {
                   title="Me gusta"
                   className={`rounded p-1 transition-colors ${
                     feedback === "up"
-                      ? "bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-400"
+                      ? "bg-secondary-50 text-secondary-600 dark:bg-brand-900/30 dark:text-brand-400"
                       : "hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                   }`}
                 >

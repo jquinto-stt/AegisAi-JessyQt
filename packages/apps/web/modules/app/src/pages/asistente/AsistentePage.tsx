@@ -76,7 +76,7 @@ export const AsistentePage = observer(() => {
               aria-pressed={barraAbierta}
               className={`flex items-center justify-center rounded-lg border px-2.5 py-1.5 text-sm font-medium transition-colors ${
                 barraAbierta
-                  ? "border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-300"
+                  ? "border-secondary-300 bg-secondary-50 text-ink-title dark:border-secondary-500 dark:bg-brand-500/10 dark:text-brand-300"
                   : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               }`}
             >
@@ -258,7 +258,7 @@ const SuggestionCard = ({
     data-sugerencia={toolId}
     onClick={onClick}
     style={{ animationDelay: retardo }}
-    className="animate-entrada-lista cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-brand-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-brand-500"
+    className="animate-entrada-lista cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors hover:border-secondary-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:hover:border-secondary-500"
   >
     <p className="text-sm font-bold text-gray-800 dark:text-white/90">{titulo}</p>
     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>

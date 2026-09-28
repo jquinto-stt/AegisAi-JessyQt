@@ -64,7 +64,7 @@ export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasVie
             : `${baseColumns.length} columnas × ${dataRows.length} registros`}
         </span>
         {isLoading && (
-          <span className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
+          <span className="flex items-center gap-1.5 text-secondary-600 dark:text-brand-400">
             <span className="inline-block h-2 w-2 animate-ping rounded-full bg-brand-500" />
             Cargando datos...
           </span>
@@ -139,7 +139,7 @@ export const SpreadsheetCanvasView = ({ table, isLoading }: SpreadsheetCanvasVie
                         onClick={() => setSelectedCell({ r: rowNumber, c: colIdx })}
                         className={`min-w-[120px] border-b border-r border-gray-200 px-3 py-1.5 transition-colors dark:border-gray-750 ${
                           isSelected
-                            ? "bg-brand-50 ring-2 ring-inset ring-brand-500 dark:bg-brand-900/20"
+                            ? "bg-secondary-50 ring-2 ring-inset ring-brand-500 dark:bg-brand-900/20"
                             : ""
                         } ${
                           isBold

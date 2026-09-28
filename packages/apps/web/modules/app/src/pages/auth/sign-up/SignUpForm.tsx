@@ -169,7 +169,7 @@ export default function SignUpForm() {
             <div className="mt-5">
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Already have an account?{" "}
-                <Link to="/login" className="text-brand-500 hover:text-brand-600 dark:text-brand-400">Inicia sesion</Link>
+                <Link to="/login" className="text-secondary-600 hover:text-secondary-600 dark:text-brand-400">Inicia sesion</Link>
               </p>
             </div>
           </div>

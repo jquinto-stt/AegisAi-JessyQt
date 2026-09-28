@@ -387,7 +387,7 @@ export const ConfigPage = observer(() => {
                           }}
                           className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
                             seleccionado
-                              ? "border-brand-500 bg-brand-50/50 shadow-theme-sm ring-2 ring-brand-500/20 dark:border-brand-400 dark:bg-brand-950/20"
+                              ? "border-secondary-500 bg-secondary-50/50 shadow-theme-sm ring-2 ring-brand-500/20 dark:border-secondary-400 dark:bg-brand-950/20"
                               : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
                           }`}
                         >

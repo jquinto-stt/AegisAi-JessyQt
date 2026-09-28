@@ -57,7 +57,7 @@ const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
 
 /** Logo del Módulo de Pedidos */
 const OrdersBrandLogo = () => (
-  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
       <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" />
     </svg>
@@ -77,7 +77,7 @@ const InventoryBrandLogo = () => (
 
 /** Logo de Integración: Necto IA */
 const NectoIaIntegrationLogo = () => (
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
       <circle cx="12" cy="12" r="3" />

@@ -125,7 +125,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="relative min-h-screen w-full bg-brand-500 text-white p-3 sm:p-5 lg:p-8 flex items-center justify-center overflow-x-hidden font-sans selection:bg-white selection:text-brand-500 dark:bg-secondary-600">
+    <div className="relative min-h-screen w-full bg-brand-500 text-white p-3 sm:p-5 lg:p-8 flex items-center justify-center overflow-x-hidden font-sans selection:bg-white selection:text-secondary-600 dark:bg-secondary-600">
       {/* Mosaico interactivo de punticos con efecto estelar que sigue el mouse */}
       <InteractiveDotGrid
         dotGap={26}
@@ -156,7 +156,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
               ) : null}
 
               <div className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-                <span className="font-bold text-brand-600 dark:text-brand-400">
+                <span className="font-bold text-secondary-600 dark:text-brand-400">
                   {pasoActual}/{totalPasos}
                 </span>
                 <span className="h-3 w-px bg-gray-300 dark:bg-gray-700" />

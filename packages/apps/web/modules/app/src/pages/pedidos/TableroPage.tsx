@@ -229,7 +229,7 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
           urgente
             ? "border-error-300 dark:border-error-800"
             : "border-gray-100 dark:border-gray-800"
@@ -247,7 +247,7 @@ const PedidoCard = observer(
           </div>
 
           <div className="relative shrink-0">
-            <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold text-xs ring-2 ring-white dark:bg-brand-900/40 dark:text-brand-300 dark:ring-gray-800 shadow-theme-xs">
+            <div className="flex size-7 sm:size-8 shrink-0 items-center justify-center rounded-full bg-secondary-100 text-ink-title font-bold text-xs ring-2 ring-white dark:bg-brand-900/40 dark:text-brand-300 dark:ring-gray-800 shadow-theme-xs">
               {getIniciales(pedido.cliente)}
             </div>
           </div>
@@ -417,7 +417,7 @@ const DetalleModal = observer(
           <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
-                <DeliveryIcon className="h-3.5 w-3.5 text-brand-500" />
+                <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600" />
                 Dirección de entrega
               </span>
               {pedido.direccionEntrega?.calle && (
@@ -425,7 +425,7 @@ const DetalleModal = observer(
                   href={mapsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 hover:underline dark:text-brand-400"
                 >
                   <MapPinIcon className="h-3.5 w-3.5" />
                   Abrir en Google Maps
@@ -475,7 +475,7 @@ const DetalleModal = observer(
                   setRepartidorInput(e.target.value);
                   pedidosStore.asignarRepartidor(pedido.id, e.target.value);
                 }}
-                className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="h-7.5 w-52 rounded-lg border border-gray-200 bg-white px-2.5 text-right text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
@@ -540,7 +540,7 @@ const DetalleModal = observer(
               onClick={() => {
                 pedidosStore.togglePagado(pedido.id);
               }}
-              className="text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+              className="text-xs font-semibold text-secondary-600 hover:underline dark:text-brand-400"
             >
               {pedido.pagado ? `Marcar como ${ETIQUETA_PAGO.sinPagar.toLowerCase()}` : `Marcar como ${ETIQUETA_PAGO.pagado.toLowerCase()}`}
             </button>
@@ -605,7 +605,7 @@ const DetalleModal = observer(
 
 const inputBase =
   "w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:text-white/90 dark:placeholder:text-white/30";
-const inputOk = "border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700";
+const inputOk = "border-gray-300 focus:border-secondary-300 focus:ring-secondary-500/20 dark:border-gray-700";
 
 const CancelarModal = observer(
   ({ pedido, onClose }: { pedido: Pedido; onClose: () => void }) => {
@@ -750,9 +750,9 @@ const ProgramadoCard = observer(({ pedido: p, onCancelar, onReprogramar, onDetal
       }
       className={
         "flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors " +
-        (clickable ? "cursor-pointer hover:border-brand-300 dark:hover:border-brand-700 " : "") +
+        (clickable ? "cursor-pointer hover:border-secondary-300 dark:hover:border-brand-700 " : "") +
         (focusId === p.id
-          ? "border-brand-500 bg-brand-50 ring-2 ring-brand-500/30 dark:border-brand-500 dark:bg-brand-500/10"
+          ? "border-secondary-500 bg-secondary-50 ring-2 ring-brand-500/30 dark:border-secondary-500 dark:bg-brand-500/10"
           : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]")
       }
     >
@@ -763,7 +763,7 @@ const ProgramadoCard = observer(({ pedido: p, onCancelar, onReprogramar, onDetal
         </div>
         <p className="truncate text-xs text-gray-600 dark:text-gray-300">{p.cliente}</p>
         {p.programadoPara && (
-          <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-brand-600 dark:text-brand-400">
+          <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-secondary-600 dark:text-brand-400">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -780,7 +780,7 @@ const ProgramadoCard = observer(({ pedido: p, onCancelar, onReprogramar, onDetal
               <button
                 type="button"
                 onClick={() => onReprogramar(p)}
-                className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
               >
                 Reprogramar
               </button>
@@ -846,7 +846,7 @@ const ProgramadosSection = observer(
             <button
               type="button"
               onClick={onVerTodos}
-              className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
             >
               Ver todos ({programados.length})
             </button>
@@ -870,7 +870,7 @@ const ProgramadosSection = observer(
           <button
             type="button"
             onClick={onVerTodos}
-            className="mt-3 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-medium text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700"
+            className="mt-3 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-medium text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700"
           >
             + {restantes} pedido{restantes === 1 ? "" : "s"} programado{restantes === 1 ? "" : "s"} más
           </button>
@@ -928,7 +928,7 @@ const ProgramadosModal = observer(
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por número o cliente…"
-              className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+              className="h-10 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-300 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/20 dark:border-gray-700 dark:text-white/90"
             />
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -1028,7 +1028,7 @@ const AccionesMenu = observer(
               <button
                 type="button"
                 onClick={run(() => onAvanzar(pedido))}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-600 dark:text-gray-200 dark:hover:bg-brand-500/10"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-secondary-50 hover:text-secondary-600 dark:text-gray-200 dark:hover:bg-brand-500/10"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 7l5 5-5 5" /></svg>
                 Avanzar a "{pedidosStore.estadoLabel(siguiente)}"
@@ -1453,7 +1453,7 @@ export const TableroPage = observer(() => {
               onClick={() => setMenuFilterOpen((v) => !v)}
               className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 sm:px-4 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                 busquedaTablero.trim() || criterioOrden !== "reciente"
-                  ? "border-brand-300 bg-brand-50/60 text-brand-700 dark:border-brand-700 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
+                  ? "border-secondary-300 bg-secondary-50/60 text-ink-title dark:border-brand-700 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
                   : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               }`}
             >
@@ -1480,7 +1480,7 @@ export const TableroPage = observer(() => {
                       value={busquedaTablero}
                       onChange={(e) => setBusquedaTablero(e.target.value)}
                       placeholder="Cliente, # pedido, producto..."
-                      className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
+                      className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
                     />
                     {busquedaTablero && (
                       <button

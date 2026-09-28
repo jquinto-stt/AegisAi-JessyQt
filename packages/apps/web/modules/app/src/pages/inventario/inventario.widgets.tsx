@@ -184,7 +184,7 @@ export function SinResultados({
       {accion && (
         <Link
           to={accion.to}
-          className="mt-4 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400"
+          className="mt-4 inline-block text-sm font-medium text-secondary-600 hover:underline dark:text-brand-400"
         >
           {accion.label}
         </Link>

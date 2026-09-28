@@ -160,7 +160,7 @@ export const RolesTab = observer(() => {
                 onClick={() => setSeleccionadoId(r.id)}
                 className={`group relative flex items-center justify-between w-full rounded-xl border p-3.5 text-left transition-all cursor-pointer ${
                   esSeleccionado
-                    ? "border-brand-500 bg-brand-50/70 shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
+                    ? "border-secondary-500 bg-secondary-50/70 shadow-theme-xs dark:border-secondary-500 dark:bg-brand-500/10"
                     : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
                 }`}
               >
@@ -169,7 +169,7 @@ export const RolesTab = observer(() => {
                     <span
                       className={`truncate text-sm font-semibold ${
                         esSeleccionado
-                          ? "text-brand-900 dark:text-brand-200"
+                          ? "text-ink-title dark:text-brand-200"
                           : "text-gray-800 dark:text-gray-200"
                       }`}
                     >
@@ -674,7 +674,7 @@ const RolEditor = observer(({
                       <button
                         type="button"
                         onClick={() => alternarGrupo(grupo.capacidades)}
-                        className="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                        className="text-xs font-semibold text-secondary-600 hover:text-ink-title dark:text-brand-400 cursor-pointer"
                       >
                         {completa ? "Quitar todo" : "Dar todo"}
                       </button>

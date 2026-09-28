@@ -172,7 +172,7 @@ const KpiIcono = ({
 }) => {
   const tonos: Record<typeof tono, string> = {
     brand:
-      "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
+      "bg-secondary-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400",
     warning:
       "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
     success:
@@ -611,7 +611,7 @@ export const HistorialAtencionPage = observer(() => {
                       <button
                         type="button"
                         onClick={() => setDetalleId(conv.id)}
-                        className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+                        className="font-medium text-secondary-600 hover:underline dark:text-brand-400"
                       >
                         {ticketId(conv.id)}
                       </button>
@@ -879,7 +879,7 @@ export const HistorialAtencionPage = observer(() => {
                       localStorage.removeItem(`crm_etapa_${tel}`);
                       setDetalleId(detalle.id);
                     }}
-                    className="text-[10px] font-medium text-brand-600 hover:underline dark:text-brand-400"
+                    className="text-[10px] font-medium text-secondary-600 hover:underline dark:text-brand-400"
                   >
                     Manual (restablecer)
                   </button>
@@ -953,7 +953,7 @@ export const HistorialAtencionPage = observer(() => {
                         {etapa.label}
                       </span>
                       {isActive && (
-                        <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400">
+                        <span className="text-[10px] font-semibold text-secondary-600 dark:text-brand-400">
                           Actual
                         </span>
                       )}

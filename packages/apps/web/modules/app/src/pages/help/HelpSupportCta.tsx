@@ -21,7 +21,7 @@ import { LifeBuoy } from "lucide-react";
  */
 export const HelpSupportCta: React.FC = () => (
   <section aria-labelledby="help-support-cta" className="mt-16">
-    <div className="flex flex-col gap-5 rounded-2xl border border-brand-500/30 bg-brand-500/[0.06] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+    <div className="flex flex-col gap-5 rounded-2xl border border-secondary-500/30 bg-brand-500/[0.06] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-500 text-white">
           <LifeBuoy className="h-5 w-5" />

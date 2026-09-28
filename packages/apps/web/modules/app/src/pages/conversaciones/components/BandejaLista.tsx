@@ -77,7 +77,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 onClick={() => setMenuOpen(!menuOpen)}
                 className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                   filtroEstado !== "todas"
-                    ? "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+                    ? "bg-secondary-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400"
                     : "text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
                 }`}
                 aria-label="Filtrar por estado"
@@ -102,7 +102,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                   }}
                   className={`text-xs ${
                     filtroEstado === f.valor
-                      ? "font-semibold text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-500/10"
+                      ? "font-semibold text-secondary-600 dark:text-brand-400 bg-secondary-50/50 dark:bg-brand-500/10"
                       : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                   }`}
                 >
@@ -133,7 +133,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             placeholder="Buscar..."
             value={conversacionesStore.busqueda}
             onChange={(e) => conversacionesStore.setBusqueda(e.target.value)}
-            className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50/70 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/15 dark:border-gray-800 dark:bg-gray-900/60 dark:text-white/90 dark:placeholder:text-gray-500"
+            className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50/70 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-secondary-500/15 dark:border-gray-800 dark:bg-gray-900/60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
 

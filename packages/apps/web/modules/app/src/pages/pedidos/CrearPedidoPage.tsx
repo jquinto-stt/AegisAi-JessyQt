@@ -21,7 +21,7 @@ const RequiredMark = () => <span className="text-error-500">*</span>;
 
 const inputBase =
   "h-11 w-full rounded-lg border bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-hidden focus:ring-3 dark:text-white/90 dark:placeholder:text-white/30";
-const inputOk = "border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700";
+const inputOk = "border-gray-300 focus:border-secondary-300 focus:ring-secondary-500/20 dark:border-gray-700";
 
 /** Fila editable de item en el formulario (antes de mapear a PedidoItem). */
 interface ItemFila {
@@ -411,23 +411,23 @@ export const CrearPedidoPage = observer(() => {
                 {created.total !== undefined && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Total a cobrar</span>
-                    <span className="font-bold text-brand-600 dark:text-brand-400">{money(created.total)}</span>
+                    <span className="font-bold text-secondary-600 dark:text-brand-400">{money(created.total)}</span>
                   </div>
                 )}
               </div>
 
-              <div className="mt-6 flex items-start gap-2 rounded-xl bg-brand-50 p-3 text-left dark:bg-brand-500/10">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-brand-500">
+              <div className="mt-6 flex items-start gap-2 rounded-xl bg-secondary-50 p-3 text-left dark:bg-brand-500/10">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-600">
                   <path d="M12 2a10 10 0 00-8.66 15l-1.3 3.9a.75.75 0 00.95.95l3.9-1.3A10 10 0 1012 2z" />
                 </svg>
                 {created.programadoPara ? (
-                  <p className="text-xs text-brand-700 dark:text-brand-300">
+                  <p className="text-xs text-ink-title dark:text-brand-300">
                     El pedido quedó <strong>Programado</strong> para el{" "}
                     <strong>{formatFechaHora(created.programadoPara)}</strong>. Aparece en la sección
                     de programados del tablero y se activará solo al llegar la hora.
                   </p>
                 ) : (
-                  <p className="text-xs text-brand-700 dark:text-brand-300">
+                  <p className="text-xs text-ink-title dark:text-brand-300">
                     El pedido entró como <strong>Nuevo</strong> y ya aparece en el tablero con su logística de entrega.
                   </p>
                 )}
@@ -453,7 +453,7 @@ export const CrearPedidoPage = observer(() => {
 
       {/* Encabezado */}
       <div className="mx-auto mb-6 flex max-w-5xl items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10 text-brand-500">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10 text-secondary-600">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -543,11 +543,11 @@ export const CrearPedidoPage = observer(() => {
                     className={
                       "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors " +
                       (activo
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-                        : "border-gray-200 text-gray-600 hover:border-brand-300 dark:border-gray-700 dark:text-gray-300")
+                        ? "border-secondary-500 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
+                        : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
                     }
                   >
-                    <span className={activo ? "text-brand-500" : "text-gray-400"}>
+                    <span className={activo ? "text-secondary-600" : "text-gray-400"}>
                       <ModalidadIcon m={m} />
                     </span>
                     <span className="text-sm font-medium">{pedidosStore.modalidadLabel(m)}</span>
@@ -580,9 +580,9 @@ export const CrearPedidoPage = observer(() => {
                         if (dir.referencia) setReferencia(dir.referencia);
                         if (dir.indicaciones) setIndicaciones(dir.indicaciones);
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-gray-800 dark:text-brand-300"
+                      className="inline-flex items-center gap-1 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-medium text-ink-title hover:bg-secondary-50 dark:border-secondary-500/30 dark:bg-gray-800 dark:text-brand-300"
                     >
-                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-brand-500" />
+                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-secondary-600" />
                       <span>{dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}</span>
                     </button>
                   ))}
@@ -711,7 +711,7 @@ export const CrearPedidoPage = observer(() => {
                     <button
                       type="button"
                       onClick={addItem}
-                      className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                      className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
                     >
                       + Añadir {perfilPreset.labels.itemSingular.toLowerCase()}
                     </button>
@@ -849,8 +849,8 @@ export const CrearPedidoPage = observer(() => {
                     className={
                       "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors " +
                       (activo
-                        ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
-                        : "border-gray-200 text-gray-600 hover:border-brand-300 dark:border-gray-700 dark:text-gray-300")
+                        ? "border-secondary-500 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
+                        : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
                     }
                   >
                     <IconComponent className="h-5 w-5" />
@@ -943,12 +943,12 @@ export const CrearPedidoPage = observer(() => {
                     <button
                       type="button"
                       onClick={() => setShowProgramar(true)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-brand-300 dark:bg-gray-900 dark:hover:border-brand-700 ${
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-secondary-300 dark:bg-gray-900 dark:hover:border-brand-700 ${
                         errors.programado ? "border-error-500" : "border-gray-300 dark:border-gray-700"
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-brand-500">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-secondary-600">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         {programadoISO ? (
@@ -959,7 +959,7 @@ export const CrearPedidoPage = observer(() => {
                           <span className="text-sm text-gray-400">Elegir fecha y hora…</span>
                         )}
                       </span>
-                      <span className="text-xs font-medium text-brand-500">Cambiar</span>
+                      <span className="text-xs font-medium text-secondary-600">Cambiar</span>
                     </button>
                     {errors.programado && <p className="mt-1.5 text-xs text-error-500">{errors.programado}</p>}
                   </div>
@@ -999,7 +999,7 @@ export const CrearPedidoPage = observer(() => {
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-gray-500">Modalidad</span>
                 <span className="inline-flex items-center gap-1.5 font-medium text-gray-800 dark:text-white/90">
-                  <span className="text-brand-500"><ModalidadIcon m={modalidad} /></span>
+                  <span className="text-secondary-600"><ModalidadIcon m={modalidad} /></span>
                   {pedidosStore.modalidadLabel(modalidad)}
                 </span>
               </div>

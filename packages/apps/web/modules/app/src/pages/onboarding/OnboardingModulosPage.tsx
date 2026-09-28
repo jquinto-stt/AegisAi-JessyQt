@@ -134,7 +134,7 @@ export const OnboardingModulosPage = observer(() => {
       >
         <div className="w-full">
           <div className="mb-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
               Paso 3 de 3 — Módulos · {org?.nombre || "Mi Organización"}
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -158,7 +158,7 @@ export const OnboardingModulosPage = observer(() => {
                 key={modulo.id}
                 className={
                   modulo.disponible
-                    ? "flex flex-col justify-between rounded-2xl border border-brand-500/40 bg-white p-5 shadow-theme-sm hover:border-brand-500 hover:shadow-theme-md transition-all dark:border-brand-500/30 dark:bg-gray-800/80"
+                    ? "flex flex-col justify-between rounded-2xl border border-secondary-500/40 bg-white p-5 shadow-theme-sm hover:border-secondary-500 hover:shadow-theme-md transition-all dark:border-secondary-500/30 dark:bg-gray-800/80"
                     : "flex flex-col justify-between rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 opacity-70 dark:border-gray-800 dark:bg-gray-800/40"
                 }
               >
@@ -206,7 +206,7 @@ export const OnboardingModulosPage = observer(() => {
                   <div className="mt-3 space-y-1 border-t border-gray-100 pt-2.5 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
                     {modulo.destacados.map((destacado) => (
                       <div key={destacado} className="flex items-center gap-1.5">
-                        <span className={modulo.disponible ? "text-brand-500" : ""}>
+                        <span className={modulo.disponible ? "text-secondary-600" : ""}>
                           {modulo.disponible ? "✓" : "•"}
                         </span>{" "}
                         {destacado}
@@ -255,7 +255,7 @@ export const OnboardingModulosPage = observer(() => {
             <button
               type="button"
               onClick={handleOmitir}
-              className="cursor-pointer text-xs font-semibold text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400 transition"
+              className="cursor-pointer text-xs font-semibold text-gray-500 hover:text-secondary-600 dark:text-gray-400 dark:hover:text-brand-400 transition"
             >
               Omitir por ahora e ir a mi organización →
             </button>

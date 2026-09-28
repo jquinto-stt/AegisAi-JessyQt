@@ -133,7 +133,7 @@ export const OrganizacionOnboardingPage = observer(() => {
         <div className="w-full">
           {/* Encabezado del paso */}
           <div className="mb-6 text-center sm:text-left">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
               Paso 2 de 2 — {subPaso} / 2 Personaliza tu organización
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -157,7 +157,7 @@ export const OrganizacionOnboardingPage = observer(() => {
             <form onSubmit={handleNextSubPaso} className="space-y-4">
               <div>
                 <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Nombre de la empresa <span className="text-brand-500">*</span>
+                  Nombre de la empresa <span className="text-secondary-600">*</span>
                 </Label>
                 <Input
                   id="companyName"
@@ -172,7 +172,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                 {slugGenerado && (
                   <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                     Identificador web:{" "}
-                    <span className="font-mono font-semibold text-brand-600 dark:text-brand-400">
+                    <span className="font-mono font-semibold text-secondary-600 dark:text-brand-400">
                       necto.app/{slugGenerado}
                     </span>
                   </p>
@@ -182,14 +182,14 @@ export const OrganizacionOnboardingPage = observer(() => {
               {/* País y Zona horaria / Moneda juntos con micro-copy natural */}
               <div>
                 <Label htmlFor="countrySelect" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  País de operación <span className="text-brand-500">*</span>
+                  País de operación <span className="text-secondary-600">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
                     id="countrySelect"
                     value={pais}
                     onChange={(e) => setPais(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {Object.keys(PAISES_CONFIG).map((pKey) => (
                       <option key={pKey} value={pKey}>
@@ -212,14 +212,14 @@ export const OrganizacionOnboardingPage = observer(() => {
 
               <div>
                 <Label htmlFor="companyType" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tipo de empresa <span className="text-brand-500">*</span>
+                  Tipo de empresa <span className="text-secondary-600">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
                     id="companyType"
                     value={tipoEmpresa}
                     onChange={(e) => setTipoEmpresa(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {TIPOS_EMPRESA.map((tipo) => (
                       <option key={tipo} value={tipo}>
@@ -237,14 +237,14 @@ export const OrganizacionOnboardingPage = observer(() => {
 
               <div>
                 <Label htmlFor="teamStrength" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tamaño del equipo <span className="text-brand-500">*</span>
+                  Tamaño del equipo <span className="text-secondary-600">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
                     id="teamStrength"
                     value={tamanoEquipo}
                     onChange={(e) => setTamanoEquipo(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                   >
                     {TAMANOS_EQUIPO.map((tam) => (
                       <option key={tam} value={tam}>
@@ -292,7 +292,7 @@ export const OrganizacionOnboardingPage = observer(() => {
               />
 
               {/* Círculo central con borde e ícono o previsualización */}
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-brand-500 bg-brand-50/40 p-2 shadow-theme-inner dark:border-brand-400 dark:bg-brand-500/10">
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-secondary-500 bg-secondary-50/40 p-2 shadow-theme-inner dark:border-secondary-400 dark:bg-brand-500/10">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
@@ -301,7 +301,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                   />
                 ) : (
                   <svg
-                    className="h-16 w-16 text-brand-500 dark:text-brand-400"
+                    className="h-16 w-16 text-secondary-600 dark:text-brand-400"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

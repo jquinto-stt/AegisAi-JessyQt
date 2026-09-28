@@ -46,7 +46,7 @@ export const ModalEspecificaciones: React.FC<ModalEspecificacionesProps> = obser
                 <h3 className="mt-1 text-xl font-bold text-ink-title dark:text-white">
                   {modulo.nombre}
                 </h3>
-                <p className="mt-0.5 text-xs font-medium text-brand-600 dark:text-brand-400">
+                <p className="mt-0.5 text-xs font-medium text-secondary-600 dark:text-brand-400">
                   {modulo.tagline}
                 </p>
               </div>

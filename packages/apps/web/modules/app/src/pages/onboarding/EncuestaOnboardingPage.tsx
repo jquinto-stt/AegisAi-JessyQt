@@ -51,7 +51,7 @@ const ComunidadIcon = () => (
 );
 
 const OtroCanalIcon = () => (
-  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-50 text-brand-600 border border-brand-200/70 dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20 shrink-0">
+  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 border border-secondary-200/70 dark:bg-brand-500/10 dark:text-brand-400 dark:border-secondary-500/20 shrink-0">
     <Sparkles className="h-4.5 w-4.5" />
   </div>
 );
@@ -146,7 +146,7 @@ export const EncuestaOnboardingPage = observer(() => {
       >
         <div className="w-full">
           <div className="mb-6">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
               Paso final — Encuesta rápida
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -170,7 +170,7 @@ export const EncuestaOnboardingPage = observer(() => {
                     }}
                     className={`flex items-center gap-3.5 rounded-2xl border p-4 text-left font-medium transition-all duration-150 cursor-pointer ${
                       seleccionado
-                        ? "border-brand-500 bg-brand-50/70 text-brand-900 shadow-theme-xs ring-2 ring-brand-500/20 dark:border-brand-400 dark:bg-brand-500/15 dark:text-brand-100"
+                        ? "border-secondary-500 bg-secondary-50/70 text-ink-title shadow-theme-xs ring-2 ring-brand-500/20 dark:border-secondary-400 dark:bg-brand-500/15 dark:text-brand-100"
                         : "border-gray-200 bg-white text-gray-800 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >

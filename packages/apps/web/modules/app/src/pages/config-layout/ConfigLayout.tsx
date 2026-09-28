@@ -353,7 +353,7 @@ export function ConfigSectionNav({
                         // Un gris no dice «estás aquí»: dice «esto es una fila».
                         // Y era una regresión concreta: `/pedidos/config` montaba
                         // el `<Tab variant="underline">` del catálogo, que marca
-                        // la activa con `bg-brand-50 text-brand-500` y una barra
+                        // la activa con `bg-secondary-50 text-secondary-600` y una barra
                         // inferior `bg-brand-500`; al unificar el mueble de las
                         // cuatro pantallas se cambió el marcador de color por uno
                         // neutro y el naranja desapareció sin que nadie lo pidiera.
@@ -365,11 +365,11 @@ export function ConfigSectionNav({
                         //
                         // Se usa LA MISMA cadena que el catalogo ya usa para una
                         // pestaña vertical activa (`elements/ui/tabs/Tab.tsx:261`),
-                        // copiada literal: `bg-brand-50 text-brand-500` y, en
+                        // copiada literal: `bg-secondary-50 text-secondary-600` y, en
                         // oscuro, `dark:bg-brand-400/20 dark:text-brand-400`.
                         //
                         // La primera version de este arreglo puso
-                        // `text-brand-700 dark:text-brand-300` porque el 700 daba
+                        // `text-ink-title dark:text-brand-300` porque el 700 daba
                         // mas contraste sobre `brand-50`. Estaba mal por dos
                         // motivos: `brand-700` es `#bf2810`, un rojo ladrillo, no
                         // el naranja de marca `#ff3c10`; y esos pasos no son los
@@ -377,7 +377,7 @@ export function ConfigSectionNav({
                         // superficie no se elige por contraste, se toma del
                         // sistema: si se cambia aqui, se cambia en `Tab` tambien.
                         estaActiva
-                          ? "bg-brand-50 text-brand-500 dark:bg-brand-400/20 dark:text-brand-400"
+                          ? "bg-secondary-50 text-secondary-600 dark:bg-brand-400/20 dark:text-brand-400"
                           : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200",
                       )}
                     >

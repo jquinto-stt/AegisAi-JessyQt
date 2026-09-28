@@ -77,7 +77,7 @@ const ICONOS_RED: Record<
 };
 
 const CLASE_INPUT =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white";
+  "w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-secondary-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white";
 const CLASE_BOTON_SECUNDARIO =
   "rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800";
 
@@ -278,7 +278,7 @@ const ProfilePage = observer(function ProfilePage() {
               {/* Iniciales, no una foto: `UsuarioPerfil` no tiene `avatarUrl`. */}
               <div
                 aria-hidden="true"
-                className="flex size-16 items-center justify-center rounded-full bg-brand-50 text-lg font-bold text-brand-600 dark:bg-brand-950/40 dark:text-brand-400 sm:size-20 sm:text-xl"
+                className="flex size-16 items-center justify-center rounded-full bg-secondary-50 text-lg font-bold text-secondary-600 dark:bg-brand-950/40 dark:text-brand-400 sm:size-20 sm:text-xl"
               >
                 {iniciales || "—"}
               </div>

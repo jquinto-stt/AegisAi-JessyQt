@@ -228,7 +228,7 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
   return (
     <div
       data-support-sent
-      className="mt-7 rounded-2xl border border-brand-500/40 bg-brand-500/[0.06] p-6 sm:p-8"
+      className="mt-7 rounded-2xl border border-secondary-500/40 bg-brand-500/[0.06] p-6 sm:p-8"
     >
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-500 text-white">
@@ -244,7 +244,7 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
             Tu referencia es{" "}
             <span
               data-support-reference
-              className="font-mono text-theme-sm font-bold text-brand-700 dark:text-brand-500"
+              className="font-mono text-theme-sm font-bold text-ink-title dark:text-secondary-600"
             >
               {request.reference}
             </span>

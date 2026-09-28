@@ -174,7 +174,7 @@ interface PresentacionIntegrable {
 const PRESENTACION_INTEGRABLE: Record<ModuloIntegrable, PresentacionIntegrable> = {
   pedidos: {
     Icono: CartIcon,
-    tono: "bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400",
+    tono: "bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400",
     proveedor: "Núcleo de Pedidos",
     version: "Plugin oficial · v1.2",
   },

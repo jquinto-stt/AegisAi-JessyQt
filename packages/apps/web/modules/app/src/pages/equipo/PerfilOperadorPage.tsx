@@ -97,7 +97,7 @@ export const PerfilOperadorPage = observer(() => {
             </p>
             <Link
               to="/equipo"
-              className="mt-4 inline-block text-sm font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              className="mt-4 inline-block text-sm font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
             >
               Volver al equipo
             </Link>
@@ -412,7 +412,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                   !puedeGestionar
                     ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-600"
                     : editandoDatos
-                    ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400 cursor-pointer"
+                    ? "border-secondary-500 bg-secondary-50 text-secondary-600 dark:border-secondary-500 dark:bg-brand-500/10 dark:text-brand-400 cursor-pointer"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 }`}
               >
@@ -668,7 +668,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               title={!puedeGestionar ? "Requiere el permiso «Gestionar equipo»." : undefined}
               className={`text-xs font-semibold ${
                 puedeGestionar
-                  ? "text-brand-600 hover:underline dark:text-brand-400 cursor-pointer"
+                  ? "text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
                   : "cursor-not-allowed text-gray-400 dark:text-gray-600"
               }`}
             >
@@ -803,7 +803,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                         className={`text-xs font-semibold transition-colors ${
                           alternarDeshabilitado
                             ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
-                            : "text-brand-600 hover:text-brand-700 dark:text-brand-400 cursor-pointer"
+                            : "text-secondary-600 hover:text-ink-title dark:text-brand-400 cursor-pointer"
                         }`}
                       >
                         {completa ? "Quitar todo" : "Dar todo"}

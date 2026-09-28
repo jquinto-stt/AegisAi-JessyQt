@@ -144,7 +144,7 @@ export const AnaliticaConversacionesPage = observer(() => {
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               Conversaciones Totales
             </span>
-            <span className="rounded-full bg-brand-50 p-2 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+            <span className="rounded-full bg-secondary-50 p-2 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
               💬
             </span>
           </div>
@@ -338,7 +338,7 @@ export const AnaliticaConversacionesPage = observer(() => {
                   </td>
                   <td className="px-4 py-3">
                     {conv.operadorAsignadoId ? (
-                      <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 font-medium">
+                      <span className="inline-flex items-center gap-1 text-secondary-600 dark:text-brand-400 font-medium">
                         👤 Operador
                       </span>
                     ) : (

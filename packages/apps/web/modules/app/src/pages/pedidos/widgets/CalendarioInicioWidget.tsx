@@ -170,7 +170,7 @@ export const CalendarioInicioWidget = observer(
                 className={
                   "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border text-sm transition-colors " +
                   (esSeleccionado
-                    ? "border-brand-500 bg-brand-50 dark:border-brand-500 dark:bg-brand-500/10"
+                    ? "border-secondary-500 bg-secondary-50 dark:border-secondary-500 dark:bg-brand-500/10"
                     : "border-transparent hover:bg-gray-50 dark:hover:bg-white/[0.04]")
                 }
               >

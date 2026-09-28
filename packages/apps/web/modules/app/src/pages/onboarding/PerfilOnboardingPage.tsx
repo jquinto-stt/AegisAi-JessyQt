@@ -66,7 +66,7 @@ export const PerfilOnboardingPage = observer(() => {
       >
         <div className="w-full">
           <div className="mb-8">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
               Paso 1 de 2 — Perfil
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
@@ -80,14 +80,14 @@ export const PerfilOnboardingPage = observer(() => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label htmlFor="pais" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                País de residencia <span className="text-brand-500">*</span>
+                País de residencia <span className="text-secondary-600">*</span>
               </Label>
               <div className="mt-2 relative">
                 <select
                   id="pais"
                   value={pais}
                   onChange={(e) => setPais(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-brand-500 focus:outline-hidden focus:ring-3 focus:ring-brand-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
+                  className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
                 >
                   {Object.keys(PAISES_CONFIG).map((pKey) => (
                     <option key={pKey} value={pKey}>

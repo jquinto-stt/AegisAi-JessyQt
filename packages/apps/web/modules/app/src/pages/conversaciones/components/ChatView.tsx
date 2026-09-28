@@ -157,7 +157,7 @@ export const ChatView = observer(({
               aria-label={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 !bandejaExpandida
-                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-secondary-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -212,7 +212,7 @@ export const ChatView = observer(({
               aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 panelExpandido
-                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-secondary-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-500 shadow-theme-xs hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -320,7 +320,7 @@ export const ChatView = observer(({
             <button
               type="button"
               onClick={() => setLimiteMensajes((prev) => prev + 25)}
-              className="rounded-full bg-brand-50 border border-brand-200 px-4 py-1.5 text-xs font-semibold text-brand-600 shadow-xs hover:bg-brand-100 transition-colors dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-400"
+              className="rounded-full bg-secondary-50 border border-secondary-200 px-4 py-1.5 text-xs font-semibold text-secondary-600 shadow-xs hover:bg-secondary-100 transition-colors dark:bg-brand-500/10 dark:border-secondary-500/20 dark:text-brand-400"
             >
               ↑ Cargar {items.length - limiteMensajes} mensajes anteriores
             </button>

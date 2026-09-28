@@ -35,7 +35,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
       return (
         <code
           key={key}
-          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-brand-600 dark:bg-white/10 dark:text-brand-400"
+          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-secondary-600 dark:bg-white/10 dark:text-brand-400"
         >
           {limpio}
         </code>
@@ -46,7 +46,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
       return (
         <code
           key={key}
-          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-brand-600 dark:bg-white/10 dark:text-brand-400"
+          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-secondary-600 dark:bg-white/10 dark:text-brand-400"
         >
           {t.slice(1, -1)}
         </code>
@@ -93,7 +93,7 @@ export const TextoMensajeFormateado: React.FC<TextoMensajeFormateadoProps> = ({
           return (
             <blockquote
               key={key}
-              className="my-2 rounded-r border-l-2 border-brand-500/60 bg-gray-50/70 py-1.5 pl-3 pr-2.5 text-[13px] font-normal leading-relaxed text-gray-700 dark:border-brand-400/60 dark:bg-white/[0.04] dark:text-gray-300"
+              className="my-2 rounded-r border-l-2 border-secondary-500/60 bg-gray-50/70 py-1.5 pl-3 pr-2.5 text-[13px] font-normal leading-relaxed text-gray-700 dark:border-secondary-400/60 dark:bg-white/[0.04] dark:text-gray-300"
             >
               {parsearInline(contenido, key)}
             </blockquote>

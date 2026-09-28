@@ -231,7 +231,7 @@ const CrearPedidoRapidoModal = observer(
                 onClick={() => setModalidad("domicilio")}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
                   modalidad === "domicilio"
-                    ? "border-brand-500 bg-brand-50/70 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
+                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-400"
                     : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -242,7 +242,7 @@ const CrearPedidoRapidoModal = observer(
                 onClick={() => setModalidad("retiro")}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
                   modalidad === "retiro"
-                    ? "border-brand-500 bg-brand-50/70 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
+                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-400"
                     : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -266,7 +266,7 @@ const CrearPedidoRapidoModal = observer(
                       if (direccionesGuardadas[0].barrio) setBarrio(direccionesGuardadas[0].barrio);
                       if (direccionesGuardadas[0].referencia) setReferencia(direccionesGuardadas[0].referencia);
                     }}
-                    className="text-[10px] font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                    className="text-[10px] font-semibold text-secondary-600 hover:underline dark:text-brand-400"
                   >
                     📍 Usar guardada
                   </button>
@@ -278,7 +278,7 @@ const CrearPedidoRapidoModal = observer(
                 placeholder="Dirección / Calle y número *"
                 value={calle}
                 onChange={(e) => setCalle(e.target.value)}
-                className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
 
               <div className="grid grid-cols-2 gap-2">
@@ -287,14 +287,14 @@ const CrearPedidoRapidoModal = observer(
                   placeholder="Barrio / Sector"
                   value={barrio}
                   onChange={(e) => setBarrio(e.target.value)}
-                  className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
                 <input
                   type="text"
                   placeholder="Apto / Casa / Torre"
                   value={referencia}
                   onChange={(e) => setReferencia(e.target.value)}
-                  className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="h-8 w-full rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
 
@@ -330,7 +330,7 @@ const CrearPedidoRapidoModal = observer(
                   onClick={() => setMetodoPago(m.id as MetodoPago)}
                   className={`rounded-lg border py-1 text-[11px] font-medium transition-colors ${
                     metodoPago === m.id
-                      ? "border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-300"
+                      ? "border-secondary-500 bg-secondary-50 text-ink-title dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                   }`}
                 >
@@ -400,7 +400,7 @@ const CrearPedidoRapidoModal = observer(
               placeholder="Ej: Apto 402, timbre blanco, salsa aparte"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              className="mt-1 h-9 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="mt-1 h-9 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
@@ -415,7 +415,7 @@ const CrearPedidoRapidoModal = observer(
                 `/pedidos/crear?cliente=${encodeURIComponent(clienteNombre)}&telefono=${encodeURIComponent(clienteTelefono)}`,
               );
             }}
-            className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400"
+            className="text-xs font-medium text-secondary-600 hover:underline dark:text-brand-400"
           >
             Abrir formulario avanzado →
           </button>
@@ -497,7 +497,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-brand-500 shrink-0"
+              className="text-secondary-600 shrink-0"
             >
               <rect x="1" y="3" width="15" height="13" />
               <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
@@ -784,7 +784,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="shrink-0 text-brand-500"
+                className="shrink-0 text-secondary-600"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
@@ -845,7 +845,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               type="button"
               onClick={restablecerAuto}
               title="Restablecer a detección automática según pedidos y chat"
-              className="text-[10px] font-medium text-brand-600 hover:underline dark:text-brand-400"
+              className="text-[10px] font-medium text-secondary-600 hover:underline dark:text-brand-400"
             >
               Manual (auto ↺)
             </button>
@@ -1063,7 +1063,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           value={notasContacto}
           onChange={(e) => guardarNotas(e.target.value)}
           placeholder="Notas solo visibles para el equipo..."
-          className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/70 p-2.5 text-xs text-gray-800 placeholder:text-gray-400 transition-colors focus:border-brand-500 focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+          className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/70 p-2.5 text-xs text-gray-800 placeholder:text-gray-400 transition-colors focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
         />
       </div>
 
@@ -1077,7 +1077,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             <button
               type="button"
               onClick={() => navigate("/pedidos")}
-              className="text-[11px] font-semibold text-brand-600 hover:underline dark:text-brand-400"
+              className="text-[11px] font-semibold text-secondary-600 hover:underline dark:text-brand-400"
             >
               Ver Kanban →
             </button>
@@ -1092,7 +1092,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             <button
               type="button"
               onClick={() => setModalCrearOpen(true)}
-              className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-brand-500 hover:underline"
+              className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 hover:underline"
             >
               <svg
                 width="12"

@@ -350,7 +350,7 @@ const ClientesModal = observer(
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar cliente o teléfono…"
-            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-10 pr-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90"
+            className="h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-10 pr-4 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-300 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/20 dark:border-gray-700 dark:text-white/90"
           />
         </div>
 
@@ -442,7 +442,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
                 className={`group cursor-pointer rounded-2xl p-4 border transition-all duration-200 ${
                   atencion === "pide_asesor"
                     ? "border-error-200 bg-error-50/50 hover:border-error-300 dark:border-error-900/50 dark:bg-error-950/20"
-                    : "border-gray-100 bg-gray-50/50 hover:bg-white hover:border-brand-200 hover:shadow-theme-xs dark:border-gray-800/80 dark:bg-gray-800/30 dark:hover:bg-gray-800"
+                    : "border-gray-100 bg-gray-50/50 hover:bg-white hover:border-secondary-200 hover:shadow-theme-xs dark:border-gray-800/80 dark:bg-gray-800/30 dark:hover:bg-gray-800"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -475,7 +475,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
                       <AlertCircle className="size-3" />
                       Solicitó atención humana
                     </span>
-                    <span className="text-brand-600 dark:text-brand-400 hover:underline">Responder →</span>
+                    <span className="text-secondary-600 dark:text-brand-400 hover:underline">Responder →</span>
                   </div>
                 )}
               </div>
@@ -487,7 +487,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
       <button
         type="button"
         onClick={onAbrir}
-        className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-brand-300 hover:text-brand-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700 cursor-pointer"
+        className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700 cursor-pointer"
       >
         Ver todas las conversaciones ({filas.length})
       </button>
@@ -513,7 +513,7 @@ const TopKpiCards = observer(() => {
       {/* Kpi 1: Total Pedidos */}
       <div
         onClick={() => navigate("/pedidos")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-200 dark:border-gray-800 dark:bg-gray-900"
+        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -535,7 +535,7 @@ const TopKpiCards = observer(() => {
       {/* Kpi 2: Sales Revenue */}
       <div
         onClick={() => navigate("/pedidos/analitica")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-200 dark:border-gray-800 dark:bg-gray-900"
+        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
@@ -557,7 +557,7 @@ const TopKpiCards = observer(() => {
       {/* Kpi 3: Submission Rate / Cumplimiento */}
       <div
         onClick={() => navigate("/pedidos/analitica")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-200 dark:border-gray-800 dark:bg-gray-900"
+        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
@@ -579,7 +579,7 @@ const TopKpiCards = observer(() => {
       {/* Kpi 4: Sales Leads / Clientes */}
       <div
         onClick={() => navigate("/conversaciones")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-brand-200 dark:border-gray-800 dark:bg-gray-900"
+        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
@@ -808,7 +808,7 @@ export const InicioPage = observer(() => {
               <button
                 type="button"
                 onClick={() => navigate("/pedidos")}
-                className="flex items-center gap-1 text-xs font-bold text-brand-600 hover:underline dark:text-brand-400 cursor-pointer"
+                className="flex items-center gap-1 text-xs font-bold text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
               >
                 <span>Ver Tablero</span>
                 <ArrowUpRight className="size-3.5" />

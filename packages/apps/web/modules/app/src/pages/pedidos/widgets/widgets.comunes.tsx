@@ -75,7 +75,7 @@ export function CabeceraWidget({
         <button
           type="button"
           onClick={onAccion}
-          className="shrink-0 text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+          className="shrink-0 text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
         >
           {accion}
         </button>
@@ -174,7 +174,7 @@ export function KpiCard({
       style={{ animationDelay: retardoEscalonado(indice) }}
       className="animate-entrada-lista group block h-full w-full text-left"
     >
-      <div className="h-full transition-all group-hover:border-brand-300 dark:group-hover:border-brand-700">
+      <div className="h-full transition-all group-hover:border-secondary-300 dark:group-hover:border-brand-700">
         {contenido}
       </div>
     </button>

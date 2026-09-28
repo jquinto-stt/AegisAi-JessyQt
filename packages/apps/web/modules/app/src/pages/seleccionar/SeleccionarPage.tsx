@@ -93,8 +93,8 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
     <Card
       className={`h-full transition-all ${
         selected
-          ? "border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/30 dark:border-brand-400 dark:bg-brand-500/10"
-          : "hover:border-brand-300 hover:shadow-theme-xs dark:hover:border-brand-500/40"
+          ? "border-secondary-500 bg-secondary-50/60 ring-2 ring-brand-500/30 dark:border-secondary-400 dark:bg-brand-500/10"
+          : "hover:border-secondary-300 hover:shadow-theme-xs dark:hover:border-secondary-500/40"
       }`}
     >
       {/* IconCard blueprint: contenedor de ícono h-14 max-w-14 rounded-[10.5px] */}
@@ -102,7 +102,7 @@ const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: Sel
         className={`mb-5 flex h-14 max-w-14 items-center justify-center rounded-[10.5px] transition-colors ${
           selected
             ? "bg-brand-500 text-white"
-            : "bg-brand-50 text-brand-500 group-hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400"
+            : "bg-secondary-50 text-secondary-600 group-hover:bg-secondary-100 dark:bg-brand-500/10 dark:text-brand-400"
         }`}
       >
         <Icon />

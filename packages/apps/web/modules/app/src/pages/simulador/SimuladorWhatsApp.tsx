@@ -117,7 +117,7 @@ export const SimuladorWhatsApp = observer(() => {
                     onClick={() => setLocalId(conv.id)}
                     className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
                       activoItem
-                        ? "border-brand-500 bg-brand-50/60 dark:bg-brand-500/10"
+                        ? "border-secondary-500 bg-secondary-50/60 dark:bg-brand-500/10"
                         : "border-transparent hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                     }`}
                   >
@@ -128,7 +128,7 @@ export const SimuladorWhatsApp = observer(() => {
                       <p className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
                         {conv.contacto.nombre}
                       </p>
-                      <p className="truncate text-xs text-brand-600 dark:text-brand-400">
+                      <p className="truncate text-xs text-secondary-600 dark:text-brand-400">
                         {etiquetaEstado(conv)}
                       </p>
                       <p className="mt-0.5 truncate text-xs text-gray-400">{ultimoTexto(items)}</p>
@@ -267,7 +267,7 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
           <button
             type="button"
             onClick={solicitarAsesor}
-            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
+            className="inline-flex items-center gap-1.5 rounded-full border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-medium text-ink-title transition-colors hover:bg-secondary-100 dark:border-secondary-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
           >
             <span aria-hidden>🙋</span>
             Hablar con un asesor
@@ -294,7 +294,7 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
             onKeyDown={onKeyDown}
             rows={1}
             placeholder="Escribe un mensaje"
-            className={`max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border bg-gray-100 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-brand-400 dark:bg-gray-800 dark:text-white/90 ${
+            className={`max-h-32 min-h-[44px] flex-1 resize-none rounded-2xl border bg-gray-100 px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-secondary-400 dark:bg-gray-800 dark:text-white/90 ${
               excedido
                 ? "border-error-400 focus:border-error-400"
                 : "border-transparent"
@@ -342,7 +342,7 @@ const Burbuja = ({ m }: { m: Mensaje }) => {
         }`}
       >
         {etiqueta && (
-          <p className="mb-0.5 text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+          <p className="mb-0.5 text-[11px] font-semibold text-secondary-600 dark:text-brand-400">
             {etiqueta}
           </p>
         )}

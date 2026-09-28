@@ -109,7 +109,7 @@ const AccionesMenu = observer(
             <button
               type="button"
               onClick={run(() => onDetalle(pedido.id))}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-600 dark:text-gray-200 dark:hover:bg-brand-500/10"
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-secondary-50 hover:text-secondary-600 dark:text-gray-200 dark:hover:bg-brand-500/10"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1 1 0 010-.644C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178a1 1 0 010 .644C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               Ver detalle
@@ -157,7 +157,7 @@ const AccionesMenu = observer(
 /** Escala de color por número de pedidos con la paleta brand de Necto. */
 const nivelColor = (n: number): string => {
   if (n <= 0) return "bg-gray-100 dark:bg-white/[0.06]";
-  if (n === 1) return "bg-brand-100 dark:bg-brand-500/25";
+  if (n === 1) return "bg-secondary-100 dark:bg-brand-500/25";
   if (n <= 3) return "bg-brand-300 dark:bg-brand-500/50";
   if (n <= 5) return "bg-brand-400 dark:bg-brand-500/75";
   return "bg-brand-500 dark:bg-brand-500";
@@ -166,7 +166,7 @@ const nivelColor = (n: number): string => {
 /** Leyenda de la escala (chips "menos → más"). */
 const LEYENDA: { label: string; clase: string }[] = [
   { label: "0", clase: "bg-gray-100 dark:bg-white/[0.06]" },
-  { label: "1", clase: "bg-brand-100 dark:bg-brand-500/25" },
+  { label: "1", clase: "bg-secondary-100 dark:bg-brand-500/25" },
   { label: "2–3", clase: "bg-brand-300 dark:bg-brand-500/50" },
   { label: "4–5", clase: "bg-brand-400 dark:bg-brand-500/75" },
   { label: "6+", clase: "bg-brand-500 dark:bg-brand-500" },
@@ -314,7 +314,7 @@ const HeatmapActividad = observer(
         <div>
           <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">Actividad diaria</h3>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            <span className="font-medium text-brand-600 dark:text-brand-400">Simulación anual</span>
+            <span className="font-medium text-secondary-600 dark:text-brand-400">Simulación anual</span>
             {" · "}
             {rangoManual ? (
               <>{totalRango} pedidos en el rango seleccionado</>
@@ -538,7 +538,7 @@ export const HistorialPage = observer(() => {
             <button
               type="button"
               onClick={limpiar}
-              className="text-xs font-medium text-brand-500 hover:text-brand-600 dark:text-brand-400"
+              className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
             >
               Limpiar filtros
             </button>
@@ -655,7 +655,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
         <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
-              <DeliveryIcon className="h-3.5 w-3.5 text-brand-500" />
+              <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600" />
               Dirección de entrega
             </span>
             {pedido.direccionEntrega?.calle && (
@@ -663,7 +663,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
                 href={mapsUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 hover:underline dark:text-brand-400"
               >
                 <MapPinIcon className="h-3.5 w-3.5" />
                 Abrir en Google Maps

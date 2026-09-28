@@ -118,7 +118,7 @@ export default function SignInForm() {
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
                     <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">Mantener sesion iniciada</span>
                   </div>
-                  <Link to="/forgot-password" className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400">Olvidaste tu contrasena?</Link>
+                  <Link to="/forgot-password" className="text-sm text-secondary-600 hover:text-secondary-600 dark:text-brand-400">Olvidaste tu contrasena?</Link>
                 </div>
                 <div>
                   <Button className="w-full" size="sm" type="submit">Iniciar sesion</Button>
@@ -149,13 +149,13 @@ export default function SignInForm() {
             <div className="mt-5 space-y-2 text-center">
               <p className="text-sm font-normal text-gray-700 dark:text-gray-400">
                 ¿No tienes una cuenta?{" "}
-                <Link to="/register" className="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-medium">Registrate aqui</Link>
+                <Link to="/register" className="text-secondary-600 hover:text-secondary-600 dark:text-brand-400 font-medium">Registrate aqui</Link>
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 ¿Tienes alguna duda sobre Necto?{" "}
                 <Link
                   to="/ayuda"
-                  className="font-semibold text-gray-700 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400 underline"
+                  className="font-semibold text-gray-700 dark:text-gray-300 hover:text-secondary-600 dark:hover:text-brand-400 underline"
                 >
                   Centro de ayuda y FAQ
                 </Link>

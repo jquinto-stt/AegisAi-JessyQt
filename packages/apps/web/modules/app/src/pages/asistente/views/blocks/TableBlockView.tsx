@@ -77,7 +77,7 @@ export const TableBlockView = ({ block }: { block: TableBlock }) => {
                 data: block,
               })
             }
-            className="flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300"
+            className="flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-secondary-50 px-2.5 py-1 text-xs font-medium text-ink-title hover:bg-secondary-100 dark:border-secondary-500/30 dark:bg-brand-500/10 dark:text-brand-300"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" />
