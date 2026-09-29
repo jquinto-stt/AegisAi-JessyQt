@@ -178,16 +178,6 @@ const PRESENTACION_INTEGRABLE: Record<ModuloIntegrable, PresentacionIntegrable> 
     proveedor: "Núcleo de Pedidos",
     version: "Plugin oficial · v1.2",
   },
-  inventario: {
-    Icono: BoxCubeIcon,
-    // Tono de aviso, no de marca: el naranja de la marca es el acento de Pedidos
-    // en esta misma pantalla y dos tarjetas contiguas del mismo color se leerían
-    // como el mismo módulo.
-    tono: "bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400",
-    proveedor: "Núcleo de Inventario",
-    // v1.0 es la primera versión: el proveedor se registró el 21/09.
-    version: "Plugin oficial · v1.0",
-  },
 };
 
 /** Clases de la chapa de versión. Igual en los dos módulos, a propósito. */

@@ -95,22 +95,6 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
     { id: "conversaciones", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
   ],
-  // Inventario: qué hay en el almacén, dónde y a qué costo. Módulo INDEPENDIENTE
-  // de Pedidos — no comparte dominio, solo el vocabulario de catálogo. Su
-  // configuración se entra con `settings.read` y se guarda con
-  // `settings.manage`, igual que las otras tres configuraciones: no se inventa
-  // una capacidad `inventory.settings` que duplicaría una existente.
-  inventario: [
-    { id: "inicio", label: "Inicio", path: "/inventario/inicio", capacidad: "inventory.read" },
-    { id: "existencias", label: "Existencias", path: "/inventario", capacidad: "inventory.read" },
-    { id: "movimientos", label: "Movimientos", path: "/inventario/movimientos", capacidad: "inventory.read" },
-    // «Conteo físico» y no «Auditoría»: la etiqueta tiene que decirle al
-    // operador lo que va a hacer. Y se entra con `inventory.read` porque MIRAR
-    // una auditoría no escribe nada — quien la abre y la concilia es
-    // `inventory.adjust`, y eso se decide dentro, no en el enlace.
-    { id: "auditoria", label: "Conteo físico", path: "/inventario/auditoria", capacidad: "inventory.read" },
-    { id: "configuracion", label: "Configuración", path: "/inventario/config", capacidad: "settings.read" },
-  ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -202,11 +186,11 @@ const SEED: Operador[] = [
     nombre: "Lucía Herrera",
     email: "lucia.herrera@negocio.com",
     telefono: "+57 312 555 6677",
-    cargo: "Auxiliar de Almacén",
+    cargo: "Despacho y Empaque",
     avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
     estado: "activo",
     modulo: "pedidos",
-    rolId: "bodega",
+    rolId: "preparacion",
   },
   {
     // `personalizado` es una PLANTILLA que empieza vacía, no un rol vacío por

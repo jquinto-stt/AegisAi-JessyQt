@@ -309,13 +309,6 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
     { seccionId: "analitica", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
   ],
-  inventario: [
-    { seccionId: "inicio", Icono: GridIcon },
-    { seccionId: "existencias", Icono: BoxIconLine },
-    { seccionId: "movimientos", Icono: TableIcon },
-    { seccionId: "auditoria", Icono: CheckLineIcon },
-    { seccionId: "configuracion", Icono: PlugInIcon },
-  ],
 };
 
 /**

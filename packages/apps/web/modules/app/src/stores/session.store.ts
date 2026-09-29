@@ -40,13 +40,13 @@ import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Los módulos del producto. */
-export type Modulo = "pedidos" | "inventario";
+export type Modulo = "pedidos";
 
 /**
  * Orden canónico de los módulos. Es el orden de `CATALOGO_MODULOS` y el que
  * decide cuál es el «principal» de una sesión con varios.
  */
-const ORDEN_MODULOS: Modulo[] = ["pedidos", "inventario"];
+const ORDEN_MODULOS: Modulo[] = ["pedidos"];
 
 /**
  * Reduce la pertenencia de la organización a los módulos que la SESIÓN sabe operar.

@@ -73,9 +73,6 @@ export const ContextoModulo = observer(({ convId, modulo }: ContextoModuloProps)
           telefono={conv.contacto.telefono}
         />
       );
-
-    case "inventario":
-      return <SinVistaDeContexto label={MODULOS_INTEGRABLES.inventario.label} />;
   }
 });
 
@@ -216,15 +213,4 @@ const ContextoPedidos = observer(
   },
 );
 
-// ═══════════════════════════════════════════════════════════════════════════
-// MÓDULO DECLARADO SIN VISTA DE CONTEXTO
-// ═══════════════════════════════════════════════════════════════════════════
 
-const SinVistaDeContexto = ({ label }: { label: string }) => (
-  <div className="flex h-full items-center justify-center p-6">
-    <p className="max-w-xs rounded-lg border border-dashed border-gray-300 p-4 text-center text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
-      {label} está conectado, pero todavía no aporta una vista de contexto a la
-      conversación.
-    </p>
-  </div>
-);

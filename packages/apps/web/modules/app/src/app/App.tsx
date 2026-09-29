@@ -11,13 +11,7 @@ import {
   ConfigPage as PedidosConfigPage,
 } from "@/pages/pedidos";
 import { PerfilOperadorPage, EquipoPage } from "@/pages/equipo";
-import {
-  InventarioInicioPage,
-  ExistenciasPage,
-  MovimientosPage,
-  AuditoriaPage,
-  InventarioConfigPage,
-} from "@/pages/inventario";
+
 import { ConfiguracionPage } from "@/pages/configuracion";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
@@ -132,30 +126,6 @@ export default function App() {
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Módulo Inventario — espejo exacto de Pedidos, con las MISMAS dos
-            guardas apiladas y sin `React.lazy`: el repo no hace code splitting y
-            las páginas de Pedidos se importan estáticamente. Introducirlo aquí
-            sería cambiar la arquitectura de carga para un módulo.
-
-            `/inventario/inicio` es la ruta de ENTRADA (la del catálogo y la del
-            redirect del login) y `/inventario` es «Existencias», igual que en
-            Pedidos `/pedidos/inicio` es la llegada y `/pedidos` el tablero. La
-            distinción está escrita en `plataforma.store.ts` y manda la de
-            entrada.
-
-            `config` se entra con `settings.read` y se guarda con
-            `settings.manage`, como las otras tres configuraciones. */}
-        <Route path="/inventario/inicio" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><InventarioInicioPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventario" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><ExistenciasPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventario/movimientos" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><MovimientosPage /></CapabilityGuard></ModuloGuard>} />
-        {/* El conteo físico se MIRA con `inventory.read` y se ESCRIBE con
-            `inventory.adjust`, que es la misma capacidad que ya protege el
-            ajuste manual del kárdex. La compuerta de la ruta es la de lectura a
-            propósito: negar la pantalla a quien no puede conciliar escondería
-            las discrepancias que esa persona necesita ver. Lo que se apaga es el
-            botón, con su motivo escrito. */}
-        <Route path="/inventario/auditoria" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="inventory.read"><AuditoriaPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventario/config" element={<ModuloGuard modulo="inventario"><CapabilityGuard capacidad="settings.read"><InventarioConfigPage /></CapabilityGuard></ModuloGuard>} />
 
         {/* Organización — DOS pantallas hermanas: configuración de la
             organización y equipo. Las dos exigen `team.manage`.

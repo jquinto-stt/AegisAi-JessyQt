@@ -130,7 +130,6 @@ function extraerPayload(evidence?: ToolResult): Mensaje["payload"] | undefined {
  */
 const MODULO_A_DESTINO: Record<Modulo, ModuloDestino> = {
   pedidos: "pedidos",
-  inventario: "inventario",
 };
 
 /**

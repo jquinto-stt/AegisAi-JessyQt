@@ -29,43 +29,22 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
   const store = new PlataformaStore();
 
   it("expone el catálogo completo, en orden de declaración", () => {
-    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos", "inventario"]);
+    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos"]);
     expect(store.catalogoModulos).toHaveLength(Object.keys(CATALOGO_MODULOS).length);
   });
 
   it("esModuloDisponible responde por el catálogo, no por lo que tenga la organización", () => {
-    // Que la plataforma OFREZCA un módulo no dice nada de si la organización lo
-    // tiene. Ambas preguntas son ciertas a la vez y viven en stores distintos.
     expect(store.esModuloDisponible("pedidos")).toBe(true);
-    // `inventario` pasó a `true` el 21/09, con el módulo construido y sus rutas
-    // en pie. Esta aserción decía `false` y era la mitad de una contradicción
-    // histórica: `integraciones.store.test.ts` exigía `false` para el mismo
-    // módulo en el otro catálogo, y los dos tests estaban protegiendo la
-    // incoherencia en vez de detectarla. Hoy los dos dicen `true` y el test de
-    // abajo fija que no puedan volver a discrepar.
-    expect(store.esModuloDisponible("inventario")).toBe(true);
   });
 
   it("lo declarado y lo disponible son cosas distintas, y el catálogo lo dice", () => {
-    // La lista del catálogo es «lo que la plataforma NOMBRA»; `disponible` es
-    // «lo que hoy se puede usar». Confundirlas es lo que hacía que
-    // `/configuracion` ofreciera instalar un módulo inexistente.
-    //
-    // El catálogo sigue nombrando los dos módulos y hoy los dos son usables, así
-    // que la distinción no se ve por diferencia de longitud: se ve en que las dos
-    // listas son el MISMO conjunto, que es lo que la hace honesta.
-    expect(store.catalogoModulos.map((m) => m.id)).toContain("inventario");
+    expect(store.catalogoModulos.map((m) => m.id)).toContain("pedidos");
     expect(store.catalogoModulos.filter((m) => m.disponible).map((m) => m.id)).toEqual([
       "pedidos",
-      "inventario",
     ]);
   });
 
   it("coincide con MODULOS_INTEGRABLES: los dos catálogos no pueden contradecirse", () => {
-    // Son dos catálogos distintos (módulos de negocio / módulos integrables en la
-    // IA) y el mismo módulo aparece en ambos. Si uno dice `true` y el otro `false`,
-    // la app afirma dos cosas opuestas del mismo módulo según por dónde se mire.
-    // Estuvo así: `inventario` era `true` aquí y `false` allí.
     for (const id of Object.keys(CATALOGO_MODULOS) as IdModuloNegocio[]) {
       expect(
         MODULOS_INTEGRABLES[id].disponible,
@@ -76,7 +55,6 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
 
   it("conectoresDe devuelve los conectores del módulo en orden canónico", () => {
     expect(store.conectoresDe("pedidos")).toEqual(IDS_CONECTORES);
-    expect(store.conectoresDe("inventario")).toEqual(IDS_CONECTORES);
   });
 
   it("el catálogo es exhaustivo: todo id del tipo tiene módulo y conectores declarados", () => {

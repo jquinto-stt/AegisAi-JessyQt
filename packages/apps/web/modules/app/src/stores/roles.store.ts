@@ -60,11 +60,6 @@ export type Capacidad =
   // Equipo
   | "team.read"
   | "team.manage"
-  // Inventario
-  | "inventory.read"      // Ver artículos, existencias y kárdex
-  | "inventory.manage"    // Administrar artículos, bodegas y mínimos
-  | "inventory.move"      // Registrar entradas, salidas y transferencias
-  | "inventory.adjust"    // Corregir existencias por conteo físico
   // Asistente IA
   | "assistant.use";
 
@@ -105,10 +100,6 @@ export const CAPACIDADES: Capacidad[] = [
   "settings.manage",
   "team.read",
   "team.manage",
-  "inventory.read",
-  "inventory.manage",
-  "inventory.move",
-  "inventory.adjust",
   "assistant.use",
 ];
 
@@ -131,10 +122,6 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
   "settings.manage": "Editar configuración",
   "team.read": "Ver equipo",
   "team.manage": "Gestionar equipo",
-  "inventory.read": "Ver existencias",
-  "inventory.manage": "Administrar artículos y bodegas",
-  "inventory.move": "Registrar movimientos",
-  "inventory.adjust": "Corregir existencias",
   "assistant.use": "Usar asistente IA",
 };
 
@@ -156,7 +143,6 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
   { id: "ordenes", label: "Órdenes", capacidades: ["orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit", "orders.delete"] },
   { id: "preparacion", label: "Preparación", capacidades: ["preparation.read", "preparation.manage"] },
   { id: "programados", label: "Programados", capacidades: ["scheduled.read", "scheduled.manage"] },
-  { id: "inventario", label: "Inventario", capacidades: ["inventory.read", "inventory.manage", "inventory.move", "inventory.adjust"] },
   { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.respond", "channels.manage"] },
   { id: "ajustes", label: "Configuración", capacidades: ["settings.read", "settings.manage"] },
   { id: "equipo", label: "Equipo", capacidades: ["team.read", "team.manage"] },
@@ -232,23 +218,7 @@ export const ROLES_SEED: Rol[] = [
     descripcion: "Prepara los pedidos confirmados.",
     capacidades: ["orders.read", "preparation.read", "preparation.manage", "scheduled.read"],
     sistema: true,
-  },
-  {
-    /**
-     * Rol de almacén. El catálogo era enteramente centrado en pedidos
-     * (`supervisor_pedidos`, `vendedor`, `preparacion`) y **ninguno describía a
-     * quien opera un almacén**.
-     *
-     * Lleva `inventory.move` y `inventory.adjust` pero **no** `inventory.manage`:
-     * administrar el catálogo (SKUs, costos, mínimos, bodegas) es trabajo de
-     * quien configura, no de quien despacha. Y lleva `inventory.read` porque sin
-     * él no podría ver lo que está moviendo.
-     */
-    id: "bodega",
-    nombre: "Bodega",
-    descripcion: "Registra entradas, salidas y conteos del almacén.",
-    capacidades: ["inventory.read", "inventory.move", "inventory.adjust"],
-    sistema: true,
+
   },
   {
     id: "personalizado",

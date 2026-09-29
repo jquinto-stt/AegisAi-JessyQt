@@ -64,16 +64,7 @@ const OrdersBrandLogo = () => (
   </div>
 );
 
-/** Logo del Módulo de Inventario */
-const InventoryBrandLogo = () => (
-  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-secondary-500/10 dark:text-secondary-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
-      <polygon points="12 2 2 7 12 12 22 7 12 2" />
-      <polyline points="2 17 12 22 22 17" />
-      <polyline points="2 12 12 17 22 12" />
-    </svg>
-  </div>
-);
+
 
 /** Logo de Integración: Necto IA */
 const NectoIaIntegrationLogo = () => (
@@ -148,27 +139,6 @@ const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
       "Asignación de repartidores y transportadoras con seguimiento",
     ],
   },
-  inventario: {
-    logo: <InventoryBrandLogo />,
-    // Las CINCO rutas reales del módulo. Antes estaba VACÍO con un comentario que
-    // decía que `/inventario` no existía — y era verdad entonces: el modal de
-    // detalles mostraba un módulo sin ninguna ruta, que es la mitad de una ficha.
-    rutasHabilitadas: [
-      "/inventario/inicio",
-      "/inventario",
-      "/inventario/movimientos",
-      "/inventario/auditoria",
-      "/inventario/config",
-    ],
-    rolesRequeridos: "inventory.read, inventory.manage, inventory.move, inventory.adjust",
-    capacidades: [
-      "Existencias derivadas del kárdex: entradas, salidas, transferencias y ajustes",
-      "Multi-almacén con una bodega principal y transferencias entre bodegas",
-      "Catálogo de artículos con variantes, punto de reorden y valoración a costo",
-      "Trazabilidad por lotes con vencimientos y despacho FEFO",
-      "Conteo físico con conciliación de diferencias contra el kárdex",
-    ],
-  },
 };
 
 /** Identidad (catálogo) + presentación (esta pantalla). Una sola fuente por dato. */
@@ -179,7 +149,6 @@ const moduloDef = (id: IdModuloNegocio): ModuloConfigDef => ({
 
 const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
   pedidos: moduloDef("pedidos"),
-  inventario: moduloDef("inventario"),
 };
 
 const IDS_MODULOS = Object.keys(MODULOS_DEF) as IdModuloNegocio[];

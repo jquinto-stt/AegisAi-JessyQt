@@ -16,53 +16,6 @@ export type {
 } from '@/stores/pedidos.store';
 export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
 
-// Inventario — módulo independiente de Pedidos (D1/D2): no comparte dominio,
-// solo el vocabulario de catálogo. Ver `stores/inventario.independencia.test.ts`.
-export {
-  inventarioStore,
-  InventarioStore,
-  seed as inventarioSeed,
-  TIPO_MOVIMIENTO_LABEL,
-  TIPOS_MOVIMIENTO,
-  ESTADO_STOCK_LABEL,
-  ESTADO_STOCK_BADGE,
-  ESTADO_AUDITORIA_LABEL,
-  ESTADO_AUDITORIA_BADGE,
-  ESTADO_LINEA_LABEL,
-  ESTADO_LINEA_BADGE,
-  SEVERIDAD_ALERTA_LABEL,
-  URGENCIA_VENCIMIENTO_LABEL,
-  URGENCIA_VENCIMIENTO_BADGE,
-  UNIDAD_MEDIDA_LABEL,
-  UNIDADES_MEDIDA,
-} from '@/stores/inventario.store';
-export type {
-  InventarioConfig,
-  DatosInventario,
-  NuevoMovimiento,
-  ResultadoRegistro,
-  ResultadoAccion,
-  ResultadoApertura,
-  ResultadoConciliacion,
-  LineaAuditoria,
-  SeveridadAlerta,
-} from '@/stores/inventario.store';
-export type {
-  Articulo,
-  Bodega,
-  Movimiento,
-  TipoMovimiento,
-  UnidadMedida,
-  EstadoStock,
-  NivelStock,
-  LoteArticulo,
-  LoteDisponible,
-  UrgenciaVencimiento,
-  AuditoriaInventario,
-  EstadoAuditoria,
-  EstadoLinea,
-  ItemAuditoria,
-} from '@/domain/inventario/inventario.domain';
 
 export { sessionStore, SessionStore, modulosOperablesDeSesion } from '@/stores/session.store';
 export type { Modulo, TipoSesion, AccessContext, DataScope } from '@/stores/session.store';

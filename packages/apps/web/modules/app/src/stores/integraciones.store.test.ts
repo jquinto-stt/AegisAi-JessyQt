@@ -140,18 +140,12 @@ describe("catálogo de módulos integrables", () => {
     expect([...MODULOS_CONOCIDOS]).toEqual(disponibles);
   });
 
-  it("inventario está DISPONIBLE y completo: módulo y capacidad declarados", async () => {
-    // Este test afirmaba lo contrario hasta el 21/09 («declarado y NO
-    // disponible»). No se ha borrado: se ha invertido, porque el defecto que
-    // vigila es el mismo en los dos sentidos — que el catálogo del asistente y
-    // el estado real del módulo discrepen. Un `disponible: true` con `modulo` o
-    // `capacidad` en `null` haría que la tarjeta se encendiera y el filtro del
-    // registry no tuviera por dónde filtrar.
+  it("pedidos está DISPONIBLE y completo: módulo y capacidad declarados", async () => {
     const { MODULOS_INTEGRABLES } = await import("@/stores/integraciones.store");
 
-    expect(MODULOS_INTEGRABLES.inventario.disponible).toBe(true);
-    expect(MODULOS_INTEGRABLES.inventario.modulo).toBe("inventario");
-    expect(MODULOS_INTEGRABLES.inventario.capacidad).toBe("inventory.read");
+    expect(MODULOS_INTEGRABLES.pedidos.disponible).toBe(true);
+    expect(MODULOS_INTEGRABLES.pedidos.modulo).toBe("pedidos");
+    expect(MODULOS_INTEGRABLES.pedidos.capacidad).toBe("orders.read");
   });
 });
 
@@ -160,22 +154,11 @@ describe("catálogo de módulos integrables", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("estado de conexión", () => {
-  it("arranca con Pedidos conectado y sin módulos declarados conectados", async () => {
+  it("arranca con Pedidos conectado", async () => {
     const { integracionesStore } = await import("@/stores/integraciones.store");
 
     expect(integracionesStore.estaConectado("pedidos")).toBe(true);
-    expect(integracionesStore.estaConectado("inventario")).toBe(false);
     expect(integracionesStore.modulosHabilitados).toEqual(["pedidos"]);
-  });
-
-  it("SÍ se puede conectar inventario desde que está disponible", async () => {
-    const { integracionesStore } = await import("@/stores/integraciones.store");
-
-    expect(integracionesStore.conectar("inventario")).toBe(true);
-    expect(integracionesStore.estaConectado("inventario")).toBe(true);
-    expect(integracionesStore.modulosHabilitados).toEqual(["pedidos", "inventario"]);
-
-    integracionesStore.desconectar("inventario");
   });
 
   it("NO se puede conectar un módulo que no está disponible", async () => {
@@ -183,21 +166,14 @@ describe("estado de conexión", () => {
       "@/stores/integraciones.store"
     );
 
-    // Guarda de profundidad: aunque un llamador olvidara mirar `disponible`, el
-    // store rechaza la conexión sin mutar estado.
-    //
-    // **La rama es hoy inalcanzable por el catálogo**: los dos módulos están
-    // disponibles, así que un test que llamara a `conectar("inventario")` a
-    // secas pasaría midiendo el caso contrario. Para que siga midiendo la
-    // guarda, se apaga el módulo un momento y se restaura pase lo que pase —
-    // dejarlo apagado contaminaría los demás tests del archivo.
-    const entrada = MODULOS_INTEGRABLES.inventario as { disponible: boolean };
+    const entrada = MODULOS_INTEGRABLES.pedidos as { disponible: boolean };
     const original = entrada.disponible;
     try {
       entrada.disponible = false;
-      expect(integracionesStore.conectar("inventario")).toBe(false);
-      expect(integracionesStore.estaConectado("inventario")).toBe(false);
-      expect(integracionesStore.modulosHabilitados).toEqual(["pedidos"]);
+      integracionesStore.desconectar("pedidos");
+      expect(integracionesStore.conectar("pedidos")).toBe(false);
+      expect(integracionesStore.estaConectado("pedidos")).toBe(false);
+      expect(integracionesStore.modulosHabilitados).toEqual([]);
     } finally {
       entrada.disponible = original;
     }
@@ -226,8 +202,9 @@ describe("estado de conexión", () => {
   it("desconectar algo que no estaba conectado es no-op", async () => {
     const { integracionesStore } = await import("@/stores/integraciones.store");
 
-    integracionesStore.desconectar("inventario");
-    expect(integracionesStore.modulosHabilitados).toEqual(["pedidos"]);
+    integracionesStore.desconectar("pedidos");
+    integracionesStore.desconectar("pedidos");
+    expect(integracionesStore.modulosHabilitados).toEqual([]);
   });
 
   it("entradas y modulosConContexto salen en orden canónico", async () => {
@@ -307,42 +284,17 @@ describe("persistencia", () => {
     expect(integracionesStore.conectados).toEqual(["pedidos"]);
   });
 
-  it("restaura inventario, que ya está disponible", async () => {
-    // La contrapartida del caso de abajo: con el módulo disponible, lo guardado
-    // se respeta. Sin este test, un recorte demasiado agresivo al restaurar
-    // pasaría inadvertido — el interruptor se desharía solo al recargar.
-    localStorage.setItem(CLAVE, JSON.stringify(["inventario"]));
-    vi.resetModules();
-    const { integracionesStore } = await import("@/stores/integraciones.store");
-
-    expect(integracionesStore.estaConectado("inventario")).toBe(true);
-    expect(integracionesStore.modulosHabilitados).toEqual(["inventario"]);
-  });
-
   it("NO restaura un módulo que hoy no está disponible", async () => {
-    // Una versión anterior pudo guardar un módulo que hoy está declarado pero
-    // no implementado. Restaurarlo dejaría el estado afirmando una conexión que
-    // el catálogo no respalda: ante la duda, se desconecta (el asistente es
-    // fail-closed en todo su recorrido).
-    //
-    // Hoy no hay ningún módulo en ese estado, así que se fabrica uno apagando
-    // `inventario` mientras dure el test y restaurándolo después.
-    //
-    // **El orden importa y no es obvio**: el store singleton se construye al
-    // EVALUAR el módulo, así que mutar el catálogo después de importarlo no
-    // cambiaría nada. Por eso se construye una instancia propia con
-    // `new IntegracionesStore()` DESPUÉS de apagar el módulo: su constructor es
-    // quien llama a `loadConectados()`.
     vi.resetModules();
     const mod = await import("@/stores/integraciones.store");
-    const entrada = mod.MODULOS_INTEGRABLES.inventario as { disponible: boolean };
+    const entrada = mod.MODULOS_INTEGRABLES.pedidos as { disponible: boolean };
     const original = entrada.disponible;
 
-    localStorage.setItem(CLAVE, JSON.stringify(["inventario"]));
+    localStorage.setItem(CLAVE, JSON.stringify(["pedidos"]));
     entrada.disponible = false;
     try {
       const store = new mod.IntegracionesStore();
-      expect(store.estaConectado("inventario")).toBe(false);
+      expect(store.estaConectado("pedidos")).toBe(false);
       expect(store.modulosHabilitados).toEqual([]);
     } finally {
       entrada.disponible = original;

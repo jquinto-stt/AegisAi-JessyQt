@@ -51,7 +51,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
-import { BoxIconLine, CartIcon, ChevronDownIcon, GridIcon } from "@/icons";
+import { CartIcon, ChevronDownIcon, GridIcon } from "@/icons";
 import { organizacionStore, sessionStore } from "@/stores";
 import { modulosOperablesDeSesion } from "@/stores/session.store";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
@@ -61,10 +61,8 @@ import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 /** Ruta del lanzador de módulos. Fuente única en `App.tsx`; aquí se referencia. */
 const RUTA_LANZADOR = "/modulos";
 
-/** Icono por módulo operable. Ver @deuda en el encabezado. */
 const ICONO_MODULO: Record<Modulo, React.FC<React.SVGProps<SVGSVGElement>>> = {
   pedidos: CartIcon,
-  inventario: BoxIconLine,
 };
 
 /**

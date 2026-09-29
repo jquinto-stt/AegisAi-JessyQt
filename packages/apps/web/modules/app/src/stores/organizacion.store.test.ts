@@ -191,7 +191,6 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
   it("una organización recién creada no tiene ningún módulo activo ni conectores encendidos", () => {
     expect(store.esModuloInstalado("pedidos")).toBe(false);
     expect(store.esModuloActivo("pedidos")).toBe(false);
-    expect(store.esModuloActivo("inventario")).toBe(false);
     expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(false);
     expect(store.esConectorActivo("pedidos", "whatsapp")).toBe(false);
     expect(store.tieneConectorActivo("necto_ia")).toBe(false);
@@ -200,14 +199,10 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
   });
 
   it("instalar un módulo lo deja activo pero NO enciende sus conectores", () => {
-    // La app no fabrica una decisión de integración que el usuario no tomó. Antes
-    // `pedidos` nacía con WhatsApp e IA encendidos por el simple hecho de existir
-    // un default sembrado; ahora quien los enciende es el onboarding —que
-    // pregunta— o el interruptor de la tarjeta del módulo.
-    store.instalarModulo("inventario");
-    expect(store.esModuloActivo("inventario")).toBe(true);
-    expect(store.esConectorActivo("inventario", "necto_ia")).toBe(false);
-    expect(store.esConectorActivo("inventario", "whatsapp")).toBe(false);
+    store.instalarModulo("pedidos");
+    expect(store.esModuloActivo("pedidos")).toBe(true);
+    expect(store.esConectorActivo("pedidos", "necto_ia")).toBe(false);
+    expect(store.esConectorActivo("pedidos", "whatsapp")).toBe(false);
   });
 
   it("esConectorActivo exige las tres condiciones: instalado, activo y conector encendido", () => {
@@ -228,12 +223,11 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
     expect(store.modulos.pedidos.conectores.necto_ia).toBe(false);
   });
 
-  it("tieneConectorActivo es transversal: basta UN módulo activo con ese conector", () => {
+  it("tieneConectorActivo refleja los conectores de los módulos activos", () => {
     store.instalarModulo("pedidos");
-    store.instalarModulo("inventario");
     expect(store.tieneConectorActivo("whatsapp")).toBe(false);
 
-    store.setConectorActivo("inventario", "whatsapp", true);
+    store.setConectorActivo("pedidos", "whatsapp", true);
     expect(store.tieneConectorActivo("whatsapp")).toBe(true);
     expect(store.tieneConectorActivo("necto_ia")).toBe(false);
   });
@@ -299,8 +293,8 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
     expect(store.siguienteRuta).toBe("/pedidos/inicio");
   });
 
-  /** Estado persistido con Pedidos apagado e Inventario encendido. */
-  const conInventarioEncendidoYPedidosApagado = () => {
+  /** Estado persistido con Pedidos encendido. */
+  const conPedidosEncendido = () => {
     localStorage.setItem(
       "necto.organizacion.v1",
       JSON.stringify({
@@ -322,59 +316,32 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
           fechaCreacion: "2026-09-01T00:00:00.000Z",
         },
         modulos: {
-          pedidos: { instalado: true, activo: false, conectores: { necto_ia: false, whatsapp: false } },
-          inventario: { instalado: true, activo: true, conectores: { necto_ia: false, whatsapp: false } },
+          pedidos: { instalado: true, activo: true, conectores: { necto_ia: false, whatsapp: false } },
         },
       }),
     );
   };
 
   it("rutaPrimerModuloActivo devuelve la ruta de ENTRADA del primer módulo activo", () => {
-    // Este test fijaba `/inventario` (la raíz del módulo) como ruta de entrada, y
-    // era el valor equivocado: `/inventario` es «Existencias» y
-    // `/inventario/inicio` es la pantalla de llegada, la misma distinción que en
-    // Pedidos (`/pedidos` = Tablero, `/pedidos/inicio` = Inicio). El catálogo lo
-    // declara en `rutaPrincipal`, y su docblock dice que **manda la de entrada**.
-    conInventarioEncendidoYPedidosApagado();
+    conPedidosEncendido();
 
     const leido = new OrganizacionStore();
 
-    // Precondición: el estado SÍ se carga. Sin esta aserción el test pasaría por
-    // vacío (si `inventario` no se hubiera leído, el resultado sería el correcto
-    // por la razón equivocada).
-    expect(leido.esModuloActivo("inventario")).toBe(true);
-    expect(leido.esModuloActivo("pedidos")).toBe(false);
-    expect(leido.modulosActivos).toEqual(["inventario"]);
-    expect(leido.rutaPrimerModuloActivo).toBe("/inventario/inicio");
+    expect(leido.esModuloActivo("pedidos")).toBe(true);
+    expect(leido.modulosActivos).toEqual(["pedidos"]);
+    expect(leido.rutaPrimerModuloActivo).toBe("/pedidos/inicio");
   });
 
   it("rutaPrimerModuloActivo ignora un módulo NO disponible: no devuelve una ruta a ninguna parte", () => {
-    // **La rama es hoy inalcanzable por el catálogo**: los dos módulos están
-    // disponibles, así que un test que se limitara a leer el estado pasaría sin
-    // medir el filtro. Para que siga midiéndolo, se apaga `inventario` un momento
-    // y se restaura pase lo que pase.
-    //
-    // Es una guarda para el FUTURO, y por eso se prueba: si mañana se declara un
-    // módulo sin implementarlo, sin este filtro `rutaPrimerModuloActivo` devolvería
-    // una ruta que no existe en `App.tsx`, el comodín redirigiría a `/login` y
-    // «entrar al primer módulo activo» echaría al usuario de la aplicación.
-    //
-    // Se mide aquí y no en el navegador porque el único consumidor de esta ruta es
-    // `siguienteRuta`, y `siguienteRuta` solo lo leen los tests: en runtime la ruta
-    // es inalcanzable, así que un arnés de navegador pasaría con y sin el arreglo.
-    conInventarioEncendidoYPedidosApagado();
+    conPedidosEncendido();
 
-    const entrada = CATALOGO_MODULOS.inventario as { disponible: boolean };
+    const entrada = CATALOGO_MODULOS.pedidos as { disponible: boolean };
     const original = entrada.disponible;
     entrada.disponible = false;
     try {
       const leido = new OrganizacionStore();
-      // Precondición: el módulo está activo de verdad; lo único que cambia es que
-      // no está disponible.
-      expect(leido.esModuloActivo("inventario")).toBe(true);
-      // `modulosActivos` sigue diciendo la verdad de la configuración…
-      expect(leido.modulosActivos).toEqual(["inventario"]);
-      // …pero no se traduce en una ruta a ninguna parte.
+      expect(leido.esModuloActivo("pedidos")).toBe(true);
+      expect(leido.modulosActivos).toEqual(["pedidos"]);
       expect(leido.rutaPrimerModuloActivo).toBeNull();
     } finally {
       entrada.disponible = original;
@@ -389,7 +356,6 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
         organizacion: null,
         modulos: {
           pedidos: { instalado: "sí", activo: 1, conectores: { necto_ia: true, whatsapp: "true" } },
-          inventario: null,
           modulo_que_no_existe: { instalado: true, activo: true, conectores: {} },
         },
       }),
@@ -398,9 +364,7 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
     const leido = new OrganizacionStore();
     expect(leido.esModuloInstalado("pedidos")).toBe(false);
     expect(leido.esConectorActivo("pedidos", "necto_ia")).toBe(false);
-    // El módulo desconocido no entra: el `Record` se reconstruye desde el catálogo,
-    // no se confía en las claves del fichero.
-    expect(Object.keys(leido.modulos).sort()).toEqual(["inventario", "pedidos"]);
+    expect(Object.keys(leido.modulos).sort()).toEqual(["pedidos"]);
   });
 
   it("acepta un estado guardado legítimo", () => {
@@ -411,7 +375,6 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
         organizacion: null,
         modulos: {
           pedidos: { instalado: true, activo: true, conectores: { necto_ia: false, whatsapp: true } },
-          inventario: { instalado: false, activo: false, conectores: { necto_ia: false, whatsapp: false } },
         },
       }),
     );

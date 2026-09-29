@@ -71,7 +71,7 @@ import type { ModuloDestino } from "@/stores/conversaciones.types";
  * obliga a que ampliar `ModuloDestino` no amplíe por accidente lo que el
  * asistente puede conectar.
  */
-export type ModuloIntegrable = Extract<ModuloDestino, "pedidos" | "inventario">;
+export type ModuloIntegrable = Extract<ModuloDestino, "pedidos">;
 
 /** Base común a toda entrada del catálogo. */
 interface EntradaBase {
@@ -128,17 +128,6 @@ export type EntradaModuloIntegrable = EntradaDisponible | EntradaDeclarada;
  * Es un `Record` sobre la unión `ModuloIntegrable` ⇒ **exhaustivo por
  * construcción**: no se puede añadir un módulo al tipo sin darle entrada aquí, y
  * el compilador lo exige.
- *
- * Los dos módulos están DISPONIBLES desde el 21/09. El catálogo conserva la
- * distinción `EntradaDisponible` / `EntradaDeclarada` porque la forma sigue
- * siendo la correcta para el próximo módulo —lo declarado se pinta deshabilitado
- * con su motivo en vez de desaparecer—, pero hoy no hay ninguna entrada en el
- * segundo estado.
- *
- * El encendido de `inventario` se hizo como se anunció aquí: pasar `disponible` a
- * `true`, rellenar `modulo` y `capacidad`. Ni la configuración del asistente ni
- * la pestaña del chat preguntan «¿es inventario?» — se encendieron solas, que era
- * el punto de tener el interruptor en un catálogo.
  */
 export const MODULOS_INTEGRABLES: Record<ModuloIntegrable, EntradaModuloIntegrable> = {
   pedidos: {
@@ -153,29 +142,10 @@ export const MODULOS_INTEGRABLES: Record<ModuloIntegrable, EntradaModuloIntegrab
       "Comparar periodos y señalar patrones",
     ],
   },
-  inventario: {
-    // Encendido el 21/09, junto con el proveedor de tools y las cuatro rutas.
-    // `capacidad` es la que exigen las cinco tools del proveedor; el registry
-    // filtra por ella además de por el módulo conectado.
-    disponible: true,
-    modulo: "inventario",
-    capacidad: "inventory.read",
-    label: "Inventario",
-    descripcion: "Consulta existencias, reposición y valor del almacén.",
-    // Los ejemplos dicen lo que las tools HACEN, no lo que el módulo promete:
-    // «consultar disponibilidad» era una frase de folleto, y ahora hay cinco
-    // tools concretas detrás. Un ejemplo que la IA no puede cumplir es una
-    // promesa que el producto no honra.
-    ejemplos: [
-      "Cuánto queda de un artículo y en qué bodega",
-      "Qué está por debajo del punto de reorden",
-      "Cuánto vale el inventario a costo",
-    ],
-  },
 };
 
 /** Orden canónico de las tarjetas en la pantalla de configuración. */
-export const ORDEN_MODULOS_INTEGRABLES: ModuloIntegrable[] = ["pedidos", "inventario"];
+export const ORDEN_MODULOS_INTEGRABLES: ModuloIntegrable[] = ["pedidos"];
 
 /**
  * Ids del catálogo como lista, para validar entradas persistidas sin recorrer

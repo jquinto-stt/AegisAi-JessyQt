@@ -141,10 +141,7 @@ describe("Alcance — los módulos declarados son los que tienen provider regist
     const { PedidosToolProvider } = await import(
       "@/modules-tools/pedidos/pedidos.tool-provider"
     );
-    const { InventarioToolProvider } = await import(
-      "@/modules-tools/inventario/inventario.tool-provider"
-    );
-    return [new PedidosToolProvider(), new InventarioToolProvider()];
+    return [new PedidosToolProvider()];
   };
 
   it("MODULOS_CONOCIDOS coincide con los módulos del bootstrap real", async () => {

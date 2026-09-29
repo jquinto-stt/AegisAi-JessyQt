@@ -24,7 +24,7 @@
 
 import { integracionesStore, sessionStore } from "@/stores";
 import { PedidosToolProvider } from "@/modules-tools/pedidos/pedidos.tool-provider";
-import { InventarioToolProvider } from "@/modules-tools/inventario/inventario.tool-provider";
+
 import { toolRegistry } from "./registry/tool-registry";
 import type { AssistantAccessContext } from "./registry/tool-registry";
 
@@ -107,6 +107,6 @@ let inicializado = false;
 export function bootstrapAssistant(): void {
   if (inicializado) return;
   toolRegistry.register(new PedidosToolProvider());
-  toolRegistry.register(new InventarioToolProvider());
+
   inicializado = true;
 }

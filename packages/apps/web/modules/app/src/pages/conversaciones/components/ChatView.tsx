@@ -726,20 +726,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
     };
   }
 
-  // 2. Inventario
-  if (m.moduloContexto === "inventario") {
-    return {
-      nombreBot: "Chatbot Necto",
-      flujo: "Consulta de existencias + [Stock en tiempo real] + Validación de almacén",
-      tag: "+Inventario",
-      tagClass:
-        "bg-accent-50 text-accent-700 border-accent-200/80 dark:bg-accent-950/40 dark:text-accent-300 dark:border-accent-800/40",
-      modulo: "inventario",
-      accion: "Consultar en Inventario",
-    };
-  }
-
-  // 3. Handoff / derivación
+  // 2. Handoff / derivación
   if (
     estadoConv === "handoff_solicitado" ||
     m.contenido.texto.toLowerCase().includes("asesor") ||
