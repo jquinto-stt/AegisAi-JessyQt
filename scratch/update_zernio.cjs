@@ -2,7 +2,7 @@ const https = require("https");
 
 const data = JSON.stringify({
   name: "whatsapp_necto",
-  url: "https://consumption-counted-forecast-collins.trycloudflare.com/api/conversaciones/webhook/zernio",
+  url: "https://pic-made-pee-beatles.trycloudflare.com/webhooks/zernio",
   secret: "448087d89461ad0b57fc5cff387b4cda91d82cc767efd947e6a74b51ca8e945e",
   events: ["message.received", "message.edited", "message.delivered", "message.failed", "referral.received", "reaction.received", "message.read", "message.deleted", "message.sent"],
   isActive: true

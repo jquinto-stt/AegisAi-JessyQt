@@ -68,8 +68,22 @@ export type AutorMensaje = "cliente" | "negocio" | "bot";
  * los rotulase como `disponible: false`. Un valor de tipo que ninguna superficie
  * puede alcanzar no es "declaración de intención": es una etiqueta que nadie lee.
  *
- * `inventario` se queda y es distinto: existe en `CATALOGO_MODULOS` y aparece en
- * el seed de conversaciones como procedencia real de mensajes.
+ * ── `inventario` (singular) NO es el módulo `inventarios` ─────────────────
+ *
+ * Son dos vocabularios distintos y conviene no confundirlos:
+ *
+ *   · `ModuloDestino` es el vocabulario de **contexto de conversación**: a qué
+ *     dominio se refiere un mensaje. Aquí `inventario` sigue vivo, y lo está
+ *     porque `conversaciones.seed.ts` lo usa como procedencia real de dos hilos.
+ *   · `IdModuloNegocio` (en `plataforma.store`) es el catálogo de **módulos de
+ *     negocio** que la plataforma ofrece. Ahí la clave es `inventarios`, en
+ *     plural, y es el módulo nuevo — el de conteos.
+ *
+ * Es decir: `inventario` aquí no apunta a ningún módulo encendible, apunta a una
+ * etiqueta de contexto. `db.adapters.ts` valida ese vocabulario y por eso lo
+ * acepta; `ModuloGuard` lee el otro. Si algún día se quiere que un hilo de
+ * conversación referencie el módulo de conteos, el valor correcto será
+ * `"inventarios"` — no se cambia `inventario` de sitio.
  */
 export type ModuloDestino = "pedidos" | "inventario" | "general";
 

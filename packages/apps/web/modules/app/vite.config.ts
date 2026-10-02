@@ -5,6 +5,7 @@ import svgr from 'vite-plugin-svgr';
 import path from 'path';
 
 export default defineConfig({
+  root: __dirname,
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -28,7 +29,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 6020,
-    allowedHosts: true,
+    allowedHosts: ['.trycloudflare.com', 'total-authentic-inspector-farms.trycloudflare.com', 'localhost', '127.0.0.1'],
     proxy: {
       // Proxy API calls to the local backend microservice (avoids CORS in dev).
       "/api": {

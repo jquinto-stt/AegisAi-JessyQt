@@ -235,13 +235,25 @@ const Button: React.FC<ButtonProps> = ({
     icon: "h-10 w-10",
   };
 
+  // ── Por qué el relleno va en 700 y no en 500 ───────────────────────────────
+  //
+  // Medido: blanco sobre `brand-500` (#FF3C10) da 3.56:1 y sobre `error-500`
+  // (#F04438) 3.76:1. Ninguno llega a 4.5:1, y a 14 px tampoco aplica la
+  // excepción de «texto grande» (que pide 3:1 a partir de 18.66 px en negrita).
+  // El botón principal del módulo —«Crear conteo», «Finalizar», «Ir al conteo»—
+  // es exactamente donde el operador con poca vista tiene que acertar.
+  //
+  // El paso 700 de la MISMA rampa cumple y sigue siendo el naranja de la casa:
+  // blanco sobre `brand-700` (#C42B10) = 5.68:1, sobre `error-700` = 5.9:1. El
+  // `hover` baja a 800 en vez de a 600, para que el estado hover no empeore el
+  // contraste que acaba de arreglarse.
   const variantClasses: Record<ButtonVariant, string> = {
     primary:
-      "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300",
+      "bg-brand-700 text-white shadow-theme-xs hover:bg-brand-800 disabled:bg-brand-300",
     outline:
       "bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700 dark:hover:bg-white/[0.03] dark:hover:text-gray-300",
     destructive:
-      "bg-error-500 text-white shadow-theme-xs hover:bg-error-600 disabled:bg-error-300",
+      "bg-error-700 text-white shadow-theme-xs hover:bg-error-800 disabled:bg-error-300",
     ghost:
       "text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-300",
   };

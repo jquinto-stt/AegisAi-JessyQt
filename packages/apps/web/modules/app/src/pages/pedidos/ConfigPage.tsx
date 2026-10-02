@@ -8,7 +8,7 @@ import { Badge } from "@/elements/ui/badge";
 import { Switch } from "@/elements/form/switch";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
-import { BoltIcon, CartIcon, GridIcon, PlusIcon, TimeIcon, TrashBinIcon } from "@/icons";
+import { BoltIcon, CartIcon, DollarLineIcon, GridIcon, PlusIcon, TimeIcon, TrashBinIcon } from "@/icons";
 import { pedidosStore, puedeGuardarConfig, motivoSinPermiso } from "@/stores";
 import type {
   Modalidad,
@@ -82,10 +82,10 @@ const DIAS_SEMANA: { d: number; label: string; largo: string }[] = [
   { d: 0, label: "Dom", largo: "Domingo" },
 ];
 
-type ClaveSeccion = "perfil" | "flujo" | "tiempos" | "catalogo";
+type ClaveSeccion = "flujo" | "pagos" | "perfil" | "tiempos" | "catalogo";
 
 /** Orden de la columna de secciones. `flujo` primero: es la seccion por defecto. */
-const ORDEN_SECCIONES: ClaveSeccion[] = ["flujo", "perfil", "tiempos", "catalogo"];
+const ORDEN_SECCIONES: ClaveSeccion[] = ["flujo", "pagos", "perfil", "tiempos", "catalogo"];
 
 /**
  * Metadatos de cada seccion. La etiqueta y el consejo los pinta `ConfigShell`,
@@ -110,6 +110,11 @@ const META_SECCION: Record<
     label: "Operación y flujo",
     hint: "Estados del pipeline, modalidades de entrega y nombres de columna.",
     icono: BoltIcon,
+  },
+  pagos: {
+    label: "Cuentas y cobros",
+    hint: "Cuentas para transferencias (Nequi, Daviplata, Bancos) e instrucciones.",
+    icono: DollarLineIcon,
   },
   perfil: {
     label: "Perfil de negocio",
@@ -152,6 +157,7 @@ export const ConfigPage = observer(() => {
     horario: { ...pedidosStore.config.horario, dias: [...pedidosStore.config.horario.dias] },
     tiemposObjetivo: { ...pedidosStore.config.tiemposObjetivo },
     alertaAtencion: { ...pedidosStore.config.alertaAtencion },
+    datosBancarios: { ...pedidosStore.config.datosBancarios },
   }));
 
   const [guardado, setGuardado] = useState(false);
@@ -162,6 +168,20 @@ export const ConfigPage = observer(() => {
 
   const set = <K extends keyof PedidosConfig>(k: K, v: PedidosConfig[K]) => {
     setDraft((prev) => ({ ...prev, [k]: v }));
+    setGuardado(false);
+  };
+
+  const setDatoBancario = <K extends keyof NonNullable<PedidosConfig["datosBancarios"]>>(
+    campo: K,
+    valor: NonNullable<PedidosConfig["datosBancarios"]>[K]
+  ) => {
+    setDraft((prev) => ({
+      ...prev,
+      datosBancarios: {
+        ...(prev.datosBancarios ?? {}),
+        [campo]: valor,
+      },
+    }));
     setGuardado(false);
   };
 
@@ -598,6 +618,146 @@ export const ConfigPage = observer(() => {
                         })}
                       </div>
                     </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN: CUENTAS Y COBROS (PAGOS)
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "pagos" && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  {/* Cuentas de Transferencia */}
+                  <Card>
+                    <CardHead>Cuentas bancarias y billeteras móviles</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Cuentas que el bot y la tienda comunican al cliente para recibir pagos por transferencia.
+                    </p>
+
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <Label htmlFor="pago-titular" className="text-xs">Titular de la cuenta</Label>
+                        <Input
+                          id="pago-titular"
+                          placeholder="Ej. Mi Empresa SAS o Nombre del titular"
+                          value={draft.datosBancarios?.titular ?? ""}
+                          onChange={(e) => setDatoBancario("titular", e.target.value)}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <Label htmlFor="pago-nequi" className="text-xs">Número Nequi</Label>
+                          <Input
+                            id="pago-nequi"
+                            placeholder="Ej. 300 123 4567"
+                            value={draft.datosBancarios?.nequi ?? ""}
+                            onChange={(e) => setDatoBancario("nequi", e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="pago-daviplata" className="text-xs">Número Daviplata</Label>
+                          <Input
+                            id="pago-daviplata"
+                            placeholder="Ej. 300 123 4567"
+                            value={draft.datosBancarios?.daviplata ?? ""}
+                            onChange={(e) => setDatoBancario("daviplata", e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="pago-bancolombia" className="text-xs">Cuenta Bancolombia / Otros Bancos</Label>
+                        <Input
+                          id="pago-bancolombia"
+                          placeholder="Ej. Ahorros # 123-456789-01"
+                          value={draft.datosBancarios?.bancolombia ?? ""}
+                          onChange={(e) => setDatoBancario("bancolombia", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Métodos de Pago Habilitados */}
+                  <Card>
+                    <CardHead>Medios de cobro aceptados</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Activa los métodos de cobro disponibles en tu negocio.
+                    </p>
+
+                    <div className="mt-4">
+                      <ToggleRow
+                        titulo="Transferencias (Nequi / Daviplata / Bancos)"
+                        descripcion="El cliente transfiere a tus cuentas y adjunta el comprobante."
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.datosBancarios?.transferenciaActivo !== false ? "success" : "light"} size="sm">
+                              {draft.datosBancarios?.transferenciaActivo !== false ? "Activo" : "Inactivo"}
+                            </Badge>
+                            <Switch
+                              checked={draft.datosBancarios?.transferenciaActivo !== false}
+                              onChange={(v) => setDatoBancario("transferenciaActivo", v)}
+                              aria-label="Aceptar transferencias"
+                            />
+                          </div>
+                        }
+                      />
+
+                      <ToggleRow
+                        titulo="Pago contra entrega (Domicilio)"
+                        descripcion="El cliente paga en efectivo o transferencia al recibir su pedido."
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.datosBancarios?.contraEntregaActivo !== false ? "success" : "light"} size="sm">
+                              {draft.datosBancarios?.contraEntregaActivo !== false ? "Activo" : "Inactivo"}
+                            </Badge>
+                            <Switch
+                              checked={draft.datosBancarios?.contraEntregaActivo !== false}
+                              onChange={(v) => setDatoBancario("contraEntregaActivo", v)}
+                              aria-label="Aceptar contra entrega"
+                            />
+                          </div>
+                        }
+                      />
+
+                      <ToggleRow
+                        titulo="Efectivo en local (Retiro / En sitio)"
+                        descripcion="Cobro en caja al momento de retirar o consumir en el local."
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.datosBancarios?.efectivoActivo !== false ? "success" : "light"} size="sm">
+                              {draft.datosBancarios?.efectivoActivo !== false ? "Activo" : "Inactivo"}
+                            </Badge>
+                            <Switch
+                              checked={draft.datosBancarios?.efectivoActivo !== false}
+                              onChange={(v) => setDatoBancario("efectivoActivo", v)}
+                              aria-label="Aceptar efectivo en local"
+                            />
+                          </div>
+                        }
+                      />
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Instrucciones de Pago */}
+                <Card>
+                  <CardHead>Instrucciones de cobro para el cliente</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Mensaje o indicaciones que el bot y la tienda envían al cliente al confirmar su orden.
+                  </p>
+
+                  <div className="mt-4">
+                    <textarea
+                      rows={3}
+                      value={draft.datosBancarios?.instrucciones ?? ""}
+                      onChange={(e) => setDatoBancario("instrucciones", e.target.value)}
+                      placeholder="Ej. Por favor realiza tu transferencia y envía el comprobante indicando tu número de pedido para iniciar la preparación de tu orden."
+                      className="w-full rounded-xl border border-gray-200 bg-white p-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-brand-500 focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+                    />
                   </div>
                 </Card>
               </div>

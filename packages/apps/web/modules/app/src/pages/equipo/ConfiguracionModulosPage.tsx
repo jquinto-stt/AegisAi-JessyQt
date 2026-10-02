@@ -66,6 +66,17 @@ const OrdersBrandLogo = () => (
 
 
 
+/** Logo del Módulo de Inventarios — una caja con visto de verificación. */
+const InventariosBrandLogo = () => (
+  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
+      <path d="M3 9.5 12 4l9 5.5v5L12 20l-9-5.5v-5Z" />
+      <path d="m3 9.5 9 5.5 9-5.5" />
+      <path d="M12 15v5" />
+    </svg>
+  </div>
+);
+
 /** Logo de Integración: Necto IA */
 const NectoIaIntegrationLogo = () => (
   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
@@ -139,6 +150,29 @@ const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
       "Asignación de repartidores y transportadoras con seguimiento",
     ],
   },
+  inventarios: {
+    logo: <InventariosBrandLogo />,
+    rutasHabilitadas: [
+      "/inventarios",
+      "/inventarios/elementos",
+      "/inventarios/ubicaciones",
+      "/inventarios/historial",
+      "/inventarios/alertas",
+      "/inventarios/reportes",
+      "/inventarios/config",
+    ],
+    rolesRequeridos: "inventory.read, inventory.count, inventory.finalize",
+    // Las capacidades se listan con el lenguaje del módulo, no con el de un
+    // ERP: se cuenta, se verifica y se deja rastro. Ninguna línea promete
+    // control de existencias, valorización ni reposición — el módulo no hace
+    // ninguna de las tres y describirlo así sería vender lo que no hay.
+    capacidades: [
+      "Conteos iniciales, periódicos y finales por ubicación",
+      "Cantidad esperada congelada frente a la observada, con diferencia visible",
+      "Evidencia fotográfica y condición por elemento contado",
+      "Historial con autor y hora de cada movimiento",
+    ],
+  },
 };
 
 /** Identidad (catálogo) + presentación (esta pantalla). Una sola fuente por dato. */
@@ -149,6 +183,7 @@ const moduloDef = (id: IdModuloNegocio): ModuloConfigDef => ({
 
 const MODULOS_DEF: Record<IdModuloNegocio, ModuloConfigDef> = {
   pedidos: moduloDef("pedidos"),
+  inventarios: moduloDef("inventarios"),
 };
 
 const IDS_MODULOS = Object.keys(MODULOS_DEF) as IdModuloNegocio[];

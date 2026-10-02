@@ -6,6 +6,8 @@ import type {
   BusinessProfile,
   NLUResult,
   FSMTransitionResult,
+  ClientePerfil,
+  DestinatarioInfo,
 } from './types.js';
 
 function normStr(s: string): string {
@@ -21,11 +23,38 @@ export class TelegramFSM {
     perfil: BusinessProfile,
     clienteNombre: string,
     ultimoPedido?: { id: string; numero: string; estado: string; total: number } | null,
-    pedidosCliente?: Array<{ id: string; numero: string; estado: string; total: number; creadoEn?: string }>
+    pedidosCliente?: Array<{ id: string; numero: string; estado: string; total: number; creadoEn?: string }>,
+    incomingClientePerfil?: ClientePerfil | null
   ): FSMTransitionResult {
     // Clon profundo para garantizar inmutabilidad
     const draft: CartDraft | null = incomingDraft ? structuredClone(incomingDraft) : null;
-    const nombreRef = clienteNombre ? clienteNombre.split(' ')[0] : 'amigo/a';
+    const yaRegistrado = Boolean(incomingClientePerfil?.completado);
+    const nombreRef = incomingClientePerfil?.nombre || (clienteNombre ? clienteNombre.split(' ')[0] : 'amigo/a');
+
+    // ─────────────────────────────────────────────────────────────
+    // Solicitud explícita de agente humano (Prioritaria en cualquier estado)
+    // ─────────────────────────────────────────────────────────────
+    if (nlu.intent === 'SOLICITAR_HUMANO') {
+      return {
+        nextState: 'MODO_HUMANO',
+        nextDraft: draft,
+        replyText: `Te comunico de inmediato con uno de nuestros asesores para que te atienda personalmente. Tu conversación y pedido quedan registrados para el equipo. En breve te responderán por este medio.`,
+        buttons: [],
+        removeKeyboard: true,
+      };
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // FLUJO CONVERSACIONAL DE ONBOARDING (ESTILO FLOR / CREPES & WAFFLES)
+    // ─────────────────────────────────────────────────────────────
+    const esEstadoOnboarding = currentState.startsWith('ONBOARDING_');
+    const requiereOnboarding =
+      esEstadoOnboarding ||
+      (incomingClientePerfil !== undefined && (!incomingClientePerfil || !incomingClientePerfil.completado));
+
+    if (requiereOnboarding) {
+      return this.manejarOnboarding(currentState, incomingClientePerfil, nlu, catalogo, perfil, clienteNombre);
+    }
 
     // ─────────────────────────────────────────────────────────────
     // REGLA: Bloqueo de Fuera de Dominio
@@ -81,6 +110,161 @@ export class TelegramFSM {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // MENÚ PRINCIPAL (Hub & Spoke Dispatcher)
+    // ─────────────────────────────────────────────────────────────
+    if (nlu.intent === 'VER_MENU_PRINCIPAL') {
+      return this.mostrarMenuPrincipal(nombreRef, yaRegistrado);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PRECALIFICACIÓN DE ENTREGA Y DESTINATARIO (ESTILO FLOR / CREPES)
+    // ─────────────────────────────────────────────────────────────
+    if (currentState === 'SELECCIONANDO_DESTINATARIO') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+
+      if (nlu.intent === 'DESTINATARIO_PROPIO' || normStr(nlu.rawText).includes('para mi') || normStr(nlu.rawText).includes('para mí')) {
+        activeDraft.destinatario = {
+          tipo: 'propio',
+          nombre: nombreRef,
+          telefono: incomingClientePerfil?.telefono,
+        };
+        return {
+          nextState: 'SOLICITANDO_ENTREGA_PREVIA',
+          nextDraft: activeDraft,
+          replyText: `¡Perfecto, ${nombreRef}! Cuéntame: ¿cómo prefieres recibir tu entrega?`,
+          buttons: ['Envío a domicilio 🛵', 'Retiro en local 🛍️', 'Menú principal 📋'],
+        };
+      }
+
+      if (nlu.intent === 'DESTINATARIO_TERCERO' || normStr(nlu.rawText).includes('otra persona') || normStr(nlu.rawText).includes('regalo')) {
+        activeDraft.destinatario = { tipo: 'tercero' };
+        return {
+          nextState: 'SOLICITANDO_RECEPTOR_NOMBRE',
+          nextDraft: activeDraft,
+          replyText: `¡Qué lindo detalle! 🎁 ¿Cómo se llama la persona que recibirá el pedido?`,
+          buttons: ['Menú principal 📋'],
+        };
+      }
+
+      return {
+        nextState: 'SELECCIONANDO_DESTINATARIO',
+        nextDraft: activeDraft,
+        replyText: `Por favor cuéntame si el pedido es para ti o para otra persona:`,
+        buttons: ['Es para mí 👤', 'Es para otra persona 🎁', 'Menú principal 📋'],
+      };
+    }
+
+    if (currentState === 'SOLICITANDO_RECEPTOR_NOMBRE') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      const raw = (nlu.rawText || '').replace(/^(?:se\s+llama|es|para)\s+/i, '').trim();
+
+      if (!raw || raw.length < 2) {
+        return {
+          nextState: 'SOLICITANDO_RECEPTOR_NOMBRE',
+          nextDraft: activeDraft,
+          replyText: `¿Me podrías indicar el nombre de la persona que recibirá el pedido?`,
+          buttons: ['Menú principal 📋'],
+        };
+      }
+
+      if (!activeDraft.destinatario) activeDraft.destinatario = { tipo: 'tercero' };
+      activeDraft.destinatario.nombre = raw;
+
+      return {
+        nextState: 'SOLICITANDO_RECEPTOR_TELEFONO',
+        nextDraft: activeDraft,
+        replyText: `¿Y cuál es el número de celular de <b>${raw}</b>? Lo necesitamos para que el domiciliario pueda contactarle al llegar.`,
+        buttons: ['Menú principal 📋'],
+      };
+    }
+
+    if (currentState === 'SOLICITANDO_RECEPTOR_TELEFONO') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      let digits = (nlu.rawText || '').replace(/\D/g, '');
+      if (digits.startsWith('57') && digits.length === 12) digits = digits.slice(2);
+
+      if (digits.length < 7 || digits.length > 12) {
+        return {
+          nextState: 'SOLICITANDO_RECEPTOR_TELEFONO',
+          nextDraft: activeDraft,
+          replyText: `Por favor ingresa un número de celular válido (ejemplo: <code>3145376069</code>) sin puntos ni caracteres especiales:`,
+          buttons: ['Menú principal 📋'],
+        };
+      }
+
+      if (!activeDraft.destinatario) activeDraft.destinatario = { tipo: 'tercero' };
+      activeDraft.destinatario.telefono = digits;
+
+      return {
+        nextState: 'SOLICITANDO_ENTREGA_PREVIA',
+        nextDraft: activeDraft,
+        replyText: `Anotado el contacto de entrega. ¿Cómo prefieres coordinar el pedido?`,
+        buttons: ['Envío a domicilio 🛵', 'Retiro en local 🛍️', 'Menú principal 📋'],
+      };
+    }
+
+    if (currentState === 'SOLICITANDO_ENTREGA_PREVIA') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+
+      if ((nlu.intent === 'ELEGIR_MODALIDAD' && nlu.entities.modalidad === 'retiro') || normStr(nlu.rawText).includes('retiro') || normStr(nlu.rawText).includes('local')) {
+        activeDraft.modalidad = 'retiro';
+        const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+        const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+        return {
+          nextState: 'CATALOGO_ACTIVO',
+          nextDraft: activeDraft,
+          replyText: `¡Listo! Tu orden será preparada para <b>retiro en local</b> 🛍️\n\nAquí tienes nuestra carta para que elijas lo que desees ordenar:\n\n${catTexto}\n\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+          buttons: [...botonesCat, 'Menú principal 📋'],
+        };
+      }
+
+      if ((nlu.intent === 'ELEGIR_MODALIDAD' && nlu.entities.modalidad === 'domicilio') || normStr(nlu.rawText).includes('domicilio') || normStr(nlu.rawText).includes('envio')) {
+        activeDraft.modalidad = 'domicilio';
+        return {
+          nextState: 'SOLICITANDO_DIRECCION_PREVIA',
+          nextDraft: activeDraft,
+          replyText: `Antes de compartirte la carta, necesito que me cuentes a dónde vamos a hacer el envío. 📍\n\n¿Cómo quieres indicar el domicilio? 👇\n\nPuedes escribir la dirección completa (calle, número y barrio):`,
+          buttons: ['Menú principal 📋'],
+        };
+      }
+
+      return {
+        nextState: 'SOLICITANDO_ENTREGA_PREVIA',
+        nextDraft: activeDraft,
+        replyText: `¿Cómo prefieres recibir el pedido?`,
+        buttons: ['Envío a domicilio 🛵', 'Retiro en local 🛍️', 'Menú principal 📋'],
+      };
+    }
+
+    if (currentState === 'SOLICITANDO_DIRECCION_PREVIA') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: 'domicilio', direccion: null, updatedAt: new Date().toISOString() };
+      const raw = (nlu.rawText || '').trim();
+
+      if (!raw || raw.length < 3) {
+        return {
+          nextState: 'SOLICITANDO_DIRECCION_PREVIA',
+          nextDraft: activeDraft,
+          replyText: `Por favor indícanos una dirección válida de entrega (ej: <code>Calle 45 # 12-30</code>):`,
+          buttons: ['Menú principal 📋'],
+        };
+      }
+
+      activeDraft.direccion = raw;
+      activeDraft.modalidad = 'domicilio';
+
+      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+      return {
+        nextState: 'CATALOGO_ACTIVO',
+        nextDraft: activeDraft,
+        replyText: `¡Excelente! Registramos tu dirección de envío en <i>${raw}</i> 📍\n\nAquí tienes nuestra carta para que elijas lo que más te guste:\n\n${catTexto}\n\nPuedes seleccionar un producto o indicarme qué deseas ordenar.`,
+        buttons: [...botonesCat, 'Menú principal 📋'],
+      };
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // VER CATÁLOGO (Sin borrar el carrito si ya existe uno activo)
     // ─────────────────────────────────────────────────────────────
     if (nlu.intent === 'VER_CATALOGO') {
@@ -93,15 +277,26 @@ export class TelegramFSM {
           nextState: 'CARRITO_EN_CONSTRUCCION',
           nextDraft: draft,
           replyText: `${catTexto}\n\n<blockquote><b>Pedido en curso:</b> ${draft.lineas.length} producto(s) — Subtotal: <code>$${total.toLocaleString('es-CO')} COP</code></blockquote>\n\nPuedes seleccionar otro producto o presionar <b>Proceder a la entrega</b> cuando termines.`,
-          buttons: ['Proceder a la entrega', ...botonesCat.slice(0, 2)],
+          buttons: ['Proceder a la entrega', ...botonesCat.slice(0, 2), 'Menú principal 📋'],
+        };
+      }
+
+      // Si aún no se ha calificado destinatario ni modalidad, iniciar precalificación Flor
+      if (!draft?.destinatario && !draft?.modalidad) {
+        const activeDraft: CartDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+        return {
+          nextState: 'SELECCIONANDO_DESTINATARIO',
+          nextDraft: activeDraft,
+          replyText: `Muy bien, cuéntame: ¿el pedido es para ti o para otra persona?`,
+          buttons: ['Es para mí 👤', 'Es para otra persona 🎁', 'Menú principal 📋'],
         };
       }
 
       return {
         nextState: 'CATALOGO_ACTIVO',
-        nextDraft: null,
+        nextDraft: draft || null,
         replyText: `${catTexto}\n\nPuedes seleccionar un producto de la lista o indicarme qué deseas ordenar.`,
-        buttons: botonesCat,
+        buttons: [...botonesCat, 'Menú principal 📋'],
       };
     }
 
@@ -163,25 +358,13 @@ export class TelegramFSM {
       const entregaStr = draft.modalidad === 'domicilio'
         ? `Domicilio en <i>${draft.direccion}</i>`
         : `Retiro en local`;
+      const destinatarioStr = this.formatearDestinatario(draft.destinatario);
 
       return {
         nextState: 'CONFIRMANDO_PEDIDO',
         nextDraft: draft,
-        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n${costoEnvio > 0 ? `<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n` : ''}<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> ${entregaStr}</blockquote>\n¿Deseas confirmar tu orden para generar el enlace de pago seguro?`,
+        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n${costoEnvio > 0 ? `<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n` : ''}<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> ${entregaStr}${destinatarioStr}</blockquote>\n¿Deseas confirmar tu orden para generar el enlace de pago seguro?`,
         buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
-      };
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // Solicitud explícita de agente humano
-    // ─────────────────────────────────────────────────────────────
-    if (nlu.intent === 'SOLICITAR_HUMANO') {
-      return {
-        nextState: 'MODO_HUMANO',
-        nextDraft: draft,
-        replyText: `Te comunico de inmediato con uno de nuestros asesores para que te atienda personalmente. Tu conversación y pedido quedan registrados para el equipo. En breve te responderán por este medio.`,
-        buttons: [],
-        removeKeyboard: true,
       };
     }
 
@@ -265,15 +448,15 @@ export class TelegramFSM {
         return {
           nextState: currentState,
           nextDraft: draft,
-          replyText: `<b>TUS PEDIDOS REGISTRADOS</b>\n<blockquote>${resumen}</blockquote>\n¿Deseas realizar un nuevo pedido, cancelar alguna orden o consultar algo adicional?`,
-          buttons: ['Hacer otro pedido', ...cancelButtons, 'Hablar con asesor'],
+          replyText: `<b>TUS PEDIDOS REGISTRADOS</b>\n<blockquote>${resumen}</blockquote>\n¿Deseas realizar un nuevo pedido, cancelar alguna orden o volver al menú?`,
+          buttons: ['Realizar pedido 🥪', ...cancelButtons, 'Menú principal 📋'],
         };
       }
       return {
         nextState: currentState,
         nextDraft: draft,
         replyText: `No encontramos pedidos registrados asociados a tu número en este momento.\n\n¿Deseas ver nuestro catálogo para ordenar?`,
-        buttons: ['Ver menú', 'Hablar con asesor'],
+        buttons: ['Realizar pedido 🥪', 'Menú principal 📋'],
       };
     }
 
@@ -592,10 +775,11 @@ export class TelegramFSM {
         const costoEnvio = perfil.costoEnvio;
         const total = subtotal + costoEnvio;
 
+        const destinatarioStr = this.formatearDestinatario(activeDraft.destinatario);
         return {
           nextState: 'CONFIRMANDO_PEDIDO',
           nextDraft: activeDraft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(activeDraft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${activeDraft.direccion}</i></blockquote>\n¿Confirmas tu orden con estos datos?`,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(activeDraft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${activeDraft.direccion}</i>${destinatarioStr}</blockquote>\n¿Confirmas tu orden con estos datos?`,
           buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
         };
       }
@@ -604,10 +788,11 @@ export class TelegramFSM {
       if (nlu.entities.modalidad === 'retiro') {
         activeDraft.modalidad = 'retiro';
         const total = this.calcularTotal(activeDraft);
+        const destinatarioStr = this.formatearDestinatario(activeDraft.destinatario);
         return {
           nextState: 'CONFIRMANDO_PEDIDO',
           nextDraft: activeDraft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(activeDraft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(activeDraft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
           buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
         };
       }
@@ -646,10 +831,11 @@ export class TelegramFSM {
 
       if (draft.modalidad === 'retiro') {
         const total = this.calcularTotal(draft);
+        const destinatarioStr = this.formatearDestinatario(draft.destinatario);
         return {
           nextState: 'CONFIRMANDO_PEDIDO',
           nextDraft: draft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
           buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
         };
       } else {
@@ -672,11 +858,12 @@ export class TelegramFSM {
       const subtotal = this.calcularTotal(draft);
       const costoEnvio = perfil.costoEnvio;
       const total = subtotal + costoEnvio;
+      const destinatarioStr = this.formatearDestinatario(draft.destinatario);
 
       return {
         nextState: 'CONFIRMANDO_PEDIDO',
         nextDraft: draft,
-        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i></blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
+        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i>${destinatarioStr}</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
         buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
       };
     }
@@ -721,6 +908,7 @@ export class TelegramFSM {
           total,
           modalidad: draft.modalidad || 'retiro',
           direccion: draft.direccion,
+          destinatario: draft.destinatario || null,
           lineas: draft.lineas,
         },
       };
@@ -729,7 +917,7 @@ export class TelegramFSM {
     // ─────────────────────────────────────────────────────────────
     // Fuera de dominio o Entrada no reconocida (Irracionalidades, bromas, preguntas ajenas)
     // ─────────────────────────────────────────────────────────────
-    if (nlu.intent === 'FUERA_DE_DOMINIO' || nlu.intent === 'DESCONOCIDO') {
+    if (nlu.intent === 'DESCONOCIDO') {
       if (currentState === 'SOLICITANDO_DIRECCION' && draft) {
         return {
           nextState: 'SOLICITANDO_DIRECCION',
@@ -768,19 +956,307 @@ export class TelegramFSM {
     }
 
     // Por defecto: Saludo o Menú inicial
-    return this.mostrarCatalogoInicial(catalogo, perfil, nombreRef);
+    return this.mostrarMenuPrincipal(nombreRef, yaRegistrado);
   }
 
-  private mostrarCatalogoInicial(catalogo: CatalogItem[], perfil: BusinessProfile, nombre: string): FSMTransitionResult {
+  private manejarOnboarding(
+    currentState: FSMState,
+    incomingClientePerfil: ClientePerfil | null | undefined,
+    nlu: NLUResult,
+    _catalogo?: CatalogItem[],
+    _perfil?: BusinessProfile,
+    _clienteNombre?: string
+  ): FSMTransitionResult {
+    const activePerfil: ClientePerfil = incomingClientePerfil
+      ? structuredClone(incomingClientePerfil)
+      : {
+          nombre: '',
+          apellido: '',
+          email: '',
+          telefono: '',
+          terminosAceptados: false,
+          completado: false,
+        };
+
+    // Si pide hablar con asesor durante el onboarding
+    if (nlu.intent === 'SOLICITAR_HUMANO' || (nlu.rawText && /asesor|humano|persona|agente/i.test(nlu.rawText))) {
+      return {
+        nextState: 'MODO_HUMANO',
+        nextDraft: null,
+        replyText: `Te comunico con uno de nuestros asesores para que te colabore directamente. En breve se comunicarán contigo por este medio.`,
+        buttons: [],
+        removeKeyboard: true,
+      };
+    }
+
+    // 0. Inicio de onboarding (primer mensaje o reinicio)
+    if (currentState === 'IDLE' || (currentState === 'ONBOARDING_NOMBRE' && !activePerfil.nombre && (!nlu.rawText || nlu.rawText === '/start' || nlu.rawText === '/reiniciar'))) {
+      return {
+        nextState: 'ONBOARDING_NOMBRE',
+        nextDraft: null,
+        replyText: `¡Hola! Soy Sofía, asistente virtual de <b>Necto</b> 🌿 y estoy aquí para ayudarte.\n\nPara empezar, ¿cuál es tu <b>nombre de pila</b>? Así podré saludarte como te mereces.`,
+        buttons: [],
+        removeKeyboard: true,
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 1. Paso: Nombre
+    if (currentState === 'ONBOARDING_NOMBRE') {
+      let raw = (nlu.rawText || '').trim();
+      raw = raw.replace(/^(?:¡?hola!?|buen[ao]s?\s+(?:d[ií]as|tardes|noches)),?\s*/i, '').trim();
+      raw = raw.replace(/^(?:mi\s+nombre\s+es|me\s+llamo|soy|yo\s+soy)\s+/i, '').trim();
+      raw = raw.replace(/[.!?,;]+$/g, '').trim();
+
+      if (!raw || raw.length < 2) {
+        return {
+          nextState: 'ONBOARDING_NOMBRE',
+          nextDraft: null,
+          replyText: `¿Me podrías indicar cuál es tu nombre de pila? Así podré dirigirme a ti correctamente.`,
+          buttons: [],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      const partes = raw.split(/\s+/).filter(Boolean);
+      if (partes.length >= 2) {
+        activePerfil.nombre = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        activePerfil.apellido = partes.slice(1).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+        return {
+          nextState: 'ONBOARDING_EMAIL',
+          nextDraft: null,
+          replyText: `¡Mucho gusto, ${activePerfil.nombre}! Ya registré tu nombre y apellido (<b>${activePerfil.nombre} ${activePerfil.apellido}</b>).\n\nMe faltan dos datos para crear tu cuenta. ¿Me apuntas tu correo electrónico? Ej: <code>juan@mail.com</code>`,
+          buttons: [],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      activePerfil.nombre = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      return {
+        nextState: 'ONBOARDING_APELLIDO',
+        nextDraft: null,
+        replyText: `¡Mucho gusto, ${activePerfil.nombre}! ¿Y me ayudarías también con tu apellido? Lo necesito para registrarte correctamente.`,
+        buttons: [],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 2. Paso: Apellido
+    if (currentState === 'ONBOARDING_APELLIDO') {
+      let ape = (nlu.rawText || '').trim();
+      ape = ape.replace(/^(?:mi\s+apellido\s+es|es)\s+/i, '').trim();
+      ape = ape.replace(/[.!?,;]+$/g, '').trim();
+
+      if (!ape || ape.length < 2) {
+        return {
+          nextState: 'ONBOARDING_APELLIDO',
+          nextDraft: null,
+          replyText: `Por favor indícanos tu apellido para completar tu registro de cliente.`,
+          buttons: [],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      activePerfil.apellido = ape.split(/\s+/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+      return {
+        nextState: 'ONBOARDING_EMAIL',
+        nextDraft: null,
+        replyText: `Me faltan dos datos para crear tu cuenta. ¿Me apuntas tu correo electrónico? Ej: <code>juan@mail.com</code>`,
+        buttons: [],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 3. Paso: Email
+    if (currentState === 'ONBOARDING_EMAIL') {
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
+      const matchEmail = (nlu.rawText || '').match(emailRegex);
+
+      if (!matchEmail) {
+        return {
+          nextState: 'ONBOARDING_EMAIL',
+          nextDraft: null,
+          replyText: `Por favor indícanos un correo electrónico válido (ejemplo: <code>juan@mail.com</code>) para asociarlo a tus pedidos y facturas.`,
+          buttons: [],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      activePerfil.email = matchEmail[0].toLowerCase();
+      return {
+        nextState: 'ONBOARDING_TELEFONO',
+        nextDraft: null,
+        replyText: `¡Lo último! Escríbeme tu celular sin puntos ni guiones para coordinar las entregas de tus pedidos.`,
+        buttons: [],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 4. Paso: Teléfono
+    if (currentState === 'ONBOARDING_TELEFONO') {
+      let digits = (nlu.rawText || '').replace(/\D/g, '');
+      if (digits.startsWith('57') && digits.length === 12) {
+        digits = digits.slice(2);
+      }
+
+      if (digits.length < 7 || digits.length > 12) {
+        return {
+          nextState: 'ONBOARDING_TELEFONO',
+          nextDraft: null,
+          replyText: `Por favor ingresa un número de teléfono celular válido de 10 dígitos (ej: <code>3145376069</code>) sin puntos ni caracteres especiales.`,
+          buttons: [],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      activePerfil.telefono = digits;
+      return {
+        nextState: 'ONBOARDING_CONFIRMAR',
+        nextDraft: null,
+        replyText: `📋 <b>CONFIRMA TUS DATOS</b>\n<blockquote>• <b>Nombre:</b> ${activePerfil.nombre} ${activePerfil.apellido}\n• <b>Correo:</b> ${activePerfil.email}\n• <b>Celular:</b> ${activePerfil.telefono}</blockquote>\n¿La información es correcta?`,
+        buttons: ['Sí, está bien ✅', 'Corregir datos ✏️'],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 5. Paso: Confirmar datos
+    if (currentState === 'ONBOARDING_CONFIRMAR') {
+      const textNorm = normStr(nlu.rawText || '');
+      const esAfirmativo = /^(?:si|sí|correcto|esta bien|está bien|ok|confirmo|si, esta bien|si esta bien)/i.test(textNorm) || textNorm.includes('bien') || textNorm.includes('correcto');
+      const esNegativo = /^(?:no|corregir|cambiar|mal|modificar)/i.test(textNorm) || textNorm.includes('corregir');
+
+      if (esAfirmativo) {
+        return {
+          nextState: 'ONBOARDING_PRIVACIDAD',
+          nextDraft: null,
+          replyText: `🔒 <b>POLÍTICA DE TRATAMIENTO DE DATOS</b>\n<blockquote>De conformidad con la Ley 1581 de 2012 de Protección de Datos Personales, autorizas a Necto a utilizar tus datos exclusivamente para la gestión, despacho y facturación de tus pedidos.</blockquote>\n¿Autorizas el tratamiento de tus datos para estos fines?`,
+          buttons: ['Sí, autorizo ✅', 'No autorizo ❌'],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      if (esNegativo) {
+        return {
+          nextState: 'ONBOARDING_NOMBRE',
+          nextDraft: null,
+          replyText: `Entendido, vamos a corregir tus datos. ¿Cuál es tu nombre de pila?`,
+          buttons: [],
+          clientePerfil: {
+            nombre: '',
+            apellido: '',
+            email: '',
+            telefono: '',
+            terminosAceptados: false,
+            completado: false,
+          },
+        };
+      }
+
+      return {
+        nextState: 'ONBOARDING_CONFIRMAR',
+        nextDraft: null,
+        replyText: `Por favor confírmanos si los datos son correctos:\n<blockquote>• <b>Nombre:</b> ${activePerfil.nombre} ${activePerfil.apellido}\n• <b>Correo:</b> ${activePerfil.email}\n• <b>Celular:</b> ${activePerfil.telefono}</blockquote>`,
+        buttons: ['Sí, está bien ✅', 'Corregir datos ✏️'],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // 6. Paso: Tratamiento de datos (Privacidad / Habeas Data)
+    if (currentState === 'ONBOARDING_PRIVACIDAD') {
+      const textNormPriv = normStr(nlu.rawText || '');
+      const autoriza = /^(?:si|sí|autorizo|acepto|de acuerdo|claro|si, autorizo)/i.test(textNormPriv) || textNormPriv.includes('autorizo') || textNormPriv.includes('acepto');
+      const noAutoriza = /^(?:no|rechazo|no autorizo)/i.test(textNormPriv) || textNormPriv.includes('no autorizo');
+
+      if (autoriza) {
+        activePerfil.terminosAceptados = true;
+        activePerfil.completado = true;
+
+        const botonesMenu = [
+          'Realizar pedido 🥪',
+          'Seguir pedido 📌',
+          'Buscar sucursales 🔍',
+          'Hacer una consulta 💬',
+        ];
+
+        return {
+          nextState: 'IDLE',
+          nextDraft: null,
+          replyText: `🎉 <b>¡Registro completado con éxito, ${activePerfil.nombre}!</b>\nSoy Sofía y ya dejé tu cuenta lista para cuando desees ordenar.\n\n¿En qué puedo ayudarte hoy? Selecciona una de las opciones del <b>Menú principal</b>:\n\n🥪 <b>Realizar pedido</b> — Consulta nuestra carta y pide a domicilio o retiro\n📌 <b>Seguir pedido</b> — Revisa el estado de tus órdenes en curso\n🔍 <b>Buscar sucursales</b> — Ubicación de tiendas y bodegas\n💬 <b>Hacer una consulta</b> — Chatea con un asesor de servicio`,
+          buttons: botonesMenu,
+          clientePerfil: activePerfil,
+        };
+      }
+
+      if (noAutoriza) {
+        return {
+          nextState: 'ONBOARDING_PRIVACIDAD',
+          nextDraft: null,
+          replyText: `Comprendemos tu decisión. Ten presente que de acuerdo con la normatividad comercial, requerimos estos datos básicos para procesar la facturación y el despacho de tus órdenes.\n\nSi deseas autorizar el tratamiento para continuar, presiona el botón a continuación:`,
+          buttons: ['Sí, autorizo ✅', 'Hablar con asesor'],
+          clientePerfil: activePerfil,
+        };
+      }
+
+      return {
+        nextState: 'ONBOARDING_PRIVACIDAD',
+        nextDraft: null,
+        replyText: `🔒 Para poder brindarte servicio en Necto, ¿autorizas el tratamiento de tus datos para gestión de pedidos y facturación?`,
+        buttons: ['Sí, autorizo ✅', 'No autorizo ❌'],
+        clientePerfil: activePerfil,
+      };
+    }
+
+    // Fallback
+    return {
+      nextState: 'ONBOARDING_NOMBRE',
+      nextDraft: null,
+      replyText: `¿Cuál es tu nombre de pila? Así podré atenderte con gusto.`,
+      buttons: [],
+      clientePerfil: activePerfil,
+    };
+  }
+
+  private mostrarMenuPrincipal(nombre: string, yaRegistrado = false): FSMTransitionResult {
+    const saludo = yaRegistrado
+      ? `¡Hola de nuevo, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> 🌿\nQué gusto encontrarte de nuevo por aquí.`
+      : `¡Hola, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> 🌿`;
+
+    const botonesMenu = [
+      'Realizar pedido 🥪',
+      'Seguir pedido 📌',
+      'Buscar sucursales 🔍',
+      'Hacer una consulta 💬',
+    ];
+
+    return {
+      nextState: 'IDLE',
+      nextDraft: null,
+      replyText: `${saludo}\n\n¿En qué puedo ayudarte hoy? Selecciona una de las opciones del <b>Menú principal</b>:\n\n🥪 <b>Realizar pedido</b> — Consulta nuestra carta y pide a domicilio o retiro\n📌 <b>Seguir pedido</b> — Revisa el estado de tus órdenes en curso\n🔍 <b>Buscar sucursales</b> — Ubicación de tiendas y bodegas\n💬 <b>Hacer una consulta</b> — Chatea con un asesor de servicio`,
+      buttons: botonesMenu,
+    };
+  }
+
+  private mostrarCatalogoInicial(catalogo: CatalogItem[], perfil: BusinessProfile, nombre: string, yaRegistrado = false): FSMTransitionResult {
     const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
     const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+    const saludo = yaRegistrado
+      ? `¡Hola de nuevo, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> 🌿`
+      : `¡Hola, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> 🌿`;
 
     return {
       nextState: 'CATALOGO_ACTIVO',
       nextDraft: null,
-      replyText: `Hola, ${nombre}. Te damos la bienvenida a <b>Necto</b>.\n\n${catTexto}\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
-      buttons: botonesCat,
+      replyText: `${saludo}\n\n${catTexto}\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+      buttons: [...botonesCat, 'Menú principal 📋'],
     };
+  }
+
+  private formatearDestinatario(destinatario?: DestinatarioInfo | null): string {
+    if (destinatario && destinatario.tipo === 'tercero') {
+      return `\n<b>Destinatario:</b> ${destinatario.nombre || 'Otra persona'} (Tel: ${destinatario.telefono || 'Sin especificar'}) 🎁`;
+    }
+    return '';
   }
 
   private formatearCatalogo(catalogo: CatalogItem[], etiqueta: string): string {

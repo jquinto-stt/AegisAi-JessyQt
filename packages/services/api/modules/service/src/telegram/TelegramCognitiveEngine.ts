@@ -151,6 +151,57 @@ const BOT_TOOLS = [
   },
 ];
 
+const TOOLS_INVENTARIO = [
+  {
+    type: 'function',
+    function: {
+      name: 'consultar_stock_inventario',
+      description: 'Consulta las existencias, cantidad disponible o stock actual de uno o más artículos/productos en inventario o bodegas. Úsala cuando pregunten por existencias o unidades de cualquier artículo (ej: "¿cuántas papas quedan?", "¿hay stock de café?", "¿cuántas unidades de gaseosa tenemos?", "stock de combo hamburguesa").',
+      parameters: {
+        type: 'object',
+        properties: {
+          articulo: { type: 'string', description: 'Nombre o término del producto o insumo a consultar' },
+          bodega: { type: 'string', description: 'Nombre o filtro de bodega específica si fue indicada' },
+        },
+        required: ['articulo'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'consultar_alertas_inventario',
+      description: 'Consulta los artículos que están escasos, agotados o por debajo del punto mínimo de reorden en inventario. Úsala ante preguntas de alertas de stock, qué falta comprar, qué está agotado o qué se debe reponer.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'consultar_resumen_inventario',
+      description: 'Genera un balance o resumen general del inventario: total de artículos, unidades registradas, valorización y estado de bodegas. Ej: "¿cómo está el inventario?", "resumen de existencias", "balance general de stock".',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'consultar_bodegas',
+      description: 'Consulta la lista de bodegas, almacenes o sedes de almacenamiento activas de la organización.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
+];
+
 export class TelegramCognitiveEngine {
   private endpoint: string;
   private apiKey: string;
@@ -186,33 +237,68 @@ export class TelegramCognitiveEngine {
     estadoActual?: string;
     draft: CartDraft | null;
     historialPrevio?: Array<{ role: 'user' | 'assistant'; content: string }>;
+    esOperador?: boolean;
+    tieneInventarios?: boolean;
+    tienePedidos?: boolean;
   }): Promise<NLUResult | null> {
     if (!this.apiKey) {
       console.warn('[TelegramCognitiveEngine] No hay AZURE_OPENAI_KEY configurada.');
       return null;
     }
 
-    const { textoUsuario, catalogo, perfil, estadoActual, draft, historialPrevio } = params;
+    const {
+      textoUsuario,
+      catalogo,
+      perfil,
+      estadoActual,
+      draft,
+      historialPrevio,
+      esOperador = false,
+      tieneInventarios = true,
+      tienePedidos = true,
+    } = params;
     const catalogoItems = catalogo.map(c => `• ${c.nombre} ($${c.precio})`).join('\n');
     const carritoResumen = draft && draft.lineas.length > 0
       ? draft.lineas.map(l => `${l.cantidad}x ${l.nombre}`).join(', ')
       : 'Vacío';
 
-    const systemPrompt = `Eres el asistente de toma de pedidos para Necto en Colombia.
+    const habilitarInventario = esOperador && tieneInventarios;
+    let toolsDisponibles: any[] = [];
+    if (tienePedidos && habilitarInventario) {
+      toolsDisponibles = [...BOT_TOOLS, ...TOOLS_INVENTARIO];
+    } else if (tienePedidos) {
+      toolsDisponibles = BOT_TOOLS;
+    } else if (habilitarInventario) {
+      toolsDisponibles = TOOLS_INVENTARIO;
+    } else {
+      toolsDisponibles = BOT_TOOLS;
+    }
+
+    const instruccionesOperador = habilitarInventario
+      ? `\n7. El usuario es un OPERADOR AUTORIZADO de Necto con acceso al módulo de inventarios:
+   - Si pregunta por stock o existencias de un producto/insumo (ej. "¿cuántas papas quedan?", "stock de café", "hay existencias de gaseosa?") -> llama SIEMPRE a \`consultar_stock_inventario\`.
+   - Si pregunta por alertas, productos por agotarse, faltantes o reorden -> llama a \`consultar_alertas_inventario\`.
+   - Si pide un balance, resumen general o estado global del inventario -> llama a \`consultar_resumen_inventario\`.
+   - Si pregunta por bodegas, almacenes o sedes -> llama a \`consultar_bodegas\`.`
+      : '';
+
+    const systemPrompt = `Eres el asistente inteligente de Necto en Colombia.
 Tu función es interpretar el mensaje del usuario y seleccionar la herramienta adecuada (Tool Call) para ejecutar la acción correspondiente.
 
 INSTRUCCIONES CLAVE:
-1. Si el usuario pide cualquier comida o bebida (ej. "el pollo", "4 hamburguesas", "agrega papas", "otra más"), llama SIEMPRE a la herramienta \`agregar_productos\`. NUNCA ignores comida solo porque no esté en el menú visible.
+1. Si el usuario pide cualquier comida o bebida para pedir o comprar (ej. "el pollo", "4 hamburguesas", "agrega papas", "otra más"), llama SIEMPRE a la herramienta \`agregar_productos\`.
 2. Si el usuario dice "quiero hacer otro pedido", "otro pedido, no puedo?", "nuevo pedido", llama a \`iniciar_nuevo_pedido\`.
 3. Si el usuario dice "sí", "claro", "dale", "de una", "por favor", revisa el mensaje previo del asistente:
    - Si el asistente ofreció ver el catálogo -> llama a \`mostrar_catalogo\`.
    - Si el asistente pidió confirmar pedido -> llama a \`confirmar_pedido\`.
    - Si no hay contexto previo -> llama a \`mostrar_catalogo\`.
 4. Si indica "recoger", "recogerlo", "para llevar", "retiro", "a domicilio", llama a \`elegir_entrega\`.
-5. Si pregunta por horarios, costo de envío o dudas, llama a \`consultar_informacion\`.
-6. Si el mensaje es una broma, operación matemática (ej. "2+2"), poesía o ajeno al negocio, NO llames a ninguna herramienta.
+5. Si pregunta por horarios, costo de envío o dudas del negocio, llama a \`consultar_informacion\`.
+6. Si el mensaje es una broma, operación matemática (ej. "2+2"), poesía o ajeno al negocio, NO llames a ninguna herramienta.${instruccionesOperador}
 
 CONTEXTO ACTUAL:
+- Tipo de negocio: ${perfil?.perfilComercial || 'comercial'} (${perfil?.etiquetaCatalogo || 'Catálogo'})
+- Rol del usuario: ${esOperador ? 'Operador Autorizado' : 'Cliente / Público General'}
 - Estado del diálogo: ${estadoActual || 'IDLE'}
 - Carrito actual: ${carritoResumen}
 - Catálogo disponible:
@@ -242,7 +328,7 @@ ${catalogoItems}`;
         },
         body: JSON.stringify({
           messages: chatMessages,
-          tools: BOT_TOOLS,
+          tools: toolsDisponibles,
           tool_choice: 'auto',
           temperature: 0,
           max_tokens: 150,
@@ -371,6 +457,46 @@ ${catalogoItems}`;
 
         if (fnName === 'solicitar_humano') {
           return { intent: 'SOLICITAR_HUMANO', confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+
+        // --- HERRAMIENTAS DE INVENTARIO ---
+        if (fnName === 'consultar_stock_inventario') {
+          return {
+            intent: 'CONSULTAR_STOCK_INVENTARIO',
+            confidence: 0.99,
+            entities: {
+              articulo: args.articulo || textoUsuario,
+              bodega: args.bodega || undefined,
+            },
+            rawText: textoUsuario,
+          };
+        }
+
+        if (fnName === 'consultar_alertas_inventario') {
+          return {
+            intent: 'CONSULTAR_ALERTAS_INVENTARIO',
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario,
+          };
+        }
+
+        if (fnName === 'consultar_resumen_inventario') {
+          return {
+            intent: 'CONSULTAR_RESUMEN_INVENTARIO',
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario,
+          };
+        }
+
+        if (fnName === 'consultar_bodegas') {
+          return {
+            intent: 'CONSULTAR_BODEGAS',
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario,
+          };
         }
       }
 

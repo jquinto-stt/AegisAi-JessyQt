@@ -11,17 +11,22 @@
 //
 // `ModuloGuard` pregunta `organizacionStore.estaActivo("conversaciones")`, que
 // delega en `tieneConectorActivo("whatsapp")`. Y `tieneConectorActivo` recorre
-// los MÓDULOS DE NEGOCIO (`pedidos`, `inventario`) buscando uno con ese conector
-// encendido:
+// los MÓDULOS DE NEGOCIO (`pedidos`, `inventarios`) buscando uno con ese
+// conector encendido:
 //
 //     Object.keys(this.modulos).some(mId => this.esConectorActivo(mId, conectorId))
 //
 // Ahí está el problema real: **`conversaciones` no es un `IdModuloNegocio`.** El
-// tipo es `"pedidos" | "inventario"`, así que el conector `whatsapp` no se puede
-// encender «por sí solo» — se enciende *dentro* de un módulo de negocio. Con el
-// estado de fábrica (ningún módulo instalado) no hay ninguna clave sobre la que
-// ponerlo, y por eso el `setConectorActivo("conversaciones", …)` que parecía
-// obvio no compila: no existe tal clave.
+// tipo es `"pedidos" | "inventarios"`, así que el conector `whatsapp` no se
+// puede encender «por sí solo» — se enciende *dentro* de un módulo de negocio.
+// Con el estado de fábrica (ningún módulo instalado) no hay ninguna clave sobre
+// la que ponerlo, y por eso el `setConectorActivo("conversaciones", …)` que
+// parecía obvio no compila: no existe tal clave.
+//
+// Inventarios **no sirve** para esto, y no por descuido: su
+// `DETALLE_CONECTORES` declara los dos conectores con beneficios vacíos, porque
+// un conteo no se pregunta por chat. Encenderlo para desbloquear Conversaciones
+// sería además afirmar una instalación que nadie pidió.
 //
 // Encender `pedidos` para desbloquear Conversaciones sería el arreglo fácil y el
 // equivocado: afirmaría una instalación que nadie pidió y metería una sección de

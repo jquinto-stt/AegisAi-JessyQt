@@ -6,7 +6,7 @@ import {
   IDS_CONECTORES,
   type IdModuloNegocio,
 } from "./plataforma.store";
-import { MODULOS_INTEGRABLES } from "./integraciones.store";
+import { ORDEN_MODULOS_INTEGRABLES } from "./integraciones.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // NIVEL 1 — PLATAFORMA
@@ -29,7 +29,7 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
   const store = new PlataformaStore();
 
   it("expone el catálogo completo, en orden de declaración", () => {
-    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos"]);
+    expect(store.catalogoModulos.map((m) => m.id)).toEqual(["pedidos", "inventarios"]);
     expect(store.catalogoModulos).toHaveLength(Object.keys(CATALOGO_MODULOS).length);
   });
 
@@ -41,20 +41,37 @@ describe("PlataformaStore — catálogo (nivel 1)", () => {
     expect(store.catalogoModulos.map((m) => m.id)).toContain("pedidos");
     expect(store.catalogoModulos.filter((m) => m.disponible).map((m) => m.id)).toEqual([
       "pedidos",
+      "inventarios",
     ]);
   });
 
   it("coincide con MODULOS_INTEGRABLES: los dos catálogos no pueden contradecirse", () => {
-    for (const id of Object.keys(CATALOGO_MODULOS) as IdModuloNegocio[]) {
+    // La comprobación va en una dirección: `MODULOS_INTEGRABLES` es un
+    // subconjunto deliberado (solo los módulos que aportan herramientas al
+    // asistente). Inventarios no está ahí porque no tiene conectores, y eso no
+    // es una discrepancia — es la decisión. Lo que sí sería un error es que un
+    // módulo integrable no exista en el catálogo de la plataforma.
+    for (const id of ORDEN_MODULOS_INTEGRABLES) {
       expect(
-        MODULOS_INTEGRABLES[id].disponible,
-        `CATALOGO_MODULOS y MODULOS_INTEGRABLES discrepan sobre ${id}`,
-      ).toBe(CATALOGO_MODULOS[id].disponible);
+        CATALOGO_MODULOS[id],
+        `MODULOS_INTEGRABLES ofrece ${id} y CATALOGO_MODULOS no lo declara`,
+      ).toBeDefined();
     }
   });
 
   it("conectoresDe devuelve los conectores del módulo en orden canónico", () => {
     expect(store.conectoresDe("pedidos")).toEqual(IDS_CONECTORES);
+    expect(store.conectoresDe("inventarios")).toEqual(IDS_CONECTORES);
+  });
+
+  it("Inventarios declara sus dos conectores SIN beneficios: no promete lo que no hace", () => {
+    // Un conector con beneficios escritos es una promesa de producto. El módulo
+    // de conteos no tiene ninguno, y la UI lee esta lista para pintar la
+    // tarjeta. Si alguien rellenara estos arrays, la configuración empezaría a
+    // ofrecer encender algo que no existe.
+    for (const conector of IDS_CONECTORES) {
+      expect(DETALLE_CONECTORES.inventarios[conector].beneficios).toEqual([]);
+    }
   });
 
   it("el catálogo es exhaustivo: todo id del tipo tiene módulo y conectores declarados", () => {

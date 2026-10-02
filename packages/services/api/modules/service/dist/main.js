@@ -77159,6 +77159,9 @@ var EP;
   EP.$Finish = EP.QueueById$.sub("/finish").endpoint(Method.POST);
   EP.$MoveTurno = EP.TurnoByNum$.endpoint(Method.PATCH);
   EP.$RemoveTurno = EP.TurnoByNum$.endpoint(Method.DELETE);
+  //!PATH - Auth
+  EP.Auth$ = EP.Root$.sub("/auth");
+  EP.$Register = EP.Auth$.sub("/register").endpoint(Method.POST);
 })(EP ||= {});
 var endpoints_default = EP;
 
@@ -77392,1337 +77395,6 @@ __legacyDecorateClassTS([
   __legacyMetadataTS("design:returntype", Promise)
 ], Turnos.prototype, "remove", null);
 var Turnos_default = Turnos;
-
-// src/controllers/index.ts
-var controllers2 = [
-  Health_default,
-  Queues_default,
-  Turnos_default
-];
-var controllers_default = controllers2;
-
-// src/telegram/TelegramNLU.ts
-function normStr(s) {
-  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
-
-class TelegramNLU {
-  interpretarFastPath(texto, catalogo, estadoActual) {
-    const raw = (texto || "").trim();
-    const norm = normStr(raw);
-    if (/^(?:cuanto\s+es\s+)?\d+\s*[\+\-\*\/xX]\s*\d+\s*\??$/i.test(norm) || /^(?:calcula|suma|resta|multiplica|divide)\s+\d+/i.test(norm)) {
-      return { intent: "FUERA_DE_DOMINIO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "/start" || norm === "hola" || norm === "buenas" || norm === "buenos dias" || norm === "buenas tardes") {
-      return { intent: "SALUDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "ver catalogo" || norm === "ver menu" || norm === "catalogo" || norm === "menu" || norm === "ver menu \uD83D\uDCDC" || norm === "ver catalogo \uD83D\uDCDC") {
-      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if ((estadoActual === "SOLICITANDO_ENTREGA" || estadoActual === "CARRITO_EN_CONSTRUCCION") && (norm.includes("opcion") || norm.includes("opciones") || norm.includes("cuales") || norm.includes("como entregan") || norm.includes("como es"))) {
-      return { intent: "DUDA_PROCESO_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "\uD83D\uDEF5 a domicilio" || norm === "a domicilio" || norm === "domicilio" || norm === "envio a domicilio") {
-      return { intent: "ELEGIR_MODALIDAD", confidence: 1, entities: { modalidad: "domicilio" }, rawText: raw };
-    }
-    if (norm === "\uD83D\uDECD️ para retirar" || norm === "para retirar" || norm === "retiro" || norm === "retiro en local" || norm === "para llevar" || norm.includes("recoger") || norm.includes("retirar")) {
-      return { intent: "ELEGIR_MODALIDAD", confidence: 1, entities: { modalidad: "retiro" }, rawText: raw };
-    }
-    if (norm === "\uD83D\uDEF5 proceder a la entrega" || norm === "proceder a la entrega" || norm === "ya con eso" || norm === "no ya con eso" || norm === "eso es todo") {
-      return { intent: "PROCEDER_ENTREGA", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "➕ agregar mas" || norm === "➕ agregar mas productos" || norm === "agregar mas" || norm === "agregar mas productos" || norm.includes("catalogo") || norm.includes("menu") || norm.includes("ver productos") || norm.includes("la carta") || norm === "ver menu") {
-      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
-    }
-    const esAfirmativo = /^(?:si|sí|claro|dale|por favor|porfa|de una|obvio|yes)$/i.test(norm);
-    if (esAfirmativo) {
-      if (estadoActual === "CONFIRMANDO_PEDIDO") {
-        return { intent: "CONFIRMAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-      }
-      if (estadoActual === "CONFIRMANDO_CANCELACION") {
-        return { intent: "CONFIRMAR_CANCELACION_SI", confidence: 1, entities: {}, rawText: raw };
-      }
-      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "✅ confirmar pedido" || norm === "confirmar pedido" || norm === "si confirmar" || norm === "confirmar orden") {
-      return { intent: "CONFIRMAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "si, cancelar pedido ❌" || norm === "si, cancelar pedido" || norm === "si cancelar" || norm === "si cancelar orden") {
-      return { intent: "CONFIRMAR_CANCELACION_SI", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "no, mantener pedido ✅" || norm === "no, mantener pedido" || norm === "no mantener" || norm === "mantener pedido" || norm === "mantener orden") {
-      return { intent: "CONFIRMAR_CANCELACION_NO", confidence: 1, entities: {}, rawText: raw };
-    }
-    const matchCancelNum = norm.match(/^(?:❌\s*)?cancelar(?:\s+el)?(?:\s+pedido|\s+la\s+orden|\s+orden)?(?:\s+#?web-|\s+#|\s+)?(\d{2,4})$/i);
-    if (matchCancelNum) {
-      return { intent: "CANCELAR_PEDIDO", confidence: 1, entities: { numeroPedido: matchCancelNum[1] }, rawText: raw };
-    }
-    if (norm === "❌ cancelar" || norm === "cancelar pedido ❌" || norm === "cancelar pedido" || norm === "❌ cancelar pedido" || norm === "cancelar" || norm === "cancelar orden") {
-      return { intent: "CANCELAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "✏️ modificar" || norm === "modificar" || norm === "modificar pedido" || norm === "modificar orden") {
-      return { intent: "MODIFICAR_CANTIDAD", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "\uD83D\uDCE6 estado del pedido" || norm === "estado del pedido" || norm === "como va mi pedido" || norm === "mis pedidos" || norm === "ver pedidos" || norm === "pedidos" || norm === "estado de mis pedidos" || norm === "consultar pedidos") {
-      return { intent: "CONSULTA_ESTADO_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "\uD83D\uDC64 hablar con asesor" || norm === "hablar con asesor \uD83D\uDC64" || norm === "asesor" || norm === "humano" || norm === "hablar con asesor") {
-      return { intent: "SOLICITAR_HUMANO", confidence: 1, entities: {}, rawText: raw };
-    }
-    if (norm === "\uD83D\uDED2 hacer otro pedido" || norm.includes("otro pedido") || norm.includes("nuevo pedido") || norm.includes("otra orden") || norm.includes("hacer otro") || norm.includes("pedir otra cosa")) {
-      return { intent: "REINICIAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
-    }
-    const matchBtnOrdinal = norm.match(/^(\d+)\.\s*(.+)/);
-    if (matchBtnOrdinal) {
-      const idx = parseInt(matchBtnOrdinal[1], 10);
-      if (idx >= 1 && idx <= catalogo.length) {
-        return {
-          intent: "SELECCION_POR_ORDINAL",
-          confidence: 1,
-          entities: { ordinalIndex: idx },
-          rawText: raw
-        };
-      }
-    }
-    return null;
-  }
-  interpretarFallbackLocal(texto, catalogo, estadoActual) {
-    const raw = (texto || "").trim();
-    const norm = normStr(raw);
-    const fast = this.interpretarFastPath(texto, catalogo, estadoActual);
-    if (fast)
-      return fast;
-    if (estadoActual === "SOLICITANDO_DIRECCION" && (/\d+/.test(raw) || norm.includes("calle") || norm.includes("carrera") || norm.includes("diagonal"))) {
-      return { intent: "DAR_DIRECCION", confidence: 0.8, entities: { direccion: raw }, rawText: raw };
-    }
-    return { intent: "DESCONOCIDO", confidence: 0.5, entities: {}, rawText: raw };
-  }
-}
-
-// src/telegram/TelegramFSM.ts
-function normStr2(s) {
-  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-}
-
-class TelegramFSM {
-  transition(currentState, incomingDraft, nlu, catalogo, perfil, clienteNombre, ultimoPedido, pedidosCliente) {
-    const draft = incomingDraft ? structuredClone(incomingDraft) : null;
-    const nombreRef = clienteNombre ? clienteNombre.split(" ")[0] : "amigo/a";
-    if (nlu.intent === "FUERA_DE_DOMINIO") {
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: "Soy el asistente de pedidos de Necto. Puedo colaborarte consultando productos, precios o gestionando tu pedido. ¿Qué deseas consultar?",
-        buttons: ["Ver menú", "Estado de mis pedidos", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "CONSULTAR_PRODUCTO") {
-      const q = normStr2(nlu.entities.nombreItem || "");
-      const item = catalogo.find((c) => normStr2(c.nombre).includes(q) || q.includes(normStr2(c.nombre)));
-      if (item) {
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `<b>INFORMACIÓN DE PRODUCTO</b>
-<blockquote><b>${item.nombre}</b>
-Precio: <code>$${item.precio.toLocaleString("es-CO")} COP</code></blockquote>
-¿Deseas agregarlo a tu pedido?`,
-          buttons: [`Ordenar ${item.nombre.slice(0, 16)}`, "Ver menú"]
-        };
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: `En este momento no encuentro "${nlu.entities.nombreItem || ""}" en el catálogo disponible.
-
-¿Deseas ver las opciones disponibles?`,
-        buttons: ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "CONSULTAR_PRECIO") {
-      const q = normStr2(nlu.entities.nombreItem || "");
-      const item = catalogo.find((c) => normStr2(c.nombre).includes(q) || q.includes(normStr2(c.nombre)));
-      if (item) {
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `<b>PRECIO DEL PRODUCTO</b>
-<blockquote><b>${item.nombre}</b>: <code>$${item.precio.toLocaleString("es-CO")} COP</code></blockquote>`,
-          buttons: [`Ordenar ${item.nombre.slice(0, 16)}`, "Ver menú"]
-        };
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: `No encuentro ese producto en el catálogo disponible para consultar su precio.
-
-¿Deseas revisar el menú completo?`,
-        buttons: ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "VER_CATALOGO") {
-      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
-      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
-      if (draft && draft.lineas.length > 0) {
-        const total = this.calcularTotal(draft);
-        return {
-          nextState: "CARRITO_EN_CONSTRUCCION",
-          nextDraft: draft,
-          replyText: `${catTexto}
-
-<blockquote><b>Pedido en curso:</b> ${draft.lineas.length} producto(s) — Subtotal: <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-
-Puedes seleccionar otro producto o presionar <b>Proceder a la entrega</b> cuando termines.`,
-          buttons: ["Proceder a la entrega", ...botonesCat.slice(0, 2)]
-        };
-      }
-      return {
-        nextState: "CATALOGO_ACTIVO",
-        nextDraft: null,
-        replyText: `${catTexto}
-
-Puedes seleccionar un producto de la lista o indicarme qué deseas ordenar.`,
-        buttons: botonesCat
-      };
-    }
-    if (nlu.intent === "DUDA_PROCESO_PEDIDO") {
-      if (currentState === "SOLICITANDO_ENTREGA" && draft) {
-        const subtotal = this.calcularTotal(draft);
-        return {
-          nextState: "SOLICITANDO_ENTREGA",
-          nextDraft: draft,
-          replyText: `<b>OPCIONES DE ENTREGA</b>
-<blockquote>1. <b>Envío a domicilio:</b> Te lo llevamos a tu dirección (Tarifa: <code>$${Number(perfil.costoEnvio).toLocaleString("es-CO")} COP</code>).
-2. <b>Retiro en local:</b> Puedes recoger tu orden directamente sin costo adicional.</blockquote>
-
-Subtotal actual: <code>$${subtotal.toLocaleString("es-CO")} COP</code>.
-¿Cuál de las dos opciones prefieres?`,
-          buttons: ["Envío a domicilio", "Retiro en local"]
-        };
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: "Puedes agregar todos los productos que desees a tu pedido. ¿Qué más te gustaría ordenar?",
-        buttons: ["Ver menú", "Proceder a la entrega"]
-      };
-    }
-    if (nlu.intent === "PROCEDER_ENTREGA") {
-      if (!draft || draft.lineas.length === 0) {
-        return {
-          nextState: "IDLE",
-          nextDraft: null,
-          replyText: `No tienes productos agregados a tu pedido actualmente.
-
-¿Deseas ver nuestro catálogo para ordenar?`,
-          buttons: ["Ver menú", "Hablar con asesor"]
-        };
-      }
-      if (!draft.modalidad) {
-        const subtotal2 = this.calcularTotal(draft);
-        return {
-          nextState: "SOLICITANDO_ENTREGA",
-          nextDraft: draft,
-          replyText: `<b>MÉTODO DE ENTREGA</b>
-<blockquote>Subtotal acumulado: <code>$${subtotal2.toLocaleString("es-CO")} COP</code></blockquote>
-¿Cómo prefieres recibir tu entrega?`,
-          buttons: ["Envío a domicilio", "Retiro en local"]
-        };
-      }
-      if (draft.modalidad === "domicilio" && !draft.direccion) {
-        return {
-          nextState: "SOLICITANDO_DIRECCION",
-          nextDraft: draft,
-          replyText: "Por favor compártenos tu dirección completa de entrega en Colombia (calle, número y barrio):",
-          buttons: [],
-          removeKeyboard: true
-        };
-      }
-      const subtotal = this.calcularTotal(draft);
-      const costoEnvio = draft.modalidad === "domicilio" ? perfil.costoEnvio : 0;
-      const total = subtotal + costoEnvio;
-      const entregaStr = draft.modalidad === "domicilio" ? `Domicilio en <i>${draft.direccion}</i>` : `Retiro en local`;
-      return {
-        nextState: "CONFIRMANDO_PEDIDO",
-        nextDraft: draft,
-        replyText: `<b>RESUMEN DEL PEDIDO</b>
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
-${costoEnvio > 0 ? `<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
-` : ""}<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
-<b>Entrega:</b> ${entregaStr}</blockquote>
-¿Deseas confirmar tu orden para generar el enlace de pago seguro?`,
-        buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
-      };
-    }
-    if (nlu.intent === "SOLICITAR_HUMANO") {
-      return {
-        nextState: "MODO_HUMANO",
-        nextDraft: draft,
-        replyText: `Te comunico de inmediato con uno de nuestros asesores para que te atienda personalmente. Tu conversación y pedido quedan registrados para el equipo. En breve te responderán por este medio.`,
-        buttons: [],
-        removeKeyboard: true
-      };
-    }
-    if (nlu.intent === "REINICIAR_PEDIDO") {
-      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
-      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
-      return {
-        nextState: "CATALOGO_ACTIVO",
-        nextDraft: null,
-        replyText: `Iniciamos una nueva orden. (Tus pedidos confirmados anteriores siguen guardados y en proceso).
-
-${catTexto}
-Puedes seleccionar un producto o decirme qué deseas pedir.`,
-        buttons: botonesCat
-      };
-    }
-    if (nlu.intent === "CONSULTA_COSTO_ENVIO") {
-      const costoEnvioFmt = Number(perfil.costoEnvio).toLocaleString("es-CO");
-      let resumenActual = "";
-      if (draft && draft.lineas.length > 0) {
-        const total = this.calcularTotal(draft);
-        resumenActual = `
-
-Tu pedido actual tiene un valor de <b>$${total.toLocaleString("es-CO")} COP</b> (${draft.lineas.map((l) => `${l.cantidad} × ${l.nombre}`).join(", ")}).
-¿Cómo deseas recibirlo?`;
-      } else {
-        resumenActual = `
-
-Puedes indicarme qué deseas ordenar cuando estés listo.`;
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: `<b>TARIFA DE ENVÍO</b>
-<blockquote>El servicio a domicilio en la zona tiene un costo fijo de <code>$${costoEnvioFmt} COP</code>.</blockquote>${resumenActual}`,
-        buttons: draft && draft.lineas.length > 0 ? ["Envío a domicilio", "Retiro en local"] : ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "CONSULTA_HORARIO") {
-      let resumenActual = "";
-      if (draft && draft.lineas.length > 0) {
-        const total = this.calcularTotal(draft);
-        resumenActual = `
-
-Tu pedido sigue guardado por <b>$${total.toLocaleString("es-CO")} COP</b>.
-¿Deseas entrega a domicilio o retiro en el local?`;
-      } else {
-        resumenActual = `
-
-¿En qué podemos colaborar con tu orden?`;
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: `<b>HORARIO DE ATENCIÓN</b>
-<blockquote>${perfil.horarioAtencion}</blockquote>${resumenActual}`,
-        buttons: draft && draft.lineas.length > 0 ? ["Envío a domicilio", "Retiro en local"] : ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "CONSULTA_ESTADO_PEDIDO") {
-      const listaPedidos = pedidosCliente && pedidosCliente.length > 0 ? pedidosCliente : ultimoPedido ? [ultimoPedido] : [];
-      if (listaPedidos.length > 0) {
-        const resumen = listaPedidos.map((p) => {
-          let estadoDesc = p.estado;
-          if (p.estado === "nuevo" || p.estado === "pendiente")
-            estadoDesc = `${p.estado} (pendiente de pago)`;
-          return `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString("es-CO")} COP</code>
-  Estado: <i>${estadoDesc}</i>`;
-        }).join(`
-
-`);
-        const pedidosCancelables = listaPedidos.filter((p) => p.estado === "nuevo" || p.estado === "pendiente");
-        let cancelButtons = [];
-        if (pedidosCancelables.length === 1) {
-          cancelButtons = [`Cancelar orden #${pedidosCancelables[0].numero}`];
-        } else if (pedidosCancelables.length > 1) {
-          cancelButtons = ["Cancelar orden"];
-        }
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `<b>TUS PEDIDOS REGISTRADOS</b>
-<blockquote>${resumen}</blockquote>
-¿Deseas realizar un nuevo pedido, cancelar alguna orden o consultar algo adicional?`,
-          buttons: ["Hacer otro pedido", ...cancelButtons, "Hablar con asesor"]
-        };
-      }
-      return {
-        nextState: currentState,
-        nextDraft: draft,
-        replyText: `No encontramos pedidos registrados asociados a tu número en este momento.
-
-¿Deseas ver nuestro catálogo para ordenar?`,
-        buttons: ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (currentState === "CONFIRMANDO_RETOMA") {
-      if (nlu.intent === "CONTINUAR_RETOMA" && draft) {
-        const total = this.calcularTotal(draft);
-        return {
-          nextState: "SOLICITANDO_ENTREGA",
-          nextDraft: draft,
-          replyText: `<b>RETOMANDO TU PEDIDO</b>
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-¿Cómo prefieres recibir tu entrega?`,
-          buttons: ["Envío a domicilio", "Retiro en local"]
-        };
-      }
-      return this.mostrarCatalogoInicial(catalogo, perfil, nombreRef);
-    }
-    if (nlu.intent === "CANCELAR_PEDIDO" || nlu.intent === "CONFIRMAR_CANCELACION_SI") {
-      const listaPedidos = pedidosCliente && pedidosCliente.length > 0 ? pedidosCliente : ultimoPedido ? [ultimoPedido] : [];
-      const pedidosCancelables = listaPedidos.filter((p) => p.estado === "nuevo" || p.estado === "pendiente");
-      const rawText = nlu.rawText || "";
-      const numBuscado = nlu.entities.numeroPedido || rawText.match(/(?:#?WEB-|\b)(\d{2,4})\b/i)?.[1];
-      let pedidoObjetivo = null;
-      if (numBuscado) {
-        pedidoObjetivo = listaPedidos.find((p) => p.numero.toLowerCase().includes(numBuscado.toLowerCase()) || p.id.includes(numBuscado)) || null;
-      }
-      if (!pedidoObjetivo && (rawText.toLowerCase().includes("anterior") || rawText.toLowerCase().includes("el otro") || rawText.toLowerCase().includes("primero"))) {
-        pedidoObjetivo = pedidosCancelables[0] || (listaPedidos.length > 1 ? listaPedidos[1] : null);
-      }
-      if (!pedidoObjetivo && pedidosCancelables.length === 1) {
-        pedidoObjetivo = pedidosCancelables[0];
-      }
-      if (!pedidoObjetivo && pedidosCancelables.length > 1) {
-        const botonesCancel = pedidosCancelables.map((p) => `Cancelar orden #${p.numero}`);
-        const items = pedidosCancelables.map((p) => `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString("es-CO")} COP</code>`).join(`
-`);
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `<b>CANCELACIÓN DE PEDIDO</b>
-<blockquote>${items}</blockquote>
-Tienes varias órdenes pendientes. ¿Cuál de ellas deseas cancelar?`,
-          buttons: [...botonesCancel, "Mantener pedidos"]
-        };
-      }
-      if (pedidoObjetivo) {
-        if (pedidoObjetivo.estado === "nuevo" || pedidoObjetivo.estado === "pendiente") {
-          return {
-            nextState: "IDLE",
-            nextDraft: null,
-            orderCancelledId: pedidoObjetivo.id,
-            replyText: `<b>ORDEN CANCELADA</b>
-<blockquote>Tu pedido <b>#${pedidoObjetivo.numero}</b> ha sido cancelado con éxito en el sistema.</blockquote>
-Cuando desees realizar un nuevo pedido, con gusto te atenderemos.`,
-            buttons: ["Hacer pedido", "Ver menú", "Hablar con asesor"]
-          };
-        } else if (pedidoObjetivo.estado === "en_preparacion" || pedidoObjetivo.estado === "en_camino" || pedidoObjetivo.estado === "listo") {
-          return {
-            nextState: "MODO_HUMANO",
-            nextDraft: draft,
-            replyText: `Tu pedido <b>#${pedidoObjetivo.numero}</b> ya se encuentra en estado <b>${pedidoObjetivo.estado}</b>, por lo que no es posible cancelarlo de forma automática.
-
-Te comunico de inmediato con un asesor del local para que te colabore personalmente.`,
-            buttons: [],
-            removeKeyboard: true
-          };
-        } else if (pedidoObjetivo.estado === "cancelado") {
-          return {
-            nextState: currentState,
-            nextDraft: draft,
-            replyText: `El pedido <b>#${pedidoObjetivo.numero}</b> ya se encuentra cancelado en el sistema.
-
-¿Deseas realizar un nuevo pedido o consultar algo adicional?`,
-            buttons: ["Hacer otro pedido", "Ver menú", "Hablar con asesor"]
-          };
-        }
-      }
-      if (draft && draft.lineas.length > 0) {
-        return {
-          nextState: "IDLE",
-          nextDraft: null,
-          replyText: `Tu orden en curso ha sido cancelada. Cuando desees empezar de nuevo, solo escribe un mensaje.`,
-          buttons: ["Ver menú", "Hablar con asesor"]
-        };
-      }
-      return {
-        nextState: "IDLE",
-        nextDraft: null,
-        replyText: `No tienes ningún pedido activo pendiente de cancelación en este momento.
-
-¿Deseas revisar nuestro catálogo para ordenar?`,
-        buttons: ["Ver menú", "Hablar con asesor"]
-      };
-    }
-    if (nlu.intent === "MODIFICAR_CANTIDAD" && draft && draft.lineas.length > 0) {
-      const nuevaCantidad = nlu.entities.cantidad || 1;
-      const ultimaLinea = draft.lineas[draft.lineas.length - 1];
-      ultimaLinea.cantidad = nuevaCantidad;
-      const total = this.calcularTotal(draft);
-      const siguienteEstado = draft.modalidad ? "CONFIRMANDO_PEDIDO" : "SOLICITANDO_ENTREGA";
-      return {
-        nextState: siguienteEstado,
-        nextDraft: draft,
-        replyText: `<b>CANTIDAD ACTUALIZADA</b>
-<blockquote>${nuevaCantidad}x ${ultimaLinea.nombre}
-<b>Nuevo total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-${draft.modalidad ? "¿Confirmas tu pedido modificado?" : "¿Deseas recibirlo a domicilio o prefieres retirarlo en local?"}`,
-        buttons: draft.modalidad ? ["Confirmar pedido", "Modificar pedido", "Cancelar orden"] : ["Envío a domicilio", "Retiro en local"]
-      };
-    }
-    if (nlu.intent === "ELIMINAR_ITEM" && draft && draft.lineas.length > 0) {
-      const qElim = normStr2(nlu.entities.nombreItem || "");
-      const lineasFiltradas = draft.lineas.filter((l) => {
-        const lNorm = normStr2(l.nombre);
-        const matchDirecto = lNorm.includes(qElim) || qElim.includes(lNorm);
-        const matchPalabras = qElim.split(" ").some((w) => w.length > 2 && lNorm.includes(w));
-        return !matchDirecto && !matchPalabras;
-      });
-      if (lineasFiltradas.length === 0) {
-        return {
-          nextState: "IDLE",
-          nextDraft: null,
-          replyText: `El producto fue retirado y tu pedido ha quedado vacío.
-
-Puedes consultar el catálogo o indicarme qué deseas ordenar.`,
-          buttons: ["Ver menú", "Hablar con asesor"]
-        };
-      }
-      draft.lineas = lineasFiltradas;
-      const total = this.calcularTotal(draft);
-      return {
-        nextState: "CARRITO_EN_CONSTRUCCION",
-        nextDraft: draft,
-        replyText: `<b>PRODUCTO RETIRADO</b>
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Subtotal:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-¿Deseas agregar algo más o proceder con la entrega?`,
-        buttons: ["Proceder a la entrega", "Agregar más productos", "Cancelar orden"]
-      };
-    }
-    if (nlu.intent === "SUSTITUIR_ITEM" && draft && draft.lineas.length > 0) {
-      const itemQuitar = normStr2(nlu.entities.reemplazarItem || "");
-      const itemAgregar = normStr2(nlu.entities.nuevoItem || "");
-      const nuevoEncontrado = catalogo.find((c) => {
-        const cNorm = normStr2(c.nombre);
-        return cNorm.includes(itemAgregar) || itemAgregar.includes(cNorm);
-      });
-      if (!nuevoEncontrado) {
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `No encontramos "${nlu.entities.nuevoItem}" en nuestro catálogo de productos disponibles.
-
-Conservas tu pedido actual intacto:
-<blockquote>${this.formatearLineas(draft)}</blockquote>
-¿Deseas elegir otra opción disponible?`,
-          buttons: ["Ver menú", "Proceder a la entrega"]
-        };
-      }
-      draft.lineas = draft.lineas.filter((l) => {
-        const lNorm = normStr2(l.nombre);
-        const matchDirecto = lNorm.includes(itemQuitar) || itemQuitar.includes(lNorm);
-        const matchPalabras = itemQuitar.split(" ").some((w) => w.length > 2 && lNorm.includes(w));
-        return !matchDirecto && !matchPalabras;
-      });
-      draft.lineas.push({
-        productId: nuevoEncontrado.id,
-        nombre: nuevoEncontrado.nombre,
-        precioUnitario: nuevoEncontrado.precio,
-        cantidad: 1
-      });
-      const total = this.calcularTotal(draft);
-      return {
-        nextState: "SOLICITANDO_ENTREGA",
-        nextDraft: draft,
-        replyText: `<b>PRODUCTO ACTUALIZADO</b>
-<blockquote>Se agregó: ${nuevoEncontrado.nombre} (<code>$${nuevoEncontrado.precio.toLocaleString("es-CO")} COP</code>)
-
-<b>Pedido actual:</b>
-${this.formatearLineas(draft)}
-──────────────────────────
-<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-¿Cómo prefieres recibir tu pedido?`,
-        buttons: ["Envío a domicilio", "Retiro en local"]
-      };
-    }
-    if (nlu.intent === "SELECCION_POR_ORDINAL" && nlu.entities.ordinalIndex) {
-      const idx = nlu.entities.ordinalIndex - 1;
-      if (idx >= 0 && idx < catalogo.length) {
-        const itemSeleccionado = catalogo[idx];
-        const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
-        const existente = activeDraft.lineas.find((x) => x.productId === itemSeleccionado.id);
-        if (existente) {
-          existente.cantidad += 1;
-        } else {
-          activeDraft.lineas.push({
-            productId: itemSeleccionado.id,
-            nombre: itemSeleccionado.nombre,
-            precioUnitario: itemSeleccionado.precio,
-            cantidad: 1
-          });
-        }
-        const total = this.calcularTotal(activeDraft);
-        return {
-          nextState: "CARRITO_EN_CONSTRUCCION",
-          nextDraft: activeDraft,
-          replyText: `<b>PRODUCTO AGREGADO</b>
-<blockquote>1x ${itemSeleccionado.nombre} — <code>$${itemSeleccionado.precio.toLocaleString("es-CO")} COP</code>
-
-<b>Subtotal acumulado:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-¿Deseas agregar algo más o proceder con la entrega?`,
-          buttons: ["Agregar más productos", "Proceder a la entrega"]
-        };
-      }
-    }
-    if (nlu.intent === "AGREGAR_ITEMS" && nlu.itemsParaAgregar && nlu.itemsParaAgregar.length > 0) {
-      const lineasNuevas = [];
-      const noEncontrados = [];
-      let mensajeStockExcedido = null;
-      for (const req of nlu.itemsParaAgregar) {
-        if (/^(?:otra|otro|lo mismo|uno mas|una mas|otra mas|otro mas)$/i.test(req.query.trim()) && draft && draft.lineas.length > 0) {
-          const ultimaLinea = draft.lineas[draft.lineas.length - 1];
-          req.query = ultimaLinea.nombre;
-        }
-        const coreQuery = req.query.replace(/\s+(?:sin|con\s+extra|sin\s+salsas?|sin\s+cebolla|sin\s+tomate|con\s+todo)\b.*$/i, "").trim();
-        const qNorm = normStr2(coreQuery || req.query);
-        const qWords = qNorm.split(/\s+/).map((w) => w.replace(/s$/i, "")).filter((w) => w.length >= 3);
-        const matched = catalogo.find((c) => {
-          const cNorm = normStr2(c.nombre);
-          if (cNorm.includes(qNorm) || qNorm.includes(cNorm))
-            return true;
-          const cWords = cNorm.split(/\s+/).map((w) => w.replace(/s$/i, ""));
-          return qWords.length > 0 && qWords.some((qw) => qw.length >= 3 && cWords.some((cw) => cw.includes(qw) || qw.includes(cw)));
-        });
-        if (!matched) {
-          noEncontrados.push(req.query);
-        } else {
-          if (matched.stock < req.cantidad) {
-            mensajeStockExcedido = `Solo disponemos de <b>${matched.stock} unidades</b> de <b>${matched.nombre}</b> (solicitaste ${req.cantidad}).
-
-¿Deseas llevar las ${matched.stock} unidades disponibles o prefieres elegir otro producto?`;
-            break;
-          }
-          lineasNuevas.push({
-            productId: matched.id,
-            nombre: matched.nombre,
-            precioUnitario: matched.precio,
-            cantidad: req.cantidad
-          });
-        }
-      }
-      if (mensajeStockExcedido) {
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: mensajeStockExcedido,
-          buttons: ["Llevar disponibles", "Ver menú", "Cancelar orden"]
-        };
-      }
-      if (noEncontrados.length > 0 && lineasNuevas.length === 0) {
-        const listaOpciones = catalogo.map((c) => `• <b>${c.nombre}</b> — <code>$${c.precio.toLocaleString("es-CO")} COP</code>`).join(`
-`);
-        const estadoPrevioTexto = draft && draft.lineas.length > 0 ? `
-
-Conservas tu pedido previo:
-<blockquote>${this.formatearLineas(draft)}</blockquote>` : "";
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `Por el momento no disponemos de "${noEncontrados.join(", ")}" en nuestro catálogo.
-
-Opciones disponibles:
-<blockquote>${listaOpciones}</blockquote>${estadoPrevioTexto}
-¿Deseas añadir alguna de las opciones disponibles?`,
-          buttons: catalogo.slice(0, 3).map((c) => c.nombre.slice(0, 18))
-        };
-      }
-      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
-      for (const l of lineasNuevas) {
-        const existente = activeDraft.lineas.find((x) => x.productId === l.productId);
-        if (existente) {
-          existente.cantidad += l.cantidad;
-        } else {
-          activeDraft.lineas.push(l);
-        }
-      }
-      if (nlu.entities.modalidad === "domicilio" && nlu.entities.direccion) {
-        activeDraft.modalidad = "domicilio";
-        activeDraft.direccion = nlu.entities.direccion;
-        const subtotal = this.calcularTotal(activeDraft);
-        const costoEnvio = perfil.costoEnvio;
-        const total2 = subtotal + costoEnvio;
-        return {
-          nextState: "CONFIRMANDO_PEDIDO",
-          nextDraft: activeDraft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>
-<blockquote>${this.formatearLineas(activeDraft)}
-──────────────────────────
-<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
-<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
-<b>Total:</b> <code>$${total2.toLocaleString("es-CO")} COP</code>
-<b>Entrega:</b> Domicilio en <i>${activeDraft.direccion}</i></blockquote>
-¿Confirmas tu orden con estos datos?`,
-          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
-        };
-      }
-      if (nlu.entities.modalidad === "retiro") {
-        activeDraft.modalidad = "retiro";
-        const total2 = this.calcularTotal(activeDraft);
-        return {
-          nextState: "CONFIRMANDO_PEDIDO",
-          nextDraft: activeDraft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>
-<blockquote>${this.formatearLineas(activeDraft)}
-──────────────────────────
-<b>Total a pagar:</b> <code>$${total2.toLocaleString("es-CO")} COP</code>
-<b>Entrega:</b> Retiro en local</blockquote>
-¿Confirmas tu orden para generar el enlace de pago seguro?`,
-          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
-        };
-      }
-      if (nlu.entities.modalidad === "domicilio" && !nlu.entities.direccion) {
-        activeDraft.modalidad = "domicilio";
-        const subtotal = this.calcularTotal(activeDraft);
-        return {
-          nextState: "SOLICITANDO_DIRECCION",
-          nextDraft: activeDraft,
-          replyText: `<b>PRODUCTO AGREGADO</b>
-<blockquote>${this.formatearLineas(activeDraft)}
-──────────────────────────
-<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code></blockquote>
-Para coordinar tu entrega a domicilio, indícanos por favor tu <b>dirección completa</b> (calle, número y barrio):`,
-          buttons: ["Hablar con asesor", "Cancelar orden"],
-          removeKeyboard: true
-        };
-      }
-      const total = this.calcularTotal(activeDraft);
-      const avisoNoEncontrados = noEncontrados.length > 0 ? `
-
-<i>(Nota: no se agregó "${noEncontrados.join(", ")}" por no figurar en el menú).</i>` : "";
-      return {
-        nextState: "CARRITO_EN_CONSTRUCCION",
-        nextDraft: activeDraft,
-        replyText: `<b>PRODUCTO AGREGADO</b>
-<blockquote>${this.formatearLineas(activeDraft)}
-──────────────────────────
-<b>Subtotal acumulado:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>${avisoNoEncontrados}
-¿Deseas agregar algo más o proceder con la entrega?`,
-        buttons: ["Agregar más productos", "Proceder a la entrega"]
-      };
-    }
-    if (nlu.intent === "ELEGIR_MODALIDAD" && draft && draft.lineas.length > 0) {
-      draft.modalidad = nlu.entities.modalidad || "domicilio";
-      if (draft.modalidad === "retiro") {
-        const total = this.calcularTotal(draft);
-        return {
-          nextState: "CONFIRMANDO_PEDIDO",
-          nextDraft: draft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
-<b>Entrega:</b> Retiro en local</blockquote>
-¿Confirmas tu orden para generar el enlace de pago seguro?`,
-          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
-        };
-      } else {
-        return {
-          nextState: "SOLICITANDO_DIRECCION",
-          nextDraft: draft,
-          replyText: `Por favor indícanos tu <b>dirección completa de entrega</b> en Colombia (calle, número, apartamento o referencias):`,
-          buttons: [],
-          removeKeyboard: true
-        };
-      }
-    }
-    if (nlu.intent === "DAR_DIRECCION" && draft && draft.lineas.length > 0) {
-      draft.direccion = nlu.entities.direccion || nlu.rawText;
-      draft.modalidad = "domicilio";
-      const subtotal = this.calcularTotal(draft);
-      const costoEnvio = perfil.costoEnvio;
-      const total = subtotal + costoEnvio;
-      return {
-        nextState: "CONFIRMANDO_PEDIDO",
-        nextDraft: draft,
-        replyText: `<b>RESUMEN DEL PEDIDO</b>
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
-<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
-<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
-<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i></blockquote>
-¿Confirmas tu orden para generar el enlace de pago seguro?`,
-        buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
-      };
-    }
-    if (nlu.intent === "CONFIRMAR_PEDIDO" && draft && draft.lineas.length > 0) {
-      if (!draft.modalidad) {
-        const subtotal2 = this.calcularTotal(draft);
-        return {
-          nextState: "SOLICITANDO_ENTREGA",
-          nextDraft: draft,
-          replyText: `<b>MÉTODO DE ENTREGA</b>
-<blockquote>Subtotal acumulado: <code>$${subtotal2.toLocaleString("es-CO")} COP</code></blockquote>
-¿Cómo prefieres recibir tu pedido?`,
-          buttons: ["Envío a domicilio", "Retiro en local"]
-        };
-      }
-      if (draft.modalidad === "domicilio" && !draft.direccion) {
-        return {
-          nextState: "SOLICITANDO_DIRECCION",
-          nextDraft: draft,
-          replyText: "Para poder confirmar tu pedido a domicilio, indícanos por favor tu dirección completa de entrega:",
-          buttons: [],
-          removeKeyboard: true
-        };
-      }
-      const subtotal = this.calcularTotal(draft);
-      const costoEnvio = draft.modalidad === "domicilio" ? perfil.costoEnvio : 0;
-      const total = subtotal + costoEnvio;
-      return {
-        nextState: "IDLE",
-        nextDraft: null,
-        replyText: ``,
-        buttons: ["Estado de mis pedidos", "Hacer otro pedido", "Hablar con asesor"],
-        orderCreated: {
-          id: "",
-          numero: "",
-          total,
-          modalidad: draft.modalidad || "retiro",
-          direccion: draft.direccion,
-          lineas: draft.lineas
-        }
-      };
-    }
-    if (nlu.intent === "FUERA_DE_DOMINIO" || nlu.intent === "DESCONOCIDO") {
-      if (currentState === "SOLICITANDO_DIRECCION" && draft) {
-        return {
-          nextState: "SOLICITANDO_DIRECCION",
-          nextDraft: draft,
-          replyText: `Para poder enviarte tu pedido (${draft.lineas.map((l) => `${l.cantidad}x ${l.nombre}`).join(", ")}), necesitamos una dirección de entrega válida (calle, carrera, número o referencias):`,
-          buttons: ["Hablar con asesor", "Cancelar orden"],
-          removeKeyboard: true
-        };
-      }
-      if (draft && draft.lineas.length > 0) {
-        const total = this.calcularTotal(draft);
-        const botonesRecuperacion = currentState === "CONFIRMANDO_PEDIDO" ? ["Confirmar pedido", "Modificar pedido", "Cancelar orden"] : currentState === "SOLICITANDO_ENTREGA" ? ["Envío a domicilio", "Retiro en local"] : ["Proceder a la entrega", "Agregar más productos", "Cancelar orden"];
-        return {
-          nextState: currentState,
-          nextDraft: draft,
-          replyText: `Soy un asistente especializado en gestionar pedidos en Necto.
-
-Tu pedido sigue intacto y guardado:
-<blockquote>${this.formatearLineas(draft)}
-──────────────────────────
-<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
-¿Deseas continuar con tu orden?`,
-          buttons: botonesRecuperacion
-        };
-      }
-      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
-      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
-      return {
-        nextState: "CATALOGO_ACTIVO",
-        nextDraft: null,
-        replyText: `Te compartimos nuestro menú disponible para que elijas lo que deseas pedir:
-
-${catTexto}
-
-Puedes seleccionar una opción o indicarme qué deseas ordenar.`,
-        buttons: botonesCat
-      };
-    }
-    return this.mostrarCatalogoInicial(catalogo, perfil, nombreRef);
-  }
-  mostrarCatalogoInicial(catalogo, perfil, nombre) {
-    const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
-    const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
-    return {
-      nextState: "CATALOGO_ACTIVO",
-      nextDraft: null,
-      replyText: `Hola, ${nombre}. Te damos la bienvenida a <b>Necto</b>.
-
-${catTexto}
-Puedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
-      buttons: botonesCat
-    };
-  }
-  formatearCatalogo(catalogo, etiqueta) {
-    const lineas = catalogo.map((c, idx) => `${idx + 1}. <b>${c.nombre}</b> — <code>$${c.precio.toLocaleString("es-CO")} COP</code>`);
-    return `<b>${etiqueta.toUpperCase()}</b>
-<blockquote>${lineas.join(`
-`)}</blockquote>`;
-  }
-  formatearLineas(draft) {
-    return draft.lineas.map((l) => `• <b>${l.cantidad}x ${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString("es-CO")} COP</code>`).join(`
-`);
-  }
-  calcularTotal(draft) {
-    return draft.lineas.reduce((acc, l) => acc + l.precioUnitario * l.cantidad, 0);
-  }
-}
-
-// src/telegram/TelegramCognitiveEngine.ts
-import fs from "fs";
-var BOT_TOOLS = [
-  {
-    type: "function",
-    function: {
-      name: "agregar_productos",
-      description: 'Agrega uno o varios productos o comidas al pedido. Úsala cuando el usuario pida cualquier alimento o bebida (incluso si no estás seguro de si está en la carta, ej. "el pollo", "4 hamburguesas", "una gaseosa", "otra más"). También captura si en el mismo mensaje indicó modalidad o dirección.',
-      parameters: {
-        type: "object",
-        properties: {
-          items: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                nombre: { type: "string", description: "Nombre del producto o comida solicitada" },
-                cantidad: { type: "integer", description: "Cantidad de unidades (por defecto 1)" }
-              },
-              required: ["nombre", "cantidad"]
-            }
-          },
-          modalidad: {
-            type: "string",
-            enum: ["domicilio", "retiro"],
-            description: "Modalidad de entrega si fue indicada"
-          },
-          direccion: {
-            type: "string",
-            description: "Dirección física completa si fue indicada en el mensaje"
-          }
-        },
-        required: ["items"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "mostrar_catalogo",
-      description: "Muestra el menú o carta de productos disponibles. Úsala cuando el usuario pida ver el menú, productos disponibles, o responda afirmativamente a ver opciones.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "iniciar_nuevo_pedido",
-      description: "Inicia una nueva orden o pedido limpio. Úsala cuando el usuario diga que quiere hacer otro pedido, pedir de nuevo, hacer una nueva orden o comenzar otra vez.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "elegir_entrega",
-      description: "Define la modalidad de entrega (domicilio o retiro/recoger) y/o la dirección del pedido.",
-      parameters: {
-        type: "object",
-        properties: {
-          modalidad: { type: "string", enum: ["domicilio", "retiro"] },
-          direccion: { type: "string", description: "Dirección física completa si es a domicilio" }
-        },
-        required: ["modalidad"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "confirmar_pedido",
-      description: 'Confirma el pedido final para generar el pago seguro cuando el cliente da su visto bueno ("sí", "confirmo", "dale", "de una").',
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "cancelar_pedido",
-      description: "Cancela el pedido en curso o un pedido registrado previamente.",
-      parameters: {
-        type: "object",
-        properties: {
-          numero_pedido: { type: "string", description: 'Número del pedido si fue especificado (ej. "0034", "WEB-0034")' }
-        }
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "consultar_estado_pedidos",
-      description: "Consulta el estado o historial de pedidos registrados del cliente.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "modificar_item_carrito",
-      description: "Ajusta cantidades, elimina un ítem o sustituye un producto por otro en el carrito actual.",
-      parameters: {
-        type: "object",
-        properties: {
-          accion: { type: "string", enum: ["cambiar_cantidad", "eliminar", "sustituir"] },
-          nombre_item: { type: "string" },
-          nueva_cantidad: { type: "integer" },
-          nuevo_item_sustituto: { type: "string" }
-        },
-        required: ["accion"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "consultar_informacion",
-      description: "Preguntas sobre costo de envío, horario del restaurante o dudas de cómo pedir.",
-      parameters: {
-        type: "object",
-        properties: {
-          tema: { type: "string", enum: ["costo_envio", "horario", "proceso_pedido"] }
-        },
-        required: ["tema"]
-      }
-    }
-  },
-  {
-    type: "function",
-    function: {
-      name: "solicitar_humano",
-      description: "Transfiere la atención a un asesor o agente humano del restaurante.",
-      parameters: {
-        type: "object",
-        properties: {}
-      }
-    }
-  }
-];
-
-class TelegramCognitiveEngine {
-  endpoint;
-  apiKey;
-  deployment;
-  constructor() {
-    let ep = process.env.AZURE_OPENAI_ENDPOINT;
-    let key = process.env.AZURE_OPENAI_KEY;
-    this.deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4o";
-    if (!key && fs.existsSync(".env")) {
-      try {
-        const envContent = fs.readFileSync(".env", "utf8");
-        ep = ep || envContent.match(/AZURE_OPENAI_ENDPOINT=(.+)/)?.[1]?.trim();
-        key = key || envContent.match(/AZURE_OPENAI_KEY=(.+)/)?.[1]?.trim();
-      } catch (e) {}
-    }
-    this.endpoint = (ep || "https://oai-nectoia-prod-d80b2.openai.azure.com/").replace(/\/+$/, "");
-    this.apiKey = key || "";
-  }
-  async extraerIntencionYEntidades(params) {
-    if (!this.apiKey) {
-      console.warn("[TelegramCognitiveEngine] No hay AZURE_OPENAI_KEY configurada.");
-      return null;
-    }
-    const { textoUsuario, catalogo, perfil, estadoActual, draft, historialPrevio } = params;
-    const catalogoItems = catalogo.map((c) => `• ${c.nombre} ($${c.precio})`).join(`
-`);
-    const carritoResumen = draft && draft.lineas.length > 0 ? draft.lineas.map((l) => `${l.cantidad}x ${l.nombre}`).join(", ") : "Vacío";
-    const systemPrompt = `Eres el asistente de toma de pedidos para Necto en Colombia.
-Tu función es interpretar el mensaje del usuario y seleccionar la herramienta adecuada (Tool Call) para ejecutar la acción correspondiente.
-
-INSTRUCCIONES CLAVE:
-1. Si el usuario pide cualquier comida o bebida (ej. "el pollo", "4 hamburguesas", "agrega papas", "otra más"), llama SIEMPRE a la herramienta \`agregar_productos\`. NUNCA ignores comida solo porque no esté en el menú visible.
-2. Si el usuario dice "quiero hacer otro pedido", "otro pedido, no puedo?", "nuevo pedido", llama a \`iniciar_nuevo_pedido\`.
-3. Si el usuario dice "sí", "claro", "dale", "de una", "por favor", revisa el mensaje previo del asistente:
-   - Si el asistente ofreció ver el catálogo -> llama a \`mostrar_catalogo\`.
-   - Si el asistente pidió confirmar pedido -> llama a \`confirmar_pedido\`.
-   - Si no hay contexto previo -> llama a \`mostrar_catalogo\`.
-4. Si indica "recoger", "recogerlo", "para llevar", "retiro", "a domicilio", llama a \`elegir_entrega\`.
-5. Si pregunta por horarios, costo de envío o dudas, llama a \`consultar_informacion\`.
-6. Si el mensaje es una broma, operación matemática (ej. "2+2"), poesía o ajeno al negocio, NO llames a ninguna herramienta.
-
-CONTEXTO ACTUAL:
-- Estado del diálogo: ${estadoActual || "IDLE"}
-- Carrito actual: ${carritoResumen}
-- Catálogo disponible:
-${catalogoItems}`;
-    const chatMessages = [
-      { role: "system", content: systemPrompt }
-    ];
-    if (historialPrevio && historialPrevio.length > 0) {
-      const recientes = historialPrevio.slice(-3);
-      for (const h of recientes) {
-        const clean = h.content.length > 200 ? h.content.slice(0, 200) + "..." : h.content;
-        chatMessages.push({ role: h.role, content: clean });
-      }
-    }
-    chatMessages.push({ role: "user", content: textoUsuario });
-    try {
-      const url = `${this.endpoint}/openai/deployments/${this.deployment}/chat/completions?api-version=2024-08-01-preview`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": this.apiKey
-        },
-        body: JSON.stringify({
-          messages: chatMessages,
-          tools: BOT_TOOLS,
-          tool_choice: "auto",
-          temperature: 0,
-          max_tokens: 150
-        })
-      });
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("[TelegramCognitiveEngine] Error Azure OpenAI Tool Calling:", res.status, errText);
-        return null;
-      }
-      const data = await res.json();
-      const choice = data.choices?.[0];
-      const toolCalls = choice?.message?.tool_calls;
-      if (toolCalls && toolCalls.length > 0) {
-        const call = toolCalls[0];
-        const fnName = call.function?.name;
-        let args = {};
-        try {
-          args = JSON.parse(call.function?.arguments || "{}");
-        } catch (e) {
-          args = {};
-        }
-        console.log(`[TelegramCognitiveEngine] \uD83D\uDEE0️ Tool ejecutada: ${fnName}`, args);
-        if (fnName === "agregar_productos") {
-          const items = (args.items || []).map((it) => ({
-            query: String(it.nombre || ""),
-            cantidad: Number(it.cantidad) || 1
-          }));
-          return {
-            intent: "AGREGAR_ITEMS",
-            confidence: 0.99,
-            entities: {
-              modalidad: args.modalidad || undefined,
-              direccion: args.direccion || undefined
-            },
-            itemsParaAgregar: items,
-            rawText: textoUsuario
-          };
-        }
-        if (fnName === "mostrar_catalogo") {
-          return { intent: "VER_CATALOGO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-        }
-        if (fnName === "iniciar_nuevo_pedido") {
-          return { intent: "REINICIAR_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-        }
-        if (fnName === "elegir_entrega") {
-          if (args.direccion) {
-            return {
-              intent: "DAR_DIRECCION",
-              confidence: 0.99,
-              entities: { direccion: args.direccion, modalidad: "domicilio" },
-              rawText: textoUsuario
-            };
-          }
-          return {
-            intent: "ELEGIR_MODALIDAD",
-            confidence: 0.99,
-            entities: { modalidad: args.modalidad || "domicilio" },
-            rawText: textoUsuario
-          };
-        }
-        if (fnName === "confirmar_pedido") {
-          return { intent: "CONFIRMAR_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-        }
-        if (fnName === "cancelar_pedido") {
-          return {
-            intent: "CANCELAR_PEDIDO",
-            confidence: 0.99,
-            entities: { numeroPedido: args.numero_pedido || undefined },
-            rawText: textoUsuario
-          };
-        }
-        if (fnName === "consultar_estado_pedidos") {
-          return { intent: "CONSULTA_ESTADO_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-        }
-        if (fnName === "modificar_item_carrito") {
-          if (args.accion === "cambiar_cantidad") {
-            return {
-              intent: "MODIFICAR_CANTIDAD",
-              confidence: 0.99,
-              entities: { cantidad: args.nueva_cantidad },
-              rawText: textoUsuario
-            };
-          }
-          if (args.accion === "eliminar") {
-            return {
-              intent: "ELIMINAR_ITEM",
-              confidence: 0.99,
-              entities: { nombreItem: args.nombre_item },
-              rawText: textoUsuario
-            };
-          }
-          if (args.accion === "sustituir") {
-            return {
-              intent: "SUSTITUIR_ITEM",
-              confidence: 0.99,
-              entities: { reemplazarItem: args.nombre_item, nuevoItem: args.nuevo_item_sustituto },
-              rawText: textoUsuario
-            };
-          }
-        }
-        if (fnName === "consultar_informacion") {
-          if (args.tema === "costo_envio") {
-            return { intent: "CONSULTA_COSTO_ENVIO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-          }
-          if (args.tema === "horario") {
-            return { intent: "CONSULTA_HORARIO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-          }
-          if (args.tema === "proceso_pedido") {
-            return { intent: "DUDA_PROCESO_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-          }
-        }
-        if (fnName === "solicitar_humano") {
-          return { intent: "SOLICITAR_HUMANO", confidence: 0.99, entities: {}, rawText: textoUsuario };
-        }
-      }
-      return { intent: "FUERA_DE_DOMINIO", confidence: 0.95, entities: {}, rawText: textoUsuario };
-    } catch (err) {
-      console.error("[TelegramCognitiveEngine] Excepción llamando a Azure Tool Calling:", err.message);
-      return null;
-    }
-  }
-}
-
-// src/telegram/TelegramHandler.ts
-class TelegramHandler {
-  dao;
-  bot;
-  nlu = new TelegramNLU;
-  fsm = new TelegramFSM;
-  cognitiveEngine = new TelegramCognitiveEngine;
-  chatLocks = new Map;
-  constructor(dao, bot) {
-    this.dao = dao;
-    this.bot = bot;
-  }
-  async onMessage(msg) {
-    const { chatId } = msg;
-    const prevLock = this.chatLocks.get(chatId) || Promise.resolve();
-    const currentTask = prevLock.then(() => this.processMessage(msg)).catch((err) => {
-      console.error(`[TelegramHandler] Error procesando mensaje de [${chatId}]:`, err);
-    });
-    this.chatLocks.set(chatId, currentTask);
-    await currentTask;
-  }
-  async processMessage(msg) {
-    const { chatId, fullName, text, messageId } = msg;
-    console.log(`[TelegramHandler] \uD83D\uDCE5 [${chatId}] ${fullName}: "${text}"`);
-    this.bot.sendChatAction(chatId, "typing").catch(() => {});
-    const estadoConv = await this.dao.asegurarConversacion(chatId, fullName);
-    const { conversacionId, modo } = estadoConv;
-    const guardarMsgPromise = this.dao.guardarMensaje(conversacionId, "cliente", text, messageId);
-    const normText = text.toLowerCase().trim();
-    const quiereVolverAlBot = ["volver al bot", "bot", "menu", "catalogo", "hola", "nuevo pedido"].some((w) => normText.includes(w));
-    if (modo === "humano" && !quiereVolverAlBot) {
-      console.log(`[TelegramHandler] Conversación ${conversacionId} en modo humano. Bot en silencio.`);
-      await guardarMsgPromise;
-      return;
-    }
-    if (modo === "humano" && quiereVolverAlBot) {
-      await this.dao.actualizarModoAtencion(conversacionId, "bot");
-    }
-    const { catalogo, perfil } = await this.dao.obtenerCatalogoYPerfil();
-    let nluResult = this.nlu.interpretarFastPath(text, catalogo, estadoConv.fsmState);
-    if (!nluResult) {
-      const historialPrevio = await this.dao.obtenerHistorialReciente(conversacionId, 4);
-      nluResult = await this.cognitiveEngine.extraerIntencionYEntidades({
-        textoUsuario: text,
-        catalogo,
-        perfil,
-        estadoActual: estadoConv.fsmState,
-        draft: estadoConv.draft,
-        historialPrevio
-      });
-      if (!nluResult) {
-        nluResult = this.nlu.interpretarFallbackLocal(text, catalogo, estadoConv.fsmState);
-      }
-    }
-    console.log(`[TelegramHandler] \uD83C\uDFAF Intent resuelto: ${nluResult.intent} (conf: ${nluResult.confidence})`);
-    let pedidosCliente = [];
-    if (nluResult.intent === "CONSULTA_ESTADO_PEDIDO" || nluResult.intent === "CANCELAR_PEDIDO" || nluResult.intent === "CONFIRMAR_CANCELACION_SI") {
-      pedidosCliente = await this.dao.obtenerPedidosRecientes(chatId, 5);
-    }
-    const ultimoPedido = pedidosCliente.length > 0 ? pedidosCliente[0] : null;
-    const transition = this.fsm.transition(estadoConv.fsmState, estadoConv.draft, nluResult, catalogo, perfil, fullName, ultimoPedido, pedidosCliente);
-    let textoFinal = transition.replyText;
-    let botonesFinales = transition.buttons;
-    let borradorFinal = transition.nextDraft;
-    let nextState = transition.nextState;
-    const removeKeyboard = Boolean(transition.removeKeyboard);
-    if (transition.orderCreated) {
-      const lineas = transition.orderCreated.lineas || estadoConv.draft?.lineas || [];
-      const modalidad = transition.orderCreated.modalidad || estadoConv.draft?.modalidad || "retiro";
-      const direccion = transition.orderCreated.direccion || estadoConv.draft?.direccion || null;
-      const draftParaCrear = {
-        lineas,
-        modalidad,
-        direccion,
-        updatedAt: new Date().toISOString()
-      };
-      const pedidoCreado = await this.dao.crearPedidoFinal(chatId, fullName, draftParaCrear, perfil.costoEnvio);
-      const refLink = pedidoCreado.numero.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const totalFmt = Number(pedidoCreado.total).toLocaleString("es-CO");
-      const resumenLineas = draftParaCrear.lineas.map((l) => `• ${l.cantidad} × <b>${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString("es-CO")} COP</code>`).join(`
-`);
-      const entregaStr = draftParaCrear.modalidad === "domicilio" ? `Domicilio en <i>${draftParaCrear.direccion}</i>` : `Retiro en local`;
-      textoFinal = `<b>PEDIDO REGISTRADO CON ÉXITO</b>
-<blockquote>` + `<b>Orden:</b> <code>#${pedidoCreado.numero}</code>
-` + `<b>Cliente:</b> ${fullName}
-` + `──────────────────────────
-` + `${resumenLineas}
-` + `──────────────────────────
-` + `<b>Total a pagar:</b> <code>$${totalFmt} COP</code>
-` + `<b>Modalidad:</b> ${entregaStr}</blockquote>
-
-` + `<b>Enlace de pago seguro:</b>
-https://necto.io/pagos/pay_${refLink}
-
-` + `<i>Acepta Nequi, Daviplata, PSE y tarjetas. Una vez confirmado el pago, iniciamos la preparación de tu orden.</i>`;
-      botonesFinales = ["Estado de mis pedidos", "Hacer otro pedido", "Hablar con asesor"];
-      borradorFinal = null;
-      nextState = "IDLE";
-    }
-    if (transition.orderCancelledId) {
-      await this.dao.cancelarPedido(transition.orderCancelledId);
-    }
-    if (nextState === "MODO_HUMANO") {
-      await this.dao.actualizarModoAtencion(conversacionId, "humano");
-    }
-    const [envio] = await Promise.all([
-      this.bot.sendMessage(chatId, textoFinal, { buttons: botonesFinales, removeKeyboard }),
-      this.dao.guardarEstadoConversacion(conversacionId, nextState, borradorFinal, {
-        ultimoPedidoId: ultimoPedido?.id || null
-      }),
-      guardarMsgPromise
-    ]);
-    if (envio.messageId) {
-      this.dao.guardarMensaje(conversacionId, "asistente", textoFinal, envio.messageId).catch(() => {});
-    }
-  }
-}
 
 // ../../node_modules/@supabase/supabase-js/dist/index.mjs
 var exports_dist3 = {};
@@ -81593,6 +80265,2165 @@ function shouldShowDeprecationWarning() {
 if (shouldShowDeprecationWarning())
   console.warn("⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715");
 
+// src/controllers/Auth.ts
+class Auth {
+  async register(ctx) {
+    const { email, password, nombre, apellido } = ctx.request.body ?? {};
+    if (!email || typeof email !== "string" || !email.includes("@")) {
+      return new HttpResponseBadRequest({ error: "Ingresa un correo electrónico válido." });
+    }
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return new HttpResponseBadRequest({ error: "La contraseña debe tener al menos 6 caracteres." });
+    }
+    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      return new HttpResponseBadRequest({ error: "Servicio de base de datos no configurado." });
+    }
+    const sb = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanNombre = (nombre || "Usuario").trim();
+    const cleanApellido = (apellido || "Necto").trim();
+    const { data: authData, error: authError } = await sb.auth.admin.createUser({
+      email: cleanEmail,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        first_name: cleanNombre,
+        last_name: cleanApellido
+      }
+    });
+    if (authError) {
+      if (authError.message.includes("already registered") || authError.message.includes("already exists") || authError.message.includes("unique constraint")) {
+        return new HttpResponseBadRequest({ error: "Ya existe una cuenta registrada con este correo electrónico." });
+      }
+      return new HttpResponseBadRequest({ error: authError.message });
+    }
+    const authUser = authData.user;
+    if (!authUser) {
+      return new HttpResponseBadRequest({ error: "No se pudo crear la cuenta de usuario." });
+    }
+    try {
+      const { data: org } = await sb.schema("necto").from("organizacion").select("id").limit(1).maybeSingle();
+      const organizacionId = org?.id || "fc009b85-73b8-47b3-8d1a-080b65ac7120";
+      const { data: nuevoUsuario, error: errU } = await sb.schema("necto").from("usuario").insert({
+        auth_user_id: authUser.id,
+        organizacion_id: organizacionId,
+        nombre: cleanNombre,
+        apellido: cleanApellido,
+        email: cleanEmail,
+        pais: "CO",
+        perfil_completado: true
+      }).select().maybeSingle();
+      if (errU) {
+        console.warn("[Auth Controller] Error vinculando necto.usuario:", errU.message);
+      }
+      await sb.schema("necto").from("operador").insert({
+        organizacion_id: organizacionId,
+        usuario_id: nuevoUsuario?.id,
+        nombre: `${cleanNombre} ${cleanApellido}`.trim(),
+        email: cleanEmail,
+        estado: "activo",
+        modulo: "pedidos",
+        rol_id: "admin_tienda"
+      });
+    } catch (err) {
+      console.warn("[Auth Controller] Excepción vinculando perfil:", err.message);
+    }
+    return new HttpResponseCreated({
+      ok: true,
+      user: {
+        id: authUser.id,
+        email: authUser.email,
+        nombre: cleanNombre,
+        apellido: cleanApellido
+      },
+      message: "Usuario registrado y confirmado exitosamente."
+    });
+  }
+}
+__legacyDecorateClassTS([
+  Endpoint(endpoints_default.$Register),
+  __legacyMetadataTS("design:type", Function),
+  __legacyMetadataTS("design:paramtypes", [
+    typeof Context === "undefined" ? Object : Context
+  ]),
+  __legacyMetadataTS("design:returntype", Promise)
+], Auth.prototype, "register", null);
+var Auth_default = Auth;
+
+// src/controllers/index.ts
+var controllers2 = [
+  Health_default,
+  Queues_default,
+  Turnos_default,
+  Auth_default
+];
+var controllers_default = controllers2;
+
+// src/telegram/TelegramNLU.ts
+function normStr(s) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+class TelegramNLU {
+  interpretarFastPath(texto, catalogo, estadoActual) {
+    const raw = (texto || "").trim();
+    const norm = normStr(raw);
+    if (/^(?:cuanto\s+es\s+)?\d+\s*[\+\-\*\/xX]\s*\d+\s*\??$/i.test(norm) || /^(?:calcula|suma|resta|multiplica|divide)\s+\d+/i.test(norm)) {
+      return { intent: "FUERA_DE_DOMINIO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "/start" || norm === "hola" || norm === "buenas" || norm === "buenos dias" || norm === "buenas tardes") {
+      return { intent: "SALUDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "menu principal" || norm === "menu principal \uD83D\uDCCB" || norm === "volver al menu" || norm === "volver al menu principal" || norm === "inicio" || norm === "/menu") {
+      return { intent: "VER_MENU_PRINCIPAL", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "realizar pedido \uD83E\uDD6A" || norm === "realizar pedido" || norm === "hacer pedido" || norm === "quiero pedir" || norm === "ver catalogo" || norm === "ver menu" || norm === "catalogo" || norm === "menu" || norm === "ver menu \uD83D\uDCDC" || norm === "ver catalogo \uD83D\uDCDC") {
+      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "seguir pedido \uD83D\uDCCC" || norm === "seguir pedido" || norm === "rastrear pedido" || norm === "estado de mi pedido" || norm === "\uD83D\uDCE6 estado del pedido" || norm === "estado del pedido" || norm === "como va mi pedido" || norm === "mis pedidos" || norm === "ver pedidos" || norm === "pedidos" || norm === "estado de mis pedidos" || norm === "consultar pedidos") {
+      return { intent: "CONSULTA_ESTADO_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "buscar sucursales \uD83D\uDD0D" || norm === "buscar sucursales" || norm === "sucursales" || norm === "tiendas" || norm === "locales" || norm === "puntos fisicos" || norm === "bodegas \uD83C\uDFEC" || norm === "ver bodegas" || norm === "bodegas") {
+      return { intent: "CONSULTAR_BODEGAS", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "hacer una consulta \uD83D\uDCAC" || norm === "hacer una consulta" || norm === "hacer consulta" || norm === "consultas" || norm === "reclamos" || norm === "sugerencias" || norm === "\uD83D\uDC64 hablar con asesor" || norm === "hablar con asesor \uD83D\uDC64" || norm === "asesor" || norm === "humano" || norm === "hablar con asesor") {
+      return { intent: "SOLICITAR_HUMANO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "es para mi \uD83D\uDC64" || norm === "es para mi" || norm === "es para mi persona" || norm === "para mi" || norm === "para mí" || norm === "es para mí" || norm === "para mi \uD83D\uDC64" || norm === "para mí \uD83D\uDC64" || norm === "para mi cuenta") {
+      return { intent: "DESTINATARIO_PROPIO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "es para otra persona \uD83C\uDF81" || norm === "es para otra persona" || norm === "para otra persona \uD83C\uDF81" || norm === "para otra persona" || norm === "otra persona" || norm === "un regalo" || norm === "es un regalo" || norm === "para un amigo" || norm === "para una amiga" || norm === "para alguien mas") {
+      return { intent: "DESTINATARIO_TERCERO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if ((estadoActual === "SOLICITANDO_ENTREGA" || estadoActual === "SOLICITANDO_ENTREGA_PREVIA" || estadoActual === "CARRITO_EN_CONSTRUCCION") && (norm.includes("opcion") || norm.includes("opciones") || norm.includes("cuales") || norm.includes("como entregan") || norm.includes("como es"))) {
+      return { intent: "DUDA_PROCESO_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "\uD83D\uDEF5 a domicilio" || norm === "envio a domicilio \uD83D\uDEF5" || norm === "a domicilio \uD83D\uDEF5" || norm === "a domicilio" || norm === "domicilio" || norm === "envio a domicilio") {
+      return { intent: "ELEGIR_MODALIDAD", confidence: 1, entities: { modalidad: "domicilio" }, rawText: raw };
+    }
+    if (norm === "\uD83D\uDECD️ para retirar" || norm === "retiro en local \uD83D\uDECD️" || norm === "para retirar \uD83D\uDECD️" || norm === "para retirar" || norm === "retiro" || norm === "retiro en local" || norm === "para llevar" || norm.includes("recoger") || norm.includes("retirar")) {
+      return { intent: "ELEGIR_MODALIDAD", confidence: 1, entities: { modalidad: "retiro" }, rawText: raw };
+    }
+    if (norm === "\uD83D\uDEF5 proceder a la entrega" || norm === "proceder a la entrega" || norm === "ya con eso" || norm === "no ya con eso" || norm === "eso es todo") {
+      return { intent: "PROCEDER_ENTREGA", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "➕ agregar mas" || norm === "➕ agregar mas productos" || norm === "agregar mas" || norm === "agregar mas productos" || norm.includes("catalogo") || norm.includes("menu") || norm.includes("ver productos") || norm.includes("la carta") || norm === "ver menu") {
+      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
+    }
+    const esAfirmativo = /^(?:si|sí|claro|dale|por favor|porfa|de una|obvio|yes)$/i.test(norm);
+    if (esAfirmativo) {
+      if (estadoActual === "CONFIRMANDO_PEDIDO") {
+        return { intent: "CONFIRMAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+      }
+      if (estadoActual === "CONFIRMANDO_CANCELACION") {
+        return { intent: "CONFIRMAR_CANCELACION_SI", confidence: 1, entities: {}, rawText: raw };
+      }
+      return { intent: "VER_CATALOGO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "✅ confirmar pedido" || norm === "confirmar pedido" || norm === "si confirmar" || norm === "confirmar orden") {
+      return { intent: "CONFIRMAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "si, cancelar pedido ❌" || norm === "si, cancelar pedido" || norm === "si cancelar" || norm === "si cancelar orden") {
+      return { intent: "CONFIRMAR_CANCELACION_SI", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "no, mantener pedido ✅" || norm === "no, mantener pedido" || norm === "no mantener" || norm === "mantener pedido" || norm === "mantener orden") {
+      return { intent: "CONFIRMAR_CANCELACION_NO", confidence: 1, entities: {}, rawText: raw };
+    }
+    const matchCancelNum = norm.match(/^(?:❌\s*)?cancelar(?:\s+el)?(?:\s+pedido|\s+la\s+orden|\s+orden)?(?:\s+#?web-|\s+#|\s+)?(\d{2,4})$/i);
+    if (matchCancelNum) {
+      return { intent: "CANCELAR_PEDIDO", confidence: 1, entities: { numeroPedido: matchCancelNum[1] }, rawText: raw };
+    }
+    if (norm === "❌ cancelar" || norm === "cancelar pedido ❌" || norm === "cancelar pedido" || norm === "❌ cancelar pedido" || norm === "cancelar" || norm === "cancelar orden") {
+      return { intent: "CANCELAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "✏️ modificar" || norm === "modificar" || norm === "modificar pedido" || norm === "modificar orden") {
+      return { intent: "MODIFICAR_CANTIDAD", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "\uD83D\uDCE6 estado del pedido" || norm === "estado del pedido" || norm === "como va mi pedido" || norm === "mis pedidos" || norm === "ver pedidos" || norm === "pedidos" || norm === "estado de mis pedidos" || norm === "consultar pedidos") {
+      return { intent: "CONSULTA_ESTADO_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "\uD83D\uDC64 hablar con asesor" || norm === "hablar con asesor \uD83D\uDC64" || norm === "asesor" || norm === "humano" || norm === "hablar con asesor") {
+      return { intent: "SOLICITAR_HUMANO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "\uD83D\uDED2 hacer otro pedido" || norm.includes("otro pedido") || norm.includes("nuevo pedido") || norm.includes("otra orden") || norm.includes("hacer otro") || norm.includes("pedir otra cosa")) {
+      return { intent: "REINICIAR_PEDIDO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "consultar alertas ⚠️" || norm === "alertas ⚠️" || norm === "alertas" || norm === "alertas de inventario" || norm === "alertas de stock" || norm === "productos agotados") {
+      return { intent: "CONSULTAR_ALERTAS_INVENTARIO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "resumen inventario \uD83D\uDCCA" || norm === "resumen \uD83D\uDCCA" || norm === "resumen inventario" || norm === "balance general" || norm === "estado del inventario") {
+      return { intent: "CONSULTAR_RESUMEN_INVENTARIO", confidence: 1, entities: {}, rawText: raw };
+    }
+    if (norm === "bodegas \uD83C\uDFEC" || norm === "ver bodegas" || norm === "bodegas" || norm === "mis bodegas" || norm === "almacenes") {
+      return { intent: "CONSULTAR_BODEGAS", confidence: 1, entities: {}, rawText: raw };
+    }
+    const matchBtnOrdinal = norm.match(/^(\d+)\.\s*(.+)/);
+    if (matchBtnOrdinal) {
+      const idx = parseInt(matchBtnOrdinal[1], 10);
+      if (idx >= 1 && idx <= catalogo.length) {
+        return {
+          intent: "SELECCION_POR_ORDINAL",
+          confidence: 1,
+          entities: { ordinalIndex: idx },
+          rawText: raw
+        };
+      }
+    }
+    return null;
+  }
+  interpretarFallbackLocal(texto, catalogo, estadoActual) {
+    const raw = (texto || "").trim();
+    const norm = normStr(raw);
+    const fast = this.interpretarFastPath(texto, catalogo, estadoActual);
+    if (fast)
+      return fast;
+    if (estadoActual === "SOLICITANDO_DIRECCION" && (/\d+/.test(raw) || norm.includes("calle") || norm.includes("carrera") || norm.includes("diagonal"))) {
+      return { intent: "DAR_DIRECCION", confidence: 0.8, entities: { direccion: raw }, rawText: raw };
+    }
+    return { intent: "DESCONOCIDO", confidence: 0.5, entities: {}, rawText: raw };
+  }
+}
+
+// src/telegram/TelegramFSM.ts
+function normStr2(s) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+class TelegramFSM {
+  transition(currentState, incomingDraft, nlu, catalogo, perfil, clienteNombre, ultimoPedido, pedidosCliente, incomingClientePerfil) {
+    const draft = incomingDraft ? structuredClone(incomingDraft) : null;
+    const yaRegistrado = Boolean(incomingClientePerfil?.completado);
+    const nombreRef = incomingClientePerfil?.nombre || (clienteNombre ? clienteNombre.split(" ")[0] : "amigo/a");
+    if (nlu.intent === "SOLICITAR_HUMANO") {
+      return {
+        nextState: "MODO_HUMANO",
+        nextDraft: draft,
+        replyText: `Te comunico de inmediato con uno de nuestros asesores para que te atienda personalmente. Tu conversación y pedido quedan registrados para el equipo. En breve te responderán por este medio.`,
+        buttons: [],
+        removeKeyboard: true
+      };
+    }
+    const esEstadoOnboarding = currentState.startsWith("ONBOARDING_");
+    const requiereOnboarding = esEstadoOnboarding || incomingClientePerfil !== undefined && (!incomingClientePerfil || !incomingClientePerfil.completado);
+    if (requiereOnboarding) {
+      return this.manejarOnboarding(currentState, incomingClientePerfil, nlu, catalogo, perfil, clienteNombre);
+    }
+    if (nlu.intent === "FUERA_DE_DOMINIO") {
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: "Soy el asistente de pedidos de Necto. Puedo colaborarte consultando productos, precios o gestionando tu pedido. ¿Qué deseas consultar?",
+        buttons: ["Ver menú", "Estado de mis pedidos", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "CONSULTAR_PRODUCTO") {
+      const q = normStr2(nlu.entities.nombreItem || "");
+      const item = catalogo.find((c) => normStr2(c.nombre).includes(q) || q.includes(normStr2(c.nombre)));
+      if (item) {
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `<b>INFORMACIÓN DE PRODUCTO</b>
+<blockquote><b>${item.nombre}</b>
+Precio: <code>$${item.precio.toLocaleString("es-CO")} COP</code></blockquote>
+¿Deseas agregarlo a tu pedido?`,
+          buttons: [`Ordenar ${item.nombre.slice(0, 16)}`, "Ver menú"]
+        };
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: `En este momento no encuentro "${nlu.entities.nombreItem || ""}" en el catálogo disponible.
+
+¿Deseas ver las opciones disponibles?`,
+        buttons: ["Ver menú", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "CONSULTAR_PRECIO") {
+      const q = normStr2(nlu.entities.nombreItem || "");
+      const item = catalogo.find((c) => normStr2(c.nombre).includes(q) || q.includes(normStr2(c.nombre)));
+      if (item) {
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `<b>PRECIO DEL PRODUCTO</b>
+<blockquote><b>${item.nombre}</b>: <code>$${item.precio.toLocaleString("es-CO")} COP</code></blockquote>`,
+          buttons: [`Ordenar ${item.nombre.slice(0, 16)}`, "Ver menú"]
+        };
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: `No encuentro ese producto en el catálogo disponible para consultar su precio.
+
+¿Deseas revisar el menú completo?`,
+        buttons: ["Ver menú", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "VER_MENU_PRINCIPAL") {
+      return this.mostrarMenuPrincipal(nombreRef, yaRegistrado);
+    }
+    if (currentState === "SELECCIONANDO_DESTINATARIO") {
+      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      if (nlu.intent === "DESTINATARIO_PROPIO" || normStr2(nlu.rawText).includes("para mi") || normStr2(nlu.rawText).includes("para mí")) {
+        activeDraft.destinatario = {
+          tipo: "propio",
+          nombre: nombreRef,
+          telefono: incomingClientePerfil?.telefono
+        };
+        return {
+          nextState: "SOLICITANDO_ENTREGA_PREVIA",
+          nextDraft: activeDraft,
+          replyText: `¡Perfecto, ${nombreRef}! Cuéntame: ¿cómo prefieres recibir tu entrega?`,
+          buttons: ["Envío a domicilio \uD83D\uDEF5", "Retiro en local \uD83D\uDECD️", "Menú principal \uD83D\uDCCB"]
+        };
+      }
+      if (nlu.intent === "DESTINATARIO_TERCERO" || normStr2(nlu.rawText).includes("otra persona") || normStr2(nlu.rawText).includes("regalo")) {
+        activeDraft.destinatario = { tipo: "tercero" };
+        return {
+          nextState: "SOLICITANDO_RECEPTOR_NOMBRE",
+          nextDraft: activeDraft,
+          replyText: `¡Qué lindo detalle! \uD83C\uDF81 ¿Cómo se llama la persona que recibirá el pedido?`,
+          buttons: ["Menú principal \uD83D\uDCCB"]
+        };
+      }
+      return {
+        nextState: "SELECCIONANDO_DESTINATARIO",
+        nextDraft: activeDraft,
+        replyText: `Por favor cuéntame si el pedido es para ti o para otra persona:`,
+        buttons: ["Es para mí \uD83D\uDC64", "Es para otra persona \uD83C\uDF81", "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (currentState === "SOLICITANDO_RECEPTOR_NOMBRE") {
+      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      const raw = (nlu.rawText || "").replace(/^(?:se\s+llama|es|para)\s+/i, "").trim();
+      if (!raw || raw.length < 2) {
+        return {
+          nextState: "SOLICITANDO_RECEPTOR_NOMBRE",
+          nextDraft: activeDraft,
+          replyText: `¿Me podrías indicar el nombre de la persona que recibirá el pedido?`,
+          buttons: ["Menú principal \uD83D\uDCCB"]
+        };
+      }
+      if (!activeDraft.destinatario)
+        activeDraft.destinatario = { tipo: "tercero" };
+      activeDraft.destinatario.nombre = raw;
+      return {
+        nextState: "SOLICITANDO_RECEPTOR_TELEFONO",
+        nextDraft: activeDraft,
+        replyText: `¿Y cuál es el número de celular de <b>${raw}</b>? Lo necesitamos para que el domiciliario pueda contactarle al llegar.`,
+        buttons: ["Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (currentState === "SOLICITANDO_RECEPTOR_TELEFONO") {
+      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      let digits = (nlu.rawText || "").replace(/\D/g, "");
+      if (digits.startsWith("57") && digits.length === 12)
+        digits = digits.slice(2);
+      if (digits.length < 7 || digits.length > 12) {
+        return {
+          nextState: "SOLICITANDO_RECEPTOR_TELEFONO",
+          nextDraft: activeDraft,
+          replyText: `Por favor ingresa un número de celular válido (ejemplo: <code>3145376069</code>) sin puntos ni caracteres especiales:`,
+          buttons: ["Menú principal \uD83D\uDCCB"]
+        };
+      }
+      if (!activeDraft.destinatario)
+        activeDraft.destinatario = { tipo: "tercero" };
+      activeDraft.destinatario.telefono = digits;
+      return {
+        nextState: "SOLICITANDO_ENTREGA_PREVIA",
+        nextDraft: activeDraft,
+        replyText: `Anotado el contacto de entrega. ¿Cómo prefieres coordinar el pedido?`,
+        buttons: ["Envío a domicilio \uD83D\uDEF5", "Retiro en local \uD83D\uDECD️", "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (currentState === "SOLICITANDO_ENTREGA_PREVIA") {
+      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      if (nlu.intent === "ELEGIR_MODALIDAD" && nlu.entities.modalidad === "retiro" || normStr2(nlu.rawText).includes("retiro") || normStr2(nlu.rawText).includes("local")) {
+        activeDraft.modalidad = "retiro";
+        const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+        const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+        return {
+          nextState: "CATALOGO_ACTIVO",
+          nextDraft: activeDraft,
+          replyText: `¡Listo! Tu orden será preparada para <b>retiro en local</b> \uD83D\uDECD️
+
+Aquí tienes nuestra carta para que elijas lo que desees ordenar:
+
+${catTexto}
+
+Puedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+          buttons: [...botonesCat, "Menú principal \uD83D\uDCCB"]
+        };
+      }
+      if (nlu.intent === "ELEGIR_MODALIDAD" && nlu.entities.modalidad === "domicilio" || normStr2(nlu.rawText).includes("domicilio") || normStr2(nlu.rawText).includes("envio")) {
+        activeDraft.modalidad = "domicilio";
+        return {
+          nextState: "SOLICITANDO_DIRECCION_PREVIA",
+          nextDraft: activeDraft,
+          replyText: `Antes de compartirte la carta, necesito que me cuentes a dónde vamos a hacer el envío. \uD83D\uDCCD
+
+¿Cómo quieres indicar el domicilio? \uD83D\uDC47
+
+Puedes escribir la dirección completa (calle, número y barrio):`,
+          buttons: ["Menú principal \uD83D\uDCCB"]
+        };
+      }
+      return {
+        nextState: "SOLICITANDO_ENTREGA_PREVIA",
+        nextDraft: activeDraft,
+        replyText: `¿Cómo prefieres recibir el pedido?`,
+        buttons: ["Envío a domicilio \uD83D\uDEF5", "Retiro en local \uD83D\uDECD️", "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (currentState === "SOLICITANDO_DIRECCION_PREVIA") {
+      const activeDraft = draft || { lineas: [], modalidad: "domicilio", direccion: null, updatedAt: new Date().toISOString() };
+      const raw = (nlu.rawText || "").trim();
+      if (!raw || raw.length < 3) {
+        return {
+          nextState: "SOLICITANDO_DIRECCION_PREVIA",
+          nextDraft: activeDraft,
+          replyText: `Por favor indícanos una dirección válida de entrega (ej: <code>Calle 45 # 12-30</code>):`,
+          buttons: ["Menú principal \uD83D\uDCCB"]
+        };
+      }
+      activeDraft.direccion = raw;
+      activeDraft.modalidad = "domicilio";
+      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+      return {
+        nextState: "CATALOGO_ACTIVO",
+        nextDraft: activeDraft,
+        replyText: `¡Excelente! Registramos tu dirección de envío en <i>${raw}</i> \uD83D\uDCCD
+
+Aquí tienes nuestra carta para que elijas lo que más te guste:
+
+${catTexto}
+
+Puedes seleccionar un producto o indicarme qué deseas ordenar.`,
+        buttons: [...botonesCat, "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (nlu.intent === "VER_CATALOGO") {
+      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+      if (draft && draft.lineas.length > 0) {
+        const total = this.calcularTotal(draft);
+        return {
+          nextState: "CARRITO_EN_CONSTRUCCION",
+          nextDraft: draft,
+          replyText: `${catTexto}
+
+<blockquote><b>Pedido en curso:</b> ${draft.lineas.length} producto(s) — Subtotal: <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+
+Puedes seleccionar otro producto o presionar <b>Proceder a la entrega</b> cuando termines.`,
+          buttons: ["Proceder a la entrega", ...botonesCat.slice(0, 2), "Menú principal \uD83D\uDCCB"]
+        };
+      }
+      if (!draft?.destinatario && !draft?.modalidad) {
+        const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+        return {
+          nextState: "SELECCIONANDO_DESTINATARIO",
+          nextDraft: activeDraft,
+          replyText: `Muy bien, cuéntame: ¿el pedido es para ti o para otra persona?`,
+          buttons: ["Es para mí \uD83D\uDC64", "Es para otra persona \uD83C\uDF81", "Menú principal \uD83D\uDCCB"]
+        };
+      }
+      return {
+        nextState: "CATALOGO_ACTIVO",
+        nextDraft: draft || null,
+        replyText: `${catTexto}
+
+Puedes seleccionar un producto de la lista o indicarme qué deseas ordenar.`,
+        buttons: [...botonesCat, "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (nlu.intent === "DUDA_PROCESO_PEDIDO") {
+      if (currentState === "SOLICITANDO_ENTREGA" && draft) {
+        const subtotal = this.calcularTotal(draft);
+        return {
+          nextState: "SOLICITANDO_ENTREGA",
+          nextDraft: draft,
+          replyText: `<b>OPCIONES DE ENTREGA</b>
+<blockquote>1. <b>Envío a domicilio:</b> Te lo llevamos a tu dirección (Tarifa: <code>$${Number(perfil.costoEnvio).toLocaleString("es-CO")} COP</code>).
+2. <b>Retiro en local:</b> Puedes recoger tu orden directamente sin costo adicional.</blockquote>
+
+Subtotal actual: <code>$${subtotal.toLocaleString("es-CO")} COP</code>.
+¿Cuál de las dos opciones prefieres?`,
+          buttons: ["Envío a domicilio", "Retiro en local"]
+        };
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: "Puedes agregar todos los productos que desees a tu pedido. ¿Qué más te gustaría ordenar?",
+        buttons: ["Ver menú", "Proceder a la entrega"]
+      };
+    }
+    if (nlu.intent === "PROCEDER_ENTREGA") {
+      if (!draft || draft.lineas.length === 0) {
+        return {
+          nextState: "IDLE",
+          nextDraft: null,
+          replyText: `No tienes productos agregados a tu pedido actualmente.
+
+¿Deseas ver nuestro catálogo para ordenar?`,
+          buttons: ["Ver menú", "Hablar con asesor"]
+        };
+      }
+      if (!draft.modalidad) {
+        const subtotal2 = this.calcularTotal(draft);
+        return {
+          nextState: "SOLICITANDO_ENTREGA",
+          nextDraft: draft,
+          replyText: `<b>MÉTODO DE ENTREGA</b>
+<blockquote>Subtotal acumulado: <code>$${subtotal2.toLocaleString("es-CO")} COP</code></blockquote>
+¿Cómo prefieres recibir tu entrega?`,
+          buttons: ["Envío a domicilio", "Retiro en local"]
+        };
+      }
+      if (draft.modalidad === "domicilio" && !draft.direccion) {
+        return {
+          nextState: "SOLICITANDO_DIRECCION",
+          nextDraft: draft,
+          replyText: "Por favor compártenos tu dirección completa de entrega en Colombia (calle, número y barrio):",
+          buttons: [],
+          removeKeyboard: true
+        };
+      }
+      const subtotal = this.calcularTotal(draft);
+      const costoEnvio = draft.modalidad === "domicilio" ? perfil.costoEnvio : 0;
+      const total = subtotal + costoEnvio;
+      const entregaStr = draft.modalidad === "domicilio" ? `Domicilio en <i>${draft.direccion}</i>` : `Retiro en local`;
+      const destinatarioStr = this.formatearDestinatario(draft.destinatario);
+      return {
+        nextState: "CONFIRMANDO_PEDIDO",
+        nextDraft: draft,
+        replyText: `<b>RESUMEN DEL PEDIDO</b>
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
+${costoEnvio > 0 ? `<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
+` : ""}<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
+<b>Entrega:</b> ${entregaStr}${destinatarioStr}</blockquote>
+¿Deseas confirmar tu orden para generar el enlace de pago seguro?`,
+        buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
+      };
+    }
+    if (nlu.intent === "REINICIAR_PEDIDO") {
+      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+      return {
+        nextState: "CATALOGO_ACTIVO",
+        nextDraft: null,
+        replyText: `Iniciamos una nueva orden. (Tus pedidos confirmados anteriores siguen guardados y en proceso).
+
+${catTexto}
+Puedes seleccionar un producto o decirme qué deseas pedir.`,
+        buttons: botonesCat
+      };
+    }
+    if (nlu.intent === "CONSULTA_COSTO_ENVIO") {
+      const costoEnvioFmt = Number(perfil.costoEnvio).toLocaleString("es-CO");
+      let resumenActual = "";
+      if (draft && draft.lineas.length > 0) {
+        const total = this.calcularTotal(draft);
+        resumenActual = `
+
+Tu pedido actual tiene un valor de <b>$${total.toLocaleString("es-CO")} COP</b> (${draft.lineas.map((l) => `${l.cantidad} × ${l.nombre}`).join(", ")}).
+¿Cómo deseas recibirlo?`;
+      } else {
+        resumenActual = `
+
+Puedes indicarme qué deseas ordenar cuando estés listo.`;
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: `<b>TARIFA DE ENVÍO</b>
+<blockquote>El servicio a domicilio en la zona tiene un costo fijo de <code>$${costoEnvioFmt} COP</code>.</blockquote>${resumenActual}`,
+        buttons: draft && draft.lineas.length > 0 ? ["Envío a domicilio", "Retiro en local"] : ["Ver menú", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "CONSULTA_HORARIO") {
+      let resumenActual = "";
+      if (draft && draft.lineas.length > 0) {
+        const total = this.calcularTotal(draft);
+        resumenActual = `
+
+Tu pedido sigue guardado por <b>$${total.toLocaleString("es-CO")} COP</b>.
+¿Deseas entrega a domicilio o retiro en el local?`;
+      } else {
+        resumenActual = `
+
+¿En qué podemos colaborar con tu orden?`;
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: `<b>HORARIO DE ATENCIÓN</b>
+<blockquote>${perfil.horarioAtencion}</blockquote>${resumenActual}`,
+        buttons: draft && draft.lineas.length > 0 ? ["Envío a domicilio", "Retiro en local"] : ["Ver menú", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "CONSULTA_ESTADO_PEDIDO") {
+      const listaPedidos = pedidosCliente && pedidosCliente.length > 0 ? pedidosCliente : ultimoPedido ? [ultimoPedido] : [];
+      if (listaPedidos.length > 0) {
+        const resumen = listaPedidos.map((p) => {
+          let estadoDesc = p.estado;
+          if (p.estado === "nuevo" || p.estado === "pendiente")
+            estadoDesc = `${p.estado} (pendiente de pago)`;
+          return `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString("es-CO")} COP</code>
+  Estado: <i>${estadoDesc}</i>`;
+        }).join(`
+
+`);
+        const pedidosCancelables = listaPedidos.filter((p) => p.estado === "nuevo" || p.estado === "pendiente");
+        let cancelButtons = [];
+        if (pedidosCancelables.length === 1) {
+          cancelButtons = [`Cancelar orden #${pedidosCancelables[0].numero}`];
+        } else if (pedidosCancelables.length > 1) {
+          cancelButtons = ["Cancelar orden"];
+        }
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `<b>TUS PEDIDOS REGISTRADOS</b>
+<blockquote>${resumen}</blockquote>
+¿Deseas realizar un nuevo pedido, cancelar alguna orden o volver al menú?`,
+          buttons: ["Realizar pedido \uD83E\uDD6A", ...cancelButtons, "Menú principal \uD83D\uDCCB"]
+        };
+      }
+      return {
+        nextState: currentState,
+        nextDraft: draft,
+        replyText: `No encontramos pedidos registrados asociados a tu número en este momento.
+
+¿Deseas ver nuestro catálogo para ordenar?`,
+        buttons: ["Realizar pedido \uD83E\uDD6A", "Menú principal \uD83D\uDCCB"]
+      };
+    }
+    if (currentState === "CONFIRMANDO_RETOMA") {
+      if (nlu.intent === "CONTINUAR_RETOMA" && draft) {
+        const total = this.calcularTotal(draft);
+        return {
+          nextState: "SOLICITANDO_ENTREGA",
+          nextDraft: draft,
+          replyText: `<b>RETOMANDO TU PEDIDO</b>
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+¿Cómo prefieres recibir tu entrega?`,
+          buttons: ["Envío a domicilio", "Retiro en local"]
+        };
+      }
+      return this.mostrarCatalogoInicial(catalogo, perfil, nombreRef);
+    }
+    if (nlu.intent === "CANCELAR_PEDIDO" || nlu.intent === "CONFIRMAR_CANCELACION_SI") {
+      const listaPedidos = pedidosCliente && pedidosCliente.length > 0 ? pedidosCliente : ultimoPedido ? [ultimoPedido] : [];
+      const pedidosCancelables = listaPedidos.filter((p) => p.estado === "nuevo" || p.estado === "pendiente");
+      const rawText = nlu.rawText || "";
+      const numBuscado = nlu.entities.numeroPedido || rawText.match(/(?:#?WEB-|\b)(\d{2,4})\b/i)?.[1];
+      let pedidoObjetivo = null;
+      if (numBuscado) {
+        pedidoObjetivo = listaPedidos.find((p) => p.numero.toLowerCase().includes(numBuscado.toLowerCase()) || p.id.includes(numBuscado)) || null;
+      }
+      if (!pedidoObjetivo && (rawText.toLowerCase().includes("anterior") || rawText.toLowerCase().includes("el otro") || rawText.toLowerCase().includes("primero"))) {
+        pedidoObjetivo = pedidosCancelables[0] || (listaPedidos.length > 1 ? listaPedidos[1] : null);
+      }
+      if (!pedidoObjetivo && pedidosCancelables.length === 1) {
+        pedidoObjetivo = pedidosCancelables[0];
+      }
+      if (!pedidoObjetivo && pedidosCancelables.length > 1) {
+        const botonesCancel = pedidosCancelables.map((p) => `Cancelar orden #${p.numero}`);
+        const items = pedidosCancelables.map((p) => `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString("es-CO")} COP</code>`).join(`
+`);
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `<b>CANCELACIÓN DE PEDIDO</b>
+<blockquote>${items}</blockquote>
+Tienes varias órdenes pendientes. ¿Cuál de ellas deseas cancelar?`,
+          buttons: [...botonesCancel, "Mantener pedidos"]
+        };
+      }
+      if (pedidoObjetivo) {
+        if (pedidoObjetivo.estado === "nuevo" || pedidoObjetivo.estado === "pendiente") {
+          return {
+            nextState: "IDLE",
+            nextDraft: null,
+            orderCancelledId: pedidoObjetivo.id,
+            replyText: `<b>ORDEN CANCELADA</b>
+<blockquote>Tu pedido <b>#${pedidoObjetivo.numero}</b> ha sido cancelado con éxito en el sistema.</blockquote>
+Cuando desees realizar un nuevo pedido, con gusto te atenderemos.`,
+            buttons: ["Hacer pedido", "Ver menú", "Hablar con asesor"]
+          };
+        } else if (pedidoObjetivo.estado === "en_preparacion" || pedidoObjetivo.estado === "en_camino" || pedidoObjetivo.estado === "listo") {
+          return {
+            nextState: "MODO_HUMANO",
+            nextDraft: draft,
+            replyText: `Tu pedido <b>#${pedidoObjetivo.numero}</b> ya se encuentra en estado <b>${pedidoObjetivo.estado}</b>, por lo que no es posible cancelarlo de forma automática.
+
+Te comunico de inmediato con un asesor del local para que te colabore personalmente.`,
+            buttons: [],
+            removeKeyboard: true
+          };
+        } else if (pedidoObjetivo.estado === "cancelado") {
+          return {
+            nextState: currentState,
+            nextDraft: draft,
+            replyText: `El pedido <b>#${pedidoObjetivo.numero}</b> ya se encuentra cancelado en el sistema.
+
+¿Deseas realizar un nuevo pedido o consultar algo adicional?`,
+            buttons: ["Hacer otro pedido", "Ver menú", "Hablar con asesor"]
+          };
+        }
+      }
+      if (draft && draft.lineas.length > 0) {
+        return {
+          nextState: "IDLE",
+          nextDraft: null,
+          replyText: `Tu orden en curso ha sido cancelada. Cuando desees empezar de nuevo, solo escribe un mensaje.`,
+          buttons: ["Ver menú", "Hablar con asesor"]
+        };
+      }
+      return {
+        nextState: "IDLE",
+        nextDraft: null,
+        replyText: `No tienes ningún pedido activo pendiente de cancelación en este momento.
+
+¿Deseas revisar nuestro catálogo para ordenar?`,
+        buttons: ["Ver menú", "Hablar con asesor"]
+      };
+    }
+    if (nlu.intent === "MODIFICAR_CANTIDAD" && draft && draft.lineas.length > 0) {
+      const nuevaCantidad = nlu.entities.cantidad || 1;
+      const ultimaLinea = draft.lineas[draft.lineas.length - 1];
+      ultimaLinea.cantidad = nuevaCantidad;
+      const total = this.calcularTotal(draft);
+      const siguienteEstado = draft.modalidad ? "CONFIRMANDO_PEDIDO" : "SOLICITANDO_ENTREGA";
+      return {
+        nextState: siguienteEstado,
+        nextDraft: draft,
+        replyText: `<b>CANTIDAD ACTUALIZADA</b>
+<blockquote>${nuevaCantidad}x ${ultimaLinea.nombre}
+<b>Nuevo total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+${draft.modalidad ? "¿Confirmas tu pedido modificado?" : "¿Deseas recibirlo a domicilio o prefieres retirarlo en local?"}`,
+        buttons: draft.modalidad ? ["Confirmar pedido", "Modificar pedido", "Cancelar orden"] : ["Envío a domicilio", "Retiro en local"]
+      };
+    }
+    if (nlu.intent === "ELIMINAR_ITEM" && draft && draft.lineas.length > 0) {
+      const qElim = normStr2(nlu.entities.nombreItem || "");
+      const lineasFiltradas = draft.lineas.filter((l) => {
+        const lNorm = normStr2(l.nombre);
+        const matchDirecto = lNorm.includes(qElim) || qElim.includes(lNorm);
+        const matchPalabras = qElim.split(" ").some((w) => w.length > 2 && lNorm.includes(w));
+        return !matchDirecto && !matchPalabras;
+      });
+      if (lineasFiltradas.length === 0) {
+        return {
+          nextState: "IDLE",
+          nextDraft: null,
+          replyText: `El producto fue retirado y tu pedido ha quedado vacío.
+
+Puedes consultar el catálogo o indicarme qué deseas ordenar.`,
+          buttons: ["Ver menú", "Hablar con asesor"]
+        };
+      }
+      draft.lineas = lineasFiltradas;
+      const total = this.calcularTotal(draft);
+      return {
+        nextState: "CARRITO_EN_CONSTRUCCION",
+        nextDraft: draft,
+        replyText: `<b>PRODUCTO RETIRADO</b>
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Subtotal:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+¿Deseas agregar algo más o proceder con la entrega?`,
+        buttons: ["Proceder a la entrega", "Agregar más productos", "Cancelar orden"]
+      };
+    }
+    if (nlu.intent === "SUSTITUIR_ITEM" && draft && draft.lineas.length > 0) {
+      const itemQuitar = normStr2(nlu.entities.reemplazarItem || "");
+      const itemAgregar = normStr2(nlu.entities.nuevoItem || "");
+      const nuevoEncontrado = catalogo.find((c) => {
+        const cNorm = normStr2(c.nombre);
+        return cNorm.includes(itemAgregar) || itemAgregar.includes(cNorm);
+      });
+      if (!nuevoEncontrado) {
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `No encontramos "${nlu.entities.nuevoItem}" en nuestro catálogo de productos disponibles.
+
+Conservas tu pedido actual intacto:
+<blockquote>${this.formatearLineas(draft)}</blockquote>
+¿Deseas elegir otra opción disponible?`,
+          buttons: ["Ver menú", "Proceder a la entrega"]
+        };
+      }
+      draft.lineas = draft.lineas.filter((l) => {
+        const lNorm = normStr2(l.nombre);
+        const matchDirecto = lNorm.includes(itemQuitar) || itemQuitar.includes(lNorm);
+        const matchPalabras = itemQuitar.split(" ").some((w) => w.length > 2 && lNorm.includes(w));
+        return !matchDirecto && !matchPalabras;
+      });
+      draft.lineas.push({
+        productId: nuevoEncontrado.id,
+        nombre: nuevoEncontrado.nombre,
+        precioUnitario: nuevoEncontrado.precio,
+        cantidad: 1
+      });
+      const total = this.calcularTotal(draft);
+      return {
+        nextState: "SOLICITANDO_ENTREGA",
+        nextDraft: draft,
+        replyText: `<b>PRODUCTO ACTUALIZADO</b>
+<blockquote>Se agregó: ${nuevoEncontrado.nombre} (<code>$${nuevoEncontrado.precio.toLocaleString("es-CO")} COP</code>)
+
+<b>Pedido actual:</b>
+${this.formatearLineas(draft)}
+──────────────────────────
+<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+¿Cómo prefieres recibir tu pedido?`,
+        buttons: ["Envío a domicilio", "Retiro en local"]
+      };
+    }
+    if (nlu.intent === "SELECCION_POR_ORDINAL" && nlu.entities.ordinalIndex) {
+      const idx = nlu.entities.ordinalIndex - 1;
+      if (idx >= 0 && idx < catalogo.length) {
+        const itemSeleccionado = catalogo[idx];
+        const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+        const existente = activeDraft.lineas.find((x) => x.productId === itemSeleccionado.id);
+        if (existente) {
+          existente.cantidad += 1;
+        } else {
+          activeDraft.lineas.push({
+            productId: itemSeleccionado.id,
+            nombre: itemSeleccionado.nombre,
+            precioUnitario: itemSeleccionado.precio,
+            cantidad: 1
+          });
+        }
+        const total = this.calcularTotal(activeDraft);
+        return {
+          nextState: "CARRITO_EN_CONSTRUCCION",
+          nextDraft: activeDraft,
+          replyText: `<b>PRODUCTO AGREGADO</b>
+<blockquote>1x ${itemSeleccionado.nombre} — <code>$${itemSeleccionado.precio.toLocaleString("es-CO")} COP</code>
+
+<b>Subtotal acumulado:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+¿Deseas agregar algo más o proceder con la entrega?`,
+          buttons: ["Agregar más productos", "Proceder a la entrega"]
+        };
+      }
+    }
+    if (nlu.intent === "AGREGAR_ITEMS" && nlu.itemsParaAgregar && nlu.itemsParaAgregar.length > 0) {
+      const lineasNuevas = [];
+      const noEncontrados = [];
+      let mensajeStockExcedido = null;
+      for (const req of nlu.itemsParaAgregar) {
+        if (/^(?:otra|otro|lo mismo|uno mas|una mas|otra mas|otro mas)$/i.test(req.query.trim()) && draft && draft.lineas.length > 0) {
+          const ultimaLinea = draft.lineas[draft.lineas.length - 1];
+          req.query = ultimaLinea.nombre;
+        }
+        const coreQuery = req.query.replace(/\s+(?:sin|con\s+extra|sin\s+salsas?|sin\s+cebolla|sin\s+tomate|con\s+todo)\b.*$/i, "").trim();
+        const qNorm = normStr2(coreQuery || req.query);
+        const qWords = qNorm.split(/\s+/).map((w) => w.replace(/s$/i, "")).filter((w) => w.length >= 3);
+        const matched = catalogo.find((c) => {
+          const cNorm = normStr2(c.nombre);
+          if (cNorm.includes(qNorm) || qNorm.includes(cNorm))
+            return true;
+          const cWords = cNorm.split(/\s+/).map((w) => w.replace(/s$/i, ""));
+          return qWords.length > 0 && qWords.some((qw) => qw.length >= 3 && cWords.some((cw) => cw.includes(qw) || qw.includes(cw)));
+        });
+        if (!matched) {
+          noEncontrados.push(req.query);
+        } else {
+          if (matched.stock < req.cantidad) {
+            mensajeStockExcedido = `Solo disponemos de <b>${matched.stock} unidades</b> de <b>${matched.nombre}</b> (solicitaste ${req.cantidad}).
+
+¿Deseas llevar las ${matched.stock} unidades disponibles o prefieres elegir otro producto?`;
+            break;
+          }
+          lineasNuevas.push({
+            productId: matched.id,
+            nombre: matched.nombre,
+            precioUnitario: matched.precio,
+            cantidad: req.cantidad
+          });
+        }
+      }
+      if (mensajeStockExcedido) {
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: mensajeStockExcedido,
+          buttons: ["Llevar disponibles", "Ver menú", "Cancelar orden"]
+        };
+      }
+      if (noEncontrados.length > 0 && lineasNuevas.length === 0) {
+        const listaOpciones = catalogo.map((c) => `• <b>${c.nombre}</b> — <code>$${c.precio.toLocaleString("es-CO")} COP</code>`).join(`
+`);
+        const estadoPrevioTexto = draft && draft.lineas.length > 0 ? `
+
+Conservas tu pedido previo:
+<blockquote>${this.formatearLineas(draft)}</blockquote>` : "";
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `Por el momento no disponemos de "${noEncontrados.join(", ")}" en nuestro catálogo.
+
+Opciones disponibles:
+<blockquote>${listaOpciones}</blockquote>${estadoPrevioTexto}
+¿Deseas añadir alguna de las opciones disponibles?`,
+          buttons: catalogo.slice(0, 3).map((c) => c.nombre.slice(0, 18))
+        };
+      }
+      const activeDraft = draft || { lineas: [], modalidad: null, direccion: null, updatedAt: new Date().toISOString() };
+      for (const l of lineasNuevas) {
+        const existente = activeDraft.lineas.find((x) => x.productId === l.productId);
+        if (existente) {
+          existente.cantidad += l.cantidad;
+        } else {
+          activeDraft.lineas.push(l);
+        }
+      }
+      if (nlu.entities.modalidad === "domicilio" && nlu.entities.direccion) {
+        activeDraft.modalidad = "domicilio";
+        activeDraft.direccion = nlu.entities.direccion;
+        const subtotal = this.calcularTotal(activeDraft);
+        const costoEnvio = perfil.costoEnvio;
+        const total2 = subtotal + costoEnvio;
+        const destinatarioStr = this.formatearDestinatario(activeDraft.destinatario);
+        return {
+          nextState: "CONFIRMANDO_PEDIDO",
+          nextDraft: activeDraft,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>
+<blockquote>${this.formatearLineas(activeDraft)}
+──────────────────────────
+<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
+<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
+<b>Total:</b> <code>$${total2.toLocaleString("es-CO")} COP</code>
+<b>Entrega:</b> Domicilio en <i>${activeDraft.direccion}</i>${destinatarioStr}</blockquote>
+¿Confirmas tu orden con estos datos?`,
+          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
+        };
+      }
+      if (nlu.entities.modalidad === "retiro") {
+        activeDraft.modalidad = "retiro";
+        const total2 = this.calcularTotal(activeDraft);
+        const destinatarioStr = this.formatearDestinatario(activeDraft.destinatario);
+        return {
+          nextState: "CONFIRMANDO_PEDIDO",
+          nextDraft: activeDraft,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>
+<blockquote>${this.formatearLineas(activeDraft)}
+──────────────────────────
+<b>Total a pagar:</b> <code>$${total2.toLocaleString("es-CO")} COP</code>
+<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>
+¿Confirmas tu orden para generar el enlace de pago seguro?`,
+          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
+        };
+      }
+      if (nlu.entities.modalidad === "domicilio" && !nlu.entities.direccion) {
+        activeDraft.modalidad = "domicilio";
+        const subtotal = this.calcularTotal(activeDraft);
+        return {
+          nextState: "SOLICITANDO_DIRECCION",
+          nextDraft: activeDraft,
+          replyText: `<b>PRODUCTO AGREGADO</b>
+<blockquote>${this.formatearLineas(activeDraft)}
+──────────────────────────
+<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code></blockquote>
+Para coordinar tu entrega a domicilio, indícanos por favor tu <b>dirección completa</b> (calle, número y barrio):`,
+          buttons: ["Hablar con asesor", "Cancelar orden"],
+          removeKeyboard: true
+        };
+      }
+      const total = this.calcularTotal(activeDraft);
+      const avisoNoEncontrados = noEncontrados.length > 0 ? `
+
+<i>(Nota: no se agregó "${noEncontrados.join(", ")}" por no figurar en el menú).</i>` : "";
+      return {
+        nextState: "CARRITO_EN_CONSTRUCCION",
+        nextDraft: activeDraft,
+        replyText: `<b>PRODUCTO AGREGADO</b>
+<blockquote>${this.formatearLineas(activeDraft)}
+──────────────────────────
+<b>Subtotal acumulado:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>${avisoNoEncontrados}
+¿Deseas agregar algo más o proceder con la entrega?`,
+        buttons: ["Agregar más productos", "Proceder a la entrega"]
+      };
+    }
+    if (nlu.intent === "ELEGIR_MODALIDAD" && draft && draft.lineas.length > 0) {
+      draft.modalidad = nlu.entities.modalidad || "domicilio";
+      if (draft.modalidad === "retiro") {
+        const total = this.calcularTotal(draft);
+        const destinatarioStr = this.formatearDestinatario(draft.destinatario);
+        return {
+          nextState: "CONFIRMANDO_PEDIDO",
+          nextDraft: draft,
+          replyText: `<b>RESUMEN DEL PEDIDO</b>
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
+<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>
+¿Confirmas tu orden para generar el enlace de pago seguro?`,
+          buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
+        };
+      } else {
+        return {
+          nextState: "SOLICITANDO_DIRECCION",
+          nextDraft: draft,
+          replyText: `Por favor indícanos tu <b>dirección completa de entrega</b> en Colombia (calle, número, apartamento o referencias):`,
+          buttons: [],
+          removeKeyboard: true
+        };
+      }
+    }
+    if (nlu.intent === "DAR_DIRECCION" && draft && draft.lineas.length > 0) {
+      draft.direccion = nlu.entities.direccion || nlu.rawText;
+      draft.modalidad = "domicilio";
+      const subtotal = this.calcularTotal(draft);
+      const costoEnvio = perfil.costoEnvio;
+      const total = subtotal + costoEnvio;
+      const destinatarioStr = this.formatearDestinatario(draft.destinatario);
+      return {
+        nextState: "CONFIRMANDO_PEDIDO",
+        nextDraft: draft,
+        replyText: `<b>RESUMEN DEL PEDIDO</b>
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Subtotal:</b> <code>$${subtotal.toLocaleString("es-CO")} COP</code>
+<b>Envío:</b> <code>$${costoEnvio.toLocaleString("es-CO")} COP</code>
+<b>Total a pagar:</b> <code>$${total.toLocaleString("es-CO")} COP</code>
+<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i>${destinatarioStr}</blockquote>
+¿Confirmas tu orden para generar el enlace de pago seguro?`,
+        buttons: ["Confirmar pedido", "Modificar pedido", "Cancelar orden"]
+      };
+    }
+    if (nlu.intent === "CONFIRMAR_PEDIDO" && draft && draft.lineas.length > 0) {
+      if (!draft.modalidad) {
+        const subtotal2 = this.calcularTotal(draft);
+        return {
+          nextState: "SOLICITANDO_ENTREGA",
+          nextDraft: draft,
+          replyText: `<b>MÉTODO DE ENTREGA</b>
+<blockquote>Subtotal acumulado: <code>$${subtotal2.toLocaleString("es-CO")} COP</code></blockquote>
+¿Cómo prefieres recibir tu pedido?`,
+          buttons: ["Envío a domicilio", "Retiro en local"]
+        };
+      }
+      if (draft.modalidad === "domicilio" && !draft.direccion) {
+        return {
+          nextState: "SOLICITANDO_DIRECCION",
+          nextDraft: draft,
+          replyText: "Para poder confirmar tu pedido a domicilio, indícanos por favor tu dirección completa de entrega:",
+          buttons: [],
+          removeKeyboard: true
+        };
+      }
+      const subtotal = this.calcularTotal(draft);
+      const costoEnvio = draft.modalidad === "domicilio" ? perfil.costoEnvio : 0;
+      const total = subtotal + costoEnvio;
+      return {
+        nextState: "IDLE",
+        nextDraft: null,
+        replyText: ``,
+        buttons: ["Estado de mis pedidos", "Hacer otro pedido", "Hablar con asesor"],
+        orderCreated: {
+          id: "",
+          numero: "",
+          total,
+          modalidad: draft.modalidad || "retiro",
+          direccion: draft.direccion,
+          destinatario: draft.destinatario || null,
+          lineas: draft.lineas
+        }
+      };
+    }
+    if (nlu.intent === "DESCONOCIDO") {
+      if (currentState === "SOLICITANDO_DIRECCION" && draft) {
+        return {
+          nextState: "SOLICITANDO_DIRECCION",
+          nextDraft: draft,
+          replyText: `Para poder enviarte tu pedido (${draft.lineas.map((l) => `${l.cantidad}x ${l.nombre}`).join(", ")}), necesitamos una dirección de entrega válida (calle, carrera, número o referencias):`,
+          buttons: ["Hablar con asesor", "Cancelar orden"],
+          removeKeyboard: true
+        };
+      }
+      if (draft && draft.lineas.length > 0) {
+        const total = this.calcularTotal(draft);
+        const botonesRecuperacion = currentState === "CONFIRMANDO_PEDIDO" ? ["Confirmar pedido", "Modificar pedido", "Cancelar orden"] : currentState === "SOLICITANDO_ENTREGA" ? ["Envío a domicilio", "Retiro en local"] : ["Proceder a la entrega", "Agregar más productos", "Cancelar orden"];
+        return {
+          nextState: currentState,
+          nextDraft: draft,
+          replyText: `Soy un asistente especializado en gestionar pedidos en Necto.
+
+Tu pedido sigue intacto y guardado:
+<blockquote>${this.formatearLineas(draft)}
+──────────────────────────
+<b>Total:</b> <code>$${total.toLocaleString("es-CO")} COP</code></blockquote>
+¿Deseas continuar con tu orden?`,
+          buttons: botonesRecuperacion
+        };
+      }
+      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+      return {
+        nextState: "CATALOGO_ACTIVO",
+        nextDraft: null,
+        replyText: `Te compartimos nuestro menú disponible para que elijas lo que deseas pedir:
+
+${catTexto}
+
+Puedes seleccionar una opción o indicarme qué deseas ordenar.`,
+        buttons: botonesCat
+      };
+    }
+    return this.mostrarMenuPrincipal(nombreRef, yaRegistrado);
+  }
+  manejarOnboarding(currentState, incomingClientePerfil, nlu, _catalogo, _perfil, _clienteNombre) {
+    const activePerfil = incomingClientePerfil ? structuredClone(incomingClientePerfil) : {
+      nombre: "",
+      apellido: "",
+      email: "",
+      telefono: "",
+      terminosAceptados: false,
+      completado: false
+    };
+    if (nlu.intent === "SOLICITAR_HUMANO" || nlu.rawText && /asesor|humano|persona|agente/i.test(nlu.rawText)) {
+      return {
+        nextState: "MODO_HUMANO",
+        nextDraft: null,
+        replyText: `Te comunico con uno de nuestros asesores para que te colabore directamente. En breve se comunicarán contigo por este medio.`,
+        buttons: [],
+        removeKeyboard: true
+      };
+    }
+    if (currentState === "IDLE" || currentState === "ONBOARDING_NOMBRE" && !activePerfil.nombre && (!nlu.rawText || nlu.rawText === "/start" || nlu.rawText === "/reiniciar")) {
+      return {
+        nextState: "ONBOARDING_NOMBRE",
+        nextDraft: null,
+        replyText: `¡Hola! Soy Sofía, asistente virtual de <b>Necto</b> \uD83C\uDF3F y estoy aquí para ayudarte.
+
+Para empezar, ¿cuál es tu <b>nombre de pila</b>? Así podré saludarte como te mereces.`,
+        buttons: [],
+        removeKeyboard: true,
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_NOMBRE") {
+      let raw = (nlu.rawText || "").trim();
+      raw = raw.replace(/^(?:¡?hola!?|buen[ao]s?\s+(?:d[ií]as|tardes|noches)),?\s*/i, "").trim();
+      raw = raw.replace(/^(?:mi\s+nombre\s+es|me\s+llamo|soy|yo\s+soy)\s+/i, "").trim();
+      raw = raw.replace(/[.!?,;]+$/g, "").trim();
+      if (!raw || raw.length < 2) {
+        return {
+          nextState: "ONBOARDING_NOMBRE",
+          nextDraft: null,
+          replyText: `¿Me podrías indicar cuál es tu nombre de pila? Así podré dirigirme a ti correctamente.`,
+          buttons: [],
+          clientePerfil: activePerfil
+        };
+      }
+      const partes = raw.split(/\s+/).filter(Boolean);
+      if (partes.length >= 2) {
+        activePerfil.nombre = partes[0].charAt(0).toUpperCase() + partes[0].slice(1).toLowerCase();
+        activePerfil.apellido = partes.slice(1).map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
+        return {
+          nextState: "ONBOARDING_EMAIL",
+          nextDraft: null,
+          replyText: `¡Mucho gusto, ${activePerfil.nombre}! Ya registré tu nombre y apellido (<b>${activePerfil.nombre} ${activePerfil.apellido}</b>).
+
+Me faltan dos datos para crear tu cuenta. ¿Me apuntas tu correo electrónico? Ej: <code>juan@mail.com</code>`,
+          buttons: [],
+          clientePerfil: activePerfil
+        };
+      }
+      activePerfil.nombre = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+      return {
+        nextState: "ONBOARDING_APELLIDO",
+        nextDraft: null,
+        replyText: `¡Mucho gusto, ${activePerfil.nombre}! ¿Y me ayudarías también con tu apellido? Lo necesito para registrarte correctamente.`,
+        buttons: [],
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_APELLIDO") {
+      let ape = (nlu.rawText || "").trim();
+      ape = ape.replace(/^(?:mi\s+apellido\s+es|es)\s+/i, "").trim();
+      ape = ape.replace(/[.!?,;]+$/g, "").trim();
+      if (!ape || ape.length < 2) {
+        return {
+          nextState: "ONBOARDING_APELLIDO",
+          nextDraft: null,
+          replyText: `Por favor indícanos tu apellido para completar tu registro de cliente.`,
+          buttons: [],
+          clientePerfil: activePerfil
+        };
+      }
+      activePerfil.apellido = ape.split(/\s+/).map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(" ");
+      return {
+        nextState: "ONBOARDING_EMAIL",
+        nextDraft: null,
+        replyText: `Me faltan dos datos para crear tu cuenta. ¿Me apuntas tu correo electrónico? Ej: <code>juan@mail.com</code>`,
+        buttons: [],
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_EMAIL") {
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i;
+      const matchEmail = (nlu.rawText || "").match(emailRegex);
+      if (!matchEmail) {
+        return {
+          nextState: "ONBOARDING_EMAIL",
+          nextDraft: null,
+          replyText: `Por favor indícanos un correo electrónico válido (ejemplo: <code>juan@mail.com</code>) para asociarlo a tus pedidos y facturas.`,
+          buttons: [],
+          clientePerfil: activePerfil
+        };
+      }
+      activePerfil.email = matchEmail[0].toLowerCase();
+      return {
+        nextState: "ONBOARDING_TELEFONO",
+        nextDraft: null,
+        replyText: `¡Lo último! Escríbeme tu celular sin puntos ni guiones para coordinar las entregas de tus pedidos.`,
+        buttons: [],
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_TELEFONO") {
+      let digits = (nlu.rawText || "").replace(/\D/g, "");
+      if (digits.startsWith("57") && digits.length === 12) {
+        digits = digits.slice(2);
+      }
+      if (digits.length < 7 || digits.length > 12) {
+        return {
+          nextState: "ONBOARDING_TELEFONO",
+          nextDraft: null,
+          replyText: `Por favor ingresa un número de teléfono celular válido de 10 dígitos (ej: <code>3145376069</code>) sin puntos ni caracteres especiales.`,
+          buttons: [],
+          clientePerfil: activePerfil
+        };
+      }
+      activePerfil.telefono = digits;
+      return {
+        nextState: "ONBOARDING_CONFIRMAR",
+        nextDraft: null,
+        replyText: `\uD83D\uDCCB <b>CONFIRMA TUS DATOS</b>
+<blockquote>• <b>Nombre:</b> ${activePerfil.nombre} ${activePerfil.apellido}
+• <b>Correo:</b> ${activePerfil.email}
+• <b>Celular:</b> ${activePerfil.telefono}</blockquote>
+¿La información es correcta?`,
+        buttons: ["Sí, está bien ✅", "Corregir datos ✏️"],
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_CONFIRMAR") {
+      const textNorm = normStr2(nlu.rawText || "");
+      const esAfirmativo = /^(?:si|sí|correcto|esta bien|está bien|ok|confirmo|si, esta bien|si esta bien)/i.test(textNorm) || textNorm.includes("bien") || textNorm.includes("correcto");
+      const esNegativo = /^(?:no|corregir|cambiar|mal|modificar)/i.test(textNorm) || textNorm.includes("corregir");
+      if (esAfirmativo) {
+        return {
+          nextState: "ONBOARDING_PRIVACIDAD",
+          nextDraft: null,
+          replyText: `\uD83D\uDD12 <b>POLÍTICA DE TRATAMIENTO DE DATOS</b>
+<blockquote>De conformidad con la Ley 1581 de 2012 de Protección de Datos Personales, autorizas a Necto a utilizar tus datos exclusivamente para la gestión, despacho y facturación de tus pedidos.</blockquote>
+¿Autorizas el tratamiento de tus datos para estos fines?`,
+          buttons: ["Sí, autorizo ✅", "No autorizo ❌"],
+          clientePerfil: activePerfil
+        };
+      }
+      if (esNegativo) {
+        return {
+          nextState: "ONBOARDING_NOMBRE",
+          nextDraft: null,
+          replyText: `Entendido, vamos a corregir tus datos. ¿Cuál es tu nombre de pila?`,
+          buttons: [],
+          clientePerfil: {
+            nombre: "",
+            apellido: "",
+            email: "",
+            telefono: "",
+            terminosAceptados: false,
+            completado: false
+          }
+        };
+      }
+      return {
+        nextState: "ONBOARDING_CONFIRMAR",
+        nextDraft: null,
+        replyText: `Por favor confírmanos si los datos son correctos:
+<blockquote>• <b>Nombre:</b> ${activePerfil.nombre} ${activePerfil.apellido}
+• <b>Correo:</b> ${activePerfil.email}
+• <b>Celular:</b> ${activePerfil.telefono}</blockquote>`,
+        buttons: ["Sí, está bien ✅", "Corregir datos ✏️"],
+        clientePerfil: activePerfil
+      };
+    }
+    if (currentState === "ONBOARDING_PRIVACIDAD") {
+      const textNormPriv = normStr2(nlu.rawText || "");
+      const autoriza = /^(?:si|sí|autorizo|acepto|de acuerdo|claro|si, autorizo)/i.test(textNormPriv) || textNormPriv.includes("autorizo") || textNormPriv.includes("acepto");
+      const noAutoriza = /^(?:no|rechazo|no autorizo)/i.test(textNormPriv) || textNormPriv.includes("no autorizo");
+      if (autoriza) {
+        activePerfil.terminosAceptados = true;
+        activePerfil.completado = true;
+        const botonesMenu = [
+          "Realizar pedido \uD83E\uDD6A",
+          "Seguir pedido \uD83D\uDCCC",
+          "Buscar sucursales \uD83D\uDD0D",
+          "Hacer una consulta \uD83D\uDCAC"
+        ];
+        return {
+          nextState: "IDLE",
+          nextDraft: null,
+          replyText: `\uD83C\uDF89 <b>¡Registro completado con éxito, ${activePerfil.nombre}!</b>
+Soy Sofía y ya dejé tu cuenta lista para cuando desees ordenar.
+
+¿En qué puedo ayudarte hoy? Selecciona una de las opciones del <b>Menú principal</b>:
+
+\uD83E\uDD6A <b>Realizar pedido</b> — Consulta nuestra carta y pide a domicilio o retiro
+\uD83D\uDCCC <b>Seguir pedido</b> — Revisa el estado de tus órdenes en curso
+\uD83D\uDD0D <b>Buscar sucursales</b> — Ubicación de tiendas y bodegas
+\uD83D\uDCAC <b>Hacer una consulta</b> — Chatea con un asesor de servicio`,
+          buttons: botonesMenu,
+          clientePerfil: activePerfil
+        };
+      }
+      if (noAutoriza) {
+        return {
+          nextState: "ONBOARDING_PRIVACIDAD",
+          nextDraft: null,
+          replyText: `Comprendemos tu decisión. Ten presente que de acuerdo con la normatividad comercial, requerimos estos datos básicos para procesar la facturación y el despacho de tus órdenes.
+
+Si deseas autorizar el tratamiento para continuar, presiona el botón a continuación:`,
+          buttons: ["Sí, autorizo ✅", "Hablar con asesor"],
+          clientePerfil: activePerfil
+        };
+      }
+      return {
+        nextState: "ONBOARDING_PRIVACIDAD",
+        nextDraft: null,
+        replyText: `\uD83D\uDD12 Para poder brindarte servicio en Necto, ¿autorizas el tratamiento de tus datos para gestión de pedidos y facturación?`,
+        buttons: ["Sí, autorizo ✅", "No autorizo ❌"],
+        clientePerfil: activePerfil
+      };
+    }
+    return {
+      nextState: "ONBOARDING_NOMBRE",
+      nextDraft: null,
+      replyText: `¿Cuál es tu nombre de pila? Así podré atenderte con gusto.`,
+      buttons: [],
+      clientePerfil: activePerfil
+    };
+  }
+  mostrarMenuPrincipal(nombre, yaRegistrado = false) {
+    const saludo = yaRegistrado ? `¡Hola de nuevo, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> \uD83C\uDF3F
+Qué gusto encontrarte de nuevo por aquí.` : `¡Hola, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> \uD83C\uDF3F`;
+    const botonesMenu = [
+      "Realizar pedido \uD83E\uDD6A",
+      "Seguir pedido \uD83D\uDCCC",
+      "Buscar sucursales \uD83D\uDD0D",
+      "Hacer una consulta \uD83D\uDCAC"
+    ];
+    return {
+      nextState: "IDLE",
+      nextDraft: null,
+      replyText: `${saludo}
+
+¿En qué puedo ayudarte hoy? Selecciona una de las opciones del <b>Menú principal</b>:
+
+\uD83E\uDD6A <b>Realizar pedido</b> — Consulta nuestra carta y pide a domicilio o retiro
+\uD83D\uDCCC <b>Seguir pedido</b> — Revisa el estado de tus órdenes en curso
+\uD83D\uDD0D <b>Buscar sucursales</b> — Ubicación de tiendas y bodegas
+\uD83D\uDCAC <b>Hacer una consulta</b> — Chatea con un asesor de servicio`,
+      buttons: botonesMenu
+    };
+  }
+  mostrarCatalogoInicial(catalogo, perfil, nombre, yaRegistrado = false) {
+    const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+    const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+    const saludo = yaRegistrado ? `¡Hola de nuevo, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> \uD83C\uDF3F` : `¡Hola, ${nombre}! Soy Sofía, asistente virtual de <b>Necto</b> \uD83C\uDF3F`;
+    return {
+      nextState: "CATALOGO_ACTIVO",
+      nextDraft: null,
+      replyText: `${saludo}
+
+${catTexto}
+Puedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+      buttons: [...botonesCat, "Menú principal \uD83D\uDCCB"]
+    };
+  }
+  formatearDestinatario(destinatario) {
+    if (destinatario && destinatario.tipo === "tercero") {
+      return `
+<b>Destinatario:</b> ${destinatario.nombre || "Otra persona"} (Tel: ${destinatario.telefono || "Sin especificar"}) \uD83C\uDF81`;
+    }
+    return "";
+  }
+  formatearCatalogo(catalogo, etiqueta) {
+    const lineas = catalogo.map((c, idx) => `${idx + 1}. <b>${c.nombre}</b> — <code>$${c.precio.toLocaleString("es-CO")} COP</code>`);
+    return `<b>${etiqueta.toUpperCase()}</b>
+<blockquote>${lineas.join(`
+`)}</blockquote>`;
+  }
+  formatearLineas(draft) {
+    return draft.lineas.map((l) => `• <b>${l.cantidad}x ${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString("es-CO")} COP</code>`).join(`
+`);
+  }
+  calcularTotal(draft) {
+    return draft.lineas.reduce((acc, l) => acc + l.precioUnitario * l.cantidad, 0);
+  }
+}
+
+// src/telegram/TelegramCognitiveEngine.ts
+import fs from "fs";
+var BOT_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "agregar_productos",
+      description: 'Agrega uno o varios productos o comidas al pedido. Úsala cuando el usuario pida cualquier alimento o bebida (incluso si no estás seguro de si está en la carta, ej. "el pollo", "4 hamburguesas", "una gaseosa", "otra más"). También captura si en el mismo mensaje indicó modalidad o dirección.',
+      parameters: {
+        type: "object",
+        properties: {
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                nombre: { type: "string", description: "Nombre del producto o comida solicitada" },
+                cantidad: { type: "integer", description: "Cantidad de unidades (por defecto 1)" }
+              },
+              required: ["nombre", "cantidad"]
+            }
+          },
+          modalidad: {
+            type: "string",
+            enum: ["domicilio", "retiro"],
+            description: "Modalidad de entrega si fue indicada"
+          },
+          direccion: {
+            type: "string",
+            description: "Dirección física completa si fue indicada en el mensaje"
+          }
+        },
+        required: ["items"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "mostrar_catalogo",
+      description: "Muestra el menú o carta de productos disponibles. Úsala cuando el usuario pida ver el menú, productos disponibles, o responda afirmativamente a ver opciones.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "iniciar_nuevo_pedido",
+      description: "Inicia una nueva orden o pedido limpio. Úsala cuando el usuario diga que quiere hacer otro pedido, pedir de nuevo, hacer una nueva orden o comenzar otra vez.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "elegir_entrega",
+      description: "Define la modalidad de entrega (domicilio o retiro/recoger) y/o la dirección del pedido.",
+      parameters: {
+        type: "object",
+        properties: {
+          modalidad: { type: "string", enum: ["domicilio", "retiro"] },
+          direccion: { type: "string", description: "Dirección física completa si es a domicilio" }
+        },
+        required: ["modalidad"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "confirmar_pedido",
+      description: 'Confirma el pedido final para generar el pago seguro cuando el cliente da su visto bueno ("sí", "confirmo", "dale", "de una").',
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "cancelar_pedido",
+      description: "Cancela el pedido en curso o un pedido registrado previamente.",
+      parameters: {
+        type: "object",
+        properties: {
+          numero_pedido: { type: "string", description: 'Número del pedido si fue especificado (ej. "0034", "WEB-0034")' }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "consultar_estado_pedidos",
+      description: "Consulta el estado o historial de pedidos registrados del cliente.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "modificar_item_carrito",
+      description: "Ajusta cantidades, elimina un ítem o sustituye un producto por otro en el carrito actual.",
+      parameters: {
+        type: "object",
+        properties: {
+          accion: { type: "string", enum: ["cambiar_cantidad", "eliminar", "sustituir"] },
+          nombre_item: { type: "string" },
+          nueva_cantidad: { type: "integer" },
+          nuevo_item_sustituto: { type: "string" }
+        },
+        required: ["accion"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "consultar_informacion",
+      description: "Preguntas sobre costo de envío, horario del restaurante o dudas de cómo pedir.",
+      parameters: {
+        type: "object",
+        properties: {
+          tema: { type: "string", enum: ["costo_envio", "horario", "proceso_pedido"] }
+        },
+        required: ["tema"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "solicitar_humano",
+      description: "Transfiere la atención a un asesor o agente humano del restaurante.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  }
+];
+var TOOLS_INVENTARIO = [
+  {
+    type: "function",
+    function: {
+      name: "consultar_stock_inventario",
+      description: 'Consulta las existencias, cantidad disponible o stock actual de uno o más artículos/productos en inventario o bodegas. Úsala cuando pregunten por existencias o unidades de cualquier artículo (ej: "¿cuántas papas quedan?", "¿hay stock de café?", "¿cuántas unidades de gaseosa tenemos?", "stock de combo hamburguesa").',
+      parameters: {
+        type: "object",
+        properties: {
+          articulo: { type: "string", description: "Nombre o término del producto o insumo a consultar" },
+          bodega: { type: "string", description: "Nombre o filtro de bodega específica si fue indicada" }
+        },
+        required: ["articulo"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "consultar_alertas_inventario",
+      description: "Consulta los artículos que están escasos, agotados o por debajo del punto mínimo de reorden en inventario. Úsala ante preguntas de alertas de stock, qué falta comprar, qué está agotado o qué se debe reponer.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "consultar_resumen_inventario",
+      description: 'Genera un balance o resumen general del inventario: total de artículos, unidades registradas, valorización y estado de bodegas. Ej: "¿cómo está el inventario?", "resumen de existencias", "balance general de stock".',
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "consultar_bodegas",
+      description: "Consulta la lista de bodegas, almacenes o sedes de almacenamiento activas de la organización.",
+      parameters: {
+        type: "object",
+        properties: {}
+      }
+    }
+  }
+];
+
+class TelegramCognitiveEngine {
+  endpoint;
+  apiKey;
+  deployment;
+  constructor() {
+    let ep = process.env.AZURE_OPENAI_ENDPOINT;
+    let key = process.env.AZURE_OPENAI_KEY;
+    this.deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4o";
+    if (!key && fs.existsSync(".env")) {
+      try {
+        const envContent = fs.readFileSync(".env", "utf8");
+        ep = ep || envContent.match(/AZURE_OPENAI_ENDPOINT=(.+)/)?.[1]?.trim();
+        key = key || envContent.match(/AZURE_OPENAI_KEY=(.+)/)?.[1]?.trim();
+      } catch (e) {}
+    }
+    this.endpoint = (ep || "https://oai-nectoia-prod-d80b2.openai.azure.com/").replace(/\/+$/, "");
+    this.apiKey = key || "";
+  }
+  async extraerIntencionYEntidades(params) {
+    if (!this.apiKey) {
+      console.warn("[TelegramCognitiveEngine] No hay AZURE_OPENAI_KEY configurada.");
+      return null;
+    }
+    const {
+      textoUsuario,
+      catalogo,
+      perfil,
+      estadoActual,
+      draft,
+      historialPrevio,
+      esOperador = false,
+      tieneInventarios = true,
+      tienePedidos = true
+    } = params;
+    const catalogoItems = catalogo.map((c) => `• ${c.nombre} ($${c.precio})`).join(`
+`);
+    const carritoResumen = draft && draft.lineas.length > 0 ? draft.lineas.map((l) => `${l.cantidad}x ${l.nombre}`).join(", ") : "Vacío";
+    const habilitarInventario = esOperador && tieneInventarios;
+    let toolsDisponibles = [];
+    if (tienePedidos && habilitarInventario) {
+      toolsDisponibles = [...BOT_TOOLS, ...TOOLS_INVENTARIO];
+    } else if (tienePedidos) {
+      toolsDisponibles = BOT_TOOLS;
+    } else if (habilitarInventario) {
+      toolsDisponibles = TOOLS_INVENTARIO;
+    } else {
+      toolsDisponibles = BOT_TOOLS;
+    }
+    const instruccionesOperador = habilitarInventario ? `
+7. El usuario es un OPERADOR AUTORIZADO de Necto con acceso al módulo de inventarios:
+   - Si pregunta por stock o existencias de un producto/insumo (ej. "¿cuántas papas quedan?", "stock de café", "hay existencias de gaseosa?") -> llama SIEMPRE a \`consultar_stock_inventario\`.
+   - Si pregunta por alertas, productos por agotarse, faltantes o reorden -> llama a \`consultar_alertas_inventario\`.
+   - Si pide un balance, resumen general o estado global del inventario -> llama a \`consultar_resumen_inventario\`.
+   - Si pregunta por bodegas, almacenes o sedes -> llama a \`consultar_bodegas\`.` : "";
+    const systemPrompt = `Eres el asistente inteligente de Necto en Colombia.
+Tu función es interpretar el mensaje del usuario y seleccionar la herramienta adecuada (Tool Call) para ejecutar la acción correspondiente.
+
+INSTRUCCIONES CLAVE:
+1. Si el usuario pide cualquier comida o bebida para pedir o comprar (ej. "el pollo", "4 hamburguesas", "agrega papas", "otra más"), llama SIEMPRE a la herramienta \`agregar_productos\`.
+2. Si el usuario dice "quiero hacer otro pedido", "otro pedido, no puedo?", "nuevo pedido", llama a \`iniciar_nuevo_pedido\`.
+3. Si el usuario dice "sí", "claro", "dale", "de una", "por favor", revisa el mensaje previo del asistente:
+   - Si el asistente ofreció ver el catálogo -> llama a \`mostrar_catalogo\`.
+   - Si el asistente pidió confirmar pedido -> llama a \`confirmar_pedido\`.
+   - Si no hay contexto previo -> llama a \`mostrar_catalogo\`.
+4. Si indica "recoger", "recogerlo", "para llevar", "retiro", "a domicilio", llama a \`elegir_entrega\`.
+5. Si pregunta por horarios, costo de envío o dudas del negocio, llama a \`consultar_informacion\`.
+6. Si el mensaje es una broma, operación matemática (ej. "2+2"), poesía o ajeno al negocio, NO llames a ninguna herramienta.${instruccionesOperador}
+
+CONTEXTO ACTUAL:
+- Tipo de negocio: ${perfil?.perfilComercial || "comercial"} (${perfil?.etiquetaCatalogo || "Catálogo"})
+- Rol del usuario: ${esOperador ? "Operador Autorizado" : "Cliente / Público General"}
+- Estado del diálogo: ${estadoActual || "IDLE"}
+- Carrito actual: ${carritoResumen}
+- Catálogo disponible:
+${catalogoItems}`;
+    const chatMessages = [
+      { role: "system", content: systemPrompt }
+    ];
+    if (historialPrevio && historialPrevio.length > 0) {
+      const recientes = historialPrevio.slice(-3);
+      for (const h of recientes) {
+        const clean = h.content.length > 200 ? h.content.slice(0, 200) + "..." : h.content;
+        chatMessages.push({ role: h.role, content: clean });
+      }
+    }
+    chatMessages.push({ role: "user", content: textoUsuario });
+    try {
+      const url = `${this.endpoint}/openai/deployments/${this.deployment}/chat/completions?api-version=2024-08-01-preview`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": this.apiKey
+        },
+        body: JSON.stringify({
+          messages: chatMessages,
+          tools: toolsDisponibles,
+          tool_choice: "auto",
+          temperature: 0,
+          max_tokens: 150
+        })
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("[TelegramCognitiveEngine] Error Azure OpenAI Tool Calling:", res.status, errText);
+        return null;
+      }
+      const data = await res.json();
+      const choice = data.choices?.[0];
+      const toolCalls = choice?.message?.tool_calls;
+      if (toolCalls && toolCalls.length > 0) {
+        const call = toolCalls[0];
+        const fnName = call.function?.name;
+        let args = {};
+        try {
+          args = JSON.parse(call.function?.arguments || "{}");
+        } catch (e) {
+          args = {};
+        }
+        console.log(`[TelegramCognitiveEngine] \uD83D\uDEE0️ Tool ejecutada: ${fnName}`, args);
+        if (fnName === "agregar_productos") {
+          const items = (args.items || []).map((it) => ({
+            query: String(it.nombre || ""),
+            cantidad: Number(it.cantidad) || 1
+          }));
+          return {
+            intent: "AGREGAR_ITEMS",
+            confidence: 0.99,
+            entities: {
+              modalidad: args.modalidad || undefined,
+              direccion: args.direccion || undefined
+            },
+            itemsParaAgregar: items,
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "mostrar_catalogo") {
+          return { intent: "VER_CATALOGO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+        if (fnName === "iniciar_nuevo_pedido") {
+          return { intent: "REINICIAR_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+        if (fnName === "elegir_entrega") {
+          if (args.direccion) {
+            return {
+              intent: "DAR_DIRECCION",
+              confidence: 0.99,
+              entities: { direccion: args.direccion, modalidad: "domicilio" },
+              rawText: textoUsuario
+            };
+          }
+          return {
+            intent: "ELEGIR_MODALIDAD",
+            confidence: 0.99,
+            entities: { modalidad: args.modalidad || "domicilio" },
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "confirmar_pedido") {
+          return { intent: "CONFIRMAR_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+        if (fnName === "cancelar_pedido") {
+          return {
+            intent: "CANCELAR_PEDIDO",
+            confidence: 0.99,
+            entities: { numeroPedido: args.numero_pedido || undefined },
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "consultar_estado_pedidos") {
+          return { intent: "CONSULTA_ESTADO_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+        if (fnName === "modificar_item_carrito") {
+          if (args.accion === "cambiar_cantidad") {
+            return {
+              intent: "MODIFICAR_CANTIDAD",
+              confidence: 0.99,
+              entities: { cantidad: args.nueva_cantidad },
+              rawText: textoUsuario
+            };
+          }
+          if (args.accion === "eliminar") {
+            return {
+              intent: "ELIMINAR_ITEM",
+              confidence: 0.99,
+              entities: { nombreItem: args.nombre_item },
+              rawText: textoUsuario
+            };
+          }
+          if (args.accion === "sustituir") {
+            return {
+              intent: "SUSTITUIR_ITEM",
+              confidence: 0.99,
+              entities: { reemplazarItem: args.nombre_item, nuevoItem: args.nuevo_item_sustituto },
+              rawText: textoUsuario
+            };
+          }
+        }
+        if (fnName === "consultar_informacion") {
+          if (args.tema === "costo_envio") {
+            return { intent: "CONSULTA_COSTO_ENVIO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+          }
+          if (args.tema === "horario") {
+            return { intent: "CONSULTA_HORARIO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+          }
+          if (args.tema === "proceso_pedido") {
+            return { intent: "DUDA_PROCESO_PEDIDO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+          }
+        }
+        if (fnName === "solicitar_humano") {
+          return { intent: "SOLICITAR_HUMANO", confidence: 0.99, entities: {}, rawText: textoUsuario };
+        }
+        if (fnName === "consultar_stock_inventario") {
+          return {
+            intent: "CONSULTAR_STOCK_INVENTARIO",
+            confidence: 0.99,
+            entities: {
+              articulo: args.articulo || textoUsuario,
+              bodega: args.bodega || undefined
+            },
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "consultar_alertas_inventario") {
+          return {
+            intent: "CONSULTAR_ALERTAS_INVENTARIO",
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "consultar_resumen_inventario") {
+          return {
+            intent: "CONSULTAR_RESUMEN_INVENTARIO",
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario
+          };
+        }
+        if (fnName === "consultar_bodegas") {
+          return {
+            intent: "CONSULTAR_BODEGAS",
+            confidence: 0.99,
+            entities: {},
+            rawText: textoUsuario
+          };
+        }
+      }
+      return { intent: "FUERA_DE_DOMINIO", confidence: 0.95, entities: {}, rawText: textoUsuario };
+    } catch (err) {
+      console.error("[TelegramCognitiveEngine] Excepción llamando a Azure Tool Calling:", err.message);
+      return null;
+    }
+  }
+}
+
+// src/telegram/TelegramHandler.ts
+class TelegramHandler {
+  dao;
+  bot;
+  nlu = new TelegramNLU;
+  fsm = new TelegramFSM;
+  cognitiveEngine = new TelegramCognitiveEngine;
+  chatLocks = new Map;
+  constructor(dao, bot) {
+    this.dao = dao;
+    this.bot = bot;
+  }
+  async onMessage(msg) {
+    const { chatId } = msg;
+    const prevLock = this.chatLocks.get(chatId) || Promise.resolve();
+    const currentTask = prevLock.then(() => this.processMessage(msg)).catch((err) => {
+      console.error(`[TelegramHandler] Error procesando mensaje de [${chatId}]:`, err);
+    });
+    this.chatLocks.set(chatId, currentTask);
+    await currentTask;
+  }
+  async processMessage(msg) {
+    const { chatId, fullName, text, messageId } = msg;
+    console.log(`[TelegramHandler] \uD83D\uDCE5 [${chatId}] ${fullName}: "${text}"`);
+    this.bot.sendChatAction(chatId, "typing").catch(() => {});
+    const estadoConv = await this.dao.asegurarConversacion(chatId, fullName);
+    const { conversacionId, modo } = estadoConv;
+    const guardarMsgPromise = this.dao.guardarMensaje(conversacionId, "cliente", text || (msg.contact ? `[Contacto: ${msg.contact.phoneNumber}]` : ""), messageId);
+    const normText = text.toLowerCase().trim();
+    const esComandoReinicio = normText === "/start" || normText.startsWith("/start") || normText === "/reiniciar" || normText === "reiniciar";
+    const quiereVolverAlBot = esComandoReinicio || ["volver al bot", "bot", "menu", "catalogo", "hola", "nuevo pedido", "pedir", "inicio", "menu principal"].some((w) => normText.includes(w));
+    if (modo === "humano" && !quiereVolverAlBot) {
+      console.log(`[TelegramHandler] Conversación ${conversacionId} en modo humano. Bot en silencio.`);
+      await guardarMsgPromise;
+      return;
+    }
+    if (modo === "humano" && quiereVolverAlBot) {
+      await this.dao.actualizarModoAtencion(conversacionId, "bot");
+      estadoConv.modo = "bot";
+    }
+    if (esComandoReinicio) {
+      if (estadoConv.clientePerfil?.completado) {
+        await this.dao.guardarEstadoConversacion(conversacionId, "IDLE", null, {
+          clientePerfil: estadoConv.clientePerfil
+        });
+        estadoConv.fsmState = "IDLE";
+        estadoConv.draft = null;
+      } else {
+        await this.dao.guardarEstadoConversacion(conversacionId, "ONBOARDING_NOMBRE", null, {
+          clientePerfil: null
+        });
+        estadoConv.fsmState = "ONBOARDING_NOMBRE";
+        estadoConv.draft = null;
+        estadoConv.clientePerfil = null;
+      }
+    }
+    const modulos = await this.dao.obtenerModulosActivos();
+    const { catalogo, perfil } = await this.dao.obtenerCatalogoYPerfil();
+    let nluResult = null;
+    const enOnboarding = estadoConv.fsmState.startsWith("ONBOARDING_");
+    const mencionaInventarioOAsesor = ["inventario", "stock", "bodega", "alerta", "asesor", "humano"].some((w) => normText.includes(w));
+    if (enOnboarding && !mencionaInventarioOAsesor) {
+      nluResult = {
+        intent: esComandoReinicio ? "REINICIAR_PEDIDO" : "DESCONOCIDO",
+        confidence: 1,
+        entities: {},
+        rawText: text
+      };
+    } else {
+      nluResult = this.nlu.interpretarFastPath(text, catalogo, estadoConv.fsmState);
+      if (!nluResult) {
+        const historialPrevio = await this.dao.obtenerHistorialReciente(conversacionId, 4);
+        nluResult = await this.cognitiveEngine.extraerIntencionYEntidades({
+          textoUsuario: text,
+          catalogo,
+          perfil,
+          estadoActual: estadoConv.fsmState,
+          draft: estadoConv.draft,
+          historialPrevio,
+          esOperador: true,
+          tieneInventarios: modulos.tieneInventarios,
+          tienePedidos: modulos.tienePedidos
+        });
+        if (!nluResult) {
+          nluResult = this.nlu.interpretarFallbackLocal(text, catalogo, estadoConv.fsmState);
+        }
+      }
+    }
+    console.log(`[TelegramHandler] \uD83C\uDFAF Intent resuelto: ${nluResult.intent} (conf: ${nluResult.confidence})`);
+    const esIntentInventario = nluResult.intent === "CONSULTAR_STOCK_INVENTARIO" || nluResult.intent === "CONSULTAR_ALERTAS_INVENTARIO" || nluResult.intent === "CONSULTAR_RESUMEN_INVENTARIO" || nluResult.intent === "CONSULTAR_BODEGAS";
+    if (esIntentInventario) {
+      if (nluResult.intent === "CONSULTAR_STOCK_INVENTARIO") {
+        const queryTerm = nluResult.entities.articulo || text;
+        const stockRes = await this.dao.consultarStockArticulo(queryTerm, nluResult.entities.bodega);
+        let textoStock = "";
+        if (!stockRes.encontrado || !stockRes.articulo) {
+          textoStock = `\uD83D\uDD0D No encontré ningún artículo registrado con el nombre <b>"${queryTerm}"</b> en el inventario de Necto.
+
+\uD83D\uDCA1 <i>Prueba con otra palabra clave o consulta el resumen general.</i>`;
+        } else {
+          const art = stockRes.articulo;
+          const alertaIcon = stockRes.bajoPuntoReorden ? "⚠️" : "✅";
+          const alertaMsg = stockRes.bajoPuntoReorden ? `
+
+⚠️ <i>¡Atención! Este artículo está por debajo o igual al punto de reorden (${art.puntoReorden} ${art.unidad}).</i>` : "";
+          let bodegasDetalle = "";
+          if (stockRes.porBodega.length > 0) {
+            bodegasDetalle = `
+
+<b>Distribución por Bodega:</b>
+` + stockRes.porBodega.map((b) => `• <b>${b.bodegaNombre}</b>: <code>${b.cantidad} ${art.unidad}</code>`).join(`
+`);
+          }
+          textoStock = `\uD83D\uDCE6 <b>Consulta de Stock — Necto</b>
+` + `──────────────────────────
+` + `<b>Artículo:</b> ${art.nombre}
+` + `<b>Categoría:</b> ${art.categoria}
+` + `<b>Stock Total:</b> <code>${stockRes.stockTotal} ${art.unidad}</code> ${alertaIcon}
+` + `<b>Punto de Reorden:</b> <code>${art.puntoReorden} ${art.unidad}</code>
+` + `<b>Costo Estimado:</b> <code>$${Number(art.costo).toLocaleString("es-CO")} COP</code>
+` + `──────────────────────────` + alertaMsg + bodegasDetalle;
+        }
+        const botonesSugeridos = ["Realizar pedido \uD83E\uDD6A", "Seguir pedido \uD83D\uDCCC", "Menú principal \uD83D\uDCCB"];
+        await this.bot.sendMessage(chatId, textoStock, { buttons: botonesSugeridos });
+        await this.dao.guardarMensaje(conversacionId, "asistente", textoStock);
+        await guardarMsgPromise;
+        return;
+      }
+      if (nluResult.intent === "CONSULTAR_ALERTAS_INVENTARIO") {
+        const alertas = await this.dao.consultarAlertasInventario();
+        let textoAlertas = "";
+        if (alertas.length === 0) {
+          textoAlertas = `✅ <b>¡Todo en orden!</b>
+
+No hay artículos por debajo del punto mínimo de reorden en este momento. El inventario se encuentra dentro de los niveles operativos normales.`;
+        } else {
+          const lista = alertas.map((a, i) => `${i + 1}. <b>${a.nombre}</b> (${a.categoria})
+   • Stock: <code>${a.stockTotal} ${a.unidad}</code> / Mínimo: <code>${a.puntoReorden}</code> (Déficit: <b>${a.deficit}</b>)`).join(`
+
+`);
+          textoAlertas = `⚠️ <b>Alertas de Reorden de Inventario</b>
+` + `Se encontraron <b>${alertas.length}</b> artículos con existencias críticas:
+
+` + lista + `
+
+\uD83D\uDCA1 <i>Se recomienda coordinar compra o reabastecimiento para estos ítems.</i>`;
+        }
+        const botonesSugeridos = ["Realizar pedido \uD83E\uDD6A", "Seguir pedido \uD83D\uDCCC", "Menú principal \uD83D\uDCCB"];
+        await this.bot.sendMessage(chatId, textoAlertas, { buttons: botonesSugeridos });
+        await this.dao.guardarMensaje(conversacionId, "asistente", textoAlertas);
+        await guardarMsgPromise;
+        return;
+      }
+      if (nluResult.intent === "CONSULTAR_RESUMEN_INVENTARIO") {
+        const resumen = await this.dao.obtenerResumenInventario();
+        const bodegasNombres = resumen.bodegas.map((b) => b.nombre + (b.principal ? " ⭐" : "")).join(", ") || "Sin bodegas";
+        const valorFmt = Number(resumen.valorTotalEstimado).toLocaleString("es-CO");
+        const textoResumen = `\uD83D\uDCCA <b>Balance General de Inventario — Necto</b>
+` + `──────────────────────────
+` + `• <b>Artículos Registrados:</b> <code>${resumen.totalArticulos}</code>
+` + `• <b>Unidades Totales en Existencia:</b> <code>${resumen.totalUnidades}</code>
+` + `• <b>Valorización Estimada de Stock:</b> <code>$${valorFmt} COP</code>
+` + `• <b>Artículos en Alerta de Reorden:</b> <code>${resumen.articulosBajoReorden}</code> ${resumen.articulosBajoReorden > 0 ? "⚠️" : "✅"}
+` + `• <b>Bodegas Activas:</b> ${resumen.bodegas.length}
+` + `  <i>${bodegasNombres}</i>
+` + `──────────────────────────`;
+        const botonesSugeridos = ["Realizar pedido \uD83E\uDD6A", "Seguir pedido \uD83D\uDCCC", "Menú principal \uD83D\uDCCB"];
+        await this.bot.sendMessage(chatId, textoResumen, { buttons: botonesSugeridos });
+        await this.dao.guardarMensaje(conversacionId, "asistente", textoResumen);
+        await guardarMsgPromise;
+        return;
+      }
+      if (nluResult.intent === "CONSULTAR_BODEGAS") {
+        const bodegas = await this.dao.obtenerBodegas();
+        let textoBodegas = "";
+        if (bodegas.length === 0) {
+          textoBodegas = `\uD83C\uDFEC No hay bodegas activas registradas en la organización.`;
+        } else {
+          const lista = bodegas.map((b) => {
+            const badge = b.principal ? " ⭐ (Principal)" : "";
+            const dir = b.direccion ? `
+   \uD83D\uDCCD <i>${b.direccion}</i>` : "";
+            return `• <b>${b.nombre}</b>${badge}${dir}`;
+          }).join(`
+
+`);
+          textoBodegas = `\uD83C\uDFEC <b>Bodegas y Sedes de Almacenamiento</b>
+` + `──────────────────────────
+` + lista + `
+──────────────────────────`;
+        }
+        const botonesSugeridos = ["Realizar pedido \uD83E\uDD6A", "Seguir pedido \uD83D\uDCCC", "Menú principal \uD83D\uDCCB"];
+        await this.bot.sendMessage(chatId, textoBodegas, { buttons: botonesSugeridos });
+        await this.dao.guardarMensaje(conversacionId, "asistente", textoBodegas);
+        await guardarMsgPromise;
+        return;
+      }
+    }
+    let pedidosCliente = [];
+    if (nluResult.intent === "CONSULTA_ESTADO_PEDIDO" || nluResult.intent === "CANCELAR_PEDIDO" || nluResult.intent === "CONFIRMAR_CANCELACION_SI") {
+      pedidosCliente = await this.dao.obtenerPedidosRecientes(chatId, 5);
+    }
+    const ultimoPedido = pedidosCliente.length > 0 ? pedidosCliente[0] : null;
+    const transition = this.fsm.transition(estadoConv.fsmState, estadoConv.draft, nluResult, catalogo, perfil, fullName, ultimoPedido, pedidosCliente, estadoConv.clientePerfil);
+    let textoFinal = transition.replyText;
+    let botonesFinales = transition.buttons;
+    let borradorFinal = transition.nextDraft;
+    let nextState = transition.nextState;
+    const removeKeyboard = Boolean(transition.removeKeyboard);
+    const clientePerfilSiguiente = transition.clientePerfil !== undefined ? transition.clientePerfil : estadoConv.clientePerfil;
+    if (clientePerfilSiguiente?.completado && (!estadoConv.clientePerfil || !estadoConv.clientePerfil.completado)) {
+      await this.dao.actualizarPerfilContacto(estadoConv.contactoId, clientePerfilSiguiente);
+    }
+    if (transition.orderCreated) {
+      const lineas = transition.orderCreated.lineas || estadoConv.draft?.lineas || [];
+      const modalidad = transition.orderCreated.modalidad || estadoConv.draft?.modalidad || "retiro";
+      const direccion = transition.orderCreated.direccion || estadoConv.draft?.direccion || null;
+      const destinatario = transition.orderCreated.destinatario || estadoConv.draft?.destinatario || null;
+      const draftParaCrear = {
+        lineas,
+        modalidad,
+        direccion,
+        destinatario,
+        updatedAt: new Date().toISOString()
+      };
+      const nombreCliente2 = clientePerfilSiguiente?.nombre ? `${clientePerfilSiguiente.nombre} ${clientePerfilSiguiente.apellido || ""}`.trim() : fullName;
+      const pedidoCreado = await this.dao.crearPedidoFinal(chatId, nombreCliente2, draftParaCrear, perfil.costoEnvio);
+      const refLink = pedidoCreado.numero.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const totalFmt = Number(pedidoCreado.total).toLocaleString("es-CO");
+      const resumenLineas = draftParaCrear.lineas.map((l) => `• ${l.cantidad} × <b>${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString("es-CO")} COP</code>`).join(`
+`);
+      const entregaStr = draftParaCrear.modalidad === "domicilio" ? `Domicilio en <i>${draftParaCrear.direccion}</i>` : `Retiro en local`;
+      const destinatarioStr = draftParaCrear.destinatario && draftParaCrear.destinatario.tipo === "tercero" ? `
+<b>Destinatario:</b> ${draftParaCrear.destinatario.nombre || "Otra persona"} (Tel: ${draftParaCrear.destinatario.telefono || "Sin especificar"}) \uD83C\uDF81` : "";
+      const baseUrl = process.env.CHECKOUT_BASE_URL || "https://total-authentic-inspector-farms.trycloudflare.com";
+      const checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente2)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || "")}`;
+      textoFinal = `<b>PEDIDO REGISTRADO CON ÉXITO</b>
+<blockquote>` + `<b>Orden:</b> <code>#${pedidoCreado.numero}</code>
+` + `<b>Cliente:</b> ${nombreCliente2}
+` + `──────────────────────────
+` + `${resumenLineas}
+` + `──────────────────────────
+` + `<b>Total a pagar:</b> <code>$${totalFmt} COP</code>
+` + `<b>Modalidad:</b> ${entregaStr}${destinatarioStr}</blockquote>
+
+` + `<b>Enlace de pago seguro (GlobalPay Redeban):</b>
+${checkoutLink}
+
+` + `<i>Acepta Tarjeta de crédito/débito y PSE. Una vez confirmado el pago, iniciamos la preparación de tu orden.</i>`;
+      botonesFinales = ["Estado de mis pedidos", "Hacer otro pedido", "Hablar con asesor"];
+      borradorFinal = null;
+      nextState = "IDLE";
+    }
+    if (transition.orderCancelledId) {
+      await this.dao.cancelarPedido(transition.orderCancelledId);
+    }
+    if (nextState === "MODO_HUMANO") {
+      await this.dao.actualizarModoAtencion(conversacionId, "humano");
+    }
+    let customReplyMarkup = undefined;
+    if (nextState === "CATALOGO_ACTIVO" || textoFinal && (textoFinal.toLowerCase().includes("la carta") || textoFinal.toLowerCase().includes("nuestra carta") || textoFinal.toLowerCase().includes("catálogo") || textoFinal.toLowerCase().includes("catalogo"))) {
+      const baseUrl = process.env.CHECKOUT_BASE_URL || "https://total-authentic-inspector-farms.trycloudflare.com";
+      const menuUrl = `${baseUrl}/menu?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent("Sede Principal")}&direccion=${encodeURIComponent(borradorFinal?.direccion || "Medellín")}`;
+      customReplyMarkup = {
+        inline_keyboard: [
+          [{ text: "\uD83D\uDD17 Ver catálogo", url: menuUrl }]
+        ]
+      };
+    }
+    const [envio] = await Promise.all([
+      this.bot.sendMessage(chatId, textoFinal, { buttons: botonesFinales, removeKeyboard, customReplyMarkup }),
+      this.dao.guardarEstadoConversacion(conversacionId, nextState, borradorFinal, {
+        ultimoPedidoId: ultimoPedido?.id || null,
+        clientePerfil: clientePerfilSiguiente || null
+      }),
+      guardarMsgPromise
+    ]);
+    if (envio.messageId) {
+      this.dao.guardarMensaje(conversacionId, "asistente", textoFinal, envio.messageId).catch(() => {});
+    }
+  }
+}
+
 // src/telegram/TelegramDAO.ts
 var ESQUEMA = "necto";
 
@@ -81627,7 +82458,9 @@ class TelegramDAO {
         modo: estado.modoAtencion,
         fsmState: estado.fsmState,
         draft: estado.draft,
-        ultimoPedidoId: estado.ultimoPedidoId
+        ultimoPedidoId: estado.ultimoPedidoId,
+        operador: estado.operador,
+        clientePerfil: estado.clientePerfil
       };
     }
     const digits = idStr.replace(/\D/g, "");
@@ -81668,16 +82501,20 @@ class TelegramDAO {
       const er = convExistente.estado_respuesta || {};
       const fsmState = er.fsmState || (er.enCurso?.lineas?.length > 0 ? "CARRITO_EN_CONSTRUCCION" : "IDLE");
       const draft = er.draft || er.enCurso || null;
+      const operador = er.operador ? er.operador : null;
+      const clientePerfil = er.clientePerfil ? er.clientePerfil : null;
       return {
         conversacionId: convExistente.id,
         contactoId,
         modo: convExistente.modo_atencion || "bot",
         fsmState,
         draft,
-        ultimoPedidoId: er.ultimoPedidoId || null
+        ultimoPedidoId: er.ultimoPedidoId || null,
+        operador,
+        clientePerfil
       };
     }
-    const { data: nuevaConv, error: errConv } = await this.t("conversacion").insert({
+    const { data: nuevaConv } = await this.t("conversacion").insert({
       organizacion_id: this.organizacionId,
       contacto_id: contactoId,
       canal: "telegram",
@@ -81688,15 +82525,18 @@ class TelegramDAO {
     }).select("id, modo_atencion").maybeSingle();
     const finalConvId = nuevaConv?.id;
     if (!finalConvId) {
-      const { data: convRetry } = await this.t("conversacion").select("id, modo_atencion").eq("organizacion_id", this.organizacionId).eq("contacto_id", contactoId).eq("canal", "telegram").single();
-      this.convCache.set(idStr, { conversacionId: convRetry.id, contactoId });
+      const { data: convRetry } = await this.t("conversacion").select("id, modo_atencion").eq("organizacion_id", this.organizacionId).eq("contacto_id", contactoId).eq("canal", "telegram").maybeSingle();
+      const retryId = convRetry?.id || "conv_fallback";
+      this.convCache.set(idStr, { conversacionId: retryId, contactoId });
       return {
-        conversacionId: convRetry.id,
+        conversacionId: retryId,
         contactoId,
-        modo: convRetry.modo_atencion || "bot",
+        modo: convRetry?.modo_atencion || "bot",
         fsmState: "IDLE",
         draft: null,
-        ultimoPedidoId: null
+        ultimoPedidoId: null,
+        operador: null,
+        clientePerfil: null
       };
     }
     this.convCache.set(idStr, { conversacionId: finalConvId, contactoId });
@@ -81706,23 +82546,29 @@ class TelegramDAO {
       modo: nuevaConv.modo_atencion || "bot",
       fsmState: "IDLE",
       draft: null,
-      ultimoPedidoId: null
+      ultimoPedidoId: null,
+      operador: null,
+      clientePerfil: null
     };
   }
   async leerEstadoConversacion(conversacionId) {
     const { data, error } = await this.t("conversacion").select("modo_atencion, estado_respuesta, actualizada_en").eq("id", conversacionId).maybeSingle();
     if (error || !data) {
-      return { fsmState: "IDLE", draft: null, ultimoPedidoId: null, modoAtencion: "bot", updatedAt: null };
+      return { fsmState: "IDLE", draft: null, ultimoPedidoId: null, modoAtencion: "bot", updatedAt: null, operador: null, clientePerfil: null };
     }
     const er = data.estado_respuesta || {};
     const fsmState = er.fsmState || (er.enCurso?.lineas?.length > 0 ? "CARRITO_EN_CONSTRUCCION" : "IDLE");
     const draft = er.draft || er.enCurso || null;
+    const operador = er.operador ? er.operador : null;
+    const clientePerfil = er.clientePerfil ? er.clientePerfil : null;
     return {
       fsmState,
       draft,
       ultimoPedidoId: er.ultimoPedidoId || null,
       modoAtencion: data.modo_atencion || "bot",
-      updatedAt: data.actualizada_en || null
+      updatedAt: data.actualizada_en || null,
+      operador,
+      clientePerfil
     };
   }
   async guardarEstadoConversacion(conversacionId, fsmState, draft, extra = {}) {
@@ -81746,6 +82592,246 @@ class TelegramDAO {
   }
   async actualizarModoAtencion(conversacionId, modo) {
     await this.t("conversacion").update({ modo_atencion: modo, actualizada_en: new Date().toISOString() }).eq("id", conversacionId);
+  }
+  async actualizarPerfilContacto(contactoId, perfil) {
+    try {
+      const nombreCompleto = `${perfil.nombre} ${perfil.apellido}`.trim();
+      const datos = {
+        nombre: nombreCompleto
+      };
+      if (perfil.telefono) {
+        datos.telefono = perfil.telefono;
+        datos.telefono_norm = perfil.telefono.replace(/\D/g, "");
+      }
+      await this.t("contacto").update(datos).eq("id", contactoId);
+      console.log(`[TelegramDAO] \uD83D\uDC64 Contacto ${contactoId} actualizado con perfil: ${nombreCompleto} (${perfil.telefono})`);
+    } catch (err) {
+      console.error(`[TelegramDAO] Error actualizando perfil de contacto ${contactoId}:`, err);
+    }
+  }
+  async obtenerModulosActivos() {
+    try {
+      const { data, error } = await this.t("modulo_organizacion").select("modulo_id, activo").eq("organizacion_id", this.organizacionId).eq("activo", true);
+      if (error || !data) {
+        return { tienePedidos: true, tieneInventarios: true };
+      }
+      const ids = new Set(data.map((m) => String(m.modulo_id).toLowerCase()));
+      return {
+        tienePedidos: ids.has("pedidos"),
+        tieneInventarios: ids.has("inventario") || ids.has("inventarios")
+      };
+    } catch {
+      return { tienePedidos: true, tieneInventarios: true };
+    }
+  }
+  async verificarOperadorPorTelefono(chatId, phoneNumber) {
+    const rawDigits = (phoneNumber || "").replace(/\D/g, "");
+    if (!rawDigits || rawDigits.length < 7) {
+      return { ok: false, motivo: "Número de teléfono no válido" };
+    }
+    try {
+      const { data: operadores, error } = await this.t("operador").select("id, nombre, email, telefono, rol_id").eq("organizacion_id", this.organizacionId).eq("estado", "activo");
+      if (error || !operadores || operadores.length === 0) {
+        return { ok: false, motivo: "No se encontraron operadores activos registrados en la organización." };
+      }
+      const op = operadores.find((o) => {
+        if (!o.telefono)
+          return false;
+        const opDigits = String(o.telefono).replace(/\D/g, "");
+        return opDigits === rawDigits || opDigits.endsWith(rawDigits) || rawDigits.endsWith(opDigits);
+      });
+      if (!op) {
+        return { ok: false, motivo: "El número de teléfono no coincide con ningún operador activo de Necto." };
+      }
+      const operadorInfo = {
+        id: op.id,
+        nombre: op.nombre,
+        rolId: op.rol_id
+      };
+      const idStr = String(chatId);
+      const cached = this.convCache.get(idStr);
+      let convId = cached?.conversacionId;
+      if (!convId) {
+        const estado = await this.asegurarConversacion(chatId, op.nombre);
+        convId = estado.conversacionId;
+      }
+      if (convId) {
+        await this.guardarEstadoConversacion(convId, "IDLE", null, {
+          operador: operadorInfo
+        });
+      }
+      return { ok: true, operador: operadorInfo };
+    } catch (err) {
+      return { ok: false, motivo: err.message };
+    }
+  }
+  async consultarStockArticulo(query, bodegaFiltro) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) {
+      return { encontrado: false, stockTotal: 0, bajoPuntoReorden: false, porBodega: [] };
+    }
+    try {
+      const { data: articulos, error } = await this.t("articulo").select("id, nombre, categoria, unidad, costo, punto_reorden").eq("organizacion_id", this.organizacionId).eq("activo", true);
+      if (error || !articulos || articulos.length === 0) {
+        return { encontrado: false, stockTotal: 0, bajoPuntoReorden: false, porBodega: [] };
+      }
+      const match = articulos.find((a) => {
+        const nom = a.nombre.toLowerCase();
+        return nom.includes(q) || q.includes(nom) || q.split(/\s+/).some((word) => word.length > 2 && nom.includes(word));
+      });
+      if (!match) {
+        return { encontrado: false, stockTotal: 0, bajoPuntoReorden: false, porBodega: [] };
+      }
+      const { data: bodegasData } = await this.t("bodega").select("id, nombre").eq("organizacion_id", this.organizacionId);
+      const mapaBodegas = new Map;
+      (bodegasData || []).forEach((b) => mapaBodegas.set(b.id, b.nombre));
+      const { data: movimientos } = await this.t("movimiento").select("tipo, cantidad, origen_id, destino_id").eq("organizacion_id", this.organizacionId).eq("articulo_id", match.id);
+      const stockPorBodega = new Map;
+      (movimientos || []).forEach((m) => {
+        const cant = Number(m.cantidad) || 0;
+        if (m.tipo === "entrada" && m.destino_id) {
+          stockPorBodega.set(m.destino_id, (stockPorBodega.get(m.destino_id) || 0) + cant);
+        } else if (m.tipo === "salida" && m.origen_id) {
+          stockPorBodega.set(m.origen_id, (stockPorBodega.get(m.origen_id) || 0) - cant);
+        } else if (m.tipo === "transferencia") {
+          if (m.origen_id)
+            stockPorBodega.set(m.origen_id, (stockPorBodega.get(m.origen_id) || 0) - cant);
+          if (m.destino_id)
+            stockPorBodega.set(m.destino_id, (stockPorBodega.get(m.destino_id) || 0) + cant);
+        } else if (m.tipo === "ajuste") {
+          if (m.destino_id)
+            stockPorBodega.set(m.destino_id, (stockPorBodega.get(m.destino_id) || 0) + cant);
+          else if (m.origen_id)
+            stockPorBodega.set(m.origen_id, (stockPorBodega.get(m.origen_id) || 0) - cant);
+        }
+      });
+      let porBodegaArr = Array.from(stockPorBodega.entries()).map(([bId, cant]) => ({
+        bodegaId: bId,
+        bodegaNombre: mapaBodegas.get(bId) || "Bodega General",
+        cantidad: Math.max(0, cant)
+      }));
+      if (bodegaFiltro) {
+        const bf = bodegaFiltro.toLowerCase();
+        porBodegaArr = porBodegaArr.filter((b) => b.bodegaNombre.toLowerCase().includes(bf));
+      }
+      const stockTotal = porBodegaArr.reduce((acc, b) => acc + b.cantidad, 0);
+      const puntoReorden = Number(match.punto_reorden) || 0;
+      return {
+        encontrado: true,
+        articulo: {
+          id: match.id,
+          nombre: match.nombre,
+          categoria: match.categoria || "General",
+          unidad: match.unidad || "unidad",
+          costo: Number(match.costo) || 0,
+          puntoReorden
+        },
+        stockTotal,
+        bajoPuntoReorden: stockTotal <= puntoReorden,
+        porBodega: porBodegaArr
+      };
+    } catch (err) {
+      console.error("[TelegramDAO] Error consultando stock:", err);
+      return { encontrado: false, stockTotal: 0, bajoPuntoReorden: false, porBodega: [] };
+    }
+  }
+  async consultarAlertasInventario() {
+    try {
+      const { data: articulos } = await this.t("articulo").select("id, nombre, categoria, unidad, punto_reorden").eq("organizacion_id", this.organizacionId).eq("activo", true);
+      if (!articulos || articulos.length === 0)
+        return [];
+      const { data: movimientos } = await this.t("movimiento").select("articulo_id, tipo, cantidad, origen_id, destino_id").eq("organizacion_id", this.organizacionId);
+      const stockMap = new Map;
+      (movimientos || []).forEach((m) => {
+        const artId = m.articulo_id;
+        const cant = Number(m.cantidad) || 0;
+        let delta = 0;
+        if (m.tipo === "entrada")
+          delta = cant;
+        else if (m.tipo === "salida")
+          delta = -cant;
+        else if (m.tipo === "ajuste")
+          delta = m.destino_id ? cant : -cant;
+        stockMap.set(artId, (stockMap.get(artId) || 0) + delta);
+      });
+      const alertas = [];
+      for (const a of articulos) {
+        const stockTotal = Math.max(0, stockMap.get(a.id) || 0);
+        const puntoReorden = Number(a.punto_reorden) || 0;
+        if (stockTotal <= puntoReorden && puntoReorden > 0) {
+          alertas.push({
+            id: a.id,
+            nombre: a.nombre,
+            categoria: a.categoria || "General",
+            unidad: a.unidad || "unidad",
+            stockTotal,
+            puntoReorden,
+            deficit: Math.max(0, puntoReorden - stockTotal)
+          });
+        }
+      }
+      alertas.sort((a, b) => b.deficit - a.deficit);
+      return alertas;
+    } catch (err) {
+      console.error("[TelegramDAO] Error consultando alertas de inventario:", err);
+      return [];
+    }
+  }
+  async obtenerResumenInventario() {
+    try {
+      const [artRes, bodRes, movRes] = await Promise.all([
+        this.t("articulo").select("id, costo, punto_reorden").eq("organizacion_id", this.organizacionId).eq("activo", true),
+        this.t("bodega").select("id, nombre, principal").eq("organizacion_id", this.organizacionId).eq("activa", true),
+        this.t("movimiento").select("articulo_id, tipo, cantidad, origen_id, destino_id").eq("organizacion_id", this.organizacionId)
+      ]);
+      const articulos = artRes.data || [];
+      const bodegas = (bodRes.data || []).map((b) => ({ id: b.id, nombre: b.nombre, principal: Boolean(b.principal) }));
+      const movimientos = movRes.data || [];
+      const stockMap = new Map;
+      movimientos.forEach((m) => {
+        const artId = m.articulo_id;
+        const cant = Number(m.cantidad) || 0;
+        let delta = 0;
+        if (m.tipo === "entrada")
+          delta = cant;
+        else if (m.tipo === "salida")
+          delta = -cant;
+        else if (m.tipo === "ajuste")
+          delta = m.destino_id ? cant : -cant;
+        stockMap.set(artId, (stockMap.get(artId) || 0) + delta);
+      });
+      let totalUnidades = 0;
+      let valorTotalEstimado = 0;
+      let articulosBajoReorden = 0;
+      articulos.forEach((a) => {
+        const stock = Math.max(0, stockMap.get(a.id) || 0);
+        const costo = Number(a.costo) || 0;
+        const punto = Number(a.punto_reorden) || 0;
+        totalUnidades += stock;
+        valorTotalEstimado += stock * costo;
+        if (stock <= punto && punto > 0)
+          articulosBajoReorden++;
+      });
+      return {
+        totalArticulos: articulos.length,
+        totalUnidades,
+        valorTotalEstimado,
+        bodegas,
+        articulosBajoReorden
+      };
+    } catch (err) {
+      console.error("[TelegramDAO] Error obteniendo resumen inventario:", err);
+      return { totalArticulos: 0, totalUnidades: 0, valorTotalEstimado: 0, bodegas: [], articulosBajoReorden: 0 };
+    }
+  }
+  async obtenerBodegas() {
+    try {
+      const { data } = await this.t("bodega").select("id, nombre, principal, direccion").eq("organizacion_id", this.organizacionId).eq("activa", true).order("principal", { ascending: false });
+      return data || [];
+    } catch (err) {
+      console.error("[TelegramDAO] Error obteniendo bodegas:", err);
+      return [];
+    }
   }
   async obtenerCatalogoYPerfil() {
     const ahora = Date.now();
@@ -81805,7 +82891,7 @@ class TelegramDAO {
     const numero = `WEB-${String((count ?? 0) + 1).padStart(4, "0")}`;
     const subtotal = (draft.lineas || []).reduce((acc, l) => acc + l.precioUnitario * l.cantidad, 0);
     const total = subtotal + (draft.modalidad === "domicilio" ? costoEnvio : 0);
-    const direccionObj = draft.modalidad === "domicilio" && draft.direccion ? { texto: draft.direccion } : null;
+    const direccionObj = draft.modalidad === "domicilio" && draft.direccion ? { texto: draft.direccion, ...draft.destinatario ? { destinatario: draft.destinatario } : {} } : draft.destinatario ? { destinatario: draft.destinatario } : null;
     const { data: pedido, error: errPed } = await this.t("pedido").insert({
       organizacion_id: this.organizacionId,
       numero,
@@ -81888,7 +82974,15 @@ class TelegramBot {
   }
   async sendMessage(chatId, text, options = {}) {
     let reply_markup = undefined;
-    if (options.buttons && options.buttons.length > 0) {
+    if (options.requestContactButton) {
+      reply_markup = {
+        keyboard: [[{ text: options.requestContactButton, request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      };
+    } else if (options.customReplyMarkup) {
+      reply_markup = options.customReplyMarkup;
+    } else if (options.buttons && options.buttons.length > 0) {
       const rows = [];
       for (let i = 0;i < options.buttons.length; i += 2) {
         rows.push(options.buttons.slice(i, i + 2).map((b) => ({ text: b })));
@@ -81983,7 +83077,14 @@ class TelegramBot {
     }
     const msg = update.message || update.callback_query?.message;
     const textRaw = update.message?.text || update.callback_query?.data || "";
-    if (!msg || !textRaw)
+    const rawContact = update.message?.contact;
+    const contact = rawContact ? {
+      phoneNumber: String(rawContact.phone_number || ""),
+      firstName: rawContact.first_name,
+      lastName: rawContact.last_name,
+      userId: rawContact.user_id
+    } : undefined;
+    if (!msg || !textRaw && !contact)
       return;
     const from = update.message?.from || update.callback_query?.from;
     const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(" ") || from?.username || "Cliente";
@@ -81993,7 +83094,8 @@ class TelegramBot {
       username: from?.username,
       fullName,
       text: textRaw.trim(),
-      messageId: msg.message_id
+      messageId: msg.message_id,
+      contact
     };
     try {
       await this.handler.onMessage(incoming);

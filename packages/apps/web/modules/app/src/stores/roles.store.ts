@@ -54,6 +54,12 @@ export type Capacidad =
   | "channels.read"
   | "channels.respond"
   | "channels.manage"
+  // Inventarios
+  | "inventory.read"
+  | "inventory.count"
+  | "inventory.manage"
+  | "inventory.finalize"
+  | "inventory.configure"
   // Ajustes del módulo
   | "settings.read"
   | "settings.manage"
@@ -64,23 +70,33 @@ export type Capacidad =
   | "assistant.use";
 
 /**
- * Catálogo completo de capacidades (pedidos + inventario + asistente IA).
+ * Catálogo completo de capacidades (pedidos + inventarios + asistente IA).
  *
  * `orders.edit` y `orders.delete` están **reservadas**: no tienen UI hoy y no se
  * construye ninguna (contrato §9). Existen para que el catálogo sea completo
  * cuando aparezcan.
  *
- * ── Por qué Inventario lleva CUATRO y no dos ──────────────────────────────
- * `move` y `adjust` se separan porque un ajuste **reescribe lo que el sistema
- * cree que hay** y no tiene contrapartida externa — ni una factura, ni un
- * consumo. Es la única acción del módulo que puede destruir información. El
- * repo ya usa esa granularidad donde importa: `orders.confirm` está separado de
- * `orders.create`.
+ * ── Por qué Inventarios lleva CINCO, y qué separa cada una ────────────────
  *
- * El mínimo viable habría sido dos (`read` + `manage`), que es lo que el
- * catálogo escribía como texto. El criterio para subir es la pregunta *«¿alguien
- * va a querer dar permiso de registrar movimientos sin dar permiso de corregir
- * existencias?»* — y en un almacén real, sí: quien despacha no hace conteos.
+ * El mínimo habría sido dos (`read` + `manage`). Se sube a cinco porque cada
+ * corte separa dos cosas que en la operación real **las hace gente distinta**:
+ *
+ *   · `count` / `finalize` — **quien cuenta no firma.** Es una separación de
+ *     responsabilidades, no un matiz: el operador que recorrió el almacén es
+ *     también el que tiene interés en que su conteo cuadre. Si pudiera firmar,
+ *     la firma no verificaría nada; sería una rúbrica al pie de su propio
+ *     trabajo. Por eso `finalize` es una capacidad aparte y no un valor de
+ *     `count`.
+ *   · `manage` — crear y dar de baja elementos y ubicaciones es **cambiar el
+ *     catálogo**, que afecta a todos los conteos futuros. Contar afecta a un
+ *     conteo. Son de otra categoría.
+ *   · `configure` — tocar la configuración cambia el comportamiento del módulo
+ *     para todos, y se hace una vez al mes o nunca. Va separada de `manage`
+ *     porque un supervisor de almacén necesita lo segundo (dar de alta una
+ *     herramienta) y no lo primero.
+ *
+ * El repo ya usa esa granularidad donde importa: `orders.confirm` está separado
+ * de `orders.create`.
  */
 export const CAPACIDADES: Capacidad[] = [
   "orders.read",
@@ -96,6 +112,11 @@ export const CAPACIDADES: Capacidad[] = [
   "channels.read",
   "channels.respond",
   "channels.manage",
+  "inventory.read",
+  "inventory.count",
+  "inventory.manage",
+  "inventory.finalize",
+  "inventory.configure",
   "settings.read",
   "settings.manage",
   "team.read",
@@ -118,6 +139,11 @@ export const CAPACIDAD_LABEL: Record<Capacidad, string> = {
   "channels.read": "Ver canales",
   "channels.respond": "Responder en canales",
   "channels.manage": "Gestionar canales",
+  "inventory.read": "Ver inventarios",
+  "inventory.count": "Contar y agregar elementos",
+  "inventory.manage": "Gestionar elementos y ubicaciones",
+  "inventory.finalize": "Finalizar y anular inventarios",
+  "inventory.configure": "Configurar el módulo de inventarios",
   "settings.read": "Ver configuración",
   "settings.manage": "Editar configuración",
   "team.read": "Ver equipo",
@@ -144,6 +170,7 @@ export const CAPACIDAD_GRUPOS: CapacidadGrupo[] = [
   { id: "preparacion", label: "Preparación", capacidades: ["preparation.read", "preparation.manage"] },
   { id: "programados", label: "Programados", capacidades: ["scheduled.read", "scheduled.manage"] },
   { id: "canales", label: "Canales", capacidades: ["channels.read", "channels.respond", "channels.manage"] },
+  { id: "inventarios", label: "Inventarios", capacidades: ["inventory.read", "inventory.count", "inventory.manage", "inventory.finalize", "inventory.configure"] },
   { id: "ajustes", label: "Configuración", capacidades: ["settings.read", "settings.manage"] },
   { id: "equipo", label: "Equipo", capacidades: ["team.read", "team.manage"] },
   { id: "asistente", label: "Asistente", capacidades: ["assistant.use"] },
@@ -189,13 +216,16 @@ export const ROLES_SEED: Rol[] = [
   },
   {
     id: "supervisor_pedidos",
-    nombre: "Supervisor de pedidos",
-    descripcion: "Gestiona el ciclo operativo completo de las órdenes.",
+    nombre: "Supervisor de operaciones",
+    descripcion: "Gestiona el ciclo operativo completo de órdenes y conteos.",
     capacidades: [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit", "orders.delete",
       "preparation.read", "preparation.manage",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond", "channels.manage",
+      // Cuenta y administra el catálogo, pero NO firma: quien recorre el
+      // almacén no puede cerrar su propio conteo sin revisión.
+      "inventory.read", "inventory.count", "inventory.manage",
       "settings.read",
       "team.read",
     ],
@@ -204,11 +234,15 @@ export const ROLES_SEED: Rol[] = [
   {
     id: "vendedor",
     nombre: "Operador",
-    descripcion: "Crea y atiende órdenes, y agenda entregas.",
+    descripcion: "Crea y atiende órdenes, y ejecuta los conteos asignados.",
     capacidades: [
       "orders.read", "orders.create", "orders.confirm", "orders.cancel", "orders.edit",
       "scheduled.read", "scheduled.manage",
       "channels.read", "channels.respond",
+      // Cuenta, pero no crea elementos ni firma. Es el rol que demuestra que
+      // «quien cuenta no firma»: no es una recomendación, es que el botón no
+      // existe para él.
+      "inventory.read", "inventory.count",
     ],
     sistema: true,
   },
@@ -219,6 +253,16 @@ export const ROLES_SEED: Rol[] = [
     capacidades: ["orders.read", "preparation.read", "preparation.manage", "scheduled.read"],
     sistema: true,
 
+  },
+  {
+    id: "analista_inventarios",
+    nombre: "Analista de inventarios",
+    descripcion: "Consulta el módulo y exporta reportes, sin modificar nada.",
+    capacidades: [
+      "inventory.read",
+      "settings.read",
+    ],
+    sistema: true,
   },
   {
     id: "personalizado",

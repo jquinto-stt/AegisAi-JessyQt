@@ -169,6 +169,44 @@ export function puedeGestionarEquipo(): boolean {
   return puede("team.manage");
 }
 
+// ── Inventarios ────────────────────────────────────────────────────────────
+//
+// Cinco ayudantes, uno por capacidad. Existen para que las pantallas no
+// escriban la cadena `"inventory.finalize"` a mano en una condición: una
+// capacidad mal escrita en un `puede(...)` **no da error de compilación** pero
+// sí deniega en silencio, que es la peor forma de fallar. Con el ayudante, el
+// nombre de la capacidad se escribe una sola vez y el compilador lo revisa.
+
+/** Ver el módulo de Inventarios completo (las siete secciones) y exportar. */
+export function puedeVerInventarios(): boolean {
+  return puede("inventory.read");
+}
+
+/** Crear inventarios, agregar y editar líneas, contar, adjuntar evidencia. */
+export function puedeContarInventario(): boolean {
+  return puede("inventory.count");
+}
+
+/** Crear, editar y dar de baja elementos y ubicaciones. */
+export function puedeGestionarCatalogo(): boolean {
+  return puede("inventory.manage");
+}
+
+/**
+ * Finalizar y anular un inventario. **Es la firma.**
+ *
+ * Va separada de `count` a propósito: quien recorrió el almacén y contó no
+ * debería cerrar su propio conteo sin revisión, o la firma no verifica nada.
+ */
+export function puedeFinalizarInventario(): boolean {
+  return puede("inventory.finalize");
+}
+
+/** Guardar la configuración del módulo de Inventarios. */
+export function puedeConfigurarInventarios(): boolean {
+  return puede("inventory.configure");
+}
+
 // ── Mensajes de por qué una acción está bloqueada ──────────────────────────
 
 /**

@@ -95,6 +95,34 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
     { id: "conversaciones", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
   ],
+
+  /**
+   * Inventarios: el acto de contar, de arriba abajo.
+   *
+   * El orden es el de la operación, no el alfabético: primero el trabajo del día
+   * (los conteos), después el catálogo que los alimenta (elementos, ubicaciones),
+   * después lo que sale de ellos (historial, alertas, reportes) y por último lo
+   * que se ajusta una vez (configuración).
+   *
+   * **Siete secciones y no nueve rutas**: `/inventarios/nuevo` y
+   * `/inventarios/:id` no son secciones de navegación —son pantallas a las que
+   * se llega desde un botón y desde una fila— así que no se declaran aquí. Ese
+   * es el motivo de que `SECCIONES` no sea un espejo de la tabla de rutas: una
+   * sección es un DESTINO, y «crear» no es un sitio al que se vaya sin más.
+   *
+   * Todas las secciones exigen `inventory.read`, incluida la de configuración,
+   * que se entra a mirar para luego guardar con `inventory.configure`. Entrar y
+   * operar se gobiernan por capacidades distintas (invariante C5).
+   */
+  inventarios: [
+    { id: "inicio", label: "Inventarios", path: "/inventarios", capacidad: "inventory.read" },
+    { id: "elementos", label: "Elementos", path: "/inventarios/elementos", capacidad: "inventory.read" },
+    { id: "ubicaciones", label: "Ubicaciones", path: "/inventarios/ubicaciones", capacidad: "inventory.read" },
+    { id: "historial", label: "Historial", path: "/inventarios/historial", capacidad: "inventory.read" },
+    { id: "alertas", label: "Alertas", path: "/inventarios/alertas", capacidad: "inventory.read" },
+    { id: "reportes", label: "Reportes", path: "/inventarios/reportes", capacidad: "inventory.read" },
+    { id: "configuracion", label: "Configuración", path: "/inventarios/config", capacidad: "inventory.read" },
+  ],
 };
 
 // ═══════════════════════════════════════════════════════════════════════════

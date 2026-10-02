@@ -297,6 +297,23 @@ const PedidoCard = observer(
           </div>
 
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                pedidosStore.togglePagado(pedido.id);
+              }}
+              title={pedido.pagado ? "Pedido pagado. Clic para marcar como pendiente" : "Pendiente de pago. Clic para registrar pago"}
+              className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer select-none flex items-center gap-1.5 ${
+                pedido.pagado
+                  ? "bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300"
+                  : "bg-warning-50 text-warning-700 hover:bg-warning-100 dark:bg-warning-950/40 dark:text-warning-300 ring-1 ring-inset ring-warning-300/60 dark:ring-warning-800"
+              }`}
+            >
+              <span className={`size-1.5 rounded-full ${pedido.pagado ? "bg-success-500" : "bg-warning-500"}`} />
+              <span>{pedido.pagado ? "Pagado" : "Por cobrar"}</span>
+            </button>
+
             <span
               className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold tracking-wide ${tag.bg}`}
             >
@@ -1104,6 +1121,7 @@ const ListaView = observer(
               <TableRow>
                 <TableCell header>Pedido</TableCell>
                 <TableCell header>Estado</TableCell>
+                <TableCell header>Pago</TableCell>
                 <TableCell header>Modalidad</TableCell>
                 <TableCell header>En estado</TableCell>
                 <TableCell header className="text-right">Acciones</TableCell>
@@ -1132,6 +1150,25 @@ const ListaView = observer(
                         </Badge>
                         {urgente && <Badge color="error" size="xs">Urgente</Badge>}
                       </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          pedidosStore.togglePagado(p.id);
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer select-none ${
+                          p.pagado
+                            ? "bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300"
+                            : "bg-warning-50 text-warning-700 hover:bg-warning-100 dark:bg-warning-950/40 dark:text-warning-300 ring-1 ring-inset ring-warning-300/60 dark:ring-warning-800"
+                        }`}
+                        title={p.pagado ? "Pagado (clic para marcar como pendiente)" : "Pendiente de pago (clic para registrar pago)"}
+                      >
+                        <span className={`size-1.5 rounded-full ${p.pagado ? "bg-success-500" : "bg-warning-500"}`} />
+                        {p.pagado ? "Pagado" : "Por cobrar"}
+                      </button>
                     </TableCell>
 
                     <TableCell>
@@ -1242,6 +1279,9 @@ export const TableroPage = observer(() => {
   const [menuFilterOpen, setMenuFilterOpen] = useState(false);
   const [busquedaTablero, setBusquedaTablero] = useState("");
 
+  type FiltroPago = "todos" | "pendientes" | "pagados";
+  const [filtroPago, setFiltroPago] = useState<FiltroPago>("todos");
+
   // Gestión dinámica de columnas
   const [menuColumnaId, setMenuColumnaId] = useState<string | null>(null);
   const [modalNuevaColumna, setModalNuevaColumna] = useState(false);
@@ -1328,6 +1368,11 @@ export const TableroPage = observer(() => {
 
   const pedidosDeColumna = (estado: PedidoEstado): Pedido[] => {
     let list = pedidosStore.porEstado(estado);
+    if (filtroPago === "pendientes") {
+      list = list.filter((p) => !p.pagado);
+    } else if (filtroPago === "pagados") {
+      list = list.filter((p) => Boolean(p.pagado));
+    }
     const q = busquedaTablero.trim().toLowerCase();
     if (q) {
       list = list.filter((p) => {
@@ -1441,8 +1486,55 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: VistaToggle + Filtrar y ordenar + Crear pedido */}
+        {/* Acciones derechas: Filtro de Pago + VistaToggle + Filtrar y ordenar + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+          {/* Pestañas de Cobro / Pago (Todo, Por cobrar, Pagado) */}
+          <div className="inline-flex h-10 items-center rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50 shrink-0 select-none">
+            <button
+              type="button"
+              onClick={() => setFiltroPago("todos")}
+              className={`flex h-full items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                filtroPago === "todos"
+                  ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              }`}
+            >
+              Todo
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroPago("pendientes")}
+              className={`flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                filtroPago === "pendientes"
+                  ? "bg-white text-warning-700 shadow-theme-xs dark:bg-gray-900 dark:text-warning-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              }`}
+            >
+              <span>Por cobrar</span>
+              {pedidosStore.totalPorCobrar > 0 && (
+                <span className="flex size-4.5 items-center justify-center rounded-full bg-warning-100 text-[10px] font-bold text-warning-800 dark:bg-warning-950 dark:text-warning-300">
+                  {pedidosStore.totalPorCobrar}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroPago("pagados")}
+              className={`flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
+                filtroPago === "pagados"
+                  ? "bg-white text-success-700 shadow-theme-xs dark:bg-gray-900 dark:text-success-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              }`}
+            >
+              <span>Pagado</span>
+              {pedidosStore.totalPagados > 0 && (
+                <span className="flex size-4.5 items-center justify-center rounded-full bg-success-100 text-[10px] font-bold text-success-800 dark:bg-success-950 dark:text-success-300">
+                  {pedidosStore.totalPagados}
+                </span>
+              )}
+            </button>
+          </div>
+
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 

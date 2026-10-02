@@ -1,5 +1,16 @@
 export type FSMState =
   | 'IDLE'
+  | 'ONBOARDING_NOMBRE'
+  | 'ONBOARDING_APELLIDO'
+  | 'ONBOARDING_EMAIL'
+  | 'ONBOARDING_TELEFONO'
+  | 'ONBOARDING_CONFIRMAR'
+  | 'ONBOARDING_PRIVACIDAD'
+  | 'SELECCIONANDO_DESTINATARIO'
+  | 'SOLICITANDO_RECEPTOR_NOMBRE'
+  | 'SOLICITANDO_RECEPTOR_TELEFONO'
+  | 'SOLICITANDO_ENTREGA_PREVIA'
+  | 'SOLICITANDO_DIRECCION_PREVIA'
   | 'CATALOGO_ACTIVO'
   | 'CARRITO_EN_CONSTRUCCION'
   | 'SOLICITANDO_ENTREGA'
@@ -8,6 +19,21 @@ export type FSMState =
   | 'CONFIRMANDO_CANCELACION'
   | 'CONFIRMANDO_RETOMA'
   | 'MODO_HUMANO';
+
+export interface ClientePerfil {
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono: string;
+  terminosAceptados: boolean;
+  completado: boolean;
+}
+
+export interface DestinatarioInfo {
+  tipo: 'propio' | 'tercero';
+  nombre?: string;
+  telefono?: string;
+}
 
 export interface CartLine {
   productId: string;
@@ -20,6 +46,7 @@ export interface CartDraft {
   lineas: CartLine[];
   modalidad: 'domicilio' | 'retiro' | null;
   direccion: string | null;
+  destinatario?: DestinatarioInfo | null;
   updatedAt: string;
 }
 
@@ -63,7 +90,14 @@ export type IntentType =
   | 'FUERA_DE_DOMINIO'
   | 'CONSULTAR_PRODUCTO'
   | 'CONSULTAR_PRECIO'
+  | 'CONSULTAR_STOCK_INVENTARIO'
+  | 'CONSULTAR_ALERTAS_INVENTARIO'
+  | 'CONSULTAR_RESUMEN_INVENTARIO'
+  | 'CONSULTAR_BODEGAS'
   | 'DUDA_PROCESO_PEDIDO'
+  | 'VER_MENU_PRINCIPAL'
+  | 'DESTINATARIO_PROPIO'
+  | 'DESTINATARIO_TERCERO'
   | 'DESCONOCIDO';
 
 export interface ExtractedEntity {
@@ -75,6 +109,8 @@ export interface ExtractedEntity {
   reemplazarItem?: string;
   nuevoItem?: string;
   numeroPedido?: string;
+  articulo?: string;
+  bodega?: string;
 }
 
 export interface NLUResult {
@@ -92,12 +128,14 @@ export interface FSMTransitionResult {
   buttons: string[];
   removeKeyboard?: boolean;
   orderCancelledId?: string;
+  clientePerfil?: ClientePerfil | null;
   orderCreated?: {
     id: string;
     numero: string;
     total: number;
     modalidad?: 'domicilio' | 'retiro';
     direccion?: string | null;
+    destinatario?: DestinatarioInfo | null;
     lineas?: CartLine[];
   };
 }

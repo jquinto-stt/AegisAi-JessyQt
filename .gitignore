@@ -13,6 +13,8 @@ sst-env.d.ts
 outputs/
 tailadmin-free-tailwind-dashboard-template-main/
 copia de la copia/
+Repo-prueba-master/
+artifacts-inv/
 
 # ══════════════════════════════════════════════════════════════════════════
 # EXCEPCIÓN DELIBERADA: el dist/ del servicio es la FUENTE DE FACTO del bot

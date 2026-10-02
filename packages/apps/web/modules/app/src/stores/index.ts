@@ -121,4 +121,33 @@ export {
   puedeVerConfig,
   puedeGestionarEquipo,
   motivoSinPermiso,
+  // Inventarios
+  puedeVerInventarios,
+  puedeContarInventario,
+  puedeGestionarCatalogo,
+  puedeFinalizarInventario,
+  puedeConfigurarInventarios,
 } from '@/stores/acceso.utils';
+
+// Inventarios — conteos. Sin dependencias de otros módulos: los actores se
+// pasan como `actorId` y los nombres legibles viven en su propio seed.
+export {
+  inventariosStore,
+  InventariosStore,
+  ORDEN_ESTADOS_LINEA,
+  ORDEN_ESTADOS_INVENTARIO,
+  ORDEN_ESTADOS_ELEMENTO,
+} from '@/stores/inventarios.store';
+export type {
+  ResultadoMutacion,
+  EntradaLinea,
+  DatosElemento,
+  DatosUbicacion,
+  DatosInventario,
+} from '@/stores/inventarios.store';
+
+export { NOMBRES_ACTORES, nombreDeActor, RESPONSABLE_POR_DEFECTO } from '@/stores/inventarios.seed';
+
+// Dominio de Inventarios — tipos y funciones puras. Se re-exporta para que las
+// páginas importen de un solo sitio sin depender de la ruta interna del dominio.
+export * from '@/domain/inventarios/inventarios.domain';

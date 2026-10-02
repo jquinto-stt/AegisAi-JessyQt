@@ -332,7 +332,7 @@ export function ConfigSectionNav({
       <ul className="flex flex-col gap-6">
         {grupos.map(({ grupo, label, secciones }) => (
           <li key={grupo}>
-            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
               {label}
             </p>
             <ul className="flex flex-row gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">

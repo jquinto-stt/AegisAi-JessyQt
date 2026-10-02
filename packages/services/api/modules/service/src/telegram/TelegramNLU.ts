@@ -25,23 +25,143 @@ export class TelegramNLU {
       return { intent: 'SALUDO', confidence: 1.0, entities: {}, rawText: raw };
     }
 
-    // 2. Botones de Catálogo y Menú
-    if (norm === 'ver catalogo' || norm === 'ver menu' || norm === 'catalogo' || norm === 'menu' || norm === 'ver menu 📜' || norm === 'ver catalogo 📜') {
+    // 1.5 Menú Principal y Navegación Hub & Spoke
+    if (
+      norm === 'menu principal' ||
+      norm === 'menu principal 📋' ||
+      norm === 'volver al menu' ||
+      norm === 'volver al menu principal' ||
+      norm === 'inicio' ||
+      norm === '/menu'
+    ) {
+      return { intent: 'VER_MENU_PRINCIPAL', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2. Botón Hub 1: Realizar Pedido / Ver Catálogo
+    if (
+      norm === 'realizar pedido 🥪' ||
+      norm === 'realizar pedido' ||
+      norm === 'hacer pedido' ||
+      norm === 'quiero pedir' ||
+      norm === 'ver catalogo' ||
+      norm === 'ver menu' ||
+      norm === 'catalogo' ||
+      norm === 'menu' ||
+      norm === 'ver menu 📜' ||
+      norm === 'ver catalogo 📜'
+    ) {
       return { intent: 'VER_CATALOGO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2.1 Botón Hub 2: Seguir Pedido
+    if (
+      norm === 'seguir pedido 📌' ||
+      norm === 'seguir pedido' ||
+      norm === 'rastrear pedido' ||
+      norm === 'estado de mi pedido' ||
+      norm === '📦 estado del pedido' ||
+      norm === 'estado del pedido' ||
+      norm === 'como va mi pedido' ||
+      norm === 'mis pedidos' ||
+      norm === 'ver pedidos' ||
+      norm === 'pedidos' ||
+      norm === 'estado de mis pedidos' ||
+      norm === 'consultar pedidos'
+    ) {
+      return { intent: 'CONSULTA_ESTADO_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2.2 Botón Hub 3: Buscar Sucursales
+    if (
+      norm === 'buscar sucursales 🔍' ||
+      norm === 'buscar sucursales' ||
+      norm === 'sucursales' ||
+      norm === 'tiendas' ||
+      norm === 'locales' ||
+      norm === 'puntos fisicos' ||
+      norm === 'bodegas 🏬' ||
+      norm === 'ver bodegas' ||
+      norm === 'bodegas'
+    ) {
+      return { intent: 'CONSULTAR_BODEGAS', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2.3 Botón Hub 4: Hacer una consulta / Hablar con Asesor
+    if (
+      norm === 'hacer una consulta 💬' ||
+      norm === 'hacer una consulta' ||
+      norm === 'hacer consulta' ||
+      norm === 'consultas' ||
+      norm === 'reclamos' ||
+      norm === 'sugerencias' ||
+      norm === '👤 hablar con asesor' ||
+      norm === 'hablar con asesor 👤' ||
+      norm === 'asesor' ||
+      norm === 'humano' ||
+      norm === 'hablar con asesor'
+    ) {
+      return { intent: 'SOLICITAR_HUMANO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2.4 Botones de Destinatario (¿Para ti o para otra persona?)
+    if (
+      norm === 'es para mi 👤' ||
+      norm === 'es para mi' ||
+      norm === 'es para mi persona' ||
+      norm === 'para mi' ||
+      norm === 'para mí' ||
+      norm === 'es para mí' ||
+      norm === 'para mi 👤' ||
+      norm === 'para mí 👤' ||
+      norm === 'para mi cuenta'
+    ) {
+      return { intent: 'DESTINATARIO_PROPIO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    if (
+      norm === 'es para otra persona 🎁' ||
+      norm === 'es para otra persona' ||
+      norm === 'para otra persona 🎁' ||
+      norm === 'para otra persona' ||
+      norm === 'otra persona' ||
+      norm === 'un regalo' ||
+      norm === 'es un regalo' ||
+      norm === 'para un amigo' ||
+      norm === 'para una amiga' ||
+      norm === 'para alguien mas'
+    ) {
+      return { intent: 'DESTINATARIO_TERCERO', confidence: 1.0, entities: {}, rawText: raw };
     }
 
     // 3. Botones de Modalidad y consultas sobre opciones de entrega
     if (
-      (estadoActual === 'SOLICITANDO_ENTREGA' || estadoActual === 'CARRITO_EN_CONSTRUCCION') &&
+      (estadoActual === 'SOLICITANDO_ENTREGA' || estadoActual === 'SOLICITANDO_ENTREGA_PREVIA' || estadoActual === 'CARRITO_EN_CONSTRUCCION') &&
       (norm.includes('opcion') || norm.includes('opciones') || norm.includes('cuales') || norm.includes('como entregan') || norm.includes('como es'))
     ) {
       return { intent: 'DUDA_PROCESO_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
     }
 
-    if (norm === '🛵 a domicilio' || norm === 'a domicilio' || norm === 'domicilio' || norm === 'envio a domicilio') {
+    if (
+      norm === '🛵 a domicilio' ||
+      norm === 'envio a domicilio 🛵' ||
+      norm === 'a domicilio 🛵' ||
+      norm === 'a domicilio' ||
+      norm === 'domicilio' ||
+      norm === 'envio a domicilio'
+    ) {
       return { intent: 'ELEGIR_MODALIDAD', confidence: 1.0, entities: { modalidad: 'domicilio' }, rawText: raw };
     }
-    if (norm === '🛍️ para retirar' || norm === 'para retirar' || norm === 'retiro' || norm === 'retiro en local' || norm === 'para llevar' || norm.includes('recoger') || norm.includes('retirar')) {
+    if (
+      norm === '🛍️ para retirar' ||
+      norm === 'retiro en local 🛍️' ||
+      norm === 'para retirar 🛍️' ||
+      norm === 'para retirar' ||
+      norm === 'retiro' ||
+      norm === 'retiro en local' ||
+      norm === 'para llevar' ||
+      norm.includes('recoger') ||
+      norm.includes('retirar')
+    ) {
       return { intent: 'ELEGIR_MODALIDAD', confidence: 1.0, entities: { modalidad: 'retiro' }, rawText: raw };
     }
 
@@ -94,6 +214,36 @@ export class TelegramNLU {
     }
     if (norm === '🛒 hacer otro pedido' || norm.includes('otro pedido') || norm.includes('nuevo pedido') || norm.includes('otra orden') || norm.includes('hacer otro') || norm.includes('pedir otra cosa')) {
       return { intent: 'REINICIAR_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 6.1 Botones de Operador / Inventario
+    if (
+      norm === 'consultar alertas ⚠️' ||
+      norm === 'alertas ⚠️' ||
+      norm === 'alertas' ||
+      norm === 'alertas de inventario' ||
+      norm === 'alertas de stock' ||
+      norm === 'productos agotados'
+    ) {
+      return { intent: 'CONSULTAR_ALERTAS_INVENTARIO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+    if (
+      norm === 'resumen inventario 📊' ||
+      norm === 'resumen 📊' ||
+      norm === 'resumen inventario' ||
+      norm === 'balance general' ||
+      norm === 'estado del inventario'
+    ) {
+      return { intent: 'CONSULTAR_RESUMEN_INVENTARIO', confidence: 1.0, entities: {}, rawText: raw };
+    }
+    if (
+      norm === 'bodegas 🏬' ||
+      norm === 'ver bodegas' ||
+      norm === 'bodegas' ||
+      norm === 'mis bodegas' ||
+      norm === 'almacenes'
+    ) {
+      return { intent: 'CONSULTAR_BODEGAS', confidence: 1.0, entities: {}, rawText: raw };
     }
 
     // 7. Clicks en botones numerados del menú (ej. "1. Combo...", "2. Papas...")

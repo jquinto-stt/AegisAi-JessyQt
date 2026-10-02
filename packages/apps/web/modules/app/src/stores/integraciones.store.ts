@@ -93,8 +93,16 @@ interface EntradaBase {
  */
 export interface EntradaDisponible extends EntradaBase {
   disponible: true;
-  /** Módulo de sesión equivalente. Es lo que entra en `enabledModules`. */
-  modulo: Modulo;
+  /**
+   * Módulo de sesión equivalente. Es lo que entra en `enabledModules`.
+   *
+   * `ModuloIntegrable` y no `Modulo`: una entrada solo puede declarar un módulo
+   * que el asistente sepa conectar, y el catálogo es un `Record` sobre
+   * `ModuloIntegrable`. Con el tipo ancho, cada consumidor tenía que indexar
+   * `MODULOS_INTEGRABLES` con una clave que el tipo admitía pero el mapa no
+   * tenía — una defensa que nunca podía activarse.
+   */
+  modulo: ModuloIntegrable;
   /**
    * Capacidad que debe poseer el operador para VER el contexto de este módulo en
    * una conversación. Sin ella, la pestaña no se pinta: mostrar el contexto de
@@ -289,7 +297,17 @@ export class IntegracionesStore {
    * disponible. El estrechamiento del tipo se hace con el discriminante
    * `disponible`, así que `modulo` no puede ser `null` aquí.
    */
-  get modulosHabilitados(): Modulo[] {
+  /**
+   * `ModuloIntegrable[]`, no `Modulo[]`.
+   *
+   * El valor solo puede salir de `ORDEN_MODULOS_INTEGRABLES`, así que declararlo
+   * como el vocabulario ancho del sesión era una promesa que el cuerpo no
+   * cumplía: obligaba a cada consumidor a indexar `MODULOS_INTEGRABLES` con una
+   * clave que el propio tipo decía que podía no existir. Ahora el tipo dice la
+   * verdad —«de aquí solo salen módulos que el asistente sabe conectar»— y el
+   * consumidor puede indexar sin defensa.
+   */
+  get modulosHabilitados(): ModuloIntegrable[] {
     return ORDEN_MODULOS_INTEGRABLES.filter((id) => this.estaConectado(id))
       .map((id) => MODULOS_INTEGRABLES[id])
       .filter((e): e is EntradaDisponible => e.disponible)

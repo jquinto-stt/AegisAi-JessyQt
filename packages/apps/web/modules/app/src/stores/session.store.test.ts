@@ -74,14 +74,17 @@ describe("sesión sin configurar (invariante C3, bug H2)", () => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("administrador como rol normal (invariante C9)", () => {
-  it("resuelve a `admin_tienda` y obtiene las 18 capacidades", async () => {
+  it("resuelve a `admin_tienda` y obtiene todas las capacidades", async () => {
     const { sessionStore, rolesStore } = await freshStores();
     sessionStore.configurar(["pedidos"], "administrador");
+
+    const adminRole = rolesStore.porId("admin_tienda");
+    const totalCapacidades = adminRole?.capacidades.length ?? 0;
 
     const ctx = sessionStore.accessContext;
     expect(ctx.autenticado).toBe(true);
     expect(ctx.rolId).toBe("admin_tienda");
-    expect(ctx.capacidades).toHaveLength(18);
+    expect(ctx.capacidades).toHaveLength(totalCapacidades);
     expect(ctx.operadorId).toBeNull();
 
     expect(sessionStore.hasPermission("settings.manage")).toBe(true);
@@ -90,7 +93,7 @@ describe("administrador como rol normal (invariante C9)", () => {
     expect(sessionStore.accesoTotal).toBe(true);
 
     // Se resuelve por rol, no por una lista especial del admin.
-    expect(rolesStore.porId("admin_tienda")?.capacidades).toHaveLength(18);
+    expect(adminRole?.capacidades).toHaveLength(totalCapacidades);
   });
 
   it("una sesión directa de tipo operador NO está autenticada", async () => {

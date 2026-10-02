@@ -174,7 +174,15 @@ describe("Alcance — los módulos declarados son los que tienen provider regist
       "@/pages/asistente/configuracion.secciones"
     );
     const providers = await providersDelBootstrap();
-    const porModulo = new Map(providers.map((p) => [p.module, p]));
+    // La clave se ensancha a `Modulo` a propósito: `MODULOS_CONOCIDOS` sale del
+    // catálogo de integrables y un módulo puede estar declarado ahí sin que su
+    // provider exista todavía — que es exactamente el defecto que este test
+    // existe para atrapar. Con el tipo estrecho, la discrepancia sería un error
+    // de compilación antes que una aserción, y el mensaje diría «no compila» en
+    // vez de «falta el provider de inventarios».
+    const porModulo = new Map<string, (typeof providers)[number]>(
+      providers.map((p) => [p.module, p]),
+    );
 
     for (const modulo of MODULOS_CONOCIDOS) {
       const provider = porModulo.get(modulo);

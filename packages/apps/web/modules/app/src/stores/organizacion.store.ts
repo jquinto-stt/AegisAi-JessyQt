@@ -212,6 +212,7 @@ function modulosIniciales(): Record<IdModuloNegocio, EstadoModuloNegocio> {
 
   return {
     pedidos: { instalado: false, activo: false, conectores: conectoresApagados() },
+    inventarios: { instalado: false, activo: false, conectores: conectoresApagados() },
   };
 }
 
@@ -710,6 +711,7 @@ export class OrganizacionStore {
    */
   estaActivo(id: string): boolean {
     if (id === "pedidos") return this.esModuloActivo("pedidos");
+    if (id === "inventarios") return this.esModuloActivo("inventarios");
     if (id === "asistente") return this.tieneConectorActivo("necto_ia");
     if (id === "conversaciones") return this.tieneConectorActivo("whatsapp");
     return false;

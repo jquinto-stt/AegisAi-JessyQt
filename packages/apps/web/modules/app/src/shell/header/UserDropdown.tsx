@@ -4,6 +4,7 @@ import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
 import { User, Settings, Info, Globe, LogOut, LayoutGrid } from "lucide-react";
 import { sessionStore, organizacionStore } from "@/stores";
+import { cerrarSesion } from "@/lib/auth.service";
 
 /**
  * UserDropdown
@@ -61,12 +62,9 @@ const UserDropdown = observer(() => {
     setIsOpen(false);
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     closeDropdown();
-    // `logout()` no existe en `SessionStore` —el método real es `reset()`, con el
-    // docblock «Limpia la sesión (ej. al cerrar sesión)»—. Este botón lanzaba un
-    // TypeError al pulsarlo: el sidebar cerraba sesión y el menú de usuario no.
-    sessionStore.reset();
+    await cerrarSesion();
     navigate("/login");
   };
 

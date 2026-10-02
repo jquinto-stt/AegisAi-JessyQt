@@ -130,6 +130,14 @@ function extraerPayload(evidence?: ToolResult): Mensaje["payload"] | undefined {
  */
 const MODULO_A_DESTINO: Record<Modulo, ModuloDestino> = {
   pedidos: "pedidos",
+  // Inventarios se traduce a `"general"`, y NO es una rendición: el vocabulario
+  // de `ModuloDestino` es de CONTEXTO DE CONVERSACIÓN, y el módulo de conteos no
+  // tiene conectores (su `DETALLE_CONECTORES` los declara con beneficios vacíos).
+  // El bot no puede operar sobre un conteo, así que no hay dominio de chat que
+  // traducir. Poner `"inventario"` afirmaría que existe un contexto al que
+  // apuntar, y no existe. Lo que sí hace el mapa es su trabajo de siempre:
+  // obligar a decidir, en vez de dejar la etiqueta caer en silencio.
+  inventarios: "general",
 };
 
 /**

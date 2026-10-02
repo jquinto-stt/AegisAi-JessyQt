@@ -43,6 +43,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { organizacionStore, sessionStore } from "@/stores";
+import { actualizarPerfilRemoto, cambiarPassword } from "@/lib/auth.service";
 import type { RedesSociales } from "@/stores";
 
 /** Motivo único de los tres controles que dependen de un backend de autenticación. */
@@ -201,6 +202,14 @@ const ProfilePage = observer(function ProfilePage() {
     setIsEditPersonalOpen(true);
   };
 
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+
   const abrirDireccion = () => {
     setAddressForm({
       pais: usuario?.pais ?? "",
@@ -211,34 +220,74 @@ const ProfilePage = observer(function ProfilePage() {
     setIsEditAddressOpen(true);
   };
 
-  const handleSavePersonal = (e: React.FormEvent) => {
+  const handleSavePersonal = async (e: React.FormEvent) => {
     e.preventDefault();
-    organizacionStore.actualizarPerfil({
-      nombre: personalForm.nombre,
-      apellido: personalForm.apellido,
-      email: personalForm.email,
-      telefono: personalForm.telefono,
-      cargo: personalForm.cargo,
-      bio: personalForm.bio,
-      ubicacion: personalForm.ubicacion,
-      redes: personalForm.redes,
-    });
-    setIsEditPersonalOpen(false);
-    showToast("Información personal actualizada");
+    setSavingPersonal(true);
+    try {
+      await actualizarPerfilRemoto({
+        nombre: personalForm.nombre,
+        apellido: personalForm.apellido,
+        email: personalForm.email,
+        telefono: personalForm.telefono,
+        cargo: personalForm.cargo,
+        bio: personalForm.bio,
+        ubicacion: personalForm.ubicacion,
+        redes: personalForm.redes,
+      });
+      setIsEditPersonalOpen(false);
+      showToast("Información personal actualizada");
+    } finally {
+      setSavingPersonal(false);
+    }
   };
 
-  const handleSaveAddress = (e: React.FormEvent) => {
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    organizacionStore.actualizarPerfil({
-      pais: addressForm.pais,
-      direccion: {
-        ciudad: addressForm.ciudad,
-        codigoPostal: addressForm.codigoPostal,
-        identificacionFiscal: addressForm.identificacionFiscal,
-      },
-    });
-    setIsEditAddressOpen(false);
-    showToast("Dirección actualizada");
+    setSavingAddress(true);
+    try {
+      await actualizarPerfilRemoto({
+        pais: addressForm.pais,
+        direccion: {
+          ciudad: addressForm.ciudad,
+          codigoPostal: addressForm.codigoPostal,
+          identificacionFiscal: addressForm.identificacionFiscal,
+        },
+      });
+      setIsEditAddressOpen(false);
+      showToast("Dirección actualizada");
+    } finally {
+      setSavingAddress(false);
+    }
+  };
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError(null);
+    try {
+      const res = await cambiarPassword(newPassword);
+      if (!res.ok) {
+        setPasswordError(res.motivo || "No se pudo cambiar la contraseña.");
+        return;
+      }
+      setIsChangePasswordOpen(false);
+      setNewPassword("");
+      setConfirmPassword("");
+      showToast("Contraseña actualizada con éxito");
+    } catch {
+      setPasswordError("Ocurrió un error inesperado al actualizar la contraseña.");
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   /**
@@ -376,11 +425,29 @@ const ProfilePage = observer(function ProfilePage() {
           </div>
 
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
-            <AccionBloqueada
-              titulo="Cambiar contraseña"
-              motivo={MOTIVO_SIN_BACKEND}
-              icono={<KeyRound className="size-3.5" />}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-4 py-5">
+              <div>
+                <h4 className="text-sm font-semibold text-ink-title dark:text-white">
+                  Cambiar contraseña
+                </h4>
+                <p className="mt-0.5 max-w-prose text-xs text-gray-500 dark:text-gray-400">
+                  Actualiza tu contraseña de acceso en Supabase Auth.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordError(null);
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setIsChangePasswordOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
+              >
+                <KeyRound className="size-3.5 text-gray-500 dark:text-gray-400" />
+                <span>Actualizar</span>
+              </button>
+            </div>
             <AccionBloqueada
               titulo="Verificación en dos pasos (2FA)"
               motivo={MOTIVO_SIN_BACKEND}
@@ -703,6 +770,85 @@ const ProfilePage = observer(function ProfilePage() {
                 Sí, eliminar mi cuenta
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: CAMBIAR CONTRASEÑA ── */}
+      {isChangePasswordOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-800">
+              <h3 className="text-lg font-bold text-ink-title dark:text-white">
+                Cambiar contraseña
+              </h3>
+              <button
+                onClick={() => setIsChangePasswordOpen(false)}
+                aria-label="Cerrar"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {passwordError && (
+              <div className="mt-4 p-3 text-xs text-error-700 bg-error-50 border border-error-200 rounded-xl dark:bg-error-950/40 dark:text-error-300 dark:border-error-800">
+                {passwordError}
+              </div>
+            )}
+
+            <form onSubmit={handleSavePassword} className="space-y-4 pt-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="Mínimo 6 caracteres"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    if (passwordError) setPasswordError(null);
+                  }}
+                  className={CLASE_INPUT}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Confirmar nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  placeholder="Repite la contraseña"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    if (passwordError) setPasswordError(null);
+                  }}
+                  className={CLASE_INPUT}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(false)}
+                  className={CLASE_BOTON_SECUNDARIO}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 dark:hover:bg-brand-400 disabled:opacity-50 transition-colors cursor-pointer"
+                >
+                  {passwordLoading ? "Actualizando..." : "Guardar contraseña"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

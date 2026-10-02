@@ -11,6 +11,41 @@
       rel="stylesheet"
     />
     <title>Necto — Plataforma de Operaciones y Gestión</title>
+
+    <!--
+      ═══════════════════════════════════════════════════════════════════════
+      TEMA ANTES DE LA PRIMERA PINTURA — script en línea, a propósito
+      ═══════════════════════════════════════════════════════════════════════
+
+      Sin esto, una carga en oscuro pinta UN FRAME EN CLARO y luego salta: el
+      `dark` lo pone `applyThemeToDOM()` desde el constructor de `UIStore`, que
+      corre después de evaluar todo el grafo de módulos (~500 ms medidos). En un
+      monitor grande eso es un fogonazo blanco en cada recarga — y quien tiene
+      poca vista es justo quien peor lo lleva.
+
+      Tiene que ser síncrono y en el `<head>`: un `<script src>` o un efecto de
+      React llegan tarde por definición, y el CSS aún no se ha aplicado.
+
+      La clave y la forma están copiadas de `ui.store.ts` (`STORAGE_KEY =
+      'webforge-ui-preferences'`, campo `theme`): si allí cambia, cambia aquí.
+      Ante cualquier duda se deja CLARO, que es el valor por defecto del store;
+      leer mal la preferencia y pintar oscuro a quien pidió claro sería peor
+      que no hacer nada.
+    -->
+    <script>
+      (function () {
+        try {
+          var bruto = localStorage.getItem("webforge-ui-preferences");
+          if (!bruto) return;
+          var prefs = JSON.parse(bruto);
+          if (prefs && prefs.theme === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {
+          /* Preferencia ilegible: se queda en claro, que es el valor por defecto. */
+        }
+      })();
+    </script>
   </head>
   <body class="font-sans antialiased dark:bg-gray-900">
     <div id="root"></div>

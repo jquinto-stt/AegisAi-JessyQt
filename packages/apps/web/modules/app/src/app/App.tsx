@@ -16,6 +16,18 @@ import { ConfiguracionPage } from "@/pages/configuracion";
 import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
+import {
+  InventariosPage,
+  CrearInventarioPage,
+  DetalleInventarioPage,
+  ElementosPage,
+  DetalleElementoPage,
+  UbicacionesPage,
+  HistorialPage as InventariosHistorialPage,
+  AlertasPage as InventariosAlertasPage,
+  ReportesPage as InventariosReportesPage,
+  InventariosConfigPage,
+} from "@/pages/inventarios";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
@@ -37,13 +49,19 @@ import {
   EncuestaOnboardingPage,
 } from "@/pages/onboarding";
 import ProfilePage from "@/pages/ProfilePage";
+import { CheckoutGlobalPayPage } from "@/pages/checkout/CheckoutGlobalPayPage";
+import { MenuCatalogoPage } from "@/pages/menu/MenuCatalogoPage";
 import { bootstrapAssistant } from "@/assistant/bootstrap";
 import { bootstrapConversaciones } from "@/lib/db.bootstrap";
+import { autoHidratarSesionSupabase } from "@/lib/auth.service";
 import { activarModoDemo, modoDemoActivo } from "@/lib/modo-demo";
 
 // Cablea el asistente ("Necto Intelligence") una sola vez al cargar el módulo de
 // rutas, antes de la primera pregunta. `bootstrapAssistant` es idempotente.
 bootstrapAssistant();
+
+// Hidrata sesión desde Supabase Auth si ya existe token persistido
+void autoHidratarSesionSupabase();
 
 // Conecta Conversaciones con `necto`: asegura sesión, comprueba la cadena de
 // permisos y hace la primera lectura real. Idempotente (guarda interna, segura
@@ -65,9 +83,14 @@ void bootstrapConversaciones();
 // `ModuloGuard modulo="conversaciones"` lee `organizacionStore.estaActivo()`,
 // que para este módulo delega en `tieneConectorActivo("whatsapp")`. Y ese
 // conector NO se puede encender suelto: `IdModuloNegocio` es
-// `"pedidos" | "inventario"`, y `tieneConectorActivo` recorre esas claves
+// `"pedidos" | "inventarios"`, y `tieneConectorActivo` recorre esas claves
 // buscando una con el conector encendido. Con el estado de fábrica (ningún
 // módulo instalado) no hay ninguna clave donde ponerlo.
+//
+// Nota sobre Inventarios: el módulo nuevo **no tiene conectores** y su
+// `DETALLE_CONECTORES` los declara con beneficios vacíos, así que la sección
+// «Canales» de la configuración no ofrece encender uno ahí. Este comentario
+// hablaba antes de un `inventario` en singular que era el módulo eliminado.
 //
 // Consecuencia real: con el canal enlazado en `necto.integracion_canal`
 // (`proveedor='whatsapp'`, `conectado=true`) y mensajes del bot ya escritos en
@@ -125,6 +148,49 @@ export default function App() {
         <Route path="/pedidos/historial" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
+
+        {/* Módulo Inventarios.
+
+            ── Independiente de Pedidos, a propósito ────────────────────────
+            No hay ninguna ruta que cruce los dos módulos y ninguna pantalla de
+            Inventarios importa nada de `@/pages/pedidos`. Un conteo no nace de
+            un pedido ni lo descuenta: el stock de este módulo sale del kárdex
+            de conteos, y un pedido entregado NO lo mueve. Se declara aquí para
+            que quien lea las rutas no suponga lo contrario.
+
+            ── Capacidad por pantalla, no una sola ─────────────────────────
+            Leer, contar y configurar son capacidades distintas (invariante C5):
+              · `inventory.read`      → ver listados, detalle, catálogo, historial,
+                                        alertas, reportes y la configuración.
+              · `inventory.count`     → abrir un conteo nuevo.
+              · `inventory.configure` → guardar la configuración del módulo.
+            `inventory.finalize` NO se aplica en la ruta: cerrar un conteo se
+            decide dentro del detalle, contra el estado real de ese conteo (si
+            tiene líneas sin contar, finalizar está bloqueado). Una guarda de
+            ruta que dejara entrar a quien no puede firmar produciría un botón
+            que miente.
+
+            ── Guardar no es entrar ────────────────────────────────────────
+            `/inventarios/config` exige `inventory.read`, no `configure`: quien
+            solo consulta debe poder leer los valores vigentes para entender un
+            reporte, con los controles deshabilitados y el motivo escrito en la
+            propia pantalla. Exigir `configure` para mirar obligaría a conceder
+            escritura a quien solo necesita leer. */}
+        <Route path="/inventarios" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/nuevo" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.count"><CrearInventarioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/elementos" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ElementosPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/elementos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleElementoPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/ubicaciones" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><UbicacionesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/historial" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosHistorialPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/alertas" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosAlertasPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/reportes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosReportesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/config" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosConfigPage /></CapabilityGuard></ModuloGuard>} />
+
+        {/* `:id` va AL FINAL de las rutas de Inventarios. React Router v7 ordena
+            por especificidad, pero declarar el comodín antes es cómo una ruta
+            estática acaba sirviendo un 404 silencioso si alguien cambia el
+            orden o añade un segmento nuevo sin leer esto. */}
+        <Route path="/inventarios/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleInventarioPage /></CapabilityGuard></ModuloGuard>} />
 
 
         {/* Organización — DOS pantallas hermanas: configuración de la
@@ -220,6 +286,14 @@ export default function App() {
       <Route path="/terminos" element={<TermsPage />} />
       <Route path="/privacidad" element={<PrivacyPage />} />
       <Route path="/cookies" element={<CookiesPage />} />
+      {/* Pasarela de Pago GlobalPay de Redeban (Acceso Libre) */}
+      <Route path="/checkout/:ref" element={<CheckoutGlobalPayPage />} />
+      <Route path="/checkout" element={<CheckoutGlobalPayPage />} />
+      <Route path="/pagos/:ref" element={<CheckoutGlobalPayPage />} />
+
+      {/* Carta / Menú Digital Externo (Acceso Libre) */}
+      <Route path="/menu" element={<MenuCatalogoPage />} />
+      <Route path="/carta" element={<MenuCatalogoPage />} />
 
       <Route path="/seleccionar" element={<SeleccionarPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />

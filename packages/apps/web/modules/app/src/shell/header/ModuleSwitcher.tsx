@@ -51,7 +51,7 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
-import { CartIcon, ChevronDownIcon, GridIcon } from "@/icons";
+import { CartIcon, ChevronDownIcon, GridIcon, BoxIcon } from "@/icons";
 import { organizacionStore, sessionStore } from "@/stores";
 import { modulosOperablesDeSesion } from "@/stores/session.store";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
@@ -63,6 +63,10 @@ const RUTA_LANZADOR = "/modulos";
 
 const ICONO_MODULO: Record<Modulo, React.FC<React.SVGProps<SVGSVGElement>>> = {
   pedidos: CartIcon,
+  // Reutiliza el icono de caja del catálogo en vez de declarar un SVG suelto:
+  // el conmutador solo necesita algo que distinga un módulo de otro, y un icono
+  // dibujado aquí sería una quinta copia del mismo símbolo.
+  inventarios: BoxIcon,
 };
 
 /**

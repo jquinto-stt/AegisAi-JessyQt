@@ -69,7 +69,13 @@ export function buildAccessContext(): AssistantAccessContext {
   }
 
   // Intersección sesión ∩ módulos conectados al asistente (ver arriba).
-  const conectados = new Set(integracionesStore.modulosHabilitados);
+  //
+  // El conjunto se tipa ancho (`Set<string>`) a propósito: `modulosHabilitados`
+  // solo puede contener módulos integrables, y los de la sesión son el
+  // vocabulario completo. El filtro los alinea, así que ensanchar la clave es
+  // describir lo que la operación hace —una intersección de dos vocabularios
+  // distintos— en vez de fingir que son el mismo tipo.
+  const conectados = new Set<string>(integracionesStore.modulosHabilitados);
 
   return {
     enabledModules: sessionStore.accessContext.modulos.filter((m) =>

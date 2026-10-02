@@ -364,7 +364,7 @@ describe("OrganizacionStore — pertenencia de módulos (nivel 2)", () => {
     const leido = new OrganizacionStore();
     expect(leido.esModuloInstalado("pedidos")).toBe(false);
     expect(leido.esConectorActivo("pedidos", "necto_ia")).toBe(false);
-    expect(Object.keys(leido.modulos).sort()).toEqual(["pedidos"]);
+    expect(Object.keys(leido.modulos).sort()).toEqual(["inventarios", "pedidos"]);
   });
 
   it("acepta un estado guardado legítimo", () => {

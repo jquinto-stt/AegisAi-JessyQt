@@ -84,6 +84,10 @@ export const AREA_COPY: Record<string, { label: string; resumen: string }> = {
     label: "Pedidos programados",
     resumen: "Pedidos agendados para más adelante en vez de para ahora.",
   },
+  inventarios: {
+    label: "Inventarios",
+    resumen: "Conteos y verificación física de elementos en ubicaciones.",
+  },
   inventario: {
     label: "Inventario",
     resumen: "Qué hay en el almacén, dónde está y cuánto costó.",

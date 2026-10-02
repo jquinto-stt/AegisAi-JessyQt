@@ -37,6 +37,13 @@ namespace EP {
   export const $MoveTurno = TurnoByNum$.endpoint(Method.PATCH);
   /** No-show: remove a ticket. */
   export const $RemoveTurno = TurnoByNum$.endpoint(Method.DELETE);
+
+  // ══════════════════════════════════════════════════════════════════════
+  //!PATH - Auth
+  // ══════════════════════════════════════════════════════════════════════
+  export const Auth$ = Root$.sub('/auth');
+  export const $Register = Auth$.sub('/register').endpoint(Method.POST);
 }
 
 export default EP;
+

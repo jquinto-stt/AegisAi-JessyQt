@@ -279,6 +279,20 @@ export interface PedidosConfig {
   capacidadesActivas?: import("../domain/pedidos/pedidos.profiles.js").OrderCapability[];
   /** Columnas dinámicas personalizadas del tablero (permite crear, renombrar, reordenar y eliminar). */
   columnasPersonalizadas?: ColumnaPersonalizada[];
+  /** Cuentas bancarias y medios de cobro manual para transferencias (Nequi, Daviplata, Bancolombia, etc.). */
+  datosBancarios?: DatosBancariosConfig;
+}
+
+/** Configuración de cuentas bancarias y medios de cobro del negocio. */
+export interface DatosBancariosConfig {
+  nequi?: string;
+  daviplata?: string;
+  bancolombia?: string;
+  titular?: string;
+  instrucciones?: string;
+  efectivoActivo?: boolean;
+  transferenciaActivo?: boolean;
+  contraEntregaActivo?: boolean;
 }
 
 /** Configuración de una columna personalizada en el tablero Kanban. */
@@ -405,6 +419,16 @@ const DEFAULT_CONFIG: PedidosConfig = {
   perfilComercial: "food",
   capacidadesActivas: [...BUSINESS_PROFILES.food.defaultCapabilities],
   columnasPersonalizadas: undefined,
+  datosBancarios: {
+    nequi: "3001234567",
+    daviplata: "3001234567",
+    bancolombia: "Ahorros 123-456789-01",
+    titular: "Mi Negocio",
+    instrucciones: "Envía el comprobante con tu nombre y número de pedido.",
+    efectivoActivo: true,
+    transferenciaActivo: true,
+    contraEntregaActivo: true,
+  },
 };
 
 // ── Proyección del catálogo ──────────────────────────────────────────────────
@@ -493,6 +517,7 @@ function loadConfig(): PedidosConfig {
                 : c
             )
           : undefined,
+        datosBancarios: { ...DEFAULT_CONFIG.datosBancarios, ...(parsed.datosBancarios ?? {}) },
       };
     }
   } catch {
@@ -505,6 +530,7 @@ function loadConfig(): PedidosConfig {
     alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion },
     capacidadesActivas: [...DEFAULT_CONFIG.capacidadesActivas!],
     columnasPersonalizadas: undefined,
+    datosBancarios: { ...DEFAULT_CONFIG.datosBancarios },
   };
 }
 
@@ -1473,6 +1499,16 @@ export class PedidosStore {
   /** Total de pedidos programados (aún no activos). */
   get totalProgramados(): number {
     return this.programados.length;
+  }
+
+  /** Total de pedidos activos sin pagar (para filtros de cobro). */
+  get totalPorCobrar(): number {
+    return this.pedidos.filter((p) => !this.esTerminal(p.estado) && !p.pagado).length;
+  }
+
+  /** Total de pedidos activos ya pagados (para filtros de cobro). */
+  get totalPagados(): number {
+    return this.pedidos.filter((p) => !this.esTerminal(p.estado) && Boolean(p.pagado)).length;
   }
 
   /** Pedidos en curso que ya superaron su tiempo objetivo (urgentes ahora). */

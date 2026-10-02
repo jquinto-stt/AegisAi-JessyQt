@@ -8,6 +8,7 @@ import {
 } from "@/shell";
 import { useSidebarContext } from "@/shell/sidebar/SidebarContext";
 import { sessionStore, organizacionStore, SECCIONES, modulosOperablesDeSesion } from "@/stores";
+import { cerrarSesion } from "@/lib/auth.service";
 import type { Modulo, Seccion } from "@/stores";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
@@ -25,7 +26,11 @@ import {
   ChatIcon,
   PieChartIcon,
   BoxIconLine,
+  BoxCubeIcon,
   TableIcon,
+  FolderIcon,
+  TimeIcon,
+  AlertHexaIcon,
   CheckLineIcon,
 } from "@/icons";
 
@@ -113,8 +118,8 @@ const SidebarFooter = observer(() => {
   const { isExpanded: showExpanded } = useSidebarContext();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    sessionStore.reset();
+  const handleLogout = async () => {
+    await cerrarSesion();
     navigate("/login");
   };
 
@@ -307,6 +312,27 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
     { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "historial", Icono: TaskIcon },
     { seccionId: "analitica", Icono: PieChartIcon },
+    { seccionId: "configuracion", Icono: PlugInIcon },
+  ],
+  /**
+   * Inventarios: siete ítems, en el orden de la operación.
+   *
+   * El orden no imita al de Pedidos. En Pedidos se va de lo general (inicio) a
+   * lo específico (crear) porque las cuatro vistas son la misma mesa de trabajo
+   * mirada de distinta forma. Aquí el recorrido es lineal —contar hoy, mantener
+   * el catálogo, mirar lo que pasó, ajustar— y el sidebar lo refleja.
+   *
+   * **«Nuevo inventario» no es un ítem**: no se navega a crear un conteo, se
+   * llega desde el botón de la lista. Un ítem permanente para una acción de un
+   * solo uso ocupa sitio todos los días para un gesto que se hace una vez al mes.
+   */
+  inventarios: [
+    { seccionId: "inicio", Icono: BoxCubeIcon },
+    { seccionId: "elementos", Icono: TableIcon },
+    { seccionId: "ubicaciones", Icono: FolderIcon },
+    { seccionId: "historial", Icono: TimeIcon },
+    { seccionId: "alertas", Icono: AlertHexaIcon },
+    { seccionId: "reportes", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
   ],
 };

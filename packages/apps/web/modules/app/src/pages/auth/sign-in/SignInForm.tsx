@@ -5,7 +5,11 @@ import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Checkbox } from "@/elements/form/checkbox";
 import { Button } from "@/elements/ui/button";
-import { sessionStore, organizacionStore, modulosOperablesDeSesion } from "@/stores";
+import { organizacionStore } from "@/stores";
+import {
+  iniciarSesion,
+  iniciarSesionConGoogle,
+} from "@/lib/auth.service";
 
 /**
  * @kgId 07b80348fc4c
@@ -14,65 +18,71 @@ export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
+  const [isChecked, setIsChecked] = useState(true);
+  const [cargando, setCargando] = useState(false);
+  const [errorMensaje, setErrorMensaje] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleLogin = (userEmail?: string) => {
-    const finalEmail = userEmail || email.trim() || "admin@necto.io";
-    const nombreUsuario = finalEmail.split("@")[0] || "Admin";
+  const ejecutarLogin = async (credenciales: { email: string; password: string }) => {
+    const finalEmail = credenciales.email.trim();
+    if (!finalEmail) {
+      setErrorMensaje("Por favor ingresa tu correo electrónico.");
+      return;
+    }
+    if (!credenciales.password) {
+      setErrorMensaje("Por favor ingresa tu contraseña.");
+      return;
+    }
 
-    // 1. En mockup sin backend, cualquier credencial autentica. Se registra el
-    //    perfil **solo si no había ninguno**.
-    //
-    //    Antes se llamaba siempre, y eso borraba datos: `actualizarPerfil` pisa
-    //    `nombre` y `apellido` con lo que derive del correo, así que entrar con
-    //    `ana@tienda.com` después de haber escrito «Ana Gómez» en `/profile`
-    //    dejaba «Ana» / «Necto». El nombre de la persona no es algo que un inicio
-    //    de sesión deba reescribir; si ya hay identidad, el login solo la usa.
-    if (!organizacionStore.usuario) {
-      organizacionStore.actualizarPerfil({
-        nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
-        apellido: "Necto",
+    setCargando(true);
+    setErrorMensaje(null);
+
+    try {
+      const res = await iniciarSesion({
         email: finalEmail,
-        pais: "Colombia",
+        password: credenciales.password,
       });
-    }
 
-    // 2. Garantizamos una organización base si no existía
-    if (!organizacionStore.organizacion) {
-      organizacionStore.crearOrganizacion({
-        nombre: "Mi Empresa",
-        pais: "Colombia",
-        moneda: "COP",
-        zonaHoraria: "America/Bogota",
-      });
-    }
+      if (!res.ok) {
+        setErrorMensaje(res.motivo || "No se pudo iniciar sesión.");
+        return;
+      }
 
-    // 3. La sesión recibe como máximo lo que la organización tiene activo.
-    //
-    // Antes decía `["pedidos"]` fijo: la sesión afirmaba operar un módulo que la
-    // organización podía no tener instalado, en contra de la regla
-    // `Sesión ⊆ Organización`.
-    sessionStore.configurar(
-      modulosOperablesDeSesion(organizacionStore.modulosActivos),
-      "administrador",
-    );
+      if (res.requiereOnboarding) {
+        navigate("/onboarding/perfil");
+        return;
+      }
 
-    // 4. Si el módulo Pedidos ya está instalado, entra directo; si no, va a /modulos para agregarlo
-    if (organizacionStore.tieneModuloPedidos) {
-      navigate("/pedidos/inicio");
-    } else {
-      navigate("/modulos");
+      if (organizacionStore.tieneModuloPedidos) {
+        navigate("/pedidos/inicio");
+      } else {
+        navigate("/modulos");
+      }
+    } catch {
+      setErrorMensaje("Ocurrió un error inesperado al conectar con el servidor.");
+    } finally {
+      setCargando(false);
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleLogin();
+    ejecutarLogin({ email, password });
   };
 
-  const handleGoogleLogin = () => {
-    handleLogin("usuario.google@necto.io");
+  const handleGoogleLogin = async () => {
+    setCargando(true);
+    setErrorMensaje(null);
+    try {
+      const res = await iniciarSesionConGoogle();
+      if (!res.ok) {
+        setErrorMensaje(res.motivo || "Error al conectar con Google.");
+      }
+    } catch {
+      setErrorMensaje("Error al iniciar autenticación con Google.");
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -84,27 +94,64 @@ export default function SignInForm() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Ingresa tus credenciales para acceder a tu panel de control.</p>
           </div>
           <div>
+            {errorMensaje && (
+              <div
+                role="alert"
+                className="p-3 mb-5 text-sm text-error-700 bg-error-50 border border-error-200 rounded-xl dark:bg-error-950/40 dark:text-error-300 dark:border-error-800 flex items-start gap-2.5"
+              >
+                <svg
+                  className="w-5 h-5 shrink-0 mt-0.5 text-error-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span className="flex-1 text-xs leading-relaxed">{errorMensaje}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div>
-                  <Label>Correo electronico <span className="text-error-500">*</span></Label>
+                  <Label>
+                    Correo electrónico <span className="text-error-500">*</span>
+                  </Label>
                   <Input
                     type="email"
                     placeholder="nombre@empresa.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={cargando}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errorMensaje) setErrorMensaje(null);
+                    }}
                   />
                 </div>
                 <div>
-                  <Label>Contrasena <span className="text-error-500">*</span></Label>
+                  <Label>
+                    Contraseña <span className="text-error-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Ingresa tu contrasena"
+                      placeholder="Ingresa tu contraseña"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={cargando}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (errorMensaje) setErrorMensaje(null);
+                      }}
                     />
-                    <span onClick={() => setShowPassword(!showPassword)} className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2">
+                    <span
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                    >
                       {showPassword ? (
                         <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
                       ) : (
@@ -116,12 +163,27 @@ export default function SignInForm() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Checkbox checked={isChecked} onChange={setIsChecked} />
-                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">Mantener sesion iniciada</span>
+                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
+                      Mantener sesión iniciada
+                    </span>
                   </div>
-                  <Link to="/forgot-password" className="text-sm text-secondary-600 hover:text-secondary-600 dark:text-brand-400">Olvidaste tu contrasena?</Link>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm" type="submit">Iniciar sesion</Button>
+                  <Button
+                    className="w-full"
+                    size="sm"
+                    type="submit"
+                    loading={cargando}
+                    disabled={cargando}
+                  >
+                    Iniciar sesión
+                  </Button>
                 </div>
               </div>
             </form>
@@ -130,13 +192,16 @@ export default function SignInForm() {
                 <div className="w-full border-t border-gray-200/70 dark:border-white/5"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="p-2 text-gray-400 bg-white dark:bg-gray-900 sm:px-5 sm:py-2">O CONTINUA CON</span>
+                <span className="p-2 text-gray-400 bg-white dark:bg-gray-900 sm:px-5 sm:py-2">
+                  O CONTINÚA CON
+                </span>
               </div>
             </div>
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="inline-flex items-center justify-center w-full gap-3 py-3 text-sm font-normal text-gray-700 transition-colors border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-white/90 dark:hover:bg-white/5 cursor-pointer"
+              disabled={cargando}
+              className="inline-flex items-center justify-center w-full gap-3 py-3 text-sm font-normal text-gray-700 transition-colors border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:text-white/90 dark:hover:bg-white/5 cursor-pointer disabled:opacity-50"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18.7511 10.1944C18.7511 9.47495 18.6915 8.94995 18.5626 8.40552H10.1797V11.6527H15.1003C15.0011 12.4597 14.4654 13.675 13.2749 14.4916L13.2582 14.6003L15.9087 16.6126L16.0924 16.6305C17.7788 15.1041 18.7511 12.8583 18.7511 10.1944Z" fill="#4285F4" />

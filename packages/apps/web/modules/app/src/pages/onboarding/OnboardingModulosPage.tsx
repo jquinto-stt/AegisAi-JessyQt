@@ -32,6 +32,13 @@ const LOGO_MODULO: Record<IdModuloNegocio, React.ReactNode> = {
       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
     </svg>
   ),
+  inventarios: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
+      <path d="M3 9.5 12 4l9 5.5v5L12 20l-9-5.5v-5Z" />
+      <path d="m3 9.5 9 5.5 9-5.5" />
+      <path d="M12 15v5" />
+    </svg>
+  ),
 };
 
 // `rutaOnboarding` se lee del catálogo (`CATALOGO_MODULOS[id].rutaOnboarding`).

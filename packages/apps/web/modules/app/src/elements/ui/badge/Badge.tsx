@@ -152,8 +152,12 @@ const Badge: React.FC<BadgeProps> = ({
   children,
   className,
 }) => {
+  // `whitespace-nowrap` es deliberado: un badge es una ETIQUETA, y una etiqueta
+  // partida en dos líneas deja de leerse de un vistazo. Sin él, «De baja» se
+  // partía como «De / baja» dentro de una columna estrecha, y el público
+  // objetivo (operadores con poca vista) lee el estado justo en ese badge.
   const baseStyles =
-    "inline-flex items-center justify-center gap-1 rounded-full font-medium";
+    "inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full font-medium";
 
   // Define size styles (font-size + padding progresivos)
   const sizeStyles = {
@@ -164,19 +168,42 @@ const Badge: React.FC<BadgeProps> = ({
   };
 
   // Define color styles for variants
+  //
+  // ── Tinta del badge en modo claro: paso 700, no 500/600 ───────────────────
+  //
+  // Medido con la fórmula de contraste de WCAG 2.1 sobre el fondo real de cada
+  // variante, el paso 500/600 no llegaba a AA en un badge de 10–12 px:
+  //
+  //   accent-500 sobre accent-50    2.38:1   (el peor de todo el módulo)
+  //   success-600 sobre success-50  3.54:1
+  //   warning-600 sobre warning-50  3.34:1
+  //   error-600 sobre error-50      4.44:1
+  //
+  // El paso 700 de la MISMA rampa sí cumple, sin salirse de la paleta de marca:
+  // accent-700 5.25:1 · success-700 5.13:1 · warning-700 5.20:1 · error-700 6.05:1.
+  //
+  // Importa porque el público objetivo son operadores con poca vista: un badge
+  // de estado que no se lee no informa, y el badge es justo donde el módulo dice
+  // si algo está bien o mal. `brand` no se toca en claro: 500 sobre 50 da
+  // 4.33:1 y es el color de la casa.
   const variants = {
     light: {
       primary:
         "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400",
       success:
-        "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-500",
+        "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500",
       error:
-        "bg-error-50 text-error-600 dark:bg-error-500/15 dark:text-error-500",
+        "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500",
       warning:
-        "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
-      info: "bg-accent-50 text-accent-500 dark:bg-accent-500/15 dark:text-accent-500",
+        "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400",
+      info: "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-500",
       light: "bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80",
-      dark: "bg-gray-500 text-white dark:bg-white/5 dark:text-white",
+      // En claro, `dark` era `bg-gray-500` + `text-white`: blanco sobre #667085 da
+      // 4.97:1, que pasa AA raspando pero se cae a 3.10:1 en cuanto el texto lleva
+      // la opacidad de la variante. En un badge de 10 px eso no se lee, y un badge
+      // de estado que no se lee no informa. Se alinea con `light`: fondo de tinta
+      // suave y texto de paso 700, que es lo que mide 6.98:1.
+      dark: "bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-white",
     },
     solid: {
       primary: "bg-brand-500 text-white dark:text-white",

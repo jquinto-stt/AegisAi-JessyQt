@@ -4,6 +4,8 @@ import { TelegramDAO } from './TelegramDAO.js';
 export interface TelegramSendOptions {
   buttons?: string[];
   removeKeyboard?: boolean;
+  requestContactButton?: string;
+  customReplyMarkup?: any;
 }
 
 export class TelegramBot {
@@ -26,7 +28,15 @@ export class TelegramBot {
   async sendMessage(chatId: number | string, text: string, options: TelegramSendOptions = {}): Promise<{ ok: boolean; messageId?: string; error?: string }> {
     let reply_markup: any = undefined;
 
-    if (options.buttons && options.buttons.length > 0) {
+    if (options.requestContactButton) {
+      reply_markup = {
+        keyboard: [[{ text: options.requestContactButton, request_contact: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      };
+    } else if (options.customReplyMarkup) {
+      reply_markup = options.customReplyMarkup;
+    } else if (options.buttons && options.buttons.length > 0) {
       const rows: { text: string }[][] = [];
       for (let i = 0; i < options.buttons.length; i += 2) {
         rows.push(options.buttons.slice(i, i + 2).map((b) => ({ text: b })));
@@ -138,7 +148,15 @@ export class TelegramBot {
 
     const msg = update.message || update.callback_query?.message;
     const textRaw = update.message?.text || update.callback_query?.data || '';
-    if (!msg || !textRaw) return;
+    const rawContact = update.message?.contact;
+    const contact = rawContact ? {
+      phoneNumber: String(rawContact.phone_number || ''),
+      firstName: rawContact.first_name,
+      lastName: rawContact.last_name,
+      userId: rawContact.user_id,
+    } : undefined;
+
+    if (!msg || (!textRaw && !contact)) return;
 
     const from = update.message?.from || update.callback_query?.from;
     const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(' ') || from?.username || 'Cliente';
@@ -150,6 +168,7 @@ export class TelegramBot {
       fullName,
       text: textRaw.trim(),
       messageId: msg.message_id,
+      contact,
     };
 
     try {
