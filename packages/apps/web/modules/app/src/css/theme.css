@@ -124,6 +124,10 @@
   --color-cream: #efe6d3;
   --color-beige: #efe6d3;
 
+  /* NECTO Legal — Verde para páginas legales, términos y condiciones (#17B363) */
+  --color-legal-500: #17b363;
+  --color-legal-600: #149a55;
+
 
   /* Rampa de grises AZUL-NOCHE. Migrada desde la escala neutra (tinte 0) del
      manual de marca a la escala con tinte azul-noche del repo de referencia

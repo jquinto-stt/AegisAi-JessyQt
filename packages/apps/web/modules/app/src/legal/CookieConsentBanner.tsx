@@ -58,7 +58,7 @@ export default function CookieConsentBanner() {
           distinto sobre el fondo de la aplicación. */}
       <Card className="rounded-2xl p-5 sm:p-5 shadow-theme-lg dark:bg-gray-900">
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400">
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#17b363]/10 text-[#17b363] dark:bg-[#17b363]/20 dark:text-[#17b363]">
             <Cookie className="h-4.5 w-4.5" />
           </span>
           <div className="min-w-0">
@@ -68,16 +68,10 @@ export default function CookieConsentBanner() {
             <p className="mt-1 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
               Sólo las necesarias y las de preferencia. No usamos publicidad ni perfilado, y no
               vendemos datos. Puedes leer el detalle en la{" "}
-              {/* `Link` de Elements: envuelve al de react-router por dentro, así
-                  que la navegación sigue siendo de cliente, y
-                  `variant="secondary"` da el `text-brand-500` que antes estaba
-                  escrito a mano. `text-theme-xs` recupera el tamaño del
-                  párrafo —el `Link` base emite `text-sm`—. */}
               <Link
                 to={LEGAL_DOCUMENTS.cookies.path}
                 text={LEGAL_DOCUMENTS.cookies.title}
-                variant="secondary"
-                className="text-theme-xs font-semibold hover:underline"
+                className="text-theme-xs font-semibold text-[#17b363] hover:underline"
               />
               .
             </p>
@@ -86,7 +80,7 @@ export default function CookieConsentBanner() {
 
         <div className="mt-4 flex items-center gap-3">
           <Button
-            className="h-10 flex-1 rounded-full text-theme-sm font-bold"
+            className="h-10 flex-1 rounded-full text-theme-sm font-bold bg-[#17b363] hover:bg-[#149a55] text-white border-transparent"
             onClick={() => decide("accepted")}
           >
             Aceptar

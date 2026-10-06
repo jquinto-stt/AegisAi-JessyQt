@@ -22,10 +22,10 @@ function Block({ block }: { block: LegalBlock }) {
             key={i}
             className="flex gap-3 text-theme-sm leading-relaxed text-gray-600 dark:text-gray-400"
           >
-            {/* Punto de marca: la viñeta por defecto desaparece al usar `flex`. */}
+            {/* Punto de viñeta en verde legal #17B363 */}
             <span
               aria-hidden
-              className="mt-[7px] h-1.5 w-1.5 flex-none rounded-full bg-brand-500"
+              className="mt-[7px] h-1.5 w-1.5 flex-none rounded-full bg-[#17b363]"
             />
             <span>{item}</span>
           </li>
@@ -86,7 +86,7 @@ function SectionIndex({ doc }: { doc: LegalDocument }) {
                 href={`#${section.id}`}
                 className={
                   isActive
-                    ? "-ml-px block border-l-2 border-brand-500 py-1 pl-3 text-theme-xs font-semibold text-brand-500 dark:text-brand-400"
+                    ? "-ml-px block border-l-2 border-[#17b363] py-1 pl-3 text-theme-xs font-semibold text-[#17b363] dark:text-[#17b363]"
                     : "-ml-px block border-l-2 border-transparent py-1 pl-3 text-theme-xs font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 }
               >
@@ -119,6 +119,7 @@ export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
       summary={doc.summary}
       contentWidth="prose"
       compactHero
+      heroColor="green"
       heroExtra={
         <p className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-theme-xs font-medium text-white/75">
           <span>Versión {doc.version}</span>
@@ -157,13 +158,7 @@ export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
           ))}
 
           {/* Ruta cruzada: quien acaba de leer los términos suele querer los
-              otros dos. Se derivan del catálogo para que no diverjan.
-
-              Es el `Link` de Elements, no el de react-router: por dentro
-              envuelve al de react-router, así que sigue siendo navegación de
-              cliente, y `variant="secondary"` da el `text-brand-500` que antes
-              estaba escrito a mano. `text-theme-sm` recupera el tamaño —el
-              `Link` base emite `text-sm`—. */}
+              otros dos. Se derivan del catálogo para que no diverjan. */}
           <div className="border-t border-gray-100 pt-8 dark:border-gray-800">
             <p className="mb-3 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
               Otros documentos legales
@@ -174,8 +169,7 @@ export default function LegalDocumentView({ doc }: { doc: LegalDocument }) {
                   key={link.id}
                   to={link.to}
                   text={link.label}
-                  variant="secondary"
-                  className="text-theme-sm font-semibold hover:underline"
+                  className="text-theme-sm font-semibold text-[#17b363] hover:underline"
                 />
               ))}
             </div>

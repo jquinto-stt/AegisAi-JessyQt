@@ -18,45 +18,16 @@ interface PublicPageLayoutProps {
   heroExtra?: React.ReactNode;
   /** Ancho de la columna de contenido. */
   contentWidth?: "prose" | "wide";
-  /**
-   * Banda del hero compacta.
-   *
-   * ⚠️ No es una variante estética: el hero de `/ayuda` lleva debajo una rejilla
-   * de sellos y el de un documento legal sólo una línea de versión. Con la misma
-   * altura, el legal quedaba con un hueco vacío entre la fecha y el borde de la
-   * banda que se lee como un bloque sin cargar.
-   */
+  /** Banda del hero compacta. */
   compactHero?: boolean;
+  /** Color de la banda hero: 'green' (#17B363 para documentos legales) o 'orange' (#FF3F1A de marca). */
+  heroColor?: "orange" | "green";
   children: React.ReactNode;
 }
 
 /**
  * Chrome de las páginas públicas de contenido (ayuda, soporte, términos,
  * privacidad, cookies).
- *
- * Existe porque `HelpPage` resolvía este mismo armazón a mano —banda de marca
- * con `InteractiveDotGrid`, logo blanco, botón de vuelta que depende de si hay
- * sesión, columna centrada y un pie mínimo— y las páginas legales necesitaban
- * exactamente eso. Copiarlo tres veces habría dejado cuatro heros que se separan
- * en cuanto alguien retoque uno.
- *
- * ⚠️ El botón de vuelta **depende de la sesión** (`useAuth`), no de la ruta: es
- * una página de acceso libre, así que quien la lee puede no tener cuenta. Con
- * sesión vuelve al hub; sin ella, a iniciar sesión. Si se fija un destino único,
- * uno de los dos casos acaba en una pantalla que no le corresponde.
- *
- * ⚠️ La banda va en `brand-500`, el naranja de marca `#ff3f1a`. **No siempre fue
- * así**: aquí vivía un verde `#17B363` (`--color-public-500`) que no aparece en
- * ninguna página del manual; se retiró el 20/09. El naranja a sangre es,
- * literalmente, lo que hace la portada del manual (pág. 14): el contenido abierto
- * se lee como la *portada* del producto, y el interior de la aplicación usa el
- * índigo y el casi-negro. Esa es la distinción, y está dentro de la paleta.
- * Si se cambia aquí, cambian las cinco a la vez: es justo el punto único que
- * buscaba este componente.
- *
- * ⚠️ El logo va en **blanco** (`necto-full-white.svg`) porque la banda es de
- * color pleno: el wordmark naranja de `NectoLogo` desaparecería sobre ella. En
- * el pie, que es claro, sí se usa `NectoLogo`.
  */
 export default function PublicPageLayout({
   eyebrow,
@@ -65,6 +36,7 @@ export default function PublicPageLayout({
   heroExtra,
   contentWidth = "wide",
   compactHero = false,
+  heroColor = "orange",
   children,
 }: PublicPageLayoutProps) {
   const navigate = useNavigate();
@@ -74,10 +46,18 @@ export default function PublicPageLayout({
   const backTarget = isAuthenticated ? "/modulos" : "/login";
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-gray-900 antialiased selection:bg-brand-500 selection:text-white dark:bg-gray-950 dark:text-gray-100">
+    <div
+      className={cn(
+        "flex min-h-screen flex-col bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100",
+        heroColor === "green"
+          ? "selection:bg-[#17b363] selection:text-white"
+          : "selection:bg-brand-500 selection:text-white"
+      )}
+    >
       <section
         className={cn(
-          "relative overflow-hidden bg-brand-500 px-5 pt-6 text-white sm:px-10 lg:px-16",
+          "relative overflow-hidden px-5 pt-6 text-white sm:px-10 lg:px-16",
+          heroColor === "green" ? "bg-[#17b363]" : "bg-brand-500",
           compactHero ? "pb-10" : "pb-14"
         )}
       >
