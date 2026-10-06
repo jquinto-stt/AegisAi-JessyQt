@@ -26,10 +26,11 @@
     "google-protobuf": "3.21.2"
   },
   "dependencies": {
-    "@webiai/sdk.core": "0.23.11",
+    "@heroicons/react": "^2.2.0",
     "@webiai/sdk.aws": "0.23.11",
-    "@webiai/sdk.infra-provider": "0.23.11",
+    "@webiai/sdk.core": "0.23.11",
     "@webiai/sdk.http": "0.23.11",
+    "@webiai/sdk.infra-provider": "0.23.11",
     "@webiai/sdk.ioc": "0.23.11"
   }
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { pedidosStore, type PedidoEstado } from "@/stores";
@@ -89,6 +90,7 @@ const ETAPAS: EtapaMeta[] = [
  */
 export const EstadosOverview = observer(() => {
   const navigate = useNavigate();
+  const [hoveredEtapa, setHoveredEtapa] = useState<string | null>(null);
 
   // Conteo de pedidos activos por etapa
   const etapasConteo = ETAPAS.map((etapa) => {
@@ -102,18 +104,13 @@ export const EstadosOverview = observer(() => {
 
   return (
     <div className="flex flex-col justify-between h-full rounded-2xl border border-[#ECECEC] bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 min-h-[310px] font-sans">
-      {/* Encabezado */}
+      {/* Encabezado limpio sin contadores redundantes */}
       <div>
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-[16px] sm:text-[24px] font-bold text-[#190088] dark:text-[#97D6DF] leading-tight">
-                Flujo de pedidos
-              </h3>
-              <span className="rounded-full bg-[#FF3F1A]/10 px-2.5 py-0.5 text-[12px] font-bold text-[#FF3F1A] border border-[#FF3F1A]/20">
-                {totalActivos} activos
-              </span>
-            </div>
+            <h3 className="text-[16px] sm:text-[24px] font-bold text-[#190088] dark:text-[#97D6DF] leading-tight">
+              Flujo de pedidos
+            </h3>
             <p className="text-[12px] font-normal text-[#212121]/70 dark:text-gray-400 mt-0.5">
               Distribución operativa por etapa
             </p>
@@ -129,51 +126,78 @@ export const EstadosOverview = observer(() => {
           </button>
         </div>
 
-        {/* Barra de progreso / distribución del pipeline */}
-        <div className="mt-4 mb-2 space-y-1.5">
-          <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[#ECECEC] dark:bg-gray-800">
+        {/* Barra horizontal segmentada con gaps y animaciones al pasar el mouse */}
+        <div className="mt-4 mb-3">
+          <div className="flex h-7 w-full items-center gap-1.5 sm:gap-2">
             {totalActivos === 0 ? (
-              <div className="w-full bg-[#ECECEC] dark:bg-gray-700" />
+              <div
+                className="h-full w-full rounded-md bg-[#ECECEC] dark:bg-gray-800 transition-colors"
+                title="Sin pedidos activos"
+              />
             ) : (
               etapasConteo.map((etapa) => {
                 if (etapa.cantidad === 0) return null;
                 const porcentaje = (etapa.cantidad / totalActivos) * 100;
+                const isHovered = hoveredEtapa === etapa.id;
+                const isAnyHovered = hoveredEtapa !== null;
+
                 return (
                   <div
                     key={etapa.id}
-                    style={{ width: `${porcentaje}%` }}
-                    className={`${etapa.colorClases.barColor} transition-all duration-300 first:rounded-l-full last:rounded-r-full`}
-                    title={`${etapa.nombre}: ${etapa.cantidad} (${Math.round(porcentaje)}%)`}
+                    style={{ flex: `${etapa.cantidad} 1 0%` }}
+                    className={`h-full rounded-md ${etapa.colorClases.barColor} transition-all duration-300 ease-out cursor-pointer ${
+                      isHovered
+                        ? "scale-y-115 -translate-y-0.5 shadow-md brightness-110 ring-2 ring-white/80 dark:ring-white/30 z-10"
+                        : isAnyHovered
+                        ? "opacity-50 scale-y-95"
+                        : "hover:scale-y-110 hover:-translate-y-0.5 shadow-2xs"
+                    }`}
+                    title={`${etapa.nombre}: ${etapa.cantidad} (${Math.round(porcentaje)}%) — Clic para filtrar en tablero`}
+                    onMouseEnter={() => setHoveredEtapa(etapa.id)}
+                    onMouseLeave={() => setHoveredEtapa(null)}
+                    onClick={() => navigate(`/pedidos?estado=${etapa.estados.join(",")}`)}
                   />
                 );
               })
             )}
           </div>
-          <div className="flex items-center justify-between text-[12px] font-light text-[#212121]/60 dark:text-gray-500">
+          <div className="mt-1.5 flex items-center justify-between text-[12px] font-light text-[#212121]/60 dark:text-gray-500">
             <span>Ingreso de órdenes</span>
             <span>Entrega final</span>
           </div>
         </div>
       </div>
 
-      {/* Grid 2x2 de bloques de etapa (escalable, interactivo y con Heroicons) */}
-      <div className="my-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+      {/* Grid 2x2 de bloques de etapa interactivos con animación coordinada */}
+      <div className="my-2 grid grid-cols-2 gap-2.5 sm:gap-3">
         {etapasConteo.map((etapa) => {
           const Icon = etapa.icon;
+          const isHovered = hoveredEtapa === etapa.id;
+
           return (
             <button
               key={etapa.id}
               type="button"
-              onClick={() => navigate("/pedidos")}
-              className="group flex flex-col justify-between rounded-xl border border-[#ECECEC] bg-[#ECECEC]/30 p-3 text-left transition-all hover:border-[#97D6DF] hover:bg-white hover:shadow-theme-xs dark:border-gray-800 dark:bg-gray-800/40 dark:hover:border-[#97D6DF]/60 dark:hover:bg-gray-800 cursor-pointer"
+              onMouseEnter={() => setHoveredEtapa(etapa.id)}
+              onMouseLeave={() => setHoveredEtapa(null)}
+              onClick={() => navigate(`/pedidos?estado=${etapa.estados.join(",")}`)}
+              className={`group flex flex-col justify-between rounded-xl border p-3 text-left transition-all duration-200 ease-out cursor-pointer ${
+                isHovered
+                  ? "border-[#97D6DF] bg-white shadow-theme-sm -translate-y-0.5 dark:border-[#97D6DF]/80 dark:bg-gray-800"
+                  : "border-[#ECECEC] bg-[#ECECEC]/30 hover:border-[#97D6DF] hover:bg-white hover:shadow-theme-xs hover:-translate-y-0.5 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:border-[#97D6DF]/60 dark:hover:bg-gray-800"
+              }`}
             >
               <div className="flex items-center justify-between gap-2">
                 <div
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor}`}
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 ${
+                    isHovered ? "scale-110 shadow-xs" : "group-hover:scale-110"
+                  }`}
                 >
                   <Icon className="size-4" />
                 </div>
-                <span className="text-[24px] font-bold font-mono tracking-tight text-[#190088] dark:text-white tabular-nums">
+                <span className={`text-[24px] font-bold font-mono tracking-tight tabular-nums transition-colors ${
+                  isHovered ? "text-[#FF3F1A] dark:text-[#97D6DF]" : "text-[#190088] dark:text-white"
+                }`}>
                   {etapa.cantidad}
                 </span>
               </div>
@@ -182,27 +206,13 @@ export const EstadosOverview = observer(() => {
                 <span className="text-[12px] sm:text-[14px] font-bold text-[#212121] dark:text-gray-200 truncate">
                   {etapa.nombre}
                 </span>
-                <ChevronRightIcon className="size-3.5 text-[#212121]/30 group-hover:text-[#190088] dark:text-gray-600 dark:group-hover:text-[#97D6DF] transition-colors shrink-0" />
+                <ChevronRightIcon className={`size-3.5 transition-all shrink-0 ${
+                  isHovered ? "text-[#FF3F1A] translate-x-0.5" : "text-[#212121]/30 group-hover:text-[#190088] group-hover:translate-x-0.5 dark:text-gray-600 dark:group-hover:text-[#97D6DF]"
+                }`} />
               </div>
             </button>
           );
         })}
-      </div>
-
-      {/* Pie informativo: estado general del pipeline */}
-      <div className="flex items-center justify-between border-t border-[#ECECEC] pt-3 text-[12px] text-[#212121]/80 dark:border-gray-800 dark:text-gray-400">
-        <span className="font-normal">
-          {totalActivos === 0
-            ? "Sin pedidos en cola"
-            : `${totalActivos} ${totalActivos === 1 ? "pedido en proceso" : "pedidos en proceso"}`}
-        </span>
-        <button
-          type="button"
-          onClick={() => navigate("/pedidos")}
-          className="font-bold text-[#190088] hover:text-[#FF3F1A] dark:text-[#97D6DF] dark:hover:text-white cursor-pointer hover:underline"
-        >
-          Gestionar en tablero →
-        </button>
       </div>
     </div>
   );

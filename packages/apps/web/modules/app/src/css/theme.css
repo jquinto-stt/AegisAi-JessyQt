@@ -163,6 +163,27 @@
   --color-ink-body: #212121;
 
 
+  /* ══════════════════════════════════════════════════════════════════════════
+     COLORES DE ESTADO — el tinte de fondo de un badge de estado
+     ══════════════════════════════════════════════════════════════════════════
+
+     Cinco tintes, uno por estado. Los cuatro primeros los fija la
+     especificación de producto; el ROJO se deriva de la misma familia: es el
+     `-100` del mismo sistema del que salen los otros tres (verde `#dcfce7`,
+     amarillo `#fef9c3` y azul `#dbeafe` son los `-100` de su rampa, y el rojo
+     `-100` es `#fee2e2`). El `error-100` del tema es `#fee4e2`: dos unidades de
+     diferencia, imperceptible, pero se usa el valor derivado para que los cinco
+     vengan del mismo sitio.
+
+     Son tintes CLAROS a propósito: el estado se lee por el color de la
+     superficie y el texto va en la tinta de la aplicación, que sobre estos
+     fondos mide entre 13:1 y 15:1. */
+  --color-estado-verde: #dcfce7;
+  --color-estado-amarillo: #fef9c3;
+  --color-estado-azul: #dbeafe;
+  --color-estado-gris: #e7eaeb;
+  --color-estado-rojo: #fee2e2;
+
   --color-success-25: #f6fef9;
   --color-success-50: #ecfdf3;
   --color-success-100: #d1fadf;

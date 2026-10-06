@@ -42,7 +42,7 @@ export default function AuthPageLayout({
             // en oscuro, que es el `#190088` — justo el color que la lamina
             // prohíbe en modo oscuro («el azul oscuro no se usaría, ese es
             // reemplazado por el azul más claro de la paleta»).
-            "bg-brand-500 border-brand-500"
+            "bg-brand-500 border-brand-500 dark:bg-secondary-600 dark:border-secondary-700"
           )}
         >
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
@@ -54,14 +54,33 @@ export default function AuthPageLayout({
           />
 
           {/* Decorative circle ornaments (brand reference) */}
-          <DecorativeCircles variant="brand" />
+          {/* Aros de marca. La variante va ATADA AL TEMA: en claro el panel es
+          naranja y los aros son blancos; en oscuro el panel es indigo y los aros
+          acompanan. No se elige a mano porque el fondo tampoco se elige. */}
+      <div className="dark:hidden">
+        <DecorativeCircles variant="brand" />
+      </div>
+      <div className="hidden dark:block">
+        <DecorativeCircles variant="indigo" />
+      </div>
 
           <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">
             <div className="inline-block mb-6">
+              {/* El lockup sigue al fondo del panel, no a un asset fijo:
+                  `necto-full-white.svg` tiene el WORDMARK en naranja —correcto
+                  sobre el sidebar blanco, invisible sobre este panel—, así que
+                  en claro se usa el arreglo «sobre color» del manual (wordmark
+                  claro + punto azul) y en oscuro el de siempre, que sobre el
+                  índigo sí se lee. */}
+              <img
+                src="/images/logo/necto-sobre-naranja.svg"
+                alt="Necto Logo"
+                className="h-16 sm:h-20 md:h-24 w-auto max-w-full drop-shadow-md dark:hidden"
+              />
               <img
                 src="/images/logo/necto-full-white.svg"
                 alt="Necto Logo"
-                className="h-12 sm:h-14 md:h-16 w-auto max-w-full drop-shadow-md"
+                className="hidden h-12 sm:h-14 md:h-16 w-auto max-w-full drop-shadow-md dark:block"
               />
             </div>
 

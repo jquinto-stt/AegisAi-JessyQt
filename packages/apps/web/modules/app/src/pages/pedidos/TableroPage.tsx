@@ -1317,7 +1317,11 @@ export const TableroPage = observer(() => {
   // Enfoque de un pedido programado al llegar con ?focus=<id> (desde el modal
   // de programación). Hace scroll a la tarjeta, la resalta y limpia la URL.
   // También soporta ?detalle=<id> (abre el detalle) y ?estado=<estado> (vista
-  // Lista filtrada) para llegar desde el dashboard justo a lo señalado.
+  // Enfoque y filtros al llegar desde el dashboard o URL:
+  // ?detalle=<id> (abre modal detalle)
+  // ?estado=<estado o e1,e2> (filtra columnas/lista por esa etapa)
+  // ?pago=<pendientes|pagados|todos> (filtra por estado de pago)
+  // ?focus=<id> (resalta pedido programado)
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
     let cambiar = false;
@@ -1330,11 +1334,19 @@ export const TableroPage = observer(() => {
       cambiar = true;
     }
 
-    // ?estado=<estado> → fuerza vista Lista (los estados se ven mejor en lista).
+    // ?estado=<estado> → filtra la columna o conjunto de estados en el tablero.
     const est = searchParams.get("estado");
     if (est) {
-      setVista("lista");
+      setColumnaFiltroActiva(est);
       next.delete("estado");
+      cambiar = true;
+    }
+
+    // ?pago=<pendientes|pagados|todos> → aplica el filtro de pagos.
+    const pagoParam = searchParams.get("pago");
+    if (pagoParam === "pendientes" || pagoParam === "pagados" || pagoParam === "todos") {
+      setFiltroPago(pagoParam);
+      next.delete("pago");
       cambiar = true;
     }
 
@@ -1357,8 +1369,7 @@ export const TableroPage = observer(() => {
       if (scrollTimer) clearTimeout(scrollTimer);
       if (clearTimer) clearTimeout(clearTimer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const columnas = pedidosStore.columnasTablero;
   const detalle = detalleId ? pedidosStore.getPedido(detalleId) ?? null : null;
@@ -1425,6 +1436,9 @@ export const TableroPage = observer(() => {
   // Filtrado de columnas visibles según la pestaña seleccionada
   const columnasVisibles = columnas.filter((estado) => {
     if (columnaFiltroActiva === "all") return true;
+    if (columnaFiltroActiva.includes(",")) {
+      return columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado);
+    }
     return estado === columnaFiltroActiva;
   });
 
@@ -1459,12 +1473,15 @@ export const TableroPage = observer(() => {
 
           {columnas.map((estado) => {
             const count = pedidosDeColumna(estado).length;
-            const activa = columnaFiltroActiva === estado;
+            const activa =
+              columnaFiltroActiva === estado ||
+              (columnaFiltroActiva.includes(",") &&
+                columnaFiltroActiva.split(",").map((s) => s.trim()).includes(estado));
             return (
               <button
                 key={estado}
                 type="button"
-                onClick={() => setColumnaFiltroActiva(activa ? "all" : estado)}
+                onClick={() => setColumnaFiltroActiva(columnaFiltroActiva === estado ? "all" : estado)}
                 className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap shrink-0 cursor-pointer select-none ${
                   activa
                     ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white font-semibold"
@@ -1486,9 +1503,46 @@ export const TableroPage = observer(() => {
           })}
         </div>
 
-        {/* Acciones derechas: Filtro de Pago + VistaToggle + Filtrar y ordenar + Crear pedido */}
-        {/* Acciones derechas: VistaToggle + Filtrar y ordenar + Crear pedido */}
+        {/* Acciones derechas: Chips de filtros activos + VistaToggle + Filtrar y ordenar + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
+          {/* Chip de filtro activo de pago */}
+          {filtroPago !== "todos" && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 dark:border-brand-900 dark:bg-brand-950/60 dark:text-brand-300">
+              <span>Pago: {filtroPago === "pagados" ? "Pagados" : "Por cobrar"}</span>
+              <button
+                type="button"
+                onClick={() => setFiltroPago("todos")}
+                className="hover:text-brand-900 dark:hover:text-white cursor-pointer"
+                title="Quitar filtro de pago"
+              >
+                <XMarkIcon className="size-3.5" />
+              </button>
+            </span>
+          )}
+
+          {/* Chip de filtro activo de etapa */}
+          {columnaFiltroActiva !== "all" && (
+            <span className="inline-flex items-center gap-1.5 rounded-xl border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-semibold text-secondary-700 dark:border-accent-900 dark:bg-accent-950/60 dark:text-accent-300">
+              <span>
+                Etapa:{" "}
+                {columnaFiltroActiva.includes(",")
+                  ? columnaFiltroActiva
+                      .split(",")
+                      .map((s) => pedidosStore.estadoLabel(s.trim() as PedidoEstado))
+                      .join(" + ")
+                  : pedidosStore.estadoLabel(columnaFiltroActiva as PedidoEstado)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setColumnaFiltroActiva("all")}
+                className="hover:text-secondary-900 dark:hover:text-white cursor-pointer"
+                title="Ver todas las etapas"
+              >
+                <XMarkIcon className="size-3.5" />
+              </button>
+            </span>
+          )}
+
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
@@ -1838,7 +1892,7 @@ export const TableroPage = observer(() => {
         </div>
       ) : (
         <ListaView
-          pedidos={columnas.flatMap((estado) => pedidosDeColumna(estado))}
+          pedidos={columnasVisibles.flatMap((estado) => pedidosDeColumna(estado))}
           onDetalle={(id) => setDetalleId(id)}
           onCancelar={abrirCancelar}
           onConfirmarEntrega={abrirEntrega}

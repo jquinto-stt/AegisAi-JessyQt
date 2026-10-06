@@ -144,25 +144,28 @@ export type NotificationProps =
 // TOAST LAYOUT (original Notification)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Mismo criterio que en Badge y Alert: el estado se lee por el tinte de la
+// superficie y el icono va en la tinta de la aplicación. `success` e `info`
+// dejan de compartir color.
 const variantStyles = {
   success: {
-    borderColor: "border-accent-500",
-    iconBg: "bg-accent-50 text-accent-500",
+    borderColor: "border-estado-verde",
+    iconBg: "bg-estado-verde text-ink-body",
     icon: <CheckCircleIcon />,
   },
   info: {
-    borderColor: "border-accent-500",
-    iconBg: "bg-accent-50 text-accent-500",
+    borderColor: "border-estado-azul",
+    iconBg: "bg-estado-azul text-ink-body",
     icon: <InfoIcon />,
   },
   warning: {
-    borderColor: "border-brand-500",
-    iconBg: "bg-brand-50 text-brand-500",
+    borderColor: "border-estado-amarillo",
+    iconBg: "bg-estado-amarillo text-ink-body",
     icon: <AlertHexaIcon />,
   },
   error: {
-    borderColor: "border-error-500",
-    iconBg: "bg-error-50 text-error-500",
+    borderColor: "border-estado-rojo",
+    iconBg: "bg-estado-rojo text-ink-body",
     icon: <ErrorHexaIcon className="size-5" />,
   },
 };

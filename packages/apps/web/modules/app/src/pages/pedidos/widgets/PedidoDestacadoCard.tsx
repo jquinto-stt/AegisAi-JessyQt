@@ -160,24 +160,8 @@ export const PedidoDestacadoCard = observer(() => {
           </div>
         )}
 
-        {/* Pie de tarjeta con acciones rápidas */}
+        {/* Pie de tarjeta con acciones rápidas para el pedido prioritario */}
         <div className="border-t border-white/20 pt-3.5">
-          <div className="flex items-center justify-between mb-3 text-[12px] text-white/90">
-            <span className="font-normal">
-              {enCurso.length} {enCurso.length === 1 ? "pedido activo" : "pedidos activos"}
-            </span>
-            {pedidoActivo && (
-              <button
-                type="button"
-                onClick={() => navigate(`/pedidos?detalle=${pedidoActivo.id}`)}
-                className="inline-flex items-center gap-1 text-[12px] font-bold text-white hover:underline cursor-pointer"
-              >
-                <span>Ver detalle del pedido</span>
-                <ArrowUpRightIcon className="size-3.5" />
-              </button>
-            )}
-          </div>
-
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -188,13 +172,16 @@ export const PedidoDestacadoCard = observer(() => {
               <CheckCircleIcon className="size-4" />
               <span>{pedidoActivo ? `Avanzar a: ${labelLimpio}` : "Sin acción"}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => navigate("/pedidos")}
-              className="rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-[#212121] shadow-xs transition-colors hover:bg-[#ECECEC] cursor-pointer"
-            >
-              Ver tablero
-            </button>
+            {pedidoActivo && (
+              <button
+                type="button"
+                onClick={() => navigate(`/pedidos?detalle=${pedidoActivo.id}`)}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-[#212121] shadow-xs transition-colors hover:bg-[#ECECEC] cursor-pointer"
+              >
+                <span>Ver detalle</span>
+                <ArrowUpRightIcon className="size-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </div>

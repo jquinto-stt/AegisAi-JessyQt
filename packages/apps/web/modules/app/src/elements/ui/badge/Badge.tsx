@@ -169,40 +169,34 @@ const Badge: React.FC<BadgeProps> = ({
 
   // Define color styles for variants
   //
-  // ── Tinta del badge en modo claro: paso 700, no 500/600 ───────────────────
+  // ── Los estados van con el TINTE de la especificación, y el texto en tinta ─
   //
-  // Medido con la fórmula de contraste de WCAG 2.1 sobre el fondo real de cada
-  // variante, el paso 500/600 no llegaba a AA en un badge de 10–12 px:
+  // Cada estado tiene un color propio de fondo (`--color-estado-*`): verde,
+  // amarillo, azul, gris y rojo. El texto va en la tinta de la aplicación
+  // —`#212121`— porque sobre esos tintes mide entre 13:1 y 15:1, muy por encima
+  // de AA, y así el color del estado no compite con el del texto.
   //
-  //   accent-500 sobre accent-50    2.38:1   (el peor de todo el módulo)
-  //   accent-600 sobre accent-50  3.54:1
-  //   brand-600 sobre brand-50  3.34:1
-  //   error-600 sobre error-50      4.44:1
+  // Antes esto era una rampa semántica del tema y el texto llevaba el paso 700
+  // de la MISMA rampa para llegar a AA. Aquel arreglo traía dos problemas: los
+  // pasos 700 del naranja son rojo ladrillo —se leían como error— y, tras unificar
+  // las rampas, `success` e `info` quedaron los dos en cyan, es decir, dos estados
+  // distintos con el mismo color. Con los tintes de la especificación cada estado
+  // vuelve a tener el suyo.
   //
-  // El paso 700 de la MISMA rampa sí cumple, sin salirse de la paleta de marca:
-  // accent-700 5.25:1 · accent-700 5.13:1 · brand-700 5.20:1 · error-700 6.05:1.
-  //
-  // Importa porque el público objetivo son operadores con poca vista: un badge
-  // de estado que no se lee no informa, y el badge es justo donde el módulo dice
-  // si algo está bien o mal. `brand` no se toca en claro: 500 sobre 50 da
-  // 4.33:1 y es el color de la casa.
+  // `primary` y `dark` no son estados: son marca y neutro fuerte, y no se tocan.
   const variants = {
     light: {
       primary:
         "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400",
       success:
-        "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-500",
+        "bg-estado-verde text-ink-body dark:bg-estado-verde/15 dark:text-estado-verde",
       error:
-        "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500",
+        "bg-estado-rojo text-ink-body dark:bg-estado-rojo/15 dark:text-estado-rojo",
       warning:
-        "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400",
-      info: "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-500",
-      light: "bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80",
-      // En claro, `dark` era `bg-gray-500` + `text-white`: blanco sobre #667085 da
-      // 4.97:1, que pasa AA raspando pero se cae a 3.10:1 en cuanto el texto lleva
-      // la opacidad de la variante. En un badge de 10 px eso no se lee, y un badge
-      // de estado que no se lee no informa. Se alinea con `light`: fondo de tinta
-      // suave y texto de paso 700, que es lo que mide 6.98:1.
+        "bg-estado-amarillo text-ink-body dark:bg-estado-amarillo/15 dark:text-estado-amarillo",
+      info: "bg-estado-azul text-ink-body dark:bg-estado-azul/15 dark:text-estado-azul",
+      light:
+        "bg-estado-gris text-ink-body dark:bg-white/5 dark:text-white/80",
       dark: "bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-white",
     },
     solid: {

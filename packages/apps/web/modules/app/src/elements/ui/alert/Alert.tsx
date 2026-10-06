@@ -182,6 +182,9 @@ const Alert: React.FC<AlertProps> = ({
   onClose,
 }) => {
   // Tailwind classes for each variant
+  // Los estados usan el TINTE de la especificación y la tinta de la aplicación.
+  // Antes `success` e `info` eran los dos `accent` —el mismo cyan—, así que dos
+  // estados distintos se veían igual. Con los tintes cada uno recupera el suyo.
   const variantClasses = {
     default: {
       container:
@@ -190,23 +193,23 @@ const Alert: React.FC<AlertProps> = ({
     },
     success: {
       container:
-        "border-accent-500 bg-accent-50 dark:border-accent-500/30 dark:bg-accent-500/15",
-      icon: "text-accent-500",
+        "border-estado-verde bg-estado-verde dark:border-estado-verde/30 dark:bg-estado-verde/15",
+      icon: "text-ink-body dark:text-estado-verde",
     },
     error: {
       container:
-        "border-error-500 bg-error-50 dark:border-error-500/30 dark:bg-error-500/15",
-      icon: "text-error-500",
+        "border-estado-rojo bg-estado-rojo dark:border-estado-rojo/30 dark:bg-estado-rojo/15",
+      icon: "text-ink-body dark:text-estado-rojo",
     },
     warning: {
       container:
-        "border-brand-500 bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/15",
-      icon: "text-brand-500",
+        "border-estado-amarillo bg-estado-amarillo dark:border-estado-amarillo/30 dark:bg-estado-amarillo/15",
+      icon: "text-ink-body dark:text-estado-amarillo",
     },
     info: {
       container:
-        "border-accent-500 bg-accent-50 dark:border-accent-500/30 dark:bg-accent-500/15",
-      icon: "text-accent-500",
+        "border-estado-azul bg-estado-azul dark:border-estado-azul/30 dark:bg-estado-azul/15",
+      icon: "text-ink-body dark:text-estado-azul",
     },
   };
 

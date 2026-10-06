@@ -5,7 +5,6 @@
  * navegación institucional, iconos de redes sociales y derechos de autor.
  */
 
-import { NectoLogo } from "@/compositions/shared/NectoLogo";
 
 interface FooterColumn {
   title: string;
@@ -59,31 +58,40 @@ const XIcon = () => (
 
 export const AppFooter = () => {
   return (
-    <footer className="mt-6 overflow-hidden rounded-2xl border border-gray-200/90 bg-white text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+    <footer className="mt-6 overflow-hidden rounded-2xl bg-brand-500 text-white shadow-theme-xs dark:bg-gray-900 dark:text-gray-200">
       {/* Main band */}
       <div className="grid grid-cols-1 gap-8 px-8 py-10 md:grid-cols-4">
         {/* Brand */}
-        <div className="flex flex-col gap-4">
-          <NectoLogo size="xs" />
+        <div className="flex flex-col items-start gap-4">
+          <img
+            src="/images/logo/necto-sobre-naranja.svg"
+            alt="NECTO"
+            className="h-11 w-auto select-none self-start dark:hidden"
+          />
+          <img
+            src="/images/logo/necto-footer.svg"
+            alt="NECTO"
+            className="hidden h-11 w-auto select-none self-start dark:block"
+          />
           <div className="flex gap-3">
             <a
               href="#"
               aria-label="Instagram"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
             >
               <InstagramIcon />
             </a>
             <a
               href="#"
               aria-label="LinkedIn"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
             >
               <LinkedInIcon />
             </a>
             <a
               href="#"
               aria-label="X"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
             >
               <XIcon />
             </a>
@@ -93,7 +101,7 @@ export const AppFooter = () => {
         {/* Link columns */}
         {columns.map((col) => (
           <div key={col.title} className="flex flex-col gap-3">
-            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900 dark:text-white">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-white dark:text-white">
               {col.title}
             </h3>
             <ul className="flex flex-col gap-2">
@@ -101,7 +109,7 @@ export const AppFooter = () => {
                 <li key={link.label}>
                   <a
                     href={link.href}
-                    className="text-sm text-gray-600 transition-colors hover:text-brand-500 dark:text-gray-400 dark:hover:text-white"
+                    className="text-sm text-white/85 transition-colors hover:text-white dark:text-gray-400 dark:hover:text-white"
                   >
                     {link.label}
                   </a>
@@ -113,8 +121,8 @@ export const AppFooter = () => {
       </div>
 
       {/* Copyright bar */}
-      <div className="border-t border-gray-100 bg-gray-50 px-8 py-3 text-center dark:border-gray-800 dark:bg-gray-950">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+      <div className="bg-secondary-600 px-8 py-3 text-center dark:bg-gray-950">
+        <p className="text-xs text-white/90 dark:text-gray-400">
           &copy; 2026 Necto. Plataforma de Operaciones y Gestión de Pedidos. Todos los derechos reservados.
         </p>
       </div>

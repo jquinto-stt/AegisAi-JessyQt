@@ -42,6 +42,7 @@ import {
   PedidoDestacadoCard,
   ConfigureDisplayModal,
   EstadosOverview,
+  EstadoPagoDonutCard,
 } from "./widgets";
 import {
   esHoy,
@@ -859,9 +860,10 @@ export const InicioPage = observer(() => {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA (1/3 del ancho): Posición "Feature Events" -> TARJETA DE CHAT REAL */}
+        {/* COLUMNA DERECHA (1/3 del ancho): Posición "Feature Events" -> TARJETA DE CHAT REAL + DONUT DE PAGO */}
         <div className="lg:col-span-4 space-y-6">
           <ClientesCardWidget onAbrir={() => setClientesOpen(true)} onChat={abrirChat} />
+          <EstadoPagoDonutCard />
         </div>
       </div>
 

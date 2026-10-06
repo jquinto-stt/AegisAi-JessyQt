@@ -1,5 +1,6 @@
 import React from "react";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
+import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 
 export interface BrandPanelSummary {
   eyebrow: string;
@@ -23,9 +24,19 @@ export const OnboardingBrandPanel: React.FC<BrandPanelProps> = ({
   summary,
 }) => {
   return (
-    <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden bg-brand-500 p-10 xl:p-12 text-white shadow-theme-xl dark:bg-accent-600">
+    <div className="relative hidden lg:flex lg:col-span-5 flex-col justify-between overflow-hidden bg-brand-500 p-10 xl:p-12 text-white shadow-theme-xl dark:bg-secondary-600">
       {/* Mosaico de estrellas interactivo */}
       <InteractiveDotGrid dotGap={26} baseRadius={1.6} activeRadius={3.8} glowDistance={150} />
+
+      {/* Aros de marca. La variante va ATADA AL TEMA: en claro el panel es
+          naranja y los aros son blancos; en oscuro el panel es indigo y los aros
+          acompanan. No se elige a mano porque el fondo tampoco se elige. */}
+      <div className="dark:hidden">
+        <DecorativeCircles variant="brand" />
+      </div>
+      <div className="hidden dark:block">
+        <DecorativeCircles variant="indigo" />
+      </div>
 
       {/* Header del Panel */}
       <div className="relative z-10 flex items-center justify-between">

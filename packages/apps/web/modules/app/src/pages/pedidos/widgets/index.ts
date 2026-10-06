@@ -24,6 +24,7 @@ export { ResumenDiaWidget } from "./ResumenDiaWidget";
 export { PedidoDestacadoCard } from "./PedidoDestacadoCard";
 export { ConfigureDisplayModal } from "./ConfigureDisplayModal";
 export { EstadosOverview } from "./EstadosOverview";
+export { EstadoPagoDonutCard } from "./EstadoPagoDonutCard";
 
 export {
   ORANGE,
