@@ -12,7 +12,9 @@ import { cerrarSesion } from "@/lib/auth.service";
 import type { Modulo, Seccion } from "@/stores";
 import { CATALOGO_MODULOS } from "@/stores/plataforma.store";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
-import { Settings } from "lucide-react";
+import {
+  Cog6ToothIcon,
+} from "@heroicons/react/24/outline";
 import {
   GridIcon,
   GroupIcon,
@@ -70,28 +72,21 @@ const TOOLTIP_LANZADOR = "Volver al selector de módulos";
 const Logo = () => (
   <Link to={RUTA_LANZADOR} className="flex items-center">
     {/*
-      Dos archivos, no uno: el lockup lleva «grow together» en índigo (#15008B),
-      que sobre el panel oscuro (`gray-900`, #212121) es prácticamente invisible.
-      El hex estaba mal escrito (`#1A1A1A` era el paso 950, el lienzo, no el
-      panel): el sidebar es `dark:bg-gray-900`, así que el fondo real es #212121.
-      CSS no puede repintar el interior de un `<img>`, así que el cambio se hace
-      con `dark:hidden` / `dark:block` y la caja queda idéntica en los dos temas.
-
-      `h-8` y no `h-5`: el lockup del manual es APILADO —wordmark arriba,
-      «grow together» debajo—, así que la altura del archivo se reparte entre
-      los dos bloques. A `h-5` el wordmark quedaba en ~10 px y no se leía.
+      Logo oficial horizontal: NECTO en rojo #FF3F1A con «grow together» a la derecha.
+      - Modo normal: acento N y «grow together» en azul #190088.
+      - Modo oscuro: acento N y «grow together» en blanco #FFFFFF.
     */}
     <img
       src="/images/logo/necto-full.svg"
       alt="NECTO"
       title={TOOLTIP_LANZADOR}
-      className="h-8 w-auto dark:hidden"
+      className="h-7 w-auto dark:hidden"
     />
     <img
       src="/images/logo/necto-full-white.svg"
       alt="NECTO"
       title={TOOLTIP_LANZADOR}
-      className="hidden h-8 w-auto dark:block"
+      className="hidden h-7 w-auto dark:block"
     />
   </Link>
 );
@@ -189,10 +184,10 @@ const SimulacionBanner = observer(() => {
   };
 
   return (
-    <div className="mb-4 rounded-lg border border-warning-300 bg-warning-50 p-3 dark:border-warning-500/40 dark:bg-warning-500/10">
+    <div className="mb-4 rounded-lg border border-brand-300 bg-brand-50 p-3 dark:border-brand-500/40 dark:bg-brand-500/10">
       {showExpanded ? (
         <>
-          <p className="text-xs font-semibold uppercase tracking-wider text-warning-600 dark:text-warning-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">
             Viendo como
           </p>
           <p className="mt-1 truncate text-sm font-semibold text-gray-800 dark:text-white/90">{rol}</p>
@@ -201,7 +196,7 @@ const SimulacionBanner = observer(() => {
           )}
           <button
             onClick={salir}
-            className="mt-2 text-xs font-medium text-warning-600 underline hover:text-warning-700 dark:text-warning-400"
+            className="mt-2 text-xs font-medium text-brand-600 underline hover:text-brand-700 dark:text-brand-400"
           >
             Salir de vista
           </button>
@@ -210,7 +205,7 @@ const SimulacionBanner = observer(() => {
         <button
           onClick={salir}
           aria-label={`Salir de vista (${rol})`}
-          className="flex w-full items-center justify-center text-warning-600 dark:text-warning-400"
+          className="flex w-full items-center justify-center text-brand-600 dark:text-brand-400"
           title={`Viendo como ${rol} — salir`}
         >
           <ArrowRightIcon />
@@ -270,7 +265,7 @@ const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motiv
           {puedeActivarlo ? (
             <Link
               to="/configuracion?tab=modulos"
-              className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+              className="font-medium text-brand-500 hover:underline dark:text-brand-400"
             >
               Activarlo
             </Link>
@@ -564,7 +559,7 @@ const SidebarContent = observer(() => {
             >
               <ul className="flex flex-col gap-1">
                 <MenuItem
-                  icon={<Settings className="size-5" />}
+                  icon={<Cog6ToothIcon className="size-5" />}
                   name="Configuración"
                   path="/configuracion"
                   isActive={esRutaConfiguracion}

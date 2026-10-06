@@ -190,22 +190,22 @@ export const Chart = observer(function Chart({
           chart: chartComun,
           grid: { borderColor: "#212121" },
           xaxis: {
-            labels: { style: { colors: "#A1A1A1" } },
-            axisBorder: { color: "#3F3F3F" },
+            labels: { style: { colors: "#98a2b3" } },
+            axisBorder: { color: "#344054" },
           },
-          yaxis: { labels: { style: { colors: ["#A1A1A1"] } } },
-          legend: { labels: { colors: "#D5D5D5" } },
+          yaxis: { labels: { style: { colors: ["#98a2b3"] } } },
+          legend: { labels: { colors: "#d0d5dd" } },
           tooltip: { theme: "dark" },
         }
       : {
           chart: chartComun,
-          grid: { borderColor: "#F4F4F4" },
+          grid: { borderColor: "#ececec" },
           xaxis: {
-            labels: { style: { colors: "#535250" } },
-            axisBorder: { color: "#E7E7E7" },
+            labels: { style: { colors: "#212121" } },
+            axisBorder: { color: "#e4e7ec" },
           },
-          yaxis: { labels: { style: { colors: ["#535250"] } } },
-          legend: { labels: { colors: "#535250" } },
+          yaxis: { labels: { style: { colors: ["#212121"] } } },
+          legend: { labels: { colors: "#212121" } },
           tooltip: { theme: "light" },
         };
 

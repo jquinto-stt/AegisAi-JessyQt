@@ -245,7 +245,7 @@ export const ModalAgregarElemento = observer(function ModalAgregarElemento({
                 return next;
               })
             }
-            className="text-xs font-medium text-brand-500 hover:text-brand-700 dark:text-brand-400"
+            className="text-xs font-medium text-brand-500 hover:text-brand-500 dark:text-brand-400"
           >
             {visibles.every((e) => seleccion.has(e.id)) ? "Quitar todos" : "Seleccionar todos los visibles"}
           </button>

@@ -1,5 +1,6 @@
 import React from "react";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
+import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 import { ThemeToggle } from "@/compositions/shared/ThemeToggle";
 import { cn } from "@/utils";
 
@@ -35,7 +36,13 @@ export default function AuthPageLayout({
         <div
           className={cn(
             "relative items-center hidden w-full h-full lg:w-1/2 lg:flex lg:justify-center overflow-hidden border-l select-none transition-colors duration-300",
-            "bg-brand-500 dark:bg-secondary-600 border-brand-500 dark:border-secondary-900/50"
+            // El panel de marca va en NARANJA en los dos temas. La lamina de
+            // modo oscuro lo dice literal: «el naranja se mantiene como color
+            // predominante por su contraste». Antes se cambiaba a `secondary-600`
+            // en oscuro, que es el `#190088` — justo el color que la lamina
+            // prohíbe en modo oscuro («el azul oscuro no se usaría, ese es
+            // reemplazado por el azul más claro de la paleta»).
+            "bg-brand-500 border-brand-500"
           )}
         >
           {/* Google Stitch inspired Interactive Dot Mosaic Background */}
@@ -45,6 +52,9 @@ export default function AuthPageLayout({
             activeRadius={3.0}
             glowDistance={160}
           />
+
+          {/* Decorative circle ornaments (brand reference) */}
+          <DecorativeCircles variant="brand" />
 
           <div className="relative z-10 flex flex-col items-center w-full max-w-2xl px-6 sm:px-10 text-center pointer-events-auto py-8">
             <div className="inline-block mb-6">

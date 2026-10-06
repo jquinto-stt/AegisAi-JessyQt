@@ -15,12 +15,15 @@
   @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-xl text-theme-sm transition-colors duration-150;
 }
 
-/* Activo = índigo pleno de marca (`secondary-600` = #15008B), que es el color
+/* Activo = índigo pleno de marca (`secondary-600` = #190088), que es el color
    secundario de la guía y el que usa «grow together» en el logotipo. El naranja
    queda para la ACCIÓN (botones, focos); si el ítem activo del menú fuera
    naranja, la navegación competiría con el botón primario de cada pantalla. */
 @utility menu-item-active {
-  @apply bg-secondary-600 text-white shadow-theme-xs dark:bg-secondary-600 dark:text-white;
+  /* Modo oscuro: el azul profundo NO se usa —lo dice la lamina—, lo reemplaza
+     el azul claro de la paleta. El texto va en la tinta oscura porque blanco
+     sobre `#97D6DF` da 1,6:1. */
+  @apply bg-secondary-600 text-white shadow-theme-xs dark:bg-accent-300 dark:text-ink-body;
 }
 
 @utility menu-item-inactive {
@@ -32,7 +35,7 @@
 }
 
 @utility menu-item-icon-active {
-  @apply text-white dark:text-white;
+  @apply text-white dark:text-ink-body;
 }
 
 @utility menu-item-icon-size {
@@ -81,15 +84,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 @utility menu-dropdown-badge {
-  @apply text-success-600 dark:text-success-500 block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase;
+  @apply text-accent-600 dark:text-accent-500 block rounded-full px-2.5 py-0.5 text-xs font-medium uppercase;
 }
 
 @utility menu-dropdown-badge-active {
-  @apply bg-success-100 dark:bg-success-500/20;
+  @apply bg-accent-100 dark:bg-accent-500/20;
 }
 
 @utility menu-dropdown-badge-inactive {
-  @apply bg-success-50 group-hover:bg-success-100 dark:bg-success-500/15 dark:group-hover:bg-success-500/20;
+  @apply bg-accent-50 group-hover:bg-accent-100 dark:bg-accent-500/15 dark:group-hover:bg-accent-500/20;
 }
 
 @utility menu-dropdown-badge-pro {

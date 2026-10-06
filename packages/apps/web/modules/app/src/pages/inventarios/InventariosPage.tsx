@@ -119,7 +119,7 @@ export const InventariosPage = observer(function InventariosPage() {
       <ContenedorPagina>
         <CabeceraPagina
           titulo="Inventarios"
-          descripcion="Supervisa y gestiona los conteos de existencias en cada una de tus ubicaciones."
+          descripcion="Cuenta lo que hay en cada ubicación."
           acciones={
             <>
               <Button
@@ -155,13 +155,13 @@ export const InventariosPage = observer(function InventariosPage() {
           <TarjetaMetrica
             icono={<TimeIcon className="h-5 w-5" />}
             valor={metricas.lineasPendientes}
-            etiqueta="Artículos por contar"
+            etiqueta="Por contar"
             tono={metricas.lineasPendientes > 0 ? "atencion" : "neutro"}
           />
           <TarjetaMetrica
             icono={<AlertHexaIcon className="h-5 w-5" />}
             valor={metricas.discrepanciasAbiertas}
-            etiqueta="Diferencias detectadas"
+            etiqueta="Diferencias"
             tono={metricas.discrepanciasAbiertas > 0 ? "atencion" : "neutro"}
             onClick={metricas.discrepanciasAbiertas > 0 ? () => navigate("/inventarios/alertas") : undefined}
           />
@@ -174,7 +174,7 @@ export const InventariosPage = observer(function InventariosPage() {
               value={consulta}
               onChange={(e) => setConsulta(e.target.value)}
               onClear={() => setConsulta("")}
-              placeholder="Buscar por número, nombre de conteo o ubicación…"
+              placeholder="Buscar conteo o ubicación…"
               className="sm:max-w-md sm:flex-1"
               aria-label="Buscar conteos"
             />
@@ -207,7 +207,7 @@ export const InventariosPage = observer(function InventariosPage() {
                   setConsulta("");
                   setFiltroEstado(FILTRO_TODOS);
                 }}
-                className="ml-2 text-xs font-medium text-gray-500 hover:text-brand-700 dark:text-gray-400 dark:hover:text-brand-400"
+                className="ml-2 text-xs font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
               >
                 Limpiar filtros
               </button>
@@ -239,8 +239,8 @@ export const InventariosPage = observer(function InventariosPage() {
               />
             ) : (
               <SinResultados
-                titulo="Aún no hay conteos de inventario"
-                detalle="Inicia un conteo para verificar las existencias de productos en una ubicación."
+                titulo="Aún no hay conteos"
+                detalle="Inicia uno para verificar lo que hay en una ubicación."
                 accion={
                   puedeContar ? (
                     <Button size="sm" startIcon={<PlusIcon className="h-4 w-4" />} onClick={() => navigate("/inventarios/nuevo")}>
@@ -284,7 +284,7 @@ function TarjetaMetrica({
   const clases = {
     neutro: "bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400",
     info: "bg-accent-50 text-accent-500 dark:bg-accent-500/15 dark:text-accent-400",
-    atencion: "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400",
+    atencion: "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400",
     error: "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400",
   }[tono];
 
@@ -293,8 +293,8 @@ function TarjetaMetrica({
   return (
     <Comp
       {...(onClick ? { type: "button" as const, onClick } : {})}
-      className={`flex items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left shadow-sm ${
-        onClick ? "transition-all duration-200 hover:border-primary/50 hover:shadow-md cursor-pointer" : ""
+      className={`flex items-center gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-left shadow-sm ${
+        onClick ? "transition-all duration-200 hover:border-brand-500/50 hover:shadow-md cursor-pointer" : ""
       }`}
     >
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${clases}`}>
@@ -328,7 +328,7 @@ function SegmentoEstado({
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
         activo
-          ? "bg-brand-700 text-white"
+          ? "bg-brand-500 text-white"
           : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
       }`}
     >

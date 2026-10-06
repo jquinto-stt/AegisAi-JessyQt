@@ -1,7 +1,10 @@
 import React from "react";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeftIcon,
+} from "@heroicons/react/24/outline";
 import { ThemeToggleButton } from "@/shell";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
+import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 
 export interface OnboardingBrandMessage {
   title: string;
@@ -125,7 +128,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   children,
 }) => {
   return (
-    <div className="relative min-h-screen w-full bg-brand-500 text-white p-3 sm:p-5 lg:p-8 flex items-center justify-center overflow-x-hidden font-sans selection:bg-white selection:text-secondary-600 dark:bg-secondary-600">
+    <div className="relative min-h-screen w-full bg-brand-500 text-white p-3 sm:p-5 lg:p-8 flex items-center justify-center overflow-x-hidden font-sans selection:bg-white selection:text-secondary-600 dark:bg-accent-600">
       {/* Mosaico interactivo de punticos con efecto estelar que sigue el mouse */}
       <InteractiveDotGrid
         dotGap={26}
@@ -133,6 +136,9 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
         activeRadius={4.8}
         glowDistance={180}
       />
+
+      {/* Decorative circle ornaments (brand reference) */}
+      <DecorativeCircles variant="brand" />
 
       {/* Contenedor principal sin cuerpo físico que opaque los puntos */}
       <div className="relative z-10 w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
@@ -151,7 +157,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                   title="Volver"
                   aria-label="Volver al paso anterior"
                 >
-                  <ArrowLeft className="size-4" />
+                  <ArrowLeftIcon className="size-4" />
                 </button>
               ) : null}
 

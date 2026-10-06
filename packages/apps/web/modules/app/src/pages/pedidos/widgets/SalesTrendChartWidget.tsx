@@ -182,7 +182,7 @@ export const SalesTrendChartWidget = observer(
         axisBorder: { show: false },
         axisTicks: { show: false },
         tooltip: { enabled: false },
-        crosshairs: { show: true, stroke: { color: "#94a3b8", width: 1, dashArray: 4 } },
+        crosshairs: { show: true, stroke: { color: "#98a2b3", width: 1, dashArray: 4 } },
         // Un mes entero son ~22 categorías: ApexCharts las rota a 90° cuando no
         // caben, y una fila de etiquetas giradas no se lee. `rotate: 0` con
         // `hideOverlappingLabels` deja las que caben y **oculta las que se

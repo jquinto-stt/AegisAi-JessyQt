@@ -146,8 +146,8 @@ export type NotificationProps =
 
 const variantStyles = {
   success: {
-    borderColor: "border-success-500",
-    iconBg: "bg-success-50 text-success-500",
+    borderColor: "border-accent-500",
+    iconBg: "bg-accent-50 text-accent-500",
     icon: <CheckCircleIcon />,
   },
   info: {
@@ -156,8 +156,8 @@ const variantStyles = {
     icon: <InfoIcon />,
   },
   warning: {
-    borderColor: "border-warning-500",
-    iconBg: "bg-warning-50 text-warning-500",
+    borderColor: "border-brand-500",
+    iconBg: "bg-brand-50 text-brand-500",
     icon: <AlertHexaIcon />,
   },
   error: {

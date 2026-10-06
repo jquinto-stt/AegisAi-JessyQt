@@ -15,7 +15,6 @@ import {
   INTENCION_BADGE,
 } from "../conversaciones.clasificacion";
 import {
-  AVATAR_MAP,
   inicialesDe,
   statusDe,
   tiempoRelativo,
@@ -169,7 +168,6 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
           <div className="space-y-1">
             {listaFiltrada.map((conv, i) => {
               const seleccionada = seleccionadaId === conv.id;
-              const avatarSrc = AVATAR_MAP[conv.id] || "";
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
               const intencion = intencionDe(conv.id);
 

@@ -89,7 +89,7 @@ const NectoIaIntegrationLogo = () => (
 
 /** Logo de Integración: WhatsApp Business */
 const WhatsAppIntegrationLogo = () => (
-  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success-50 text-success-600 dark:bg-success-500/10 dark:text-success-400">
+  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
     </svg>
@@ -644,7 +644,7 @@ export const ModulosTab = observer(() => {
               <ul className="mt-2.5 space-y-2">
                 {modalModulo.capacidades.map((cap, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-500" />
+                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
                     <span>{cap}</span>
                   </li>
                 ))}
@@ -734,7 +734,7 @@ export const ModulosTab = observer(() => {
               <ul className="mt-2.5 space-y-2">
                 {modalIntegracion.detalles.beneficios.map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success-500" />
+                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
                     <span>{b}</span>
                   </li>
                 ))}
@@ -866,7 +866,7 @@ export const ModulosTab = observer(() => {
               {/* Módulo Próximamente */}
               <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 p-3.5 opacity-70 dark:border-gray-800">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-secondary-500/10 dark:text-secondary-400">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-accent-500/10 dark:text-accent-400">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                     </svg>

@@ -80,7 +80,7 @@ export const PerfilOnboardingPage = observer(() => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label htmlFor="pais" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                País de residencia <span className="text-secondary-600">*</span>
+                País de residencia <span className="text-secondary-600 dark:text-accent-300">*</span>
               </Label>
               <div className="mt-2 relative">
                 <select

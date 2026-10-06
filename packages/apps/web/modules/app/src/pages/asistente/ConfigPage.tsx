@@ -332,7 +332,7 @@ export const AsistenteConfigPage = observer(() => {
 
                   <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-white/[0.02]">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <BoltIcon className="h-5 w-5 text-secondary-600" />
+                      <BoltIcon className="h-5 w-5 text-secondary-600 dark:text-accent-300" />
                       <span className="text-sm font-semibold text-gray-800 dark:text-white/90">
                         {MOTOR_LABEL[motor]}
                       </span>

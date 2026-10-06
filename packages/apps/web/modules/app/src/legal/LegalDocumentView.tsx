@@ -86,7 +86,7 @@ function SectionIndex({ doc }: { doc: LegalDocument }) {
                 href={`#${section.id}`}
                 className={
                   isActive
-                    ? "-ml-px block border-l-2 border-brand-500 py-1 pl-3 text-theme-xs font-semibold text-brand-600 dark:text-brand-400"
+                    ? "-ml-px block border-l-2 border-brand-500 py-1 pl-3 text-theme-xs font-semibold text-brand-500 dark:text-brand-400"
                     : "-ml-px block border-l-2 border-transparent py-1 pl-3 text-theme-xs font-medium text-gray-500 transition-colors hover:border-gray-300 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                 }
               >

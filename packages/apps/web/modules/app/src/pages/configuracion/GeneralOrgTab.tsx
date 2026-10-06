@@ -414,7 +414,7 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
       <ConfigAcciones
         mensaje={
           guardado ? (
-            <span className="font-semibold text-success-600 dark:text-success-400">
+            <span className="font-semibold text-accent-600 dark:text-accent-400">
               Cambios guardados
             </span>
           ) : !hayCambios ? (

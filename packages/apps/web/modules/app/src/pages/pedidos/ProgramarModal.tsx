@@ -173,7 +173,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
                     className={
                       "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border text-sm transition-colors " +
                       (isSelected
-                        ? "border-secondary-500 bg-secondary-50 dark:bg-brand-500/10"
+                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 dark:bg-brand-500/10"
                         : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-800/50") +
                       (pasado ? " cursor-not-allowed opacity-40" : "")
                     }
@@ -230,7 +230,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
                       className={
                         "rounded-xl border border-gray-200 p-3 dark:border-gray-800 " +
                         (clickable
-                          ? "cursor-pointer transition-colors hover:border-secondary-300 hover:bg-secondary-50/50 dark:hover:border-brand-700 dark:hover:bg-brand-500/5"
+                          ? "cursor-pointer transition-colors hover:border-secondary-300 hover:bg-secondary-50/50 dark:hover:border-brand-500 dark:hover:bg-brand-500/5"
                           : "")
                       }
                     >
@@ -270,7 +270,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
                       className={
                         "rounded-lg border py-2 text-sm transition-colors " +
                         (activa
-                          ? "border-secondary-500 bg-brand-500 font-medium text-white"
+                          ? "border-secondary-500 dark:border-accent-400 bg-brand-500 font-medium text-white"
                           : deshabilitada
                           ? "cursor-not-allowed border-gray-100 text-gray-300 dark:border-gray-800 dark:text-gray-700"
                           : "border-gray-200 text-gray-700 hover:border-secondary-400 hover:bg-secondary-50 hover:text-secondary-600 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-brand-500/10")
@@ -289,7 +289,7 @@ export const ProgramarModal = observer(({ valorInicial, onClose, onConfirmar, on
       {/* Resumen + acciones */}
       <div className="mt-6 flex flex-col gap-4 border-t border-gray-100 pt-5 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-sm">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 shrink-0 text-secondary-600">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 shrink-0 text-secondary-600 dark:text-accent-300">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           {hora ? (

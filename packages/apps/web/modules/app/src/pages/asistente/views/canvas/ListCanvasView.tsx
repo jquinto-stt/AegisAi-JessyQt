@@ -28,7 +28,7 @@ export const ListCanvasView = ({ list }: ListCanvasViewProps) => {
                   {item.primary}
                 </h4>
                 {item.trailing && (
-                  <span className="shrink-0 rounded-full border border-secondary-200 bg-secondary-50 px-2 py-0.5 text-[11px] font-medium text-ink-title dark:border-secondary-500/30 dark:bg-brand-500/10 dark:text-brand-300">
+                  <span className="shrink-0 rounded-full border border-secondary-200 bg-secondary-50 px-2 py-0.5 text-[11px] font-medium text-ink-title dark:border-accent-500/30 dark:bg-brand-500/10 dark:text-brand-300">
                     {item.trailing}
                   </span>
                 )}

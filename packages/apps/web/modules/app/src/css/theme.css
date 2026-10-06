@@ -1,41 +1,30 @@
 @theme {
   /* ══════════════════════════════════════════════════════════════════════════
-     TIPOGRAFÍA — la de `Esencia_necto`, sustituida y declarado el porqué
+     TIPOGRAFÍA — DM Sans, la familia oficial de NECTO
      ══════════════════════════════════════════════════════════════════════════
 
-     La guía de marca usa **Gotham** (Hoefler&Co): `Gotham-Black` en el
-     logotipo, `Gotham-Bold` en titulares y `Gotham-Book` en texto corrido.
+     `DM Sans` es la tipografía principal de NECTO. Pesos usados: 300 (Light),
+     400 (Regular) y 700 (Bold).
 
-     No se puede usar aquí, y son DOS razones independientes:
+     Nota de trazabilidad: el manual de marca `Esencia_necto/` está compuesto en
+     **Gotham** (Hoefler&Co), que no se puede usar aquí por dos razones
+     independientes y medibles:
 
        1. **No hay licencia.** Gotham es comercial y en el repo no hay ninguna
-          licencia de webfont. Incrustarla desde el PDF sería distribuir una
-          fuente propietaria.
+          licencia de webfont.
+       2. **Lo que el PDF embebe es un subconjunto.** Medido con `fontTools`
+          sobre los `FontFile3` de `PRESENTACIÓN NAMING + MARCA.pdf`:
+          `Gotham-Bold` trae 52 glifos, `Gotham-Book` 47, `Gotham-Black` 12 y el
+          del logotipo de la p.8 solo 9. Falta `k u v w x y z`, casi todos los
+          dígitos, la `ñ` y los signos de apertura.
 
-       2. **Lo que hay incrustado es un subconjunto.** Medido con `fontTools`
-          sobre los `FontFile3` extraídos de `PRESENTACIÓN NAMING + MARCA.pdf`:
-          `Gotham-Bold` trae **52 glifos**, `Gotham-Book` **47**, `Gotham-Black`
-          **12** y el del logotipo de la p.8 solo **9** (`e g h o r space t w`).
-          Falta `k u v w x y z`, casi todos los dígitos, la `ñ` y los signos de
-          apertura. «Configuración» saldría con huecos. Aunque hubiera licencia,
-          ese archivo no sirve como webfont.
-
-     **Sustituta: Montserrat.** Es el sustituto libre estándar de Gotham y
-     coincide en lo que hace reconocible a Gotham: construcción geométrica,
-     `a` de doble piso, `g` de un piso, altura de x alta y trazos de grosor
-     uniforme. Poppins queda descartada porque su `a` es de un solo piso, que es
-     justo el rasgo donde más se separa de Gotham.
-
-     Correspondencia de pesos guía → Montserrat: Black → 800/900,
-     Bold → 600/700, Book → 400/500.
-
-     `--font-outfit` se mantiene como alias: hay consumidores que lo nombran y
-     hoy no existe ninguna fuente «Outfit» cargada, así que apuntaba a DM Sans.
-     Ahora los dos tokens apuntan al mismo sitio.
+     La especificación de producto fija **DM Sans** como familia de la interfaz;
+     es la que se carga. `--font-outfit` se mantiene como alias porque hay
+     consumidores que lo nombran: los dos tokens apuntan al mismo sitio.
   */
   --font-*: initial;
-  --font-outfit: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-outfit: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 
   /* `--font-*: initial` borra tambien `--font-mono` y `--font-serif`. Una
      familia que no se declara NO genera CSS: `font-mono` quedaba sin regla y
@@ -54,6 +43,11 @@
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 
+  /* Escala tipografica oficial NECTO: 36 / 24 / 16 / 14 / 12 px.
+     Los cinco peldaños viven en la escala que ya existia, sin abrir una
+     paralela:
+       36 → `text-title-md`   24 → `text-theme-2xl` (nuevo)
+       16 → `text-theme-md` (nuevo)   14 → `text-theme-sm`   12 → `text-theme-xs` */
   --text-title-2xl: 72px;
   --text-title-2xl--line-height: 90px;
   --text-title-xl: 60px;
@@ -64,8 +58,12 @@
   --text-title-md--line-height: 44px;
   --text-title-sm: 30px;
   --text-title-sm--line-height: 38px;
+  --text-theme-2xl: 24px;
+  --text-theme-2xl--line-height: 32px;
   --text-theme-xl: 20px;
   --text-theme-xl--line-height: 30px;
+  --text-theme-md: 16px;
+  --text-theme-md--line-height: 24px;
   --text-theme-sm: 14px;
   --text-theme-sm--line-height: 20px;
   --text-theme-xs: 12px;
@@ -76,50 +74,55 @@
   --color-white: #ffffff;
   --color-black: #101828;
 
-  /* NECTO brand — primary orange (#FF3C10) — medido en la pág. G */
+  /* NECTO brand — Naranja oficial (#FF3F1A). Peldaño 500 = el hex de marca.
+     Los demas pasos se reanclaron conservando la L* de cada uno y la deriva de
+     tono de la rampa: el contraste entre pasos no cambia. */
   --color-brand-25: #fff5f2;
   --color-brand-50: #ffede8;
   --color-brand-100: #ffd6cc;
-  --color-brand-200: #ffb3a3;
-  --color-brand-300: #ff8f78;
-  --color-brand-400: #ff6647;
-  --color-brand-500: #ff3c10;
-  --color-brand-600: #e63314;
-  --color-brand-700: #bf2810;
-  --color-brand-800: #99200d;
-  --color-brand-900: #7a1a0b;
-  --color-brand-950: #4d0f06;
+  --color-brand-200: #feb3a4;
+  --color-brand-300: #fe8f79;
+  --color-brand-400: #fe674a;
+  --color-brand-500: #ff3f1a;
+  --color-brand-600: #e5351a;
+  --color-brand-700: #be2a15;
+  --color-brand-800: #982111;
+  --color-brand-900: #791b0d;
+  --color-brand-950: #4d0f07;
 
-  /* NECTO secondary — indigo (#15008B) — medido en la pág. G */
-  --color-secondary-25: #f4f2ff;
-  --color-secondary-50: #ebe6ff;
-  --color-secondary-100: #d2c7ff;
-  --color-secondary-200: #a98fff;
-  --color-secondary-300: #7e57ff;
-  --color-secondary-400: #4d1fe0;
-  --color-secondary-500: #2a0bb0;
-  --color-secondary-600: #15008b;
-  --color-secondary-700: #14006e;
-  --color-secondary-800: #0f0054;
-  --color-secondary-900: #0a003a;
-  --color-secondary-950: #060022;
+  /* NECTO secondary — Azul profundo oficial (#190088). Peldaño 600 = el hex de
+     marca. Se conserva el violeta deliberado de los peldaños 200-400. */
+  --color-secondary-25: #f3f4f5;
+  --color-secondary-50: #e9eaee;
+  --color-secondary-100: #ccd0dc;
+  --color-secondary-200: #9aa4c3;
+  --color-secondary-300: #6d7bb0;
+  --color-secondary-400: #40509e;
+  --color-secondary-500: #252d91;
+  --color-secondary-600: #190088;
+  --color-secondary-700: #17016c;
+  --color-secondary-800: #110052;
+  --color-secondary-900: #0b0039;
+  --color-secondary-950: #070021;
 
-  /* NECTO accent — light blue (#71D6E0) — medido en la pág. G */
-  --color-accent-25: #f5fcfd;
-  --color-accent-50: #eaf7f9;
-  --color-accent-100: #d5eff3;
-  --color-accent-200: #b6e3ea;
-  --color-accent-300: #71d6e0;
-  --color-accent-400: #6bc2ce;
-  --color-accent-500: #45aebd;
-  --color-accent-600: #348a97;
-  --color-accent-700: #2a6f79;
-  --color-accent-800: #22585f;
-  --color-accent-900: #1c474d;
-  --color-accent-950: #0f2a2e;
+  /* NECTO accent — Cyan oficial (#97D6DF). Peldaño 300 = el hex de marca. */
+  --color-accent-25: #f7fbfc;
+  --color-accent-50: #edf6f8;
+  --color-accent-100: #dcedf0;
+  --color-accent-200: #c2e0e6;
+  --color-accent-300: #97d6df;
+  --color-accent-400: #87bdc7;
+  --color-accent-500: #6ba9b5;
+  --color-accent-600: #538690;
+  --color-accent-700: #436c74;
+  --color-accent-800: #35555b;
+  --color-accent-900: #2b454a;
+  --color-accent-950: #18292c;
 
-  /* NECTO neutrals — beige medido del manual. */
-  --color-beige: #f2e7d3;
+  /* NECTO Cream oficial (#EFE6D3). `beige` se conserva como alias: hay tres
+     consumidores que lo nombran y el manual lo llama igual en sus muestras. */
+  --color-cream: #efe6d3;
+  --color-beige: #efe6d3;
 
 
   /* Rampa de grises AZUL-NOCHE. Migrada desde la escala neutra (tinte 0) del
@@ -133,12 +136,11 @@
        · Panel   → gray-900 (#101828) — sidebar, header, cards, modales
        · Tarjeta → white/[0.03] sobre gray-900
 
-     `gray-dark` (#1A2231) es un peldaño intermedio para dropdowns y
-     superficies flotantes que necesitan separarse del panel sin llegar
-     al lienzo. */
+     El peldaño 100 es el gris claro de superficie oficial (#ECECEC, «Light
+     Gray»): el lienzo claro de la app. */
   --color-gray-25: #fcfcfd;
   --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
+  --color-gray-100: #ececec;
   --color-gray-200: #e4e7ec;
   --color-gray-300: #d0d5dd;
   --color-gray-400: #98a2b3;
@@ -150,23 +152,15 @@
   --color-gray-950: #0c111d;
   --color-gray-dark: #1a2231;
 
-  /* TINTAS DE TEXTO — medidas sobre el mueble de las diez paginas del manual.
-     El manual NO escribe con el indigo de marca: tiene dos tintas propias, y
-     son las que llevan sus titulares y su texto corrido.
+  /* TINTAS DE TEXTO — jerarquia oficial NECTO:
+       TITULOS / ENCABEZADOS   → #190088 (azul profundo de marca)
+       TEXTO PRINCIPAL / BODY  → #212121 (el «Dark» de la paleta)
 
-       #1d3261  azul marino apagado -> TITULO. Es el color modal de la columna
-                de etiqueta en las pags. 6, 8, 9, 11, 12 y 13 (entre 14 892 y
-                16 011 px modales en cada una). «B / Naming» y «C / Conceptos
-                Visuales» estan en esta tinta.
-       #535250  gris calido oscuro  -> CUERPO y marca de letra. Color modal de
-                las pags. 5, 7 y 10, y segunda tinta de todas las demas.
-
-     El indigo `--color-secondary-600` (#15008B) es ACENTO —el punto del
-     logotipo, el isotopo, el «CO» del lockup— y nunca tinta de titular. Por eso
-     los titulos de la app no usan `text-secondary-*` ni `text-gray-900`: la
-     rampa de grises es neutra (tinte 0) y no tiene el azul del manual. */
-  --color-ink-title: #1d3261;
-  --color-ink-body: #535250;
+     El azul profundo se usa AQUI como tinta de titular por decision de
+     producto. `ink-body` toma el #212121 de la paleta oficial en lugar del gris
+     calido del mueble del manual. */
+  --color-ink-title: #190088;
+  --color-ink-body: #212121;
 
 
   --color-success-25: #f6fef9;
@@ -220,17 +214,18 @@
   --shadow-theme-inner: inset 0 2px 4px 0 rgba(16, 24, 40, 0.05);
   /* NECTO — sombras con tinte de marca.
      Las `--shadow-theme-*` de arriba usan el azul-noche (#101828) como base.
-     Estas tres son la misma forma con el negro cambiado por el naranja de marca,
-     y existen para un solo trabajo: que una superficie destacada —el hero de una
-     pantalla, el KPI que el operador debe mirar primero— se lea como «de NECTO»
-     **sin** pintarla de naranja. El tinte es bajo (0.04–0.16) a propósito: por
-     encima de ~0.2 el halo se lee como un error de renderizado, no como marca. */
-  --shadow-necto-xs: 0 1px 2px 0 rgb(16 24 40 / 0.05), 0 0 0 1px rgb(255 60 16 / 0.04);
-  --shadow-necto-sm: 0 2px 6px -1px rgb(255 60 16 / 0.1), 0 1px 3px 0 rgb(16 24 40 / 0.06);
-  --shadow-necto-md: 0 10px 24px -6px rgb(255 60 16 / 0.16), 0 4px 8px -2px rgb(16 24 40 / 0.06);
+     Estas tres son la misma forma con el negro cambiado por el naranja de marca
+     (#FF3F1A), y existen para un solo trabajo: que una superficie destacada —el
+     hero de una pantalla, el KPI que el operador debe mirar primero— se lea como
+     «de NECTO» **sin** pintarla de naranja. El tinte es bajo (0.04–0.16) a
+     propósito: por encima de ~0.2 el halo se lee como un error de renderizado,
+     no como marca. */
+  --shadow-necto-xs: 0 1px 2px 0 rgb(16 24 40 / 0.05), 0 0 0 1px rgb(255 63 26 / 0.04);
+  --shadow-necto-sm: 0 2px 6px -1px rgb(255 63 26 / 0.1), 0 1px 3px 0 rgb(16 24 40 / 0.06);
+  --shadow-necto-md: 0 10px 24px -6px rgb(255 63 26 / 0.16), 0 4px 8px -2px rgb(16 24 40 / 0.06);
 
   --shadow-datepicker: -5px 0 0 #262d3c, 5px 0 0 #262d3c;
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(255, 60, 16, 0.12);
+  --shadow-focus-ring: 0px 0px 0px 4px rgba(255, 63, 26, 0.12);
   --shadow-slider-navigation: 0px 1px 2px 0px rgba(16, 24, 40, 0.1),
     0px 1px 3px 0px rgba(16, 24, 40, 0.1);
   --shadow-tooltip: 0px 4px 6px -2px rgba(16, 24, 40, 0.05),

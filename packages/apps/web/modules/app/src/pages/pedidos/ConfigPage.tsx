@@ -363,7 +363,7 @@ export const ConfigPage = observer(() => {
               <ConfigAcciones
                 mensaje={
                   guardado ? (
-                    <span className="text-sm text-success-600 dark:text-success-500">
+                    <span className="text-sm text-accent-600 dark:text-accent-500">
                       Guardado ✓
                     </span>
                   ) : undefined
@@ -407,7 +407,7 @@ export const ConfigPage = observer(() => {
                           }}
                           className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 ${
                             seleccionado
-                              ? "border-secondary-500 bg-secondary-50/50 shadow-theme-sm ring-2 ring-brand-500/20 dark:border-secondary-400 dark:bg-brand-950/20"
+                              ? "border-secondary-500 bg-secondary-50/50 shadow-theme-sm ring-2 ring-brand-500/20 dark:border-accent-400 dark:bg-brand-950/20"
                               : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700"
                           }`}
                         >
@@ -846,7 +846,7 @@ export const ConfigPage = observer(() => {
                           </span>
                           <Badge color="light" size="xs">Ejemplo pedido #P-001</Badge>
                         </div>
-                        <p className="mt-1.5 font-mono text-xs text-brand-600 dark:text-brand-400 break-all select-all">
+                        <p className="mt-1.5 font-mono text-xs text-brand-500 dark:text-brand-400 break-all select-all">
                           {draft.datosBancarios?.linkPagoTipo === "personalizado" && draft.datosBancarios?.linkPagoUrl
                             ? draft.datosBancarios.linkPagoUrl
                             : `${window.location.origin}/checkout/P-001`}

@@ -66,10 +66,10 @@ export const AnaliticaConversacionesPage = observer(() => {
 
   const intenciones = [
     { nombre: "Consultas de Menú / Productos", porcentaje: 45, color: "bg-brand-500" },
-    { nombre: "Creación de Pedidos", porcentaje: 30, color: "bg-emerald-500" },
-    { nombre: "Preguntas Frecuentes (Horarios/Ubicación)", porcentaje: 15, color: "bg-sky-500" },
-    { nombre: "Solicitud de Operador Humano", porcentaje: 7, color: "bg-amber-500" },
-    { nombre: "Quejas o Inconvenientes", porcentaje: 3, color: "bg-rose-500" },
+    { nombre: "Creación de Pedidos", porcentaje: 30, color: "bg-accent-500" },
+    { nombre: "Preguntas Frecuentes (Horarios/Ubicación)", porcentaje: 15, color: "bg-accent-500" },
+    { nombre: "Solicitud de Operador Humano", porcentaje: 7, color: "bg-brand-500" },
+    { nombre: "Quejas o Inconvenientes", porcentaje: 3, color: "bg-error-500" },
   ];
 
   return (
@@ -151,7 +151,7 @@ export const AnaliticaConversacionesPage = observer(() => {
           <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
             {metricas.totalConversaciones}
           </div>
-          <div className="mt-1 flex items-center text-xs text-emerald-600 dark:text-emerald-400">
+          <div className="mt-1 flex items-center text-xs text-accent-600 dark:text-accent-400">
             ↑ 12% vs período anterior
           </div>
         </Card>
@@ -162,7 +162,7 @@ export const AnaliticaConversacionesPage = observer(() => {
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               Resolución por IA (Bot)
             </span>
-            <span className="rounded-full bg-emerald-50 p-2 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <span className="rounded-full bg-accent-50 p-2 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
               🤖
             </span>
           </div>
@@ -180,14 +180,14 @@ export const AnaliticaConversacionesPage = observer(() => {
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               Tiempo Promedio de Respuesta
             </span>
-            <span className="rounded-full bg-sky-50 p-2 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400">
+            <span className="rounded-full bg-accent-50 p-2 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
               ⚡
             </span>
           </div>
           <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
             {metricas.tiempoPromedioRespuestaSec}
           </div>
-          <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+          <div className="mt-1 text-xs text-accent-600 dark:text-accent-400">
             Respuestas automatizadas &lt; 2s
           </div>
         </Card>
@@ -198,14 +198,14 @@ export const AnaliticaConversacionesPage = observer(() => {
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               Conversión a Pedido
             </span>
-            <span className="rounded-full bg-purple-50 p-2 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400">
+            <span className="rounded-full bg-secondary-50 p-2 text-secondary-600 dark:bg-accent-300/10 dark:text-accent-300">
               🛒
             </span>
           </div>
           <div className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
             {metricas.tasaConversion}
           </div>
-          <div className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+          <div className="mt-1 text-xs text-secondary-600 dark:text-accent-300">
             De chats a carritos confirmados
           </div>
         </Card>
@@ -215,7 +215,7 @@ export const AnaliticaConversacionesPage = observer(() => {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Card: Desglose de Sentimiento */}
         <Card className="p-5 dark:border-gray-800">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-bold text-ink-title dark:text-white">
             Análisis de Sentimiento de Clientes
           </h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -227,13 +227,13 @@ export const AnaliticaConversacionesPage = observer(() => {
             <div>
               <div className="flex justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> Positivo / Satisfecho
+                  <span className="h-2.5 w-2.5 rounded-full bg-accent-500" /> Positivo / Satisfecho
                 </span>
                 <span>{metricas.pctPositivo}%</span>
               </div>
               <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-accent-500 transition-all duration-500"
                   style={{ width: `${metricas.pctPositivo}%` }}
                 />
               </div>
@@ -243,13 +243,13 @@ export const AnaliticaConversacionesPage = observer(() => {
             <div>
               <div className="flex justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-sky-500" /> Neutro / Informativo
+                  <span className="h-2.5 w-2.5 rounded-full bg-accent-500" /> Neutro / Informativo
                 </span>
                 <span>{metricas.pctNeutro}%</span>
               </div>
               <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
-                  className="h-full rounded-full bg-sky-500 transition-all duration-500"
+                  className="h-full rounded-full bg-accent-500 transition-all duration-500"
                   style={{ width: `${metricas.pctNeutro}%` }}
                 />
               </div>
@@ -259,13 +259,13 @@ export const AnaliticaConversacionesPage = observer(() => {
             <div>
               <div className="flex justify-between text-xs font-semibold text-gray-700 dark:text-gray-300">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Requiere Atención / Alerta
+                  <span className="h-2.5 w-2.5 rounded-full bg-error-500" /> Requiere Atención / Alerta
                 </span>
                 <span>{metricas.pctNegativo}%</span>
               </div>
               <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 <div
-                  className="h-full rounded-full bg-rose-500 transition-all duration-500"
+                  className="h-full rounded-full bg-error-500 transition-all duration-500"
                   style={{ width: `${metricas.pctNegativo}%` }}
                 />
               </div>
@@ -279,7 +279,7 @@ export const AnaliticaConversacionesPage = observer(() => {
 
         {/* Card: Distribución de Intenciones */}
         <Card className="p-5 dark:border-gray-800">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-bold text-ink-title dark:text-white">
             Matriz de Intenciones Detectadas
           </h2>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -308,7 +308,7 @@ export const AnaliticaConversacionesPage = observer(() => {
       {/* ── Tabla de Resumen de Actividad Reciente ────────────────────────── */}
       <Card className="mt-6 p-5 dark:border-gray-800">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-bold text-ink-title dark:text-white">
             Resumen de Conversaciones Recientes
           </h2>
           <Badge color="light" size="sm">
@@ -342,7 +342,7 @@ export const AnaliticaConversacionesPage = observer(() => {
                         👤 Operador
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span className="inline-flex items-center gap-1 text-accent-600 dark:text-accent-400 font-medium">
                         🤖 Bot Necto
                       </span>
                     )}
@@ -359,7 +359,7 @@ export const AnaliticaConversacionesPage = observer(() => {
                     )}
                   </td>
                   <td className="px-4 py-3 font-medium">
-                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-accent-600 dark:text-accent-400">
                       😊 Positivo
                     </span>
                   </td>

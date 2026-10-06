@@ -3,16 +3,25 @@
  *
  * ── De dónde sale esto ──────────────────────────────────────────────────────
  *
- * De `Esencia_necto/` (presentación de naming + marca). Los tres colores que
- * mandan, y sus valores exactos:
+ * De la paleta oficial de NECTO. Los tres colores que mandan, y sus valores
+ * exactos:
  *
- *   · Naranja  #FF3C10 → `--color-brand-500`     (color primario, la marca)
- *   · Índigo   #15008B → `--color-secondary-600` (secundario; "grow together")
- *   · Celeste  #71D6E0 → `--color-accent-300`    (acento frío)
+ *   · Naranja  #FF3F1A → `--color-brand-500`     (color primario, la marca)
+ *   · Azul     #190088 → `--color-secondary-600` (secundario; "grow together")
+ *   · Cyan     #97D6DF → `--color-accent-300`    (acento frío)
  *
- * Más el beige `#F2E7D3` (`--color-beige`) y el casi-negro `#1A1A1A`
- * (`--color-gray-900`), que la guía usa como fondos de bloque. El isotipo es el
- * glifo de nodo (`necto-icon.svg`): dos trazos que se cruzan y se anudan.
+ * Más el cream `#EFE6D3` (`--color-cream`), el gris claro `#ECECEC`
+ * (`--color-gray-100`) y el «Dark» `#212121`, que es la tinta de cuerpo
+ * (`--color-ink-body`). El par oscuro de superficies sigue siendo el azul-noche
+ * del tema (`gray-900` `#101828` / `gray-950` `#0C111D`).
+ *
+ * Nota de trazabilidad: el manual `Esencia_necto/` es una presentación cuyas
+ * muestras, medidas, dan valores ligeramente distintos (`#FF3C10`, `#15008B`,
+ * `#71D6E0`). Aquí manda la especificación de identidad, que es la que fija los
+ * hex de arriba.
+ *
+ * El isotipo es el glifo de nodo (`necto-icon.svg`): dos trazos que se cruzan y
+ * se anudan.
  *
  * ── Por qué en `@layer components` y no en `@utility` ───────────────────────
  *
@@ -57,15 +66,15 @@
   .necto-lienzo {
     @apply bg-gray-100 dark:bg-gray-950;
     background-image:
-      radial-gradient(1100px 520px at 6% -12%, rgb(255 60 16 / 0.07), transparent 62%),
-      radial-gradient(900px 460px at 102% -6%, rgb(21 0 139 / 0.06), transparent 60%);
+      radial-gradient(1100px 520px at 6% -12%, rgb(255 63 26 / 0.07), transparent 62%),
+      radial-gradient(900px 460px at 102% -6%, rgb(25 0 136 / 0.06), transparent 60%);
     background-attachment: fixed;
   }
 
   .dark .necto-lienzo {
     background-image:
-      radial-gradient(1100px 520px at 6% -12%, rgb(255 60 16 / 0.1), transparent 62%),
-      radial-gradient(900px 460px at 102% -6%, rgb(77 31 224 / 0.14), transparent 60%);
+      radial-gradient(1100px 520px at 6% -12%, rgb(255 63 26 / 0.1), transparent 62%),
+      radial-gradient(900px 460px at 102% -6%, rgb(81 32 220 / 0.14), transparent 60%);
   }
 
   /* ══════════════════════════════════════════════════════════════════════════
@@ -135,7 +144,7 @@
   .necto-hero {
     @apply relative overflow-hidden rounded-2xl text-white
            bg-gradient-to-br from-brand-500 via-brand-600 to-secondary-600
-           dark:from-secondary-700 dark:via-secondary-800 dark:to-gray-950;
+           dark:from-brand-600 dark:via-brand-700 dark:to-gray-950;
   }
 
   /* Malla de nodos: el isotipo como textura de fondo.
@@ -164,7 +173,7 @@
   .necto-azulejo-indigo {
     @apply inline-flex shrink-0 items-center justify-center rounded-xl
            bg-secondary-50 text-secondary-600 ring-1 ring-secondary-100
-           dark:bg-secondary-500/15 dark:text-secondary-300 dark:ring-secondary-500/25;
+           dark:bg-accent-300/15 dark:text-accent-300 dark:ring-accent-300/25;
   }
 
   .necto-azulejo-celeste {
@@ -183,7 +192,7 @@
 
   .necto-pildora-indigo {
     @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-theme-xs font-medium
-           bg-secondary-50 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-200;
+           bg-secondary-50 text-secondary-700 dark:bg-accent-300/20 dark:text-accent-200;
   }
 
   .necto-pildora-celeste {

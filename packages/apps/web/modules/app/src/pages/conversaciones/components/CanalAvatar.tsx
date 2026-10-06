@@ -68,9 +68,9 @@ export const CanalAvatar: React.FC<CanalAvatarProps> = ({
   }[size];
 
   const statusColors: Record<AvatarStatus, string> = {
-    online: "bg-emerald-500",
-    busy: "bg-amber-500",
-    offline: "bg-red-400",
+    online: "bg-accent-500",
+    busy: "bg-brand-500",
+    offline: "bg-error-400",
     none: "",
   };
 
@@ -78,13 +78,9 @@ export const CanalAvatar: React.FC<CanalAvatarProps> = ({
     <div
       className={`relative inline-flex shrink-0 items-center justify-center rounded-full ${sizeClasses} ${className}`}
     >
-      {/* Círculo con el logo de Telegram o WhatsApp */}
+      {/* Círculo con el logo de canal neutro, sin colores asociados a WhatsApp */}
       <div
-        className={`flex h-full w-full items-center justify-center rounded-full transition-transform ${
-          esTelegram
-            ? "bg-[#229ED9] text-white shadow-sm shadow-[#229ED9]/30"
-            : "bg-[#25D366] text-white shadow-sm shadow-[#25D366]/30"
-        }`}
+        className="flex h-full w-full items-center justify-center rounded-full bg-gray-100 text-gray-500 border border-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700/60 transition-colors"
         title={`${nombre} (${esTelegram ? "Telegram" : "WhatsApp"})`}
       >
         {esTelegram ? (

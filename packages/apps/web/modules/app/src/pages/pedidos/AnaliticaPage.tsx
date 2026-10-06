@@ -27,7 +27,7 @@ import { SinDatos } from "./SinDatos";
 // pago son catálogos y salen de `analitica.utils`, para que un gráfico y su
 // leyenda no puedan pintar lo mismo de dos colores distintos.
 // ═══════════════════════════════════════════════════════════════════════════
-const ORANGE = "#FF3C10";
+const ORANGE = "#ff3f1a";
 
 import {
   COLOR_ESTADO,
@@ -370,7 +370,7 @@ export const AnaliticaPage = observer(() => {
       categories: volumenDiario.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { style: { colors: "#a1a1a1", fontSize: "11px", fontWeight: 400 } },
+      labels: { style: { colors: "#98a2b3", fontSize: "11px", fontWeight: 400 } },
     },
     yaxis: {
       min: 0,
@@ -380,11 +380,11 @@ export const AnaliticaPage = observer(() => {
       tickAmount: 4,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#a1a1a1", fontSize: "11px" },
+        style: { colors: "#98a2b3", fontSize: "11px" },
       },
     },
     grid: {
-      borderColor: isDark ? "#282828" : "#f4f4f4",
+      borderColor: isDark ? "#1d2939" : "#ececec",
       strokeDashArray: 0,
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
@@ -424,7 +424,7 @@ export const AnaliticaPage = observer(() => {
       categories: serieEstado.map((d) => diaCorto(d.fecha)),
       axisBorder: { show: false },
       axisTicks: { show: false },
-      labels: { style: { colors: "#a1a1a1", fontSize: "11px" } },
+      labels: { style: { colors: "#98a2b3", fontSize: "11px" } },
     },
     yaxis: {
       min: 0,
@@ -432,11 +432,11 @@ export const AnaliticaPage = observer(() => {
       tickAmount: 5,
       labels: {
         formatter: (v) => `${Math.round(v)}`,
-        style: { colors: "#a1a1a1", fontSize: "11px" },
+        style: { colors: "#98a2b3", fontSize: "11px" },
       },
     },
     grid: {
-      borderColor: isDark ? "#282828" : "#f4f4f4",
+      borderColor: isDark ? "#1d2939" : "#ececec",
       strokeDashArray: 0,
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
@@ -529,7 +529,7 @@ export const AnaliticaPage = observer(() => {
                     onClick={() => setVista(id)}
                     className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                       activo
-                        ? "bg-success-500 text-white shadow-theme-xs"
+                        ? "bg-accent-500 text-white shadow-theme-xs"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -563,7 +563,7 @@ export const AnaliticaPage = observer(() => {
                         setPagina(1);
                       }}
                       onItemClick={() => setPeriodoAbierto(false)}
-                      className={periodo === op.value ? "font-semibold text-success-600 dark:text-success-400" : ""}
+                      className={periodo === op.value ? "font-semibold text-accent-600 dark:text-accent-400" : ""}
                     >
                       <span className="flex flex-col">
                         <span>{op.label}</span>
@@ -588,7 +588,7 @@ export const AnaliticaPage = observer(() => {
                 El degradado recorre las **tres rampas de marca** en orden
                 luminoso: `brand-500` (naranja NECTO) → `secondary-300` (violeta)
                 → `accent-300` (cian). El original usaba esas mismas tres rampas
-                pero terminaba en índigo `#15008B`, tan oscuro que un extremo del
+                pero terminaba en azul `#190088`, tan oscuro que un extremo del
                 anillo se fundía con el fondo y el conjunto se leía sucio. Aquí
                 las tres son claras, así que el recorrido se lee como color, no
                 como mancha.
@@ -601,7 +601,7 @@ export const AnaliticaPage = observer(() => {
                 `@keyframes` nuevo.
 
                 **El texto lleva tonos MÁS OSCUROS que el anillo, y no es un
-                descuido.** `accent-300` (#71d6e0) sobre blanco da 1.65:1 de
+                descuido.** `accent-300` (#97d6df) sobre blanco da 1.62:1 de
                 contraste: ilegible. El anillo puede permitírselo porque es
                 decoración; el texto no. Por eso el texto va por
                 `brand-700` → `secondary-400` → `accent-700` (5.9:1, 8.1:1 y
@@ -616,7 +616,7 @@ export const AnaliticaPage = observer(() => {
                 title="Abrir NECTO AI — asistente interno"
                 className="group inline-flex h-9 shrink-0 items-center rounded-full bg-gradient-to-r from-brand-500 via-secondary-300 to-accent-300 bg-[length:200%_100%] bg-[position:0%_50%] p-[1.5px] shadow-theme-md shadow-secondary-300/25 transition-all duration-500 ease-out hover:-translate-y-px hover:bg-[position:100%_50%] hover:shadow-theme-lg hover:shadow-brand-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
               >
-                <span className="flex h-full items-center gap-2 rounded-full bg-white px-3.5 dark:bg-secondary-900">
+                <span className="flex h-full items-center gap-2 rounded-full bg-white px-3.5 dark:bg-accent-900">
                   <ShootingStarIcon className="h-4 w-4 shrink-0 text-secondary-600 transition-transform duration-300 ease-out group-hover:rotate-[18deg] group-hover:scale-110 dark:text-brand-400" />
                   <span className="whitespace-nowrap bg-gradient-to-r from-brand-700 via-secondary-400 to-accent-700 bg-clip-text text-xs font-semibold text-transparent dark:from-brand-300 dark:via-secondary-200 dark:to-accent-200">
                     NECTO AI
@@ -730,12 +730,12 @@ export const AnaliticaPage = observer(() => {
                       aria-label="Elegir rango en calendario"
                       className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-theme-xs transition-all ${
                         rangoPersonalizado
-                          ? "border-secondary-500 bg-brand-500/10 text-secondary-600 dark:border-secondary-500 dark:bg-brand-500/20"
+                          ? "border-secondary-500 bg-brand-500/10 text-secondary-600 dark:text-accent-300 dark:border-accent-500 dark:bg-brand-500/20"
                           : "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                       }`}
                       title="Seleccionar rango de fechas libremente"
                     >
-                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-secondary-600" : "text-gray-500 dark:text-gray-400"}`} />
+                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-secondary-600 dark:text-accent-300" : "text-gray-500 dark:text-gray-400"}`} />
                       <span>
                         {rangoPersonalizado
                           ? `${diaCorto(rangoPersonalizado.desde)} - ${diaCorto(rangoPersonalizado.hasta)}`
@@ -1073,7 +1073,7 @@ export const AnaliticaPage = observer(() => {
                         onClick={() => alternarOrden(c.key)}
                         aria-label={`Ordenar por ${c.label}`}
                         className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-gray-700 dark:hover:text-gray-200 ${
-                          orden.columna === c.key ? "text-success-600 dark:text-success-400" : ""
+                          orden.columna === c.key ? "text-accent-600 dark:text-accent-400" : ""
                         } ${c.align === "right" ? "ml-auto" : ""}`}
                       >
                         {c.label}

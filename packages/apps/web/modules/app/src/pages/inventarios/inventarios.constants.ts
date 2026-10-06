@@ -73,29 +73,75 @@ export const OPCIONES_ESTADO_INVENTARIO: { value: string; label: string }[] = [
 // ── Inventario: tipo ──────────────────────────────────────────────────────
 
 /**
- * Los tres tipos de conteo, con su `hint`.
+ * Los tres tipos de conteo.
  *
- * El `hint` no es relleno: es lo que permite elegir bien antes de crear. Un
- * «periódico» sin explicar se confunde con «final», y la diferencia importa
- * porque decide de dónde sale la cantidad esperada.
+ * ── Por qué ya no hay `hint` ────────────────────────────────────────────────
+ *
+ * Antes cada tipo traía un párrafo de dos líneas explicando mecánica interna
+ * («la cantidad esperada se copia del último conteo finalizado», «no se calcula
+ * diferencia»). Eso es un manual, no una interfaz: si hay que explicar cómo
+ * funciona el sistema para poder elegir, el problema es la elección, no la falta
+ * de texto.
+ *
+ * Ahora cada tipo trae **una sola línea de consecuencia** —qué pasa si eliges
+ * esto— y la elección se hace con una pregunta que el usuario ya sabe responder:
+ * «¿Ya has contado aquí antes?». `eleccion` dice a cuál de las dos tarjetas
+ * pertenece cada tipo, para que la vista no tenga su propia lista de cuáles son
+ * principales: esa decisión se toma aquí y en un solo sitio.
+ *
+ * `label` se conserva porque lo usan la tabla, el detalle y los reportes.
  */
 export const TIPO_INVENTARIO_META: Record<
   TipoInventario,
-  { label: string; hint: string }
+  {
+    /** Nombre corto del tipo, para badges, tabla y reportes. */
+    label: string;
+    /** Título de la tarjeta de elección, en el idioma del usuario. */
+    titulo: string;
+    /** UNA línea: qué pasa si eliges esto. Nunca cómo funciona por dentro. */
+    consecuencia: string;
+    /** A cuál de las dos tarjetas de la pregunta binaria pertenece. */
+    eleccion: EleccionConteo;
+  }
 > = {
   inicial: {
     label: "Inicial",
-    hint: "El primer conteo de esta ubicación. No hay referencia previa, así que no se calcula diferencia: lo que se observe pasa a ser el punto cero.",
+    titulo: "Es la primera vez",
+    consecuencia: "Sin comparación: lo que cuentes queda como punto de partida.",
+    eleccion: "primera_vez",
   },
   periodico: {
     label: "Periódico",
-    hint: "Conteo de rutina. La cantidad esperada se copia del último conteo finalizado de esta ubicación, y se muestra la diferencia contra ese número.",
+    titulo: "Ya hay un conteo anterior",
+    consecuencia: "Se compara contra el último conteo cerrado de esta ubicación.",
+    eleccion: "con_referencia",
   },
   final: {
     label: "Final",
-    hint: "Cierre. Igual que el periódico en cuanto a la referencia, pero marca el fin de un ciclo: es el número que queda como definitivo.",
+    titulo: "Cerrar el ciclo",
+    consecuencia: "Cierra el ciclo: el número queda como definitivo.",
+    eleccion: "con_referencia",
   },
 };
+
+/**
+ * La pregunta que sustituye a la lista de tres tipos.
+ *
+ * Es binaria a propósito: el usuario sabe si ha contado ahí antes o no. La
+ * diferencia entre «periódico» y «final» es de ciclo, no de método, y se decide
+ * después —`final` se ofrece como acción contextual, y solo cuando la ubicación
+ * ya tiene un conteo cerrado—. Así deja de haber una opción que haya que
+ * entender de antemano.
+ */
+export const PREGUNTA_ELECCION_CONTEO = "¿Ya has contado aquí antes?";
+
+export type EleccionConteo = "primera_vez" | "con_referencia";
+
+/** Las dos tarjetas, en orden. La vista lee esto; no decide cuáles son. */
+export const OPCIONES_ELECCION_CONTEO: TipoInventario[] = ["inicial", "periodico"];
+
+/** El tipo que NO se elige al crear: es un cierre y se ofrece aparte. */
+export const TIPO_CIERRE_CICLO: TipoInventario = "final";
 
 export const OPCIONES_TIPO_INVENTARIO: { value: TipoInventario; label: string }[] = [
   { value: "inicial", label: "Inicial" },

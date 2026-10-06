@@ -19,7 +19,7 @@ export interface SegmentedControlProps<V extends string = string> {
   /**
    * Estilo visual del segmento activo:
    *  - 'contrast' (default): activo oscuro (gray-950 / dark:white).
-   *  - 'accent': activo naranja de marca (#FF3C10).
+   *  - 'accent': activo naranja de marca (#ff3f1a).
    *  - 'panel': activo blanco sobre track gris (look de pestañas suaves).
    */
   tone?: 'contrast' | 'accent' | 'panel';

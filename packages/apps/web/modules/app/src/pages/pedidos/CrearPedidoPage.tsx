@@ -370,13 +370,13 @@ export const CrearPedidoPage = observer(() => {
         <PageMeta title="Pedido creado" description="Pedido creado con éxito" />
         <div className="mx-auto max-w-lg">
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex flex-col items-center gap-3 bg-success-50 px-8 py-8 text-center dark:bg-success-500/10">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-success-500 text-white">
+            <div className="flex flex-col items-center gap-3 bg-accent-50 px-8 py-8 text-center dark:bg-accent-500/10">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-500 text-white">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-7 w-7">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
               </div>
-              <p className="text-sm font-medium text-success-700 dark:text-success-300">Pedido creado con éxito</p>
+              <p className="text-sm font-medium text-accent-700 dark:text-accent-300">Pedido creado con éxito</p>
             </div>
 
             <div className="px-8 py-8 text-center">
@@ -417,7 +417,7 @@ export const CrearPedidoPage = observer(() => {
               </div>
 
               <div className="mt-6 flex items-start gap-2 rounded-xl bg-secondary-50 p-3 text-left dark:bg-brand-500/10">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-600">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-600 dark:text-accent-300">
                   <path d="M12 2a10 10 0 00-8.66 15l-1.3 3.9a.75.75 0 00.95.95l3.9-1.3A10 10 0 1012 2z" />
                 </svg>
                 {created.programadoPara ? (
@@ -453,7 +453,7 @@ export const CrearPedidoPage = observer(() => {
 
       {/* Encabezado */}
       <div className="mx-auto mb-6 flex max-w-5xl items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10 text-secondary-600">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500/10 text-secondary-600 dark:text-accent-300">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -480,11 +480,11 @@ export const CrearPedidoPage = observer(() => {
         próxima apertura.
       */}
       {!pedidosStore.estaAbierto() && (
-        <div className="mx-auto mb-4 flex max-w-5xl items-start gap-2 rounded-xl border border-warning-300 bg-warning-50 p-3 dark:border-warning-500/40 dark:bg-warning-500/10">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="mt-0.5 h-5 w-5 shrink-0 text-warning-600 dark:text-warning-500">
+        <div className="mx-auto mb-4 flex max-w-5xl items-start gap-2 rounded-xl border border-brand-300 bg-brand-50 p-3 dark:border-brand-500/40 dark:bg-brand-500/10">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-500">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-xs text-warning-700 dark:text-warning-300">
+          <p className="text-xs text-brand-700 dark:text-brand-300">
             Atención: El negocio se encuentra fuera de su horario comercial habitual. Este pedido se
             registrará con la fecha actual.
           </p>
@@ -543,11 +543,11 @@ export const CrearPedidoPage = observer(() => {
                     className={
                       "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors " +
                       (activo
-                        ? "border-secondary-500 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
+                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
                         : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
                     }
                   >
-                    <span className={activo ? "text-secondary-600" : "text-gray-400"}>
+                    <span className={activo ? "text-secondary-600 dark:text-accent-300" : "text-gray-400"}>
                       <ModalidadIcon m={m} />
                     </span>
                     <span className="text-sm font-medium">{pedidosStore.modalidadLabel(m)}</span>
@@ -580,9 +580,9 @@ export const CrearPedidoPage = observer(() => {
                         if (dir.referencia) setReferencia(dir.referencia);
                         if (dir.indicaciones) setIndicaciones(dir.indicaciones);
                       }}
-                      className="inline-flex items-center gap-1 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-medium text-ink-title hover:bg-secondary-50 dark:border-secondary-500/30 dark:bg-gray-800 dark:text-brand-300"
+                      className="inline-flex items-center gap-1 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-medium text-ink-title hover:bg-secondary-50 dark:border-accent-500/30 dark:bg-gray-800 dark:text-brand-300"
                     >
-                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-secondary-600" />
+                      <MapPinIcon className="h-3.5 w-3.5 shrink-0 text-secondary-600 dark:text-accent-300" />
                       <span>{dir.calle} {dir.barrio ? `(${dir.barrio})` : ""}</span>
                     </button>
                   ))}
@@ -849,7 +849,7 @@ export const CrearPedidoPage = observer(() => {
                     className={
                       "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors " +
                       (activo
-                        ? "border-secondary-500 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
+                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 text-ink-title dark:bg-brand-500/10 dark:text-brand-300"
                         : "border-gray-200 text-gray-600 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-300")
                     }
                   >
@@ -886,7 +886,7 @@ export const CrearPedidoPage = observer(() => {
                   <div className="flex flex-col justify-end">
                     <div className="rounded-xl border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-700 dark:bg-gray-800">
                       <p className="text-gray-500 dark:text-gray-400">Cambio a entregar por el repartidor:</p>
-                      <p className="text-base font-bold text-success-600 dark:text-success-400">
+                      <p className="text-base font-bold text-accent-600 dark:text-accent-400">
                         {Number(pagaCon) >= totalPedido
                           ? money(Number(pagaCon) - totalPedido)
                           : `Faltan ${money(totalPedido - Number(pagaCon))}`}
@@ -943,12 +943,12 @@ export const CrearPedidoPage = observer(() => {
                     <button
                       type="button"
                       onClick={() => setShowProgramar(true)}
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-secondary-300 dark:bg-gray-900 dark:hover:border-brand-700 ${
+                      className={`flex w-full items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-secondary-300 dark:bg-gray-900 dark:hover:border-brand-500 ${
                         errors.programado ? "border-error-500" : "border-gray-300 dark:border-gray-700"
                       }`}
                     >
                       <span className="flex items-center gap-2">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-secondary-600">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5 text-secondary-600 dark:text-accent-300">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                         {programadoISO ? (
@@ -959,7 +959,7 @@ export const CrearPedidoPage = observer(() => {
                           <span className="text-sm text-gray-400">Elegir fecha y hora…</span>
                         )}
                       </span>
-                      <span className="text-xs font-medium text-secondary-600">Cambiar</span>
+                      <span className="text-xs font-medium text-secondary-600 dark:text-accent-300">Cambiar</span>
                     </button>
                     {errors.programado && <p className="mt-1.5 text-xs text-error-500">{errors.programado}</p>}
                   </div>
@@ -999,7 +999,7 @@ export const CrearPedidoPage = observer(() => {
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-gray-500">Modalidad</span>
                 <span className="inline-flex items-center gap-1.5 font-medium text-gray-800 dark:text-white/90">
-                  <span className="text-secondary-600"><ModalidadIcon m={modalidad} /></span>
+                  <span className="text-secondary-600 dark:text-accent-300"><ModalidadIcon m={modalidad} /></span>
                   {pedidosStore.modalidadLabel(modalidad)}
                 </span>
               </div>
@@ -1079,12 +1079,12 @@ export const CrearPedidoPage = observer(() => {
 
               {/* Vuelto / Cambio */}
               {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && Number(pagaCon) > 0 && (
-                <div className="rounded-xl bg-success-50 p-2.5 text-xs dark:bg-success-500/10">
-                  <div className="flex justify-between text-success-700 dark:text-success-300">
+                <div className="rounded-xl bg-accent-50 p-2.5 text-xs dark:bg-accent-500/10">
+                  <div className="flex justify-between text-accent-700 dark:text-accent-300">
                     <span>Abona con:</span>
                     <span>{money(Number(pagaCon))}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-success-800 dark:text-success-200 mt-0.5">
+                  <div className="flex justify-between font-bold text-accent-800 dark:text-accent-200 mt-0.5">
                     <span>Cambio:</span>
                     <span>
                       {Number(pagaCon) >= totalPedido

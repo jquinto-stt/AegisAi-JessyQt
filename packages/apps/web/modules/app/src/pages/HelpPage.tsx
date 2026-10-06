@@ -16,7 +16,7 @@ import { FaqAccordion } from "./help/FaqAccordion";
  * numerado y acordeón de preguntas— sin la tarjeta de precio, que era del
  * referente y aquí no aplica.
  *
- * ⚠️ La banda la pone `PublicPageLayout` en `brand-500` (`#FF3C10`). Aquí vivía
+ * ⚠️ La banda la pone `PublicPageLayout` en `brand-500` (`#ff3f1a`). Aquí vivía
  * un verde `#17B363` que no está en el manual; se retiró el 20/09 junto con el
  * token `--color-public-500`, que no tenía ningún otro consumidor. El naranja a
  * sangre es lo que hace la portada del manual, y `/ayuda`, `/soporte` y las

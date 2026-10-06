@@ -412,7 +412,7 @@ const HeatmapActividad = observer(
                               (seleccionando && !enSel ? " opacity-30" : "") +
                               // Marca solo los dos extremos del tramo en curso.
                               (seleccionando && extremo
-                                ? " ring-2 ring-brand-600 ring-offset-1 ring-offset-white dark:ring-white dark:ring-offset-gray-900"
+                                ? " ring-2 ring-brand-500 ring-offset-1 ring-offset-white dark:ring-white dark:ring-offset-gray-900"
                                 : "")
                             }
                           />
@@ -655,7 +655,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
         <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
-              <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600" />
+              <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600 dark:text-accent-300" />
               Dirección de entrega
             </span>
             {pedido.direccionEntrega?.calle && (
@@ -688,7 +688,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
               )}
             </div>
           ) : (
-            <p className="mt-1 flex items-center gap-1 text-xs text-warning-600 dark:text-warning-400">
+            <p className="mt-1 flex items-center gap-1 text-xs text-brand-600 dark:text-brand-400">
               <AlertTriangleIcon className="h-3.5 w-3.5 shrink-0" />
               Sin dirección registrada.
             </p>
@@ -755,7 +755,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
                 campos rotulados «Estado» en la misma tarjeta obligan a adivinar
                 cuál es cuál. */}
             <span className="text-gray-400">Pago: </span>
-            <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
+            <span className={pedido.pagado ? "font-semibold text-accent-600" : "font-semibold text-brand-600"}>
               {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
             </span>
           </div>
@@ -763,7 +763,7 @@ const DetalleModal = observer(({ pedido, onClose }: { pedido: Pedido; onClose: (
         {pedido.metodoPago === "efectivo" && pedido.pagaCon !== undefined && (
           <div className="mt-2 flex items-center justify-between border-t border-gray-200/60 pt-2 text-gray-600 dark:border-gray-800 dark:text-gray-400">
             <span>Abonó con: ${pedido.pagaCon.toLocaleString()}</span>
-            {cambio > 0 && <span className="font-semibold text-success-600">Cambio: ${cambio.toLocaleString()}</span>}
+            {cambio > 0 && <span className="font-semibold text-accent-600">Cambio: ${cambio.toLocaleString()}</span>}
           </div>
         )}
       </div>

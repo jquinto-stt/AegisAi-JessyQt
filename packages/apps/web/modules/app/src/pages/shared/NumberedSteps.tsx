@@ -50,7 +50,7 @@ export const NumberedSteps: React.FC<NumberedStepsProps> = ({ id, heading, steps
               />
             )}
 
-            <span className="relative z-10 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-success-500 text-theme-sm font-bold text-white shadow-theme-xs">
+            <span className="relative z-10 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-accent-500 text-theme-sm font-bold text-white shadow-theme-xs">
               {step.num}
             </span>
 

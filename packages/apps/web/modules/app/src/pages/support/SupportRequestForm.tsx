@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { CheckCircle2, TriangleAlert } from "lucide-react";
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 import { Button, Input, Label, Select, Textarea } from "@/elements";
 import { organizacionStore } from "@/stores/organizacion.store";
 import {
@@ -107,9 +110,9 @@ export const SupportRequestForm: React.FC = () => {
               solicitud. Se retira el día que exista el canal real. */}
           <p
             data-support-scope-note
-            className="mt-4 flex max-w-2xl items-start gap-2 rounded-xl border border-warning-200 bg-warning-25 px-4 py-3 text-theme-xs leading-relaxed text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-200"
+            className="mt-4 flex max-w-2xl items-start gap-2 rounded-xl border border-brand-200 bg-brand-25 px-4 py-3 text-theme-xs leading-relaxed text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200"
           >
-            <TriangleAlert className="mt-0.5 h-3.5 w-3.5 flex-none" />
+            <ExclamationTriangleIcon className="mt-0.5 h-3.5 w-3.5 flex-none" />
             <span>
               El buzón todavía no está conectado en este entorno: tu solicitud se guarda
               en el dispositivo con su referencia y no sale de aquí. El formulario ya
@@ -228,11 +231,11 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
   return (
     <div
       data-support-sent
-      className="mt-7 rounded-2xl border border-secondary-500/40 bg-brand-500/[0.06] p-6 sm:p-8"
+      className="mt-7 rounded-2xl border border-secondary-500 dark:border-accent-400/40 bg-brand-500/[0.06] p-6 sm:p-8"
     >
       <div className="flex items-start gap-4">
         <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-brand-500 text-white">
-          <CheckCircle2 className="h-5.5 w-5.5" />
+          <CheckCircleIcon className="h-5.5 w-5.5" />
         </span>
 
         <div className="min-w-0 flex-1 space-y-4">
@@ -244,7 +247,7 @@ const Confirmation: React.FC<{ request: SupportRequest; onReset: () => void }> =
             Tu referencia es{" "}
             <span
               data-support-reference
-              className="font-mono text-theme-sm font-bold text-ink-title dark:text-secondary-600"
+              className="font-mono text-theme-sm font-bold text-ink-title dark:text-accent-600"
             >
               {request.reference}
             </span>

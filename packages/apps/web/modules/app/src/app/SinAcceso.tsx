@@ -30,7 +30,7 @@ export const SinAcceso = ({ titulo, mensaje }: SinAccesoProps) => {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center">
-      <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
+      <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
         <LockIcon />
       </span>
       <h2 className="text-xl font-bold text-ink-title dark:text-white/90">{titulo}</h2>

@@ -1,6 +1,9 @@
 import { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
-import { Search, X } from 'lucide-react';
+import {
+  MagnifyingGlassIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 export interface SearchInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'className' | 'onChange'> {
@@ -37,7 +40,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         data-intent={intent}
         className={`relative flex items-center ${className}`}
       >
-        <Search className="w-4 h-4 absolute left-3.5 text-gray-400 pointer-events-none" />
+        <MagnifyingGlassIcon className="w-4 h-4 absolute left-3.5 text-gray-400 pointer-events-none" />
         <input
           ref={ref}
           type="text"
@@ -63,7 +66,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             className="absolute right-2.5 w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors cursor-pointer"
             title="Limpiar búsqueda"
           >
-            <X className="w-2.5 h-2.5" />
+            <XMarkIcon className="w-2.5 h-2.5" />
           </button>
         ) : shortcut ? (
           <kbd className="absolute right-2.5 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono text-theme-xs text-gray-400 pointer-events-none">

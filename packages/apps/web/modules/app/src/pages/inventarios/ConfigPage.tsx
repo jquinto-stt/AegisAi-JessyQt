@@ -364,7 +364,7 @@ function SeccionAvanzado({ disabled, puedeGestionar }: { disabled: boolean; pued
       </div>
 
       {restaurado && (
-        <div className="rounded-xl border border-success-200 bg-success-50 p-3 text-xs text-success-800 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-400">
+        <div className="rounded-xl border border-accent-200 bg-accent-50 p-3 text-xs text-accent-800 dark:border-accent-500/20 dark:bg-accent-500/10 dark:text-accent-400">
           Los datos de demostración han sido restablecidos exitosamente.
         </div>
       )}

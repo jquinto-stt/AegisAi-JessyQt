@@ -141,7 +141,7 @@ export const DetalleElementoPage = observer(function DetalleElementoPage() {
         <Card className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex min-w-0 gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400">
                 <BoxIcon className="h-7 w-7" />
               </span>
               <div className="min-w-0">
@@ -217,7 +217,7 @@ export const DetalleElementoPage = observer(function DetalleElementoPage() {
                 className={cn(
                   "-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors",
                   tab === t
-                    ? "border-brand-500 text-brand-700 dark:text-brand-400"
+                    ? "border-brand-500 text-secondary-600 dark:text-brand-400"
                     : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
                 )}
               >
@@ -265,7 +265,7 @@ export const DetalleElementoPage = observer(function DetalleElementoPage() {
                             <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
                               {inv!.numero}
                             </span>
-                            <span className="mt-0.5 block truncate text-sm font-semibold text-ink-title group-hover:text-brand-700 dark:text-gray-100">
+                            <span className="mt-0.5 block truncate text-sm font-semibold text-ink-title group-hover:text-brand-500 dark:text-gray-100">
                               {caminoDe(inv!.ubicacionId, porId)}
                             </span>
                           </button>
@@ -420,7 +420,7 @@ function Metrica({
         className={cn(
           "font-semibold",
           esTexto ? "text-sm" : "text-lg tabular-nums",
-          tono === "atencion" ? "text-warning-700 dark:text-warning-400" : "text-ink-title dark:text-white",
+          tono === "atencion" ? "text-brand-700 dark:text-brand-400" : "text-ink-title dark:text-white",
         )}
       >
         {valor}

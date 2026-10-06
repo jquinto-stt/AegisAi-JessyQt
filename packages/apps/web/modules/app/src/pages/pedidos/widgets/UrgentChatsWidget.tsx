@@ -10,7 +10,7 @@ import { pedidosStore, conversacionesStore, sessionStore } from "@/stores";
 import { puede, puedeResponderConversacion, motivoSinPermiso } from "@/stores/acceso.utils";
 import { ATENCION_LABEL, etiquetaEstado, presenciaDe } from "@/stores";
 import type { ConversacionCanal } from "@/stores";
-import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
+import { CanalAvatar } from "@/pages/conversaciones";
 import { CabeceraWidget, ListaVacia, relativo } from "./widgets.comunes";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -37,9 +37,6 @@ import { CabeceraWidget, ListaVacia, relativo } from "./widgets.comunes";
 // control que mienta, nunca deshabilitar en silencio.
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Avatar generado como respaldo si no hay foto en el mapa. */
-const avatarUrl = (nombre: string) =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
 /**
  * Hilos que piden un asesor, el más antiguo primero.
@@ -71,15 +68,10 @@ const FilaUrgente = observer(
     return (
       <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 p-3 dark:border-white/5">
         <button type="button" onClick={onAbrir} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-          <Avatar
-            src={AVATAR_MAP[conv.id] || avatarUrl(conv.contacto.nombre)}
-            alt={conv.contacto.nombre}
-            initials={inicialesDe(conv.contacto.nombre)}
+          <CanalAvatar
+            canal={conv.canal}
+            nombre={conv.contacto.nombre}
             size="medium"
-            // Derivado del catálogo, no fijado: toda fila de este widget está
-            // `en_espera`, así que el valor coincide — pero escribirlo a mano
-            // dejaba a este widget pintando distinto que las otras tres
-            // superficies el día que la presencia cambie.
             status={presenciaDe(conv.estado)}
           />
           <div className="min-w-0">

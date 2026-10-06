@@ -481,7 +481,7 @@ export const OperadorRegistroPage = observer(() => {
                       className={
                         colisionVisible.tipo === "activo"
                           ? "flex gap-2.5 rounded-lg border border-error-200 bg-error-50 px-3 py-2.5 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
-                          : "flex gap-2.5 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2.5 text-xs text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400"
+                          : "flex gap-2.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2.5 text-xs text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400"
                       }
                     >
                       <InfoIcon />
@@ -527,7 +527,7 @@ export const OperadorRegistroPage = observer(() => {
                       /* Sin módulos activos el desplegable no tendría ninguna
                          opción legítima: se dice el motivo en vez de pintar un
                          Select vacío que parezca roto. */
-                      <p className="mt-1.5 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-xs text-warning-700 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-400">
+                      <p className="mt-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-400">
                         Tu organización no tiene ningún módulo activo, así que no hay acceso que
                         solicitar. Contacta a tu administrador.
                       </p>
@@ -583,7 +583,7 @@ export const OperadorRegistroPage = observer(() => {
             /* Estado de éxito: reemplaza por completo al formulario */
             <Card>
               <div className="flex flex-col items-center py-6 text-center">
-                <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success-50 text-success-500 dark:bg-success-500/10">
+                <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-accent-50 text-accent-500 dark:bg-accent-500/10">
                   <CheckCircleIcon />
                 </span>
                 <h2 className="text-xl font-bold text-ink-title dark:text-white/90">
@@ -616,7 +616,7 @@ export const OperadorRegistroPage = observer(() => {
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-gray-500 dark:text-gray-400">Estado</dt>
-                    <dd className="font-medium text-warning-600 dark:text-warning-400">
+                    <dd className="font-medium text-brand-600 dark:text-brand-400">
                       Pendiente de aprobación
                     </dd>
                   </div>

@@ -24,9 +24,9 @@ export type BadgeSize = "xs" | "sm" | "md" | "lg";
  * Semantic color of the Badge that communicates meaning at a glance.
  *
  * - `"primary"` — Brand color (`brand-500`) — general-purpose highlight, default category
- * - `"success"` — Green (`success-500`) — completed, active, approved, positive outcome
+ * - `"success"` — Green (`accent-500`) — completed, active, approved, positive outcome
  * - `"error"` — Red (`error-500`) — failed, rejected, critical issue in the view
- * - `"warning"` — Orange (`warning-500`) — caution, pending review, needs attention
+ * - `"warning"` — Orange (`brand-500`) — caution, pending review, needs attention
  * - `"info"` — Celeste (`accent-500`) — informational, neutral update, FYI
  * - `"light"` — Gray (`gray-100`/`gray-400`) — neutral, disabled, archived
  * - `"dark"` — Dark gray (`gray-500`/`gray-700`) — strong neutral, inverted context
@@ -175,12 +175,12 @@ const Badge: React.FC<BadgeProps> = ({
   // variante, el paso 500/600 no llegaba a AA en un badge de 10–12 px:
   //
   //   accent-500 sobre accent-50    2.38:1   (el peor de todo el módulo)
-  //   success-600 sobre success-50  3.54:1
-  //   warning-600 sobre warning-50  3.34:1
+  //   accent-600 sobre accent-50  3.54:1
+  //   brand-600 sobre brand-50  3.34:1
   //   error-600 sobre error-50      4.44:1
   //
   // El paso 700 de la MISMA rampa sí cumple, sin salirse de la paleta de marca:
-  // accent-700 5.25:1 · success-700 5.13:1 · warning-700 5.20:1 · error-700 6.05:1.
+  // accent-700 5.25:1 · accent-700 5.13:1 · brand-700 5.20:1 · error-700 6.05:1.
   //
   // Importa porque el público objetivo son operadores con poca vista: un badge
   // de estado que no se lee no informa, y el badge es justo donde el módulo dice
@@ -191,11 +191,11 @@ const Badge: React.FC<BadgeProps> = ({
       primary:
         "bg-brand-50 text-brand-500 dark:bg-brand-500/15 dark:text-brand-400",
       success:
-        "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-500",
+        "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-500",
       error:
         "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-500",
       warning:
-        "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400",
+        "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400",
       info: "bg-accent-50 text-accent-700 dark:bg-accent-500/15 dark:text-accent-500",
       light: "bg-gray-100 text-gray-700 dark:bg-white/5 dark:text-white/80",
       // En claro, `dark` era `bg-gray-500` + `text-white`: blanco sobre #667085 da
@@ -207,9 +207,9 @@ const Badge: React.FC<BadgeProps> = ({
     },
     solid: {
       primary: "bg-brand-500 text-white dark:text-white",
-      success: "bg-success-500 text-white dark:text-white",
+      success: "bg-accent-500 text-white dark:text-white",
       error: "bg-error-500 text-white dark:text-white",
-      warning: "bg-warning-500 text-white dark:text-white",
+      warning: "bg-brand-500 text-white dark:text-white",
       info: "bg-accent-500 text-white dark:text-white",
       light: "bg-gray-400 dark:bg-white/5 text-white dark:text-white/80",
       dark: "bg-gray-700 text-white dark:text-white",

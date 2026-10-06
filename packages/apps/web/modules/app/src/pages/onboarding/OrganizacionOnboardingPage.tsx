@@ -1,7 +1,11 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Upload, Edit3, ArrowRight } from "lucide-react";
+import {
+  ArrowRightIcon,
+  ArrowUpTrayIcon,
+  PencilIcon,
+} from "@heroicons/react/24/outline";
 import { PageMeta } from "@/shell/meta";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
@@ -157,7 +161,7 @@ export const OrganizacionOnboardingPage = observer(() => {
             <form onSubmit={handleNextSubPaso} className="space-y-4">
               <div>
                 <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Nombre de la empresa <span className="text-secondary-600">*</span>
+                  Nombre de la empresa <span className="text-secondary-600 dark:text-accent-300">*</span>
                 </Label>
                 <Input
                   id="companyName"
@@ -182,7 +186,7 @@ export const OrganizacionOnboardingPage = observer(() => {
               {/* País y Zona horaria / Moneda juntos con micro-copy natural */}
               <div>
                 <Label htmlFor="countrySelect" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  País de operación <span className="text-secondary-600">*</span>
+                  País de operación <span className="text-secondary-600 dark:text-accent-300">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
@@ -212,7 +216,7 @@ export const OrganizacionOnboardingPage = observer(() => {
 
               <div>
                 <Label htmlFor="companyType" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tipo de empresa <span className="text-secondary-600">*</span>
+                  Tipo de empresa <span className="text-secondary-600 dark:text-accent-300">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
@@ -237,7 +241,7 @@ export const OrganizacionOnboardingPage = observer(() => {
 
               <div>
                 <Label htmlFor="teamStrength" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tamaño del equipo <span className="text-secondary-600">*</span>
+                  Tamaño del equipo <span className="text-secondary-600 dark:text-accent-300">*</span>
                 </Label>
                 <div className="mt-1.5 relative">
                   <select
@@ -274,7 +278,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                   className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
                 >
                   Continuar
-                  <ArrowRight className="size-4 ml-1.5 inline" />
+                  <ArrowRightIcon className="size-4 ml-1.5 inline" />
                 </Button>
               </div>
             </form>
@@ -292,7 +296,7 @@ export const OrganizacionOnboardingPage = observer(() => {
               />
 
               {/* Círculo central con borde e ícono o previsualización */}
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-secondary-500 bg-secondary-50/40 p-2 shadow-theme-inner dark:border-secondary-400 dark:bg-brand-500/10">
+              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-secondary-500 bg-secondary-50/40 p-2 shadow-theme-inner dark:border-accent-400 dark:bg-brand-500/10">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
@@ -323,7 +327,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                   onClick={() => fileInputRef.current?.click()}
                   className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                 >
-                  <Upload className="mr-2 h-4 w-4" />
+                  <ArrowUpTrayIcon className="mr-2 h-4 w-4" />
                   Subir logo
                 </Button>
 
@@ -339,7 +343,7 @@ export const OrganizacionOnboardingPage = observer(() => {
                   }}
                   className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                 >
-                  <Edit3 className="mr-2 h-4 w-4" />
+                  <PencilIcon className="mr-2 h-4 w-4" />
                   {logoUrl ? "Quitar logo" : "Cambiar logo"}
                 </Button>
               </div>

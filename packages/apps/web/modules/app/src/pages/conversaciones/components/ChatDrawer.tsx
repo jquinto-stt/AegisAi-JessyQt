@@ -13,8 +13,8 @@ import type { Pedido } from "@/stores/pedidos.store";
 
 import { ChatView } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
-import { AVATAR_MAP, inicialesDe, statusDe } from "@/pages/conversaciones/conversaciones.utils";
-import { Avatar } from "@/elements/ui/avatar";
+import { inicialesDe, statusDe } from "@/pages/conversaciones/conversaciones.utils";
+import { CanalAvatar } from "./CanalAvatar";
 
 /** Ancho del panel en escritorio; en móvil ocupa el ancho completo. */
 const ANCHO_PANEL = "w-full sm:w-[26rem] lg:w-[28rem]";
@@ -261,7 +261,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           aria-label="Arrastra para cambiar el ancho del panel"
           title="Arrastra para cambiar el ancho · doble clic para restablecer"
           className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-brand-500 text-white shadow-theme-md transition-all hover:scale-105 hover:bg-brand-600 ${
-            arrastrando ? "scale-105 bg-brand-600" : ""
+            arrastrando ? "scale-105 bg-brand-500" : ""
           }`}
         >
           <svg
@@ -288,10 +288,9 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
         {/* ── Cabecera: identidad + nº de pedido + acciones ── */}
         <header className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
           <div className="flex min-w-0 items-center gap-3">
-            <Avatar
-              src={conv ? AVATAR_MAP[conv.id] || "" : ""}
-              alt={nombre}
-              initials={inicialesDe(nombre)}
+            <CanalAvatar
+              canal={conv?.canal}
+              nombre={nombre}
               size="large"
               status={conv ? statusDe(conv.estado) : "offline"}
             />

@@ -82,15 +82,15 @@ export const AlertasPage = observer(function AlertasPage() {
             className={cn(
               "rounded-2xl border p-4 text-left transition-all",
               filtroTipo === "inventario_estancado"
-                ? "border-warning-500 bg-warning-50/50 shadow-sm dark:border-warning-500/50 dark:bg-warning-500/10"
+                ? "border-brand-500 bg-brand-50/50 shadow-sm dark:border-brand-500/50 dark:bg-brand-500/10"
                 : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700",
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-warning-700 dark:text-warning-400">
+              <span className="text-xs font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-400">
                 Conteos detenidos
               </span>
-              <span className="flex h-2 w-2 rounded-full bg-warning-500" />
+              <span className="flex h-2 w-2 rounded-full bg-brand-500" />
             </div>
             <p className="mt-2 text-2xl font-bold tabular-nums text-ink-title dark:text-white">
               {conteoPorTipo.inventario_estancado}
@@ -111,7 +111,7 @@ export const AlertasPage = observer(function AlertasPage() {
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-400">
+              <span className="text-xs font-semibold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
                 Conteos sin iniciar
               </span>
               <span className="flex h-2 w-2 rounded-full bg-brand-500" />
@@ -133,7 +133,7 @@ export const AlertasPage = observer(function AlertasPage() {
             className={cn(
               "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
               filtroTipo === "__todas__"
-                ? "bg-brand-700 text-white shadow-sm"
+                ? "bg-brand-500 text-white shadow-sm"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10",
             )}
           >
@@ -154,7 +154,7 @@ export const AlertasPage = observer(function AlertasPage() {
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                   activa
-                    ? "bg-brand-700 text-white shadow-sm"
+                    ? "bg-brand-500 text-white shadow-sm"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10",
                 )}
               >
@@ -192,8 +192,8 @@ export const AlertasPage = observer(function AlertasPage() {
                           a.severidad === "alta"
                             ? "bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400"
                             : a.severidad === "media"
-                              ? "bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-400"
-                              : "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400",
+                              ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400"
+                              : "bg-brand-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400",
                         )}
                       >
                         <AlertHexaIcon className="h-5 w-5" />

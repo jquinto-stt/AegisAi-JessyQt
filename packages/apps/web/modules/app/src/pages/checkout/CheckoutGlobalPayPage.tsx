@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router';
-import { CreditCard, Building2, CheckCircle2, ShieldCheck, Lock, Loader2, ArrowLeft } from 'lucide-react';
+import {
+  ArrowPathIcon,
+  BuildingOffice2Icon,
+  CheckCircleIcon,
+  CreditCardIcon,
+  LockClosedIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
 import { getSupabase, ESQUEMA } from '../../lib/supabase';
 
 // Logo SVG estilizado de GlobalPay de Redeban
@@ -201,7 +208,7 @@ export const CheckoutGlobalPayPage: React.FC = () => {
       <header className="w-full bg-white border-b border-gray-200/80 px-6 sm:px-14 py-4 flex items-center justify-between shadow-xs">
         <GlobalPayLogo />
         <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <ShieldCheckIcon className="w-4 h-4 text-accent-600" />
           <span className="hidden sm:inline">Transacción segura cifrada a 256 bits</span>
         </div>
       </header>
@@ -212,11 +219,11 @@ export const CheckoutGlobalPayPage: React.FC = () => {
           {pagoAprobado ? (
             /* ── VOUCHER DE COMPROBANTE DE PAGO APROBADO ── */
             <div className="py-8 text-center max-w-md mx-auto space-y-6 animate-fadeIn">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-                <CheckCircle2 className="w-10 h-10" />
+              <div className="w-16 h-16 bg-accent-100 text-accent-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircleIcon className="w-10 h-10" />
               </div>
               <div>
-                <span className="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                <span className="inline-block bg-accent-100 text-accent-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
                   Transacción Aprobada
                 </span>
                 <h2 className="text-2xl font-bold text-gray-900">¡Pago Exitoso!</h2>
@@ -391,7 +398,7 @@ export const CheckoutGlobalPayPage: React.FC = () => {
                     onClick={() => setModalMetodo('tarjeta')}
                     className="w-full py-3 px-4 bg-[#ea933e] hover:bg-[#df832a] active:bg-[#c96f18] text-white text-xs font-bold uppercase tracking-wider rounded transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <CreditCard className="w-4 h-4" />
+                    <CreditCardIcon className="w-4 h-4" />
                     PAGAR CON TARJETA
                   </button>
 
@@ -400,13 +407,13 @@ export const CheckoutGlobalPayPage: React.FC = () => {
                     onClick={() => setModalMetodo('pse')}
                     className="w-full py-3 px-4 bg-[#ea933e] hover:bg-[#df832a] active:bg-[#c96f18] text-white text-xs font-bold uppercase tracking-wider rounded transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <Building2 className="w-4 h-4" />
+                    <BuildingOffice2Icon className="w-4 h-4" />
                     PAGAR CON PSE
                   </button>
                 </div>
 
                 <div className="mt-6 flex items-center gap-1.5 text-[11px] text-gray-400">
-                  <Lock className="w-3.5 h-3.5 text-gray-400" />
+                  <LockClosedIcon className="w-3.5 h-3.5 text-gray-400" />
                   <span>Procesado por Redeban Multicolor S.A.</span>
                 </div>
               </div>
@@ -422,7 +429,7 @@ export const CheckoutGlobalPayPage: React.FC = () => {
             {/* Cabecera del modal */}
             <div className="bg-[#ea7a24] text-white px-5 py-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2 font-semibold text-sm">
-                {modalMetodo === 'tarjeta' ? <CreditCard className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+                {modalMetodo === 'tarjeta' ? <CreditCardIcon className="w-4 h-4" /> : <BuildingOffice2Icon className="w-4 h-4" />}
                 <span>{modalMetodo === 'tarjeta' ? 'Pagar con Tarjeta de Crédito / Débito' : 'Pagar con PSE (Débito Bancario)'}</span>
               </div>
               <button
@@ -544,7 +551,7 @@ export const CheckoutGlobalPayPage: React.FC = () => {
                 >
                   {procesando ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <ArrowPathIcon className="w-4 h-4 animate-spin" />
                       <span>Procesando pago con Redeban...</span>
                     </>
                   ) : (

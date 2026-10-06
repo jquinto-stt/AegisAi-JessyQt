@@ -142,7 +142,7 @@ const FilaEquipo = observer(
     if (op.rolId === "admin_tienda") {
       userTypeConfig = {
         label: "Admin",
-        color: "primary", // Necto Brand Orange (#FF3C10)
+        color: "primary", // Necto Brand Orange (#ff3f1a)
       };
     } else if (op.rolId === "supervisor_pedidos") {
       userTypeConfig = {
@@ -186,7 +186,7 @@ const FilaEquipo = observer(
         // el grupo entra como una unidad.
         className={`animate-entrada-lista transition-colors ${
           esPendiente
-            ? "bg-warning-50/20 dark:bg-warning-500/10 hover:bg-warning-50/40"
+            ? "bg-brand-50/20 dark:bg-brand-500/10 hover:bg-brand-50/40"
             : "hover:bg-gray-50/60 dark:hover:bg-white/[0.02]"
         }`}
       >
@@ -299,7 +299,7 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   operadoresStore.aprobar(op.id);
                 }}
-                className="h-8 px-3 mr-2 rounded-lg text-xs font-semibold bg-success-600 hover:bg-success-700 text-white transition-colors cursor-pointer"
+                className="h-8 px-3 mr-2 rounded-lg text-xs font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors cursor-pointer"
               >
                 Aprobar
               </button>

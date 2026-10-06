@@ -21,7 +21,6 @@ import { ContextoModulo } from "./ContextoModulo";
 import { TextoMensajeFormateado } from "./TextoMensajeFormateado";
 import { CanalAvatar } from "./CanalAvatar";
 import {
-  AVATAR_MAP,
   inicialesDe,
   statusDe,
   horaDe,
@@ -139,8 +138,6 @@ export const ChatView = observer(({
     );
   }
 
-  const avatarSrc = AVATAR_MAP[conv.id] || "";
-
   return (
     <div className="animate-aparecer flex flex-1 min-h-0 flex-col overflow-hidden">
       {/* ── Cabecera del Chat (Estilo Webi.AI Elements / TailAdmin) ──
@@ -157,7 +154,7 @@ export const ChatView = observer(({
               aria-label={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 !bandejaExpandida
-                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-secondary-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-accent-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -212,7 +209,7 @@ export const ChatView = observer(({
               aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 panelExpandido
-                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-secondary-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  ? "border-secondary-500/30 bg-secondary-50 text-secondary-600 shadow-theme-xs dark:border-accent-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                   : "border-gray-200 bg-white text-gray-500 shadow-theme-xs hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
@@ -320,7 +317,7 @@ export const ChatView = observer(({
             <button
               type="button"
               onClick={() => setLimiteMensajes((prev) => prev + 25)}
-              className="rounded-full bg-secondary-50 border border-secondary-200 px-4 py-1.5 text-xs font-semibold text-secondary-600 shadow-xs hover:bg-secondary-100 transition-colors dark:bg-brand-500/10 dark:border-secondary-500/20 dark:text-brand-400"
+              className="rounded-full bg-secondary-50 border border-secondary-200 px-4 py-1.5 text-xs font-semibold text-secondary-600 shadow-xs hover:bg-secondary-100 transition-colors dark:bg-brand-500/10 dark:border-accent-500/20 dark:text-brand-400"
             >
               ↑ Cargar {items.length - limiteMensajes} mensajes anteriores
             </button>
@@ -403,21 +400,21 @@ export const ChatView = observer(({
 
                   <div className="flex flex-col items-start max-w-[88%] sm:max-w-lg lg:max-w-xl">
                     {/* Burbuja principal del bot: adaptable (w-fit) para abrazar el contenido y no desperdiciar espacio */}
-                    <div className="w-fit min-w-[210px] max-w-full rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-secondary-800/40 dark:bg-secondary-950/30 dark:text-secondary-100">
+                    <div className="w-fit min-w-[210px] max-w-full rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-accent-800/40 dark:bg-accent-950/30 dark:text-accent-100">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex items-center justify-between gap-3 border-b border-secondary-100/80 pb-1.5 dark:border-secondary-800/40">
+                      <div className="mb-2 flex items-center justify-between gap-3 border-b border-secondary-100/80 pb-1.5 dark:border-accent-800/40">
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-xs font-semibold text-secondary-900 dark:text-secondary-200">
+                          <span className="text-xs font-semibold text-secondary-900 dark:text-accent-200">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium text-secondary-700 dark:bg-secondary-900/50 dark:text-secondary-300">
+                          <span className="inline-flex items-center rounded-full bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium text-secondary-700 dark:bg-accent-900/50 dark:text-accent-300">
                             IA
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setTrazaSeleccionada({ mensaje: m, traza })}
-                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-secondary-500/80 transition-colors hover:bg-secondary-100/70 hover:text-secondary-800 dark:text-secondary-400 dark:hover:bg-secondary-900/50 dark:hover:text-secondary-200"
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-secondary-500/80 transition-colors hover:bg-secondary-100/70 hover:text-secondary-800 dark:text-accent-400 dark:hover:bg-accent-900/50 dark:hover:text-accent-200"
                           title="Inspeccionar trazabilidad técnica IA"
                         >
                           <AiIcon className="h-3 w-3" />
@@ -430,7 +427,7 @@ export const ChatView = observer(({
 
                       {/* Tarjeta interactiva de pedido asociado si existe */}
                       {pedidoId && (
-                        <div className="mt-3 w-full rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-secondary-800/50 dark:bg-gray-900/80">
+                        <div className="mt-3 w-full rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-accent-800/50 dark:bg-gray-900/80">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
@@ -471,7 +468,7 @@ export const ChatView = observer(({
                             <button
                               type="button"
                               onClick={() => setVista("pedidos")}
-                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold text-secondary-700 transition-colors hover:bg-secondary-50 dark:text-secondary-300 dark:hover:bg-secondary-900/40"
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold text-secondary-700 transition-colors hover:bg-secondary-50 dark:text-accent-300 dark:hover:bg-accent-900/40"
                             >
                               <span>Ver pedido</span>
                               <ArrowRightIcon className="h-3 w-3" />
@@ -482,16 +479,16 @@ export const ChatView = observer(({
 
                       {/* Acción contextual si no hay pedido pero sí módulo vinculado */}
                       {!pedidoId && traza.accion && puedeIrModulo && (
-                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-secondary-200/60 pt-2 dark:border-secondary-800/40">
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-secondary-200/60 pt-2 dark:border-accent-800/40">
                           <button
                             type="button"
                             onClick={() => setVista(traza.modulo!)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-secondary-700 dark:bg-secondary-900/60 dark:text-secondary-200 dark:hover:bg-secondary-800/60"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-accent-700 dark:bg-accent-900/60 dark:text-accent-200 dark:hover:bg-accent-800/60"
                           >
                             <span>{traza.accion}</span>
                             <ArrowRightIcon className="h-3 w-3" />
                           </button>
-                          <span className="text-xs text-secondary-400 dark:text-secondary-400/80">
+                          <span className="text-xs text-secondary-400 dark:text-accent-400/80">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
@@ -499,7 +496,7 @@ export const ChatView = observer(({
 
                       {/* Timestamp del mensaje cuando no hay botón de acción */}
                       {(pedidoId || !traza.accion || !puedeIrModulo) && (
-                        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-secondary-400 dark:text-secondary-400/80">
+                        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-secondary-400 dark:text-accent-400/80">
                           <EyeIcon className="h-3.5 w-3.5" />
                           <span>{horaDe(m.timestamp)}</span>
                         </div>
@@ -510,14 +507,14 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #15008B adaptable ──
+            // ── 3. ASESOR HUMANO (Equipo): A la DERECHA con Índigo de marca #190088 adaptable ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">
                 <div className="flex flex-col items-end max-w-[85%] sm:max-w-lg lg:max-w-xl">
-                  <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-secondary-600 px-4 py-3 text-left text-[15px] leading-relaxed text-white shadow-theme-xs">
+                  <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-secondary-600 dark:bg-accent-300 dark:text-ink-body px-4 py-3 text-left text-[15px] leading-relaxed text-white shadow-theme-xs">
                     {/* Distintivo claro de Asesor Humano */}
-                    <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-semibold text-white/90">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-success-300" />
+                    <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-semibold text-white/90 dark:text-ink-body/80">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-300" />
                       <span>Asesor Humano</span>
                     </div>
                     <TextoMensajeFormateado texto={m.contenido.texto} />
@@ -535,7 +532,7 @@ export const ChatView = observer(({
           <button
             type="button"
             onClick={scrollToBottom}
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
           >
             ↓ Nuevos mensajes
           </button>
@@ -563,11 +560,11 @@ export const ChatView = observer(({
         {trazaSeleccionada && (
           <div>
             <div className="flex items-center gap-3 border-b border-gray-100 pb-3.5 dark:border-gray-800">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-accent-950/60 dark:text-accent-400">
                 <AiIcon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-sm font-semibold text-ink-title dark:text-white">
                   Trazabilidad de Inteligencia Artificial
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -581,7 +578,7 @@ export const ChatView = observer(({
                 <span className="font-semibold text-gray-700 dark:text-gray-300">
                   Flujo de ejecución e intención
                 </span>
-                <p className="mt-1.5 rounded-lg border border-secondary-100 bg-secondary-25/50 p-2.5 font-medium leading-relaxed text-gray-800 dark:border-secondary-900/50 dark:bg-secondary-950/20 dark:text-gray-200">
+                <p className="mt-1.5 rounded-lg border border-secondary-100 bg-secondary-25/50 p-2.5 font-medium leading-relaxed text-gray-800 dark:border-accent-900/50 dark:bg-accent-950/20 dark:text-gray-200">
                   {trazaSeleccionada.traza.flujo}
                 </p>
               </div>
@@ -602,7 +599,7 @@ export const ChatView = observer(({
                   <span className="font-medium text-gray-500 dark:text-gray-400">
                     Acción sugerida
                   </span>
-                  <span className="font-semibold text-secondary-700 dark:text-secondary-300">
+                  <span className="font-semibold text-secondary-700 dark:text-accent-300">
                     {trazaSeleccionada.traza.accion}
                   </span>
                 </div>
@@ -630,7 +627,7 @@ export const ChatView = observer(({
                       setTrazaSeleccionada(null);
                       setVista(mod);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-secondary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors hover:bg-secondary-700"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-secondary-600 dark:bg-accent-300 dark:text-ink-body px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-colors hover:bg-secondary-700"
                   >
                     <span>Abrir módulo {trazaSeleccionada.traza.modulo}</span>
                     <ArrowRightIcon className="h-3 w-3" />
@@ -720,7 +717,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Verificación de menú + [Catálogo de pedidos] + Validación operativa",
       tag: "+Pedidos",
       tagClass:
-        "bg-success-50 text-success-700 border-success-200/80 dark:bg-success-950/40 dark:text-success-300 dark:border-success-800/40",
+        "bg-accent-50 text-accent-700 border-accent-200/80 dark:bg-accent-950/40 dark:text-accent-300 dark:border-accent-800/40",
       modulo: "pedidos",
       accion: m.payload?.pedidoId ? `Ver pedido #${m.payload.pedidoId}` : "Ver catálogo de pedidos",
     };
@@ -737,7 +734,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Derivación asistida + [Mesa de ayuda] + Solicitud de handoff",
       tag: "+Handoff",
       tagClass:
-        "bg-warning-50 text-warning-700 border-warning-200/80 dark:bg-warning-950/40 dark:text-warning-300 dark:border-warning-800/40",
+        "bg-brand-50 text-brand-700 border-brand-200/80 dark:bg-brand-950/40 dark:text-brand-300 dark:border-brand-800/40",
     };
   }
 
@@ -747,7 +744,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
     flujo: "Atención inteligente + [Base de conocimiento] + Respuesta conversacional",
     tag: "+FAQ",
     tagClass:
-      "bg-secondary-50 text-secondary-700 border-secondary-200/80 dark:bg-secondary-950/40 dark:text-secondary-300 dark:border-secondary-800/40",
+      "bg-secondary-50 text-secondary-700 border-secondary-200/80 dark:bg-accent-950/40 dark:text-accent-300 dark:border-accent-800/40",
   };
 }
 
@@ -757,7 +754,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
 function BotAvatar() {
   return (
     <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10">
-      <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-secondary-100 to-secondary-100 text-secondary-700 shadow-theme-xs ring-1 ring-secondary-200 dark:from-secondary-950/60 dark:to-secondary-950/60 dark:text-secondary-300 dark:ring-secondary-800/50">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-b from-secondary-100 to-secondary-100 text-secondary-700 shadow-theme-xs ring-1 ring-secondary-200 dark:from-accent-950/60 dark:to-accent-950/60 dark:text-accent-300 dark:ring-accent-800/50">
         <svg
           width="20"
           height="20"
@@ -776,7 +773,7 @@ function BotAvatar() {
         </svg>
       </div>
       <div
-        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-secondary-600 text-white shadow-theme-xs ring-2 ring-white dark:ring-gray-900"
+        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-secondary-600 dark:bg-accent-300 dark:text-ink-body text-white shadow-theme-xs ring-2 ring-white dark:ring-gray-900"
         title="Agente IA de atención"
       >
         <svg

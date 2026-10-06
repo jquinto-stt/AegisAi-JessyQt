@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Handshake, Users2, Sparkles, ArrowRight } from "lucide-react";
+import {
+  ArrowRightIcon,
+  SparklesIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { Handshake } from "lucide-react";
 import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { organizacionStore } from "@/stores/organizacion.store";
@@ -45,14 +51,14 @@ const ColegaIcon = () => (
 
 // Ídem, al índigo. La familia `violet` de Tailwind no está en la guía.
 const ComunidadIcon = () => (
-  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 border border-secondary-200/70 dark:bg-secondary-500/15 dark:text-secondary-300 dark:border-secondary-500/30 shrink-0">
-    <Users2 className="h-4.5 w-4.5" />
+  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 border border-secondary-200/70 dark:bg-accent-500/15 dark:text-accent-300 dark:border-accent-500/30 shrink-0">
+    <UsersIcon className="h-4.5 w-4.5" />
   </div>
 );
 
 const OtroCanalIcon = () => (
-  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 border border-secondary-200/70 dark:bg-brand-500/10 dark:text-brand-400 dark:border-secondary-500/20 shrink-0">
-    <Sparkles className="h-4.5 w-4.5" />
+  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 border border-secondary-200/70 dark:bg-brand-500/10 dark:text-brand-400 dark:border-accent-500/20 shrink-0">
+    <SparklesIcon className="h-4.5 w-4.5" />
   </div>
 );
 
@@ -170,7 +176,7 @@ export const EncuestaOnboardingPage = observer(() => {
                     }}
                     className={`flex items-center gap-3.5 rounded-2xl border p-4 text-left font-medium transition-all duration-150 cursor-pointer ${
                       seleccionado
-                        ? "border-secondary-500 bg-secondary-50/70 text-ink-title shadow-theme-xs ring-2 ring-brand-500/20 dark:border-secondary-400 dark:bg-brand-500/15 dark:text-brand-100"
+                        ? "border-secondary-500 bg-secondary-50/70 text-ink-title shadow-theme-xs ring-2 ring-brand-500/20 dark:border-accent-400 dark:bg-brand-500/15 dark:text-brand-100"
                         : "border-gray-200 bg-white text-gray-800 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:bg-gray-800"
                     }`}
                   >
@@ -197,7 +203,7 @@ export const EncuestaOnboardingPage = observer(() => {
               className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
             >
               Ir a mi organización
-              <ArrowRight className="size-4 ml-1.5 inline" />
+              <ArrowRightIcon className="size-4 ml-1.5 inline" />
             </Button>
           </div>
         </div>

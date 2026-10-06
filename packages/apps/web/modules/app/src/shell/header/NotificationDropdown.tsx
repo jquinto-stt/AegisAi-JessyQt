@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ShellDropdown } from "@/shell/header/ShellDropdown";
-import { X } from "lucide-react";
+import {
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 interface NotificationItem {
   id: string;
@@ -116,7 +118,7 @@ export default function NotificationDropdown() {
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
             aria-label="Cerrar notificaciones"
           >
-            <X className="size-5" />
+            <XMarkIcon className="size-5" />
           </button>
         </div>
 
@@ -134,7 +136,7 @@ export default function NotificationDropdown() {
                   />
                   <span
                     className={`absolute bottom-0.5 right-0.5 size-3 rounded-full border-2 border-white dark:border-gray-900 ${
-                      item.statusColor === "green" ? "bg-success-500" : "bg-error-500"
+                      item.statusColor === "green" ? "bg-accent-500" : "bg-error-500"
                     }`}
                   />
                 </div>

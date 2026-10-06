@@ -99,7 +99,7 @@ describe("Consistencia Pedidos ↔ Conversaciones", () => {
       // `COLOR_ESTADO` es una paleta de gráfica (hex), no una copia del badge
       // (tokens), así que no se exige igualdad literal. Lo que sí se exige es que
       // un estado no sea cálido en el badge y frío en el donut, que es el defecto
-      // real que había en `en_camino`: `primary` (índigo) frente a `#7E57FF`
+      // real que había en `en_camino`: `primary` (índigo) frente a `#8257fb`
       // mientras los demás sí seguían la misma familia.
       //
       // Se comprueba por familia: `en_camino` comparte color de badge con

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router";
 import { Badge } from "@/elements/ui/badge";
-import { Avatar } from "@/elements/ui/avatar";
 import { Modal } from "@/elements/ui/modal";
+import { CanalAvatar } from "./CanalAvatar";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { sessionStore } from "@/stores/session.store";
 import {
@@ -17,7 +17,7 @@ import {
 import { puedeCrearPedido, puedeMoverA } from "@/stores/acceso.utils";
 import type { EstadoConversacion } from "@/stores/conversaciones.types";
 import { avanzarPedido, confirmarPagoPedido } from "@/pages/pedidos/pedidos.notificaciones";
-import { AVATAR_MAP, inicialesDe, statusDe } from "../conversaciones.utils";
+import { inicialesDe, statusDe } from "../conversaciones.utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PIPELINE CRM DEL CONTACTO
@@ -231,7 +231,7 @@ const CrearPedidoRapidoModal = observer(
                 onClick={() => setModalidad("domicilio")}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
                   modalidad === "domicilio"
-                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-400"
+                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-accent-500/40 dark:bg-brand-500/10 dark:text-brand-400"
                     : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -242,7 +242,7 @@ const CrearPedidoRapidoModal = observer(
                 onClick={() => setModalidad("retiro")}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
                   modalidad === "retiro"
-                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-400"
+                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-accent-500/40 dark:bg-brand-500/10 dark:text-brand-400"
                     : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -330,7 +330,7 @@ const CrearPedidoRapidoModal = observer(
                   onClick={() => setMetodoPago(m.id as MetodoPago)}
                   className={`rounded-lg border py-1 text-[11px] font-medium transition-colors ${
                     metodoPago === m.id
-                      ? "border-secondary-500 bg-secondary-50 text-ink-title dark:border-secondary-500/40 dark:bg-brand-500/10 dark:text-brand-300"
+                      ? "border-secondary-500 bg-secondary-50 text-ink-title dark:border-accent-500/40 dark:bg-brand-500/10 dark:text-brand-300"
                       : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                   }`}
                 >
@@ -497,7 +497,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-secondary-600 shrink-0"
+              className="text-secondary-600 dark:text-accent-300 shrink-0"
             >
               <rect x="1" y="3" width="15" height="13" />
               <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
@@ -510,7 +510,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             )}
           </div>
           {pedido.repartidor && (
-            <div className="text-[10px] text-success-600 dark:text-success-400">
+            <div className="text-[10px] text-accent-600 dark:text-accent-400">
               Repartidor: {pedido.repartidor}
             </div>
           )}
@@ -545,7 +545,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             <button
               type="button"
               onClick={() => void confirmarPagoPedido(pedido.id)}
-              className="inline-flex items-center gap-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold transition-all cursor-pointer dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-600 dark:hover:text-white active:scale-95"
+              className="inline-flex items-center gap-1 rounded-md bg-accent-50 text-accent-700 hover:bg-accent-600 hover:text-white border border-accent-200 px-2 py-0.5 text-[10px] font-semibold transition-all cursor-pointer dark:bg-accent-950/40 dark:text-accent-400 dark:border-accent-800 dark:hover:bg-accent-600 dark:hover:text-white active:scale-95"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
@@ -625,7 +625,6 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
 
   const { nombre, telefono } = conv.contacto;
   const pedidos = pedidosStore.porTelefono(telefono);
-  const avatarSrc = AVATAR_MAP[conv.id] || "";
 
   const totalGastado = pedidos.reduce((acc, p) => {
     return (
@@ -717,10 +716,9 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
     <div className="flex flex-col gap-3 pb-3">
       {/* ── 1. Tarjeta de Perfil del Cliente ── */}
       <div className="flex flex-col items-center rounded-2xl border border-gray-200/80 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
-        <Avatar
-          src={avatarSrc}
-          alt=""
-          initials={inicialesDe(nombre)}
+        <CanalAvatar
+          canal={conv.canal}
+          nombre={nombre}
           size="large"
           status={statusDe(conv.estado)}
         />
@@ -746,7 +744,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-success-500"
+              className="text-accent-500"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -784,7 +782,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="shrink-0 text-secondary-600"
+                className="shrink-0 text-secondary-600 dark:text-accent-300"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
@@ -828,7 +826,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             <span
               className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
                 etapaActiva === "cliente"
-                  ? "bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400"
+                  ? "bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400"
                   : etapaActiva === "perdido"
                     ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400"
                     : etapaActiva === "interesado"
@@ -872,7 +870,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 etapa.id === "perdido"
                   ? "bg-error-500"
                   : etapa.id === "cliente"
-                    ? "bg-success-500"
+                    ? "bg-accent-500"
                     : "bg-brand-500 shadow-theme-xs";
             } else if (isCompleted) {
               barColor = "bg-gray-700 hover:bg-gray-800 dark:bg-gray-400 dark:hover:bg-gray-300";
@@ -947,12 +945,12 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             title={`Enviar ${pedidosStore.config.perfilComercial === "food" ? "menú" : pedidosStore.config.perfilComercial === "services" ? "servicios" : "catálogo"} con precios al chat`}
             className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "menu"
-                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
+                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "menu" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -991,12 +989,12 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             title="Solicitar dirección de entrega al cliente"
             className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "ubicacion"
-                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
+                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "ubicacion" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -1024,12 +1022,12 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             title="Enviar datos bancarios para pago"
             className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
               plantillaEnviada === "pago"
-                ? "border-success-500/40 bg-success-50 text-success-700 dark:border-success-500/30 dark:bg-success-500/10 dark:text-success-400"
+                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
                 : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "pago" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -1092,7 +1090,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             <button
               type="button"
               onClick={() => setModalCrearOpen(true)}
-              className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 hover:underline"
+              className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 dark:text-accent-300 hover:underline"
             >
               <svg
                 width="12"

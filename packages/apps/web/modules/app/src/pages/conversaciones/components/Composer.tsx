@@ -128,7 +128,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             type="submit"
             disabled={!puedeEnviar}
             title="Enviar mensaje"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-600 text-white shadow-theme-xs transition-colors hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-600 dark:bg-accent-300 dark:text-ink-body text-white shadow-theme-xs transition-colors hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperPlaneIcon className="h-4.5 w-4.5 fill-current" />
           </button>
@@ -136,7 +136,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       </form>
 
       {!puedeResponder && (
-        <p className="mt-1 text-xs text-warning-600 dark:text-warning-400">
+        <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
           {motivoSinPermiso("channels.respond")}
         </p>
       )}
@@ -157,7 +157,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       {conversacionesStore.ultimoErrorEnvio && (
         <div
           role="alert"
-          className="mt-1.5 flex items-start gap-2 rounded-lg border border-red-300/60 bg-red-50 px-2.5 py-1.5 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200/90"
+          className="mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-xs text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠

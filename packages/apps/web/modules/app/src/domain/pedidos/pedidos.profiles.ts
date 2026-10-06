@@ -116,7 +116,7 @@ export const BUSINESS_PROFILES: Record<BusinessProfileType, BusinessProfile> = {
     defaultAliasEstados: {
       en_preparacion: "Empacando pedido",
       listo: "Listo para despacho",
-      en_camino: "Despachado (en guía)",
+      en_camino: "Despachado",
       entregado: "Entregado al cliente",
     },
     defaultPlantillas: {

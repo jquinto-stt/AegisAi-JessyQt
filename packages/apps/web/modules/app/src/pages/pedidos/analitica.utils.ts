@@ -165,39 +165,39 @@ export const ORDEN_ESTADO: readonly PedidoEstado[] = ORDEN_ESTADOS;
  * del badge —un estado que se ve cálido en la tabla no puede salir frío en el
  * donut—, y por eso `en_camino` es aquí un índigo suave, igual que su badge es
  * `primary`. Antes esta tabla y el store discrepaban justo en `en_camino`
- * (`#7E57FF` contra `primary`) mientras el comentario prometía respetarlo.
+ * (`#8257fb` contra `primary`) mientras el comentario prometía respetarlo.
  *
  * Hay un test que cruza las dos tablas y falla si un estado cambia de familia
  * de color en una sola de ellas.
  */
 export const COLOR_ESTADO: Record<PedidoEstado, string> = {
-  programado: "#A1A1A1", // gray-400: aún no activo
-  nuevo: "#45AEBD", // accent-500 (celeste): recién entrado
-  confirmado: "#15008B", // secondary-600: el índigo de marca
-  en_preparacion: "#FF8F78", // brand-300: en cocina
-  listo: "#FF3C10", // brand-500: el naranja de marca
-  en_camino: "#7E57FF", // secondary-300: índigo suave (badge `primary`)
-  entregado: "#BF2810", // brand-700: naranja profundo, cerrado
+  programado: "#98a2b3", // gray-400: aún no activo
+  nuevo: "#6ba9b5", // accent-500 (celeste): recién entrado
+  confirmado: "#190088", // secondary-600: el azul profundo de marca
+  en_preparacion: "#fe8f79", // brand-300: en cocina
+  listo: "#ff3f1a", // brand-500: el naranja de marca
+  en_camino: "#8257fb", // secondary-300: índigo suave (badge `primary`)
+  entregado: "#be2a15", // brand-700: naranja profundo, cerrado
   cancelado: "#F04438", // error-500
 };
 
 /** Color de cada canal de entrada. */
 export const COLOR_ORIGEN: Record<Origen, string> = {
   whatsapp: "#25D366", // verde de WhatsApp: color de tercero, no de NECTO
-  operador: "#15008B", // secondary-600
+  operador: "#190088", // secondary-600
 };
 
 /** Color de cada modalidad de entrega. */
 export const COLOR_MODALIDAD: Record<Modalidad, string> = {
-  retiro: "#4D1FE0", // secondary-400
-  domicilio: "#FF6647", // brand-400
-  en_sitio: "#348A97", // accent-600
+  retiro: "#5120dc", // secondary-400
+  domicilio: "#fe674a", // brand-400
+  en_sitio: "#538690", // accent-600
 };
 
 /** Color del estado de pago (donut). */
 export const COLOR_PAGO = {
-  pagado: "#12B76A", // success-500
-  pendiente: "#F79009", // warning-500
+  pagado: "#6ba9b5", // accent-500 (cyan)
+  pendiente: "#ff3f1a", // brand-500 (naranja de marca)
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════════════

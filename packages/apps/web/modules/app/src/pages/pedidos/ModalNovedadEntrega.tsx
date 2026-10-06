@@ -87,7 +87,7 @@ export const ModalNovedadEntrega = observer(
     return (
       <Modal isOpen onClose={onClose} className="max-w-lg p-6 sm:p-8">
         <div className="mb-5 flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-50 text-warning-600 dark:bg-warning-500/10 dark:text-warning-400">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
             <AlertIcon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -114,7 +114,7 @@ export const ModalNovedadEntrega = observer(
                   key={m.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
                     activo
-                      ? "border-secondary-500 bg-secondary-50 dark:border-secondary-500/50 dark:bg-brand-500/10"
+                      ? "border-secondary-500 bg-secondary-50 dark:border-accent-500/50 dark:bg-brand-500/10"
                       : "border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03]"
                   }`}
                 >
@@ -136,7 +136,7 @@ export const ModalNovedadEntrega = observer(
                     aria-hidden="true"
                     className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.25px] ${
                       activo
-                        ? "border-secondary-500 bg-brand-500"
+                        ? "border-secondary-500 dark:border-accent-400 bg-brand-500"
                         : "border-gray-300 bg-transparent dark:border-gray-700"
                     }`}
                   >
@@ -146,7 +146,7 @@ export const ModalNovedadEntrega = observer(
                   </span>
                   <Icono
                     className={`h-4 w-4 shrink-0 ${
-                      activo ? "text-secondary-600" : "text-gray-400 dark:text-gray-500"
+                      activo ? "text-secondary-600 dark:text-accent-300" : "text-gray-400 dark:text-gray-500"
                     }`}
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-200">{m.label}</span>
@@ -200,7 +200,7 @@ export const ModalNovedadEntrega = observer(
                     !habilitado
                       ? "cursor-not-allowed border-gray-200 opacity-60 dark:border-gray-700"
                       : activo
-                        ? "cursor-pointer border-secondary-500 bg-secondary-50 dark:border-secondary-500/50 dark:bg-brand-500/10"
+                        ? "cursor-pointer border-secondary-500 bg-secondary-50 dark:border-accent-500/50 dark:bg-brand-500/10"
                         : "cursor-pointer border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-white/[0.03]"
                   }`}
                 >
@@ -218,7 +218,7 @@ export const ModalNovedadEntrega = observer(
                       aria-hidden="true"
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.25px] ${
                         activo && habilitado
-                          ? "border-secondary-500 bg-brand-500"
+                          ? "border-secondary-500 dark:border-accent-400 bg-brand-500"
                           : "border-gray-300 bg-transparent dark:border-gray-700"
                       }`}
                     >
@@ -231,7 +231,7 @@ export const ModalNovedadEntrega = observer(
                     <Icono
                       className={`h-4 w-4 shrink-0 ${
                         activo && habilitado
-                          ? "text-secondary-600"
+                          ? "text-secondary-600 dark:text-accent-300"
                           : "text-gray-400 dark:text-gray-500"
                       }`}
                     />

@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router";
-import { LifeBuoy } from "lucide-react";
+import {
+  LifebuoyIcon,
+} from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 
 /**
@@ -34,7 +36,7 @@ export function SupportButton({ className = "" }: { className?: string }) {
         className
       )}
     >
-      <LifeBuoy className="h-4 w-4 flex-none stroke-[2.2] text-gray-400 transition-colors group-hover:text-brand-500" />
+      <LifebuoyIcon className="h-4 w-4 flex-none stroke-[2.2] text-gray-400 transition-colors group-hover:text-brand-500" />
       <span className="hidden text-theme-sm font-medium text-gray-500 transition-colors group-hover:text-gray-800 lg:inline dark:text-gray-400 dark:group-hover:text-gray-200">
         Soporte
       </span>

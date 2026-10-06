@@ -56,7 +56,7 @@ export const InventariosTabla = observer(function InventariosTabla({
     // scroll posible— en vez de dejarlas alcanzar. Se vio en la captura a
     // 1440 px: «Exportar» cortado y la barra de avance pegada al borde. Una
     // tabla recortada no se lee como «no cabe», se lee como «falta información».
-    <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>
@@ -121,7 +121,7 @@ export const InventariosTabla = observer(function InventariosTabla({
                     e.stopPropagation();
                     onAbrir(f.inventario.id);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                  className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-secondary-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                 >
                   <EyeIcon className="h-3.5 w-3.5" />
                   <span>Ver</span>

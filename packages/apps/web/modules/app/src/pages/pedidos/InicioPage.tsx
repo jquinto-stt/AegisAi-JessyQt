@@ -10,7 +10,8 @@ import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
 import { Avatar } from "@/elements/ui/avatar";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
-import { AVATAR_MAP, inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
+import { inicialesDe } from "@/pages/conversaciones/conversaciones.utils";
+import { CanalAvatar } from "@/pages/conversaciones";
 import {
   pedidosStore,
   sessionStore,
@@ -56,22 +57,19 @@ import {
 } from "./inicio.calendario";
 
 import {
-  Users,
-  DollarSign,
-  TrendingUp,
-  MessageSquare,
-  Plus,
-  Calendar as CalendarIcon,
-  ArrowUpRight,
-  ChevronDown,
-  AlertCircle,
-  Filter,
-  CheckCircle2,
-  Clock,
-  Tv,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
+  ArrowTrendingUpIcon,
+  ArrowUpRightIcon,
+  CalendarDaysIcon as CalendarIcon,
+  ChatBubbleLeftIcon,
+  ChevronDownIcon,
+  CurrencyDollarIcon,
+  ExclamationCircleIcon,
+  PlusIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+  TvIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CAMPANITA DE ATENCIÓN (Web Audio, sin archivos)
@@ -183,15 +181,15 @@ const BotonSilenciar = observer(({ className }: { className?: string }) => {
       className={cn(
         "flex items-center justify-center rounded-xl transition-all cursor-pointer",
         sonidoActivo
-          ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 animate-pulse"
+          ? "bg-brand-100 text-brand-700 hover:bg-brand-200 border border-brand-300 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800 animate-pulse"
           : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-800 dark:text-gray-500 border border-gray-200 dark:border-gray-700",
         className ?? "size-9"
       )}
     >
       {sonidoActivo ? (
-        <Volume2 className="size-4" />
+        <SpeakerWaveIcon className="size-4" />
       ) : (
-        <VolumeX className="size-4" />
+        <SpeakerXMarkIcon className="size-4" />
       )}
     </button>
   );
@@ -251,8 +249,6 @@ const SEGMENTOS: { id: Segmento; label: string }[] = [
   { id: "humano", label: "Con asesor" },
 ];
 
-const avatarUrl = (nombre: string) =>
-  `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf`;
 
 function filasDeClientes(): ClienteFila[] {
   return conversacionesStore.conversaciones.map((conv) => ({
@@ -297,10 +293,9 @@ const ClienteRow = observer(
         className="flex w-full items-center gap-3.5 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.04]"
       >
         <div className="relative shrink-0">
-          <Avatar
-            src={AVATAR_MAP[conv.id] || avatarUrl(conv.contacto.nombre)}
-            alt={conv.contacto.nombre}
-            initials={inicialesDe(conv.contacto.nombre)}
+          <CanalAvatar
+            canal={conv.canal}
+            nombre={conv.contacto.nombre}
             size="large"
             status={atencion === "pide_asesor" ? "busy" : "online"}
           />
@@ -448,7 +443,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
             className="flex size-9 items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
             title="Ir a Conversaciones"
           >
-            <ArrowUpRight className="size-4" />
+            <ArrowUpRightIcon className="size-4" />
           </button>
         </div>
       </div>
@@ -476,10 +471,9 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <Avatar
-                      src={AVATAR_MAP[conv.id] || avatarUrl(conv.contacto.nombre)}
-                      alt={conv.contacto.nombre}
-                      initials={inicialesDe(conv.contacto.nombre)}
+                    <CanalAvatar
+                      canal={conv.canal}
+                      nombre={conv.contacto.nombre}
                       size="medium"
                       status={atencion === "pide_asesor" ? "busy" : "online"}
                     />
@@ -501,7 +495,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
                 {atencion === "pide_asesor" && (
                   <div className="mt-2.5 flex items-center justify-between border-t border-error-100/80 pt-2 text-[11px] font-semibold text-error-600 dark:border-error-900/40 dark:text-error-400">
                     <span className="flex items-center gap-1">
-                      <AlertCircle className="size-3" />
+                      <ExclamationCircleIcon className="size-3" />
                       Solicitó atención humana
                     </span>
                     <span className="text-secondary-600 dark:text-brand-400 hover:underline">Responder →</span>
@@ -516,7 +510,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
       <button
         type="button"
         onClick={onAbrir}
-        className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700 cursor-pointer"
+        className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-500 cursor-pointer"
       >
         Ver todas las conversaciones ({filas.length})
       </button>
@@ -545,10 +539,10 @@ const TopKpiCards = observer(() => {
         className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-400">
-            <Users className="size-5" />
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-accent-950/60 dark:text-accent-300">
+            <UsersIcon className="size-5" />
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700 dark:bg-success-950/50 dark:text-success-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
             +5.6%
           </span>
         </div>
@@ -567,10 +561,10 @@ const TopKpiCards = observer(() => {
         className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-            <DollarSign className="size-5" />
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 dark:bg-accent-950/60 dark:text-accent-400">
+            <CurrencyDollarIcon className="size-5" />
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700 dark:bg-success-950/50 dark:text-success-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
             +7.9%
           </span>
         </div>
@@ -589,10 +583,10 @@ const TopKpiCards = observer(() => {
         className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
-            <TrendingUp className="size-5" />
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-950/60 dark:text-error-400">
+            <ArrowTrendingUpIcon className="size-5" />
           </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-semibold text-success-700 dark:bg-success-950/50 dark:text-success-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
             +5.6%
           </span>
         </div>
@@ -611,8 +605,8 @@ const TopKpiCards = observer(() => {
         className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
       >
         <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
-            <MessageSquare className="size-5" />
+          <div className="flex size-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400">
+            <ChatBubbleLeftIcon className="size-5" />
           </div>
         </div>
         <div className="mt-4">
@@ -760,10 +754,10 @@ export const InicioPage = observer(() => {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
               {saludoText}
             </h1>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-medium text-accent-600 dark:bg-accent-500/15 dark:text-accent-400">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-success-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-500" />
               </span>
               en vivo
             </span>
@@ -781,7 +775,7 @@ export const InicioPage = observer(() => {
             onClick={() => setDisplayOpen(true)}
             className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
           >
-            <Tv className="size-4 text-brand-500" />
+            <TvIcon className="size-4 text-brand-500" />
             <span>Modo Enfoque</span>
           </button>
 
@@ -792,7 +786,7 @@ export const InicioPage = observer(() => {
               onClick={() => navigate("/pedidos/crear")}
               className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 disabled:opacity-50 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer"
             >
-              <Plus className="size-4 stroke-[2.5]" />
+              <PlusIcon className="size-4 stroke-[2.5]" />
               <span>Crear pedido</span>
             </button>
           </div>
@@ -808,7 +802,7 @@ export const InicioPage = observer(() => {
         </div>
       </div>
 
-      {/* ── SECCIÓN HERO: PEDIDO DESTACADO (IZQ) + FLUJO DE COCINA Y DESPACHO (DER) ── */}
+      {/* ── SECCIÓN HERO: PEDIDO PRIORITARIO (IZQ) + FLUJO OPERATIVO DE PEDIDOS (DER) ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 mb-6 items-stretch">
         <PedidoDestacadoCard />
         <EstadosOverview />
@@ -833,7 +827,7 @@ export const InicioPage = observer(() => {
                 className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
               >
                 <span>{MESES[mes.month]} {mes.year}</span>
-                <ChevronDown className="size-3.5 text-gray-400" />
+                <ChevronDownIcon className="size-3.5 text-gray-400" />
               </button>
             </div>
 
@@ -857,7 +851,7 @@ export const InicioPage = observer(() => {
                 className="flex items-center gap-1 text-xs font-bold text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
               >
                 <span>Ver Tablero</span>
-                <ArrowUpRight className="size-3.5" />
+                <ArrowUpRightIcon className="size-3.5" />
               </button>
             </div>
 

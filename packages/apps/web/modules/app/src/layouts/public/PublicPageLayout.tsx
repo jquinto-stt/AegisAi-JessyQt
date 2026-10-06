@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeftIcon,
+} from "@heroicons/react/24/outline";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { cn } from "@/utils";
 import { NectoLogo } from "../../compositions/shared/NectoLogo";
@@ -43,7 +45,7 @@ interface PublicPageLayoutProps {
  * sesión vuelve al hub; sin ella, a iniciar sesión. Si se fija un destino único,
  * uno de los dos casos acaba en una pantalla que no le corresponde.
  *
- * ⚠️ La banda va en `brand-500`, el naranja de marca `#FF3C10`. **No siempre fue
+ * ⚠️ La banda va en `brand-500`, el naranja de marca `#ff3f1a`. **No siempre fue
  * así**: aquí vivía un verde `#17B363` (`--color-public-500`) que no aparece en
  * ninguna página del manual; se retiró el 20/09. El naranja a sangre es,
  * literalmente, lo que hace la portada del manual (pág. 14): el contenido abierto
@@ -90,7 +92,7 @@ export default function PublicPageLayout({
               onClick={() => navigate(backTarget)}
               className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-theme-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/25"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
+              <ArrowLeftIcon className="h-3.5 w-3.5" />
               <span>{backLabel}</span>
             </button>
           </div>

@@ -157,7 +157,7 @@ export const OnboardingModulosPage = observer(() => {
                 key={modulo.id}
                 className={
                   modulo.disponible
-                    ? "flex flex-col justify-between rounded-2xl border border-secondary-500/40 bg-white p-5 shadow-theme-sm hover:border-secondary-500 hover:shadow-theme-md transition-all dark:border-secondary-500/30 dark:bg-gray-800/80"
+                    ? "flex flex-col justify-between rounded-2xl border border-secondary-500/40 bg-white p-5 shadow-theme-sm hover:border-secondary-500 hover:shadow-theme-md transition-all dark:border-accent-500/30 dark:bg-gray-800/80"
                     : "flex flex-col justify-between rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-5 opacity-70 dark:border-gray-800 dark:bg-gray-800/40"
                 }
               >
@@ -205,7 +205,7 @@ export const OnboardingModulosPage = observer(() => {
                   <div className="mt-3 space-y-1 border-t border-gray-100 pt-2.5 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
                     {modulo.destacados.map((destacado) => (
                       <div key={destacado} className="flex items-center gap-1.5">
-                        <span className={modulo.disponible ? "text-secondary-600" : ""}>
+                        <span className={modulo.disponible ? "text-secondary-600 dark:text-accent-300" : ""}>
                           {modulo.disponible ? "✓" : "•"}
                         </span>{" "}
                         {destacado}

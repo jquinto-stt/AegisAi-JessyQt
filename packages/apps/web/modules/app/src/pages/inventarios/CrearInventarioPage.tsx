@@ -7,10 +7,11 @@ import { Button } from "@/elements/ui/button";
 import { Card } from "@/elements/ui/card";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
+import { Radio } from "@/elements/form/radio";
 import { Select } from "@/elements/form/select";
 import { Textarea } from "@/elements/form/textarea";
 import { Alert } from "@/elements/ui/alert";
-import { CalenderIcon } from "@/icons";
+import { cn } from "@/utils";
 import {
   inventariosStore,
   NOMBRES_ACTORES,
@@ -19,21 +20,37 @@ import {
   type TipoInventario,
 } from "@/stores";
 import { CabeceraPagina, ContenedorPagina, EnlaceVolver } from "./inventarios.ui";
-import { TIPO_INVENTARIO_META, OPCIONES_TIPO_INVENTARIO } from "./inventarios.constants";
-import { caminoDe, formatearFechaHora, validarInventario } from "./inventarios.presentacion";
-import { cn } from "@/utils";
+import {
+  TIPO_INVENTARIO_META,
+  OPCIONES_ELECCION_CONTEO,
+  PREGUNTA_ELECCION_CONTEO,
+  TIPO_CIERRE_CICLO,
+} from "./inventarios.constants";
+import { caminoDe, formatearFechaCorta, validarInventario } from "./inventarios.presentacion";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CREAR CONTEO
+// NUEVO CONTEO
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// El formulario tiene una decisión difícil y por eso el `hint` de cada tipo es
-// largo: **de dónde sale la cantidad esperada**. La diferencia entre un conteo
-// «inicial» y uno «periódico» no es una etiqueta, es si habrá o no comparación.
-// Un usuario que elija «inicial» por parecer el más seguro acabará con un
-// conteo que no calcula ninguna diferencia y no lo entenderá hasta el final.
+// ── Qué cambió, y por qué ───────────────────────────────────────────────────
 //
-// Todo eso se dice ANTES de crear, no después.
+// Antes esta pantalla era un formulario de TRES secciones numeradas con cinco
+// controles, y cada tipo de conteo traía un párrafo de dos líneas explicando
+// mecánica interna. El resultado: había que leer un manual para rellenar cuatro
+// campos.
+//
+// Ahora hay UNA tarjeta y UNA pregunta que el usuario ya sabe responder —«¿ya has
+// contado aquí antes?»—. Los rótulos viven en `inventarios.constants`, que es la
+// única fuente: esta vista NO decide cuáles son las opciones ni qué dice cada
+// una, solo las pinta.
+//
+// El tercer tipo (`final`) no se elige aquí: es un cierre de ciclo y se ofrece
+// como acción contextual, y solo cuando la ubicación elegida ya tiene un conteo
+// cerrado. El tipo sigue existiendo en el dominio —lo usan la tabla, el detalle
+// y los reportes— pero deja de ser una opción que haya que entender de antemano.
+//
+// Las notas van PLEGADAS: son opcionales y no compiten con lo que sí hay que
+// decidir.
 
 export const CrearInventarioPage = observer(function CrearInventarioPage() {
   const navigate = useNavigate();
@@ -43,6 +60,7 @@ export const CrearInventarioPage = observer(function CrearInventarioPage() {
   const [ubicacionId, setUbicacionId] = useState("");
   const [responsableId, setResponsableId] = useState(RESPONSABLE_POR_DEFECTO);
   const [notas, setNotas] = useState("");
+  const [notasAbiertas, setNotasAbiertas] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [errorServidor, setErrorServidor] = useState<string | null>(null);
 
@@ -68,10 +86,13 @@ export const CrearInventarioPage = observer(function CrearInventarioPage() {
 
   const validacion = validarInventario({ nombre, tipo, ubicacionId, responsableId }, inventariosStore.ubicaciones);
 
+  /** El conteo cerrado contra el que se compararía. `inicial` no compara. */
   const referencia = useMemo(() => {
     if (tipo === "inicial" || !ubicacionId) return null;
     return inventariosStore.ultimoFinalizadoDeUbicacionPublico(ubicacionId);
   }, [tipo, ubicacionId, inventariosStore.inventarios.length]);
+
+  const sinComparacion = tipo === "inicial";
 
   function crear() {
     setEnviado(true);
@@ -118,146 +139,146 @@ export const CrearInventarioPage = observer(function CrearInventarioPage() {
         <CabeceraPagina
           volver={<EnlaceVolver onClick={() => navigate("/inventarios")}>Volver a conteos</EnlaceVolver>}
           titulo="Nuevo conteo"
-          descripcion="Configura los datos del espacio que vas a verificar. El conteo se creará en borrador para que puedas alistar los productos antes de iniciar."
         />
 
         {errorServidor && (
           <Alert variant="error" title="No se pudo crear el conteo" message={errorServidor} />
         )}
 
-        <Card className="divide-y divide-gray-100 p-6 dark:divide-gray-800 sm:p-7">
-          {/* ── 1. Información principal ── */}
-          <div className="space-y-4 pb-6">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
-              1. Datos principales
-            </h2>
+        <Card className="space-y-6 p-6 sm:p-7">
+          <div>
+            <Label htmlFor="inv-nombre">Nombre</Label>
+            <Input
+              id="inv-nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Conteo mensual de bodega"
+              error={enviado && !!validacion.errores.nombre}
+            />
+            {enviado && validacion.errores.nombre && (
+              <p className="mt-1.5 text-xs text-error-700 dark:text-error-400">{validacion.errores.nombre}</p>
+            )}
+          </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="inv-nombre">Nombre o título del conteo</Label>
-              <Input
-                id="inv-nombre"
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej. Conteo mensual de bodega principal"
-                error={enviado && !!validacion.errores.nombre}
+              <Label htmlFor="inv-ubicacion">Ubicación</Label>
+              <Select
+                options={opcionesUbicacion}
+                defaultValue={ubicacionId}
+                onChange={setUbicacionId}
+                placeholder="Selecciona"
+                error={enviado && !!validacion.errores.ubicacionId}
               />
-              {enviado && validacion.errores.nombre && (
-                <p className="mt-1.5 text-xs text-error-700 dark:text-error-400">{validacion.errores.nombre}</p>
+              {enviado && validacion.errores.ubicacionId && (
+                <p className="mt-1.5 text-xs text-error-700 dark:text-error-400">
+                  {validacion.errores.ubicacionId}
+                </p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="inv-ubicacion">Ubicación a contar</Label>
-                <Select
-                  options={opcionesUbicacion}
-                  defaultValue={ubicacionId}
-                  onChange={setUbicacionId}
-                  placeholder="Selecciona la ubicación"
-                  error={enviado && !!validacion.errores.ubicacionId}
-                />
-                {enviado && validacion.errores.ubicacionId && (
-                  <p className="mt-1.5 text-xs text-error-700 dark:text-error-400">
-                    {validacion.errores.ubicacionId}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="inv-responsable">Persona responsable</Label>
-                <Select
-                  options={opcionesResponsable}
-                  defaultValue={responsableId}
-                  onChange={setResponsableId}
-                  error={enviado && !!validacion.errores.responsableId}
-                />
-              </div>
+            <div>
+              <Label htmlFor="inv-responsable">Responsable</Label>
+              <Select
+                options={opcionesResponsable}
+                defaultValue={responsableId}
+                onChange={setResponsableId}
+                error={enviado && !!validacion.errores.responsableId}
+              />
             </div>
           </div>
 
-          {/* ── 2. Modalidad de conteo ── */}
-          <div className="space-y-3 py-6">
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-400">
-                2. Modalidad de conteo
-              </h2>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Selecciona cómo deseas verificar las cantidades físicas:
-              </p>
-            </div>
+          {/* ── La única pregunta que hay que responder ────────────────────── */}
+          <fieldset className="border-t border-gray-100 pt-6 dark:border-gray-800">
+            <legend className="text-sm font-semibold text-ink-title dark:text-white">
+              {PREGUNTA_ELECCION_CONTEO}
+            </legend>
 
-            <div className="space-y-2">
-              {OPCIONES_TIPO_INVENTARIO.map((o) => {
-                const m = TIPO_INVENTARIO_META[o.value];
-                const activa = tipo === o.value;
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {OPCIONES_ELECCION_CONTEO.map((valor) => {
+                const meta = TIPO_INVENTARIO_META[valor];
+                const activa = tipo === valor || (valor === "periodico" && tipo === TIPO_CIERRE_CICLO);
                 return (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => setTipo(o.value)}
+                  <Radio
+                    key={valor}
+                    id={`inv-eleccion-${valor}`}
+                    name="inv-eleccion"
+                    value={valor}
+                    checked={activa}
+                    label={meta.titulo}
+                    description={meta.consecuencia}
+                    onChange={() => setTipo(valor)}
                     className={cn(
-                      "w-full rounded-xl border p-3.5 text-left transition-all",
+                      "items-start rounded-xl border p-3.5 transition-colors",
                       activa
-                        ? "border-brand-500 bg-brand-50/50 shadow-sm dark:border-brand-500/60 dark:bg-brand-500/10"
+                        ? "border-brand-500 bg-brand-50/50 dark:border-brand-500/60 dark:bg-brand-500/10"
                         : "border-gray-200 hover:border-gray-300 dark:border-gray-800 dark:hover:border-gray-700",
                     )}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={cn(
-                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border",
-                          activa ? "border-brand-500 bg-brand-500" : "border-gray-300 dark:border-gray-600",
-                        )}
-                      >
-                        {activa && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                      </span>
-                      <span className="text-sm font-semibold text-ink-title dark:text-gray-100">{m.label}</span>
-                    </div>
-                    <p className="mt-1 pl-6 text-xs text-gray-500 dark:text-gray-400">
-                      {m.hint}
-                    </p>
-                  </button>
+                  />
                 );
               })}
             </div>
 
-            {/* Referencia previa contextual */}
-            {tipo !== "inicial" && ubicacionId && referencia && (
-              <div className="flex items-start gap-2.5 rounded-xl bg-gray-50 p-3 text-xs text-gray-600 dark:bg-white/[0.03] dark:text-gray-300">
-                <CalenderIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
-                <div>
-                  <span className="font-medium text-gray-800 dark:text-gray-200">
-                    Se comparará contra el conteo {referencia.numero}
-                  </span>
-                  <p className="mt-0.5 text-gray-500 dark:text-gray-400">
-                    Cerrado el {formatearFechaHora(referencia.finalizadoEn)}. Las existencias registradas allí servirán de base.
-                  </p>
-                </div>
+            {/* Sin comparación: es un hecho, no una advertencia. Etiqueta, no párrafo. */}
+            {sinComparacion && (
+              <p className="mt-3 text-xs font-medium text-gray-500 dark:text-gray-400">
+                Sin comparación
+              </p>
+            )}
+
+            {/* Con referencia: UNA línea con el conteo y su fecha. */}
+            {referencia && (
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Referencia:{" "}
+                <span className="font-medium text-gray-700 dark:text-gray-200">{referencia.numero}</span>
+                {" · "}
+                {formatearFechaCorta(referencia.finalizadoEn)}
+              </p>
+            )}
+
+            {/* Cierre de ciclo: contextual, solo si la ubicación ya tiene un conteo cerrado. */}
+            {referencia && tipo !== TIPO_CIERRE_CICLO && (
+              <button
+                type="button"
+                onClick={() => setTipo(TIPO_CIERRE_CICLO)}
+                className="mt-2 text-xs font-medium text-secondary-600 hover:text-secondary-700 dark:text-accent-300"
+              >
+                {TIPO_INVENTARIO_META[TIPO_CIERRE_CICLO].titulo}
+              </button>
+            )}
+          </fieldset>
+
+          {/* ── Notas, plegadas: son opcionales y no compiten con lo que hay que decidir ── */}
+          <div className="border-t border-gray-100 pt-5 dark:border-gray-800">
+            <button
+              type="button"
+              onClick={() => setNotasAbiertas((v) => !v)}
+              aria-expanded={notasAbiertas}
+              className="text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              {notasAbiertas ? "Ocultar notas" : "Añadir notas"}
+            </button>
+            {notasAbiertas && (
+              <div className="mt-3">
+                <Label htmlFor="inv-notas">Notas</Label>
+                <Textarea
+                  id="inv-notas"
+                  value={notas}
+                  onChange={setNotas}
+                  rows={2}
+                  placeholder="Sector revisado, condiciones de acceso…"
+                />
               </div>
             )}
           </div>
 
-          {/* ── 3. Observaciones y confirmación ── */}
-          <div className="space-y-4 pt-6">
-            <div>
-              <Label htmlFor="inv-notas">Notas u observaciones (opcional)</Label>
-              <Textarea
-                id="inv-notas"
-                value={notas}
-                onChange={setNotas}
-                rows={2}
-                placeholder="Añade detalles útiles para el equipo (ej. sector revisado, condiciones de acceso)..."
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => navigate("/inventarios")}>
-                Cancelar
-              </Button>
-              <Button onClick={crear} disabled={enviado && !validacion.ok}>
-                Crear conteo
-              </Button>
-            </div>
+          <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-5 dark:border-gray-800">
+            <Button variant="outline" onClick={() => navigate("/inventarios")}>
+              Cancelar
+            </Button>
+            <Button onClick={crear} disabled={enviado && !validacion.ok}>
+              Crear conteo
+            </Button>
           </div>
         </Card>
       </ContenedorPagina>

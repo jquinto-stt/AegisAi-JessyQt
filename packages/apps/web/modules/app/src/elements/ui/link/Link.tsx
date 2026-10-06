@@ -6,9 +6,9 @@ import { cn } from "@/utils";
  *
  * - `"primary"` — Muted gray (`text-gray-500`) — general-purpose, default navigation
  * - `"secondary"` — Brand color (`text-brand-500`) — highlighted or promoted links
- * - `"success"` — Green (`text-success-500`) — positive context, completed actions
+ * - `"success"` — Green (`text-accent-500`) — positive context, completed actions
  * - `"danger"` — Red (`text-error-500`) — destructive or warning navigation
- * - `"warning"` — Orange (`text-warning-500`) — caution, attention-needed links
+ * - `"warning"` — Orange (`text-brand-500`) — caution, attention-needed links
  * - `"gray"` — Gray (`text-gray-500`) — neutral, secondary navigation *(default)*
  * - `"accent"` — Celeste (`text-accent-500`) — informational links
  * - `"dark"` — Dark gray (`text-gray-800`) — high-contrast, prominent links
@@ -208,9 +208,9 @@ const Link: React.FC<LinkProps> = ({
   const variants: Record<string, string> = {
     primary: "text-gray-500 dark:text-gray-400",
     secondary: "text-brand-500 dark:text-brand-500",
-    success: "text-success-500",
+    success: "text-accent-500",
     danger: "text-error-500",
-    warning: "text-warning-500",
+    warning: "text-brand-500",
     "accent": "text-accent-500",
     gray: "text-gray-500 dark:text-gray-400",
     dark: "text-gray-800 dark:text-white/90",

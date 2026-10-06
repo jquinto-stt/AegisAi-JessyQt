@@ -57,7 +57,7 @@ export const BotonHandoff = observer(({ convId }: { convId: string }) => {
     <button
       type="button"
       onClick={() => conversacionesStore.tomar(convId, operadorId)}
-      className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-secondary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-secondary-700 active:scale-95"
+      className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-secondary-600 dark:bg-accent-300 dark:text-ink-body px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-secondary-700 active:scale-95"
     >
       Tomar chat
     </button>

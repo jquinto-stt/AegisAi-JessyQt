@@ -1,9 +1,11 @@
 /**
- * AppFooter — NECTO branded footer.
+ * AppFooter — Pie de página unificado con NectoLogo oficial.
  *
- * Orange band with the white logo, three link columns (Nosotros, Servicios,
- * Contacto), social icons, and an indigo copyright bar at the bottom.
+ * Muestra el logo oficial adaptado a modo normal y oscuro, columnas de
+ * navegación institucional, iconos de redes sociales y derechos de autor.
  */
+
+import { NectoLogo } from "@/compositions/shared/NectoLogo";
 
 interface FooterColumn {
   title: string;
@@ -57,24 +59,32 @@ const XIcon = () => (
 
 export const AppFooter = () => {
   return (
-    <footer className="mt-6 overflow-hidden rounded-2xl bg-brand-500 text-white">
+    <footer className="mt-6 overflow-hidden rounded-2xl border border-gray-200/90 bg-white text-gray-800 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
       {/* Main band */}
       <div className="grid grid-cols-1 gap-8 px-8 py-10 md:grid-cols-4">
         {/* Brand */}
         <div className="flex flex-col gap-4">
-          <img
-            src="/images/logo/necto-full-white.svg"
-            alt="NECTO"
-            className="h-6 w-auto self-start"
-          />
+          <NectoLogo size="xs" />
           <div className="flex gap-3">
-            <a href="#" aria-label="Instagram" className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25">
+            <a
+              href="#"
+              aria-label="Instagram"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+            >
               <InstagramIcon />
             </a>
-            <a href="#" aria-label="LinkedIn" className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25">
+            <a
+              href="#"
+              aria-label="LinkedIn"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+            >
               <LinkedInIcon />
             </a>
-            <a href="#" aria-label="X" className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25">
+            <a
+              href="#"
+              aria-label="X"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/20 dark:hover:text-white"
+            >
               <XIcon />
             </a>
           </div>
@@ -83,11 +93,16 @@ export const AppFooter = () => {
         {/* Link columns */}
         {columns.map((col) => (
           <div key={col.title} className="flex flex-col gap-3">
-            <h3 className="text-sm font-bold uppercase tracking-wide">{col.title}</h3>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-gray-900 dark:text-white">
+              {col.title}
+            </h3>
             <ul className="flex flex-col gap-2">
               {col.links.map((link) => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-white/85 transition-colors hover:text-white">
+                  <a
+                    href={link.href}
+                    className="text-sm text-gray-600 transition-colors hover:text-brand-500 dark:text-gray-400 dark:hover:text-white"
+                  >
                     {link.label}
                   </a>
                 </li>
@@ -98,9 +113,9 @@ export const AppFooter = () => {
       </div>
 
       {/* Copyright bar */}
-      <div className="bg-secondary-600 px-8 py-3 text-center">
-        <p className="text-xs text-white/90">
-          &copy; 2026 Necto. Plataforma de Operaciones y Gestion para Restaurantes. Todos los derechos reservados.
+      <div className="border-t border-gray-100 bg-gray-50 px-8 py-3 text-center dark:border-gray-800 dark:bg-gray-950">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          &copy; 2026 Necto. Plataforma de Operaciones y Gestión de Pedidos. Todos los derechos reservados.
         </p>
       </div>
     </footer>

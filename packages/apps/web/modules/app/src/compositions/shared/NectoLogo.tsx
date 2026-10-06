@@ -13,9 +13,9 @@ import React from "react";
  *
  * Ahora todo sale de `public/images/logo/`, que es la única fuente:
  *
- *   - `necto-full.svg`        naranja `#FF3C10` + «grow together» índigo `#15008B`
- *   - `necto-full-white.svg`  blanco pleno, para bandas de color y modo oscuro
- *   - `necto-icon.svg`        isotipo suelto (la N + el cuadrado índigo)
+ *   - `necto-full.svg`        NECTO en rojo `#FF3F1A` (acento N en azul `#190088`) + «grow together» en azul `#190088` (Modo normal)
+ *   - `necto-full-white.svg`  NECTO en rojo `#FF3F1A` (acento N en blanco `#FFFFFF`) + «grow together» en blanco `#FFFFFF` (Modo oscuro)
+ *   - `necto-icon.svg`        isotipo suelto (N roja `#FF3F1A` + acento azul `#190088`)
  *
  * El cambio de variante en modo oscuro se hace con `dark:hidden` / `dark:block`
  * porque CSS no puede repintar el interior de un `<img>`; los dos archivos

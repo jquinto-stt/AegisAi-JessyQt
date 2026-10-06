@@ -190,10 +190,10 @@ export const claseSegmentoTrack =
 // Se adopta ese MISMO relleno, no una variante nueva: un estado activo se
 // pinta igual en toda la app o deja de ser un lenguaje.
 //
-// Deuda anotada, no escondida: blanco sobre `brand-500` (`#ff3c10`) mide
+// Deuda anotada, no escondida: blanco sobre `brand-500` (`#ff3f1a`) mide
 // 3,6:1, por debajo de AA (4,5:1) para una etiqueta de 12 px. Es el mismo par
 // que ya usaban esos dos sitios, asi que unificar no empeora nada; si se
-// quiere AA, el paso es `bg-brand-700` (5,9:1) en los TRES sitios a la vez.
+// quiere AA, el paso es `bg-brand-500` (5,9:1) en los TRES sitios a la vez.
 export const claseSegmentoActivo = "bg-brand-500 text-white shadow-theme-xs";
 
 /** Opcion no elegida: tinta secundaria, sin relleno. */
@@ -371,8 +371,8 @@ export function ConfigSectionNav({
                         // La primera version de este arreglo puso
                         // `text-ink-title dark:text-brand-300` porque el 700 daba
                         // mas contraste sobre `brand-50`. Estaba mal por dos
-                        // motivos: `brand-700` es `#bf2810`, un rojo ladrillo, no
-                        // el naranja de marca `#ff3c10`; y esos pasos no son los
+                        // motivos: `brand-700` es `#be2a15`, un rojo ladrillo, no
+                        // el naranja de marca `#ff3f1a`; y esos pasos no son los
                         // que el producto usa para un activo. El naranja de una
                         // superficie no se elige por contraste, se toma del
                         // sistema: si se cambia aqui, se cambia en `Tab` tambien.

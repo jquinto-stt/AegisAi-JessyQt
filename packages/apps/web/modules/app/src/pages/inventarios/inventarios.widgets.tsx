@@ -155,7 +155,7 @@ export function DiferenciaTexto({
         // justificado porque una discrepancia es exactamente lo que hay que
         // mirar. El gris del signo negativo no se usa para `falta`, porque
         // sobrar también descuadra.
-        "text-warning-700 dark:text-warning-400",
+        "text-brand-700 dark:text-brand-400",
         className,
       )}
     >
@@ -229,7 +229,7 @@ export function ProgresoBar({
           <div
             className={cn(
               "h-full rounded-full transition-all duration-300",
-              completo ? "bg-success-500" : "bg-brand-500",
+              completo ? "bg-accent-500" : "bg-brand-500",
             )}
             style={{ width: `${porcentaje}%` }}
           />
@@ -237,7 +237,7 @@ export function ProgresoBar({
         <span
           className={cn(
             "shrink-0 text-xs tabular-nums",
-            completo ? "text-success-700 dark:text-success-400" : "text-gray-500 dark:text-gray-400",
+            completo ? "text-accent-700 dark:text-accent-400" : "text-gray-500 dark:text-gray-400",
           )}
         >
           {contadas}/{total}
@@ -309,7 +309,7 @@ export function NotaHonesta({
       className={cn(
         "rounded-xl border border-dashed px-4 py-3",
         tono === "atencion"
-          ? "border-warning-300 bg-warning-50/60 dark:border-warning-500/30 dark:bg-warning-500/[0.06]"
+          ? "border-brand-300 bg-brand-50/60 dark:border-brand-500/30 dark:bg-brand-500/[0.06]"
           : "border-gray-200 bg-gray-50/60 dark:border-gray-800 dark:bg-white/[0.02]",
       )}
     >
@@ -318,7 +318,7 @@ export function NotaHonesta({
           className={cn(
             "text-xs font-semibold",
             tono === "atencion"
-              ? "text-warning-700 dark:text-warning-400"
+              ? "text-brand-700 dark:text-brand-400"
               : "text-gray-600 dark:text-gray-300",
           )}
         >
@@ -330,7 +330,7 @@ export function NotaHonesta({
           "text-xs leading-relaxed",
           titulo && "mt-1",
           tono === "atencion"
-            ? "text-warning-700/90 dark:text-warning-300/90"
+            ? "text-brand-700/90 dark:text-brand-300/90"
             : "text-gray-500 dark:text-gray-400",
         )}
       >

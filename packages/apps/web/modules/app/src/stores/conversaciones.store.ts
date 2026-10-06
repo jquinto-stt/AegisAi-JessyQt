@@ -91,7 +91,7 @@ const nowIso = () => new Date().toISOString();
  * lleva el bot, `light` = en espera (neutro, sin dueño claro).
  *
  * `abierta` NO es `warning`: `warning` se pinta con la rampa naranja, y el
- * naranja `#FF3C10` es el color PRIMARIO DE LA MARCA. Un badge de estado en
+ * naranja `#ff3f1a` es el color PRIMARIO DE LA MARCA. Un badge de estado en
  * naranja compite con la marca y, peor, convierte un estado normal (el bot
  * atendiendo) en una alarma. La urgencia real —un cliente pidiendo un asesor—
  * ya la comunica el estado `en_espera`, que sí tiene su propio tratamiento de

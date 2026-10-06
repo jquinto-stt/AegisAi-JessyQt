@@ -100,12 +100,12 @@ export const META_ESTADO_PEDIDO: Record<
   { label: string; badge: ColorEstadoPedido; punto: string }
 > = {
   programado: { label: "Programado", badge: "light", punto: "bg-gray-400" },
-  nuevo: { label: "Pendiente de pago", badge: "warning", punto: "bg-warning-500" },
+  nuevo: { label: "Pendiente de pago", badge: "warning", punto: "bg-brand-500" },
   confirmado: { label: "Confirmado", badge: "primary", punto: "bg-brand-500" },
-  en_preparacion: { label: "En preparación", badge: "warning", punto: "bg-warning-500" },
-  listo: { label: "Listo", badge: "success", punto: "bg-success-500" },
+  en_preparacion: { label: "En preparación", badge: "warning", punto: "bg-brand-500" },
+  listo: { label: "Listo", badge: "success", punto: "bg-accent-500" },
   en_camino: { label: "En camino", badge: "primary", punto: "bg-brand-500" },
-  entregado: { label: "Entregado", badge: "success", punto: "bg-success-600" },
+  entregado: { label: "Entregado", badge: "success", punto: "bg-accent-600" },
   cancelado: { label: "Cancelado", badge: "error", punto: "bg-error-500" },
 };
 

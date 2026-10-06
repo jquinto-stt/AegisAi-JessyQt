@@ -190,8 +190,8 @@ const Alert: React.FC<AlertProps> = ({
     },
     success: {
       container:
-        "border-success-500 bg-success-50 dark:border-success-500/30 dark:bg-success-500/15",
-      icon: "text-success-500",
+        "border-accent-500 bg-accent-50 dark:border-accent-500/30 dark:bg-accent-500/15",
+      icon: "text-accent-500",
     },
     error: {
       container:
@@ -200,8 +200,8 @@ const Alert: React.FC<AlertProps> = ({
     },
     warning: {
       container:
-        "border-warning-500 bg-warning-50 dark:border-warning-500/30 dark:bg-warning-500/15",
-      icon: "text-warning-500",
+        "border-brand-500 bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/15",
+      icon: "text-brand-500",
     },
     info: {
       container:

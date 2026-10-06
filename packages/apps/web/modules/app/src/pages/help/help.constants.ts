@@ -1,10 +1,14 @@
+import type { ComponentType, SVGProps } from "react";
 import {
-  Rocket,
-  ShieldCheck,
-  CreditCard,
-  Headphones,
-  type LucideIcon,
-} from "lucide-react";
+  CreditCardIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { Headphones } from "lucide-react";
+/** Los iconos de este archivo vienen de dos catalogos (Heroicons y lucide),
+ *  asi que el tipo comun es el minimo que ambos cumplen. */
+export type IconoApp = ComponentType<SVGProps<SVGSVGElement>>;
 
 /* ── Centro de ayuda: contenido estático ───────────────────────────────
  * Los textos viven aquí y no dentro del JSX para que el acordeón y los pasos
@@ -17,14 +21,14 @@ import {
 export interface HelpFeature {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: IconoApp;
 }
 
 /** Sellos de confianza del hero. */
 export const HELP_FEATURES: HelpFeature[] = [
-  { id: "fast", label: "Puesta en marcha rápida", icon: Rocket },
-  { id: "secure", label: "Plataforma segura", icon: ShieldCheck },
-  { id: "payments", label: "Pagos simples", icon: CreditCard },
+  { id: "fast", label: "Puesta en marcha rápida", icon: RocketLaunchIcon },
+  { id: "secure", label: "Plataforma segura", icon: ShieldCheckIcon },
+  { id: "payments", label: "Pagos simples", icon: CreditCardIcon },
   { id: "support", label: "Soporte experto", icon: Headphones },
 ];
 

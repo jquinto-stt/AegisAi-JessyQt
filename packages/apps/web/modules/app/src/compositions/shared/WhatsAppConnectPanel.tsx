@@ -1,5 +1,9 @@
 import React, { useId } from "react";
-import { Check, Info, ShieldCheck } from "lucide-react";
+import {
+  CheckIcon,
+  InformationCircleIcon,
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
 
 interface WhatsAppConnectPanelProps {
   /**
@@ -367,7 +371,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
           {BENEFITS.map(benefit => (
             <li key={benefit.title} className="flex items-start gap-3">
               <span className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-whatsapp-50 text-whatsapp-600 dark:bg-whatsapp-500/15 dark:text-whatsapp-300">
-                <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
               </span>
               <div className="min-w-0">
                 <p className="text-theme-sm font-bold text-gray-900 dark:text-white">
@@ -398,11 +402,11 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-whatsapp-200 bg-whatsapp-50 p-3 dark:border-whatsapp-500/25 dark:bg-whatsapp-500/10">
               <p className="flex flex-wrap items-center gap-2 text-theme-xs font-bold text-whatsapp-700 dark:text-whatsapp-300">
                 <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-whatsapp-500 text-white">
-                  <Check className="h-3 w-3" strokeWidth={3.5} />
+                  <CheckIcon className="h-3 w-3" strokeWidth={3.5} />
                 </span>
                 Canal conectado
                 {isDemo && (
-                  <span className="rounded-full bg-warning-100 px-2 py-0.5 font-bold text-warning-700 dark:bg-warning-900/40 dark:text-warning-300">
+                  <span className="rounded-full bg-brand-100 px-2 py-0.5 font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                     Demostración
                   </span>
                 )}
@@ -421,7 +425,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
             <>
               {!metaAuthorizationAvailable && (
                 <p className="flex items-start gap-2 rounded-xl bg-gray-50 p-3 text-theme-xs leading-relaxed text-gray-500 dark:bg-gray-800/60 dark:text-gray-400">
-                  <Info className="mt-0.5 h-3.5 w-3.5 flex-none text-gray-400" />
+                  <InformationCircleIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gray-400" />
                   <span>
                     La autorización con Meta necesita el servicio de Necto en el servidor y{" "}
                     <strong className="font-bold text-gray-700 dark:text-gray-200">
@@ -449,7 +453,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
           )}
 
           <p className="flex items-start gap-2 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            <ShieldCheck className="mt-0.5 h-3.5 w-3.5 flex-none text-gray-400" />
+            <ShieldCheckIcon className="mt-0.5 h-3.5 w-3.5 flex-none text-gray-400" />
             <span>
               Conexión oficial vía Meta y credenciales en el servidor de Necto, nunca en el navegador.{" "}
               {/*
@@ -488,7 +492,7 @@ export const WhatsAppConnectPanel: React.FC<WhatsAppConnectPanelProps> = ({
 
           El logotipo de Necto va en su versión blanca porque este panel es una
           superficie oscura **en los dos temas**: la variante a color esconde la
-          "E" (#15008B) sobre el verde. Es la misma regla que sigue el sidebar.
+          "E" (#190088) sobre el verde. Es la misma regla que sigue el sidebar.
         */}
         <div className="relative flex flex-col items-center gap-3">
           <div className="flex items-center gap-4" role="img" aria-label="Necto con WhatsApp">

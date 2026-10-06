@@ -25,20 +25,20 @@ import {
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
 import {
-  MoreHorizontal,
-  SlidersHorizontal,
-  Plus,
-  Calendar,
-  MessageSquare,
-  Paperclip,
-  ArrowLeft,
-  ArrowRight,
-  Edit3,
-  Trash2,
-  Check,
-  Search,
-  X,
-} from "lucide-react";
+  AdjustmentsHorizontalIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftIcon,
+  CheckIcon,
+  EllipsisHorizontalIcon,
+  MagnifyingGlassIcon,
+  PaperClipIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // AUTORIZACIÓN DE ACCIONES (contrato §1.4 / §2)
@@ -189,9 +189,9 @@ const PedidoCard = observer(
         return { label: "Delivery", bg: "bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-300" };
       }
       if (pedido.modalidad === "en_sitio") {
-        return { label: "En Mesa", bg: "bg-secondary-50 text-secondary-600 dark:bg-secondary-900/30 dark:text-secondary-300" };
+        return { label: "En Mesa", bg: "bg-secondary-50 text-secondary-600 dark:bg-accent-900/30 dark:text-accent-300" };
       }
-      return { label: "Pickup", bg: "bg-warning-50 text-warning-600 dark:bg-warning-900/30 dark:text-warning-300" };
+      return { label: "Pickup", bg: "bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300" };
     };
     const tag = tagModalidad();
 
@@ -275,14 +275,14 @@ const PedidoCard = observer(
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-gray-400 dark:text-gray-400">
           <div className="flex items-center gap-3 font-medium">
             <div className="flex items-center gap-1.5">
-              <Calendar className="size-3.5 text-gray-400" />
+              <CalendarDaysIcon className="size-3.5 text-gray-400" />
               <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
                 {fechaAmigable()}
               </span>
             </div>
 
             <div className="flex items-center gap-1">
-              <MessageSquare className="size-3.5 text-gray-400" />
+              <ChatBubbleLeftIcon className="size-3.5 text-gray-400" />
               <span className="text-[11px] text-gray-500 dark:text-gray-400">
                 {itemsCount}
               </span>
@@ -290,7 +290,7 @@ const PedidoCard = observer(
 
             {pedido.direccionEntrega && (
               <div className="flex items-center gap-1" title={pedido.direccionEntrega.calle}>
-                <Paperclip className="size-3.5 text-gray-400" />
+                <PaperClipIcon className="size-3.5 text-gray-400" />
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">1</span>
               </div>
             )}
@@ -306,11 +306,11 @@ const PedidoCard = observer(
               title={pedido.pagado ? "Pedido pagado. Clic para marcar como pendiente" : "Pendiente de pago. Clic para registrar pago"}
               className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer select-none flex items-center gap-1.5 ${
                 pedido.pagado
-                  ? "bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300"
-                  : "bg-warning-50 text-warning-700 hover:bg-warning-100 dark:bg-warning-950/40 dark:text-warning-300 ring-1 ring-inset ring-warning-300/60 dark:ring-warning-800"
+                  ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
+                  : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
               }`}
             >
-              <span className={`size-1.5 rounded-full ${pedido.pagado ? "bg-success-500" : "bg-warning-500"}`} />
+              <span className={`size-1.5 rounded-full ${pedido.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
               <span>{pedido.pagado ? "Pagado" : "Por cobrar"}</span>
             </button>
 
@@ -340,7 +340,7 @@ const PedidoCard = observer(
                 <button
                   type="button"
                   onClick={onChat}
-                  className="flex items-center gap-1 rounded-lg border border-success-200 bg-success-50/70 hover:bg-success-100/80 px-2.5 py-1.5 text-xs font-medium text-success-700 dark:border-success-800 dark:bg-success-950/40 dark:text-success-300 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 rounded-lg border border-accent-200 bg-accent-50/70 hover:bg-accent-100/80 px-2.5 py-1.5 text-xs font-medium text-accent-700 dark:border-accent-800 dark:bg-accent-950/40 dark:text-accent-300 transition-colors cursor-pointer"
                 >
                   <WhatsAppIcon />
                   <span>Chat</span>
@@ -434,7 +434,7 @@ const DetalleModal = observer(
           <div className="mb-4 rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 dark:border-gray-800 dark:bg-white/[0.02]">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-800 dark:text-white/90">
-                <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600" />
+                <DeliveryIcon className="h-3.5 w-3.5 text-secondary-600 dark:text-accent-300" />
                 Dirección de entrega
               </span>
               {pedido.direccionEntrega?.calle && (
@@ -467,7 +467,7 @@ const DetalleModal = observer(
                 )}
               </div>
             ) : (
-              <p className="mt-1 flex items-center gap-1 text-xs text-warning-600 dark:text-warning-400">
+              <p className="mt-1 flex items-center gap-1 text-xs text-brand-600 dark:text-brand-400">
                 <AlertTriangleIcon className="h-3.5 w-3.5 shrink-0" />
                 Sin dirección registrada para este domicilio.
               </p>
@@ -574,7 +574,7 @@ const DetalleModal = observer(
               {/* «Pago», no «Estado»: el badge de estado del pedido está arriba
                   y este campo es el estado de PAGO, un eje distinto. */}
               <span className="text-gray-400">Pago: </span>
-              <span className={pedido.pagado ? "font-semibold text-success-600" : "font-semibold text-warning-600"}>
+              <span className={pedido.pagado ? "font-semibold text-accent-600" : "font-semibold text-brand-600"}>
                 {pedido.pagado ? ETIQUETA_PAGO.pagado : ETIQUETA_PAGO.sinPagar}
               </span>
             </div>
@@ -588,7 +588,7 @@ const DetalleModal = observer(
                   ${pedido.pagaCon.toLocaleString()}
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between font-semibold text-success-600 dark:text-success-400">
+              <div className="mt-1 flex items-center justify-between font-semibold text-accent-600 dark:text-accent-400">
                 <span>Cambio / Vuelto a entregar:</span>
                 <span>${cambio.toLocaleString()}</span>
               </div>
@@ -699,7 +699,7 @@ const EntregaModal = observer(
     return (
       <Modal isOpen onClose={onClose} className="max-w-sm p-6">
         <div className="mb-5 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success-50 text-success-500 dark:bg-success-500/10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-50 text-accent-500 dark:bg-accent-500/10">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
@@ -767,9 +767,9 @@ const ProgramadoCard = observer(({ pedido: p, onCancelar, onReprogramar, onDetal
       }
       className={
         "flex items-center justify-between gap-3 rounded-xl border p-3 transition-colors " +
-        (clickable ? "cursor-pointer hover:border-secondary-300 dark:hover:border-brand-700 " : "") +
+        (clickable ? "cursor-pointer hover:border-secondary-300 dark:hover:border-brand-500 " : "") +
         (focusId === p.id
-          ? "border-secondary-500 bg-secondary-50 ring-2 ring-brand-500/30 dark:border-secondary-500 dark:bg-brand-500/10"
+          ? "border-secondary-500 bg-secondary-50 ring-2 ring-brand-500/30 dark:border-accent-500 dark:bg-brand-500/10"
           : "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]")
       }
     >
@@ -887,7 +887,7 @@ const ProgramadosSection = observer(
           <button
             type="button"
             onClick={onVerTodos}
-            className="mt-3 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-medium text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-700"
+            className="mt-3 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-medium text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-500"
           >
             + {restantes} pedido{restantes === 1 ? "" : "s"} programado{restantes === 1 ? "" : "s"} más
           </button>
@@ -1161,12 +1161,12 @@ const ListaView = observer(
                         }}
                         className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer select-none ${
                           p.pagado
-                            ? "bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-950/40 dark:text-success-300"
-                            : "bg-warning-50 text-warning-700 hover:bg-warning-100 dark:bg-warning-950/40 dark:text-warning-300 ring-1 ring-inset ring-warning-300/60 dark:ring-warning-800"
+                            ? "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-950/40 dark:text-accent-300"
+                            : "bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-950/40 dark:text-brand-300 ring-1 ring-inset ring-brand-300/60 dark:ring-brand-800"
                         }`}
                         title={p.pagado ? "Pagado (clic para marcar como pendiente)" : "Pendiente de pago (clic para registrar pago)"}
                       >
-                        <span className={`size-1.5 rounded-full ${p.pagado ? "bg-success-500" : "bg-warning-500"}`} />
+                        <span className={`size-1.5 rounded-full ${p.pagado ? "bg-accent-500" : "bg-brand-500"}`} />
                         {p.pagado ? "Pagado" : "Por cobrar"}
                       </button>
                     </TableCell>
@@ -1449,7 +1449,7 @@ export const TableroPage = observer(() => {
             <span
               className={`flex size-5.5 items-center justify-center rounded-full text-xs font-bold shrink-0 ${
                 columnaFiltroActiva === "all"
-                  ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950 dark:text-secondary-400"
+                  ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400"
                   : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
               }`}
             >
@@ -1475,7 +1475,7 @@ export const TableroPage = observer(() => {
                 <span
                   className={`flex size-5.5 items-center justify-center rounded-full text-xs font-semibold shrink-0 ${
                     activa
-                      ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950 dark:text-secondary-400 font-bold"
+                      ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950 dark:text-accent-400 font-bold"
                       : "bg-gray-200/80 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                   }`}
                 >
@@ -1499,11 +1499,11 @@ export const TableroPage = observer(() => {
               onClick={() => setMenuFilterOpen((v) => !v)}
               className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 sm:px-4 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                 busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos"
-                  ? "border-secondary-300 bg-secondary-50/60 text-ink-title dark:border-brand-700 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
+                  ? "border-secondary-300 bg-secondary-50/60 text-ink-title dark:border-brand-500 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
                   : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               }`}
             >
-              <SlidersHorizontal className="size-4 shrink-0" />
+              <AdjustmentsHorizontalIcon className="size-4 shrink-0" />
               <span>Filtrar y ordenar</span>
               {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
                 <span className="size-2 rounded-full bg-brand-500 shrink-0" />
@@ -1542,7 +1542,7 @@ export const TableroPage = observer(() => {
                   <div className="mb-3">
                     <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Buscar tarjetas</p>
                     <div className="relative flex items-center">
-                      <Search className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
+                      <MagnifyingGlassIcon className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
                       <input
                         type="text"
                         autoFocus
@@ -1557,7 +1557,7 @@ export const TableroPage = observer(() => {
                           onClick={() => setBusquedaTablero("")}
                           className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
                         >
-                          <X className="size-3.5" />
+                          <XMarkIcon className="size-3.5" />
                         </button>
                       )}
                     </div>
@@ -1590,13 +1590,13 @@ export const TableroPage = observer(() => {
                         onClick={() => setFiltroPago("pendientes")}
                         className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                           filtroPago === "pendientes"
-                            ? "bg-white text-warning-700 shadow-theme-xs dark:bg-gray-900 dark:text-warning-400"
+                            ? "bg-white text-brand-700 shadow-theme-xs dark:bg-gray-900 dark:text-brand-400"
                             : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                         }`}
                       >
                         <span className="truncate">Por cobrar</span>
                         {pedidosStore.totalPorCobrar > 0 && (
-                          <span className="flex size-4 items-center justify-center rounded-full bg-warning-100 text-[10px] font-bold text-warning-800 dark:bg-warning-950 dark:text-warning-300 shrink-0">
+                          <span className="flex size-4 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-800 dark:bg-brand-950 dark:text-brand-300 shrink-0">
                             {pedidosStore.totalPorCobrar}
                           </span>
                         )}
@@ -1606,13 +1606,13 @@ export const TableroPage = observer(() => {
                         onClick={() => setFiltroPago("pagados")}
                         className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                           filtroPago === "pagados"
-                            ? "bg-white text-success-700 shadow-theme-xs dark:bg-gray-900 dark:text-success-400"
+                            ? "bg-white text-accent-700 shadow-theme-xs dark:bg-gray-900 dark:text-accent-400"
                             : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                         }`}
                       >
                         <span className="truncate">Pagado</span>
                         {pedidosStore.totalPagados > 0 && (
-                          <span className="flex size-4 items-center justify-center rounded-full bg-success-100 text-[10px] font-bold text-success-800 dark:bg-success-950 dark:text-success-300 shrink-0">
+                          <span className="flex size-4 items-center justify-center rounded-full bg-accent-100 text-[10px] font-bold text-accent-800 dark:bg-accent-950 dark:text-accent-300 shrink-0">
                             {pedidosStore.totalPagados}
                           </span>
                         )}
@@ -1641,12 +1641,12 @@ export const TableroPage = observer(() => {
                           }}
                           className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                             criterioOrden === op.id
-                              ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400 font-semibold"
+                              ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950/60 dark:text-accent-400 font-semibold"
                               : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
                           }`}
                         >
                           <span>{op.label}</span>
-                          {criterioOrden === op.id && <Check className="size-3.5" />}
+                          {criterioOrden === op.id && <CheckIcon className="size-3.5" />}
                         </button>
                       ))}
                     </div>
@@ -1663,7 +1663,7 @@ export const TableroPage = observer(() => {
             className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <span>Add New Task</span>
-            <Plus className="size-4 stroke-[2.5] shrink-0" />
+            <PlusIcon className="size-4 stroke-[2.5] shrink-0" />
           </button>
         </div>
       </div>
@@ -1733,7 +1733,7 @@ export const TableroPage = observer(() => {
                       className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                       aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
                     >
-                      <MoreHorizontal className="size-4" />
+                      <EllipsisHorizontalIcon className="size-4" />
                     </button>
 
                     {menuColumnaId === estado && (
@@ -1750,7 +1750,7 @@ export const TableroPage = observer(() => {
                           }}
                           className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                         >
-                          <Edit3 className="size-3.5 text-gray-400" />
+                          <PencilIcon className="size-3.5 text-gray-400" />
                           <span>Renombrar</span>
                         </button>
 
@@ -1767,7 +1767,7 @@ export const TableroPage = observer(() => {
                             }}
                             className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                           >
-                            <ArrowLeft className="size-3.5 text-gray-400" />
+                            <ArrowLeftIcon className="size-3.5 text-gray-400" />
                             <span>Mover a la izquierda</span>
                           </button>
                         )}
@@ -1785,7 +1785,7 @@ export const TableroPage = observer(() => {
                             }}
                             className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
                           >
-                            <ArrowRight className="size-3.5 text-gray-400" />
+                            <ArrowRightIcon className="size-3.5 text-gray-400" />
                             <span>Mover a la derecha</span>
                           </button>
                         )}
@@ -1800,7 +1800,7 @@ export const TableroPage = observer(() => {
                           }}
                           className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer"
                         >
-                          <Trash2 className="size-3.5 text-error-500" />
+                          <TrashIcon className="size-3.5 text-error-500" />
                           <span>Eliminar columna</span>
                         </button>
                       </div>

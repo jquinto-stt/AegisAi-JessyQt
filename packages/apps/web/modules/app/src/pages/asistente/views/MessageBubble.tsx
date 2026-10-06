@@ -61,7 +61,7 @@ export const MessageBubble = ({ message }: { message: AssistantMessage }) => {
                   className="rounded p-1 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
                 >
                   {copied ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-success-500">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   ) : (

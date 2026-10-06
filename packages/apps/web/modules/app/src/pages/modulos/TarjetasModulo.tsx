@@ -26,7 +26,14 @@
  */
 
 import { observer } from "mobx-react-lite";
-import { ArrowRight, Lock, Plus, Kanban, BarChart3 } from "lucide-react";
+import {
+  ArrowRightIcon,
+  ChartBarIcon,
+  LockClosedIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { Kanban } from "lucide-react";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { CartIcon } from "@/icons";
@@ -107,7 +114,7 @@ export function metricasPedidosHoy(): MetricaViva[] {
       // Ámbar solo si hay algo que atender. Un cero en rojo grita por un problema
       // que no existe.
       valor: String(atencion),
-      tono: atencion > 0 ? "text-warning-600 dark:text-warning-400" : "text-gray-400 dark:text-gray-500",
+      tono: atencion > 0 ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-500",
     },
   ];
 }
@@ -155,9 +162,9 @@ export interface Atajo {
  * desfase se ve como un atajo que expulsa al pulsarlo.
  */
 export const ATAJOS_PEDIDOS: Atajo[] = [
-  { label: "Crear Pedido", to: "/pedidos/crear", capacidad: "orders.create", icon: <Plus className="size-4" /> },
+  { label: "Crear Pedido", to: "/pedidos/crear", capacidad: "orders.create", icon: <PlusIcon className="size-4" /> },
   { label: "Tablero Kanban", to: "/pedidos", capacidad: "orders.read", icon: <Kanban className="size-4" /> },
-  { label: "Analítica", to: "/pedidos/analitica", capacidad: "orders.read", icon: <BarChart3 className="size-4" /> },
+  { label: "Analítica", to: "/pedidos/analitica", capacidad: "orders.read", icon: <ChartBarIcon className="size-4" /> },
 ];
 
 /**
@@ -215,7 +222,7 @@ export const AtajosRapidos: React.FC<{ atajos: Atajo[]; onIr: (to: string) => vo
             </Button>
             {!habilitado && (
               <span className="flex items-center gap-1 px-1 text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-                <Lock className="size-3 shrink-0" />
+                <LockClosedIcon className="size-3 shrink-0" />
                 {motivoSinPermiso(a.capacidad)}
               </span>
             )}
@@ -323,7 +330,7 @@ export const TarjetaProximo: React.FC<TarjetaProximoProps> = observer(
           </Button>
           {!puedeGestionar && (
             <span className="flex items-center gap-1 px-1 text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-              <Lock className="size-3 shrink-0" />
+              <LockClosedIcon className="size-3 shrink-0" />
               {motivoSinPermiso("team.manage")}
             </span>
           )}
@@ -334,4 +341,4 @@ export const TarjetaProximo: React.FC<TarjetaProximoProps> = observer(
 );
 
 /** Flecha re-exportada para que la página no dependa de `lucide-react` directo. */
-export const IconoEntrar = ArrowRight;
+export const IconoEntrar = ArrowRightIcon;

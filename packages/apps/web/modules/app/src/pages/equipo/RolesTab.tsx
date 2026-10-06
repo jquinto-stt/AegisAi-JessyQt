@@ -160,7 +160,7 @@ export const RolesTab = observer(() => {
                 onClick={() => setSeleccionadoId(r.id)}
                 className={`group relative flex items-center justify-between w-full rounded-xl border p-3.5 text-left transition-all cursor-pointer ${
                   esSeleccionado
-                    ? "border-secondary-500 bg-secondary-50/70 shadow-theme-xs dark:border-secondary-500 dark:bg-brand-500/10"
+                    ? "border-secondary-500 bg-secondary-50/70 shadow-theme-xs dark:border-accent-500 dark:bg-brand-500/10"
                     : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
                 }`}
               >
@@ -243,7 +243,7 @@ export const RolesTab = observer(() => {
         className="max-w-md p-6"
       >
         <div className="flex flex-col items-center text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-warning-50 text-warning-500 dark:bg-warning-500/10">
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-500/10">
             <AlertIcon className="h-7 w-7" />
           </span>
           <h3 className="text-lg font-bold text-ink-title dark:text-white">
@@ -456,7 +456,7 @@ const RolEditor = observer(({
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           {guardado && (
-            <span className="text-xs font-semibold text-success-600 dark:text-success-400 mr-1">
+            <span className="text-xs font-semibold text-accent-600 dark:text-accent-400 mr-1">
               Guardado
             </span>
           )}
@@ -571,7 +571,7 @@ const RolEditor = observer(({
             >
               <CheckCircleIcon
                 className={`h-3.5 w-3.5 flex-shrink-0 ${
-                  errorCapacidades ? "text-error-500" : "text-success-500"
+                  errorCapacidades ? "text-error-500" : "text-accent-500"
                 }`}
               />
               <span>{capacidades.length} de {CAPACIDADES.length} activas</span>
@@ -735,7 +735,7 @@ const RolEditor = observer(({
       {!soloLectura && (
         <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
           {guardado && (
-            <span className="text-xs font-semibold text-success-600 dark:text-success-400">
+            <span className="text-xs font-semibold text-accent-600 dark:text-accent-400">
               Cambios guardados correctamente
             </span>
           )}

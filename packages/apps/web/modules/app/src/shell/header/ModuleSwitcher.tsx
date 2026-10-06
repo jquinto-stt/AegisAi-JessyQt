@@ -128,7 +128,7 @@ export const ModuleSwitcher: React.FC = observer(() => {
         data-module-switcher="trigger"
         className="dropdown-toggle flex items-center gap-2 h-10 px-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-brand-200 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03] lg:h-11 lg:px-3 transition-colors"
       >
-        <span className="flex items-center justify-center size-6 rounded-md bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+        <span className="flex items-center justify-center size-6 rounded-md bg-brand-50 text-brand-500 dark:bg-brand-500/10 dark:text-brand-400">
           <IconoActual className="size-4" />
         </span>
         <span className="hidden max-w-[160px] truncate text-sm font-medium sm:block">
@@ -164,11 +164,11 @@ export const ModuleSwitcher: React.FC = observer(() => {
                   <div
                     aria-current="true"
                     data-module-switcher-activo="true"
-                    className="flex cursor-default items-center gap-3 rounded-xl bg-brand-50 px-2.5 py-2 text-sm font-medium text-brand-700 dark:bg-brand-500/10 dark:text-brand-300"
+                    className="flex cursor-default items-center gap-3 rounded-xl bg-brand-50 px-2.5 py-2 text-sm font-medium text-secondary-600 dark:bg-brand-500/10 dark:text-brand-300"
                   >
                     <Icono className="size-4.5 text-brand-500 dark:text-brand-400" />
                     <span className="flex-1 truncate">{nombreModulo(modulo)}</span>
-                    <span className="text-xs font-semibold text-brand-600 dark:text-brand-400">
+                    <span className="text-xs font-semibold text-brand-500 dark:text-brand-400">
                       Activo
                     </span>
                   </div>

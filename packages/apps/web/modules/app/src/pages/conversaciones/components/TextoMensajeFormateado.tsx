@@ -93,7 +93,7 @@ export const TextoMensajeFormateado: React.FC<TextoMensajeFormateadoProps> = ({
           return (
             <blockquote
               key={key}
-              className="my-2 rounded-r border-l-2 border-secondary-500/60 bg-gray-50/70 py-1.5 pl-3 pr-2.5 text-[13px] font-normal leading-relaxed text-gray-700 dark:border-secondary-400/60 dark:bg-white/[0.04] dark:text-gray-300"
+              className="my-2 rounded-r border-l-2 border-secondary-500/60 bg-gray-50/70 py-1.5 pl-3 pr-2.5 text-[13px] font-normal leading-relaxed text-gray-700 dark:border-accent-400/60 dark:bg-white/[0.04] dark:text-gray-300"
             >
               {parsearInline(contenido, key)}
             </blockquote>

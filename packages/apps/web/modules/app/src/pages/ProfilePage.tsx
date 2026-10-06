@@ -33,15 +33,15 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
-  Pencil,
-  KeyRound,
-  LogOut,
-  Trash2,
-  Check,
-  X,
-  ShieldCheck,
-  AlertTriangle,
-} from "lucide-react";
+  ArrowLeftOnRectangleIcon,
+  CheckIcon,
+  ExclamationTriangleIcon,
+  KeyIcon,
+  PencilIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { organizacionStore, sessionStore } from "@/stores";
 import { actualizarPerfilRemoto, cambiarPassword } from "@/lib/auth.service";
 import type { RedesSociales } from "@/stores";
@@ -308,7 +308,7 @@ const ProfilePage = observer(function ProfilePage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
       {successToast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-theme-xl dark:bg-white dark:text-gray-900 animate-entrada-lista">
-          <Check className="size-4 text-success-400 dark:text-success-600" />
+          <CheckIcon className="size-4 text-accent-400 dark:text-accent-600" />
           <span>{successToast}</span>
         </div>
       )}
@@ -348,7 +348,7 @@ const ProfilePage = observer(function ProfilePage() {
               onClick={abrirPersonal}
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
             >
-              <Pencil className="size-3.5 text-gray-500 dark:text-gray-400" />
+              <PencilIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
               <span>Editar</span>
             </button>
           </div>
@@ -403,7 +403,7 @@ const ProfilePage = observer(function ProfilePage() {
               onClick={abrirDireccion}
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
             >
-              <Pencil className="size-3.5 text-gray-500 dark:text-gray-400" />
+              <PencilIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
               <span>Editar</span>
             </button>
           </div>
@@ -444,14 +444,14 @@ const ProfilePage = observer(function ProfilePage() {
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80 cursor-pointer transition-colors"
               >
-                <KeyRound className="size-3.5 text-gray-500 dark:text-gray-400" />
+                <KeyIcon className="size-3.5 text-gray-500 dark:text-gray-400" />
                 <span>Actualizar</span>
               </button>
             </div>
             <AccionBloqueada
               titulo="Verificación en dos pasos (2FA)"
               motivo={MOTIVO_SIN_BACKEND}
-              icono={<ShieldCheck className="size-3.5" />}
+              icono={<ShieldCheckIcon className="size-3.5" />}
             />
           </div>
         </section>
@@ -468,7 +468,7 @@ const ProfilePage = observer(function ProfilePage() {
             <AccionBloqueada
               titulo="Cerrar sesión en otros dispositivos"
               motivo="Cerrar las sesiones de otros dispositivos requiere un backend de autenticación. Para salir de este dispositivo, usa el menú de la cabecera."
-              icono={<LogOut className="size-3.5" />}
+              icono={<ArrowLeftOnRectangleIcon className="size-3.5" />}
             />
 
             <div className="flex flex-wrap items-center justify-between gap-4 py-5">
@@ -486,7 +486,7 @@ const ProfilePage = observer(function ProfilePage() {
                 onClick={() => setIsDeleteAccountOpen(true)}
                 className="inline-flex items-center gap-2 rounded-lg border border-error-500/80 bg-white px-4 py-2 text-xs font-semibold text-error-600 shadow-theme-xs hover:bg-error-50 dark:bg-error-950/20 dark:border-error-500/50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer transition-colors"
               >
-                <Trash2 className="size-3.5 text-error-600 dark:text-error-400" />
+                <TrashIcon className="size-3.5 text-error-600 dark:text-error-400" />
                 <span>Eliminar cuenta</span>
               </button>
             </div>
@@ -507,7 +507,7 @@ const ProfilePage = observer(function ProfilePage() {
                 aria-label="Cerrar"
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                <X className="size-5" />
+                <XMarkIcon className="size-5" />
               </button>
             </div>
 
@@ -662,7 +662,7 @@ const ProfilePage = observer(function ProfilePage() {
                 aria-label="Cerrar"
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                <X className="size-5" />
+                <XMarkIcon className="size-5" />
               </button>
             </div>
 
@@ -745,7 +745,7 @@ const ProfilePage = observer(function ProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-theme-xl dark:bg-gray-900 dark:border dark:border-gray-800 text-center">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-error-100 text-error-600 dark:bg-error-950/40 dark:text-error-400 mb-4">
-              <AlertTriangle className="size-6" />
+              <ExclamationTriangleIcon className="size-6" />
             </div>
             <h3 className="text-lg font-bold text-ink-title dark:text-white">
               ¿Eliminar la cuenta permanentemente?
@@ -787,7 +787,7 @@ const ProfilePage = observer(function ProfilePage() {
                 aria-label="Cerrar"
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                <X className="size-5" />
+                <XMarkIcon className="size-5" />
               </button>
             </div>
 

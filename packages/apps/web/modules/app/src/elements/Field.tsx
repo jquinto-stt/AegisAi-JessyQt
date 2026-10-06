@@ -64,7 +64,7 @@ export const Field = ui_dsl<FieldProps>({
             mono ? 'font-mono' : 'font-normal',
             invalid
               ? 'border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:border-error-500'
-              : 'border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 bg-transparent text-gray-800 dark:focus:border-brand-800',
+              : 'border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 bg-transparent text-gray-800 dark:focus:border-brand-500',
           ].join(' ')}
           {...(inputProps as InputHTMLAttributes<HTMLInputElement>)}
         />

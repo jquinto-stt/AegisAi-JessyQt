@@ -213,7 +213,7 @@ export const ElementosPage = observer(function ElementosPage() {
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   filtroEstado === tab.id
-                    ? "bg-brand-700 text-white"
+                    ? "bg-brand-500 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
                 }`}
               >
@@ -227,7 +227,7 @@ export const ElementosPage = observer(function ElementosPage() {
               <button
                 type="button"
                 onClick={limpiar}
-                className="ml-2 text-xs font-medium text-gray-500 hover:text-brand-700 dark:text-gray-400 dark:hover:text-brand-400"
+                className="ml-2 text-xs font-medium text-gray-500 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
               >
                 Limpiar filtros
               </button>
@@ -320,7 +320,7 @@ export const ElementosPage = observer(function ElementosPage() {
                               ev.stopPropagation();
                               navigate(`/inventarios/elementos/${e.id}`);
                             }}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+                            className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-secondary-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
                           >
                             <EyeIcon className="h-4 w-4" />
                             <span>Ver</span>
@@ -334,7 +334,7 @@ export const ElementosPage = observer(function ElementosPage() {
                                 ev.stopPropagation();
                                 setModal({ abierto: true, elemento: e });
                               }}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-700 dark:hover:bg-white/5 dark:hover:text-brand-400"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-500 dark:hover:bg-white/5 dark:hover:text-brand-400"
                             >
                               <PencilIcon className="h-4 w-4" />
                             </button>
@@ -355,7 +355,7 @@ export const ElementosPage = observer(function ElementosPage() {
                               className={cn(
                                 "inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors",
                                 e.estado === "inactivo"
-                                  ? "hover:bg-success-50 hover:text-success-700 dark:hover:bg-success-500/10"
+                                  ? "hover:bg-accent-50 hover:text-accent-700 dark:hover:bg-accent-500/10"
                                   : "hover:bg-error-50 hover:text-error-700 dark:hover:bg-error-500/10",
                               )}
                             >

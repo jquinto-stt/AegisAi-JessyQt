@@ -271,21 +271,21 @@ export const ReportesPage = observer(function ReportesPage() {
               <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                 {agregado.coinciden > 0 && (
                   <span
-                    className="bg-success-500"
+                    className="bg-accent-500"
                     style={{ width: `${(agregado.coinciden / agregado.contadas) * 100}%` }}
                     title={`${agregado.coinciden} coinciden`}
                   />
                 )}
                 {agregado.falta > 0 && (
                   <span
-                    className="bg-warning-500"
+                    className="bg-brand-500"
                     style={{ width: `${(agregado.falta / agregado.contadas) * 100}%` }}
                     title={`${agregado.falta} faltan`}
                   />
                 )}
                 {agregado.sobra > 0 && (
                   <span
-                    className="bg-warning-300 dark:bg-warning-600"
+                    className="bg-brand-300 dark:bg-brand-600"
                     style={{ width: `${(agregado.sobra / agregado.contadas) * 100}%` }}
                     title={`${agregado.sobra} sobran`}
                   />
@@ -458,7 +458,7 @@ function Cifra({
       <p
         className={cn(
           "text-2xl font-semibold tabular-nums",
-          tono === "atencion" ? "text-warning-700 dark:text-warning-400" : "text-ink-title dark:text-white",
+          tono === "atencion" ? "text-brand-700 dark:text-brand-400" : "text-ink-title dark:text-white",
         )}
       >
         {valor}
@@ -479,9 +479,9 @@ function Leyenda({
   n: number;
 }) {
   const clase = {
-    success: "bg-success-500",
-    warning: "bg-warning-500",
-    "warning-suave": "bg-warning-300 dark:bg-warning-600",
+    success: "bg-accent-500",
+    warning: "bg-brand-500",
+    "warning-suave": "bg-brand-300 dark:bg-brand-600",
     gray: "bg-gray-300 dark:bg-gray-600",
     error: "bg-error-500",
   }[color];
@@ -501,7 +501,7 @@ function Numero({ n, tono }: { n: number; tono: "atencion" | "error" }) {
     <span
       className={cn(
         "text-sm font-medium tabular-nums",
-        tono === "atencion" ? "text-warning-700 dark:text-warning-400" : "text-error-700 dark:text-error-400",
+        tono === "atencion" ? "text-brand-700 dark:text-brand-400" : "text-error-700 dark:text-error-400",
       )}
     >
       {n}

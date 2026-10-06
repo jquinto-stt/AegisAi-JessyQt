@@ -2,7 +2,14 @@ import { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ShellDropdown, ShellDropdownItem } from "@/shell/header/ShellDropdown";
 import { useNavigate } from "react-router";
-import { User, Settings, Info, Globe, LogOut, LayoutGrid } from "lucide-react";
+import {
+  ArrowLeftOnRectangleIcon,
+  Cog6ToothIcon,
+  GlobeAltIcon,
+  InformationCircleIcon,
+  Squares2X2Icon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import { sessionStore, organizacionStore } from "@/stores";
 import { cerrarSesion } from "@/lib/auth.service";
 
@@ -85,7 +92,7 @@ const UserDropdown = observer(() => {
             de usuario, un glifo genérico. */}
         <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-200 p-0.5 overflow-hidden dark:bg-accent-500/25">
           <span className="flex h-full w-full items-center justify-center rounded-full bg-white text-sm font-medium uppercase text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-            {iniciales || <User className="size-4 text-gray-400" />}
+            {iniciales || <UserIcon className="size-4 text-gray-400" />}
           </span>
         </div>
 
@@ -141,7 +148,7 @@ const UserDropdown = observer(() => {
               to="/profile"
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
             >
-              <User className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
+              <UserIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
               <span>Editar perfil</span>
             </ShellDropdownItem>
           </li>
@@ -157,7 +164,7 @@ const UserDropdown = observer(() => {
               to="/configuracion"
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
             >
-              <Settings className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
+              <Cog6ToothIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
               <span>Configuración de la organización</span>
             </ShellDropdownItem>
           </li>
@@ -170,7 +177,7 @@ const UserDropdown = observer(() => {
               to="/soporte"
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
             >
-              <Info className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
+              <InformationCircleIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
               <span>Soporte</span>
             </ShellDropdownItem>
           </li>
@@ -180,7 +187,7 @@ const UserDropdown = observer(() => {
           <li>
             <div className="flex items-center justify-between px-2.5 py-2 font-medium text-gray-700 rounded-xl text-sm hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800/70 transition-colors">
               <div className="flex items-center gap-3">
-                <Globe className="size-4.5 text-gray-500 dark:text-gray-400" />
+                <GlobeAltIcon className="size-4.5 text-gray-500 dark:text-gray-400" />
                 <span>Idioma</span>
               </div>
               <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -222,9 +229,9 @@ const UserDropdown = observer(() => {
               onItemClick={closeDropdown}
               tag="a"
               to="/modulos"
-              className="flex items-center gap-3 px-2.5 py-2 font-medium text-brand-700 rounded-xl group text-sm bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 transition-colors"
+              className="flex items-center gap-3 px-2.5 py-2 font-medium text-secondary-600 rounded-xl group text-sm bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 transition-colors"
             >
-              <LayoutGrid className="size-4.5 text-brand-500 group-hover:text-brand-600 dark:text-brand-400" />
+              <Squares2X2Icon className="size-4.5 text-brand-500 group-hover:text-brand-600 dark:text-brand-400" />
               <span>Workspace</span>
             </ShellDropdownItem>
             <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
@@ -237,7 +244,7 @@ const UserDropdown = observer(() => {
           onClick={handleLogout}
           className="flex w-full items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors cursor-pointer text-left"
         >
-          <LogOut className="size-4.5 text-gray-500 dark:text-gray-400" />
+          <ArrowLeftOnRectangleIcon className="size-4.5 text-gray-500 dark:text-gray-400" />
           <span>Cerrar sesión</span>
         </button>
       </ShellDropdown>

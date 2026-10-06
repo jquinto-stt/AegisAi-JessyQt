@@ -471,10 +471,10 @@ export const CatalogoPage: React.FC = observer(() => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-xl md:text-2xl font-bold text-ink-title dark:text-white tracking-tight">
                 Menú y Productos
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400 border border-success-200 dark:border-success-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400 border border-accent-200 dark:border-accent-500/20">
                 En línea
               </span>
             </div>
@@ -488,7 +488,7 @@ export const CatalogoPage: React.FC = observer(() => {
         <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => setMostrarImportador(!mostrarImportador)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 dark:border-brand-500/30 bg-brand-50/60 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 text-sm font-semibold hover:bg-brand-100/80 dark:hover:bg-brand-500/20 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 dark:border-brand-500/30 bg-brand-50/60 dark:bg-brand-500/10 text-brand-500 dark:text-brand-400 text-sm font-semibold hover:bg-brand-100/80 dark:hover:bg-brand-500/20 transition-all"
           >
             <DocsIcon className="w-4 h-4" />
             Cargar Menú (PDF / Excel)
@@ -524,13 +524,13 @@ export const CatalogoPage: React.FC = observer(() => {
         <div
           className={`p-4 rounded-2xl flex items-center justify-between border ${
             alerta.tipo === 'exito'
-              ? 'bg-success-50 border-success-200 text-success-700 dark:bg-success-500/10 dark:border-success-500/30 dark:text-success-400'
+              ? 'bg-accent-50 border-accent-200 text-accent-700 dark:bg-accent-500/10 dark:border-accent-500/30 dark:text-accent-400'
               : 'bg-error-50 border-error-200 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-400'
           }`}
         >
           <div className="flex items-center gap-3">
             {alerta.tipo === 'exito' ? (
-              <CheckCircleIcon className="w-5 h-5 text-success-600 dark:text-success-400 shrink-0" />
+              <CheckCircleIcon className="w-5 h-5 text-accent-600 dark:text-accent-400 shrink-0" />
             ) : (
               <AlertIcon className="w-5 h-5 text-error-600 dark:text-error-400 shrink-0" />
             )}
@@ -554,7 +554,7 @@ export const CatalogoPage: React.FC = observer(() => {
                 <FileIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                <h3 className="text-base font-bold text-ink-title dark:text-white">
                   Cargar menú desde archivo
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -795,7 +795,7 @@ export const CatalogoPage: React.FC = observer(() => {
             <DocsIcon className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900 dark:text-white">
+            <h3 className="text-base font-bold text-ink-title dark:text-white">
               No hay productos para mostrar
             </h3>
             <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
@@ -854,7 +854,7 @@ export const CatalogoPage: React.FC = observer(() => {
                   title={item.disponible ? 'Pausar plato' : 'Habilitar plato'}
                   className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold shadow-theme-xs transition-all ${
                     item.disponible
-                      ? 'bg-success-500 text-white'
+                      ? 'bg-accent-500 text-white'
                       : 'bg-gray-600 text-gray-200'
                   }`}
                 >
@@ -872,7 +872,7 @@ export const CatalogoPage: React.FC = observer(() => {
               {/* Contenido */}
               <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
                 <div>
-                  <h4 className="font-bold text-sm text-gray-900 dark:text-white line-clamp-1">
+                  <h4 className="font-bold text-sm text-ink-title dark:text-white line-clamp-1">
                     {item.nombre}
                   </h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
@@ -920,7 +920,7 @@ export const CatalogoPage: React.FC = observer(() => {
                     />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">
+                    <h4 className="font-bold text-ink-title dark:text-white text-sm">
                       {item.nombre}
                     </h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">
@@ -941,7 +941,7 @@ export const CatalogoPage: React.FC = observer(() => {
                     onClick={(e) => toggleDisponibilidad(item.id, e)}
                     className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                       item.disponible
-                        ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400 border border-success-200 dark:border-success-500/30'
+                        ? 'bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400 border border-accent-200 dark:border-accent-500/30'
                         : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                     }`}
                   >
@@ -966,7 +966,7 @@ export const CatalogoPage: React.FC = observer(() => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl p-6 shadow-theme-lg border border-gray-200 dark:border-gray-800 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              <h3 className="text-base font-bold text-ink-title dark:text-white">
                 {esNuevoProducto ? 'Nuevo Plato o Producto' : 'Editar Plato'}
               </h3>
               <button
@@ -1109,7 +1109,7 @@ export const CatalogoPage: React.FC = observer(() => {
                   }
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                     productoEnEdicion.disponible
-                      ? 'bg-success-500 text-white'
+                      ? 'bg-accent-500 text-white'
                       : 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                   }`}
                 >

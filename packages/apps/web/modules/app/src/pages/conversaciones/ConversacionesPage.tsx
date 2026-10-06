@@ -96,8 +96,8 @@ export const ConversacionesPage = observer(() => {
               title="La bandeja se actualiza sola cuando llega un mensaje"
             >
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-500" />
               </span>
               En vivo
             </span>
@@ -198,7 +198,7 @@ export const ConversacionesPage = observer(() => {
           className={`shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs ${
             conversacionesStore.origenDatos === "cargando"
               ? "border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
-              : "border-amber-300/60 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200/90"
+              : "border-brand-300/60 bg-brand-50 text-brand-900 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200/90"
           }`}
         >
           <svg
@@ -237,7 +237,7 @@ export const ConversacionesPage = observer(() => {
       {conversacionesStore.ultimoErrorModo && (
         <div
           role="alert"
-          className="shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-red-300/60 bg-red-50 px-3.5 py-2.5 text-xs text-red-900 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200/90"
+          className="shrink-0 mb-3 flex items-start gap-2.5 rounded-xl border border-error-300/60 bg-error-50 px-3.5 py-2.5 text-xs text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠

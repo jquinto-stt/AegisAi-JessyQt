@@ -132,7 +132,7 @@ export const ModalElemento = observer(function ModalElemento({
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
           <section aria-labelledby="el-identificacion-title">
             <div className="mb-3 flex items-baseline justify-between gap-4">
-              <h3 id="el-identificacion-title" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+              <h3 id="el-identificacion-title" className="text-sm font-semibold text-ink-title dark:text-gray-200">
                 Identificación
               </h3>
               <span className="text-xs text-gray-500 dark:text-gray-400">* Campo obligatorio</span>
@@ -141,7 +141,7 @@ export const ModalElemento = observer(function ModalElemento({
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.35fr_0.8fr]">
               <div>
                 <Label htmlFor="el-nombre" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Nombre del producto <span className="text-brand-700 dark:text-brand-300">*</span>
+                  Nombre del producto <span className="text-secondary-600 dark:text-brand-300">*</span>
                 </Label>
                 <Input
                   id="el-nombre"
@@ -163,7 +163,7 @@ export const ModalElemento = observer(function ModalElemento({
 
               <div>
                 <Label htmlFor="el-codigo" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Código o referencia <span className="text-brand-700 dark:text-brand-300">*</span>
+                  Código o referencia <span className="text-secondary-600 dark:text-brand-300">*</span>
                 </Label>
                 <Input
                   id="el-codigo"
@@ -192,7 +192,7 @@ export const ModalElemento = observer(function ModalElemento({
           <section aria-label="Clasificación y forma de conteo" className="grid grid-cols-1 gap-6 border-t border-gray-100 pt-5 dark:border-white/10 md:grid-cols-[0.92fr_1.08fr] md:gap-7">
             <div>
               <Label htmlFor="el-categoria" className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                Categoría <span className="text-brand-700 dark:text-brand-300">*</span>
+                Categoría <span className="text-secondary-600 dark:text-brand-300">*</span>
               </Label>
               <p id="el-categoria-hint" className="mt-1 text-xs leading-4 text-gray-600 dark:text-gray-400">
                 Escribe una categoría o elige una existente.
@@ -230,11 +230,11 @@ export const ModalElemento = observer(function ModalElemento({
                           onClick={() => setCategoria(sugerencia)}
                           className={
                             seleccionada
-                              ? "inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-800 transition-colors hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-200 dark:hover:bg-brand-500/20"
+                              ? "inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-brand-300 bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-secondary-600 transition-colors hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-200 dark:hover:bg-brand-500/20"
                               : "inline-flex min-h-9 items-center rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:border-white/20 dark:hover:bg-white/[0.05]"
                           }
                         >
-                          {seleccionada && <CheckLineIcon className="h-4 w-4 shrink-0 text-brand-700 dark:text-brand-300" />}
+                          {seleccionada && <CheckLineIcon className="h-4 w-4 shrink-0 text-secondary-600 dark:text-brand-300" />}
                           {sugerencia}
                         </button>
                       );
@@ -246,7 +246,7 @@ export const ModalElemento = observer(function ModalElemento({
 
             <fieldset className="min-w-0">
               <legend className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                Forma de conteo <span className="text-brand-700 dark:text-brand-300">*</span>
+                Forma de conteo <span className="text-secondary-600 dark:text-brand-300">*</span>
               </legend>
               <p id="el-unidad-hint" className="mt-1 text-xs leading-4 text-gray-600 dark:text-gray-400">
                 Define qué representa cada cantidad.
@@ -333,7 +333,7 @@ export const ModalElemento = observer(function ModalElemento({
             <Button
               type="submit"
               disabled={enviado && !validacion.ok}
-              className="w-full disabled:bg-brand-100 disabled:text-brand-800 disabled:opacity-100 dark:disabled:bg-brand-500/15 dark:disabled:text-brand-200 sm:w-auto"
+              className="w-full disabled:bg-brand-100 disabled:text-secondary-600 disabled:opacity-100 dark:disabled:bg-brand-500/15 dark:disabled:text-brand-200 sm:w-auto"
             >
               {editando ? "Guardar cambios" : "Agregar producto"}
             </Button>

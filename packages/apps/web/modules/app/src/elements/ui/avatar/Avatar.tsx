@@ -17,9 +17,9 @@ export type AvatarSize = "xsmall" | "small" | "medium" | "large" | "xlarge" | "x
 /**
  * Online presence status shown as a colored dot on the avatar.
  *
- * - `"online"` — Green dot (`success-500`) — user is active and available
+ * - `"online"` — Green dot (`accent-500`) — user is active and available
  * - `"offline"` — Red dot (`error-400`) — user is disconnected or away
- * - `"busy"` — Orange dot (`warning-500`) — user is occupied, do not disturb
+ * - `"busy"` — Orange dot (`brand-500`) — user is occupied, do not disturb
  * - `"none"` — No indicator shown *(default)*
  * @kgId f30a018abbc5
  */
@@ -97,9 +97,9 @@ const statusSizeClasses = {
 };
 
 const statusColorClasses = {
-  online: "bg-success-500",
+  online: "bg-accent-500",
   offline: "bg-error-400",
-  busy: "bg-warning-500",
+  busy: "bg-brand-500",
 };
 
 /**

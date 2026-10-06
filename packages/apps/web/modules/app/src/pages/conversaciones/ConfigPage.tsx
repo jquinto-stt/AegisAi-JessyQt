@@ -438,7 +438,7 @@ export const ConfigPage = observer(() => {
                   fija
                   mensaje={
                     guardado ? (
-                      <span className="text-sm text-success-600 dark:text-success-500">
+                      <span className="text-sm text-accent-600 dark:text-accent-500">
                         Guardado ✓
                       </span>
                     ) : undefined
@@ -671,7 +671,7 @@ export const ConfigPage = observer(() => {
                                   >
                                     <CheckCircleIcon
                                       className={`h-3.5 w-3.5 shrink-0 ${
-                                        entrada.disponible ? "text-success-500" : "text-gray-400"
+                                        entrada.disponible ? "text-accent-500" : "text-gray-400"
                                       }`}
                                     />
                                     {capacidad}

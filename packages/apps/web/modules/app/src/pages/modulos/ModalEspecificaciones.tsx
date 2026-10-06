@@ -16,7 +16,9 @@
 
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Lock } from "lucide-react";
+import {
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
@@ -104,7 +106,7 @@ export const ModalEspecificaciones: React.FC<ModalEspecificacionesProps> = obser
                 </Button>
               ) : (
                 <span className="flex items-center gap-1 text-[10px] leading-tight text-gray-400 dark:text-gray-500">
-                  <Lock className="size-3 shrink-0" />
+                  <LockClosedIcon className="size-3 shrink-0" />
                   {motivoSinPermiso("team.manage")}
                 </span>
               )}

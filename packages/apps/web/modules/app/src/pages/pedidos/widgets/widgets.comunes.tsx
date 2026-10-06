@@ -16,11 +16,12 @@ import { retardoEscalonado } from "@/utils";
 
 // ── Paleta oficial NECTO ───────────────────────────────────────────────────
 //
-// Los tres colores de marca. Se declaran aquí y los importan todos los widgets,
-// en vez de que cada uno redeclare su propio `const ORANGE = "#FF3C10"`.
-export const ORANGE = "#FF3C10";
-export const INDIGO = "#15008B";
-export const CELESTE = "#71D6E0";
+// Los tres colores de marca, en los hex oficiales. Se declaran aquí y los
+// importan todos los widgets, en vez de que cada uno redeclare su propio
+// `const ORANGE = "#FF3F1A"`.
+export const ORANGE = "#ff3f1a";
+export const INDIGO = "#190088";
+export const CELESTE = "#97d6df";
 
 /**
  * Importe en pesos colombianos.
@@ -174,7 +175,7 @@ export function KpiCard({
       style={{ animationDelay: retardoEscalonado(indice) }}
       className="animate-entrada-lista group block h-full w-full text-left"
     >
-      <div className="h-full transition-all group-hover:border-secondary-300 dark:group-hover:border-brand-700">
+      <div className="h-full transition-all group-hover:border-secondary-300 dark:group-hover:border-brand-500">
         {contenido}
       </div>
     </button>

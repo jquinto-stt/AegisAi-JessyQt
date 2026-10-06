@@ -55,7 +55,7 @@ export const ComparisonBlockView = ({ block }: { block: ComparisonBlock }) => {
             vari === null || vari === 0
               ? "text-gray-400 dark:text-gray-500"
               : vari > 0
-              ? "text-success-600 dark:text-success-400"
+              ? "text-accent-600 dark:text-accent-400"
               : "text-error-600 dark:text-error-400";
 
           const max = Math.max(Math.abs(item.valueA), Math.abs(item.valueB), 1);

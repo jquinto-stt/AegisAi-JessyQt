@@ -66,7 +66,7 @@ export function EnlaceVolver({ onClick, children }: { onClick: () => void; child
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 text-xs sm:text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-brand-400"
+      className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -ml-2 text-xs sm:text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-brand-500 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-brand-400"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} className="h-4 w-4">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />

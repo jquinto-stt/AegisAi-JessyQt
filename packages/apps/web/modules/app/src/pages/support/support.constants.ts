@@ -1,12 +1,16 @@
+import type { ComponentType, SVGProps } from "react";
 import {
-  BookOpen,
-  Clock,
-  FileText,
-  Mail,
-  MessagesSquare,
-  UserRoundCheck,
-  type LucideIcon,
-} from "lucide-react";
+  BookOpenIcon,
+  ChatBubbleLeftRightIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  EnvelopeIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { UserRoundCheck } from "lucide-react";
+/** Los iconos de este archivo vienen de dos catalogos (Heroicons y lucide),
+ *  asi que el tipo comun es el minimo que ambos cumplen. */
+export type IconoApp = ComponentType<SVGProps<SVGSVGElement>>;
 import type { SelectOption } from "@/elements";
 import type { NumberedStep } from "../shared/NumberedSteps";
 
@@ -29,7 +33,7 @@ export const SUPPORT_EMAIL = "soporte@necto.app";
 export interface SupportSeal {
   id: string;
   label: string;
-  icon: LucideIcon;
+  icon: IconoApp;
 }
 
 /**
@@ -39,16 +43,16 @@ export interface SupportSeal {
  */
 export const SUPPORT_SEALS: SupportSeal[] = [
   { id: "human", label: "Te responde una persona", icon: UserRoundCheck },
-  { id: "sla", label: "Respuesta en 2 días hábiles", icon: Clock },
-  { id: "followup", label: "Seguimiento por escrito", icon: MessagesSquare },
-  { id: "kb", label: "Centro de ayuda siempre abierto", icon: BookOpen },
+  { id: "sla", label: "Respuesta en 2 días hábiles", icon: ClockIcon },
+  { id: "followup", label: "Seguimiento por escrito", icon: ChatBubbleLeftRightIcon },
+  { id: "kb", label: "Centro de ayuda siempre abierto", icon: BookOpenIcon },
 ];
 
 export interface SupportChannel {
   id: string;
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: IconoApp;
   /** Rótulo del enlace de la tarjeta. */
   action: string;
   /** Ruta interna. Excluyente con `href`. */
@@ -70,7 +74,7 @@ export const SUPPORT_CHANNELS: SupportChannel[] = [
     title: "Centro de ayuda",
     description:
       "Los primeros pasos del alta y las siete dudas que más nos llegan. Suele resolver la consulta sin esperar.",
-    icon: BookOpen,
+    icon: BookOpenIcon,
     action: "Abrir el centro de ayuda",
     to: "/ayuda",
   },
@@ -79,7 +83,7 @@ export const SUPPORT_CHANNELS: SupportChannel[] = [
     title: "Formulario de soporte",
     description:
       "Cuéntanos el caso con tus palabras. Queda registrado con una referencia que puedes citar después.",
-    icon: FileText,
+    icon: DocumentTextIcon,
     action: "Ir al formulario",
     // Ancla de la propia página, no ruta: se resuelve con un `<a href="#…">`
     // nativo para que el salto lo haga el navegador. Con el `Link` del router
@@ -91,7 +95,7 @@ export const SUPPORT_CHANNELS: SupportChannel[] = [
     title: "Correo",
     description:
       "Para casos que necesitan adjuntar capturas, facturas o cualquier archivo que no cabe en un formulario.",
-    icon: Mail,
+    icon: EnvelopeIcon,
     action: "Escribir al buzón",
     href: `mailto:${SUPPORT_EMAIL}`,
   },

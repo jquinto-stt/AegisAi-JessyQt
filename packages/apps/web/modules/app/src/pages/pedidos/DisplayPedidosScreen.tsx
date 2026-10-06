@@ -4,19 +4,15 @@ import { useSearchParams, useNavigate } from "react-router";
 import { pedidosStore, organizacionStore, type Pedido, type Modalidad } from "@/stores";
 import { Card, Badge, Button } from "@/elements";
 import {
-  Volume2,
-  VolumeX,
-  Maximize2,
-  Minimize2,
-  ChevronLeft,
-  ArrowRight,
-  PackageCheck,
-  ChefHat,
-  Clock,
-  Store,
-  Bike,
-  UtensilsCrossed,
-} from "lucide-react";
+  ArrowRightIcon,
+  ArrowsPointingInIcon,
+  ArrowsPointingOutIcon,
+  BuildingStorefrontIcon,
+  CheckBadgeIcon,
+  ChevronLeftIcon,
+  SpeakerWaveIcon,
+  SpeakerXMarkIcon,
+} from "@heroicons/react/24/outline";
 
 /**
  * Sonido chime sintético suave y profesional para Smart TV.
@@ -58,7 +54,7 @@ function playChime() {
  * DisplayPedidosScreen — Pantalla de Turnos y Sala Oficial Necto.
  * Construida con el sistema de diseño @/elements (Card, Badge, Button):
  * - Estética sobria, profesional y sin iluminaciones neón innecesarias.
- * - Tarjeta Hero en rojo corporativo Necto (#FF3D00 / brand-500) con llamado claro a ventanilla.
+ * - Tarjeta Hero en naranja de marca Necto (#FF3F1A / brand-500) con llamado claro a ventanilla.
  * - Tabla estructurada con componentes canónicos de @/elements para los siguientes turnos.
  * - Tipografía clara, legible a gran distancia sin saturación.
  */
@@ -207,10 +203,10 @@ export const DisplayPedidosScreen = observer(() => {
   return (
     <div
       ref={containerRef}
-      className="relative flex h-screen w-screen flex-col justify-between overflow-hidden bg-[#070B14] text-gray-100 select-none font-sans"
+      className="relative flex h-screen w-screen flex-col justify-between overflow-hidden bg-gray-950 text-gray-100 select-none font-sans"
     >
       {/* 1. Header Superior Corporativo Necto */}
-      <header className="relative z-10 flex h-20 w-full items-center justify-between border-b border-gray-800/80 bg-[#0A101D] px-8 sm:px-14">
+      <header className="relative z-10 flex h-20 w-full items-center justify-between border-b border-gray-800/80 bg-gray-950 px-8 sm:px-14">
         {/* Logo NECTO grow together */}
         <div className="flex items-center gap-3">
           <button
@@ -247,18 +243,18 @@ export const DisplayPedidosScreen = observer(() => {
 
       {/* 2. Área Central: Tarjeta Hero Necto + Card SIGUIENTES TURNOS */}
       <main className="relative z-10 flex flex-1 items-center justify-center px-8 sm:px-12 lg:px-16 gap-8 lg:gap-12 max-w-[1680px] mx-auto w-full">
-        {/* A. Tarjeta Hero Flotante Necto (#FF3D00 / brand-500) */}
+        {/* A. Tarjeta Hero Flotante Necto (#FF3F1A / brand-500) */}
         <div className="flex-1 flex justify-center max-w-[660px]">
           <div
             onClick={avanzarHero}
-            className="group relative flex w-full flex-col justify-between rounded-3xl bg-[#FF3D00] p-8 sm:p-10 text-white shadow-xl transition-transform duration-200 hover:scale-[1.01] cursor-pointer min-h-[480px] border border-orange-500"
+            className="group relative flex w-full flex-col justify-between rounded-3xl bg-brand-500 p-8 sm:p-10 text-white shadow-xl transition-transform duration-200 hover:scale-[1.01] cursor-pointer min-h-[480px] border border-brand-400"
             title="Click o [Espacio] para avanzar pedido"
           >
             {/* Header del Ticket Hero: Icono + Badge */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex size-10 items-center justify-center rounded-xl bg-white/20">
-                  <PackageCheck className="size-6 text-white stroke-[2.2]" />
+                  <CheckBadgeIcon className="size-6 text-white stroke-[2.2]" />
                 </div>
                 <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-white">
                   ¡TU PEDIDO ESTÁ LISTO!
@@ -299,13 +295,13 @@ export const DisplayPedidosScreen = observer(() => {
                   <span className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
                     {obtenerPuntoEntrega(turnoHero)}
                   </span>
-                  <ArrowRight className="size-6 sm:size-7 text-white stroke-[3]" />
+                  <ArrowRightIcon className="size-6 sm:size-7 text-white stroke-[3]" />
                 </div>
               </div>
 
               {/* Distintivo de Mostrador */}
               <div className="flex items-center gap-2 rounded-xl bg-white/15 px-3.5 py-2">
-                <Store className="size-5 text-white" />
+                <BuildingStorefrontIcon className="size-5 text-white" />
                 <span className="text-xs font-bold uppercase tracking-wider text-white">
                   ENTREGA
                 </span>
@@ -316,7 +312,7 @@ export const DisplayPedidosScreen = observer(() => {
 
         {/* B. Panel Lateral: SIGUIENTES TURNOS usando Card de @/elements */}
         <div className="w-full max-w-[620px] flex flex-col">
-          <Card className="flex flex-col rounded-3xl bg-[#0A101D] border-gray-800 p-7 sm:p-9 shadow-xl min-h-[480px] justify-between">
+          <Card className="flex flex-col rounded-3xl bg-gray-950 border-gray-800 p-7 sm:p-9 shadow-xl min-h-[480px] justify-between">
             <div>
               {/* Título de Sección */}
               <div className="flex items-center justify-between mb-5">
@@ -391,7 +387,7 @@ export const DisplayPedidosScreen = observer(() => {
                         <div className="h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
-                              esCocina ? "bg-amber-500" : "bg-sky-500"
+                              esCocina ? "bg-brand-500" : "bg-accent-500"
                             }`}
                             style={{ width: `${progreso}%` }}
                           />
@@ -413,7 +409,7 @@ export const DisplayPedidosScreen = observer(() => {
       </main>
 
       {/* 3. Footer / Barra Inferior con Buttons de @/elements */}
-      <footer className="relative z-10 flex h-16 w-full items-center justify-between border-t border-gray-800/80 bg-[#0A101D] px-8 sm:px-14 text-xs text-gray-400">
+      <footer className="relative z-10 flex h-16 w-full items-center justify-between border-t border-gray-800/80 bg-gray-950 px-8 sm:px-14 text-xs text-gray-400">
         {/* Controles de Salir y Audio con Button de @/elements */}
         <div className="flex items-center gap-2">
           <Button
@@ -422,7 +418,7 @@ export const DisplayPedidosScreen = observer(() => {
             onClick={() => navigate("/pedidos")}
             className="border-gray-700 bg-transparent text-gray-300 hover:bg-gray-800 gap-1.5"
           >
-            <ChevronLeft className="size-4" />
+            <ChevronLeftIcon className="size-4" />
             <span>Salir</span>
           </Button>
 
@@ -437,7 +433,7 @@ export const DisplayPedidosScreen = observer(() => {
               sonidoHabilitado ? "text-gray-200" : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            {sonidoHabilitado ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
+            {sonidoHabilitado ? <SpeakerWaveIcon className="size-4" /> : <SpeakerXMarkIcon className="size-4" />}
             <span>{sonidoHabilitado ? "Sonido Activo" : "Silenciado"}</span>
           </Button>
         </div>
@@ -455,7 +451,7 @@ export const DisplayPedidosScreen = observer(() => {
             onClick={toggleFullscreen}
             className="text-gray-300 hover:bg-gray-800 gap-1.5"
           >
-            {esPantallaCompleta ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+            {esPantallaCompleta ? <ArrowsPointingInIcon className="size-4" /> : <ArrowsPointingOutIcon className="size-4" />}
             <span className="hidden md:inline">Pantalla Completa</span>
           </Button>
         </div>

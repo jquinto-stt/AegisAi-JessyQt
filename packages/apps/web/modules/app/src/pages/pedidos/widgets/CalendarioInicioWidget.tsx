@@ -170,7 +170,7 @@ export const CalendarioInicioWidget = observer(
                 className={
                   "flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border text-sm transition-colors " +
                   (esSeleccionado
-                    ? "border-secondary-500 bg-secondary-50 dark:border-secondary-500 dark:bg-brand-500/10"
+                    ? "border-secondary-500 bg-secondary-50 dark:border-accent-500 dark:bg-brand-500/10"
                     : "border-transparent hover:bg-gray-50 dark:hover:bg-white/[0.04]")
                 }
               >
@@ -193,7 +193,7 @@ export const CalendarioInicioWidget = observer(
                     {Array.from({ length: Math.min(recibidos, MAX_PUNTOS) }).map((_, k) => (
                       <span key={`r${k}`} className="h-1.5 w-1.5 rounded-full bg-brand-400" />
                     ))}
-                    {programados > 0 && <span className="h-1.5 w-1.5 rounded-full bg-secondary-600" />}
+                    {programados > 0 && <span className="h-1.5 w-1.5 rounded-full bg-secondary-600 dark:bg-accent-300" />}
                   </span>
                 )}
               </button>
@@ -210,7 +210,7 @@ export const CalendarioInicioWidget = observer(
             </span>
             {verProgramados && (
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-secondary-600" />
+                <span className="h-1.5 w-1.5 rounded-full bg-secondary-600 dark:bg-accent-300" />
                 Programados para ese día
               </span>
             )}

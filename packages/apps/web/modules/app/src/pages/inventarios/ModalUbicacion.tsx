@@ -132,7 +132,7 @@ export const ModalUbicacion = observer(function ModalUbicacion({
             {err("padreId") ? (
               <p className="mt-1.5 text-xs text-error-700 dark:text-error-400">{err("padreId")}</p>
             ) : opcionesPadre.length === 0 ? (
-              <p className="mt-1.5 text-xs text-warning-700 dark:text-warning-400">
+              <p className="mt-1.5 text-xs text-brand-700 dark:text-brand-400">
                 No hay {NIVEL_UBICACION_META[nivelSuperior].labelPlural.toLowerCase()} activos disponibles. Debes crear uno primero.
               </p>
             ) : null}
@@ -325,7 +325,7 @@ export const NodoUbicacion = observer(function NodoUbicacion({
             className={cn(
               "inline-flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 transition-colors",
               inactiva
-                ? "hover:bg-success-50 hover:text-success-700 dark:hover:bg-success-500/10"
+                ? "hover:bg-accent-50 hover:text-accent-700 dark:hover:bg-accent-500/10"
                 : "hover:bg-error-50 hover:text-error-700 dark:hover:bg-error-500/10",
             )}
           >

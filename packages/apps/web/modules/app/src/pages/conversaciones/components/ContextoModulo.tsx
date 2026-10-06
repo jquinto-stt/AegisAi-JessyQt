@@ -176,7 +176,7 @@ const ContextoPedidos = observer(
                             type="button"
                             onClick={() => void confirmarPagoPedido(p.id)}
                             title="Confirmar pago y avanzar a Confirmado"
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-200/80 px-2 py-1 text-xs font-semibold transition-all cursor-pointer dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-600 dark:hover:text-white active:scale-95"
+                            className="inline-flex items-center gap-1 rounded-lg bg-accent-50 text-accent-700 hover:bg-accent-600 hover:text-white border border-accent-200/80 px-2 py-1 text-xs font-semibold transition-all cursor-pointer dark:bg-accent-950/40 dark:text-accent-400 dark:border-accent-800 dark:hover:bg-accent-600 dark:hover:text-white active:scale-95"
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                               <polyline points="20 6 9 17 4 12" />

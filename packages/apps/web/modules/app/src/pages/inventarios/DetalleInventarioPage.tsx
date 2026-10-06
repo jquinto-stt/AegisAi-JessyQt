@@ -242,8 +242,8 @@ export const DetalleInventarioPage = observer(function DetalleInventarioPage() {
         )}
 
         {inventario.estado === "finalizado" && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-success-200 bg-success-50/60 px-4 py-2.5 text-xs text-success-800 dark:border-success-500/20 dark:bg-success-500/10 dark:text-success-400">
-            <CheckCircleIcon className="h-4 w-4 shrink-0 text-success-700 dark:text-success-400" />
+          <div className="flex items-center gap-2.5 rounded-xl border border-accent-200 bg-accent-50/60 px-4 py-2.5 text-xs text-accent-800 dark:border-accent-500/20 dark:bg-accent-500/10 dark:text-accent-400">
+            <CheckCircleIcon className="h-4 w-4 shrink-0 text-accent-700 dark:text-accent-400" />
             <span>
               Conteo cerrado y firmado el {formatearFechaHora(inventario.finalizadoEn)} por {nombreDeActor(inventario.finalizadoPorId)}. Solo lectura.
             </span>
@@ -260,7 +260,7 @@ export const DetalleInventarioPage = observer(function DetalleInventarioPage() {
           <Card className="p-5 sm:p-5 lg:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <UbicacionFija camino={camino} />
-              <span className="text-xs text-gray-600 dark:text-gray-400" title={meta.hint}>
+              <span className="text-xs text-gray-600 dark:text-gray-400" title={meta.consecuencia}>
                 {meta.label}
               </span>
             </div>
@@ -330,7 +330,7 @@ export const DetalleInventarioPage = observer(function DetalleInventarioPage() {
                     Finalizar conteo
                   </Button>
                   {!finalizacion.habilitado && finalizacion.motivo && (
-                    <span className="text-xs text-warning-700 dark:text-warning-400">
+                    <span className="text-xs text-brand-700 dark:text-brand-400">
                       {finalizacion.motivo}
                     </span>
                   )}
@@ -465,7 +465,7 @@ export const DetalleInventarioPage = observer(function DetalleInventarioPage() {
               <button
                 type="button"
                 onClick={() => navigate("/inventarios/historial")}
-                className="text-xs font-medium text-brand-500 hover:text-brand-700 dark:text-brand-400"
+                className="text-xs font-medium text-brand-500 hover:text-brand-500 dark:text-brand-400"
               >
                 Ver todo el historial
               </button>
@@ -832,7 +832,7 @@ function ResumenCelda({
 }) {
   const color = {
     neutro: "text-ink-title dark:text-white",
-    atencion: "text-warning-700 dark:text-warning-400",
+    atencion: "text-brand-700 dark:text-brand-400",
     error: "text-error-700 dark:text-error-400",
   }[tono];
 

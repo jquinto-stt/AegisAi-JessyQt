@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Minus, Plus } from "lucide-react";
+import {
+  MinusIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 import { FAQ_ITEMS } from "./help.constants";
 
@@ -34,7 +37,7 @@ export const FaqAccordion: React.FC = () => {
               className={cn(
                 "overflow-hidden rounded-xl border transition-all duration-200",
                 isOpen
-                  ? "border-success-500/40 bg-success-50 shadow-theme-xs dark:border-success-500/40 dark:bg-success-950/20"
+                  ? "border-accent-500/40 bg-accent-50 shadow-theme-xs dark:border-accent-500/40 dark:bg-accent-950/20"
                   : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
               )}
             >
@@ -51,16 +54,16 @@ export const FaqAccordion: React.FC = () => {
                   className={cn(
                     "flex h-6 w-6 flex-none items-center justify-center rounded-full transition-colors",
                     isOpen
-                      ? "bg-success-500 text-white"
+                      ? "bg-accent-500 text-white"
                       : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                   )}
                 >
-                  {isOpen ? <Minus className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                  {isOpen ? <MinusIcon className="h-3.5 w-3.5" /> : <PlusIcon className="h-3.5 w-3.5" />}
                 </span>
               </button>
 
               {isOpen && (
-                <div className="animate-aparecer border-t border-success-500/15 bg-success-50 px-5 pt-2 pb-5 text-theme-sm leading-relaxed text-gray-700 dark:border-success-500/20 dark:bg-success-950/20 dark:text-gray-300">
+                <div className="animate-aparecer border-t border-accent-500/15 bg-accent-50 px-5 pt-2 pb-5 text-theme-sm leading-relaxed text-gray-700 dark:border-accent-500/20 dark:bg-accent-950/20 dark:text-gray-300">
                   <p>{item.answer}</p>
                 </div>
               )}

@@ -169,9 +169,9 @@ const Input: FC<InputProps> = ({
   } else if (error) {
     stateClasses = "border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:text-error-400 dark:border-error-500 dark:focus:border-error-800";
   } else if (success) {
-    stateClasses = "border-success-500 focus:border-success-300 focus:ring-success-500/20 dark:text-success-400 dark:border-success-500 dark:focus:border-success-800";
+    stateClasses = "border-accent-500 focus:border-accent-300 focus:ring-accent-500/20 dark:text-accent-400 dark:border-accent-500 dark:focus:border-accent-800";
   } else {
-    stateClasses = "bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-800";
+    stateClasses = "bg-transparent text-gray-800 border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:text-white/90 dark:focus:border-brand-500";
   }
 
   const inputClasses = cn(baseClasses, stateClasses, className);
@@ -206,7 +206,7 @@ const Input: FC<InputProps> = ({
             error
               ? "text-error-500"
               : success
-              ? "text-success-500"
+              ? "text-accent-500"
               : "text-gray-500"
           )}
         >

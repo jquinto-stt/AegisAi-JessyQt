@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import { Layers, Plus, ArrowRight, Utensils, Shirt, Wrench, Package, MessageCircle, Bot } from "lucide-react";
+import {
+  ArrowRightIcon,
+  ChatBubbleOvalLeftIcon,
+  CubeIcon,
+  PlusIcon,
+  RectangleStackIcon,
+  WrenchIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { Bot, Shirt, Utensils } from "lucide-react";
 import { BaseAppHeader } from "@/shell";
 import { ThemeToggleButton } from "@/shell";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
@@ -75,9 +84,9 @@ export const ModulosPage = observer(() => {
     switch (id) {
       case "food": return <Utensils className="size-4" />;
       case "fashion": return <Shirt className="size-4" />;
-      case "services": return <Wrench className="size-4" />;
-      case "general": return <Package className="size-4" />;
-      default: return <Package className="size-4" />;
+      case "services": return <WrenchIcon className="size-4" />;
+      case "general": return <CubeIcon className="size-4" />;
+      default: return <CubeIcon className="size-4" />;
     }
   };
 
@@ -194,7 +203,7 @@ export const ModulosPage = observer(() => {
                 onClick={() => navigate("/configuracion?tab=modulos")}
                 className="rounded-full font-bold bg-brand-500 text-white shadow-theme-sm shadow-brand-500/20"
               >
-                <Plus className="size-4 mr-1.5" />
+                <PlusIcon className="size-4 mr-1.5" />
                 Agregar módulo
               </Button>
             </div>
@@ -204,7 +213,7 @@ export const ModulosPage = observer(() => {
           {!tienePedidos ? (
             <div className="mx-auto my-12 max-w-lg rounded-3xl border border-dashed border-gray-300 bg-white/70 p-10 text-center shadow-theme-xs dark:border-gray-800 dark:bg-gray-900/60 sm:p-14">
               <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-secondary-50 text-secondary-600 shadow-theme-sm dark:bg-brand-500/10 dark:text-brand-400 mb-6">
-                <Layers className="size-10" />
+                <RectangleStackIcon className="size-10" />
               </div>
 
               <h2 className="text-xl font-bold text-ink-title dark:text-white sm:text-2xl">
@@ -224,7 +233,7 @@ export const ModulosPage = observer(() => {
                   onClick={() => navigate("/configuracion?tab=modulos")}
                   className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20"
                 >
-                  <Plus className="size-5 mr-1.5" />
+                  <PlusIcon className="size-5 mr-1.5" />
                   Agregar módulo
                 </Button>
               </div>
@@ -245,7 +254,7 @@ export const ModulosPage = observer(() => {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {/* Módulo Pedidos Activo */}
-                <div className="flex flex-col justify-between rounded-3xl border border-success-500/40 bg-white p-6 shadow-theme-sm dark:bg-gray-900 ring-2 ring-success-500/10">
+                <div className="flex flex-col justify-between rounded-3xl border border-accent-500/40 bg-white p-6 shadow-theme-sm dark:bg-gray-900 ring-2 ring-accent-500/10">
                   <div>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-theme-md shadow-brand-500/20">
@@ -275,19 +284,19 @@ export const ModulosPage = observer(() => {
                     <MetricasVivas metricas={metricas} />
 
                     {perfilActual && (
-                      <div className="mt-4 rounded-xl border border-success-100 bg-success-50/60 p-3 dark:border-success-500/20 dark:bg-success-500/5">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-success-800 dark:text-success-300">
+                      <div className="mt-4 rounded-xl border border-accent-100 bg-accent-50/60 p-3 dark:border-accent-500/20 dark:bg-accent-500/5">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-accent-800 dark:text-accent-300">
                           <span>{getProfileIcon(perfilActual.id)}</span>
                           <span>Perfil: {perfilActual.name}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {organizacionStore.esConectorActivo("pedidos", "whatsapp") && (
-                            <span className="flex items-center gap-1 rounded bg-success-100 px-2 py-0.5 text-[10px] font-medium text-success-800 dark:bg-success-900/50 dark:text-success-300">
-                              <MessageCircle className="size-3" /> WhatsApp Agent
+                            <span className="flex items-center gap-1 rounded bg-accent-100 px-2 py-0.5 text-[10px] font-medium text-accent-800 dark:bg-accent-900/50 dark:text-accent-300">
+                              <ChatBubbleOvalLeftIcon className="size-3" /> WhatsApp Agent
                             </span>
                           )}
                           {organizacionStore.esConectorActivo("pedidos", "necto_ia") && (
-                            <span className="flex items-center gap-1 rounded bg-secondary-100 px-2 py-0.5 text-[10px] font-medium text-secondary-800 dark:bg-secondary-900/50 dark:text-secondary-300">
+                            <span className="flex items-center gap-1 rounded bg-secondary-100 px-2 py-0.5 text-[10px] font-medium text-secondary-800 dark:bg-accent-900/50 dark:text-accent-300">
                               <Bot className="size-3" /> Necto Agent (IA)
                             </span>
                           )}
@@ -313,7 +322,7 @@ export const ModulosPage = observer(() => {
                       onClick={handleEntrarPedidos}
                     >
                       Entrar al módulo
-                      <ArrowRight className="size-4 ml-1.5 inline" />
+                      <ArrowRightIcon className="size-4 ml-1.5 inline" />
                     </Button>
                   </div>
 

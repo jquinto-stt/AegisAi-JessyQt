@@ -130,12 +130,12 @@ export default function SignUpForm() {
             {mensajeExito && (
               <div
                 role="status"
-                className="p-4 mb-5 text-sm text-success-800 bg-success-50 border border-success-200 rounded-xl dark:bg-success-950/40 dark:text-success-300 dark:border-success-800 space-y-3"
+                className="p-4 mb-5 text-sm text-accent-800 bg-accent-50 border border-accent-200 rounded-xl dark:bg-accent-950/40 dark:text-accent-300 dark:border-accent-800 space-y-3"
               >
                 <p className="text-xs leading-relaxed">{mensajeExito}</p>
                 <Link
                   to="/login"
-                  className="inline-block px-3 py-1.5 text-xs font-semibold text-white bg-success-600 hover:bg-success-700 rounded-lg transition-colors"
+                  className="inline-block px-3 py-1.5 text-xs font-semibold text-white bg-accent-600 hover:bg-accent-700 rounded-lg transition-colors"
                 >
                   Ir a iniciar sesión
                 </Link>

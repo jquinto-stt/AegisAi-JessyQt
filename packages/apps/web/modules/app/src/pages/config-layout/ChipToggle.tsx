@@ -54,7 +54,7 @@ export function ChipDia({
         "inline-flex h-9 items-center justify-center gap-1 rounded-full border px-3 text-sm font-medium transition-colors cursor-pointer",
         minAncho && "min-w-[46px]",
         activo
-          ? "border-secondary-500 bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400"
+          ? "border-secondary-500 dark:border-accent-400 bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400"
           : "border-gray-300 text-gray-500 hover:border-secondary-300 dark:border-gray-700 dark:text-gray-400",
         disabled && "cursor-not-allowed opacity-50",
       )}

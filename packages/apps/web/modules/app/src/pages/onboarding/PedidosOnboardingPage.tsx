@@ -10,7 +10,13 @@ import { organizacionStore } from "@/stores/organizacion.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import { sessionStore, modulosOperablesDeSesion } from "@/stores/session.store";
 import type { BusinessProfileType } from "@/domain/pedidos/pedidos.profiles";
-import { Utensils, Shirt, Wrench, Package, MessageCircle, Bot } from "lucide-react";
+import {
+  ChatBubbleOvalLeftIcon,
+  CubeIcon,
+  WrenchIcon,
+} from "@heroicons/react/24/outline";
+// Sin equivalente claro en Heroicons: se quedan en lucide.
+import { Bot, Shirt, Utensils } from "lucide-react";
 import { OnboardingStepper } from "./OnboardingStepper";
 import { OnboardingBrandPanel } from "./OnboardingBrandPanel";
 import { OnboardingLayout } from "./OnboardingLayout";
@@ -31,7 +37,7 @@ const PEDIDOS_STEPS = [
 const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   {
     id: "food",
-    icon: <Utensils className="h-8 w-8 text-orange-500" />,
+    icon: <Utensils className="h-8 w-8 text-brand-500" />,
     name: "Alimentos y Bebidas",
     description:
       "Restaurantes, dark kitchens, cafés y panaderías con cocina o preparación inmediata.",
@@ -44,7 +50,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "fashion",
-    icon: <Shirt className="h-8 w-8 text-blue-500" />,
+    icon: <Shirt className="h-8 w-8 text-secondary-500" />,
     name: "Ropa, Calzado y Accesorios",
     description:
       "Boutiques, tiendas de moda, calzado y confección con variantes de talla, color y envíos.",
@@ -57,7 +63,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "services",
-    icon: <Wrench className="h-8 w-8 text-gray-500" />,
+    icon: <WrenchIcon className="h-8 w-8 text-gray-500" />,
     name: "Servicios y Citas",
     description:
       "Profesionales, barberías, spas, consultorios y talleres con agendamiento.",
@@ -65,7 +71,7 @@ const PERFILES_COMERCIALES: PerfilComercialItem[] = [
   },
   {
     id: "general",
-    icon: <Package className="h-8 w-8 text-amber-600" />,
+    icon: <CubeIcon className="h-8 w-8 text-brand-600" />,
     name: "Comercio General / Retail",
     description:
       "Venta de productos físicos estándar, papelería, tecnología u hogar.",
@@ -187,7 +193,7 @@ export const PedidosOnboardingPage = observer(() => {
                         onClick={() => setPerfilElegido(perfil.id)}
                         className={`flex flex-col justify-between rounded-3xl border p-5 transition-all cursor-pointer ${
                           seleccionado
-                            ? "border-secondary-500 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20 dark:border-secondary-400"
+                            ? "border-secondary-500 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20 dark:border-accent-400"
                             : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-theme-sm dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20"
                         }`}
                       >
@@ -265,13 +271,13 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarWhatsApp(!habilitarWhatsApp)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarWhatsApp
-                        ? "border-secondary-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
+                        ? "border-secondary-500 dark:border-accent-400/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >
                     <div className="flex items-center gap-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366]/10 text-[#25D366]">
-                        <MessageCircle className="h-6 w-6" />
+                        <ChatBubbleOvalLeftIcon className="h-6 w-6" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -302,7 +308,7 @@ export const PedidosOnboardingPage = observer(() => {
                     onClick={() => setHabilitarIA(!habilitarIA)}
                     className={`flex items-center justify-between rounded-3xl border p-6 transition cursor-pointer ${
                       habilitarIA
-                        ? "border-secondary-500/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
+                        ? "border-secondary-500 dark:border-accent-400/50 bg-white dark:bg-white/[0.03] shadow-theme-md ring-2 ring-brand-500/20"
                         : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900/60"
                     }`}
                   >

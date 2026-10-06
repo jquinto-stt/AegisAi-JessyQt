@@ -171,7 +171,7 @@ export default function DatePicker({
     ? "border-gray-300 opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 dark:border-gray-700"
     : error
     ? "border-error-500 focus:border-error-300 focus:ring-error-500/20 dark:border-error-500 dark:focus:border-error-800"
-    : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:focus:border-brand-800";
+    : "border-gray-300 focus:border-brand-300 focus:ring-brand-500/20 dark:border-gray-700 dark:focus:border-brand-500";
 
   return (
     <div>

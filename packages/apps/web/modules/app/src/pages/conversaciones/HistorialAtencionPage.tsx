@@ -40,10 +40,10 @@ import {
 } from "@/stores";
 import type { ConversacionCanal } from "@/stores";
 import {
-  AVATAR_MAP,
   inicialesDe,
   statusDe,
 } from "@/pages/conversaciones/conversaciones.utils";
+import { CanalAvatar } from "./components/CanalAvatar";
 import { retardoEscalonado } from "@/utils";
 import {
   ETAPAS_CRM,
@@ -174,9 +174,9 @@ const KpiIcono = ({
     brand:
       "bg-secondary-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400",
     warning:
-      "bg-warning-50 text-warning-600 dark:bg-warning-500/15 dark:text-warning-400",
+      "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
     success:
-      "bg-success-50 text-success-600 dark:bg-success-500/15 dark:text-success-400",
+      "bg-accent-50 text-accent-600 dark:bg-accent-500/15 dark:text-accent-400",
     // «En curso» es trabajo en marcha, no una alerta ni un logro: va en el gris
     // neutro. `brand` (naranja) competiría con el naranja de la marca y
     // `warning` es la misma rampa, así que convertiría una cifra normal en alarma.
@@ -619,18 +619,11 @@ export const HistorialAtencionPage = observer(() => {
 
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 text-xs font-semibold text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                          {AVATAR_MAP[conv.id] ? (
-                            <img
-                              src={AVATAR_MAP[conv.id]}
-                              alt=""
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            inicialesDe(conv.contacto.nombre)
-                          )}
-                        </span>
+                        <CanalAvatar
+                          canal={conv.canal}
+                          nombre={conv.contacto.nombre}
+                          size="small"
+                        />
                         <div className="min-w-0">
                           <p className="truncate font-medium text-gray-800 dark:text-white/90">
                             {conv.contacto.nombre}
@@ -745,7 +738,7 @@ export const HistorialAtencionPage = observer(() => {
                                 setMenuAbiertoId(null);
                                 marcarResuelto(conv.id);
                               }}
-                              className="text-xs text-success-600 hover:bg-success-50 dark:text-success-400 dark:hover:bg-success-500/10"
+                              className="text-xs text-accent-600 hover:bg-accent-50 dark:text-accent-400 dark:hover:bg-accent-500/10"
                             >
                               {ETIQUETA_RESOLVER}
                             </DropdownItem>

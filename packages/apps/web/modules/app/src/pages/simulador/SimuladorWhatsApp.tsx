@@ -117,7 +117,7 @@ export const SimuladorWhatsApp = observer(() => {
                     onClick={() => setLocalId(conv.id)}
                     className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left transition-colors ${
                       activoItem
-                        ? "border-secondary-500 bg-secondary-50/60 dark:bg-brand-500/10"
+                        ? "border-secondary-500 dark:border-accent-400 bg-secondary-50/60 dark:bg-brand-500/10"
                         : "border-transparent hover:bg-gray-50 dark:hover:bg-white/[0.03]"
                     }`}
                   >
@@ -267,13 +267,13 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
           <button
             type="button"
             onClick={solicitarAsesor}
-            className="inline-flex items-center gap-1.5 rounded-full border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-medium text-ink-title transition-colors hover:bg-secondary-100 dark:border-secondary-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
+            className="inline-flex items-center gap-1.5 rounded-full border border-secondary-200 bg-secondary-50 px-3 py-1.5 text-xs font-medium text-ink-title transition-colors hover:bg-secondary-100 dark:border-accent-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
           >
             <span aria-hidden>🙋</span>
             Hablar con un asesor
           </button>
           {avisoAsesor && (
-            <span className="text-xs font-medium text-warning-600 dark:text-warning-400" role="status">
+            <span className="text-xs font-medium text-brand-600 dark:text-brand-400" role="status">
               {avisoAsesor}
             </span>
           )}
@@ -303,7 +303,7 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
           <button
             onClick={enviar}
             aria-label="Enviar mensaje"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-success-500 text-white transition-colors hover:bg-success-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-500 text-white transition-colors hover:bg-accent-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <SendIcon />
           </button>
@@ -383,7 +383,7 @@ const etiquetaEstado = (conv: Conversacion) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 const WhatsAppMark = () => (
-  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success-500 text-white">
+  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-500 text-white">
     <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5">
       <path d="M12 2a10 10 0 00-8.6 15.1L2 22l5-1.3A10 10 0 1012 2zm0 18a8 8 0 01-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1112 20z" />
     </svg>

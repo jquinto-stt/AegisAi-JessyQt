@@ -270,7 +270,7 @@ const FilaLinea = observer(function FilaLinea({
           <button
             type="button"
             onClick={onAdjuntarEvidencia}
-            className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-brand-700 hover:text-brand-800 dark:text-brand-400"
+            className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-secondary-600 hover:text-brand-600 dark:text-brand-400"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M18 6.75h.008v.008H18V6.75z" />
@@ -303,7 +303,7 @@ const FilaLinea = observer(function FilaLinea({
             <button
               type="button"
               onClick={() => setEditando(true)}
-              className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-brand-700 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
+              className="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs font-medium text-secondary-600 transition-colors hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-500/10"
               title="Registrar conteo de este producto"
             >
               <PencilIcon className="h-3.5 w-3.5" />
@@ -321,7 +321,7 @@ const FilaLinea = observer(function FilaLinea({
           </span>
         )}
         {enEdicion && !validacion.ok && !error && (
-          <span className="mt-1 block text-[10px] leading-tight text-warning-700 dark:text-warning-400">
+          <span className="mt-1 block text-[10px] leading-tight text-brand-700 dark:text-brand-400">
             {Object.values(validacion.errores)[0]}
           </span>
         )}
@@ -429,7 +429,7 @@ function IconoAccion({
       disabled={disabled}
       className={cn(
         "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40",
-        tono === "ok" && "bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-500/10 dark:text-success-500 dark:hover:bg-success-500/20",
+        tono === "ok" && "bg-accent-50 text-accent-700 hover:bg-accent-100 dark:bg-accent-500/10 dark:text-accent-500 dark:hover:bg-accent-500/20",
         tono === "peligro" && "text-gray-500 hover:bg-error-50 hover:text-error-700 dark:hover:bg-error-500/10 dark:hover:text-error-400",
         tono === "neutro" && "text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-200",
         disabled && "hover:bg-transparent hover:text-gray-500 dark:hover:text-gray-400",
@@ -480,7 +480,7 @@ export function FiltrosLineas({
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                 activa
-                  ? "bg-brand-700 text-white shadow-sm"
+                  ? "bg-brand-500 text-white shadow-sm"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10",
               )}
             >
