@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
@@ -22,12 +23,13 @@ import type { Modulo } from "@/stores/session.store";
 import {
   CardHead,
   ConfigHeader,
-  ConfigSectionNav,
+  ConfigHub,
   ConfigShell,
   Label2,
   Segmentado,
+  VolverAlHub,
   claseFila,
-  type GrupoNav,
+  type TarjetaHub,
 } from "@/pages/config-layout";
 import { buildAccessContext } from "@/assistant/bootstrap";
 import { toolRegistry } from "@/assistant";
@@ -38,7 +40,6 @@ import {
   ESTADO_INTEGRACION_BADGE,
   ESTADO_INTEGRACION_LABEL,
   FLUJO_INTEGRACION,
-  GRUPO_SECCION_LABEL,
   INFERENCIA_TIPO_LABEL,
   LIMITES_ASISTENTE,
   META_SECCION,
@@ -52,6 +53,7 @@ import {
   NIVEL_LABEL,
   OPCIONES_DENSIDAD,
   OPCIONES_RESPUESTA,
+  ORDEN_SECCIONES,
   SWITCH_COLOR,
   TERMINOS_CAUSALES_PROHIBIDOS,
   nivelOperativo,
@@ -121,7 +123,29 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
 const filaBase = claseFila;
 
 export const AsistenteConfigPage = observer(() => {
-  const [seccion, setSeccion] = useState<SeccionAsistente>("perfil");
+  // ── La sección activa vive en la URL (`?seccion=`) ────────────────────────
+  //
+  // Antes era un `useState`, así que «Herramientas» no tenía enlace propio y
+  // siempre se aterrizaba en la primera sección. **Sin parámetro se pinta el hub
+  // de tarjetas**: es la pantalla de entrada, y elegir una sección «por defecto»
+  // escondería las demás. Mismo criterio que las otras dos pantallas.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const seccionParam = searchParams.get("seccion");
+  const seccion: SeccionAsistente | null = esSeccionValida(seccionParam) ? seccionParam : null;
+
+  /**
+   * ¿Es `v` una sección conocida?
+   *
+   * El valor lo escribe el usuario. Uno inventado no puede dejar la pantalla en
+   * blanco: cae al hub, que es lo que se pinta de verdad.
+   */
+  function esSeccionValida(v: string | null): v is SeccionAsistente {
+    return v !== null && (ORDEN_SECCIONES as string[]).includes(v);
+  }
+
+  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
+  const volverAlHub = () => setSearchParams({});
 
   // Preferencias locales. No se persisten en el dominio (no hay campo para
   // ellas) y por eso se declaran explícitamente como Preferencias de interfaz.
@@ -152,16 +176,57 @@ export const AsistenteConfigPage = observer(() => {
   // tampoco tiene nada que ejecutar — y la página lo dice.
   const { disponibles, totales } = herramientasVisibles();
 
-  const grupos: GrupoNav[] = seccionesPorGrupo().map(({ grupo, secciones }) => ({
-    grupo,
-    label: GRUPO_SECCION_LABEL[grupo],
-    secciones: secciones.map((s) => ({
+  // Las tarjetas del hub salen del catálogo, no de una lista copiada: una
+  // sección nueva aparece aquí sola. Se aplana el agrupamiento porque la
+  // cuadrícula ya agrupa por sí misma.
+  const tarjetasHub: TarjetaHub[] = seccionesPorGrupo()
+    .flatMap(({ secciones }) => secciones)
+    .map((s) => ({
       key: s,
       label: META_SECCION[s].label,
       hint: META_SECCION[s].hint,
       icono: ICONO_SECCION[META_SECCION[s].icono],
-    })),
-  }));
+    }));
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISTA RAÍZ — el hub de tarjetas
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (!seccion) {
+    return (
+      <>
+        <PageMeta
+          title="Configuración de NECTO AI"
+          description="Estado del asistente interno: motor, herramientas y límites"
+        />
+
+        <div className="mb-7">
+          <ConfigHeader
+            titulo="Configuración de NECTO AI"
+            descripcion="Elige qué quieres consultar. Cada opción abre su propia pantalla."
+            acciones={
+              <Badge color={MOTOR_BADGE[motor]} size="sm">
+                {MOTOR_BADGE_LABEL[motor]}
+              </Badge>
+            }
+          />
+        </div>
+
+        {/* El aviso de «este no es el bot de WhatsApp» se mantiene en la vista
+            raíz: la confusión que evita es de ENTRADA, y quien la sufre es quien
+            acaba de llegar, no quien ya está dentro de una sección. */}
+        <div className="mb-6">
+          <Alert
+            variant="info"
+            title="Este no es el bot de WhatsApp"
+            message="NECTO AI es el asistente interno: lo usa tu equipo para consultar datos de pedidos. El bot que responde a los clientes por WhatsApp se configura en Canales → Configuración."
+          />
+        </div>
+
+        <ConfigHub tarjetas={tarjetasHub} onEntrar={entrarASeccion} />
+      </>
+    );
+  }
+
   const meta = META_SECCION[seccion];
 
   return (
@@ -194,15 +259,14 @@ export const AsistenteConfigPage = observer(() => {
         />
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-        <ConfigSectionNav
-          grupos={grupos}
-          activa={seccion}
-          onSeleccionar={(k) => setSeccion(k as SeccionAsistente)}
-          ariaLabel="Secciones de configuración de NECTO AI"
-        />
+      {/* ═══════════ Vuelta al hub ═══════════ */}
+      {/* Esta pantalla no tiene modo solo lectura, así que el control puede ir
+          aquí sin quedar inerte bajo un `fieldset disabled`. */}
+      <div className="mb-3">
+        <VolverAlHub onVolver={volverAlHub} />
+      </div>
 
+      <div>
         {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
         {/* El `key={seccion}` dispara el fundido: al cambiar de sección React
             desmonta el panel y monta uno nuevo, que reproduce `animate-aparecer`.

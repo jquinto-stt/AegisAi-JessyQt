@@ -19,6 +19,11 @@ import type { NivelArea } from "./equipo.presentacion";
  * (`administrador` | `operador`), y se retiró del vocabulario de autorización
  * (contrato §1.2). En la UI de equipo hablamos de **personas** y de su
  * **acceso**, que puede estar activo, pendiente o suspendido.
+ *
+ * Los colores son los TINTES DE ESTADO de la especificación (`bg-estado-*`),
+ * que es lo que el `Badge` con `variant="light"` pinta por dentro. Se nombran
+ * aquí como «success»/«warning»/«light» porque ese es el vocabulario del
+ * catálogo, no porque `success` sea una familia del tema.
  */
 export const ESTADO_META: Record<OperadorEstado, { label: string; color: BadgeColor; descripcion: string }> = {
   activo: {
@@ -55,14 +60,35 @@ export const OPCIONES_FILTRO_ESTADO: { value: string; label: string }[] = [
   { value: "inactivo", label: ESTADO_META.inactivo.label },
 ];
 
-/** Colores de badge semánticos para cada categoría de capacidades. */
+/**
+ * Color del badge de cada grupo de capacidades.
+ *
+ * ── Por qué cada grupo tiene un color distinto ────────────────────────────
+ *
+ * El color aquí NO es decorativo: es el ancla que permite saltar de un grupo a
+ * otro con el ojo. Con dos grupos del mismo color —lo que pasaba antes, con
+ * `canales` y `ordenes` compartiendo familia— el distintivo deja de distinguir
+ * y la rejilla se lee como un bloque uniforme.
+ *
+ * Los siete colores salen de las familias que el tema TIENE declaradas:
+ * `estado-*` es el juego de tintes de estado, y `primary`/`warning`/`dark` son
+ * marca y neutros fuertes del `Badge`. No se usa `emerald`, `sky`, `rose` ni
+ * `indigo`: **no son familias de este tema** y Tailwind las resolvería con sus
+ * valores por defecto, ajenas a la paleta.
+ *
+ * Los ocho grupos del catálogo (`CAPACIDAD_GRUPOS`) son:
+ * órdenes · preparación · programados · canales · inventarios · configuración ·
+ * equipo · asistente.
+ */
 export const CATEGORIA_COLORES: Record<string, BadgeColor> = {
   ordenes: "info",
   preparacion: "warning",
   programados: "primary",
   canales: "success",
+  inventarios: "dark",
   ajustes: "light",
-  equipo: "dark",
+  equipo: "error",
+  asistente: "info",
 };
 
 /**

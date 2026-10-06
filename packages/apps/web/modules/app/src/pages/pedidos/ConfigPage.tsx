@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useSearchParams } from "react-router";
 import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
 import { Card } from "@/elements/ui/card";
@@ -26,12 +27,13 @@ import {
   ChipDia,
   ConfigAcciones,
   ConfigHeader,
-  ConfigSectionNav,
+  ConfigHub,
   ConfigShell,
   Label2,
   ToggleRow,
+  VolverAlHub,
   claseFila,
-  type GrupoNav,
+  type TarjetaHub,
 } from "@/pages/config-layout";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -127,7 +129,7 @@ const META_SECCION: Record<
     icono: TimeIcon,
   },
   catalogo: {
-    label: "Catálogo rápido",
+    label: "Productos frecuentes",
     hint: "Ítems sugeridos con precio para cargar pedidos sin teclear.",
     icono: CartIcon,
   },
@@ -144,7 +146,35 @@ const META_SECCION: Record<
 // cambia respecto de la versión anterior.
 
 export const ConfigPage = observer(() => {
-  const [seccion, setSeccion] = useState<ClaveSeccion>("flujo");
+  // ── La sección activa vive en la URL (`?seccion=`) ────────────────────────
+  //
+  // Antes era un `useState`. Con estado local, entrar a una sección concreta
+  // —desde un enlace externo, un marcador o una incidencia— era imposible:
+  // siempre se aterrizaba en la primera, y el usuario tenía que navegar a mano.
+  // Con el parámetro, cada sección es direccionable y el enlace directo
+  // funciona. Es el mismo criterio que ya usa `/configuracion` con `?tab=`.
+  //
+  // **Sin parámetro NO se elige una sección por defecto**: se pinta el hub de
+  // tarjetas. Es la pantalla de entrada, y elegir una sección «por defecto»
+  // escondería las demás detrás de una navegación que el usuario no ha visto.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const seccionParam = searchParams.get("seccion");
+  const seccion: ClaveSeccion | null = esClaveSeccion(seccionParam) ? seccionParam : null;
+
+  /**
+   * ¿Es `v` una sección conocida?
+   *
+   * El parámetro lo escribe el usuario, así que un valor inventado no puede
+   * dejar la pantalla en blanco ni en una sección fantasma: cae al hub, que es
+   * lo que se pinta de verdad. La URL no es una promesa de esta pantalla.
+   */
+  function esClaveSeccion(v: string | null): v is ClaveSeccion {
+    return v !== null && (ORDEN_SECCIONES as string[]).includes(v);
+  }
+
+  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
+  const volverAlHub = () => setSearchParams({});
 
   // Borrador local: preserva el store intacto hasta presionar "Guardar cambios".
   const [draft, setDraft] = useState<PedidosConfig>(() => ({
@@ -292,20 +322,43 @@ export const ConfigPage = observer(() => {
     setTimeout(() => setGuardado(false), 3000);
   };
 
-  const meta = META_SECCION[seccion];
+  // Las tarjetas del hub salen de `ORDEN_SECCIONES` y `META_SECCION`, no de una
+  // lista copiada: una sección nueva aparece aquí sola y no puede quedarse sin
+  // tarjeta —ni al revés— que es como una navegación se desincroniza del
+  // contenido.
+  const tarjetasHub: TarjetaHub[] = ORDEN_SECCIONES.map((k) => ({
+    key: k,
+    label: META_SECCION[k].label,
+    hint: META_SECCION[k].hint,
+    icono: META_SECCION[k].icono,
+  }));
 
-  const grupos: GrupoNav[] = [
-    {
-      grupo: "pedidos",
-      label: "Pedidos",
-      secciones: ORDEN_SECCIONES.map((k) => ({
-        key: k,
-        label: META_SECCION[k].label,
-        hint: META_SECCION[k].hint,
-        icono: META_SECCION[k].icono,
-      })),
-    },
-  ];
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISTA RAÍZ — el hub de tarjetas
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Sin `?seccion=`. Es una pantalla de entrada: cabecera y tarjetas, nada más.
+  // No se pinta aquí el aviso de solo lectura ni el `<fieldset disabled>`:
+  // navegar entre secciones no es editar, y desactivar la navegación dejaría al
+  // usuario en modo lectura sin poder ni mirar las otras secciones.
+  if (!seccion) {
+    return (
+      <div className="pb-12">
+        <PageMeta title="Configuración · Pedidos" description="Ajustes del módulo de pedidos" />
+
+        <div className="mb-7">
+          <ConfigHeader
+            titulo="Configuración de Pedidos"
+            descripcion="Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+          />
+        </div>
+
+        <ConfigHub tarjetas={tarjetasHub} onEntrar={entrarASeccion} />
+      </div>
+    );
+  }
+
+  const meta = META_SECCION[seccion];
 
   return (
     <div className="pb-12">
@@ -320,7 +373,7 @@ export const ConfigPage = observer(() => {
       <div className="mb-5">
         <ConfigHeader
           titulo="Configuración de Pedidos"
-          descripcion="Ajustes del flujo operativo, modalidades, horario y catálogo rápido."
+          descripcion="Ajustes del flujo operativo, modalidades, horario y productos frecuentes."
         />
       </div>
 
@@ -335,46 +388,42 @@ export const ConfigPage = observer(() => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-        {/* Va FUERA del `<fieldset>` a propósito: navegar entre secciones no es
-            editar. Metida dentro, `fieldset disabled` desactiva sus botones y
-            en modo solo lectura el usuario no podría ni cambiar de sección. */}
-        <ConfigSectionNav
-          grupos={grupos}
-          activa={seccion}
-          onSeleccionar={(k) => setSeccion(k as ClaveSeccion)}
-          ariaLabel="Secciones de configuración de Pedidos"
-        />
+      {/* ═══════════ Vuelta al hub — FUERA del fieldset ═══════════ */}
+      {/* `fieldset disabled` desactiva NATIVAMENTE los `<button>` de dentro, así
+          que en modo solo lectura el usuario que llega por enlace directo se
+          quedaría encerrado en la sección sin forma de ver las demás: el control
+          existiría y no haría nada. Volver no es editar. */}
+      <div className="mb-3">
+        <VolverAlHub onVolver={volverAlHub} />
+      </div>
 
-        {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
-        {/* El `<fieldset>` envuelve SOLO el panel, no la navegación. `min-w-0`
-            neutraliza el `min-inline-size: min-content` por defecto del
-            fieldset, que rompería el layout de dos columnas. */}
-        <fieldset
-          disabled={soloLectura}
-          className="m-0 min-w-0 flex-1 border-0 p-0"
+      {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
+      {/* El `<fieldset>` envuelve SOLO el panel. `min-w-0` neutraliza el
+          `min-inline-size: min-content` por defecto del fieldset. */}
+      <fieldset
+        disabled={soloLectura}
+        className="m-0 min-w-0 border-0 p-0"
+      >
+        <ConfigShell
+          seccionKey={seccion}
+          titulo={meta.label}
+          hint={meta.hint}
+          footer={
+            <ConfigAcciones
+              mensaje={
+                guardado ? (
+                  <span className="text-sm text-accent-600 dark:text-accent-500">
+                    Guardado ✓
+                  </span>
+                ) : undefined
+              }
+            >
+              <Button disabled={horarioInvalido || soloLectura} onClick={guardar}>
+                Guardar cambios
+              </Button>
+            </ConfigAcciones>
+          }
         >
-          <ConfigShell
-            seccionKey={seccion}
-            titulo={meta.label}
-            hint={meta.hint}
-            footer={
-              <ConfigAcciones
-                mensaje={
-                  guardado ? (
-                    <span className="text-sm text-accent-600 dark:text-accent-500">
-                      Guardado ✓
-                    </span>
-                  ) : undefined
-                }
-              >
-                <Button disabled={horarioInvalido || soloLectura} onClick={guardar}>
-                  Guardar cambios
-                </Button>
-              </ConfigAcciones>
-            }
-          >
             {/* ═════════════════════════════════════════════════════════════════════
                 SECCIÓN 0: PERFIL DE NEGOCIO (¿QUÉ VENDES?)
                ═════════════════════════════════════════════════════════════════════ */}
@@ -1063,16 +1112,23 @@ export const ConfigPage = observer(() => {
             )}
 
             {/* ═════════════════════════════════════════════════════════════════════
-                SECCIÓN 3: CATÁLOGO RÁPIDO
+                SECCIÓN 3: PRODUCTOS FRECUENTES
+
+                No es el Catálogo (`/pedidos/catalogo`): aquel es la mercancía real
+                —categoría, foto, descripción, disponibilidad— y lo que ve el
+                cliente en `/menu`. Esta lista es un atajo de nombre+precio para
+                autocompletar el formulario de Crear pedido. Se llamaba «Catálogo
+                rápido» y el nombre hacía creer que duplicaba el Catálogo.
                ═════════════════════════════════════════════════════════════════════ */}
             {seccion === "catalogo" && (
               <div className="space-y-5">
                 <Card>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <CardHead>Catálogo de productos rápidos</CardHead>
+                      <CardHead>Productos frecuentes</CardHead>
                       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Items sugeridos con precio para carga ágil de pedidos.
+                        Atajos de nombre y precio para cargar pedidos sin teclear. No es el
+                        Catálogo: esto no se publica ni lleva foto.
                       </p>
                     </div>
                     <Button size="sm" variant="outline" onClick={addItem}>
@@ -1084,7 +1140,7 @@ export const ConfigPage = observer(() => {
                   {draft.catalogo.length === 0 ? (
                     <div className="py-10 text-center">
                       <p className="text-xs text-gray-400">
-                        Sin productos configurados. Los ítems se ingresan libremente en Crear Pedido.
+                        Sin productos frecuentes. Los ítems se ingresan libremente en Crear Pedido.
                       </p>
                       <Button size="sm" variant="outline" className="mt-3" onClick={addItem}>
                         Crear primer producto
@@ -1139,7 +1195,6 @@ export const ConfigPage = observer(() => {
             )}
           </ConfigShell>
         </fieldset>
-      </div>
     </div>
   );
 });

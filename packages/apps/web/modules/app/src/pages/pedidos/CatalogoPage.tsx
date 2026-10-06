@@ -18,6 +18,7 @@ import {
   EyeIcon,
 } from '@/icons';
 import { getSupabase, ESQUEMA } from '@/lib/supabase';
+import { PageMeta } from '@/shell/meta';
 import { pedidosStore } from '@/stores';
 
 export interface ProductoCatalogoItem {
@@ -76,7 +77,7 @@ const FOTOS_TEMATICAS: { palabrasClave: string[]; url: string }[] = [
 
 const FOTO_POR_DEFECTO = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
 
-// Asigna una foto profesional automáticamente analizando el texto del plato
+// Asigna una foto profesional automáticamente analizando el texto del producto
 const asignarFotoInteligente = (nombre: string, categoria: string): string => {
   const texto = `${nombre} ${categoria}`.toLowerCase();
   for (const tema of FOTOS_TEMATICAS) {
@@ -87,61 +88,73 @@ const asignarFotoInteligente = (nombre: string, categoria: string): string => {
   return FOTO_POR_DEFECTO;
 };
 
-// Menú de demostración listo para activar con 1 clic
-const MENU_DEMO_EJEMPLO: ProductoCatalogoItem[] = [
+// Catálogo de ejemplo listo para activar con 1 clic
+//
+// ── Por qué este catálogo es genérico y no de restaurante ─────────────────
+//
+// Antes eran seis platos (hamburguesa, pizza, alitas, papas, limonada,
+// tiramisú) con categorías de carta —«Entradas», «Acompañamientos», «Postres»—.
+// El catálogo es universal: lo usa una ferretería, una tienda de ropa y una
+// panadería igual de bien, y un ejemplo gastronómico le dice a esos negocios
+// que la herramienta no es para ellos antes de que lean una sola palabra.
+//
+// El ejemplo no enseña a vender comida: enseña la FORMA del dato —nombre,
+// categoría, descripción, precio, imagen, disponibilidad—. Se eligen productos
+// de uso corriente y categorías que existen en cualquier catálogo.
+const CATALOGO_DEMO_EJEMPLO: ProductoCatalogoItem[] = [
   {
     id: 'demo-1',
-    nombre: 'Hamburguesa Doble Queso Artesanal',
-    categoria: 'Hamburguesas',
-    descripcion: '200g de carne de res, doble queso cheddar fundido, tocineta crocante y salsa especial.',
+    nombre: 'Producto de ejemplo — categoría A',
+    categoria: 'Categoría A',
+    descripcion: 'Descripción breve del producto. Aquí va lo que el cliente necesita saber para decidirse.',
     precio: 28000,
-    imagen: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80',
+    imagen: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80',
     disponible: true,
   },
   {
     id: 'demo-2',
-    nombre: 'Pizza Pepperoni Supreme Familiar',
-    categoria: 'Pizzas',
-    descripcion: 'Masa madre tradicional, salsa pomodoro italiana, abundante mozzarella y pepperoni.',
+    nombre: 'Producto de ejemplo — categoría A (variante)',
+    categoria: 'Categoría A',
+    descripcion: 'Un segundo producto de la misma categoría, para que se vea cómo agrupa el catálogo.',
     precio: 42000,
-    imagen: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&q=80',
+    imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80',
     disponible: true,
   },
   {
     id: 'demo-3',
-    nombre: 'Alitas BBQ Crocantes (8 und)',
-    categoria: 'Entradas',
-    descripcion: 'Alitas marinadas en salsa BBQ ahumada de la casa, acompañadas de apio y salsa tártara.',
+    nombre: 'Producto de ejemplo — categoría B',
+    categoria: 'Categoría B',
+    descripcion: 'Un producto de otra categoría. La categoría es texto libre: escribe la que use tu negocio.',
     precio: 22000,
-    imagen: 'https://images.unsplash.com/photo-1562967914-608f82629710?w=600&q=80',
+    imagen: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=600&q=80',
     disponible: true,
   },
   {
     id: 'demo-4',
-    nombre: 'Papas Rústicas Trufadas',
-    categoria: 'Acompañamientos',
-    descripcion: 'Papas en cascos con aceite de trufa blanca, queso parmesano y sal marina.',
+    nombre: 'Producto de ejemplo — categoría B (variante)',
+    categoria: 'Categoría B',
+    descripcion: 'La categoría se puede renombrar o reemplazar: no hay una lista cerrada que respetar.',
     precio: 14000,
-    imagen: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&q=80',
+    imagen: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=600&q=80',
     disponible: true,
   },
   {
     id: 'demo-5',
-    nombre: 'Limonada de Coco Caribeña',
-    categoria: 'Bebidas',
-    descripcion: 'Vaso de 16oz con leche de coco natural, hielo frappé y toque de limón fresco.',
+    nombre: 'Producto de ejemplo — categoría C',
+    categoria: 'Categoría C',
+    descripcion: 'Precio, disponibilidad e imagen son opcionales. Este bloque muestra cómo se ve un producto completo.',
     precio: 9500,
-    imagen: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&q=80',
+    imagen: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=600&q=80',
     disponible: true,
   },
   {
     id: 'demo-6',
-    nombre: 'Tiramisú Tradicional de Café',
-    categoria: 'Postres',
-    descripcion: 'Capas de soletillas empapadas en café espresso y crema sedosa de queso mascarpone.',
+    nombre: 'Producto de ejemplo — sin stock',
+    categoria: 'Categoría C',
+    descripcion: 'Un producto pausado: sigue en el catálogo pero el cliente no puede pedirlo.',
     precio: 15000,
-    imagen: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&q=80',
-    disponible: true,
+    imagen: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=600&q=80',
+    disponible: false,
   },
 ];
 
@@ -205,7 +218,7 @@ export const CatalogoPage: React.FC = observer(() => {
       if (!error && data?.catalogo && Array.isArray(data.catalogo)) {
         const formateados: ProductoCatalogoItem[] = data.catalogo.map((i: any, idx: number) => ({
           id: String(i.id || `prod-${idx + 1}`),
-          nombre: String(i.nombre || 'Plato o Producto'),
+          nombre: String(i.nombre || 'Producto'),
           categoria: String(i.categoria || 'Generales'),
           descripcion: String(i.descripcion || 'Preparado fresco con ingredientes seleccionados.'),
           precio: Number(i.precio) || 0,
@@ -238,24 +251,24 @@ export const CatalogoPage: React.FC = observer(() => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'plantilla_menu_necto.csv');
+    link.setAttribute('download', 'plantilla_catalogo_necto.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     setAlerta({
       tipo: 'exito',
-      mensaje: 'Plantilla descargada. Puedes abrirla en Excel, agregar tus platos y volver a subirla aquí.',
+      mensaje: 'Plantilla descargada. Puedes abrirla en Excel, agregar tus productos y volver a subirla aquí.',
     });
   };
 
-  // 3. Cargar menú de ejemplo instantáneo (Demo)
-  const cargarMenuEjemplo = () => {
-    setProductos(MENU_DEMO_EJEMPLO);
+  // 3. Cargar catálogo de ejemplo (Demo)
+  const cargarCatalogoEjemplo = () => {
+    setProductos(CATALOGO_DEMO_EJEMPLO);
     setMostrarImportador(false);
     setAlerta({
       tipo: 'exito',
-      mensaje: '¡Menú de demostración cargado! Puedes editar los precios, nombres o fotos y hacer clic en "Guardar y Publicar".',
+      mensaje: '¡Catálogo de ejemplo cargado! Puedes editar los precios, nombres o fotos y hacer clic en "Guardar y Publicar".',
     });
   };
 
@@ -264,7 +277,7 @@ export const CatalogoPage: React.FC = observer(() => {
     const permitidos = ['.pdf', '.xlsx', '.xls', '.csv', '.png', '.jpg', '.jpeg'];
     const esValido = permitidos.some((ext) => file.name.toLowerCase().endsWith(ext));
     if (!esValido) {
-      setErrorCarga('Por favor sube un documento PDF, una hoja de Excel (.xlsx) o una foto de tu carta.');
+      setErrorCarga('Por favor sube un documento PDF, una hoja de Excel (.xlsx) o una foto de tu lista de precios.');
       return;
     }
     setArchivo(file);
@@ -273,13 +286,13 @@ export const CatalogoPage: React.FC = observer(() => {
 
   const ejecutarImportacion = async () => {
     if (!archivo && !textoManual.trim()) {
-      setErrorCarga('Por favor adjunta un archivo o escribe algunos platos antes de continuar.');
+      setErrorCarga('Por favor adjunta un archivo o escribe algunos productos antes de continuar.');
       return;
     }
 
     setProcesandoArchivo(true);
     setErrorCarga(null);
-    setMensajeProgreso('Leyendo tu carta o documento...');
+    setMensajeProgreso('Leyendo tu documento...');
 
     try {
       let bodyPayload: any = {};
@@ -292,17 +305,17 @@ export const CatalogoPage: React.FC = observer(() => {
           reader.readAsDataURL(archivo);
         });
 
-        setMensajeProgreso('Organizando platos, precios y asignando fotos...');
+        setMensajeProgreso('Organizando productos, precios y asignando fotos...');
         bodyPayload = {
           fileBase64: base64Data,
           fileName: archivo.name,
           mimeType: archivo.type,
         };
       } else {
-        setMensajeProgreso('Interpretando texto y precios de tu carta...');
+        setMensajeProgreso('Interpretando texto y precios...');
         bodyPayload = {
           textoPlano: textoManual,
-          fileName: 'mi_menu.txt',
+          fileName: 'mi_catalogo.txt',
         };
       }
 
@@ -333,7 +346,7 @@ export const CatalogoPage: React.FC = observer(() => {
           mensaje: `Se cargaron ${data.total} productos con fotos sugeridas. Revisa los precios y haz clic en "Guardar y Publicar" para confirmarlos.`,
         });
       } else {
-        throw new Error('No se detectaron platos con precios claros. Prueba con otro archivo o escribe el texto directamente.');
+        throw new Error('No se detectaron productos con precios claros. Prueba con otro archivo o escribe el texto directamente.');
       }
     } catch (err: any) {
       setErrorCarga(err.message || 'Hubo un inconveniente al procesar el archivo.');
@@ -344,7 +357,7 @@ export const CatalogoPage: React.FC = observer(() => {
   };
 
   // 5. Guardar en Supabase
-  const guardarMenu = async () => {
+  const guardarCatalogo = async () => {
     setGuardando(true);
     setAlerta(null);
     const sb = getSupabase();
@@ -370,7 +383,7 @@ export const CatalogoPage: React.FC = observer(() => {
       setOriginalProductos(productos);
       setAlerta({
         tipo: 'exito',
-        mensaje: '¡Tu menú ha sido publicado! Tus clientes ya pueden pedir estos productos en Telegram y en tu carta web.',
+        mensaje: '¡Tu catálogo ha sido publicado! Tus clientes ya pueden pedir estos productos en Telegram y en tu catálogo web.',
       });
 
       if (pedidosStore?.config) {
@@ -403,7 +416,7 @@ export const CatalogoPage: React.FC = observer(() => {
     const nuevo: ProductoCatalogoItem = {
       id: `prod-${Date.now()}`,
       nombre: '',
-      categoria: categoriaActiva !== 'Todas' ? categoriaActiva : 'Platos Principales',
+      categoria: categoriaActiva !== 'Todas' ? categoriaActiva : 'General',
       descripcion: '',
       precio: 18000,
       imagen: FOTO_POR_DEFECTO,
@@ -462,24 +475,34 @@ export const CatalogoPage: React.FC = observer(() => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-gray-950 p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* ── Encabezado Principal con Colores Oficiales Necto (brand-500) ── */}
+    <>
+      <PageMeta
+        title="Catálogo"
+        description="Productos y precios que ven tus clientes"
+      />
+      <div className="min-h-screen bg-gray-50/70 dark:bg-gray-950 p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      {/* ── Encabezado principal ──
+          El cuadro del icono iba en `bg-brand-50` + `border-brand-100` +
+          `text-brand-500`: los peldaños CLAROS del naranja son un melocotón que
+          se lee rosa, y es el mismo defecto que ya se corrigió en el login. Se
+          usa el tono de icono que el resto de la app ya declara para una
+          cabecera de sección. */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200/80 dark:border-gray-800 shadow-theme-xs">
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 flex items-center justify-center text-brand-500 shadow-theme-xs">
+          <div className="h-12 w-12 rounded-2xl bg-secondary-50 dark:bg-brand-500/10 flex items-center justify-center text-secondary-600 dark:text-brand-400 shadow-theme-xs">
             <DocsIcon className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl md:text-2xl font-bold text-ink-title dark:text-white tracking-tight">
-                Menú y Productos
+                Catálogo
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400 border border-accent-200 dark:border-accent-500/20">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-estado-verde text-ink-body border border-accent-200 dark:border-accent-500/20">
                 En línea
               </span>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Administra los platos y precios que ven tus clientes en Telegram y en la carta web.
+              Administra los productos y precios que ven tus clientes en Telegram y en el catálogo web.
             </p>
           </div>
         </div>
@@ -488,10 +511,10 @@ export const CatalogoPage: React.FC = observer(() => {
         <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => setMostrarImportador(!mostrarImportador)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 dark:border-brand-500/30 bg-brand-50/60 dark:bg-brand-500/10 text-brand-500 dark:text-brand-400 text-sm font-semibold hover:bg-brand-100/80 dark:hover:bg-brand-500/20 transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
           >
             <DocsIcon className="w-4 h-4" />
-            Cargar Menú (PDF / Excel)
+            Cargar catálogo (PDF / Excel)
           </button>
 
           <Link
@@ -500,11 +523,11 @@ export const CatalogoPage: React.FC = observer(() => {
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
           >
             <EyeIcon className="w-4 h-4 text-gray-400" />
-            Ver Carta Pública
+            Ver catálogo público
           </Link>
 
           <button
-            onClick={guardarMenu}
+            onClick={guardarCatalogo}
             disabled={guardando || (!hayCambiosPendientes && productos.length === 0)}
             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-theme-xs ${
               hayCambiosPendientes
@@ -545,7 +568,7 @@ export const CatalogoPage: React.FC = observer(() => {
         </div>
       )}
 
-      {/* ── Panel Desplegable: Cargar Carta o Menú (PDF / Excel / Plantilla) ── */}
+      {/* ── Panel desplegable: cargar catálogo (PDF / Excel / plantilla) ── */}
       {mostrarImportador && (
         <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-theme-sm space-y-5">
           <div className="flex items-center justify-between">
@@ -555,10 +578,10 @@ export const CatalogoPage: React.FC = observer(() => {
               </div>
               <div>
                 <h3 className="text-base font-bold text-ink-title dark:text-white">
-                  Cargar menú desde archivo
+                  Cargar catálogo desde archivo
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Sube cualquier carta en PDF, lista en Excel o foto de tu menú. No necesitas un formato estricto.
+                  Sube tu lista de precios en PDF, una hoja de Excel o una foto. No necesitas un formato estricto.
                 </p>
               </div>
             </div>
@@ -580,7 +603,7 @@ export const CatalogoPage: React.FC = observer(() => {
                   ¿No tienes un archivo con formato especial? ¡No hay problema!
                 </span>
                 <p className="mt-0.5">
-                  Puedes subir tu <strong>volante impreso, carta en PDF o lista de precios actual</strong>. Nuestro sistema extraerá los platos, los precios en pesos colombianos y les asignará automáticamente fotos profesionales de alta resolución.
+                  Puedes subir tu <strong>volante impreso, lista de precios en PDF o tu inventario actual</strong>. Nuestro sistema extraerá los productos, los precios en pesos colombianos y les asignará automáticamente fotos profesionales de alta resolución.
                 </p>
               </div>
             </div>
@@ -597,11 +620,11 @@ export const CatalogoPage: React.FC = observer(() => {
 
               <button
                 type="button"
-                onClick={cargarMenuEjemplo}
+                onClick={cargarCatalogoEjemplo}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-all shadow-theme-xs"
               >
                 <CheckCircleIcon className="w-3.5 h-3.5" />
-                Cargar Menú de Prueba con 1 Clic (Demo)
+                Cargar catálogo de ejemplo (Demo)
               </button>
             </div>
           </div>
@@ -626,7 +649,7 @@ export const CatalogoPage: React.FC = observer(() => {
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
               }`}
             >
-              Escribir / Pegar Texto de la Carta
+              Escribir o pegar texto
             </button>
           </div>
 
@@ -673,7 +696,7 @@ export const CatalogoPage: React.FC = observer(() => {
                       Arrastra tu archivo aquí o haz clic para seleccionarlo
                     </p>
                     <p className="text-xs text-gray-400">
-                      Compatible con cualquier PDF, Excel (.xlsx, .xls), CSV o foto nítida de tu carta física.
+                      Compatible con PDF, Excel (.xlsx, .xls), CSV o una foto nítida de tu lista de precios.
                     </p>
                   </>
                 )}
@@ -721,7 +744,7 @@ export const CatalogoPage: React.FC = observer(() => {
               type="text"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por plato, categoría o ingrediente..."
+              placeholder="Buscar por producto, categoría o descripción..."
               className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
@@ -759,7 +782,7 @@ export const CatalogoPage: React.FC = observer(() => {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold shadow-theme-xs transition-all"
             >
               <PlusIcon className="w-4 h-4" />
-              Nuevo Plato
+              Nuevo producto
             </button>
           </div>
         </div>
@@ -799,23 +822,23 @@ export const CatalogoPage: React.FC = observer(() => {
               No hay productos para mostrar
             </h3>
             <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
-              Agrega tu primer producto con "Nuevo Plato", carga el menú demo o sube tu archivo en PDF o Excel.
+              Agrega tu primer producto con "Nuevo producto", carga el catálogo de ejemplo o sube tu archivo en PDF o Excel.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={cargarMenuEjemplo}
+              onClick={cargarCatalogoEjemplo}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-semibold transition-all"
             >
               <CheckCircleIcon className="w-4 h-4 text-brand-500" />
-              Cargar Menú de Prueba con 1 Clic
+              Cargar catálogo de ejemplo
             </button>
             <button
               onClick={() => setMostrarImportador(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold shadow-theme-xs transition-all"
             >
               <DocsIcon className="w-4 h-4" />
-              Cargar Menú desde Archivo
+              Cargar catálogo desde archivo
             </button>
           </div>
         </div>
@@ -831,8 +854,14 @@ export const CatalogoPage: React.FC = observer(() => {
                   : 'border-gray-200/60 dark:border-gray-800/60 opacity-60'
               }`}
             >
-              {/* Imagen del Plato con Badge de Categoría */}
-              <div className="relative h-44 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              {/* Imagen del producto con badge de categoría */}
+              {/*
+                El hueco de la imagen va en tinta oscura, no en `gray-100`: el
+                precio y las píldoras viven ENCIMA de esta caja, y sobre el gris
+                claro el blanco del precio leía a 1.18:1. Con la foto aún sin
+                cargar —o caída— el precio tiene que seguir leyéndose.
+              */}
+              <div className="relative h-44 w-full bg-gray-900 dark:bg-gray-800 overflow-hidden">
                 <img
                   src={item.imagen}
                   alt={item.nombre}
@@ -851,10 +880,10 @@ export const CatalogoPage: React.FC = observer(() => {
                 {/* Switch de Disponibilidad */}
                 <button
                   onClick={(e) => toggleDisponibilidad(item.id, e)}
-                  title={item.disponible ? 'Pausar plato' : 'Habilitar plato'}
+                  title={item.disponible ? 'Pausar producto' : 'Habilitar producto'}
                   className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold shadow-theme-xs transition-all ${
                     item.disponible
-                      ? 'bg-accent-500 text-white'
+                      ? 'bg-estado-verde text-ink-body'
                       : 'bg-gray-600 text-gray-200'
                   }`}
                 >
@@ -888,7 +917,7 @@ export const CatalogoPage: React.FC = observer(() => {
 
                   <button
                     onClick={(e) => eliminarProducto(item.id, e)}
-                    title="Eliminar plato"
+                    title="Eliminar producto"
                     className="p-1.5 rounded-lg text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
                   >
                     <TrashBinIcon className="w-4 h-4" />
@@ -967,7 +996,7 @@ export const CatalogoPage: React.FC = observer(() => {
           <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-3xl p-6 shadow-theme-lg border border-gray-200 dark:border-gray-800 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
               <h3 className="text-base font-bold text-ink-title dark:text-white">
-                {esNuevoProducto ? 'Nuevo Plato o Producto' : 'Editar Plato'}
+                {esNuevoProducto ? 'Nuevo producto' : 'Editar producto'}
               </h3>
               <button
                 onClick={() => setProductoEnEdicion(null)}
@@ -1015,7 +1044,7 @@ export const CatalogoPage: React.FC = observer(() => {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Nombre del plato
+                  Nombre del producto
                 </label>
                 <input
                   type="text"
@@ -1093,7 +1122,7 @@ export const CatalogoPage: React.FC = observer(() => {
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/60 rounded-xl">
                 <div>
                   <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-                    Disponible en la carta
+                    Disponible en el catálogo
                   </p>
                   <p className="text-[11px] text-gray-400">
                     Si se agota, apágalo para que tus clientes no lo pidan.
@@ -1130,13 +1159,14 @@ export const CatalogoPage: React.FC = observer(() => {
                 onClick={guardarProductoModal}
                 className="px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-theme-xs"
               >
-                Guardar Plato
+                Guardar producto
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 });
 

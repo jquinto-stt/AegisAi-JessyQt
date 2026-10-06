@@ -4,7 +4,6 @@ import { Link } from "react-router";
 
 import { Alert } from "@/elements/ui/alert";
 import { Button } from "@/elements/ui/button";
-import { Card } from "@/elements/ui/card";
 import { Input } from "@/elements/form/input";
 import { Select } from "@/elements/form/select";
 import {
@@ -18,10 +17,25 @@ import {
   type OrganizacionWorkspace,
 } from "@/stores/organizacion.store";
 import {
-  CardHead,
+  BuildingStorefrontIcon,
+  ConstructionIcon,
+  FashionIcon,
+  FoodIcon,
+  GlobeAltIcon,
+  GroupIcon,
+  HealthIcon,
+  IdentificationIcon,
+  OtherRubroIcon,
+  ServicesIcon,
+  UserIcon,
+} from "@/icons";
+import {
+  BloqueConfig,
+  CampoConfig,
   ConfigAcciones,
-  Label2,
-  claseFila,
+  RejillaOpciones,
+  type IconoConfig,
+  type OpcionConIcono,
 } from "@/pages/config-layout";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -66,6 +80,53 @@ const ZONAS_HORARIAS: string[] = [
 const PAISES: string[] = Object.keys(PAISES_CONFIG);
 
 /**
+ * Un icono por rubro, atado a `TIPOS_EMPRESA` por `value`.
+ *
+ * Antes «Tipo de empresa» era un `Select`: ocho rubros que el usuario no veía
+ * hasta abrir el desplegable, uno a uno. Ahora se pintan los ocho a la vez con
+ * una metáfora cada uno, porque ocho etiquetas de texto en fila no se
+ * distinguen de un párrafo.
+ *
+ * Las etiquetas se ACORTAN para la ficha (donde el ancho es de una columna):
+ * «Servicios Profesionales & Consultoría» es el `value` real, pero como rótulo
+ * de ficha no cabe. Se acorta lo que se PINTA, nunca lo que se GUARDA.
+ */
+const ICONO_POR_RUBRO: Record<string, { icono: IconoConfig; corto: string }> = {
+  "Gastronomía & Alimentos": { icono: FoodIcon, corto: "Gastronomía" },
+  "Moda, Calzado & Accesorios": { icono: FashionIcon, corto: "Moda & Calzado" },
+  // `BuildingStorefront` es también el icono del bloque «qué negocio eres»: se
+  // reutiliza a propósito, no son dos conceptos distintos.
+  "Retail & Comercio minorista": { icono: BuildingStorefrontIcon, corto: "Comercio minorista" },
+  "Tecnología & Software": { icono: ServicesIcon, corto: "Tecnología" },
+  "Servicios Profesionales & Consultoría": { icono: ServicesIcon, corto: "Servicios" },
+  "Salud, Estética & Bienestar": { icono: HealthIcon, corto: "Salud & Bienestar" },
+  "Construcción & Hogar": { icono: ConstructionIcon, corto: "Construcción & Hogar" },
+  "Otro rubro comercial": { icono: OtherRubroIcon, corto: "Otro rubro" },
+};
+
+/**
+ * Las fichas de rubro, derivadas del catálogo.
+ *
+ * Se construyen desde `TIPOS_EMPRESA` —no se copian a mano— para que el
+ * selector no pueda desincronizarse: un rubro nuevo aparece aquí solo, y si
+ * falta su icono el `filter` lo deja fuera en vez de pintar una ficha vacía.
+ * Un rubro sin entrada se pinta igual, con el icono de «otro» y su nombre
+ * completo: es preferible una ficha sin metáfora a un rubro sin elegir.
+ */
+const OPCIONES_RUBRO: OpcionConIcono<string>[] = TIPOS_EMPRESA.map((t) => ({
+  value: t,
+  label: ICONO_POR_RUBRO[t]?.corto ?? t,
+  icono: ICONO_POR_RUBRO[t]?.icono ?? OtherRubroIcon,
+}));
+
+/** Fichas del tamaño del equipo, en el orden del catálogo. */
+const OPCIONES_TAMANO: OpcionConIcono<string>[] = TAMANOS_EQUIPO.map((t) => ({
+  value: t,
+  label: t,
+  icono: /^Solo yo/.test(t) ? UserIcon : GroupIcon,
+}));
+
+/**
  * Desfase de una zona horaria, o `null` si `Intl` no la reconoce.
  *
  * Es el LECTOR de `organizacion.zonaHoraria`, que hasta ahora se guardaba y no
@@ -99,26 +160,20 @@ function desfaseDeZona(zona: string): string | null {
  * nada sería exactamente el control que miente. Se explica dónde se crea.
  */
 const SinOrganizacion = () => (
-  <Card>
-    <CardHead>Todavía no hay ninguna organización</CardHead>
-    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-      Estos datos se crean una vez, en el alta. Cuando exista tu organización podrás
-      corregir aquí su nombre, su región y su logo.
-    </p>
-
-    <div className="mt-4">
-      <Link to="/onboarding/organizacion">
-        <Button size="sm">Crear mi organización</Button>
-      </Link>
-    </div>
-  </Card>
+  <BloqueConfig
+    icono={IdentificationIcon}
+    pregunta="Todavía no hay ninguna organización"
+    descripcion="Estos datos se crean una vez, en el alta. Cuando exista tu organización podrás corregir aquí su nombre, su región y su logo."
+  >
+    <Link to="/onboarding/organizacion">
+      <Button size="sm">Crear mi organización</Button>
+    </Link>
+  </BloqueConfig>
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FORMULARIO
 // ═══════════════════════════════════════════════════════════════════════════
-
-const filaBase = claseFila;
 
 const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => {
   /**
@@ -209,48 +264,51 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
   return (
     <>
       {/* ── IDENTIDAD ──────────────────────────────────────────────────── */}
-      <Card>
-        <CardHead>Identidad</CardHead>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Con qué nombre y con qué logo aparece tu organización dentro de Necto.
-        </p>
+      <BloqueConfig
+        icono={IdentificationIcon}
+        pregunta="¿Cómo se llama tu negocio?"
+        descripcion="El nombre y el logo con los que aparece tu organización dentro de Necto."
+      >
+        {/* La etiqueta ya no repite la pregunta del bloque. Antes el bloque se
+            titulaba «¿Cómo se llama tu negocio?» y la fila decía «Nombre de la
+            organización»: dos renglones para el mismo dato, y el usuario tenía
+            que emparejarlos por su cuenta. Queda un solo rótulo. */}
+        <CampoConfig
+          etiqueta="Nombre"
+          ayuda="Es el nombre que ven tu equipo y tus comprobantes."
+          htmlFor="org-nombre"
+          ancho="max-w-md"
+        >
+          <Input
+            id="org-nombre"
+            value={borrador.nombre}
+            placeholder="Ej. Boutique Roma"
+            error={!nombreValido}
+            hint={nombreValido ? undefined : "El nombre no puede quedar vacío."}
+            onChange={(e) => set("nombre", e.target.value)}
+          />
+        </CampoConfig>
 
-        <div className="mt-4">
-          <div className={filaBase}>
-            <Label2
-              titulo="Nombre de la organización"
-              descripcion="Es el nombre que ven tu equipo y tus comprobantes."
-              htmlFor="org-nombre"
-            />
-            <div className="w-full sm:w-80">
-              <Input
-                id="org-nombre"
-                value={borrador.nombre}
-                placeholder="Ej. Boutique Roma"
-                error={!nombreValido}
-                hint={nombreValido ? undefined : "El nombre no puede quedar vacío."}
-                onChange={(e) => set("nombre", e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className={filaBase}>
-            <Label2
-              titulo="Identificador web"
-              descripcion="Se deriva del nombre: no se edita por separado, cambia con él."
-            />
+        <div className="mt-5">
+          <CampoConfig
+            etiqueta="Identificador web"
+            ayuda="Se deriva del nombre: no se edita por separado, cambia con él."
+            ancho="max-w-md"
+          >
             <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
               necto.app/{slugDe(borrador.nombre)}
             </span>
-          </div>
+          </CampoConfig>
+        </div>
 
-          <div className={filaBase}>
-            <Label2
-              titulo="Logo"
-              descripcion="Dirección de una imagen. Se muestra a la izquierda tal como se verá."
-              htmlFor="org-logo"
-            />
-            <div className="flex w-full items-center gap-3 sm:w-80">
+        <div className="mt-5">
+          <CampoConfig
+            etiqueta="Logo"
+            ayuda="Dirección de una imagen. Se muestra a la izquierda tal como se verá."
+            htmlFor="org-logo"
+            ancho="max-w-md"
+          >
+            <div className="flex w-full items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03]">
                 {borrador.logoUrl.trim() ? (
                   // El `alt` describe la imagen, no repite el nombre del campo: un
@@ -274,78 +332,71 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
                 onChange={(e) => set("logoUrl", e.target.value)}
               />
             </div>
-          </div>
+          </CampoConfig>
         </div>
-      </Card>
+      </BloqueConfig>
 
       {/* ── REGIÓN ──────────────────────────────────────────────────────── */}
-      <Card>
-        <CardHead>Región</CardHead>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Dónde opera el negocio y en qué unidad se expresan sus importes. Cambiar el país
-          propone su moneda y su zona horaria; puedes ajustarlas después.
-        </p>
-
-        <div className="mt-4">
-          <div className={filaBase}>
-            <Label2
-              titulo="País"
-              descripcion="País desde el que opera la organización."
-              htmlFor="org-pais"
+      <BloqueConfig
+        icono={GlobeAltIcon}
+        pregunta="¿Dónde operas y con qué moneda?"
+        descripcion="Estos tres valores viajan juntos: cambiar el país propone su moneda y su zona horaria."
+      >
+        <div className="grid gap-5 sm:grid-cols-2">
+          <CampoConfig
+            etiqueta="País"
+            ayuda="País desde el que opera la organización."
+            htmlFor="org-pais"
+          >
+            {/* `Select` del catálogo es NO controlado: solo lee `defaultValue` al
+                montar. El `key` lo remonta cuando el valor cambia desde fuera,
+                que es lo que pasa al cambiar de país o al recargar del store. */}
+            <Select
+              key={`pais-${borrador.pais}`}
+              options={PAISES.map((p) => ({ value: p, label: p }))}
+              defaultValue={borrador.pais}
+              onChange={cambiarPais}
+              aria-label="País de la organización"
             />
-            <div className="w-full sm:w-72">
-              {/* `Select` del catálogo es NO controlado: solo lee `defaultValue` al
-                  montar. El `key` lo remonta cuando el valor cambia desde fuera,
-                  que es lo que pasa al cambiar de país o al recargar del store. */}
-              <Select
-                key={`pais-${borrador.pais}`}
-                options={PAISES.map((p) => ({ value: p, label: p }))}
-                defaultValue={borrador.pais}
-                onChange={cambiarPais}
-                aria-label="País de la organización"
-              />
-            </div>
-          </div>
+          </CampoConfig>
 
-          <div className={filaBase}>
-            <Label2
-              titulo="Moneda"
-              descripcion="Código de tres letras con el que se expresan los importes."
-              htmlFor="org-moneda"
+          <CampoConfig
+            etiqueta="Moneda"
+            ayuda="Código de tres letras. Cambiar el país lo propone."
+            htmlFor="org-moneda"
+          >
+            <Input
+              id="org-moneda"
+              value={borrador.moneda}
+              maxLength={3}
+              placeholder="COP"
+              onChange={(e) => set("moneda", e.target.value)}
             />
-            <div className="w-full sm:w-72">
-              <Input
-                id="org-moneda"
-                value={borrador.moneda}
-                maxLength={3}
-                placeholder="COP"
-                onChange={(e) => set("moneda", e.target.value)}
-              />
-            </div>
-          </div>
+          </CampoConfig>
+        </div>
 
-          <div className={filaBase}>
-            <Label2
-              titulo="Zona horaria"
-              descripcion="Huso con el que se fechan las operaciones de la organización."
-              htmlFor="org-zona"
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <CampoConfig
+            etiqueta="Zona horaria"
+            ayuda="Huso con el que se fechan las operaciones de la organización."
+            htmlFor="org-zona"
+          >
+            <Select
+              key={`zona-${borrador.zonaHoraria}`}
+              options={opcionesZona.map((z) => ({ value: z, label: z }))}
+              defaultValue={borrador.zonaHoraria}
+              onChange={(v) => set("zonaHoraria", v)}
+              aria-label="Zona horaria de la organización"
             />
-            <div className="w-full sm:w-72">
-              <Select
-                key={`zona-${borrador.zonaHoraria}`}
-                options={opcionesZona.map((z) => ({ value: z, label: z }))}
-                defaultValue={borrador.zonaHoraria}
-                onChange={(v) => set("zonaHoraria", v)}
-                aria-label="Zona horaria de la organización"
-              />
-            </div>
-          </div>
+          </CampoConfig>
 
-          <div className={filaBase}>
-            <Label2
-              titulo="Desfase horario"
-              descripcion="Se calcula con la zona que hayas elegido, no se guarda aparte."
-            />
+          {/* El lector de la zona: se calcula, no se guarda. Va como campo y no
+              como fila de adorno porque es la prueba de que la zona se aplica. */}
+          <CampoConfig
+            etiqueta="Desfase horario"
+            ayuda="Se calcula con la zona que hayas elegido, no se guarda aparte."
+            ancho="max-w-none"
+          >
             {desfase ? (
               <span className="font-mono text-xs text-gray-600 dark:text-gray-300">{desfase}</span>
             ) : (
@@ -353,53 +404,55 @@ const FormularioGeneral = observer(({ org }: { org: OrganizacionWorkspace }) => 
                 «{borrador.zonaHoraria}» no es una zona horaria reconocida.
               </span>
             )}
-          </div>
+          </CampoConfig>
         </div>
-      </Card>
+      </BloqueConfig>
 
       {/* ── PERFIL DEL NEGOCIO ──────────────────────────────────────────── */}
-      <Card>
-        <CardHead>Perfil del negocio</CardHead>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Rubro y tamaño del equipo. Son los mismos valores que preguntó el alta.
-        </p>
+      {/*
+        Los dos controles de esta tarjeta ya NO son `<Select>`. Eran ocho rubros
+        y cuatro tamaños escondidos tras un desplegable: el usuario no sabía qué
+        había dentro hasta abrirlo, y comparar dos opciones exigía recordar la
+        anterior. Ahora se ven todas a la vez y se eligen con un clic.
 
-        <div className="mt-4">
-          <div className={filaBase}>
-            <Label2
-              titulo="Tipo de empresa"
-              descripcion="Rubro principal del negocio."
-              htmlFor="org-tipo"
-            />
-            <div className="w-full sm:w-72">
-              <Select
-                key={`tipo-${borrador.tipoEmpresa}`}
-                options={TIPOS_EMPRESA.map((t) => ({ value: t, label: t }))}
-                defaultValue={borrador.tipoEmpresa}
-                onChange={(v) => set("tipoEmpresa", v)}
-                aria-label="Tipo de empresa"
-              />
-            </div>
-          </div>
+        El estado sigue siendo el MISMO borrador: elegir marca y guarda el botón
+        «Guardar cambios» del pie. No se guarda al clic, para no romper la regla
+        de que guardar es una acción con efecto y su «Descartar».
+      */}
+      <BloqueConfig
+        icono={BuildingStorefrontIcon}
+        pregunta="¿Qué tipo de negocio es?"
+        descripcion="Rubro y tamaño del equipo. Son los mismos valores que preguntó el alta."
+      >
+        <CampoConfig
+          etiqueta="Tipo de empresa"
+          ayuda="Rubro principal del negocio. Se guarda el nombre completo del rubro, no la etiqueta corta que se ve aquí."
+          ancho="max-w-none"
+        >
+          <RejillaOpciones
+            opciones={OPCIONES_RUBRO}
+            valor={borrador.tipoEmpresa}
+            onChange={(v) => set("tipoEmpresa", v)}
+            ariaLabel="Tipo de empresa"
+          />
+        </CampoConfig>
 
-          <div className={filaBase}>
-            <Label2
-              titulo="Tamaño del equipo"
-              descripcion="Cuántas personas operan hoy en la organización."
-              htmlFor="org-tamano"
+        <div className="mt-6">
+          <CampoConfig
+            etiqueta="Tamaño del equipo"
+            ayuda="Cuántas personas operan hoy en la organización."
+            ancho="max-w-none"
+          >
+            <RejillaOpciones
+              opciones={OPCIONES_TAMANO}
+              valor={borrador.tamanoEquipo}
+              onChange={(v) => set("tamanoEquipo", v)}
+              ariaLabel="Tamaño del equipo"
+              columnas="sm:grid-cols-4"
             />
-            <div className="w-full sm:w-72">
-              <Select
-                key={`tamano-${borrador.tamanoEquipo}`}
-                options={TAMANOS_EQUIPO.map((t) => ({ value: t, label: t }))}
-                defaultValue={borrador.tamanoEquipo}
-                onChange={(v) => set("tamanoEquipo", v)}
-                aria-label="Tamaño del equipo"
-              />
-            </div>
-          </div>
+          </CampoConfig>
         </div>
-      </Card>
+      </BloqueConfig>
 
       {/* El aviso de por qué el botón está apagado. Sin esto, un «Guardar
           cambios» deshabilitado obliga a adivinar qué falta. */}

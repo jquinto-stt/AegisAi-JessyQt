@@ -88,7 +88,7 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   pedidos: [
     { id: "inicio", label: "Inicio", path: "/pedidos/inicio", capacidad: "orders.read" },
     { id: "tablero", label: "Tablero", path: "/pedidos", capacidad: "orders.read" },
-    { id: "catalogo", label: "Menú y Carta", path: "/pedidos/catalogo", capacidad: "orders.read" },
+    { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.read" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
     { id: "historial", label: "Historial", path: "/pedidos/historial", capacidad: "orders.read" },
     { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "orders.read" },
@@ -148,10 +148,19 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
  * `inactivo` (una baja con historial conservado). Un estado sin ningún caso de
  * ejemplo es una rama de la UI que nadie puede comprobar.
  *
- * Y las **excepciones** tienen sus dos casos: `capacidadesExtra` (Diana ve las
- * conversaciones aunque su rol no las incluya) y `capacidadesRemovidas` (Óscar
- * no puede cancelar pedidos, que es lo que su rol sí permitiría). Son las dos
- * formas de que la autorización real no sea solo «el rol y nada más».
+ * Y las **excepciones** tienen sus dos casos: `capacidadesExtra` (Diana confirma
+ * inventarios, que su rol no le da) y `capacidadesRemovidas` (Óscar no puede
+ * cancelar pedidos, que es lo que su rol sí permitiría). Son las dos formas de
+ * que la autorización real no sea solo «el rol y nada más».
+ *
+ * OJO al elegir un `capacidadesExtra`: **tiene que ser algo que el rol NO dé**.
+ * El modelo tiene una regla explícita —una excepción solo existe si cambia
+ * algo— y `procedenciaDe` la aplica: si el rol ya concede la capacidad, el
+ * extra se ignora y la fila se lee «Viene de su rol». Diana llevaba
+ * `channels.read`, que `vendedor` ya incluye, así que durante un tiempo el
+ * único caso de «se le dio de más» del catálogo no existía: la pantalla no
+ * pintaba ningún pie y el seed juraba que sí. Ahora es `inventory.manage`, que
+ * `vendedor` no tiene a propósito («quien cuenta no firma»).
  */
 const SEED: Operador[] = [
   {
@@ -231,6 +240,11 @@ const SEED: Operador[] = [
     // mensajes» no crea un rol para eso, usa la plantilla y suma lo que le
     // hace falta. Así que esta fila demuestra las DOS cosas a la vez —que la
     // plantilla sirve y que los extras son el mecanismo para usarla—.
+    //
+    // Los extras son los que la plantilla `personalizado` NO trae (no trae
+    // ninguno: nace vacía). Antes llevaba `orders.read`, `channels.read` y
+    // `channels.respond`, pero la plantilla ya no es lo que importa aquí: con
+    // `orders.read` de más, Sofía quedaba idéntica a un `vendedor` cualquiera.
     id: "d9",
     nombre: "Sofía Cárdenas",
     email: "sofia.cardenas@negocio.com",
@@ -240,13 +254,18 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "personalizado",
-    capacidadesExtra: ["orders.read", "channels.read", "channels.respond"],
+    capacidadesExtra: ["orders.read", "channels.read", "channels.respond", "scheduled.read"],
   },
   // ── Excepciones: la autorización real no es solo el rol ──────────────────
   {
-    // SUMA. Su rol (`vendedor`) no trae `channels.read`, pero atiende el
-    // WhatsApp del negocio. El extra se concede aquí, no cambiando el rol: si se
-    // editara `vendedor`, se lo estaría dando a Mateo y a Daniela sin querer.
+    // SUMA. Su rol (`vendedor`) solo le deja CONTAR inventario; Diana además lo
+    // gestiona, porque es quien responde por el stock del local. El extra se
+    // concede aquí, no cambiando el rol: si se editara `vendedor`, se lo
+    // estaría dando a Mateo y a Daniela sin querer.
+    //
+    // `inventory.manage` y no `channels.read`: `vendedor` YA trae
+    // `channels.read`, y un extra que el rol ya concede no es una excepción —
+    // `procedenciaDe` lo descarta y la fila se lee «Viene de su rol».
     id: "d6",
     nombre: "Diana Ríos",
     email: "diana.rios@negocio.com",
@@ -256,7 +275,7 @@ const SEED: Operador[] = [
     estado: "activo",
     modulo: "pedidos",
     rolId: "vendedor",
-    capacidadesExtra: ["channels.read"],
+    capacidadesExtra: ["inventory.manage"],
   },
   {
     // RESTA. Su rol (`supervisor_pedidos`) permite cancelar pedidos, pero por

@@ -294,7 +294,7 @@ export default function App() {
       <Route path="/checkout" element={<CheckoutGlobalPayPage />} />
       <Route path="/pagos/:ref" element={<CheckoutGlobalPayPage />} />
 
-      {/* Carta / Menú Digital Externo (Acceso Libre) */}
+      {/* Carta / Catálogo digital Externo (Acceso Libre) */}
       <Route path="/menu" element={<MenuCatalogoPage />} />
       <Route path="/carta" element={<MenuCatalogoPage />} />
 

@@ -13,6 +13,8 @@ import {
   ShoppingBagIcon,
 } from "@heroicons/react/24/outline";
 import { getSupabase, ESQUEMA } from '../../lib/supabase';
+import { PageMeta } from '../../shell/meta';
+import { NectoLogo } from '../../compositions/shared/NectoLogo';
 
 interface ProductoItem {
   id: string;
@@ -25,65 +27,72 @@ interface ProductoItem {
 }
 
 // Categorías base para filtrado
+//
+// Genéricas a propósito: el catálogo sirve a cualquier negocio, no solo a uno
+// de comida. Las categorías reales salen del catálogo guardado; estas son solo
+// las de la vista de ejemplo.
 const CATEGORIAS_BASE = [
   'Todos',
-  'Combos y Platos',
-  'Acompañamientos',
-  'Bebidas',
-  'Postres',
+  'Categoría A',
+  'Categoría B',
+  'Categoría C',
+  'Ofertas',
 ] as const;
 
-// Catálogo por defecto para Necto
+// Catálogo de ejemplo para Necto
+//
+// Los productos son genéricos, no gastronómicos: lo que el ejemplo enseña es la
+// FORMA del dato (nombre, categoría, descripción, precio, imagen), no un rubro
+// concreto. Un catálogo de hamburguesas le dice a una ferretería que esto no es
+// para ella.
 const PRODUCTOS_DEFAULT: ProductoItem[] = [
   {
     id: 'cat-f1',
-    nombre: 'Combo Hamburguesa Clásica',
-    categoria: 'Combos y Platos',
-    descripcion: 'Carne 100% de res a la parrilla, queso cheddar, lechuga fresca, tomate y salsa especial de la casa con papas.',
+    nombre: 'Producto de ejemplo A1',
+    categoria: 'Categoría A',
+    descripcion: 'Descripción breve del producto. Aquí va lo que el cliente necesita saber para decidirse.',
     precio: 25000,
-    imagen: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
-    popular: true,
+    imagen: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
   },
   {
     id: 'cat-f2',
-    nombre: 'Papas Rústicas con Queso',
-    categoria: 'Acompañamientos',
-    descripcion: 'Papas en cascos doradas sazonadas con especias artesanales y bañadas en fondue de queso fundido.',
+    nombre: 'Producto de ejemplo A2',
+    categoria: 'Categoría A',
+    descripcion: 'Un segundo artículo de la misma categoría, para que se vea cómo se agrupa el catálogo.',
     precio: 12000,
-    imagen: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80',
   },
   {
     id: 'cat-f3',
-    nombre: 'Bebida Gaseosa 350ml',
-    categoria: 'Bebidas',
-    descripcion: 'Refresco frío en lata para acompañar tu orden.',
+    nombre: 'Producto de ejemplo B1',
+    categoria: 'Categoría B',
+    descripcion: 'Artículo de otra categoría. Las categorías son texto libre: escribe las que use tu negocio.',
     precio: 4000,
-    imagen: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&q=80',
   },
   {
     id: 'cat-f4',
-    nombre: 'Postre Cheesecake de Frutos Rojos',
-    categoria: 'Postres',
-    descripcion: 'Cremoso cheesecake neoyorquino con base crocante y coulis artesanal de frutos del bosque.',
+    nombre: 'Producto de ejemplo B2',
+    categoria: 'Categoría B',
+    descripcion: 'El precio, la imagen y la descripción se ajustan a lo que vendas. No hay un formato obligatorio.',
     precio: 9000,
-    imagen: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500&q=80',
-    popular: true,
+    imagen: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80',
   },
   {
     id: 'cat-f5',
-    nombre: 'Bowl Saludable de Pollo Teriyaki',
-    categoria: 'Combos y Platos',
-    descripcion: 'Pechuga a la plancha glaseada en salsa teriyaki, arroz integral, aguacate, ajonjolí y vegetales al vapor.',
+    nombre: 'Producto de ejemplo C1',
+    categoria: 'Categoría C',
+    descripcion: 'Este bloque muestra cómo se ve un producto con todos sus datos completos.',
     precio: 27500,
-    imagen: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=500&q=80',
   },
   {
     id: 'cat-f6',
-    nombre: 'Limonada Natural Hierbabuena',
-    categoria: 'Bebidas',
-    descripcion: 'Limonada frappé recién preparada con hojas de hierbabuena fresca y toque de panela.',
+    nombre: 'Producto de ejemplo C2',
+    categoria: 'Categoría C',
+    descripcion: 'Puedes tener tantos productos y categorías como necesites.',
     precio: 7500,
-    imagen: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=500&q=80',
+    imagen: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&q=80',
   },
 ];
 
@@ -127,20 +136,25 @@ export const MenuCatalogoPage: React.FC = () => {
             .filter((i: any) => i && i.disponible !== false)
             .map((i: any, idx: number) => {
               // Asignar imagen coherente por defecto si no viene
+              // Imágenes e textos de reserva, genéricos: se usan solo cuando el
+              // producto guardado no trae los suyos, y no deben sugerir un rubro.
               const defaultImgs = [
-                'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=80',
-                'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500&q=80',
-                'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500&q=80',
-                'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500&q=80',
+                'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+                'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&q=80',
+                'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=500&q=80',
+                'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&q=80',
               ];
               return {
                 id: String(i.id || `prod-${idx}`),
                 nombre: String(i.nombre),
-                categoria: i.categoria || (idx % 2 === 0 ? 'Combos y Platos' : 'Acompañamientos'),
-                descripcion: i.descripcion || 'Producto fresco preparado al momento con los más altos estándares.',
+                categoria: i.categoria || (idx % 2 === 0 ? 'Categoría A' : 'Categoría B'),
+                descripcion: i.descripcion || 'Descripción pendiente de completar.',
                 precio: Number(i.precio) || 0,
                 imagen: i.imagen || defaultImgs[idx % defaultImgs.length],
-                popular: idx === 0,
+                // El sello «Destacado» sale del dato, no de la posición en la lista:
+                // marcar idx===0 convertía «el primero» en «el que el negocio destaca»,
+                // y el sello aparecía sobre un producto que nadie destacó.
+                popular: i.popular === true,
               };
             });
 
@@ -178,6 +192,20 @@ export const MenuCatalogoPage: React.FC = () => {
       return nuevo;
     });
   };
+
+  /**
+   * Categorías que se pintan en la barra: las del catálogo real, en el orden en
+   * que aparecen los productos. Se cae a `CATEGORIAS_BASE` solo si el catálogo
+   * todavía no ha cargado — nunca para ofrecer una categoría que no existe.
+   */
+  const categoriasDisponibles = useMemo(() => {
+    const vistas: string[] = [];
+    for (const p of productos) {
+      const c = (p.categoria || '').trim();
+      if (c && !vistas.includes(c)) vistas.push(c);
+    }
+    return vistas.length > 0 ? ['Todos', ...vistas] : [...CATEGORIAS_BASE];
+  }, [productos]);
 
   // Filtrado
   const productosFiltrados = useMemo(() => {
@@ -319,33 +347,33 @@ export const MenuCatalogoPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 antialiased selection:bg-secondary-600 selection:text-white pb-24">
+    <>
+      <PageMeta
+        title={categoriaActiva === 'Todos' ? 'Catálogo' : `${categoriaActiva} · Catálogo`}
+        description="Catálogo de productos del negocio"
+      />
+      <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800 antialiased selection:bg-secondary-600 selection:text-white pb-24">
       {/* ── CABECERA CORPORATIVA NECTO ── */}
       <header className="sticky top-0 z-30 bg-gray-900 text-white shadow-md border-b border-gray-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           {/* Logo Necto & Sede */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <img
-                src="/images/logo/necto-full-white.svg"
-                alt="NECTO"
-                className="h-7 w-auto"
-                onError={(e) => {
-                  // Fallback si no carga imagen estática
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <span className="text-xl font-black tracking-tight text-white flex items-center">
-                NECTO<span className="text-secondary-400">.</span>
-              </span>
-            </div>
+            {/*
+              La marca sale de `@/compositions/shared/NectoLogo`, que es la ÚNICA
+              fuente del lockup. Aquí había un `<img>` del SVG **y además** un
+              `<span>NECTO.</span>` al lado, así que se leían los dos: «NECTO. NECTO.»
+              en la misma línea. El `<img>` solo se escondía en `onError`, y el SVG
+              carga bien, de modo que el respaldo nunca entraba y el duplicado
+              quedaba siempre a la vista.
+            */}
+            <NectoLogo size="sm" blanco />
 
             <div className="h-5 w-px bg-gray-700 mx-1 hidden sm:block"></div>
 
             <div className="hidden sm:flex flex-col">
-              <span className="text-xs font-semibold text-gray-200">Catálogo Digital</span>
-              <div className="flex items-center gap-1 text-[11px] text-gray-400">
-                <MapPinIcon className="w-3 h-3 text-secondary-400" />
+              <span className="text-xs font-semibold text-gray-200">Catálogo</span>
+              <div className="flex items-center gap-1 text-[11px] text-gray-300">
+                <MapPinIcon className="w-3 h-3 text-accent-300" />
                 <span className="truncate max-w-[180px]">{sede}</span>
               </div>
             </div>
@@ -394,20 +422,24 @@ export const MenuCatalogoPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── BARRA DE CATEGORÍAS ── */}
+        {/* ── BARRA DE CATEGORÍAS ──
+            Las pestañas salen del catálogo REAL, no de `CATEGORIAS_BASE`: una
+            barra fija ofrecía «Ofertas» aunque no hubiera ninguna, y ocultaba
+            las categorías que el negocio sí usa. `CATEGORIAS_BASE` queda solo
+            como respaldo cuando el catálogo aún no ha cargado. */}
         <div className="bg-gray-950 border-t border-gray-800 px-4 overflow-x-auto scrollbar-none py-2.5">
           <div className="max-w-6xl mx-auto flex items-center gap-2">
-            {CATEGORIAS_BASE.map((cat) => {
+            {categoriasDisponibles.map((cat) => {
               const activa = categoriaActiva === cat;
               return (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => setCategoriaActiva(cat)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs whitespace-nowrap transition-all cursor-pointer ${
                     activa
-                      ? 'bg-secondary-600 dark:bg-accent-300 dark:text-ink-body text-white font-semibold shadow-xs'
-                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-800 hover:text-white'
+                      ? 'bg-accent-300 text-ink-body font-semibold'
+                      : 'bg-gray-800 text-gray-100 hover:bg-gray-700 hover:text-white font-medium'
                   }`}
                 >
                   {cat}
@@ -418,9 +450,13 @@ export const MenuCatalogoPage: React.FC = () => {
         </div>
       </header>
 
-      {/* ── BANNER SENCILLO NECTO ── */}
-      <div className="bg-secondary-50 border-b border-secondary-100 py-2.5 px-4 text-center text-xs text-secondary-900">
-        <span>👋 Bienvenido <b>{cliente}</b> • Entrega estimada en: <i>{direccion}</i></span>
+      {/* ── BANNER SENCILLO NECTO ──
+          `bg-accent-50` con tinta `ink-body`: es el tinte de información que el
+          sistema ya usa, y el texto lee a 13:1. Antes iba en `secondary-900`
+          sobre `secondary-50`, que era legible pero arrastraba el azul de marca
+          a una superficie de aviso. */}
+      <div className="bg-accent-50 border-b border-accent-200 py-2.5 px-4 text-center text-xs text-ink-body">
+        <span>Bienvenido <b>{cliente}</b> • Entrega estimada en: <i>{direccion}</i></span>
       </div>
 
       {/* ── LISTADO / GRID DE PRODUCTOS ── */}
@@ -783,7 +819,8 @@ export const MenuCatalogoPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

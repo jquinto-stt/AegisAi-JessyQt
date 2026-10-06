@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
@@ -44,13 +45,14 @@ import {
   ChipDia,
   ConfigAcciones,
   ConfigHeader,
-  ConfigSectionNav,
+  ConfigHub,
   ConfigShell,
   Label2,
   Segmentado,
   ToggleRow,
+  VolverAlHub,
   claseFila,
-  type GrupoNav,
+  type TarjetaHub,
 } from "@/pages/config-layout";
 
 /** Alias del token compartido de fila, para no tocar cada uso en el cuerpo. */
@@ -62,7 +64,6 @@ import {
   ESTADO_INTEGRACION_BADGE,
   ESTADO_INTEGRACION_LABEL,
   FILAS_PLANTILLA,
-  GRUPO_SECCION_LABEL,
   META_SECCION,
   OPCIONES_DENSIDAD,
   OPCIONES_TEMA,
@@ -219,8 +220,32 @@ const TONO_VERSION =
  * criterio que `pages/pedidos/ConfigPage.tsx`.
  */
 export const ConfigPage = observer(() => {
-  // ── Estado local de la superficie (no es estado de dominio) ──
-  const [seccion, setSeccion] = useState<SeccionCanal>("perfil");
+  // ── La sección activa vive en la URL (`?seccion=`) ────────────────────────
+  //
+  // Antes era un `useState`: un enlace a «Plantillas» no existía, y quien llegaba
+  // desde una incidencia siempre aterrizaba en «Perfil del canal». Con el
+  // parámetro, cada sección es direccionable — y **sin parámetro se pinta el hub
+  // de tarjetas**, porque es la pantalla de entrada. Elegir una sección «por
+  // defecto» escondería las otras siete detrás de una nav que el usuario no ha
+  // visto. Mismo criterio que `pages/pedidos/ConfigPage.tsx`.
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const seccionParam = searchParams.get("seccion");
+  const seccion: SeccionCanal | null = esSeccionValida(seccionParam) ? seccionParam : null;
+
+  /**
+   * ¿Es `v` una sección conocida?
+   *
+   * El valor lo escribe el usuario. Uno inventado no puede dejar la pantalla en
+   * blanco: cae al hub, que es lo que se pinta de verdad.
+   */
+  function esSeccionValida(v: string | null): v is SeccionCanal {
+    return v !== null && (ORDEN_SECCIONES as string[]).includes(v);
+  }
+
+  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
+  const volverAlHub = () => setSearchParams({});
+
   const [guardado, setGuardado] = useState(false);
 
   // ── Preferencias locales de UI (sin fuente de verdad de negocio) ──
@@ -254,26 +279,14 @@ export const ConfigPage = observer(() => {
   const soloLectura = !puedeGestionarCanal;
   const motivo = motivoSinPermiso("channels.manage");
 
-  // ── Navegación: agrupación derivada del catálogo, calculada una vez ──
+  // ── Navegación: el hub sale del catálogo ──
   //
-  // El catálogo (`configuracion.secciones.ts`) es la fuente de verdad del
-  // vocabulario; aquí solo se RESUELVE el nombre del icono contra el mapa
-  // explícito y se pasa la forma que consume `<ConfigSectionNav>`. La página no
-  // escribe ninguna etiqueta de sección: todas salen de `META_SECCION`.
-  const grupos: GrupoNav[] = useMemo(
-    () =>
-      seccionesPorGrupo().map(({ grupo, secciones }) => ({
-        grupo,
-        label: GRUPO_SECCION_LABEL[grupo],
-        secciones: secciones.map((s) => ({
-          key: s,
-          label: META_SECCION[s].label,
-          hint: META_SECCION[s].hint,
-          icono: ICONO_SECCION[META_SECCION[s].icono],
-        })),
-      })),
-    [],
-  );
+  // Aquí vivía un `useMemo` que armaba `GrupoNav[]` para la columna lateral.
+  // La columna se sustituyó por el hub de tarjetas, que NO agrupa: una
+  // cuadrícula ya es agrupación, y repetir los rótulos CANAL / MENSAJERÍA /
+  // PREFERENCIAS encima de cada fila serían tres cabeceras para ocho tarjetas.
+  // `tarjetasHub` (más arriba) aplana el mismo catálogo. El catálogo sigue
+  // siendo el dueño del vocabulario; lo que cambió es cómo se presenta.
 
   // ── Setters del borrador ──
   // Todos marcan `guardado = false`: cualquier edición invalida el aviso de
@@ -362,6 +375,50 @@ export const ConfigPage = observer(() => {
   const estadoCanal: EstadoCanal = draft.horario.activo ? "conectado" : "pausado";
 
   // ── Encabezado de la sección activa ──
+  // Las tarjetas del hub salen del catálogo (`seccionesPorGrupo`), no de una
+  // lista copiada: una sección nueva aparece aquí sola. Se aplana el
+  // agrupamiento porque el hub ya agrupa por sí mismo —una cuadrícula— y
+  // repetir los rótulos CANAL / MENSAJERÍA / PREFERENCIAS encima de cada fila
+  // añadiría tres cabeceras para ocho tarjetas.
+  const tarjetasHub: TarjetaHub[] = useMemo(
+    () =>
+      seccionesPorGrupo()
+        .flatMap(({ secciones }) => secciones)
+        .map((s) => ({
+          key: s,
+          label: META_SECCION[s].label,
+          hint: META_SECCION[s].hint,
+          icono: ICONO_SECCION[META_SECCION[s].icono],
+        })),
+    [],
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISTA RAÍZ — el hub de tarjetas
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Sin `?seccion=`. No se pinta el aviso de solo lectura: navegar no es editar,
+  // y el aviso pertenece a la sección que se va a consultar, donde sí importa.
+  if (!seccion) {
+    return (
+      <div className="pb-12">
+        <PageMeta
+          title="Configuración del canal · Conversaciones"
+          description="Ajustes del canal de WhatsApp"
+        />
+
+        <div className="mb-7">
+          <ConfigHeader
+            titulo="Configuración del canal"
+            descripcion="Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+          />
+        </div>
+
+        <ConfigHub tarjetas={tarjetasHub} onEntrar={entrarASeccion} />
+      </div>
+    );
+  }
+
   const meta = META_SECCION[seccion];
 
   return (
@@ -390,40 +447,34 @@ export const ConfigPage = observer(() => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* ═══════════ Navegación vertical de secciones ═══════════ */}
-        {/* Va FUERA del `<fieldset>` a propósito: navegar entre secciones no es
-            editar. Metido dentro, `fieldset disabled` desactiva sus botones y en
-            modo solo lectura el usuario no podría ni cambiar de sección para
-            consultar. */}
-        <ConfigSectionNav
-          grupos={grupos}
-          activa={seccion}
-          onSeleccionar={(k) => setSeccion(k as SeccionCanal)}
-          ariaLabel="Secciones de configuración del canal"
-        />
+      <div>
+        {/* ═══════════ Vuelta al hub — FUERA del fieldset ═══════════ */}
+        {/*
+          El camino de vuelta va AQUÍ, fuera del `<fieldset disabled>`, y no
+          dentro de `ConfigShell`. La razón es concreta: `fieldset disabled`
+          desactiva NATIVAMENTE todos los `<button>` de dentro, y en modo solo
+          lectura el usuario que llega por enlace directo se quedaría encerrado
+          en la sección sin forma de ver las demás — el control existiría y no
+          haría nada, que es exactamente lo que este proyecto no acepta.
+          Volver no es editar, así que no debe desactivarse con la edición.
+        */}
+        <div className="mb-3">
+          <VolverAlHub onVolver={volverAlHub} />
+        </div>
 
         {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}
         {/*
           El panel es un <fieldset>: deshabilitarlo desactiva NATIVAMENTE todos
           los inputs, switches y textareas de dentro sin cablear `disabled` en
-          cada control. `min-w-0` neutraliza el `min-inline-size` por defecto del
-          fieldset, que rompería el layout de dos columnas.
-
-          Envuelve SOLO el panel, NO la navegación: `fieldset disabled` también
-          desactiva los `<button>` de dentro, y la nav es navegación, no edición.
+          cada control.
         */}
-        <fieldset disabled={soloLectura} className="m-0 min-w-0 flex-1 border-0 p-0">
+        <fieldset disabled={soloLectura} className="m-0 min-w-0 border-0 p-0">
           {/* El `key={seccion}` es lo que dispara el fundido: al cambiar de
               sección React desmonta el panel entero y monta uno nuevo, y el
-              nuevo reproduce `animate-aparecer`. Sin la key reutilizaría el
-              mismo nodo, la clase no cambiaría y la sección se sustituiría de
-              golpe — el defecto que se corrige.
+              nuevo reproduce `animate-aparecer`.
 
               Fundido PURO, sin desplazamiento: el panel nuevo ocupa el sitio del
-              anterior, así que moverlo sugeriría que viene de algún lado. Cuando
-              dos contenidos comparten el mismo hueco, lo correcto es que uno se
-              apague y el otro se encienda. */}
+              anterior, así que moverlo sugeriría que viene de algún lado. */}
           <ConfigShell
             seccionKey={seccion}
             titulo={meta.label}

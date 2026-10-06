@@ -291,7 +291,11 @@ const FilaEquipo = observer(
         {/* Columna 5: Acciones */}
         <TableCell className="py-4 text-right pr-6">
           <div className="flex items-center justify-end gap-1.5 relative">
-            {/* Botón Aprobar si está pendiente (color positivo esmeralda) */}
+            {/* Botón Aprobar si está pendiente.
+                Antes iba en `bg-accent-600` —el CYAN de la paleta— sobre una
+                fila teñida de naranja: dos acentos compitiendo y el botón de
+                confirmar no se distinguía del fondo. Va en el naranja de marca,
+                que es el color de la acción principal en toda la app. */}
             {esPendiente && (
               <button
                 type="button"
@@ -299,7 +303,7 @@ const FilaEquipo = observer(
                   e.stopPropagation();
                   operadoresStore.aprobar(op.id);
                 }}
-                className="h-8 px-3 mr-2 rounded-lg text-xs font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors cursor-pointer"
+                className="h-8 px-3 mr-2 rounded-lg text-xs font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors cursor-pointer"
               >
                 Aprobar
               </button>

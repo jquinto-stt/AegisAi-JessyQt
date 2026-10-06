@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 
+import { Card } from "@/elements/ui/card";
 import { Label } from "@/elements/form/label";
+import { ArrowRightIcon, CheckLineIcon, ChevronLeftIcon } from "@/icons";
 import { cn } from "@/utils";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -50,6 +52,105 @@ export interface ConfigHeaderProps {
   descripcion: string;
   /** Acciones alineadas a la derecha (badges de estado, botón de guardado…). */
   acciones?: ReactNode;
+}
+
+/**
+ * Icono admitido por las cabeceras de tarjeta.
+ *
+ * Se declara como tipo propio en vez de `ReactNode` porque las páginas resuelven
+ * su icono desde un `Record<Clave, React.FC<...>>` (ver `ICONO_SECCION` en
+ * `/asistente/config`), y `ReactNode` aceptaría un `string`, que ahí no lo es.
+ */
+export type IconoConfig = React.FC<React.SVGProps<SVGSVGElement>>;
+
+export interface ConfigCardProps {
+  /** Icono representativo de la tarjeta. Es el ancla de escaneo. */
+  icono: IconoConfig;
+  /**
+   * Título de la tarjeta. Debe leerse como la PREGUNTA que resuelve el bloque
+   * («¿Cómo se llama tu negocio?»), no como un sustantivo administrativo
+   * («Identidad»): quien entra por primera vez no sabe qué hay dentro de
+   * «Identidad», y sí sabe qué responder a la primera.
+   */
+  titulo: string;
+  /** Una línea que explica qué se decide aquí. Obligatoria: una tarjeta sin ella obliga a adivinar. */
+  descripcion: string;
+  /** Filas de la tarjeta. */
+  children: ReactNode;
+  /**
+   * La tarjeta es la acción destacada de la sección: el cuadro del icono se
+   * pinta con el naranja de marca.
+   *
+   * Se reserva para UNA tarjeta por pantalla como máximo — el patrón de la
+   * referencia de diseño. Dos acentos en la misma vista no destacan nada.
+   */
+  acento?: boolean;
+  /** Acciones de la tarjeta, alineadas a la derecha bajo las filas. */
+  acciones?: ReactNode;
+}
+
+/**
+ * ConfigCard — tarjeta de configuración con icono representativo.
+ *
+ * ── Qué problema resuelve ──────────────────────────────────────────────────
+ *
+ * Antes la cabecera de cada bloque era un `<CardHead>` de una línea
+ * (`text-sm font-semibold`) seguido de un párrafo gris. Veinte bloques
+ * idénticos sin ancla visual: el ojo no distingue dónde acaba uno y empieza el
+ * siguiente, y volver a un bloque concreto obliga a leerlos todos.
+ *
+ * El cuadro del icono es esa ancla. Se reconoce el bloque ANTES de leerlo, que
+ * es lo que hace una pantalla manejable para alguien que no la conoce.
+ *
+ * ── Por qué el icono va AQUÍ y no en cada fila ─────────────────────────────
+ *
+ * Un icono por fila convierte la tarjeta en un semáforo: seis iconos que no
+ * significan nada distinto entre sí compiten con el texto en vez de guiarlo.
+ * El icono marca el BLOQUE; dentro, la jerarquía la da el título de la fila.
+ *
+ * ── Lo que NO hace ─────────────────────────────────────────────────────────
+ *
+ * No anida tarjetas. El cuerpo es una lista de filas, no un contenedor con
+ * borde propio: una tarjeta dentro de otra duplica el marco y lee como error de
+ * maquetación, no como jerarquía.
+ */
+export function ConfigCard({
+  icono: Icono,
+  titulo,
+  descripcion,
+  children,
+  acento,
+  acciones,
+}: ConfigCardProps) {
+  return (
+    <Card>
+      <div className="flex items-start gap-3.5">
+        {/* Cuadro del icono. Es la copia literal del que ya usan las tarjetas de
+            `/equipo` (`SubIntegrationCard`), extraída a un solo sitio: si el
+            tono cambia, cambia en las dos pantallas a la vez. */}
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            acento
+              ? "bg-brand-500 text-white"
+              : "bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400",
+          )}
+          aria-hidden="true"
+        >
+          <Icono className="h-5 w-5" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold text-ink-title dark:text-white">{titulo}</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{descripcion}</p>
+        </div>
+      </div>
+
+      <div className="mt-4">{children}</div>
+
+      {acciones && <div className="mt-4">{acciones}</div>}
+    </Card>
+  );
 }
 
 /**
@@ -283,6 +384,431 @@ export function SegmentedRow({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REJILLA DE OPCIONES CON ICONO
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface OpcionConIcono<T extends string> {
+  value: T;
+  label: string;
+  icono: IconoConfig;
+}
+
+/**
+ * RejillaOpciones — elegir UNA opción entre varias visibles, con icono.
+ *
+ * ── Por qué no es `Segmentado` ────────────────────────────────────────────
+ *
+ * `Segmentado` es una pista de píldoras en una sola línea. Sirve para dos o
+ * tres etiquetas cortas («Retiro / Domicilio»). Con OCHO rubros de nombre largo
+ * la píldora o se desborda o se corta, y el usuario acaba leyendo una fila de
+ * texto sin poder comparar. Aquí cada opción es una ficha: icono arriba,
+ * etiqueta debajo, y todas a la vista. La diferencia es de forma, no de
+ * semántica — ambas son selección exclusiva y las dos marcan el activo igual.
+ *
+ * ── El color de la elegida: naranja de marca, NO verde (06/10) ────────────
+ *
+ * El borrador pidió el verde `#17b363` literal (era el de la referencia
+ * visual). No se puede usar: en `theme.css` ese hex solo existe como
+ * `--color-legal-500`, declarado para las páginas legales — no es un color de
+ * la paleta de producto. La regla del proyecto es que el verde no aparece en
+ * la app, y el arnés lo comprueba.
+ *
+ * El paso que se usa es `brand-500` (`#ff3f1a`), el MISMO con el que el resto
+ * del producto marca «elegido»: el borde de la ficha, el fondo tenue y el
+ * círculo. El check se conserva.
+ *
+ * ── Por qué el relleno del cuadro del icono NO va en naranja ──────────────
+ *
+ * La primera versión pintaba el cuadro del icono en naranja relleno con la
+ * tinta en blanco. Se quitó por dos razones medibles:
+ *
+ *  1. **El naranja dejaba de significar «elegido».** Con el icono de las fichas
+ *     inactivas ya en `brand-400` sobre `brand-500/10` en oscuro, TODAS las
+ *     fichas tenían naranja y el color no distinguía ninguna. En claro no
+ *     pasaba porque el inactivo iba en azul — o sea que la señal de selección
+ *     dependía del tema, que es justo lo que no puede ser.
+ *  2. **Blanco sobre `#ff3f1a` mide 3,6:1**, por debajo de 4,5:1. El check es
+ *     la señal que no depende del color; el relleno solo añadía un texto por
+ *     debajo del umbral. (Aquí se pinta el check en `brand-500` sobre blanco,
+ *     no texto blanco sobre naranja: eso sí pasa.)
+ */
+export function RejillaOpciones<T extends string>({
+  opciones,
+  valor,
+  onChange,
+  disabled,
+  ariaLabel,
+  columnas = "sm:grid-cols-4",
+}: {
+  opciones: OpcionConIcono<T>[];
+  valor: T;
+  onChange: (v: T) => void;
+  disabled?: boolean;
+  ariaLabel: string;
+  /** Clases de `grid-cols` desde `sm`. Por defecto 4 por fila. */
+  columnas?: string;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className={cn("grid grid-cols-2 gap-3 sm:gap-4", columnas)}
+    >
+      {opciones.map((o) => {
+        const activo = o.value === valor;
+        const Icono = o.icono;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={activo}
+            disabled={disabled}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "group relative flex cursor-pointer flex-col items-center justify-between min-h-[114px] sm:min-h-[128px] rounded-2xl p-4 sm:p-5 text-center transition-all duration-200 ease-out select-none",
+              activo
+                ? "border-2 border-brand-500 bg-brand-500/[0.04] shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
+                : "border border-gray-200/90 bg-white hover:border-gray-300 hover:bg-gray-50/70 hover:-translate-y-0.5 hover:shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700 dark:hover:bg-white/[0.05]",
+              disabled && "cursor-not-allowed opacity-50",
+            )}
+          >
+            {/* Contenedor central: icono o círculo con checkmark estilo TurboTax */}
+            <div className="flex h-11 w-11 items-center justify-center mb-2.5">
+              {activo ? (
+                <span
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-500 bg-white text-brand-500 shadow-xs dark:border-brand-500 dark:bg-gray-900 transition-transform duration-200 scale-105"
+                  aria-hidden="true"
+                >
+                  <CheckLineIcon className="h-5 w-5 stroke-[2.5]" />
+                </span>
+              ) : (
+                <span
+                  className="flex h-10 w-10 items-center justify-center text-gray-500 transition-all duration-200 group-hover:text-gray-800 group-hover:scale-110 dark:text-gray-400 dark:group-hover:text-gray-200"
+                  aria-hidden="true"
+                >
+                  <Icono className="h-6 w-6 stroke-[1.75]" />
+                </span>
+              )}
+            </div>
+
+            <span
+              className={cn(
+                "text-xs sm:text-sm leading-snug transition-colors",
+                activo
+                  ? "font-semibold text-gray-900 dark:text-white"
+                  : "font-medium text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200",
+              )}
+            >
+              {o.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BLOQUE DE CONFIGURACIÓN — el título manda
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface BloqueConfigProps {
+  /** Icono del bloque. Va sobre el título, no a su lado. */
+  icono: IconoConfig;
+  /**
+   * La pregunta que resuelve el bloque. Es el elemento DOMINANTE: se lee
+   * `text-theme-2xl` (24 px), no los 16 px de una etiqueta de campo.
+   */
+  pregunta: string;
+  /** Una línea que explica qué se decide aquí. */
+  descripcion: string;
+  /** Contenido del bloque, a ancho completo. */
+  children: ReactNode;
+}
+
+/**
+ * BloqueConfig — la unidad de agrupación de una pantalla de configuración.
+ * Tarjeta espaciosa con bordes suaves y jerarquía tipográfica limpia.
+ */
+export function BloqueConfig({
+  icono: Icono,
+  pregunta,
+  descripcion,
+  children,
+}: BloqueConfigProps) {
+  return (
+    <Card className="rounded-3xl border border-gray-100 bg-white p-6 sm:p-8 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+      <div className="flex items-start gap-4">
+        <span
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400"
+          aria-hidden="true"
+        >
+          <Icono className="h-6 w-6" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[20px] sm:text-[24px] leading-tight font-bold text-ink-title dark:text-white">
+            {pregunta}
+          </h2>
+          <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">{descripcion}</p>
+        </div>
+      </div>
+
+      <div className="mt-7">{children}</div>
+    </Card>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMPO DE CONFIGURACIÓN — etiqueta encima, control debajo
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface CampoConfigProps {
+  /** Etiqueta del campo. `text-sm font-semibold`: por debajo de la pregunta del bloque. */
+  etiqueta: string;
+  /**
+   * Qué es el valor o qué efecto tiene cambiarlo. Se conserva aunque el bloque
+   * ya tenga descripción: son cosas distintas — la del bloque dice PARA QUÉ es
+   * el grupo, esta dice QUÉ HACE el control concreto.
+   */
+  ayuda?: string;
+  /** `id` del control, para atar la etiqueta. */
+  htmlFor?: string;
+  /** El control, a ancho completo. */
+  children: ReactNode;
+  /** Ancho máximo del control. Por defecto `max-w-sm`. */
+  ancho?: string;
+}
+
+/**
+ * CampoConfig — un campo dentro de un `BloqueConfig`.
+ *
+ * ── Por qué la etiqueta va ENCIMA del control ─────────────────────────────
+ *
+ * `claseFila` (etiqueta-izquierda / control-derecha) es el patrón de una lista
+ * de ajustes y funciona cuando TODAS las filas tienen control: el ojo baja por
+ * una columna de controles alineados. En una pantalla donde la mitad del
+ * contenido son rejillas de fichas a ancho completo, esa alternancia produce un
+ * zigzag: fila estrecha, luego rejilla ancha, luego fila estrecha. La etiqueta
+ * encima deja el control a ancho completo y el bloque se lee en una sola
+ * dirección.
+ *
+ * No se han perdido las descripciones al hacerlo: siguen ahí, porque explican
+ * efectos que no se adivinan (que cambiar el país propone la moneda). Lo que
+ * cambia es dónde están, no que estén.
+ */
+export function CampoConfig({
+  etiqueta,
+  ayuda,
+  htmlFor,
+  children,
+  ancho = "max-w-sm",
+}: CampoConfigProps) {
+  return (
+    <div>
+      <Label htmlFor={htmlFor} className="mb-0">
+        {etiqueta}
+      </Label>
+      {ayuda && (
+        <p className="mt-0.5 max-w-lg text-xs text-gray-500 dark:text-gray-400">{ayuda}</p>
+      )}
+      <div className={cn("mt-2", ancho)}>{children}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HUB DE CONFIGURACIÓN — la entrada de una pantalla de ajustes
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Una sección ofrecida en el hub. Es la misma forma que `SeccionNav`. */
+export interface TarjetaHub {
+  /** Clave de la sección. Es el valor que viaja en `?seccion=`. */
+  key: string;
+  /** Nombre de la sección, en negrita en la tarjeta. */
+  label: string;
+  /** Una línea que explica qué se ajusta ahí. */
+  hint: string;
+  /** Icono, ya resuelto por la página. */
+  icono: IconoConfig;
+}
+
+export interface ConfigHubProps {
+  /** Tarjetas del hub, en orden de lectura. */
+  tarjetas: TarjetaHub[];
+  /** Se llama con la clave de la tarjeta pulsada. */
+  onEntrar: (key: string) => void;
+  /** Texto del enlace de cada tarjeta. Por defecto «Entrar a configurar». */
+  accion?: string;
+}
+
+/**
+ * ConfigHub — la pantalla de entrada de una configuración, como cuadrícula de
+ * tarjetas prominentes.
+ *
+ * ── Qué problema resuelve ────────────────────────────────────────────────
+ *
+ * La navegación lateral (`ConfigSectionNav`) funciona cuando el usuario YA sabe
+ * qué sección busca: es una lista de etiquetas, y hay que leerlas todas para
+ * encontrar la propia. Quien entra por primera vez no sabe qué hay dentro de
+ * «Operación y flujo», y la única forma de averiguarlo es entrar una por una.
+ *
+ * Con tarjetas, cada sección trae su icono y su descripción ANTES de entrar: se
+ * reconoce la sección sin leer el nombre, que es lo que hace una pantalla
+ * manejable para alguien que no la conoce. Es la agrupación que pidió el usuario
+ * (06/10), y por eso las cuatro pantallas de configuración la comparten.
+ *
+ * ── Por qué NO es una lista de pestañas ni un acordeón ───────────────────
+ *
+ * El requisito es que elegir una tarjeta **navegue a pantalla completa**, no que
+ * despliegue el contenido debajo. Un acordeón dejaría las otras secciones a la
+ * vista como distracción mientras se edita una, y en móvil obligaría a
+ * desplazarse por lo ya resuelto. Aquí la sección ocupa la pantalla y hay un
+ * camino explícito de vuelta.
+ *
+ * ── Sobre el color de realce ─────────────────────────────────────────────
+ *
+ * El realce del hover va en `brand-500`, el naranja de marca, **no** en el verde
+ * `#17b363` que pedía el borrador inicial: ese verde se retiró de la paleta
+ * (20/09) y no figura en el manual de NECTO. Un hex literal, además, no tendría
+ * variante oscura y el hover desaparecería en tema oscuro.
+ */
+export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }: ConfigHubProps) {
+  const esDoble = tarjetas.length === 2;
+
+  return (
+    <ul
+      className={cn(
+        "grid grid-cols-1 gap-6 sm:grid-cols-2",
+        esDoble
+          ? "max-w-2xl mx-auto"
+          : "lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
+      )}
+    >
+      {tarjetas.map((t) => {
+        const Icono = t.icono;
+        return (
+          <li key={t.key} className="flex">
+            {/* Tarjeta con proporciones compactas según la referencia visual del usuario */}
+            <button
+              type="button"
+              onClick={() => onEntrar(t.key)}
+              className={cn(
+                "group flex h-full w-full cursor-pointer flex-col justify-between rounded-3xl border-2 border-gray-100 bg-white p-6 sm:p-7 text-left transition-all min-h-[260px] sm:min-h-[280px]",
+                "hover:-translate-y-1 hover:border-[#FF3F1A]/40 hover:shadow-theme-md",
+                "focus-visible:border-[#FF3F1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF3F1A]/30",
+                "dark:border-gray-800 dark:bg-gray-900/60 dark:hover:border-[#FF3F1A]/50",
+              )}
+            >
+              <div>
+                {/* Icono en contenedor redondeado */}
+                <span
+                  className={cn(
+                    "flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50/90 text-gray-700 transition-colors border border-gray-100",
+                    "group-hover:bg-[#FF3F1A]/10 group-hover:text-[#FF3F1A]",
+                    "dark:bg-white/[0.04] dark:border-gray-800 dark:text-gray-300 dark:group-hover:bg-[#FF3F1A]/15 dark:group-hover:text-[#FF3F1A]",
+                  )}
+                  aria-hidden="true"
+                >
+                  <Icono className="h-7 w-7 stroke-[1.75]" />
+                </span>
+
+                {/* Título en azul profundo NECTO (#190088) y descripción */}
+                <div className="mt-5">
+                  <span className="block text-lg sm:text-xl font-bold text-[#190088] dark:text-white">
+                    {t.label}
+                  </span>
+                  <span className="mt-2 block text-sm text-gray-600 leading-relaxed dark:text-gray-400">
+                    {t.hint}
+                  </span>
+                </div>
+              </div>
+
+              {/* Acción inferior: «Entrar a configurar →».
+                  ── El naranja de marca no sirve como color de TEXTO ──────
+                  Iba en `text-[#FF3F1A]`, un hex literal que mide **3,51:1**
+                  sobre el blanco de la tarjeta. La etiqueta es `text-sm
+                  font-semibold`: no llega al umbral de «texto grande», así que
+                  le aplica el 4,5:1 de WCAG AA y no lo cumple.
+                  Se corrige con el mismo par que `VolverAlHub`, medido:
+                  `brand-700` en claro (5,40:1) y `brand-400` en oscuro
+                  (5,98:1). El hex literal tenía además un segundo problema: no
+                  tiene variante oscura, así que el enlace se quedaba en el
+                  naranja de marca sobre `gray-900` y el hover era indistinguible
+                  del reposo. Con el par de la rampa, el hover SÍ cambia de paso
+                  de tema (`brand-800` / `brand-300`), que es lo que hace visible
+                  que la tarjeta es pulsable. */}
+              <div className="mt-6 pt-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700 transition-colors group-hover:text-brand-800 dark:text-brand-400 dark:group-hover:text-brand-300">
+                  {accion}
+                  <ArrowRightIcon
+                    className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                    aria-hidden="true"
+                  />
+                </span>
+              </div>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VOLVER AL HUB
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface VolverAlHubProps {
+  /** A dónde vuelve. Se llama sin argumentos: la página decide su ruta base. */
+  onVolver: () => void;
+  /** Rótulo. Por defecto «Volver a Configuración». */
+  etiqueta?: string;
+}
+
+/**
+ * VolverAlHub — el camino de vuelta desde una sección al menú de tarjetas.
+ *
+ * ── Por qué es un control propio y no el «atrás» del navegador ───────────
+ *
+ * Cuando se entra con un enlace directo (`/pedidos/config?seccion=pagos`) no hay
+ * historial que retroceder: el «atrás» del navegador sacaría al usuario de la
+ * aplicación, o lo devolvería a la página anterior del sitio, que no es el menú.
+ * Y sin este control, quien llegue por enlace directo se queda encerrado en la
+ * sección sin forma de ver las demás.
+ *
+ * Es un `<button>` y no un enlace porque no cambia de documento: solo quita el
+ * parámetro de la URL. Un `<a href>` sin `preventDefault` recargaría la página
+ * entera para el mismo efecto.
+ *
+ * ── El naranja del hover, por paso de tema ────────────────────────────────
+ *
+ * El hover pone el texto en naranja. Con `brand-500` medía **3,19:1** sobre el
+ * `gray-100` del propio hover y 3,51:1 sobre blanco — por debajo de 4,5:1. Es
+ * el mismo defecto que tenía el enlace de las tarjetas y se corrige igual, con
+ * el mismo par: `brand-700` en claro (5,40:1 sobre `gray-100`) y `brand-400` en
+ * oscuro. El reposo (`gray-600`) ya pasaba con 7,56:1 y no se toca.
+ */
+export function VolverAlHub({ onVolver, etiqueta = "Volver a Configuración" }: VolverAlHubProps) {
+  return (
+    <button
+      type="button"
+      onClick={onVolver}
+      className={cn(
+        "-ml-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5",
+        "text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-brand-700",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+        "dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-brand-400",
+      )}
+    >
+      <ChevronLeftIcon className="h-4 w-4" aria-hidden="true" />
+      {etiqueta}
+    </button>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SHELL: NAVEGACIÓN VERTICAL POR SECCIONES
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -404,6 +930,15 @@ export interface ConfigShellProps {
   titulo: string;
   /** Consejo de una línea bajo el título. */
   hint: string;
+  /**
+   * Control de vuelta al hub de tarjetas, sobre el título.
+   *
+   * Es opcional y no lo pinta la página por su cuenta porque su POSICIÓN —encima
+   * del título, alineado con el panel— es parte del patrón: si cada pantalla lo
+   * colocara a su manera, el mismo control aparecería en cuatro sitios distintos.
+   * Se pide como `ReactNode` ya construido, normalmente `<VolverAlHub />`.
+   */
+  volver?: ReactNode;
   /** Pie de la tarjeta o barra de acciones, opcional. */
   footer?: ReactNode;
 }
@@ -423,6 +958,7 @@ export function ConfigShell({
   seccionKey,
   titulo,
   hint,
+  volver,
   footer,
 }: ConfigShellProps) {
   return (
@@ -430,6 +966,8 @@ export function ConfigShell({
       key={seccionKey}
       className="animate-aparecer flex min-w-0 flex-1 flex-col"
     >
+      {volver && <div className="mb-3">{volver}</div>}
+
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-ink-title dark:text-white/90">{titulo}</h2>
         <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{hint}</p>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 
 import { PageMeta } from "@/shell/meta";
@@ -9,11 +9,12 @@ import { Input } from "@/elements/form/input";
 import { Select } from "@/elements/form/select";
 import {
   ConfigHeader,
-  ConfigSectionNav,
+  ConfigHub,
   ConfigShell,
   Label2,
   claseFila,
-  type GrupoNav,
+  VolverAlHub,
+  type TarjetaHub,
 } from "@/pages/config-layout";
 import { BoxCubeIcon, GridIcon, PlugInIcon, TimeIcon } from "@/icons";
 import {
@@ -47,12 +48,66 @@ import { cn } from "@/utils";
 // analista que necesita consultar la configuración para entender un reporte no
 // debería poder cambiarla, y entrar y operar se gobiernan por capacidades
 // distintas (invariante C5).
+//
+// ── La sección activa vive en la URL, no en el estado del componente ──────
+//
+// Es la misma arquitectura que usan pedidos, conversaciones y asistente: la
+// raíz (`/inventarios/config`, sin `?seccion=`) es el HUB de tarjetas, y cada
+// sección es una pantalla completa con su camino de vuelta. Antes esta pantalla
+// tenía la navegación lateral (`ConfigSectionNav`) y elegía la sección en un
+// `useState`, así que un enlace directo a una sección concreta era imposible de
+// escribir y el «atrás» del navegador no llevaba al menú. Con `?seccion=` el
+// enlace es compartible, el «atrás» funciona y el hub puede existir como
+// pantalla propia en vez de convivir con el contenido.
 
-type SeccionConfig = "general" | "categorias" | "alertas" | "avanzado";
+export type SeccionConfig = "general" | "categorias" | "alertas" | "avanzado";
+
+/** Orden de la columna del hub. `general` primero: es la sección por defecto. */
+export const ORDEN_SECCIONES: SeccionConfig[] = ["general", "categorias", "alertas", "avanzado"];
+
+/**
+ * Metadatos de cada sección.
+ *
+ * La etiqueta y el consejo los pinta el hub Y el `ConfigShell` de la sección,
+ * así que viven en un solo sitio: una etiqueta escrita dos veces se
+ * desincroniza en cuanto alguien corrige una de las dos.
+ */
+export const META_SECCION: Record<
+  SeccionConfig,
+  { label: string; hint: string; icono: typeof BoxCubeIcon }
+> = {
+  general: {
+    label: "Medición y unidades",
+    hint: "Valores por defecto al crear nuevos elementos.",
+    icono: BoxCubeIcon,
+  },
+  categorias: {
+    label: "Categorías sugeridas",
+    hint: "Etiquetas propuestas al clasificar elementos.",
+    icono: GridIcon,
+  },
+  alertas: {
+    label: "Umbrales de alertas",
+    hint: "Criterios para considerar conteos detenidos o estancados.",
+    icono: TimeIcon,
+  },
+  avanzado: {
+    label: "Datos y restablecimiento",
+    hint: "Opciones de mantenimiento sobre los datos del módulo.",
+    icono: PlugInIcon,
+  },
+};
+
+const esClaveSeccion = (v: string | null): v is SeccionConfig =>
+  v !== null && (ORDEN_SECCIONES as string[]).includes(v);
 
 export const InventariosConfigPage = observer(function InventariosConfigPage() {
   const navigate = useNavigate();
-  const [seccion, setSeccion] = useState<SeccionConfig>("general");
+
+  // ── La sección activa vive en la URL (`?seccion=`) ────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seccionParam = searchParams.get("seccion");
+  const seccion: SeccionConfig | null = esClaveSeccion(seccionParam) ? seccionParam : null;
 
   const puedeConfigurar = puedeConfigurarInventarios();
   const puedeGestionar = puedeGestionarCatalogo();
@@ -70,75 +125,85 @@ export const InventariosConfigPage = observer(function InventariosConfigPage() {
     );
   }
 
-  const grupos: GrupoNav[] = [
-    {
-      grupo: "general",
-      label: "Configuración",
-      secciones: [
-        { key: "general", label: "Medición y unidades", hint: HINT.general, icono: BoxCubeIcon },
-        { key: "categorias", label: "Categorías sugeridas", hint: HINT.categorias, icono: GridIcon },
-        { key: "alertas", label: "Umbrales de alertas", hint: HINT.alertas, icono: TimeIcon },
-        { key: "avanzado", label: "Datos y restablecimiento", hint: HINT.avanzado, icono: PlugInIcon },
-      ],
-    },
-  ];
+  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
+  const volverAlHub = () => setSearchParams({});
 
-  return (
-    <>
-      <PageMeta title="Configuración · Inventarios" />
-      <div className="flex flex-col gap-5">
-        <ConfigHeader
-          titulo="Configuración de Inventarios"
-          descripcion="Preferencias y parámetros para el registro de productos y conteos."
-          acciones={
-            <>
-              <Badge color={puedeConfigurar ? "success" : "light"} size="sm">
-                {puedeConfigurar ? "Edición habilitada" : "Solo lectura"}
-              </Badge>
+  // Las tarjetas salen de `ORDEN_SECCIONES` y `META_SECCION`, no de una lista
+  // copiada: una sección nueva aparece aquí sola y no puede quedarse sin tarjeta
+  // —ni al revés—, que es como una navegación se desincroniza del contenido.
+  const tarjetasHub: TarjetaHub[] = ORDEN_SECCIONES.map((k) => ({
+    key: k,
+    label: META_SECCION[k].label,
+    hint: META_SECCION[k].hint,
+    icono: META_SECCION[k].icono,
+  }));
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VISTA RAÍZ — el hub de tarjetas
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // Sin `?seccion=`. Es una pantalla de entrada: cabecera y tarjetas, nada más.
+  // No se pinta aquí el aviso de solo lectura: navegar entre secciones no es
+  // editar, y desactivar la navegación dejaría al usuario encerrado sin poder ni
+  // mirar las otras secciones.
+  if (!seccion) {
+    return (
+      <div className="pb-12">
+        <PageMeta title="Configuración · Inventarios" description="Ajustes del módulo de inventarios" />
+
+        <div className="mb-7">
+          <ConfigHeader
+            titulo="Configuración de Inventarios"
+            descripcion="Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+            acciones={
               <Button variant="outline" size="sm" onClick={() => navigate("/inventarios")}>
                 Volver a conteos
               </Button>
-            </>
+            }
+          />
+        </div>
+
+        <ConfigHub tarjetas={tarjetasHub} onEntrar={entrarASeccion} />
+      </div>
+    );
+  }
+
+  const meta = META_SECCION[seccion];
+
+  return (
+    <div className="pb-12">
+      <PageMeta title="Configuración · Inventarios" description="Ajustes del módulo de inventarios" />
+
+      <div className="mb-5">
+        <ConfigHeader
+          titulo="Configuración de Inventarios"
+          descripcion="Preferencias y parámetros para el registro de elementos y conteos."
+          acciones={
+            <Badge color={puedeConfigurar ? "success" : "light"} size="sm">
+              {puedeConfigurar ? "Edición habilitada" : "Solo lectura"}
+            </Badge>
           }
         />
-
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <ConfigSectionNav
-            grupos={grupos}
-            activa={seccion}
-            onSeleccionar={(id) => setSeccion(id as SeccionConfig)}
-            ariaLabel="Secciones de configuración de Inventarios"
-          />
-
-          <ConfigShell
-            seccionKey={seccion}
-            titulo={TITULO[seccion]}
-            hint={HINT[seccion]}
-          >
-            {seccion === "general" && <SeccionGeneral disabled={!puedeConfigurar} />}
-            {seccion === "categorias" && <SeccionCategorias disabled={!puedeConfigurar} />}
-            {seccion === "alertas" && <SeccionAlertas disabled={!puedeConfigurar} />}
-            {seccion === "avanzado" && <SeccionAvanzado disabled={!puedeConfigurar} puedeGestionar={puedeGestionar} />}
-          </ConfigShell>
-        </div>
       </div>
-    </>
+
+      {/* Volver no es editar: el enlace está fuera de cualquier `fieldset
+          disabled`, para que quien solo tenga `inventory.read` pueda entrar a
+          mirar una sección y salir sin quedarse atrapado. */}
+      <div className="mb-4">
+        <VolverAlHub onVolver={volverAlHub} etiqueta="Volver a Configuración" />
+      </div>
+
+      <ConfigShell seccionKey={seccion} titulo={meta.label} hint={meta.hint}>
+        {seccion === "general" && <SeccionGeneral disabled={!puedeConfigurar} />}
+        {seccion === "categorias" && <SeccionCategorias disabled={!puedeConfigurar} />}
+        {seccion === "alertas" && <SeccionAlertas disabled={!puedeConfigurar} />}
+        {seccion === "avanzado" && (
+          <SeccionAvanzado disabled={!puedeConfigurar} puedeGestionar={puedeGestionar} />
+        )}
+      </ConfigShell>
+    </div>
   );
 });
-
-const TITULO: Record<SeccionConfig, string> = {
-  general: "Medición y unidades",
-  categorias: "Categorías sugeridas",
-  alertas: "Umbrales de alertas",
-  avanzado: "Datos y restablecimiento",
-};
-
-const HINT: Record<SeccionConfig, string> = {
-  general: "Valores por defecto al crear nuevos productos.",
-  categorias: "Etiquetas sugeridas al clasificar productos.",
-  alertas: "Criterios para considerar conteos detenidos o estancados.",
-  avanzado: "Opciones de mantenimiento sobre los datos del módulo.",
-};
 
 // ── Sección: General ──────────────────────────────────────────────────────
 

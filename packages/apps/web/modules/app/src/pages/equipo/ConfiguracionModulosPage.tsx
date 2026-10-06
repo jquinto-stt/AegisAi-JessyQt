@@ -13,86 +13,55 @@ import {
   type IdModuloNegocio,
   type InfoModuloNegocio,
 } from "@/stores";
+import {
+  AiIcon,
+  BoxCubeIcon,
+  CartIcon,
+  ChatIcon,
+  CheckLineIcon,
+  MoreDotsIcon,
+  PageIcon,
+  PlusIcon,
+  SettingsGearIcon,
+  TrashBinIcon,
+} from "@/icons";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICONOS SVG VECTORIALES LIMPIOS
+// LOGOS DE MÓDULO
 // ═══════════════════════════════════════════════════════════════════════════
-
-const SettingsGearIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
-const MoreDotsIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <circle cx="5" cy="12" r="1.5" />
-    <circle cx="12" cy="12" r="1.5" />
-    <circle cx="19" cy="12" r="1.5" />
-  </svg>
-);
-
-const CheckCircleSmall = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const PlusIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const TrashIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    <line x1="10" y1="11" x2="10" y2="17" />
-    <line x1="14" y1="11" x2="14" y2="17" />
-  </svg>
-);
+//
+// Los cuatro logos salen de Heroicons, igual que el resto de la interfaz. Antes
+// eran `<svg>` escritos a mano en este archivo, con `strokeWidth` y `viewBox`
+// propios: cuatro formas que no venían del mismo juego que el resto de la app y
+// que nadie podía retocar sin dibujarlas de nuevo. Las clases del contenedor
+// (cuadro de color, radio, tamaño) se conservan **byte a byte**: lo que cambia
+// es de dónde sale el trazo, no cómo se ve el bloque.
 
 /** Logo del Módulo de Pedidos */
 const OrdersBrandLogo = () => (
   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 0 0-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
+    <CartIcon className="h-6 w-6" />
   </div>
 );
 
-
-
-/** Logo del Módulo de Inventarios — una caja con visto de verificación. */
+/** Logo del Módulo de Inventarios — una caja, que es lo que se cuenta. */
 const InventariosBrandLogo = () => (
   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-      <path d="M3 9.5 12 4l9 5.5v5L12 20l-9-5.5v-5Z" />
-      <path d="m3 9.5 9 5.5 9-5.5" />
-      <path d="M12 15v5" />
-    </svg>
+    <BoxCubeIcon className="h-6 w-6" />
   </div>
 );
 
 /** Logo de Integración: Necto IA */
 const NectoIaIntegrationLogo = () => (
   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
+    <AiIcon className="h-5 w-5" />
   </div>
 );
 
 /** Logo de Integración: WhatsApp Business */
 const WhatsAppIntegrationLogo = () => (
   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-50 text-accent-600 dark:bg-accent-500/10 dark:text-accent-400">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} className="h-5 w-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-    </svg>
+    <ChatIcon className="h-5 w-5" />
   </div>
 );
 
@@ -293,7 +262,7 @@ const SubIntegrationCard = observer(({
             onClick={() => onOpenDetails(item)}
             className="rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
           >
-            Details
+            Ver detalles
           </button>
         </div>
 
@@ -447,7 +416,7 @@ const ModuloMaestroCard = observer(({
                 className="text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
               >
                 <div className="flex items-center gap-2">
-                  <TrashIcon className="h-3.5 w-3.5" />
+                  <TrashBinIcon className="h-3.5 w-3.5" />
                   <span>Desinstalar</span>
                 </div>
               </DropdownItem>
@@ -480,7 +449,7 @@ const ModuloMaestroCard = observer(({
       {/* ── 2. SUBSECCIÓN DE INTEGRACIONES ── */}
       <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
         <h4 className="mb-3 text-sm font-semibold text-ink-title dark:text-white">
-          Integrations
+          Integraciones
         </h4>
 
         {/* Tarjetas de integración */}
@@ -644,7 +613,7 @@ export const ModulosTab = observer(() => {
               <ul className="mt-2.5 space-y-2">
                 {modalModulo.capacidades.map((cap, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
+                    <CheckLineIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
                     <span>{cap}</span>
                   </li>
                 ))}
@@ -734,7 +703,7 @@ export const ModulosTab = observer(() => {
               <ul className="mt-2.5 space-y-2">
                 {modalIntegracion.detalles.beneficios.map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <CheckCircleSmall className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
+                    <CheckLineIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent-500" />
                     <span>{b}</span>
                   </li>
                 ))}
@@ -867,9 +836,7 @@ export const ModulosTab = observer(() => {
               <div className="flex items-center justify-between rounded-xl border border-dashed border-gray-200 p-3.5 opacity-70 dark:border-gray-800">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary-50 text-secondary-600 dark:bg-accent-500/10 dark:text-accent-400">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-                    </svg>
+                    <PageIcon className="h-6 w-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
@@ -904,7 +871,7 @@ export const ModulosTab = observer(() => {
         >
           <div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-400">
-              <TrashIcon className="h-5 w-5" />
+              <TrashBinIcon className="h-5 w-5" />
             </div>
 
             <h3 className="mt-3 text-base font-bold text-ink-title dark:text-white">

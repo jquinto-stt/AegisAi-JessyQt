@@ -10,11 +10,9 @@ import { Modal } from "@/elements/ui/modal";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
-import { Switch } from "@/elements/form/switch";
 import {
   AlertIcon,
   CheckCircleIcon,
-  ChevronDownIcon,
   EyeIcon,
   LockIcon,
   PencilIcon,
@@ -22,7 +20,6 @@ import {
 } from "@/icons";
 import {
   CAPACIDAD_GRUPOS,
-  CAPACIDAD_LABEL,
   operadoresStore,
   rolesStore,
   sessionStore,
@@ -30,6 +27,7 @@ import {
   type Operador,
 } from "@/stores";
 import { puede } from "@/stores/acceso.utils";
+import { GrupoCapacidades, type FilaCapacidad } from "@/pages/config-layout";
 import { ESTADO_META, CATEGORIA_COLORES } from "./equipo.constants";
 import { aplicarPreset, aplicarToggle, normalizar, procedenciaDe } from "./excepciones";
 import {
@@ -89,15 +87,15 @@ export const PerfilOperadorPage = observer(() => {
         <PageMeta title="Persona no encontrada · Equipo" description="La persona no existe" />
         <Card>
           <div className="py-12 text-center">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
               Esta persona ya no está en el equipo.
             </p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
               Puede que se haya eliminado de la organización.
             </p>
             <Link
               to="/equipo"
-              className="mt-4 inline-block text-sm font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
+              className="mt-4 inline-block text-theme-sm font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
             >
               Volver al equipo
             </Link>
@@ -328,7 +326,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
       {/* Navegación hacia atrás */}
       <Link
         to="/equipo"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
+        className="inline-flex items-center gap-1.5 text-theme-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -350,7 +348,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             />
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-xl font-bold text-ink-title dark:text-white">
+                <h1 className="text-theme-2xl font-bold text-ink-title dark:text-white">
                   {op.nombre}
                 </h1>
                 <Badge color={estado.color} size="xs">
@@ -363,18 +361,18 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 )}
               </div>
 
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                 {op.cargo || "Sin cargo definido"} · {op.email} · {op.telefono}
               </p>
 
               {datosGuardados && (
-                <span className="mt-2 inline-block text-xs font-medium text-accent-600 dark:text-accent-400">
+                <span className="mt-2 inline-block text-theme-xs font-medium text-success-700 dark:text-success-400">
                   Datos actualizados correctamente.
                 </span>
               )}
 
               {!puedeGestionar && (
-                <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                <p className="mt-2 inline-flex items-center gap-1.5 text-theme-xs font-medium text-gray-500 dark:text-gray-400">
                   <LockIcon className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>Solo lectura: tu rol no permite gestionar el equipo.</span>
                 </p>
@@ -412,7 +410,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                   !puedeGestionar
                     ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-300 dark:border-gray-800 dark:bg-gray-800/60 dark:text-gray-600"
                     : editandoDatos
-                    ? "border-secondary-500 bg-secondary-50 text-secondary-600 dark:border-accent-500 dark:bg-brand-500/10 dark:text-brand-400 cursor-pointer"
+                    ? "border-secondary-500 bg-secondary-50 text-secondary-600 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400 cursor-pointer"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
                 }`}
               >
@@ -433,7 +431,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                     disabled={esUnoMismoOp}
                     title={esUnoMismoOp ? motivoCicloPropio : "Retira el acceso sin borrar su historial"}
                     onClick={() => setConfirmacion("suspender")}
-                    className={`h-9 rounded-lg px-3 text-sm font-medium ring-1 ring-inset transition-colors ${
+                    className={`h-9 rounded-lg px-3 text-theme-sm font-medium ring-1 ring-inset transition-colors ${
                       esUnoMismoOp
                         ? "cursor-not-allowed bg-white text-gray-300 ring-gray-200 dark:bg-gray-800 dark:text-gray-600 dark:ring-gray-700"
                         : "bg-white text-brand-700 ring-brand-200 hover:bg-brand-50 dark:bg-gray-800 dark:text-brand-300 dark:ring-brand-500/30 dark:hover:bg-brand-500/10"
@@ -449,10 +447,10 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                     disabled={esUnoMismoOp}
                     title={esUnoMismoOp ? motivoCicloPropio : "Vuelve a darle acceso"}
                     onClick={() => setConfirmacion("reactivar")}
-                    className={`h-9 rounded-lg px-3 text-sm font-medium ring-1 ring-inset transition-colors ${
+                    className={`h-9 rounded-lg px-3 text-theme-sm font-medium ring-1 ring-inset transition-colors ${
                       esUnoMismoOp
                         ? "cursor-not-allowed bg-white text-gray-300 ring-gray-200 dark:bg-gray-800 dark:text-gray-600 dark:ring-gray-700"
-                        : "bg-white text-accent-700 ring-accent-200 hover:bg-accent-50 dark:bg-gray-800 dark:text-accent-300 dark:ring-accent-500/30 dark:hover:bg-accent-500/10"
+                        : "bg-white text-brand-700 ring-brand-200 hover:bg-brand-50 dark:bg-gray-800 dark:text-brand-300 dark:ring-brand-500/30 dark:hover:bg-brand-500/10"
                     }`}
                   >
                     Reactivar operador
@@ -464,7 +462,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                   disabled={esUnoMismoOp}
                   title={esUnoMismoOp ? motivoCicloPropio : "Elimina a la persona del equipo"}
                   onClick={() => setConfirmacion("eliminar")}
-                  className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors ${
+                  className={`inline-flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-theme-sm font-medium transition-colors ${
                     esUnoMismoOp
                       ? "cursor-not-allowed bg-error-300 text-white"
                       : "bg-error-500 text-white shadow-theme-xs hover:bg-error-600"
@@ -477,7 +475,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             )}
 
             {puedeGestionar && op.estado !== "pendiente" && esUnoMismoOp && (
-              <p className="max-w-[16rem] text-right text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+              <p className="max-w-[16rem] text-right text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
                 Las acciones de suspender y eliminar están deshabilitadas sobre tu propia cuenta.
               </p>
             )}
@@ -487,7 +485,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         {/* Formulario de edición rápida si se activa */}
         {editandoDatos && (
           <div className="mt-6 border-t border-gray-100 pt-5 dark:border-gray-800">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <h3 className="mb-3 text-theme-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Editar Datos de Contacto
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -557,10 +555,10 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
       {op.estado === "pendiente" && (
         <div className="flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50/80 p-5 sm:flex-row sm:items-center sm:justify-between dark:border-brand-500/20 dark:bg-brand-500/10">
           <div>
-            <h3 className="text-sm font-bold text-brand-900 dark:text-brand-200">
+            <h3 className="text-theme-sm font-bold text-brand-900 dark:text-brand-200">
               Solicitud de acceso pendiente
             </h3>
-            <p className="mt-0.5 text-xs text-brand-700 dark:text-brand-300">
+            <p className="mt-0.5 text-theme-xs text-brand-700 dark:text-brand-300">
               Revisa su rol y permisos a continuación. Al aprobar, el operador podrá iniciar sesión en la plataforma.
             </p>
           </div>
@@ -579,7 +577,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             <button
               type="button"
               onClick={() => operadoresStore.aprobar(op.id)}
-              className="h-9 px-4 rounded-xl text-xs font-semibold bg-accent-600 hover:bg-accent-700 text-white transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-xl text-theme-xs font-semibold bg-brand-500 hover:bg-brand-600 text-white transition-colors cursor-pointer"
             >
               Aprobar operador
             </button>
@@ -591,10 +589,10 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
       <Card className="p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-base font-bold text-ink-title dark:text-white">
+            <h2 className="text-theme-md font-bold text-ink-title dark:text-white">
               Rol Asignado
             </h2>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
               El rol define los permisos base del operador. Cualquier cambio reajustará sus capacidades automáticamente.
             </p>
           </div>
@@ -606,14 +604,14 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               // dato se lea en vez de aparecer un desplegable en blanco.
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span className="text-theme-sm font-semibold text-gray-900 dark:text-white">
                     {rolesStore.nombreDe(op.rolId) || "Administrador de tienda"}
                   </span>
                   <Badge color="dark" size="xs">
                     Rol de sistema
                   </Badge>
                 </div>
-                <p className="mt-1 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-theme-xs leading-snug text-gray-500 dark:text-gray-400">
                   El rol de administrador es único por tienda y no se puede reasignar desde el perfil.
                 </p>
               </div>
@@ -635,7 +633,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 {avisoRol && (
                   <div className="mt-2 flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5 dark:border-brand-500/25 dark:bg-brand-500/10">
                     <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
-                    <p className="text-[11px] leading-snug text-brand-800 dark:text-brand-200">
+                    <p className="text-theme-xs leading-snug text-brand-800 dark:text-brand-200">
                       No se aplicó «{avisoRol}»: ese rol no incluye la gestión de equipo y te dejaría sin
                       acceso a esta pantalla. Elige otro rol o ajusta los permisos a mano.
                     </p>
@@ -649,7 +647,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         {!esAdminPrincipal && op.rolId && !rolesStore.porId(op.rolId) && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-3 dark:border-brand-500/20 dark:bg-brand-500/10">
             <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
-            <span className="text-xs text-brand-800 dark:text-brand-200">
+            <span className="text-theme-xs text-brand-800 dark:text-brand-200">
               Esta persona apunta a un rol que ya no existe en el catálogo, así que ahora mismo no tiene
               capacidades. Asígnale un rol para devolverle el acceso.
             </span>
@@ -657,8 +655,8 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         )}
 
         {ajustes.length > 0 && (
-          <div className="mt-4 flex items-center justify-between rounded-xl border border-accent-100 bg-accent-50/60 px-4 py-3 dark:border-accent-500/20 dark:bg-accent-500/10">
-            <span className="text-xs text-accent-800 dark:text-accent-300">
+          <div className="mt-4 flex items-center justify-between rounded-xl border border-estado-amarillo bg-estado-amarillo/60 px-4 py-3 dark:border-estado-amarillo/20 dark:bg-estado-amarillo/10">
+            <span className="text-theme-xs text-ink-body dark:text-estado-amarillo">
               Este operador tiene <strong>{ajustes.length}</strong> ajuste{ajustes.length > 1 ? "s" : ""} personalizado{ajustes.length > 1 ? "s" : ""} sobre su rol.
             </span>
             <button
@@ -666,7 +664,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               onClick={restablecerAlRol}
               disabled={!puedeGestionar}
               title={!puedeGestionar ? "Requiere el permiso «Gestionar equipo»." : undefined}
-              className={`text-xs font-semibold ${
+              className={`text-theme-xs font-semibold ${
                 puedeGestionar
                   ? "text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
                   : "cursor-not-allowed text-gray-400 dark:text-gray-600"
@@ -682,17 +680,17 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
       <Card className="p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-base font-bold text-ink-title dark:text-white">
+            <h2 className="text-theme-md font-bold text-ink-title dark:text-white">
               Permisos y Reglas de Acceso
             </h2>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
               Capacidades por área. Activa o desactiva interruptores para conceder o revocar permisos específicos.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300">
-              <CheckCircleIcon className="h-3.5 w-3.5 text-accent-500 flex-shrink-0" />
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-theme-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300">
+              <CheckCircleIcon className="h-3.5 w-3.5 text-success-600 flex-shrink-0" />
               <span>{efectivas.length} de 18 activas</span>
             </span>
 
@@ -731,7 +729,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         {esUnoMismoOp && motivoSelf && (
           <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-brand-200 bg-brand-50/80 px-4 py-3 dark:border-brand-500/20 dark:bg-brand-500/10">
             <LockIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-brand-600 dark:text-brand-400" />
-            <p className="text-xs leading-relaxed text-brand-800 dark:text-brand-200">
+            <p className="text-theme-xs leading-relaxed text-brand-800 dark:text-brand-200">
               <span className="font-semibold">Protección contra autodesahuicio.</span> {motivoSelf}
             </p>
           </div>
@@ -740,154 +738,84 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         {!puedeGestionar && (
           <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
             <AlertIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-500 dark:text-gray-400" />
-            <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300">
+            <p className="text-theme-xs leading-relaxed text-gray-700 dark:text-gray-300">
               Estás viendo esta pantalla en modo solo lectura. Los interruptores están deshabilitados porque tu rol
               no incluye la capacidad <span className="font-semibold">Gestionar equipo</span>.
             </p>
           </div>
         )}
 
-        {/* Grid de 2 columnas con tarjetas de categorías colapsables */}
+        {/* Rejilla de capacidades — la MISMA pieza que usa el editor de roles.
+            Lo único distinto aquí es el `pie` de cada fila, que dice de dónde
+            viene el permiso; la estructura no se duplica. */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {CAPACIDAD_GRUPOS.map((grupo) => {
             const tiene = new Set(efectivas);
-            const puede = grupo.capacidades.filter((c) => tiene.has(c));
-            const completa = puede.length === grupo.capacidades.length;
-            const estaColapsado = !!colapsados[grupo.id];
             // El preset no puede tocar la gestión de equipo de uno mismo.
             const alternarDeshabilitado =
               !puedeGestionar || (esUnoMismoOp && grupo.capacidades.some((c) => CAPACIDADES_GESTION.includes(c)));
 
-            return (
-              <div
-                key={grupo.id}
-                className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow dark:border-gray-800 dark:bg-gray-900"
-              >
-                {/* Cabecera de la Tarjeta con botón de colapso */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => toggleColapso(grupo.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleColapso(grupo.id);
-                    }
-                  }}
-                  className={`flex cursor-pointer select-none items-center justify-between p-4 transition-colors hover:bg-gray-50/75 dark:hover:bg-white/[0.02] ${
-                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
-                      {grupo.label}
-                    </Badge>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {puede.length} de {grupo.capacidades.length}
-                    </span>
-                  </div>
+            const filas: FilaCapacidad[] = grupo.capacidades.map((cap) => {
+              const activa = efectivas.includes(cap);
+              const proc = procedenciaDe(op, cap, capacidadesDelRol);
+              const meta = PROCEDENCIA_HUMANA[proc];
+              // Interruptor candado: revocar la gestión de equipo a la propia
+              // sesión la dejaría fuera de la pantalla.
+              const bloqueada = esUnoMismoOp && activa && CAPACIDADES_GESTION.includes(cap);
 
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    {!estaColapsado && (
-                      <button
-                        type="button"
-                        onClick={() => alternarGrupo(grupo)}
-                        disabled={alternarDeshabilitado}
-                        title={
-                          alternarDeshabilitado
-                            ? !puedeGestionar
-                              ? "Requiere el permiso «Gestionar equipo»."
-                              : "No puedes revocar tu propio permiso de gestión de equipo."
-                            : undefined
-                        }
-                        className={`text-xs font-semibold transition-colors ${
-                          alternarDeshabilitado
-                            ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
-                            : "text-secondary-600 hover:text-ink-title dark:text-brand-400 cursor-pointer"
-                        }`}
-                      >
-                        {completa ? "Quitar todo" : "Dar todo"}
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => toggleColapso(grupo.id)}
-                      aria-label={estaColapsado ? `Expandir ${grupo.label}` : `Contraer ${grupo.label}`}
-                      title={estaColapsado ? "Expandir" : "Contraer"}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer"
+              return {
+                cap,
+                activa,
+                bloqueada,
+                motivoBloqueo: bloqueada
+                  ? "No puedes revocar tu propio permiso de administración"
+                  : undefined,
+                etiqueta: bloqueada ? (
+                  <Badge color="warning" size="xs">
+                    Protegida
+                  </Badge>
+                ) : null,
+                // El pie es lo que hace de esta pantalla la de una PERSONA y no
+                // la de un rol: dice si el permiso viene del rol, se concedió de
+                // más o se quitó a mano. Con tono neutro se omite —decir «viene
+                // de su rol» en 18 filas seguidas es ruido, no información—.
+                pie:
+                  meta.tono !== "neutro" ? (
+                    <span
+                      className={`text-theme-xs leading-snug ${
+                        meta.tono === "mas"
+                          ? "text-success-700 dark:text-success-400"
+                          : "text-error-600 dark:text-error-400"
+                      }`}
                     >
-                      <ChevronDownIcon
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          estaColapsado ? "-rotate-90" : "rotate-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
+                      {meta.label}
+                    </span>
+                  ) : null,
+              };
+            });
 
-                {/* Lista de capacidades si la tarjeta está expandida */}
-                {!estaColapsado && (
-                  <div className="p-4 space-y-2.5">
-                    {grupo.capacidades.map((cap) => {
-                      const activa = efectivas.includes(cap);
-                      const proc = procedenciaDe(op, cap, capacidadesDelRol);
-                      const meta = PROCEDENCIA_HUMANA[proc];
-                      // Interruptor candado: revocar la gestión de equipo a la
-                      // propia sesión la dejaría fuera de la pantalla.
-                      const bloqueadaPorAutodesahuicio =
-                        esUnoMismoOp && activa && CAPACIDADES_GESTION.includes(cap);
-
-                      return (
-                        <div
-                          key={cap}
-                          className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 transition-colors ${
-                            bloqueadaPorAutodesahuicio
-                              ? "border-brand-200 bg-brand-50/50 dark:border-brand-500/20 dark:bg-brand-500/[0.06]"
-                              : "border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-white/[0.02]"
-                          }`}
-                        >
-                          <div className="flex min-w-0 items-center gap-2">
-                            {bloqueadaPorAutodesahuicio && (
-                              <LockIcon className="h-3.5 w-3.5 flex-shrink-0 text-brand-600 dark:text-brand-400" />
-                            )}
-                            <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
-                              {CAPACIDAD_LABEL[cap]}
-                            </span>
-
-                            {bloqueadaPorAutodesahuicio && (
-                              <Badge color="warning" size="xs">
-                                Protegida
-                              </Badge>
-                            )}
-
-                            {meta.tono !== "neutro" && (
-                              <Badge
-                                color={meta.tono === "mas" ? "success" : "warning"}
-                                size="xs"
-                              >
-                                {meta.label}
-                              </Badge>
-                            )}
-                          </div>
-
-                          <Switch
-                            checked={activa}
-                            onChange={() => toggleCapacidad(cap)}
-                            disabled={!puedeGestionar || bloqueadaPorAutodesahuicio}
-                            aria-label={
-                              bloqueadaPorAutodesahuicio
-                                ? "No puedes revocar tu propio permiso de administración"
-                                : CAPACIDAD_LABEL[cap]
-                            }
-                            label=""
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+            return (
+              <GrupoCapacidades
+                key={grupo.id}
+                grupo={grupo}
+                filas={filas}
+                colapsado={!!colapsados[grupo.id]}
+                onAlternarColapso={() => toggleColapso(grupo.id)}
+                colorEtiqueta={CATEGORIA_COLORES[grupo.id] || "light"}
+                // Sin permiso de gestión, la rejilla entera es de solo lectura:
+                // los controles pasan a indicadores y la acción de grupo se
+                // omite en vez de pintarse inerte.
+                soloLectura={!puedeGestionar}
+                onAlternarGrupo={alternarDeshabilitado ? undefined : () => alternarGrupo(grupo)}
+                onCambiarCapacidad={
+                  !puedeGestionar
+                    ? undefined
+                    : (cap) => {
+                        if (alternarDeshabilitado && !tiene.has(cap)) return;
+                        toggleCapacidad(cap);
+                      }
+                }
+              />
             );
           })}
         </div>
@@ -904,10 +832,10 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-error-50 dark:bg-error-500/10">
               <TrashBinIcon className="h-5 w-5 text-error-600 dark:text-error-400" />
             </div>
-            <h2 className="mb-1 text-lg font-semibold text-ink-title dark:text-white/90">
+            <h2 className="mb-1 text-theme-2xl font-semibold text-ink-title dark:text-white/90">
               ¿Eliminar a {op.nombre} del equipo?
             </h2>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mb-5 text-theme-sm text-gray-500 dark:text-gray-400">
               Se borra su ficha y sus permisos. No se puede deshacer. Si solo quieres retirarle el acceso
               conservando su historial, suspéndelo en vez de eliminarlo.
             </p>
@@ -919,10 +847,10 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10">
               <LockIcon className="h-5 w-5 text-brand-600 dark:text-brand-400" />
             </div>
-            <h2 className="mb-1 text-lg font-semibold text-ink-title dark:text-white/90">
+            <h2 className="mb-1 text-theme-2xl font-semibold text-ink-title dark:text-white/90">
               ¿Suspender a {op.nombre}?
             </h2>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mb-5 text-theme-sm text-gray-500 dark:text-gray-400">
               Pierde el acceso a la plataforma de inmediato. Su ficha y su historial se conservan, y puedes
               reactivarla cuando quieras.
             </p>
@@ -931,13 +859,13 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
         {confirmacion === "reactivar" && (
           <>
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-accent-50 dark:bg-accent-500/10">
-              <CheckCircleIcon className="h-5 w-5 text-accent-600 dark:text-accent-400" />
+            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-estado-verde dark:bg-estado-verde/10">
+              <CheckCircleIcon className="h-5 w-5 text-success-700 dark:text-estado-verde" />
             </div>
-            <h2 className="mb-1 text-lg font-semibold text-ink-title dark:text-white/90">
+            <h2 className="mb-1 text-theme-2xl font-semibold text-ink-title dark:text-white/90">
               ¿Reactivar a {op.nombre}?
             </h2>
-            <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mb-5 text-theme-sm text-gray-500 dark:text-gray-400">
               Vuelve a tener acceso con el rol y los permisos que ya tenía configurados.
             </p>
           </>

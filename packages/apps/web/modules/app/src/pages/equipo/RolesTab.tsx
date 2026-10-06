@@ -6,12 +6,14 @@ import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
-import { Switch } from "@/elements/form/switch";
 import {
   AlertIcon,
   CheckCircleIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
   CopyIcon,
+  GridIcon,
+  GroupIcon,
   LockIcon,
   PlusIcon,
   TrashBinIcon,
@@ -19,12 +21,17 @@ import {
 import {
   CAPACIDADES,
   CAPACIDAD_GRUPOS,
-  CAPACIDAD_LABEL,
   operadoresStore,
   rolesStore,
   type Capacidad,
   type Rol,
 } from "@/stores";
+import {
+  BloqueConfig,
+  CampoConfig,
+  GrupoCapacidades,
+  type FilaCapacidad,
+} from "@/pages/config-layout";
 import { CATEGORIA_COLORES } from "./equipo.constants";
 import {
   ERROR_ROL_SIN_CAPACIDADES,
@@ -134,11 +141,11 @@ export const RolesTab = observer(() => {
   const miembrosDelQueSeElimina = aEliminar ? miembrosConRol(aEliminar.id).length : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,290px)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
       {/* ── LISTA DE ROLES (SIDEBAR IZQUIERDO) ─────────────────────────────── */}
       <div>
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-ink-title dark:text-white">
+          <h2 className="text-theme-sm font-bold text-ink-title dark:text-white">
             Roles ({rolesStore.roles.length})
           </h2>
           <Button size="sm" variant="outline" onClick={nuevoRol}>
@@ -147,27 +154,42 @@ export const RolesTab = observer(() => {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* Es una LISTA de selección, no una lista de acciones: el elemento se
+            elige, y la única acción destructiva va dentro como control propio.
+            Por eso el contenedor es `role="listbox"` y cada fila un `option`
+            con `aria-selected`: filas con `onClick` y nada más no las puede
+            anunciar un lector de pantalla, y aquí la selección ES el estado
+            principal de la pantalla. */}
+        <div role="listbox" aria-label="Roles de la organización" className="flex flex-col gap-2">
           {rolesStore.roles.map((r) => {
             const esSeleccionado = r.id === seleccionadoId;
-            // Los de sistema se cuentan igual, para poder decir en el título
-            // cuánta gente depende del rol aunque no se pueda borrar.
+            // Los de sistema se cuentan igual, para poder decir cuánta gente
+            // depende del rol aunque no se pueda borrar.
             const asignados = miembrosConRol(r.id).length;
 
             return (
               <div
                 key={r.id}
+                role="option"
+                aria-selected={esSeleccionado}
+                tabIndex={0}
                 onClick={() => setSeleccionadoId(r.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSeleccionadoId(r.id);
+                  }
+                }}
                 className={`group relative flex items-center justify-between w-full rounded-xl border p-3.5 text-left transition-all cursor-pointer ${
                   esSeleccionado
-                    ? "border-secondary-500 bg-secondary-50/70 shadow-theme-xs dark:border-accent-500 dark:bg-brand-500/10"
-                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700"
+                    ? "border-brand-500 bg-brand-500/[0.04] shadow-theme-xs dark:border-brand-500 dark:bg-brand-500/10"
+                    : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700 dark:hover:bg-white/[0.05]"
                 }`}
               >
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`truncate text-sm font-semibold ${
+                      className={`truncate text-theme-sm font-semibold ${
                         esSeleccionado
                           ? "text-ink-title dark:text-brand-200"
                           : "text-gray-800 dark:text-gray-200"
@@ -177,7 +199,7 @@ export const RolesTab = observer(() => {
                     </span>
                     {r.sistema && <Badge color="light" size="xs">Sistema</Badge>}
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
                     {r.capacidades.length} de {CAPACIDADES.length} accesos · {asignados} {asignados === 1 ? "usuario" : "usuarios"}
                   </p>
                 </div>
@@ -231,9 +253,9 @@ export const RolesTab = observer(() => {
           onPedirEliminar={pedirEliminar}
         />
       ) : (
-        <Card className="p-12 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-gray-200 p-12 text-center text-theme-sm text-gray-500 dark:border-gray-800 dark:text-gray-400">
           Selecciona un rol para editarlo.
-        </Card>
+        </div>
       )}
 
       {/* ── AVISO: NO SE PUEDE BORRAR UN ROL CON MIEMBROS ─────────────────── */}
@@ -246,10 +268,10 @@ export const RolesTab = observer(() => {
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-50 text-brand-500 dark:bg-brand-500/10">
             <AlertIcon className="h-7 w-7" />
           </span>
-          <h3 className="text-lg font-bold text-ink-title dark:text-white">
+          <h3 className="text-theme-2xl font-bold text-ink-title dark:text-white">
             No se puede eliminar el rol
           </h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
             {motivoRolConMiembros(miembrosDelQueSeElimina)}
           </p>
 
@@ -263,10 +285,10 @@ export const RolesTab = observer(() => {
             <ul className="mt-4 w-full space-y-1.5 rounded-xl border border-gray-200 bg-gray-50/70 p-3 text-left dark:border-gray-800 dark:bg-white/[0.02]">
               {miembrosConRol(aEliminar.id).map((op) => (
                 <li key={op.id} className="flex items-center justify-between gap-3">
-                  <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
+                  <span className="truncate text-theme-xs font-medium text-gray-800 dark:text-gray-200">
                     {op.nombre}
                   </span>
-                  <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="shrink-0 text-theme-xs text-gray-500 dark:text-gray-400">
                     {op.estado === "pendiente" ? "Pendiente" : op.estado === "activo" ? "Activo" : "Inactivo"}
                   </span>
                 </li>
@@ -292,10 +314,10 @@ export const RolesTab = observer(() => {
           <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-error-50 text-error-500 dark:bg-error-500/10">
             <TrashBinIcon className="h-7 w-7" />
           </span>
-          <h3 className="text-lg font-bold text-ink-title dark:text-white">
+          <h3 className="text-theme-2xl font-bold text-ink-title dark:text-white">
             ¿Eliminar «{aConfirmar?.nombre}»?
           </h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
             Este rol no lo tiene asignado nadie, así que nadie pierde acceso. La acción no se puede
             deshacer y el rol no se puede recuperar.
           </p>
@@ -371,8 +393,15 @@ const RolEditor = observer(({
 
   const tiene = (c: Capacidad) => capacidades.includes(c);
 
-  const toggle = (c: Capacidad) => {
-    setCapacidades((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+  /**
+   * Cambio de UNA capacidad. Recibe el valor nuevo del interruptor en vez de
+   * invertir el estado: el `Switch` ya lo calcula, y derivarlo otra vez aquí
+   * sería una segunda fuente de verdad que se puede desincronizar.
+   */
+  const cambiarCapacidad = (c: Capacidad, nuevo: boolean) => {
+    setCapacidades((prev) =>
+      nuevo ? (prev.includes(c) ? prev : [...prev, c]) : prev.filter((x) => x !== c),
+    );
     setGuardado(false);
   };
 
@@ -427,44 +456,47 @@ const RolEditor = observer(({
     if (copia) onDuplicado(copia.id);
   };
 
+  /**
+   * Distribución de las tarjetas de grupo.
+   *
+   * Rejilla de 2 columnas a ANCHO COMPLETO de la columna del editor. Antes los
+   * grupos vivían dentro de una tarjeta con su propio `p-6`, así que había
+   * tarjetas (grupo) dentro de tarjetas (editor) dentro de la rejilla de la
+   * página: tres marcos concéntricos para una jerarquía de dos niveles. El
+   * marco de más no aportaba nada y leía como error de maquetación.
+   */
+  const rejillaGrupos = "grid grid-cols-1 gap-4 lg:grid-cols-2";
+
   return (
-    <Card className="p-6 space-y-6">
-      {/* Cabecera del Editor */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-gray-100 pb-5 dark:border-gray-800">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h2 className="text-lg font-bold text-ink-title dark:text-white">
-              {nombre || "Rol sin nombre"}
-            </h2>
-            {rol.sistema ? (
-              <Badge color="light" size="xs">Rol de Sistema</Badge>
-            ) : (
-              <Badge color="success" size="xs">Personalizado</Badge>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {rol.sistema
-              ? "Los roles de sistema son predefinidos. Puedes duplicarlo para crear una base personalizada."
-              : "Rol editable. Los operadores con este rol recibirán estas capacidades por defecto."}
-          </p>
-          {rol.sistema && descripcion && (
-            <p className="mt-3 text-sm text-gray-700 dark:text-gray-300">
-              {descripcion}
-            </p>
+    <div className="space-y-5">
+      {/* ═══ BLOQUE 1 · IDENTIDAD DEL ROL ═══════════════════════════════════
+          La pregunta del bloque es lo que el admin se pregunta de verdad
+          («¿Cómo se llama este rol y para qué sirve?»), no un sustantivo
+          administrativo («Metadatos»). */}
+      <BloqueConfig
+        icono={GridIcon}
+        pregunta="¿Cómo se llama este rol y para qué sirve?"
+        descripcion={
+          soloLectura
+            ? "Los roles de sistema son predefinidos. Puedes duplicarlo para crear una base personalizada."
+            : "El rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2 pb-5">
+          <h3 className="text-theme-md font-bold text-ink-title dark:text-white">
+            {nombre || "Rol sin nombre"}
+          </h3>
+          {rol.sistema ? (
+            <Badge color="dark" size="xs">Rol de sistema</Badge>
+          ) : (
+            <Badge color="primary" size="xs">Personalizado</Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {guardado && (
-            <span className="text-xs font-semibold text-accent-600 dark:text-accent-400 mr-1">
-              Guardado
-            </span>
-          )}
-
-          {/* El `Button` del catálogo no acepta `title`, así que envolverlo en un
-              `<span>` es lo que da el tooltip sin romper el tipado. (`RolesTab` no
-              es el único sitio con este problema: `ConfiguracionModulosPage` pasa
-              `title` directo al `Button` y arrastra el mismo error de tipos.) */}
+        {/* Las acciones del rol viven en su bloque, no flotando en la cabecera
+            de una tarjeta: duplicar y eliminar son operaciones SOBRE el rol, y
+            aquí están junto a lo que identifican. */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 pb-5 dark:border-gray-800">
           <span title="Duplicar rol">
             <Button size="sm" variant="outline" onClick={duplicar}>
               <CopyIcon className="mr-1.5 h-3.5 w-3.5" />
@@ -472,17 +504,10 @@ const RolEditor = observer(({
             </Button>
           </span>
 
-          {/*
-            El botón Eliminar se pinta siempre y se deshabilita en los roles de
-            sistema, con el motivo en el `title`. Se usa un `<button>` nativo
-            porque `Button` del catálogo no acepta `title` (documentado en
-            REFERENCIA.md) y sin `title` el motivo sería invisible: quedaría un
-            botón apagado sin explicación, que es justo lo que el requisito
-            quiere evitar.
-
-            En un rol personalizado delega en `onPedirEliminar`, el guardia único
-            del padre, que decide si borra o si abre el aviso por tener miembros.
-          */}
+          {/* El botón Eliminar se pinta siempre y se deshabilita en los roles de
+              sistema, con el motivo en el `title`: un botón apagado sin
+              explicación es justo lo que se quiere evitar. `<button>` nativo
+              porque el `Button` del catálogo no acepta `title`. */}
           <button
             type="button"
             disabled={soloLectura}
@@ -491,8 +516,8 @@ const RolEditor = observer(({
             onClick={() => onPedirEliminar(rol)}
             className={
               soloLectura
-                ? "inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 px-3.5 text-sm font-medium text-gray-300 dark:border-gray-800 dark:text-gray-600"
-                : "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-error-200 px-3.5 text-sm font-medium text-error-600 transition-colors hover:bg-error-50 dark:border-error-800 dark:text-error-400 dark:hover:bg-error-950/30"
+                ? "inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-lg border border-gray-200 px-3.5 text-theme-sm font-medium text-gray-300 dark:border-gray-800 dark:text-gray-600"
+                : "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-error-200 px-3.5 text-theme-sm font-medium text-error-600 transition-colors hover:bg-error-50 dark:border-error-800 dark:text-error-400 dark:hover:bg-error-950/30"
             }
           >
             {soloLectura ? (
@@ -502,68 +527,72 @@ const RolEditor = observer(({
             )}
             Eliminar
           </button>
-
-          {!soloLectura && (
-            <Button size="sm" onClick={guardar}>
-              Guardar cambios
-            </Button>
-          )}
         </div>
-      </div>
 
-      {/* Datos del rol (Oculto en roles de sistema para evitar ruido de campos deshabilitados) */}
-      {!soloLectura && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="rol-nombre">Nombre del Rol</Label>
-            <Input
-              id="rol-nombre"
-              value={nombre}
-              placeholder="Ej. Supervisor de turno"
-              error={Boolean(errorNombre)}
-              hint={errorNombre}
-              onChange={(e) => {
-                setNombre(e.target.value);
-                setGuardado(false);
-              }}
-            />
+        {/* Los campos de identidad solo existen si el rol es editable. En un rol
+            de sistema no se pintan deshabilitados —eso es ruido de campos que
+            nunca se van a escribir—: arriba queda su descripción, que es el dato
+            que sí importa leer. */}
+        {!soloLectura ? (
+          <div className="grid grid-cols-1 gap-4 pt-5 sm:grid-cols-2">
+            <CampoConfig
+              etiqueta="Nombre del rol"
+              htmlFor="rol-nombre"
+              ayuda="Como lo verá el admin al asignarlo. Debe distinguirse de los demás roles."
+            >
+              <Input
+                id="rol-nombre"
+                value={nombre}
+                placeholder="Ej. Supervisor de turno"
+                error={Boolean(errorNombre)}
+                hint={errorNombre}
+                onChange={(e) => {
+                  setNombre(e.target.value);
+                  setGuardado(false);
+                }}
+              />
+            </CampoConfig>
+            <CampoConfig
+              etiqueta="Descripción"
+              htmlFor="rol-desc"
+              ayuda="Para qué sirve este rol dentro de tu operación."
+            >
+              <Input
+                id="rol-desc"
+                value={descripcion}
+                placeholder="Propósito u operativa de este rol"
+                onChange={(e) => {
+                  setDescripcion(e.target.value);
+                  setGuardado(false);
+                }}
+              />
+            </CampoConfig>
           </div>
-          <div>
-            <Label htmlFor="rol-desc">Descripción</Label>
-            <Input
-              id="rol-desc"
-              value={descripcion}
-              placeholder="Propósito u operativa de este rol"
-              onChange={(e) => {
-                setDescripcion(e.target.value);
-                setGuardado(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
+        ) : (
+          descripcion && (
+            <p className="pt-5 text-theme-sm text-gray-700 dark:text-gray-300">{descripcion}</p>
+          )
+        )}
+      </BloqueConfig>
 
-      {/* ── REGLAS Y PERMISOS DEL ROL (GRID JERÁRQUICO COLAPSABLE) ─────────── */}
-      <div className="space-y-4 pt-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-bold text-ink-title dark:text-white">
-              Reglas y Permisos del Rol
-            </h3>
-            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-              {soloLectura 
-                ? "Capacidades incluidas en este rol predeterminado." 
-                : "Activa o desactiva las capacidades asignadas al paquete de este rol."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+      {/* ═══ BLOQUE 2 · PERMISOS DEL ROL ════════════════════════════════════ */}
+      <BloqueConfig
+        icono={GroupIcon}
+        pregunta="¿Qué puede hacer con este rol?"
+        descripcion={
+          soloLectura
+            ? "Capacidades incluidas en este rol predeterminado. Es de solo lectura."
+            : "Activa o desactiva las capacidades del paquete. Quien tenga este rol las recibe tal cual."
+        }
+      >
+        {/* Barra de estado y control de la rejilla */}
+        <div className="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800">
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* El contador se tiñe de rojo cuando el rol no tiene ninguna
-                capacidad y ya se intentó guardar: es el punto donde el requisito
-                "no permitir roles vacíos" se hace visible sin ocupar una línea
-                extra, porque el contador ya estaba ahí y ya dice lo que importa. */}
+                capacidad y ya se intentó guardar: es donde «no permitir roles
+                vacíos» se hace visible sin ocupar una línea extra. */}
             <span
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-theme-xs font-medium ${
                 errorCapacidades
                   ? "border-error-200 bg-error-50 text-error-600 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400"
                   : "border-gray-100 bg-gray-50 text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300"
@@ -571,179 +600,104 @@ const RolEditor = observer(({
             >
               <CheckCircleIcon
                 className={`h-3.5 w-3.5 flex-shrink-0 ${
-                  errorCapacidades ? "text-error-500" : "text-accent-500"
+                  errorCapacidades ? "text-error-500" : "text-success-600"
                 }`}
               />
-              <span>{capacidades.length} de {CAPACIDADES.length} activas</span>
+              <span>{capacidades.length} de {CAPACIDADES.length} concedidas</span>
             </span>
 
-            <div className="flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 dark:border-gray-800 dark:bg-gray-900">
-              <button
-                type="button"
-                onClick={expandirTodos}
-                title="Expandir todas las categorías"
-                aria-label="Expandir todas las categorías"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                <svg
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3.5 w-3.5"
-                >
-                  <path d="M5 6l5 5 5-5" />
-                  <path d="M5 11l5 5 5-5" />
-                </svg>
-              </button>
+            {soloLectura && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1 text-theme-xs font-medium text-gray-600 dark:border-gray-800 dark:bg-white/[0.04] dark:text-gray-300">
+                <LockIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                Solo lectura
+              </span>
+            )}
+          </div>
 
-              <button
-                type="button"
-                onClick={colapsarTodos}
-                title="Contraer todas las categorías"
-                aria-label="Contraer todas las categorías"
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                <svg
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-3.5 w-3.5"
-                >
-                  <path d="M5 9l5-5 5 5" />
-                  <path d="M5 14l5-5 5 5" />
-                </svg>
-              </button>
-            </div>
+          <div className="flex items-center gap-0.5 self-start rounded-xl border border-gray-200 bg-white p-0.5 sm:self-auto dark:border-gray-800 dark:bg-gray-900">
+            <button
+              type="button"
+              onClick={expandirTodos}
+              title="Expandir todas las categorías"
+              aria-label="Expandir todas las categorías"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+            >
+              <ChevronDownIcon className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={colapsarTodos}
+              title="Contraer todas las categorías"
+              aria-label="Contraer todas las categorías"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+            >
+              <ChevronUpIcon className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
-        {/* Mensaje del rol vacío. Va aquí, pegado al encabezado de la sección y
-            no dentro de una tarjeta, porque el problema no es de una categoría
-            concreta sino del rol entero. */}
+        {/* Mensaje del rol vacío. Va pegado al encabezado de la sección y no
+            dentro de una tarjeta: el problema es del rol entero, no de una
+            categoría concreta. */}
         {errorCapacidades && (
-          <p className="flex items-start gap-2 rounded-xl border border-error-200 bg-error-50 px-3.5 py-2.5 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
+          <p className="mb-4 flex items-start gap-2 rounded-xl border border-error-200 bg-error-50 px-3.5 py-2.5 text-theme-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
             <AlertIcon className="mt-px h-3.5 w-3.5 shrink-0" />
             <span>{ERROR_ROL_SIN_CAPACIDADES}</span>
           </p>
         )}
 
-        {/* Grid de tarjetas de categorías con switches estables */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className={rejillaGrupos}>
           {CAPACIDAD_GRUPOS.map((grupo) => {
-            const puede = grupo.capacidades.filter(tiene);
-            const completa = puede.length === grupo.capacidades.length;
-            const estaColapsado = !!colapsados[grupo.id];
+            const filas: FilaCapacidad[] = grupo.capacidades.map((cap) => ({
+              cap,
+              activa: tiene(cap),
+            }));
 
             return (
-              <div
+              <GrupoCapacidades
                 key={grupo.id}
-                className="overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow dark:border-gray-800 dark:bg-gray-900"
-              >
-                {/* Cabecera de la Tarjeta con botón de colapso */}
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => toggleColapso(grupo.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      toggleColapso(grupo.id);
-                    }
-                  }}
-                  className={`flex cursor-pointer select-none items-center justify-between p-4 transition-colors hover:bg-gray-50/75 dark:hover:bg-white/[0.02] ${
-                    !estaColapsado ? "border-b border-gray-100 dark:border-gray-800/60 bg-gray-50/30 dark:bg-white/[0.01]" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Badge color={CATEGORIA_COLORES[grupo.id] || "light"} size="xs">
-                      {grupo.label}
-                    </Badge>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {puede.length} de {grupo.capacidades.length}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    {!estaColapsado && !soloLectura && (
-                      <button
-                        type="button"
-                        onClick={() => alternarGrupo(grupo.capacidades)}
-                        className="text-xs font-semibold text-secondary-600 hover:text-ink-title dark:text-brand-400 cursor-pointer"
-                      >
-                        {completa ? "Quitar todo" : "Dar todo"}
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => toggleColapso(grupo.id)}
-                      aria-label={estaColapsado ? `Expandir ${grupo.label}` : `Contraer ${grupo.label}`}
-                      title={estaColapsado ? "Expandir" : "Contraer"}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer"
-                    >
-                      <ChevronDownIcon
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          estaColapsado ? "-rotate-90" : "rotate-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Lista limpia y ordenada de capacidades */}
-                {!estaColapsado && (
-                  <div className="p-2 space-y-1">
-                    {grupo.capacidades.map((cap) => {
-                      const activa = tiene(cap);
-
-                      return (
-                        <div
-                          key={cap}
-                          className="group flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
-                        >
-                          <span
-                            title={cap}
-                            className="truncate text-xs font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white"
-                          >
-                            {CAPACIDAD_LABEL[cap]}
-                          </span>
-
-                          <Switch
-                            checked={activa}
-                            disabled={soloLectura}
-                            onChange={() => toggle(cap)}
-                            label=""
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                grupo={grupo}
+                filas={filas}
+                colapsado={!!colapsados[grupo.id]}
+                onAlternarColapso={() => toggleColapso(grupo.id)}
+                colorEtiqueta={CATEGORIA_COLORES[grupo.id] || "light"}
+                soloLectura={soloLectura}
+                // En solo lectura la acción de grupo se omite: no hay nada que
+                // conceder ni revocar, y un «Dar todo» inerte sería una promesa
+                // que el control no puede cumplir.
+                onAlternarGrupo={soloLectura ? undefined : () => alternarGrupo(grupo.capacidades)}
+                onCambiarCapacidad={soloLectura ? undefined : cambiarCapacidad}
+              />
             );
           })}
         </div>
-      </div>
+      </BloqueConfig>
 
-      {/* Botón inferior para guardar (Oculto si es solo lectura) */}
+      {/* ═══ GUARDAR ════════════════════════════════════════════════════════
+          En solo lectura no hay botón: guardar sobre un rol de sistema no
+          tendría nada que escribir. Fingirlo sería el control que miente. */}
       {!soloLectura && (
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 rounded-2xl border border-gray-200 bg-white/95 px-5 py-3.5 shadow-theme-lg backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
           {guardado && (
-            <span className="text-xs font-semibold text-accent-600 dark:text-accent-400">
+            <span className="text-theme-xs font-semibold text-success-700 dark:text-success-400">
               Cambios guardados correctamente
             </span>
           )}
-          <Button size="sm" onClick={guardar}>
+          <Button
+            size="sm"
+            // Un rol sin nombre o sin capacidades no se puede guardar: el
+            // validador ya lo sabe (`validarRol`) y el botón lo dice antes de
+            // que el admin pulse. Antes quedaba accionable y el clic no hacía
+            // nada salvo pintar el error — un control que promete algo que el
+            // sistema no va a cumplir.
+            disabled={!validacion.valido}
+            onClick={guardar}
+          >
             Guardar cambios
           </Button>
         </div>
       )}
-    </Card>
+    </div>
   );
 });

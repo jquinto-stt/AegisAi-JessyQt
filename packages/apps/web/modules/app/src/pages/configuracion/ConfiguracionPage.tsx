@@ -1,162 +1,183 @@
 import { observer } from "mobx-react-lite";
-import { Navigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
-import { Badge } from "@/elements/ui/badge";
-import { GridIcon, PlugInIcon } from "@/icons";
-import { organizacionStore } from "@/stores";
 import {
-  ConfigHeader,
-  ConfigSectionNav,
-  ConfigShell,
-  type GrupoNav,
-} from "@/pages/config-layout";
-import { ModulosTab } from "@/pages/equipo";
+  ArrowRightIcon,
+  ChevronLeftIcon,
+  IdentificationIcon,
+  PlugInIcon,
+} from "@/icons";
+import { organizacionStore } from "@/stores";
+import { ConfigHub, ConfigShell } from "@/pages/config-layout";
+
 import { GeneralOrgTab } from "./GeneralOrgTab";
+import { ModulosTab } from "@/pages/equipo";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// CONFIGURACIÓN DE LA ORGANIZACIÓN — /configuracion
+// CENTRO DE CONFIGURACIÓN — /configuracion
 // ═══════════════════════════════════════════════════════════════════════════
 //
-// Una sola pantalla para los ajustes que son de la organización: identidad y
-// módulos encendidos. Antes estaba partida en dos (`/equipo` y
-// `/configuracion`) y los datos generales no tenían sitio ninguno: el onboarding
-// los pedía una vez y no había forma de corregir un nombre mal escrito.
+// Al ingresar sin parámetro (`/configuracion`), muestra el selector inicial de
+// dos tarjetas:
+//   1. «Información de la sede» (nombre comercial, logo, país, moneda y rubro)
+//      — clave `general`, que es la que viaja en la URL
+//   2. Módulos e integraciones (Servicios y conexiones activas)
 //
-// ── Por qué «Equipo» YA NO es una pestaña de aquí ─────────────────────────
+// El rótulo visible y la CLAVE son independientes: la clave `general` se
+// conserva porque está en `?tab=general` y la leen guardas y tests; el rótulo
+// se cambió a «Información de la sede» porque «General» no describía su
+// contenido (06/10).
 //
-// Configuración agrupa lo que se ajusta UNA VEZ: el nombre del negocio, su
-// región, qué módulos están encendidos. Gestionar personas es una tarea
-// RECURRENTE —se invita, se aprueba, se cambia un rol— y enterrarla aquí
-// obligaba a dos clics y a saber de antemano que estaba dentro. Ahora vive en
-// `/equipo` como hermana de esta pantalla, y el sidebar las muestra seguidas.
-// `?tab=equipo` sigue resolviendo (ver la guarda de abajo) para no romper
-// enlaces guardados.
-//
-// ── La pestaña activa vive en la URL (`?tab=`) ────────────────────────────
-//
-// No en un `useState`. La razón es concreta: `/equipo` tiene que seguir
-// funcionando para los enlaces guardados, y la única forma de que un enlace
-// apunte a una pestaña es que la pestaña sea direccionable. Con estado local,
-// `/equipo` solo podría dejar al usuario en la pantalla y pedirle un clic más.
-//
-// ── Por qué el mecanismo de pestañas NO se declara aquí ───────────────────
-//
-// `ConfigSectionNav` + `ConfigShell` ya existen en `@/pages/config-layout` y son
-// la navegación por secciones de `/pedidos/config`, `/conversaciones/config` y
-// `/asistente/config`. Montan SOLO la sección activa y remontan el panel con
-// `seccionKey` para disparar el fundido de entrada. Inventar aquí un segundo
-// mecanismo de pestañas daría dos comportamientos distintos para lo mismo — que
-// es exactamente cómo divergen las copias.
+// Al hacer clic en una tarjeta, navega DENTRO de esa configuración
+// (`?tab=general` o `?tab=modulos`), mostrando la pantalla completa con un
+// botón «← Volver a Configuración» para regresar al selector.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-/** Claves de pestaña. Son también los valores válidos de `?tab=`. */
-type ClaveTab = "general" | "modulos";
-
-const CLAVES_TAB: ClaveTab[] = ["general", "modulos"];
-
-/**
- * ¿Es `v` una pestaña conocida?
- *
- * El parámetro lo escribe el usuario, así que un valor inventado no puede dejar
- * la pantalla en blanco: cae en la pestaña por defecto, que es lo que se pinta
- * de verdad. La URL no es una promesa que esta pantalla haya hecho.
- */
-const esClaveTab = (v: string | null): v is ClaveTab =>
-  v !== null && (CLAVES_TAB as string[]).includes(v);
-
-/** Metadatos de cada pestaña. La etiqueta y el consejo los pinta `ConfigShell`. */
-const META_TAB: Record<
-  ClaveTab,
-  { label: string; hint: string; icono: React.FC<React.SVGProps<SVGSVGElement>> }
-> = {
-  general: {
-    label: "General",
-    hint: "Identidad, región y perfil del negocio.",
-    icono: GridIcon,
-  },
-  modulos: {
-    label: "Módulos e integraciones",
-    hint: "Qué tiene encendido la organización y qué conectores usa cada módulo.",
-    icono: PlugInIcon,
-  },
-};
+export type ClaveConfig = "general" | "modulos";
 
 export const ConfiguracionPage = observer(() => {
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const tab: ClaveTab = esClaveTab(searchParams.get("tab"))
-    ? (searchParams.get("tab") as ClaveTab)
-    : "general";
-  const meta = META_TAB[tab];
-
-  const grupos: GrupoNav[] = [
-    {
-      grupo: "organizacion",
-      label: "Organización",
-      secciones: CLAVES_TAB.map((k) => ({
-        key: k,
-        label: META_TAB[k].label,
-        hint: META_TAB[k].hint,
-        icono: META_TAB[k].icono,
-      })),
-    },
-  ];
+  const tab = searchParams.get("tab") as ClaveConfig | null;
 
   const nombreOrg = organizacionStore.organizacion?.nombre;
 
-  // ── Enlaces guardados a la pestaña que ya no existe ───────────────────────
-  //
-  // `?tab=equipo` era la pestaña de equipo. Al sacarla a `/equipo`, un marcador
-  // viejo caería en `general` y el usuario vería datos que no pidió, sin
-  // entender por qué. Se redirige a su sitio nuevo. Es una guarda, no una
-  // pestaña oculta: no se pinta nada de equipo aquí.
-  if (searchParams.get("tab") === "equipo") {
-    return <Navigate to="/equipo" replace />;
+  const irA = (clave: ClaveConfig) => {
+    setSearchParams({ tab: clave });
+  };
+
+  const volverAlHub = () => {
+    setSearchParams({});
+  };
+
+  // ── VISTA INTERNA: CONFIGURACIÓN GENERAL ─────────────────────────────────
+  if (tab === "general") {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <PageMeta
+          title="Configuración · Información de la sede"
+          description="Datos generales, identidad y región de la organización"
+        />
+
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={volverAlHub}
+            className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+          >
+            <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            <span>Volver a Configuración</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => irA("modulos")}
+            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 dark:text-gray-400"
+          >
+            <span>Ir a Módulos e integraciones</span>
+            <ArrowRightIcon className="h-3 w-3" />
+          </button>
+        </div>
+
+        <div className="animate-aparecer">
+          <ConfigShell
+            seccionKey="general"
+            titulo="Datos generales de la organización"
+            hint="Identidad de marca, ubicación y moneda de trabajo"
+          >
+            <GeneralOrgTab />
+          </ConfigShell>
+        </div>
+      </div>
+    );
   }
 
+  // ── VISTA INTERNA: MÓDULOS E INTEGRACIONES ───────────────────────────────
+  if (tab === "modulos") {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <PageMeta
+          title="Configuración · Módulos e integraciones"
+          description="Servicios y conexiones activas de la organización"
+        />
+
+        <div className="mb-6 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={volverAlHub}
+            className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+          >
+            <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            <span>Volver a Configuración</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => irA("general")}
+            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 dark:text-gray-400"
+          >
+            <ChevronLeftIcon className="h-3 w-3" />
+            <span>Ir a General</span>
+          </button>
+        </div>
+
+        <div className="animate-aparecer">
+          <ConfigShell
+            seccionKey="modulos"
+            titulo="Módulos e integraciones"
+            hint="Activa o desactiva capacidades y conecta servicios externos"
+          >
+            <ModulosTab />
+          </ConfigShell>
+        </div>
+      </div>
+    );
+  }
+
+  // ── VISTA INICIAL: HUB DE SELECCIÓN CON LAS TARJETAS ─────────────────────
+  //
+  // ESTA pantalla es la REFERENCIA del estilo de tarjeta vertical según la
+  // captura del usuario (General y Módulos e integraciones).
   return (
-    <>
+    <div className="animate-aparecer">
       <PageMeta
-        title="Configuración de la organización"
-        description="Datos generales, módulos e integraciones de la organización"
+        title="Configuración"
+        description="Centro de configuración de la organización"
       />
 
-      <div className="mb-5">
-        <ConfigHeader
-          titulo="Configuración"
-          descripcion="Los datos de tu organización y los módulos que tiene encendidos. Para gestionar personas, usa Equipo y perfiles."
-          // El nombre en la cabecera responde «¿de quién es esta configuración?»
-          // sin obligar a bajar a la pestaña General. Si no hay organización, no
-          // se pinta un hueco: no hay nada que nombrar.
-          acciones={
-            nombreOrg ? (
-              <Badge color="light" size="sm">
-                {nombreOrg}
-              </Badge>
-            ) : undefined
-          }
-        />
+      <div className="mb-10 text-center">
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400">
+          <span className="h-2 w-2 rounded-full bg-brand-500" />
+          <span>Configuración del sistema</span>
+        </div>
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-title dark:text-white">
+          Configuración {nombreOrg ? `· ${nombreOrg}` : ""}
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-gray-500 dark:text-gray-400">
+          Selecciona la sección que deseas gestionar para tu negocio.
+        </p>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        <ConfigSectionNav
-          grupos={grupos}
-          activa={tab}
-          onSeleccionar={(k) => setSearchParams({ tab: k })}
-          ariaLabel="Secciones de la configuración de la organización"
-        />
-
-        {/* `seccionKey={tab}` es lo que remonta el panel al cambiar de pestaña y
-            dispara `animate-aparecer`. Sin él React reutilizaría el nodo y la
-            sección se sustituiría de golpe. */}
-        <ConfigShell seccionKey={tab} titulo={meta.label} hint={meta.hint}>
-          {tab === "general" && <GeneralOrgTab />}
-          {tab === "modulos" && <ModulosTab />}
-        </ConfigShell>
-      </div>
-    </>
+      <ConfigHub
+        tarjetas={[
+          {
+            key: "general",
+            label: "Información de la sede",
+            hint: "Nombre comercial, logo, país, moneda de cobro y perfil de rubro.",
+            icono: IdentificationIcon,
+          },
+          {
+            key: "modulos",
+            label: "Módulos e integraciones",
+            hint: "Herramientas activas, catálogo de extensiones y conectores externos.",
+            icono: PlugInIcon,
+          },
+        ]}
+        onEntrar={(k) => irA(k as ClaveConfig)}
+      />
+    </div>
   );
 });
 

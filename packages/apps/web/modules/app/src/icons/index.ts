@@ -51,6 +51,12 @@ export {
   ChevronDownIcon as AngleDownIcon,
   EllipsisHorizontalIcon as MoreDotIcon,
   EllipsisHorizontalIcon as HorizontaLDots,
+  // El menú de una tarjeta va en vertical: tres puntos en fila se leen como
+  // «más opciones de la barra», no como el menú de ESE elemento.
+  EllipsisVerticalIcon as MoreDotsIcon,
+  // El engranaje de «ajustes de este elemento». No estaba en el barril y por eso
+  // las tarjetas de `/equipo` lo dibujaban a mano en un `<svg>` en línea.
+  Cog6ToothIcon as SettingsGearIcon,
 
   // ── estado y aviso ────────────────────────────────────────────────────────
   ExclamationCircleIcon as AlertIcon,
@@ -80,6 +86,30 @@ export {
   TableCellsIcon as TableIcon,
   ChartPieIcon as PieChartIcon,
 
+  // ── identidad de la organización (configuración › General) ────────────────
+  // Tres metáforas distintas para tres bloques que no deben confundirse:
+  // con qué nombre te conocen (`Identification`), dónde operas (`GlobeAlt`) y
+  // qué negocio eres (`BuildingStorefront`).
+  IdentificationIcon,
+  GlobeAltIcon,
+  BuildingStorefrontIcon,
+
+  // ── rubros del negocio (configuración › General › tipo de empresa) ────────
+  // Ocho metáforas para ocho rubros, todas de Heroicons 24/outline. El selector
+  // de tipo de empresa dejó de ser un desplegable y ahora pinta los ocho a la
+  // vez: sin un icono por rubro, ocho etiquetas de texto en fila no se
+  // distinguen de un párrafo.
+  //
+  // `BuildingStorefrontIcon` (arriba) sirve a «Retail & Comercio minorista», que
+  // es también el rubro por defecto: se reutiliza a propósito para no tener dos
+  // formas del mismo concepto.
+  FireIcon as FoodIcon,
+  SparklesIcon as FashionIcon,
+  BuildingOffice2Icon as ServicesIcon,
+  HeartIcon as HealthIcon,
+  WrenchScrewdriverIcon as ConstructionIcon,
+  Squares2X2Icon as OtherRubroIcon,
+
   // ── personas y comunicación ───────────────────────────────────────────────
   UsersIcon as GroupIcon,
   UserIcon,
@@ -100,4 +130,10 @@ export {
   VideoCameraIcon as VideoIcon,
   ClipboardDocumentListIcon as TaskIcon,
   CurrencyDollarIcon as DollarLineIcon,
+
+  // Rubros del negocio: trazos que aún no estaban en el barrel.
+  FireIcon,
+  BuildingOffice2Icon,
+  HeartIcon,
+  WrenchScrewdriverIcon,
 } from "@heroicons/react/24/outline";
