@@ -329,16 +329,19 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
  */
 const Burbuja = ({ m }: { m: Mensaje }) => {
   const esCliente = m.autor === "cliente";
+  const esBot = m.autor === "bot";
   const etiqueta =
-    m.autor === "bot" ? "🤖 Asistente" : m.autor === "negocio" ? "👤 Asesor" : null;
+    esBot ? "🤖 Asistente" : m.autor === "negocio" ? "👤 Asesor" : null;
 
   return (
     <div className={`flex ${esCliente ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[80%] rounded-2xl px-3 py-2 shadow-theme-xs ${
+        className={`w-fit max-w-[85%] break-words rounded-2xl px-3.5 py-2 shadow-theme-xs ${
           esCliente
             ? "rounded-br-sm bg-[#d9fdd3] text-gray-800 dark:bg-brand-500/30 dark:text-white/90"
-            : "rounded-bl-sm bg-white text-gray-800 dark:bg-gray-900 dark:text-white/90"
+            : esBot
+              ? "rounded-bl-sm border border-[#d2eaef] bg-[#edf6f8] text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90"
+              : "rounded-bl-sm bg-white text-gray-800 dark:bg-gray-900 dark:text-white/90"
         }`}
       >
         {etiqueta && (
@@ -346,7 +349,7 @@ const Burbuja = ({ m }: { m: Mensaje }) => {
             {etiqueta}
           </p>
         )}
-        <p className="whitespace-pre-line text-sm leading-relaxed">{m.contenido.texto}</p>
+        <p className="whitespace-pre-line text-sm leading-relaxed [overflow-wrap:anywhere]">{m.contenido.texto}</p>
         <p className={`mt-1 text-right text-[10px] ${esCliente ? "text-gray-500 dark:text-white/50" : "text-gray-400"}`}>
           {horaDe(m.timestamp)}
         </p>

@@ -62,125 +62,140 @@ export const PedidoDestacadoCard = observer(() => {
   };
 
   return (
-    <div className="flex flex-col justify-between h-full rounded-2xl bg-brand-500 p-5 sm:p-6 text-white shadow-theme-md min-h-[310px]">
-      {/* Encabezado de la tarjeta */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-            </span>
-            <span className="text-xs font-bold uppercase tracking-wider text-white/90">
-              Pedido Prioritario
-            </span>
-          </div>
-          <h2 className="mt-1 text-base sm:text-lg font-bold text-white">
-            {pedidoActivo ? "Atención inmediata requerida" : "Sin pedidos pendientes"}
-          </h2>
-        </div>
+    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-2xl bg-[#250081] p-5 sm:p-6 text-white shadow-theme-md min-h-[310px]">
+      {/* Círculos decorativos de marca idénticos a la imagen de referencia */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl" aria-hidden="true">
+        {/* Anillo púrpura superior izquierdo */}
+        <div className="absolute -left-12 -top-12 h-44 w-44 rounded-full border-[18px] border-[#4d3199]" />
 
-        {/* Selector de modalidad */}
-        <select
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value as FiltroModalidad)}
-          aria-label="Filtrar por modalidad"
-          className="max-w-[55%] truncate rounded-xl border border-white/30 bg-white/20 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white outline-none backdrop-blur-sm transition-colors hover:bg-white/25 focus:border-white [&>option]:text-gray-900 cursor-pointer"
-        >
-          {MODALIDADES.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-        </select>
+        {/* Anillo púrpura inferior derecho */}
+        <div className="absolute -bottom-14 right-14 sm:right-28 h-56 w-56 rounded-full border-[20px] border-[#4d3199]" />
+
+        {/* Anillo carmesí / rojo vibrante lateral derecho (#ea003e) */}
+        <div className="absolute -right-12 top-1/2 -translate-y-1/2 h-60 w-60 sm:h-68 sm:w-68 rounded-full border-[26px] border-[#ea003e]" />
       </div>
 
-      {/* Cuerpo principal con datos del pedido */}
-      {pedidoActivo ? (
-        <div className="my-4 space-y-3">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-sm font-mono">
-              {pedidoActivo.numero}
-            </span>
-            <span className="rounded-full bg-white/25 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white backdrop-blur-sm border border-white/20">
-              {pedidosStore.estadoLabel(pedidoActivo.estado)}
-            </span>
+      {/* Contenido en capa superior */}
+      <div className="relative z-10 flex flex-col justify-between h-full">
+        {/* Encabezado de la tarjeta */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ea003e] opacity-80" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ea003e]" />
+              </span>
+              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-[#ea003e] shadow-2xs">
+                Pedido Prioritario
+              </span>
+            </div>
+            <h2 className="mt-1.5 text-base sm:text-lg font-bold text-white">
+              {pedidoActivo ? "Atención inmediata requerida" : "Sin pedidos pendientes"}
+            </h2>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-sm text-white">
-            <span className="font-extrabold text-base sm:text-lg text-white">{pedidoActivo.cliente}</span>
-            <span className="text-white/60">·</span>
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm border border-white/10">
-              {pedidoActivo.modalidad === "retiro" && <BuildingStorefrontIcon className="size-3.5" />}
-              {pedidoActivo.modalidad === "domicilio" && <Bike className="size-3.5" />}
-              {pedidoActivo.modalidad === "en_sitio" && <BuildingStorefrontIcon className="size-3.5" />}
-              <span>{pedidosStore.modalidadLabel(pedidoActivo.modalidad)}</span>
+          {/* Selector de modalidad */}
+          <select
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value as FiltroModalidad)}
+            aria-label="Filtrar por modalidad"
+            className="max-w-[55%] truncate rounded-xl border border-white/30 bg-white/15 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white outline-none backdrop-blur-sm transition-colors hover:bg-white/25 focus:border-white [&>option]:text-gray-900 cursor-pointer"
+          >
+            {MODALIDADES.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Cuerpo principal con datos del pedido */}
+        {pedidoActivo ? (
+          <div className="my-4 space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-sm font-mono">
+                {pedidoActivo.numero}
+              </span>
+              <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white backdrop-blur-sm border border-white/20">
+                {pedidosStore.estadoLabel(pedidoActivo.estado)}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-sm text-white">
+              <span className="font-extrabold text-base sm:text-lg text-white">{pedidoActivo.cliente}</span>
+              <span className="text-white/60">·</span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm border border-white/10">
+                {pedidoActivo.modalidad === "retiro" && <BuildingStorefrontIcon className="size-3.5" />}
+                {pedidoActivo.modalidad === "domicilio" && <Bike className="size-3.5" />}
+                {pedidoActivo.modalidad === "en_sitio" && <BuildingStorefrontIcon className="size-3.5" />}
+                <span>{pedidosStore.modalidadLabel(pedidoActivo.modalidad)}</span>
+              </span>
+              <span className="text-white/60">·</span>
+              <span className="font-extrabold text-base text-white">
+                {money(pedidosStore.totalPedido(pedidoActivo))}
+              </span>
+              {Boolean(pedidoActivo.estadoDesde || pedidoActivo.createdAt) && (
+                <>
+                  <span className="text-white/60">·</span>
+                  <span className="text-xs font-mono font-bold text-white bg-black/30 px-2 py-0.5 rounded-md">
+                    {formatMinutos(pedidoActivo.estadoDesde || pedidoActivo.createdAt)}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Resumen de items con alto contraste */}
+            <div className="rounded-xl bg-black/25 border border-white/15 p-3 text-xs text-white backdrop-blur-xs">
+              <p className="truncate font-medium text-white/95">
+                {pedidoActivo.items.map((it) => `${it.cantidad}× ${it.nombre}`).join("  •  ")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="my-6 text-center sm:text-left">
+            <p className="text-lg font-bold text-white">Todos los pedidos al día</p>
+            <p className="mt-1 text-xs text-white/85">
+              No hay pedidos activos que requieran atención en esta modalidad.
+            </p>
+          </div>
+        )}
+
+        {/* Pie de tarjeta con acciones rápidas */}
+        <div className="border-t border-white/20 pt-3.5">
+          <div className="flex items-center justify-between mb-3 text-xs text-white/90">
+            <span className="font-medium">
+              {enCurso.length} {enCurso.length === 1 ? "pedido activo" : "pedidos activos"}
             </span>
-            <span className="text-white/60">·</span>
-            <span className="font-extrabold text-base text-white">
-              {money(pedidosStore.totalPedido(pedidoActivo))}
-            </span>
-            {Boolean(pedidoActivo.estadoDesde || pedidoActivo.createdAt) && (
-              <>
-                <span className="text-white/60">·</span>
-                <span className="text-xs font-mono font-bold text-white bg-black/25 px-2 py-0.5 rounded-md">
-                  {formatMinutos(pedidoActivo.estadoDesde || pedidoActivo.createdAt)}
-                </span>
-              </>
+            {pedidoActivo && (
+              <button
+                type="button"
+                onClick={() => navigate(`/pedidos?detalle=${pedidoActivo.id}`)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-white hover:underline cursor-pointer"
+              >
+                <span>Ver detalle del pedido</span>
+                <ArrowUpRightIcon className="size-3.5" />
+              </button>
             )}
           </div>
 
-          {/* Resumen de items con alto contraste */}
-          <div className="rounded-xl bg-black/20 border border-white/15 p-3 text-xs text-white backdrop-blur-xs">
-            <p className="truncate font-medium text-white/95">
-              {pedidoActivo.items.map((it) => `${it.cantidad}× ${it.nombre}`).join("  •  ")}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="my-6 text-center sm:text-left">
-          <p className="text-lg font-bold text-white">Todos los pedidos al día</p>
-          <p className="mt-1 text-xs text-white/85">
-            No hay pedidos activos que requieran atención en esta modalidad.
-          </p>
-        </div>
-      )}
-
-      {/* Pie de tarjeta con acciones rápidas */}
-      <div className="border-t border-white/20 pt-3.5">
-        <div className="flex items-center justify-between mb-3 text-xs text-white/90">
-          <span className="font-medium">
-            {enCurso.length} {enCurso.length === 1 ? "pedido activo" : "pedidos activos"}
-          </span>
-          {pedidoActivo && (
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate(`/pedidos?detalle=${pedidoActivo.id}`)}
-              className="inline-flex items-center gap-1 text-xs font-bold text-white hover:underline cursor-pointer"
+              onClick={handleAvanzar}
+              disabled={!pedidoActivo}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#ea003e] px-4 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#d00037] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer border border-white/10"
             >
-              <span>Ver detalle del pedido</span>
-              <ArrowUpRightIcon className="size-3.5" />
+              <CheckCircleIcon className="size-4" />
+              <span>{pedidoActivo ? `Avanzar a: ${labelLimpio}` : "Sin acción"}</span>
             </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={handleAvanzar}
-            disabled={!pedidoActivo}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-secondary-600 px-4 py-2.5 text-xs sm:text-sm font-extrabold text-white shadow-md transition-all hover:bg-secondary-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer border border-white/10"
-          >
-            <CheckCircleIcon className="size-4" />
-            <span>{pedidoActivo ? `Avanzar a: ${labelLimpio}` : "Sin acción"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/pedidos")}
-            className="rounded-xl border border-white/40 bg-white/10 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-white/20 cursor-pointer"
-          >
-            Ver tablero
-          </button>
+            <button
+              type="button"
+              onClick={() => navigate("/pedidos")}
+              className="rounded-xl bg-white px-4 py-2.5 text-xs sm:text-sm font-extrabold text-gray-900 shadow-xs transition-colors hover:bg-gray-100 cursor-pointer"
+            >
+              Ver tablero
+            </button>
+          </div>
         </div>
       </div>
     </div>

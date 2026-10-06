@@ -76,7 +76,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
 
 export const TextoMensajeFormateado: React.FC<TextoMensajeFormateadoProps> = ({
   texto,
-  className = "whitespace-pre-line leading-relaxed",
+  className = "whitespace-pre-line leading-relaxed break-words [overflow-wrap:anywhere]",
 }) => {
   if (!texto) return null;
 

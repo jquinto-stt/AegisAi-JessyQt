@@ -382,7 +382,7 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja Lavanda Adaptable + Inspección IA On-Demand + Pedido Inline ──
+            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja #edf6f8 Adaptable + Inspección IA On-Demand + Pedido Inline ──
             if (esBot) {
               const traza = getBotTrazabilidad(m, conv.estado);
               const puedeIrModulo =
@@ -398,23 +398,23 @@ export const ChatView = observer(({
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
                   <BotAvatar />
 
-                  <div className="flex flex-col items-start max-w-[88%] sm:max-w-lg lg:max-w-xl">
-                    {/* Burbuja principal del bot: adaptable (w-fit) para abrazar el contenido y no desperdiciar espacio */}
-                    <div className="w-fit min-w-[210px] max-w-full rounded-2xl rounded-tl-sm border border-secondary-200/70 bg-secondary-25 px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs dark:border-accent-800/40 dark:bg-accent-950/30 dark:text-accent-100">
+                  <div className="flex flex-col items-start w-fit max-w-[88%] sm:max-w-xl lg:max-w-2xl min-w-0">
+                    {/* Burbuja principal del bot: fondo #edf6f8 y adaptable (w-fit) al tamaño del mensaje */}
+                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tl-sm border border-[#d2eaef] bg-[#edf6f8] px-4 py-3 text-[15px] leading-relaxed text-gray-800 shadow-theme-xs break-words [overflow-wrap:anywhere] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex items-center justify-between gap-3 border-b border-secondary-100/80 pb-1.5 dark:border-accent-800/40">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[#d2eaef] pb-1.5 dark:border-gray-700">
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-xs font-semibold text-secondary-900 dark:text-accent-200">
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-secondary-100 px-1.5 py-0.5 text-[10px] font-medium text-secondary-700 dark:bg-accent-900/50 dark:text-accent-300">
+                          <span className="inline-flex items-center rounded-full bg-[#dbeff2] px-1.5 py-0.5 text-[10px] font-semibold text-[#155e75] dark:bg-teal-900/50 dark:text-teal-300">
                             IA
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setTrazaSeleccionada({ mensaje: m, traza })}
-                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-secondary-500/80 transition-colors hover:bg-secondary-100/70 hover:text-secondary-800 dark:text-accent-400 dark:hover:bg-accent-900/50 dark:hover:text-accent-200"
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-gray-500 transition-colors hover:bg-white/80 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                           title="Inspeccionar trazabilidad técnica IA"
                         >
                           <AiIcon className="h-3 w-3" />
@@ -427,7 +427,7 @@ export const ChatView = observer(({
 
                       {/* Tarjeta interactiva de pedido asociado si existe */}
                       {pedidoId && (
-                        <div className="mt-3 w-full rounded-xl border border-secondary-200/80 bg-white/95 p-3 shadow-xs dark:border-accent-800/50 dark:bg-gray-900/80">
+                        <div className="mt-3 w-full rounded-xl border border-[#d2eaef] bg-white/95 p-3 shadow-xs dark:border-gray-700 dark:bg-gray-900/80">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-bold tabular-nums text-gray-900 dark:text-white">
@@ -479,16 +479,16 @@ export const ChatView = observer(({
 
                       {/* Acción contextual si no hay pedido pero sí módulo vinculado */}
                       {!pedidoId && traza.accion && puedeIrModulo && (
-                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-secondary-200/60 pt-2 dark:border-accent-800/40">
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#d2eaef] pt-2 dark:border-gray-700">
                           <button
                             type="button"
                             onClick={() => setVista(traza.modulo!)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary-200 bg-white px-2.5 py-1 text-xs font-semibold text-secondary-700 shadow-theme-xs transition-colors hover:bg-secondary-50 dark:border-accent-700 dark:bg-accent-900/60 dark:text-accent-200 dark:hover:bg-accent-800/60"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#c6e4ea] bg-white px-2.5 py-1 text-xs font-semibold text-[#155e75] shadow-theme-xs transition-colors hover:bg-white/90 hover:text-[#0e7490] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                           >
                             <span>{traza.accion}</span>
                             <ArrowRightIcon className="h-3 w-3" />
                           </button>
-                          <span className="text-xs text-secondary-400 dark:text-accent-400/80">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
@@ -496,7 +496,7 @@ export const ChatView = observer(({
 
                       {/* Timestamp del mensaje cuando no hay botón de acción */}
                       {(pedidoId || !traza.accion || !puedeIrModulo) && (
-                        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-secondary-400 dark:text-accent-400/80">
+                        <div className="mt-2 flex items-center justify-end gap-1 text-xs text-gray-500 dark:text-gray-400">
                           <EyeIcon className="h-3.5 w-3.5" />
                           <span>{horaDe(m.timestamp)}</span>
                         </div>
@@ -578,7 +578,7 @@ export const ChatView = observer(({
                 <span className="font-semibold text-gray-700 dark:text-gray-300">
                   Flujo de ejecución e intención
                 </span>
-                <p className="mt-1.5 rounded-lg border border-secondary-100 bg-secondary-25/50 p-2.5 font-medium leading-relaxed text-gray-800 dark:border-accent-900/50 dark:bg-accent-950/20 dark:text-gray-200">
+                <p className="mt-1.5 rounded-lg border border-[#d2eaef] bg-[#edf6f8] p-2.5 font-medium leading-relaxed text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                   {trazaSeleccionada.traza.flujo}
                 </p>
               </div>
