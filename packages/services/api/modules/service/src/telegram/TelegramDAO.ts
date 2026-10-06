@@ -633,11 +633,11 @@ export class TelegramDAO {
   }
 
   async obtenerPedidosRecientes(chatId: number | string, limite = 5): Promise<Array<{ id: string; numero: string; estado: string; total: number; creadoEn?: string }>> {
-    const tel = `tg:${chatId}`;
+    const digits = String(chatId).replace(/\D/g, '');
     const { data, error } = await this.t('pedido')
-      .select('id, numero, estado, creado_en, modalidad, pedido_item (cantidad, precio_unitario)')
+      .select('id, numero, estado, total, creado_en, modalidad, pedido_item (cantidad, precio_unitario)')
       .eq('organizacion_id', this.organizacionId)
-      .eq('telefono', tel)
+      .or(`telefono.eq.tg:${chatId},telefono.eq.${chatId},telefono.ilike.%${digits}%`)
       .order('creado_en', { ascending: false })
       .limit(limite);
 
@@ -647,11 +647,12 @@ export class TelegramDAO {
       const items = (p.pedido_item as any[]) || [];
       const subtotal = items.reduce((acc, it) => acc + (Number(it.precio_unitario) * Number(it.cantidad)), 0);
       const costoEnvio = p.modalidad === 'domicilio' ? 5000 : 0;
+      const totalCalculado = Number(p.total) > 0 ? Number(p.total) : subtotal + costoEnvio;
       return {
         id: p.id,
         numero: p.numero,
         estado: p.estado,
-        total: subtotal + costoEnvio,
+        total: totalCalculado,
         creadoEn: p.creado_en,
       };
     });
@@ -693,7 +694,8 @@ export class TelegramDAO {
         modalidad: draft.modalidad || 'retiro',
         origen: 'telegram',
         estado: 'nuevo',
-        metodo_pago: 'otro',
+        metodo_pago: 'globalpay',
+        pago_con: total,
         direccion_entrega: direccionObj,
       })
       .select('id')

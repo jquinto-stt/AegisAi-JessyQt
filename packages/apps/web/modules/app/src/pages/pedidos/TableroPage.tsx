@@ -1487,132 +1487,172 @@ export const TableroPage = observer(() => {
         </div>
 
         {/* Acciones derechas: Filtro de Pago + VistaToggle + Filtrar y ordenar + Crear pedido */}
+        {/* Acciones derechas: VistaToggle + Filtrar y ordenar + Crear pedido */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end lg:self-auto">
-          {/* Pestañas de Cobro / Pago (Todo, Por cobrar, Pagado) */}
-          <div className="inline-flex h-10 items-center rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50 shrink-0 select-none">
-            <button
-              type="button"
-              onClick={() => setFiltroPago("todos")}
-              className={`flex h-full items-center gap-1 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                filtroPago === "todos"
-                  ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              }`}
-            >
-              Todo
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltroPago("pendientes")}
-              className={`flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                filtroPago === "pendientes"
-                  ? "bg-white text-warning-700 shadow-theme-xs dark:bg-gray-900 dark:text-warning-400"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              }`}
-            >
-              <span>Por cobrar</span>
-              {pedidosStore.totalPorCobrar > 0 && (
-                <span className="flex size-4.5 items-center justify-center rounded-full bg-warning-100 text-[10px] font-bold text-warning-800 dark:bg-warning-950 dark:text-warning-300">
-                  {pedidosStore.totalPorCobrar}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFiltroPago("pagados")}
-              className={`flex h-full items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                filtroPago === "pagados"
-                  ? "bg-white text-success-700 shadow-theme-xs dark:bg-gray-900 dark:text-success-400"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-              }`}
-            >
-              <span>Pagado</span>
-              {pedidosStore.totalPagados > 0 && (
-                <span className="flex size-4.5 items-center justify-center rounded-full bg-success-100 text-[10px] font-bold text-success-800 dark:bg-success-950 dark:text-success-300">
-                  {pedidosStore.totalPagados}
-                </span>
-              )}
-            </button>
-          </div>
-
           {/* Selector de vista: Kanban / Lista */}
           <VistaToggle vista={vista} onChange={cambiarVista} />
 
-          {/* Botón y menú Filtrar y ordenar con Buscador */}
+          {/* Botón y menú Filtrar y ordenar con Buscador y Filtro de Pago */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setMenuFilterOpen((v) => !v)}
               className={`flex h-10 items-center gap-2 rounded-xl border px-3.5 sm:px-4 text-xs sm:text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap ${
-                busquedaTablero.trim() || criterioOrden !== "reciente"
+                busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos"
                   ? "border-secondary-300 bg-secondary-50/60 text-ink-title dark:border-brand-700 dark:bg-brand-950/40 dark:text-brand-300 shadow-theme-xs"
                   : "border-gray-200/90 bg-white text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
               }`}
             >
               <SlidersHorizontal className="size-4 shrink-0" />
               <span>Filtrar y ordenar</span>
-              {(busquedaTablero.trim() || criterioOrden !== "reciente") && (
+              {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
                 <span className="size-2 rounded-full bg-brand-500 shrink-0" />
               )}
             </button>
 
             {menuFilterOpen && (
-              <div
-                className="absolute right-0 top-full mt-2 z-50 w-64 rounded-2xl border border-gray-100 bg-white p-3 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* Campo de búsqueda integrado */}
-                <div className="mb-2.5">
-                  <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Buscar tarjetas</p>
-                  <div className="relative flex items-center">
-                    <Search className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      autoFocus
-                      value={busquedaTablero}
-                      onChange={(e) => setBusquedaTablero(e.target.value)}
-                      placeholder="Cliente, # pedido, producto..."
-                      className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
-                    />
-                    {busquedaTablero && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setMenuFilterOpen(false)}
+                />
+                <div
+                  className="absolute right-0 top-full mt-2 z-50 w-72 rounded-2xl border border-gray-100 bg-white p-3.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900 animate-aparecer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Cabecera del popover con opción de limpiar si hay filtros */}
+                  <div className="flex items-center justify-between px-1 mb-2.5">
+                    <span className="text-xs font-bold text-ink-title dark:text-white">Filtros & Orden</span>
+                    {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
                       <button
                         type="button"
-                        onClick={() => setBusquedaTablero("")}
-                        className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                        onClick={() => {
+                          setBusquedaTablero("");
+                          setCriterioOrden("reciente");
+                          setFiltroPago("todos");
+                        }}
+                        className="text-[11px] font-semibold text-brand-500 hover:text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
                       >
-                        <X className="size-3.5" />
+                        Limpiar todo
                       </button>
                     )}
                   </div>
+
+                  {/* Campo de búsqueda integrado */}
+                  <div className="mb-3">
+                    <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Buscar tarjetas</p>
+                    <div className="relative flex items-center">
+                      <Search className="absolute left-3 size-3.5 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        autoFocus
+                        value={busquedaTablero}
+                        onChange={(e) => setBusquedaTablero(e.target.value)}
+                        placeholder="Cliente, # pedido, producto..."
+                        className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-8.5 pr-8 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-700 dark:bg-gray-800/80 dark:text-white dark:placeholder:text-gray-500 transition-all"
+                      />
+                      {busquedaTablero && (
+                        <button
+                          type="button"
+                          onClick={() => setBusquedaTablero("")}
+                          className="absolute right-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Filtro por estado de pago (Todo, Por cobrar, Pagado) */}
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between px-1 mb-1.5">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Estado de pago</p>
+                      {filtroPago !== "todos" && (
+                        <span className="text-[10px] font-semibold text-brand-500 dark:text-brand-400">
+                          {filtroPago === "pendientes" ? "Por cobrar" : "Pagados"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-1 rounded-xl border border-gray-200/90 bg-gray-50/80 p-1 dark:border-gray-800 dark:bg-gray-800/50">
+                      <button
+                        type="button"
+                        onClick={() => setFiltroPago("todos")}
+                        className={`flex h-8 items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors cursor-pointer ${
+                          filtroPago === "todos"
+                            ? "bg-white text-gray-900 shadow-theme-xs dark:bg-gray-900 dark:text-white"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        Todo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroPago("pendientes")}
+                        className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                          filtroPago === "pendientes"
+                            ? "bg-white text-warning-700 shadow-theme-xs dark:bg-gray-900 dark:text-warning-400"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="truncate">Por cobrar</span>
+                        {pedidosStore.totalPorCobrar > 0 && (
+                          <span className="flex size-4 items-center justify-center rounded-full bg-warning-100 text-[10px] font-bold text-warning-800 dark:bg-warning-950 dark:text-warning-300 shrink-0">
+                            {pedidosStore.totalPorCobrar}
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltroPago("pagados")}
+                        className={`flex h-8 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                          filtroPago === "pagados"
+                            ? "bg-white text-success-700 shadow-theme-xs dark:bg-gray-900 dark:text-success-400"
+                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                        }`}
+                      >
+                        <span className="truncate">Pagado</span>
+                        {pedidosStore.totalPagados > 0 && (
+                          <span className="flex size-4 items-center justify-center rounded-full bg-success-100 text-[10px] font-bold text-success-800 dark:bg-success-950 dark:text-success-300 shrink-0">
+                            {pedidosStore.totalPagados}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="my-2.5 border-t border-gray-100 dark:border-gray-800" />
+
+                  {/* Ordenar por */}
+                  <div>
+                    <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
+                    <div className="space-y-0.5">
+                      {[
+                        { id: "reciente", label: "Más reciente" },
+                        { id: "antiguo", label: "Más antiguo" },
+                        { id: "monto", label: "Mayor importe" },
+                        { id: "urgente", label: "Urgentes primero" },
+                      ].map((op) => (
+                        <button
+                          key={op.id}
+                          type="button"
+                          onClick={() => {
+                            setCriterioOrden(op.id as CriterioOrden);
+                            setMenuFilterOpen(false);
+                          }}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                            criterioOrden === op.id
+                              ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400 font-semibold"
+                              : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          <span>{op.label}</span>
+                          {criterioOrden === op.id && <Check className="size-3.5" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-
-                <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
-
-                <p className="px-1 mb-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
-                {[
-                  { id: "reciente", label: "Más reciente" },
-                  { id: "antiguo", label: "Más antiguo" },
-                  { id: "monto", label: "Mayor importe" },
-                  { id: "urgente", label: "Urgentes primero" },
-                ].map((op) => (
-                  <button
-                    key={op.id}
-                    type="button"
-                    onClick={() => {
-                      setCriterioOrden(op.id as CriterioOrden);
-                      setMenuFilterOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
-                      criterioOrden === op.id
-                        ? "bg-secondary-50 text-secondary-600 dark:bg-secondary-950/60 dark:text-secondary-400 font-semibold"
-                        : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
-                    }`}
-                  >
-                    <span>{op.label}</span>
-                    {criterioOrden === op.id && <Check className="size-3.5" />}
-                  </button>
-                ))}
-              </div>
+              </>
             )}
           </div>
 

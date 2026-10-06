@@ -21,6 +21,9 @@ export { PrepQueueWidget } from "./PrepQueueWidget";
 export { LogisticsDeliveryWidget } from "./LogisticsDeliveryWidget";
 export { CalendarioInicioWidget, CalendarioInicioModal } from "./CalendarioInicioWidget";
 export { ResumenDiaWidget } from "./ResumenDiaWidget";
+export { PedidoDestacadoCard } from "./PedidoDestacadoCard";
+export { ConfigureDisplayModal } from "./ConfigureDisplayModal";
+export { EstadosOverview } from "./EstadosOverview";
 
 export {
   ORANGE,

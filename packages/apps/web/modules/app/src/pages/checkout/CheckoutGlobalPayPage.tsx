@@ -38,6 +38,7 @@ export const CheckoutGlobalPayPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Estados de datos de la compra
+  const chatId = searchParams.get('chatId') || '';
   const [nombre, setNombre] = useState(searchParams.get('nombre') || '');
   const [apellido, setApellido] = useState(searchParams.get('apellido') || '');
   const [email, setEmail] = useState(searchParams.get('email') || '');
@@ -162,6 +163,34 @@ export const CheckoutGlobalPayPage: React.FC = () => {
         }
       } catch (err) {
         console.warn('[CheckoutGlobalPay] No se pudo sincronizar estado con BD', err);
+      }
+
+      // Notificar al bot de Telegram que el pago fue recibido con éxito
+      const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+      if (chatId && botToken) {
+        const metodoTxt = modalMetodo === 'pse' ? 'PSE (Débito en cuenta)' : 'Tarjeta de Crédito / Débito';
+        const msgAprobado = `✅ <b>¡PAGO CONFIRMADO CON ÉXITO!</b>\n<blockquote>` +
+          `<b>Orden:</b> <code>#${referencia}</code>\n` +
+          `<b>Monto pagado:</b> <code>${formatearCOP(total)} COP</code>\n` +
+          `<b>Método:</b> ${metodoTxt}\n` +
+          `<b>Comprobante Redeban:</b> <code>${txCode}</code>\n` +
+          `<b>Estado:</b> 👨‍🍳 Confirmado (En preparación)</blockquote>\n\n` +
+          `¡Muchas gracias por tu compra! Tu pedido ya pasó a preparación en cocina y te estaremos avisando cuando esté listo. 🛵`;
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: msgAprobado,
+            parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '📦 Consultar estado de mi pedido', callback_data: 'estado_pedido' }]
+              ]
+            }
+          }),
+        }).catch((err) => console.warn('[CheckoutGlobalPay] Error notificando Telegram:', err));
       }
     }, 1600);
   };

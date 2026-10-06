@@ -9,6 +9,8 @@ import {
   HistorialPage as PedidosHistorialPage,
   AnaliticaPage as PedidosAnaliticaPage,
   ConfigPage as PedidosConfigPage,
+  DisplayPedidosScreen,
+  CatalogoPage,
 } from "@/pages/pedidos";
 import { PerfilOperadorPage, EquipoPage } from "@/pages/equipo";
 
@@ -144,6 +146,7 @@ export default function App() {
         {/* Módulo Pedidos (condicionado a que esté activo en plataforma) */}
         <Route path="/pedidos/inicio" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosInicioPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><TableroPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/historial" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
@@ -295,12 +298,16 @@ export default function App() {
       <Route path="/menu" element={<MenuCatalogoPage />} />
       <Route path="/carta" element={<MenuCatalogoPage />} />
 
+      {/* Pantalla Display de Sala / Mostrador (Fullscreen TV) */}
+      <Route path="/pedidos/display" element={<DisplayPedidosScreen />} />
+      <Route path="/display" element={<DisplayPedidosScreen />} />
+
       <Route path="/seleccionar" element={<SeleccionarPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
       <Route path="/operador/login" element={<RedireccionViendoComo />} />
       <Route path="/wa" element={<SimuladorWhatsApp />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/pedidos/inicio" replace />} />
+      <Route path="*" element={<Navigate to="/pedidos/inicio" replace />} />
     </Routes>
   );
 }

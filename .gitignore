@@ -42,4 +42,5 @@ packages/apps/web/modules/novedad-out*
 packages/apps/web/modules/vcr-*
 packages/apps/web/modules/verify-*
 packages/apps/web/modules/vite-verify-out
+.kombai/
 

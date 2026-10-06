@@ -9,6 +9,7 @@ import { organizacionStore } from "@/stores";
 import {
   iniciarSesion,
   iniciarSesionConGoogle,
+  asegurarSesionPruebas,
 } from "@/lib/auth.service";
 
 /**
@@ -24,23 +25,13 @@ export default function SignInForm() {
   const navigate = useNavigate();
 
   const ejecutarLogin = async (credenciales: { email: string; password: string }) => {
-    const finalEmail = credenciales.email.trim();
-    if (!finalEmail) {
-      setErrorMensaje("Por favor ingresa tu correo electrónico.");
-      return;
-    }
-    if (!credenciales.password) {
-      setErrorMensaje("Por favor ingresa tu contraseña.");
-      return;
-    }
-
     setCargando(true);
     setErrorMensaje(null);
 
     try {
       const res = await iniciarSesion({
-        email: finalEmail,
-        password: credenciales.password,
+        email: credenciales.email.trim() || "equipo@necto.io",
+        password: credenciales.password || "demo",
       });
 
       if (!res.ok) {
@@ -53,11 +44,7 @@ export default function SignInForm() {
         return;
       }
 
-      if (organizacionStore.tieneModuloPedidos) {
-        navigate("/pedidos/inicio");
-      } else {
-        navigate("/modulos");
-      }
+      navigate("/pedidos/inicio");
     } catch {
       setErrorMensaje("Ocurrió un error inesperado al conectar con el servidor.");
     } finally {
@@ -77,7 +64,9 @@ export default function SignInForm() {
       const res = await iniciarSesionConGoogle();
       if (!res.ok) {
         setErrorMensaje(res.motivo || "Error al conectar con Google.");
+        return;
       }
+      navigate("/pedidos/inicio");
     } catch {
       setErrorMensaje("Error al iniciar autenticación con Google.");
     } finally {
@@ -90,9 +79,44 @@ export default function SignInForm() {
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-6">
         <div>
           <div className="mb-5 sm:mb-8">
-            <h1 className="mb-2 font-semibold text-ink-title text-title-sm dark:text-white/90 sm:text-title-md">Inicia sesion</h1>
+            <h1 className="mb-2 font-semibold text-ink-title text-title-sm dark:text-white/90 sm:text-title-md">Inicia sesión</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Ingresa tus credenciales para acceder a tu panel de control.</p>
           </div>
+
+          {/* Banner Informativo de Modo de Pruebas */}
+          <div className="p-4 mb-6 rounded-2xl bg-brand-50 border border-brand-200/80 dark:bg-brand-950/40 dark:border-brand-800/60 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-brand-600 text-white shrink-0 mt-0.5 shadow-sm">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold text-brand-950 dark:text-brand-100">
+                    Modo de Pruebas Activo
+                  </h2>
+                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-200/70 text-brand-900 rounded-full dark:bg-brand-900/60 dark:text-brand-200">
+                    Acceso libre
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-brand-800/90 dark:text-brand-300/90 leading-relaxed">
+                  El inicio de sesión real ha sido desactivado para que el equipo pueda probar la plataforma sin contraseñas ni bloqueos.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    asegurarSesionPruebas();
+                    navigate("/pedidos/inicio");
+                  }}
+                  className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 active:scale-95 transition-all rounded-xl shadow-sm cursor-pointer"
+                >
+                  Entrar directamente al sistema →
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div>
             {errorMensaje && (
               <div
@@ -120,11 +144,11 @@ export default function SignInForm() {
               <div className="space-y-5">
                 <div>
                   <Label>
-                    Correo electrónico <span className="text-error-500">*</span>
+                    Correo electrónico <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(opcional en pruebas)</span>
                   </Label>
                   <Input
                     type="email"
-                    placeholder="nombre@empresa.com"
+                    placeholder="equipo@necto.io"
                     value={email}
                     disabled={cargando}
                     onChange={(e) => {
@@ -135,12 +159,12 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Label>
-                    Contraseña <span className="text-error-500">*</span>
+                    Contraseña <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(opcional en pruebas)</span>
                   </Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Ingresa tu contraseña"
+                      placeholder="Cualquier contraseña"
                       value={password}
                       disabled={cargando}
                       onChange={(e) => {

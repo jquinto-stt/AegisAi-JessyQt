@@ -309,6 +309,7 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
   pedidos: [
     { seccionId: "inicio", Icono: GridIcon },
     { seccionId: "tablero", Icono: ListIcon },
+    { seccionId: "catalogo", Icono: TableIcon },
     { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "historial", Icono: TaskIcon },
     { seccionId: "analitica", Icono: PieChartIcon },

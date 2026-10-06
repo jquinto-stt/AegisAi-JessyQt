@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router';
-import { Search, ShoppingBag, Plus, Minus, ArrowRight, MapPin, Store, Trash2, X, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Search, ShoppingBag, Plus, Minus, ArrowRight, MapPin, Store, Trash2, X, Sparkles, CheckCircle2, ShieldCheck, Loader2, ExternalLink } from 'lucide-react';
 import { getSupabase, ESQUEMA } from '../../lib/supabase';
 
 interface ProductoItem {
@@ -83,12 +83,19 @@ export const MenuCatalogoPage: React.FC = () => {
   const cliente = searchParams.get('cliente') || 'Jessy Quinto';
   const sede = searchParams.get('sede') || 'Sede Principal';
   const direccion = searchParams.get('direccion') || 'Medellín, Colombia';
+  const chatId = searchParams.get('chatId') || '';
+  const modalidad = searchParams.get('modalidad') || (direccion ? 'domicilio' : 'retiro');
 
   const [productos, setProductos] = useState<ProductoItem[]>(PRODUCTOS_DEFAULT);
   const [categoriaActiva, setCategoriaActiva] = useState<string>('Todos');
   const [busqueda, setBusqueda] = useState<string>('');
   const [carrito, setCarrito] = useState<{ [productoId: string]: number }>({});
   const [modalCarritoAbierto, setModalCarritoAbierto] = useState(false);
+  const [seleccionEnviada, setSeleccionEnviada] = useState<{
+    total: number;
+    cantidad: number;
+  } | null>(null);
+  const [guardandoPedido, setGuardandoPedido] = useState(false);
 
   // Cargar catálogo desde Supabase si existe configuración personalizada
   useEffect(() => {
@@ -179,20 +186,125 @@ export const MenuCatalogoPage: React.FC = () => {
     const prod = productos.find((p) => p.id === id);
     return acc + (prod ? prod.precio * qty : 0);
   }, 0);
-  const costoEnvio = cantidadTotal > 0 ? 5000 : 0;
+  const costoEnvio = cantidadTotal > 0 && modalidad === 'domicilio' ? 5000 : 0;
   const total = subtotal + costoEnvio;
 
-  // Redirigir a GlobalPay
-  const irAlCheckout = () => {
-    const refOrden = 'NEC-' + Math.floor(1000 + Math.random() * 9000);
-    const query = new URLSearchParams({
-      cliente,
-      total: String(total),
-      descripcion: `Necto Pedidos (${cantidadTotal} productos) - ${sede}`,
-      ref: refOrden,
-    }).toString();
+  // Enviar selección de productos a Telegram para revisión y confirmación en el bot
+  const enviarSeleccionATelegram = async () => {
+    if (cantidadTotal === 0) return;
+    setGuardandoPedido(true);
 
-    navigate(`/checkout/${refOrden}?${query}`);
+    try {
+      const lineas = Object.entries(carrito).map(([id, qty]) => {
+        const prod = productos.find((p) => p.id === id);
+        return {
+          productId: id,
+          nombre: prod?.nombre || 'Producto',
+          cantidad: qty,
+          precioUnitario: prod?.precio || 0,
+        };
+      });
+
+      const sb = getSupabase();
+      if (sb && chatId) {
+        // Actualizar el borrador y estado de la conversación en Supabase
+        const { data: contacto } = await sb
+          .schema(ESQUEMA)
+          .from('contacto')
+          .select('id')
+          .eq('organizacion_id', 'fc009b85-73b8-47b3-8d1a-080b65ac7120')
+          .ilike('telefono', `%${chatId}%`)
+          .maybeSingle();
+
+        if (contacto?.id) {
+          const { data: conv } = await sb
+            .schema(ESQUEMA)
+            .from('conversacion')
+            .select('id, estado_respuesta')
+            .eq('contacto_id', contacto.id)
+            .maybeSingle();
+
+          if (conv?.id) {
+            const previo = (conv.estado_respuesta as Record<string, any>) || {};
+            const draftObj = {
+              lineas,
+              modalidad: modalidad || 'retiro',
+              direccion: modalidad === 'domicilio' ? direccion : null,
+              destinatario: previo?.draft?.destinatario || { tipo: 'propio', nombre: cliente },
+              updatedAt: new Date().toISOString(),
+            };
+
+            await sb
+              .schema(ESQUEMA)
+              .from('conversacion')
+              .update({
+                estado_respuesta: {
+                  ...previo,
+                  fsmState: 'CONFIRMANDO_PEDIDO',
+                  draft: draftObj,
+                  enCurso: draftObj,
+                },
+                actualizada_en: new Date().toISOString(),
+              })
+              .eq('id', conv.id);
+          }
+        }
+      }
+
+      // Notificar al bot de Telegram directamente con el resumen y botones
+      const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+      if (chatId && botToken) {
+        const resumenProds = lineas
+          .map((l) => `• ${l.cantidad} × <b>${l.nombre}</b> — <code>$${(l.precioUnitario * l.cantidad).toLocaleString('es-CO')} COP</code>`)
+          .join('\n');
+
+        const entregaDesc = modalidad === 'domicilio'
+          ? `🛵 <b>Domicilio en:</b> <i>${direccion}</i>`
+          : `🛍️ <b>Retiro en:</b> <i>${sede}</i>`;
+
+        const mensajeTelegram = `📋 <b>RESUMEN DE TU PEDIDO SELECCIONADO</b>\n<blockquote>` +
+          `${resumenProds}\n` +
+          `──────────────────────────\n` +
+          `<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n` +
+          `<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n` +
+          `<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n` +
+          `${entregaDesc}</blockquote>\n\n` +
+          `¿Estás a gusto con tu orden o deseas cambiar algo?`;
+
+        const keyboardRows = [
+          [{ text: 'Confirmar y Pagar 💳' }],
+          [{ text: '✏️ Modificar pedido' }, { text: '❌ Cancelar orden' }],
+        ];
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: mensajeTelegram,
+            parse_mode: 'HTML',
+            reply_markup: {
+              keyboard: keyboardRows,
+              resize_keyboard: true,
+              one_time_keyboard: false,
+            },
+          }),
+        }).catch((err) => console.warn('[MenuCatalogoPage] Error notificando Telegram:', err));
+      }
+
+      setSeleccionEnviada({
+        total,
+        cantidad: cantidadTotal,
+      });
+    } catch (e) {
+      console.error('[MenuCatalogoPage] Error al enviar selección al bot:', e);
+      setSeleccionEnviada({
+        total,
+        cantidad: cantidadTotal,
+      });
+    } finally {
+      setGuardandoPedido(false);
+    }
   };
 
   return (
@@ -438,132 +550,224 @@ export const MenuCatalogoPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── MODAL DEL CARRITO / CONFIRMAR PEDIDO ── */}
+      {/* ── MODAL DEL CARRITO / CONFIRMAR PEDIDO (2 PASOS) ── */}
       {modalCarritoAbierto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-fadeIn">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Cabecera */}
+            {/* Cabecera del modal */}
             <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2 font-bold text-sm">
                 <ShoppingBag className="w-4 h-4 text-indigo-400" />
-                <span>Tu Pedido ({cantidadTotal} productos)</span>
+                <span>
+                  {seleccionEnviada
+                    ? 'Selección enviada a Telegram'
+                    : `Tu Pedido (${cantidadTotal} productos)`}
+                </span>
               </div>
               <button
                 type="button"
-                onClick={() => setModalCarritoAbierto(false)}
+                onClick={() => {
+                  setModalCarritoAbierto(false);
+                  if (seleccionEnviada) {
+                    setCarrito({});
+                    setSeleccionEnviada(null);
+                  }
+                }}
                 className="text-slate-400 hover:text-white text-xl leading-none cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            {/* Lista de productos */}
-            <div className="p-5 overflow-y-auto space-y-3 flex-1">
-              {cantidadTotal === 0 ? (
-                <div className="text-center py-8 text-slate-500 text-sm">
-                  El carrito está vacío. Agrega productos del catálogo.
+            {/* ── PASO 2: SELECCIÓN ENVIADA A TELEGRAM (SIN PASARELA EN WEB) ── */}
+            {seleccionEnviada ? (
+              <div className="p-6 text-center space-y-5 animate-fadeIn overflow-y-auto">
+                <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                  <CheckCircle2 className="w-10 h-10" />
                 </div>
-              ) : (
-                Object.entries(carrito).map(([id, qty]) => {
-                  const prod = productos.find((p) => p.id === id);
-                  if (!prod) return null;
-                  return (
-                    <div
-                      key={id}
-                      className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80 gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={prod.imagen}
-                          alt={prod.nombre}
-                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                        />
-                        <div>
-                          <div className="text-xs font-bold text-slate-800">{prod.nombre}</div>
-                          <div className="text-xs text-slate-500 font-mono">
-                            {formatearCOP(prod.precio)} c/u
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-300">
-                          <button
-                            type="button"
-                            onClick={() => quitarItem(id)}
-                            className="text-xs text-slate-600 hover:text-black font-bold px-1"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </button>
-                          <span className="text-xs font-bold font-mono px-1">{qty}</span>
-                          <button
-                            type="button"
-                            onClick={() => agregarItem(id)}
-                            className="text-xs text-indigo-600 hover:text-indigo-800 font-bold px-1"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <span className="text-xs font-bold text-slate-900 w-16 text-right font-mono">
-                          {formatearCOP(prod.precio * qty)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-
-              {/* Datos de entrega */}
-              {cantidadTotal > 0 && (
-                <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 text-xs space-y-1.5 mt-4">
-                  <div className="font-bold text-slate-800 flex items-center gap-1 mb-1">
-                    <Store className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Información de Entrega</span>
-                  </div>
-                  <div className="text-slate-600"><b>Cliente:</b> {cliente}</div>
-                  <div className="text-slate-600"><b>Dirección:</b> {direccion}</div>
-                  <div className="text-slate-600"><b>Sede:</b> {sede}</div>
+                <div>
+                  <span className="inline-block bg-indigo-100 text-indigo-800 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                    ¡Selección enviada a Telegram!
+                  </span>
+                  <h2 className="text-xl font-black text-slate-900">
+                    Tu pedido ya está en el bot
+                  </h2>
+                  <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
+                    Hemos transferido los {seleccionEnviada.cantidad} productos seleccionados a tu conversación con Sofía.
+                  </p>
                 </div>
-              )}
-            </div>
 
-            {/* Totales y Botón de pago */}
-            {cantidadTotal > 0 && (
-              <div className="p-5 bg-slate-50 border-t border-slate-200 space-y-3">
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal productos:</span>
-                    <span className="font-mono font-medium">{formatearCOP(subtotal)}</span>
+                {/* Resumen de la selección enviada */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-left text-xs space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Cliente:</span>
+                    <span className="font-semibold text-slate-800">{cliente}</span>
                   </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Costo de envío:</span>
-                    <span className="font-mono font-medium">{formatearCOP(costoEnvio)}</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Modalidad:</span>
+                    <span className="font-semibold text-slate-800">
+                      {modalidad === 'domicilio' ? `🛵 Domicilio (${direccion})` : `🛍️ Retiro en ${sede}`}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
-                    <span>Total a pagar:</span>
-                    <span className="text-indigo-600 font-mono">{formatearCOP(total)} COP</span>
+                  <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm">
+                    <span className="text-slate-900">Total a liquidar:</span>
+                    <span className="text-indigo-600 font-mono">{formatearCOP(seleccionEnviada.total)} COP</span>
                   </div>
                 </div>
 
-                <div className="pt-2 flex flex-col gap-2">
+                <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs text-left leading-relaxed">
+                  💬 <b>Siguiente paso en Telegram:</b> Abre tu chat con el bot para revisar tu orden. Allí podrás <b>confirmar tu pedido para recibir el link de pago seguro</b>, o <b>editar / cancelar</b> si deseas cambiar algo.
+                </div>
+
+                <div className="pt-2 flex flex-col gap-2.5">
                   <button
                     type="button"
-                    onClick={irAlCheckout}
-                    className="w-full py-3 bg-[#ea7a24] hover:bg-[#d96a17] active:bg-[#c2590b] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => window.open('https://t.me/NectoPedidosBot', '_blank')}
+                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>Proceder al Pago con GlobalPay Redeban</span>
+                    <span>Volver al Bot de Telegram 🤖</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setModalCarritoAbierto(false)}
-                    className="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-medium text-center"
+                    onClick={() => {
+                      setModalCarritoAbierto(false);
+                      setSeleccionEnviada(null);
+                    }}
+                    className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-800 font-medium text-center"
                   >
                     Seguir explorando el catálogo
                   </button>
                 </div>
               </div>
+            ) : (
+              /* ── PASO 1: REVISIÓN DE PRODUCTOS Y CONFIRMAR PEDIDO ── */
+              <>
+                {/* Lista de productos */}
+                <div className="p-5 overflow-y-auto space-y-3 flex-1">
+                  {cantidadTotal === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                      El carrito está vacío. Agrega productos del catálogo.
+                    </div>
+                  ) : (
+                    Object.entries(carrito).map(([id, qty]) => {
+                      const prod = productos.find((p) => p.id === id);
+                      if (!prod) return null;
+                      return (
+                        <div
+                          key={id}
+                          className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80 gap-3"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={prod.imagen}
+                              alt={prod.nombre}
+                              className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                            />
+                            <div>
+                              <div className="text-xs font-bold text-slate-800">{prod.nombre}</div>
+                              <div className="text-xs text-slate-500 font-mono">
+                                {formatearCOP(prod.precio)} c/u
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-lg border border-slate-300">
+                              <button
+                                type="button"
+                                onClick={() => quitarItem(id)}
+                                className="text-xs text-slate-600 hover:text-black font-bold px-1"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <span className="text-xs font-bold font-mono px-1">{qty}</span>
+                              <button
+                                type="button"
+                                onClick={() => agregarItem(id)}
+                                className="text-xs text-indigo-600 hover:text-indigo-800 font-bold px-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                            <span className="text-xs font-bold text-slate-900 w-16 text-right font-mono">
+                              {formatearCOP(prod.precio * qty)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+
+                  {/* Datos de entrega */}
+                  {cantidadTotal > 0 && (
+                    <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200 text-xs space-y-1.5 mt-4">
+                      <div className="font-bold text-slate-800 flex items-center gap-1 mb-1">
+                        <Store className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Información de Entrega</span>
+                      </div>
+                      <div className="text-slate-600"><b>Cliente:</b> {cliente}</div>
+                      <div className="text-slate-600"><b>Modalidad:</b> {modalidad === 'domicilio' ? 'Envío a domicilio 🛵' : 'Retiro en local 🛍️'}</div>
+                      {modalidad === 'domicilio' && (
+                        <div className="text-slate-600"><b>Dirección:</b> {direccion}</div>
+                      )}
+                      <div className="text-slate-600"><b>Sede:</b> {sede}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Totales y Botón de Confirmación */}
+                {cantidadTotal > 0 && (
+                  <div className="p-5 bg-slate-50 border-t border-slate-200 space-y-3">
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Subtotal productos:</span>
+                        <span className="font-mono font-medium">{formatearCOP(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Costo de envío:</span>
+                        <span className="font-mono font-medium">
+                          {costoEnvio === 0 ? 'Gratis (Retiro en local)' : formatearCOP(costoEnvio)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-200">
+                        <span>Total pedido:</span>
+                        <span className="text-indigo-600 font-mono">{formatearCOP(total)} COP</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={enviarSeleccionATelegram}
+                        disabled={guardandoPedido}
+                        className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        {guardandoPedido ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Enviando al bot de Telegram...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Confirmar selección y enviar al Bot 📲</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setModalCarritoAbierto(false)}
+                        className="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-medium text-center"
+                      >
+                        Seguir explorando el catálogo
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

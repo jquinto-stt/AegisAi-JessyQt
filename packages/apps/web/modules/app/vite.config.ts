@@ -37,6 +37,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ""),
       },
+      "/webhooks": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      "/health": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
     },
   },
 });

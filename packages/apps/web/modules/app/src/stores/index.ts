@@ -14,7 +14,7 @@ export type {
   DireccionEntrega,
   MetodoPago,
 } from '@/stores/pedidos.store';
-export type { Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
+export type { Modalidad, Modalidad as ModalidadPedido } from '@/stores/pedidos.store';
 
 
 export { sessionStore, SessionStore, modulosOperablesDeSesion } from '@/stores/session.store';

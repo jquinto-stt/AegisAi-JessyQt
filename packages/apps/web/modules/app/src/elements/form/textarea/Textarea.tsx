@@ -117,6 +117,7 @@ const TextArea: React.FC<TextareaProps> = ({
   maxLength,
   "aria-label": ariaLabel,
   "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onChange) {
@@ -131,7 +132,7 @@ const TextArea: React.FC<TextareaProps> = ({
   if (disabled) {
     stateClasses = "bg-gray-100 opacity-50 text-gray-500 border-gray-300 cursor-not-allowed dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700";
   } else if (error) {
-    stateClasses = "bg-transparent border-gray-300 focus:border-error-300 focus:ring-3 focus:ring-error-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:focus:border-error-800";
+    stateClasses = "bg-transparent border-error-500 focus:border-error-300 focus:ring-3 focus:ring-error-500/20 dark:border-error-500 dark:bg-gray-900 dark:text-white/90 dark:focus:border-error-800";
   } else if (success) {
     stateClasses = "bg-transparent border-success-500 focus:border-success-300 focus:ring-3 focus:ring-success-500/20 dark:border-success-500 dark:bg-gray-900 dark:text-success-400 dark:focus:border-success-800";
   } else {
@@ -155,6 +156,7 @@ const TextArea: React.FC<TextareaProps> = ({
         maxLength={maxLength}
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedBy}
+        aria-invalid={ariaInvalid}
         className={textareaClasses}
       />
       {hint && (

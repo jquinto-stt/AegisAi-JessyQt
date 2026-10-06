@@ -224,8 +224,8 @@ export class TelegramFSM {
         return {
           nextState: 'SOLICITANDO_DIRECCION_PREVIA',
           nextDraft: activeDraft,
-          replyText: `Antes de compartirte la carta, necesito que me cuentes a dónde vamos a hacer el envío. 📍\n\n¿Cómo quieres indicar el domicilio? 👇\n\nPuedes escribir la dirección completa (calle, número y barrio):`,
-          buttons: ['Menú principal 📋'],
+          replyText: `Antes de compartirte la carta, necesito que me cuentes a dónde vamos a hacer el envío. 📍\n\n¿Cómo quieres indicar el domicilio? 👇\n\nPuedes escribir la dirección completa o presionar el botón para enviar tu ubicación actual desde el celular:`,
+          buttons: ['📍 Enviar mi ubicación actual', 'Retiro en local 🛍️', 'Menú principal 📋'],
         };
       }
 
@@ -240,27 +240,102 @@ export class TelegramFSM {
     if (currentState === 'SOLICITANDO_DIRECCION_PREVIA') {
       const activeDraft: CartDraft = draft || { lineas: [], modalidad: 'domicilio', direccion: null, updatedAt: new Date().toISOString() };
       const raw = (nlu.rawText || '').trim();
+      const rawNorm = normStr(raw);
 
-      if (!raw || raw.length < 3) {
+      // Si el cliente decide cambiar a retiro en local
+      if (
+        (nlu.intent === 'ELEGIR_MODALIDAD' && nlu.entities.modalidad === 'retiro') ||
+        rawNorm.includes('retiro') ||
+        rawNorm.includes('local')
+      ) {
+        activeDraft.modalidad = 'retiro';
+        activeDraft.direccion = null;
+        const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+        const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+        return {
+          nextState: 'CATALOGO_ACTIVO',
+          nextDraft: activeDraft,
+          replyText: `¡Listo! Tu orden será preparada para <b>retiro en local</b> 🛍️\n\nAquí tienes nuestra carta para que elijas lo que desees ordenar:\n\n${catTexto}\n\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+          buttons: [...botonesCat, 'Menú principal 📋'],
+        };
+      }
+
+      // Si desea volver al menú principal
+      if (rawNorm.includes('menu principal') || rawNorm === 'menu' || rawNorm === 'inicio') {
+        return this.mostrarMenuPrincipal(nombreRef, yaRegistrado);
+      }
+
+      // Si el texto parece una opción del menú o acción en vez de una dirección
+      const esAccionMenu = /^(?:realizar pedido|hacer pedido|hacer un pedido|pedir|ver menu|menu|ver catalogo|seguir pedido|consultar|estado)/i.test(rawNorm) || rawNorm.includes('realizar pedido') || rawNorm.includes('menu principal');
+      if (esAccionMenu || !raw || raw.length < 5) {
         return {
           nextState: 'SOLICITANDO_DIRECCION_PREVIA',
           nextDraft: activeDraft,
-          replyText: `Por favor indícanos una dirección válida de entrega (ej: <code>Calle 45 # 12-30</code>):`,
-          buttons: ['Menú principal 📋'],
+          replyText: `Para coordinar tu entrega a domicilio, por favor indícanos tu dirección exacta de entrega (ejemplo: <i>Calle 10 # 43-20, Poblado</i>) o presiona el botón para compartir tu ubicación GPS:`,
+          buttons: ['📍 Enviar mi ubicación actual', 'Retiro en local 🛍️', 'Menú principal 📋'],
         };
       }
 
       activeDraft.direccion = raw;
       activeDraft.modalidad = 'domicilio';
 
-      const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
-      const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+      return {
+        nextState: 'CONFIRMANDO_DIRECCION_PREVIA',
+        nextDraft: activeDraft,
+        replyText: `Muy bien. ¿Esta es tu dirección de entrega? 🙂\n\n📍 <b>Dirección:</b> <i>${raw}</i>\n\nSi ves algo mal, elige la segunda opción.`,
+        buttons: ['Sí, es esa ✅', 'Cambiar dirección ✏️', 'Retiro en local 🛍️'],
+      };
+    }
+
+    if (currentState === 'CONFIRMANDO_DIRECCION_PREVIA') {
+      const activeDraft: CartDraft = draft || { lineas: [], modalidad: 'domicilio', direccion: null, updatedAt: new Date().toISOString() };
+      const rawNorm = normStr(nlu.rawText || '');
+
+      // Cambio a retiro en local
+      if (rawNorm.includes('retiro') || rawNorm.includes('local')) {
+        activeDraft.modalidad = 'retiro';
+        activeDraft.direccion = null;
+        const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+        const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+        return {
+          nextState: 'CATALOGO_ACTIVO',
+          nextDraft: activeDraft,
+          replyText: `¡Listo! Cambiamos tu pedido para <b>retiro en local</b> 🛍️\n\nAquí tienes nuestra carta para que elijas lo que más te guste:\n\n${catTexto}\n\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+          buttons: [...botonesCat, 'Menú principal 📋'],
+        };
+      }
+
+      const esAfirmativo = /^(?:si|sí|es esa|correcto|esta bien|está bien|ok|confirmo|si, es esa)/i.test(rawNorm) || rawNorm.includes('es esa') || rawNorm.includes('bien') || rawNorm.includes('correcto');
+      const esCambio = rawNorm.includes('cambiar') || rawNorm.includes('corregir') || rawNorm.includes('no');
+
+      if (esAfirmativo) {
+        const catTexto = this.formatearCatalogo(catalogo, perfil.etiquetaCatalogo);
+        const botonesCat = catalogo.slice(0, 4).map((c, idx) => `${idx + 1}. ${c.nombre.slice(0, 18)}`);
+
+        return {
+          nextState: 'CATALOGO_ACTIVO',
+          nextDraft: activeDraft,
+          replyText: `¡Perfecto! Registramos tu dirección en <i>${activeDraft.direccion}</i> 📍\n\nAquí tienes nuestra carta para que elijas lo que más te guste:\n\n${catTexto}\n\nPuedes seleccionar un producto de la lista o indicarme qué deseas pedir.`,
+          buttons: [...botonesCat, 'Menú principal 📋'],
+        };
+      }
+
+      if (esCambio) {
+        return {
+          nextState: 'SOLICITANDO_DIRECCION_PREVIA',
+          nextDraft: activeDraft,
+          replyText: `Por favor escribe tu dirección de entrega o presiona el botón para compartir tu ubicación GPS:`,
+          buttons: ['📍 Enviar mi ubicación actual', 'Retiro en local 🛍️', 'Menú principal 📋'],
+        };
+      }
 
       return {
-        nextState: 'CATALOGO_ACTIVO',
+        nextState: 'CONFIRMANDO_DIRECCION_PREVIA',
         nextDraft: activeDraft,
-        replyText: `¡Excelente! Registramos tu dirección de envío en <i>${raw}</i> 📍\n\nAquí tienes nuestra carta para que elijas lo que más te guste:\n\n${catTexto}\n\nPuedes seleccionar un producto o indicarme qué deseas ordenar.`,
-        buttons: [...botonesCat, 'Menú principal 📋'],
+        replyText: `¿Confirmas que tu dirección de entrega es <i>${activeDraft.direccion}</i>?`,
+        buttons: ['Sí, es esa ✅', 'Cambiar dirección ✏️', 'Retiro en local 🛍️'],
       };
     }
 
@@ -346,9 +421,8 @@ export class TelegramFSM {
         return {
           nextState: 'SOLICITANDO_DIRECCION',
           nextDraft: draft,
-          replyText: 'Por favor compártenos tu dirección completa de entrega en Colombia (calle, número y barrio):',
-          buttons: [],
-          removeKeyboard: true,
+          replyText: 'Por favor compártenos tu dirección de entrega en Colombia o presiona el botón para enviar tu ubicación actual:',
+          buttons: ['📍 Enviar mi ubicación actual', 'Menú principal 📋'],
         };
       }
 
@@ -433,8 +507,20 @@ export class TelegramFSM {
       if (listaPedidos.length > 0) {
         const resumen = listaPedidos.map(p => {
           let estadoDesc = p.estado;
-          if (p.estado === 'nuevo' || p.estado === 'pendiente') estadoDesc = `${p.estado} (pendiente de pago)`;
-          return `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString('es-CO')} COP</code>\n  Estado: <i>${estadoDesc}</i>`;
+          if (p.estado === 'confirmado') {
+            estadoDesc = 'Confirmado (Pago recibido) 👨‍🍳 En preparación';
+          } else if (p.estado === 'en_preparacion') {
+            estadoDesc = 'En preparación en cocina 👨‍🍳';
+          } else if (p.estado === 'en_camino') {
+            estadoDesc = 'En camino a tu dirección 🛵';
+          } else if (p.estado === 'entregado') {
+            estadoDesc = 'Entregado con éxito ✅';
+          } else if (p.estado === 'cancelado') {
+            estadoDesc = 'Cancelado ❌';
+          } else if (p.estado === 'nuevo' || p.estado === 'pendiente') {
+            estadoDesc = 'Pendiente de pago ⏳';
+          }
+          return `• <b>Orden #${p.numero}</b> — <code>$${Number(p.total).toLocaleString('es-CO')} COP</code>\n  Estado: <b>${estadoDesc}</b>`;
         }).join('\n\n');
 
         const pedidosCancelables = listaPedidos.filter(p => p.estado === 'nuevo' || p.estado === 'pendiente');
@@ -448,7 +534,7 @@ export class TelegramFSM {
         return {
           nextState: currentState,
           nextDraft: draft,
-          replyText: `<b>TUS PEDIDOS REGISTRADOS</b>\n<blockquote>${resumen}</blockquote>\n¿Deseas realizar un nuevo pedido, cancelar alguna orden o volver al menú?`,
+          replyText: `<b>ESTADO DE TUS PEDIDOS</b>\n<blockquote>${resumen}</blockquote>\n¿Deseas realizar un nuevo pedido, consultar alguna duda o volver al menú principal?`,
           buttons: ['Realizar pedido 🥪', ...cancelButtons, 'Menú principal 📋'],
         };
       }
@@ -568,6 +654,14 @@ export class TelegramFSM {
     // Corrección de cantidad
     // ─────────────────────────────────────────────────────────────
     if (nlu.intent === 'MODIFICAR_CANTIDAD' && draft && draft.lineas.length > 0) {
+      if (!nlu.entities.cantidad && (nlu.rawText.toLowerCase().includes('modificar') || nlu.rawText.toLowerCase().includes('cambiar') || nlu.rawText.toLowerCase().includes('editar'))) {
+        return {
+          nextState: 'CONFIRMANDO_PEDIDO',
+          nextDraft: draft,
+          replyText: `¿Qué te gustaría modificar de tu pedido?\n\n• Puedes escribir por ejemplo: <i>"cambiar a 2 hamburguesas"</i> o <i>"quitar papas"</i>.\n• O abrir de nuevo el catálogo interactivo para ajustar los productos a tu gusto:`,
+          buttons: ['Ver menú 📜', 'Confirmar y Pagar 💳', '❌ Cancelar orden'],
+        };
+      }
       const nuevaCantidad = nlu.entities.cantidad || 1;
       const ultimaLinea = draft.lineas[draft.lineas.length - 1];
       ultimaLinea.cantidad = nuevaCantidad;
@@ -578,8 +672,8 @@ export class TelegramFSM {
       return {
         nextState: siguienteEstado,
         nextDraft: draft,
-        replyText: `<b>CANTIDAD ACTUALIZADA</b>\n<blockquote>${nuevaCantidad}x ${ultimaLinea.nombre}\n<b>Nuevo total:</b> <code>$${total.toLocaleString('es-CO')} COP</code></blockquote>\n${draft.modalidad ? '¿Confirmas tu pedido modificado?' : '¿Deseas recibirlo a domicilio o prefieres retirarlo en local?'}`,
-        buttons: draft.modalidad ? ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'] : ['Envío a domicilio', 'Retiro en local'],
+        replyText: `<b>CANTIDAD ACTUALIZADA</b>\n<blockquote>${nuevaCantidad}x ${ultimaLinea.nombre}\n<b>Nuevo total:</b> <code>$${total.toLocaleString('es-CO')} COP</code></blockquote>\n${draft.modalidad ? '¿Estás a gusto con tu orden o deseas cambiar algo más?' : '¿Deseas recibirlo a domicilio o prefieres retirarlo en local?'}`,
+        buttons: draft.modalidad ? ['Confirmar y Pagar 💳', '✏️ Modificar pedido', '❌ Cancelar orden'] : ['Envío a domicilio', 'Retiro en local'],
       };
     }
 
@@ -835,16 +929,15 @@ export class TelegramFSM {
         return {
           nextState: 'CONFIRMANDO_PEDIDO',
           nextDraft: draft,
-          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
-          buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
+          replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Retiro en local${destinatarioStr}</blockquote>\n¿Estás a gusto con tu orden o deseas cambiar algo?`,
+          buttons: ['Confirmar y Pagar 💳', '✏️ Modificar pedido', '❌ Cancelar orden'],
         };
       } else {
         return {
           nextState: 'SOLICITANDO_DIRECCION',
           nextDraft: draft,
-          replyText: `Por favor indícanos tu <b>dirección completa de entrega</b> en Colombia (calle, número, apartamento o referencias):`,
-          buttons: [],
-          removeKeyboard: true,
+          replyText: `Por favor indícanos tu <b>dirección completa de entrega</b> en Colombia o presiona el botón para compartir tu ubicación actual:`,
+          buttons: ['📍 Enviar mi ubicación actual', 'Menú principal 📋'],
         };
       }
     }
@@ -863,8 +956,8 @@ export class TelegramFSM {
       return {
         nextState: 'CONFIRMANDO_PEDIDO',
         nextDraft: draft,
-        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i>${destinatarioStr}</blockquote>\n¿Confirmas tu orden para generar el enlace de pago seguro?`,
-        buttons: ['Confirmar pedido', 'Modificar pedido', 'Cancelar orden'],
+        replyText: `<b>RESUMEN DEL PEDIDO</b>\n<blockquote>${this.formatearLineas(draft)}\n──────────────────────────\n<b>Subtotal:</b> <code>$${subtotal.toLocaleString('es-CO')} COP</code>\n<b>Envío:</b> <code>$${costoEnvio.toLocaleString('es-CO')} COP</code>\n<b>Total a pagar:</b> <code>$${total.toLocaleString('es-CO')} COP</code>\n<b>Entrega:</b> Domicilio en <i>${draft.direccion}</i>${destinatarioStr}</blockquote>\n¿Estás a gusto con tu orden o deseas cambiar algo?`,
+        buttons: ['Confirmar y Pagar 💳', '✏️ Modificar pedido', '❌ Cancelar orden'],
       };
     }
 
@@ -1164,7 +1257,7 @@ export class TelegramFSM {
     // 6. Paso: Tratamiento de datos (Privacidad / Habeas Data)
     if (currentState === 'ONBOARDING_PRIVACIDAD') {
       const textNormPriv = normStr(nlu.rawText || '');
-      const autoriza = /^(?:si|sí|autorizo|acepto|de acuerdo|claro|si, autorizo)/i.test(textNormPriv) || textNormPriv.includes('autorizo') || textNormPriv.includes('acepto');
+      const autoriza = /^(?:si|sí|autorizo|acepto|de acuerdo|estoy de acuerdo|claro|si, autorizo|si estoy de acuerdo)/i.test(textNormPriv) || textNormPriv.includes('autorizo') || textNormPriv.includes('acepto') || textNormPriv.includes('acuerdo');
       const noAutoriza = /^(?:no|rechazo|no autorizo)/i.test(textNormPriv) || textNormPriv.includes('no autorizo');
 
       if (autoriza) {

@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { TelegramDAO } from './TelegramDAO.js';
 import type { TelegramBot } from './TelegramBot.js';
 import { TelegramNLU } from './TelegramNLU.js';
@@ -17,6 +19,10 @@ export interface TelegramIncomingMessage {
     firstName?: string;
     lastName?: string;
     userId?: number;
+  };
+  location?: {
+    latitude: number;
+    longitude: number;
   };
 }
 
@@ -60,7 +66,8 @@ export class TelegramHandler {
 
     // 2. Comandos de operador y estado
     const normText = text.toLowerCase().trim();
-    const esComandoReinicio = normText === '/start' || normText.startsWith('/start') || normText === '/reiniciar' || normText === 'reiniciar';
+    const esComandoReinicio = normText === '/start' || normText.startsWith('/start') || normText === '/reiniciar' || normText === 'reiniciar' || normText === '/reset' || normText === 'reset';
+    const esReinicioTotal = normText === '/reiniciar' || normText === 'reiniciar' || normText === '/reset' || normText === 'reset';
     const quiereVolverAlBot = esComandoReinicio || ['volver al bot', 'bot', 'menu', 'catalogo', 'hola', 'nuevo pedido', 'pedir', 'inicio', 'menu principal'].some(w => normText.includes(w));
 
     if (modo === 'humano' && !quiereVolverAlBot) {
@@ -75,19 +82,19 @@ export class TelegramHandler {
     }
 
     if (esComandoReinicio) {
-      if (estadoConv.clientePerfil?.completado) {
-        await this.dao.guardarEstadoConversacion(conversacionId, 'IDLE', null, {
-          clientePerfil: estadoConv.clientePerfil,
-        });
-        estadoConv.fsmState = 'IDLE';
-        estadoConv.draft = null;
-      } else {
+      if (esReinicioTotal || !estadoConv.clientePerfil?.completado) {
         await this.dao.guardarEstadoConversacion(conversacionId, 'ONBOARDING_NOMBRE', null, {
           clientePerfil: null,
         });
         estadoConv.fsmState = 'ONBOARDING_NOMBRE';
         estadoConv.draft = null;
         estadoConv.clientePerfil = null;
+      } else {
+        await this.dao.guardarEstadoConversacion(conversacionId, 'IDLE', null, {
+          clientePerfil: estadoConv.clientePerfil,
+        });
+        estadoConv.fsmState = 'IDLE';
+        estadoConv.draft = null;
       }
     }
 
@@ -99,38 +106,82 @@ export class TelegramHandler {
 
     // 5. Inferencia de Intención y Entidades
     let nluResult: NLUResult | null = null;
-    const enOnboarding = estadoConv.fsmState.startsWith('ONBOARDING_');
-    const mencionaInventarioOAsesor = ['inventario', 'stock', 'bodega', 'alerta', 'asesor', 'humano'].some(w => normText.includes(w));
 
-    if (enOnboarding && !mencionaInventarioOAsesor) {
-      nluResult = {
-        intent: esComandoReinicio ? 'REINICIAR_PEDIDO' : 'DESCONOCIDO',
-        confidence: 1.0,
-        entities: {},
-        rawText: text,
-      };
-    } else {
-      // Capa 1: FAST-PATH DETERMINISTA (< 1ms)
-      nluResult = this.nlu.interpretarFastPath(text, catalogo, estadoConv.fsmState);
+    // 5.0 Procesamiento prioritario de ubicación GPS en tiempo real
+    if (msg.location) {
+      const { latitude, longitude } = msg.location;
+      if (estadoConv.fsmState === 'SOLICITANDO_DIRECCION_PREVIA' || estadoConv.fsmState === 'SOLICITANDO_DIRECCION') {
+        const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        const dirStr = `Ubicación GPS (${latitude.toFixed(5)}, ${longitude.toFixed(5)}) - ${mapsLink}`;
+        nluResult = {
+          intent: 'DAR_DIRECCION',
+          confidence: 1.0,
+          entities: { direccion: dirStr },
+          rawText: dirStr,
+        };
+      } else {
+        const bodegas = await this.dao.obtenerBodegas();
+        let textoResultado = '';
+        if (bodegas.length === 0) {
+          textoResultado = `📍 Recibimos tu ubicación actual (<code>${latitude.toFixed(4)}, ${longitude.toFixed(4)}</code>).\n\nEn este momento no hay tiendas o bodegas activas registradas en la organización.`;
+        } else {
+          const items = bodegas.map(b => {
+            const badge = b.principal ? ' ⭐ (Sede Principal)' : '';
+            const dirText = b.direccion ? `\n   📍 Dirección: <i>${b.direccion}</i>` : '';
+            const destQuery = encodeURIComponent((b.direccion || b.nombre) + ', Colombia');
+            const rutaUrl = `https://www.google.com/maps/dir/?api=1&origin=${latitude},${longitude}&destination=${destQuery}`;
+            return `• <b>${b.nombre}</b>${badge}${dirText}\n   🗺️ <a href="${rutaUrl}">Ver ruta en Google Maps</a>`;
+          }).join('\n\n');
 
-      // Capa 2: Si es lenguaje natural libre, invocar NLU semántico real con contexto multi-turno
-      if (!nluResult) {
-        const historialPrevio = await this.dao.obtenerHistorialReciente(conversacionId, 4);
-        nluResult = await this.cognitiveEngine.extraerIntencionYEntidades({
-          textoUsuario: text,
-          catalogo,
-          perfil,
-          estadoActual: estadoConv.fsmState,
-          draft: estadoConv.draft,
-          historialPrevio,
-          esOperador: true, // Modo desarrollo: sin obstáculo de login
-          tieneInventarios: modulos.tieneInventarios,
-          tienePedidos: modulos.tienePedidos,
-        });
+          textoResultado = `📍 <b>¡Ubicación recibida con éxito!</b>\n` +
+            `<i>Coordenadas: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}</i>\n\n` +
+            `Encontramos las siguientes sucursales disponibles para ti:\n\n` +
+            items +
+            `\n\n──────────────────────────\n¿Deseas realizar un pedido a domicilio o para retiro en local?`;
+        }
 
-        // Capa 3: Fallback de emergencia local
+        const botones = ['Realizar pedido 🥪', 'Seguir pedido 📌', 'Menú principal 📋'];
+        await this.bot.sendMessage(chatId, textoResultado, { buttons: botones });
+        await this.dao.guardarMensaje(conversacionId, 'asistente', textoResultado);
+        await guardarMsgPromise;
+        return;
+      }
+    }
+
+    if (!nluResult) {
+      const enOnboarding = estadoConv.fsmState.startsWith('ONBOARDING_');
+      const mencionaInventarioOAsesor = ['inventario', 'stock', 'bodega', 'alerta', 'asesor', 'humano'].some(w => normText.includes(w));
+
+      if (enOnboarding && !mencionaInventarioOAsesor) {
+        nluResult = {
+          intent: esComandoReinicio ? 'REINICIAR_PEDIDO' : 'DESCONOCIDO',
+          confidence: 1.0,
+          entities: {},
+          rawText: text,
+        };
+      } else {
+        // Capa 1: FAST-PATH DETERMINISTA (< 1ms)
+        nluResult = this.nlu.interpretarFastPath(text, catalogo, estadoConv.fsmState);
+
+        // Capa 2: Si es lenguaje natural libre, invocar NLU semántico real con contexto multi-turno
         if (!nluResult) {
-          nluResult = this.nlu.interpretarFallbackLocal(text, catalogo, estadoConv.fsmState);
+          const historialPrevio = await this.dao.obtenerHistorialReciente(conversacionId, 4);
+          nluResult = await this.cognitiveEngine.extraerIntencionYEntidades({
+            textoUsuario: text,
+            catalogo,
+            perfil,
+            estadoActual: estadoConv.fsmState,
+            draft: estadoConv.draft,
+            historialPrevio,
+            esOperador: true, // Modo desarrollo: sin obstáculo de login
+            tieneInventarios: modulos.tieneInventarios,
+            tienePedidos: modulos.tienePedidos,
+          });
+
+          // Capa 3: Fallback de emergencia local
+          if (!nluResult) {
+            nluResult = this.nlu.interpretarFallbackLocal(text, catalogo, estadoConv.fsmState);
+          }
         }
       }
     }
@@ -142,7 +193,9 @@ export class TelegramHandler {
       nluResult.intent === 'CONSULTAR_STOCK_INVENTARIO' ||
       nluResult.intent === 'CONSULTAR_ALERTAS_INVENTARIO' ||
       nluResult.intent === 'CONSULTAR_RESUMEN_INVENTARIO' ||
-      nluResult.intent === 'CONSULTAR_BODEGAS';
+      nluResult.intent === 'CONSULTAR_BODEGAS' ||
+      nluResult.intent === 'BUSCAR_SUCURSALES_GPS' ||
+      nluResult.intent === 'VER_TODAS_BODEGAS';
 
     if (esIntentInventario) {
 
@@ -234,24 +287,47 @@ export class TelegramHandler {
       }
 
       if (nluResult.intent === 'CONSULTAR_BODEGAS') {
+        const textoIntro = `Vamos a buscar tus sucursales más cercanas. 🔍📍\n\n` +
+          `¿Cómo deseas buscar tu sede? 👇\n\n` +
+          `Puedes compartir tu <b>ubicación actual</b> desde tu celular para indicarte la ruta a la más cercana, o consultar la lista completa de tiendas.`;
+        const botones = ['📍 Por ubicación actual', '🏬 Ver todas las sedes', 'Menú principal 📋'];
+
+        await this.bot.sendMessage(chatId, textoIntro, { buttons: botones });
+        await this.dao.guardarMensaje(conversacionId, 'asistente', textoIntro);
+        await guardarMsgPromise;
+        return;
+      }
+
+      if (nluResult.intent === 'BUSCAR_SUCURSALES_GPS') {
+        const textoPedirUbicacion = `Para encontrar tu tienda más cercana, presiona el botón de abajo para <b>compartir tu ubicación actual</b> desde tu celular 📱📍👇`;
+        await this.bot.sendMessage(chatId, textoPedirUbicacion, {
+          requestLocationButton: '📍 Enviar mi ubicación actual',
+          buttons: ['🏬 Ver todas las sedes', 'Menú principal 📋'],
+        });
+        await this.dao.guardarMensaje(conversacionId, 'asistente', textoPedirUbicacion);
+        await guardarMsgPromise;
+        return;
+      }
+
+      if (nluResult.intent === 'VER_TODAS_BODEGAS') {
         const bodegas = await this.dao.obtenerBodegas();
         let textoBodegas = '';
         if (bodegas.length === 0) {
-          textoBodegas = `🏬 No hay bodegas activas registradas en la organización.`;
+          textoBodegas = `🏬 No hay bodegas o tiendas activas registradas en la organización.`;
         } else {
           const lista = bodegas.map(b => {
-            const badge = b.principal ? ' ⭐ (Principal)' : '';
+            const badge = b.principal ? ' ⭐ (Sede Principal)' : '';
             const dir = b.direccion ? `\n   📍 <i>${b.direccion}</i>` : '';
             return `• <b>${b.nombre}</b>${badge}${dir}`;
           }).join('\n\n');
 
-          textoBodegas = `🏬 <b>Bodegas y Sedes de Almacenamiento</b>\n` +
+          textoBodegas = `🏬 <b>Sucursales y Sedes de Atención</b>\n` +
             `──────────────────────────\n` +
             lista +
             `\n──────────────────────────`;
         }
 
-        const botonesSugeridos = ['Realizar pedido 🥪', 'Seguir pedido 📌', 'Menú principal 📋'];
+        const botonesSugeridos = ['📍 Por ubicación actual', 'Realizar pedido 🥪', 'Menú principal 📋'];
 
         await this.bot.sendMessage(chatId, textoBodegas, { buttons: botonesSugeridos });
         await this.dao.guardarMensaje(conversacionId, 'asistente', textoBodegas);
@@ -290,6 +366,16 @@ export class TelegramHandler {
     let nextState = transition.nextState;
     const removeKeyboard = Boolean(transition.removeKeyboard);
     const clientePerfilSiguiente = transition.clientePerfil !== undefined ? transition.clientePerfil : estadoConv.clientePerfil;
+    let baseUrl = process.env.CHECKOUT_BASE_URL || 'http://localhost:6020';
+    try {
+      const linkPath = path.resolve(process.cwd(), 'scratch/link.txt');
+      if (fs.existsSync(linkPath)) {
+        const link = fs.readFileSync(linkPath, 'utf-8').trim();
+        if (link && link.startsWith('https://')) {
+          baseUrl = link;
+        }
+      }
+    } catch {}
 
     // Si el usuario acaba de completar el onboarding, actualizar contacto en BD
     if (clientePerfilSiguiente?.completado && (!estadoConv.clientePerfil || !estadoConv.clientePerfil.completado)) {
@@ -329,8 +415,7 @@ export class TelegramHandler {
         ? `\n<b>Destinatario:</b> ${draftParaCrear.destinatario.nombre || 'Otra persona'} (Tel: ${draftParaCrear.destinatario.telefono || 'Sin especificar'}) 🎁`
         : '';
 
-      const baseUrl = process.env.CHECKOUT_BASE_URL || 'https://total-authentic-inspector-farms.trycloudflare.com';
-      const checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || '')}`;
+      const checkoutLink = `${baseUrl}/checkout/${pedidoCreado.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoCreado.total}&email=${encodeURIComponent(clientePerfilSiguiente?.email || '')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(draftParaCrear.modalidad || 'retiro')}&direccion=${encodeURIComponent(draftParaCrear.direccion || '')}`;
 
       textoFinal = `<b>PEDIDO REGISTRADO CON ÉXITO</b>\n<blockquote>` +
         `<b>Orden:</b> <code>#${pedidoCreado.numero}</code>\n` +
@@ -346,6 +431,14 @@ export class TelegramHandler {
       botonesFinales = ['Estado de mis pedidos', 'Hacer otro pedido', 'Hablar con asesor'];
       borradorFinal = null;
       nextState = 'IDLE';
+
+      if (baseUrl.startsWith('https://')) {
+        customReplyMarkup = {
+          inline_keyboard: [
+            [{ text: '💳 Pagar con GlobalPay Redeban', url: checkoutLink }],
+          ],
+        };
+      }
     }
 
     // B. Si la FSM canceló un pedido ya existente
@@ -358,16 +451,21 @@ export class TelegramHandler {
       await this.dao.actualizarModoAtencion(conversacionId, 'humano');
     }
 
-    // D. Botón interactivo [Ver catálogo] para catálogo externo si aplica
-    let customReplyMarkup: any = undefined;
-    if (nextState === 'CATALOGO_ACTIVO' || (textoFinal && (textoFinal.toLowerCase().includes('la carta') || textoFinal.toLowerCase().includes('nuestra carta') || textoFinal.toLowerCase().includes('catálogo') || textoFinal.toLowerCase().includes('catalogo')))) {
-      const baseUrl = process.env.CHECKOUT_BASE_URL || 'https://total-authentic-inspector-farms.trycloudflare.com';
-      const menuUrl = `${baseUrl}/menu?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent('Sede Principal')}&direccion=${encodeURIComponent(borradorFinal?.direccion || 'Medellín')}`;
-      customReplyMarkup = {
-        inline_keyboard: [
-          [{ text: '🔗 Ver catálogo', url: menuUrl }],
-        ],
-      };
+    // D. Enlace de catálogo o pago seguro si aplica (sin sobreescribir el teclado de opciones)
+    // SOLO cuando el usuario está explícitamente en el catálogo activo (NUNCA en el menú principal)
+    if (nextState === 'CATALOGO_ACTIVO') {
+      const nombreCliente = clientePerfilSiguiente?.nombre || estadoConv.clientePerfil?.nombre || fullName || 'Cliente';
+      if (baseUrl.startsWith('https://')) {
+        const menuUrl = `${baseUrl}/menu?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent('Sede Principal')}&direccion=${encodeURIComponent(borradorFinal?.direccion || 'Medellín')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(borradorFinal?.modalidad || 'retiro')}`;
+        textoFinal += `\n\n🔗 <b>Catálogo interactivo:</b> <a href="${menuUrl}">Abrir catálogo en línea</a>`;
+      }
+    } else if (nluResult.intent === 'CONSULTA_ESTADO_PEDIDO') {
+      const pedidoPendiente = pedidosCliente.find(p => p.estado === 'nuevo' || p.estado === 'pendiente');
+      if (pedidoPendiente && baseUrl.startsWith('https://')) {
+        const nombreCliente = clientePerfilSiguiente?.nombre || estadoConv.clientePerfil?.nombre || fullName || 'Cliente';
+        const payUrl = `${baseUrl}/checkout/${pedidoPendiente.numero}?cliente=${encodeURIComponent(nombreCliente)}&total=${pedidoPendiente.total}&chatId=${encodeURIComponent(chatId)}`;
+        textoFinal += `\n\n💳 <b>Pagar orden #${pedidoPendiente.numero}:</b> <a href="${payUrl}">Pagar ahora en línea</a>`;
+      }
     }
 
     // 9. Persistir estado y enviar respuesta a Telegram de forma concurrente
@@ -379,6 +477,12 @@ export class TelegramHandler {
       }),
       guardarMsgPromise,
     ]);
+
+    if (!envio.ok) {
+      console.error(`[TelegramHandler] ❌ Error enviando mensaje a [${chatId}]:`, envio.error);
+    } else {
+      console.log(`[TelegramHandler] 📤 Respuesta enviada con éxito a [${chatId}] (ID: ${envio.messageId})`);
+    }
 
     // 10. Guardar mensaje saliente del asistente en segundo plano
     if (envio.messageId) {

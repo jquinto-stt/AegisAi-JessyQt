@@ -53,7 +53,7 @@ export class TelegramNLU {
       return { intent: 'VER_CATALOGO', confidence: 1.0, entities: {}, rawText: raw };
     }
 
-    // 2.1 Botón Hub 2: Seguir Pedido
+    // 2.1 Botón Hub 2: Seguir Pedido / Consulta de Estado / Ya pagué
     if (
       norm === 'seguir pedido 📌' ||
       norm === 'seguir pedido' ||
@@ -66,7 +66,16 @@ export class TelegramNLU {
       norm === 'ver pedidos' ||
       norm === 'pedidos' ||
       norm === 'estado de mis pedidos' ||
-      norm === 'consultar pedidos'
+      norm === 'consultar pedidos' ||
+      norm === 'ya pague' ||
+      norm === 'ya pagué' ||
+      norm === 'pague' ||
+      norm === 'pagué' ||
+      norm === 'pago realizado' ||
+      norm.includes('ya pague') ||
+      norm.includes('ya pagué') ||
+      norm.includes('realice el pago') ||
+      norm.includes('hice el pago')
     ) {
       return { intent: 'CONSULTA_ESTADO_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
     }
@@ -84,6 +93,35 @@ export class TelegramNLU {
       norm === 'bodegas'
     ) {
       return { intent: 'CONSULTAR_BODEGAS', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    // 2.2.1 Sub-opciones de búsqueda de sucursales
+    if (
+      norm === 'por ubicacion actual 📍' ||
+      norm === '📍 por ubicacion actual' ||
+      norm === 'por ubicacion actual' ||
+      norm === 'ubicacion actual' ||
+      norm === 'enviar mi ubicacion actual' ||
+      norm === '📍 enviar mi ubicacion actual' ||
+      norm === 'mi ubicacion' ||
+      norm === 'ubicacion gps' ||
+      norm === 'gps' ||
+      norm === 'cerca de mi' ||
+      norm === 'la mas cercana'
+    ) {
+      return { intent: 'BUSCAR_SUCURSALES_GPS', confidence: 1.0, entities: {}, rawText: raw };
+    }
+
+    if (
+      norm === 'ver todas las sedes' ||
+      norm === '🏬 ver todas las sedes' ||
+      norm === 'ver todas las sucursales' ||
+      norm === 'todas las sedes' ||
+      norm === 'todas las sucursales' ||
+      norm === 'ver todas' ||
+      norm === 'lista de tiendas'
+    ) {
+      return { intent: 'VER_TODAS_BODEGAS', confidence: 1.0, entities: {}, rawText: raw };
     }
 
     // 2.3 Botón Hub 4: Hacer una consulta / Hablar con Asesor
@@ -185,7 +223,21 @@ export class TelegramNLU {
       return { intent: 'VER_CATALOGO', confidence: 1.0, entities: {}, rawText: raw };
     }
 
-    if (norm === '✅ confirmar pedido' || norm === 'confirmar pedido' || norm === 'si confirmar' || norm === 'confirmar orden') {
+    if (
+      norm === '✅ confirmar pedido' ||
+      norm === 'confirmar pedido' ||
+      norm === 'si confirmar' ||
+      norm === 'confirmar orden' ||
+      norm === 'confirmar y pagar 💳' ||
+      norm === 'confirmar y pagar' ||
+      norm.includes('confirmar y pagar') ||
+      norm === 'estoy feliz con el pedido' ||
+      norm === 'si estoy feliz' ||
+      norm === 'estoy a gusto' ||
+      norm === 'estoy de acuerdo' ||
+      norm === 'asi esta bien' ||
+      norm === 'así está bien'
+    ) {
       return { intent: 'CONFIRMAR_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
     }
     if (norm === 'si, cancelar pedido ❌' || norm === 'si, cancelar pedido' || norm === 'si cancelar' || norm === 'si cancelar orden') {
@@ -198,10 +250,27 @@ export class TelegramNLU {
     if (matchCancelNum) {
       return { intent: 'CANCELAR_PEDIDO', confidence: 1.0, entities: { numeroPedido: matchCancelNum[1] }, rawText: raw };
     }
-    if (norm === '❌ cancelar' || norm === 'cancelar pedido ❌' || norm === 'cancelar pedido' || norm === '❌ cancelar pedido' || norm === 'cancelar' || norm === 'cancelar orden') {
+    if (
+      norm === '❌ cancelar' ||
+      norm === 'cancelar pedido ❌' ||
+      norm === 'cancelar pedido' ||
+      norm === '❌ cancelar pedido' ||
+      norm === 'cancelar' ||
+      norm === 'cancelar orden' ||
+      norm === '❌ cancelar orden'
+    ) {
       return { intent: 'CANCELAR_PEDIDO', confidence: 1.0, entities: {}, rawText: raw };
     }
-    if (norm === '✏️ modificar' || norm === 'modificar' || norm === 'modificar pedido' || norm === 'modificar orden') {
+    if (
+      norm === '✏️ modificar' ||
+      norm === 'modificar' ||
+      norm === 'modificar pedido' ||
+      norm === '✏️ modificar pedido' ||
+      norm === 'modificar orden' ||
+      norm === 'cambiar algo' ||
+      norm === 'quiero cambiar algo' ||
+      norm === 'editar pedido'
+    ) {
       return { intent: 'MODIFICAR_CANTIDAD', confidence: 1.0, entities: {}, rawText: raw };
     }
 

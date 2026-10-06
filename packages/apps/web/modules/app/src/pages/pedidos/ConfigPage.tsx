@@ -724,6 +724,23 @@ export const ConfigPage = observer(() => {
                       />
 
                       <ToggleRow
+                        titulo="Link de pago digital (Tarjeta y PSE)"
+                        descripcion="Genera un enlace de pago en línea para cobrar con tarjeta o PSE."
+                        control={
+                          <div className="flex items-center gap-2.5">
+                            <Badge color={draft.datosBancarios?.linkPagoActivo !== false ? "success" : "light"} size="sm">
+                              {draft.datosBancarios?.linkPagoActivo !== false ? "Activo" : "Inactivo"}
+                            </Badge>
+                            <Switch
+                              checked={draft.datosBancarios?.linkPagoActivo !== false}
+                              onChange={(v) => setDatoBancario("linkPagoActivo", v)}
+                              aria-label="Aceptar link de pago"
+                            />
+                          </div>
+                        }
+                      />
+
+                      <ToggleRow
                         titulo="Efectivo en local (Retiro / En sitio)"
                         descripcion="Cobro en caja al momento de retirar o consumir en el local."
                         control={
@@ -742,6 +759,102 @@ export const ConfigPage = observer(() => {
                     </div>
                   </Card>
                 </div>
+
+                {/* Pasarela y Configuración del Link de Pago */}
+                {draft.datosBancarios?.linkPagoActivo !== false && (
+                  <Card>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardHead>Pasarela y Link de Pago Online</CardHead>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Define si usarás la pasarela integrada GlobalPay Redeban o tu propio enlace externo (Wompi, Bold, Mercado Pago, ePayco).
+                        </p>
+                      </div>
+                      <Badge color="primary" size="sm">Pasarela Activa</Badge>
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                          Proveedor del Link de Pago
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => setDatoBancario("linkPagoTipo", "globalpay")}
+                            className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                              (draft.datosBancarios?.linkPagoTipo ?? "globalpay") === "globalpay"
+                                ? "border-brand-500 bg-brand-50/60 dark:border-brand-500 dark:bg-brand-950/30"
+                                : "border-gray-200 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-sm font-bold text-gray-800 dark:text-white">
+                                GlobalPay de Redeban (Integrado)
+                              </span>
+                              <Badge color="success" size="xs">Recomendado</Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Checkout seguro integrado con soporte para tarjetas de crédito, débito y PSE directo con bancos colombianos.
+                            </p>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setDatoBancario("linkPagoTipo", "personalizado")}
+                            className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                              draft.datosBancarios?.linkPagoTipo === "personalizado"
+                                ? "border-brand-500 bg-brand-50/60 dark:border-brand-500 dark:bg-brand-950/30"
+                                : "border-gray-200 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-sm font-bold text-gray-800 dark:text-white">
+                                Link externo (Wompi, Bold, Mercado Pago)
+                              </span>
+                              <Badge color="light" size="xs">Personalizado</Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Redirige al cliente a tu enlace de cobro de Wompi, datáfono Bold o pasarela externa propia.
+                            </p>
+                          </button>
+                        </div>
+                      </div>
+
+                      {draft.datosBancarios?.linkPagoTipo === "personalizado" && (
+                        <div className="pt-2">
+                          <Label htmlFor="link-pago-url" className="text-xs">
+                            URL o Enlace de cobro externo
+                          </Label>
+                          <Input
+                            id="link-pago-url"
+                            placeholder="Ej. https://checkout.wompi.co/l/link-de-tu-negocio o https://mpago.li/..."
+                            value={draft.datosBancarios?.linkPagoUrl ?? ""}
+                            onChange={(e) => setDatoBancario("linkPagoUrl", e.target.value)}
+                          />
+                          <p className="mt-1 text-[11px] text-gray-400">
+                            El bot de WhatsApp y las órdenes compartirán este enlace exacto para que el cliente pague su orden.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Vista previa del enlace generado */}
+                      <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                            Enlace generado para el cliente:
+                          </span>
+                          <Badge color="light" size="xs">Ejemplo pedido #P-001</Badge>
+                        </div>
+                        <p className="mt-1.5 font-mono text-xs text-brand-600 dark:text-brand-400 break-all select-all">
+                          {draft.datosBancarios?.linkPagoTipo === "personalizado" && draft.datosBancarios?.linkPagoUrl
+                            ? draft.datosBancarios.linkPagoUrl
+                            : `${window.location.origin}/checkout/P-001`}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                )}
 
                 {/* Instrucciones de Pago */}
                 <Card>

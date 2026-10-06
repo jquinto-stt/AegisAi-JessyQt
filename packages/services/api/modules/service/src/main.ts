@@ -5,6 +5,9 @@ import { bootstrap, type Setup } from './bootstrap.js';
 import { services, controllers } from './services/index.js';
 import allControllers from './controllers/index.js';
 import { TelegramBot } from './telegram/index.js';
+import { Config } from '@webiai/sdk.core';
+
+Config.set('settings.bodyParser.limit', '50mb');
 
 // Cargar .env.local de forma determinista si no están en process.env
 const envLocations = [

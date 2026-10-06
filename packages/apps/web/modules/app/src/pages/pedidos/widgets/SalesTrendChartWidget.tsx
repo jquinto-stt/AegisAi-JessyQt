@@ -115,24 +115,29 @@ const RangoCalendarioModal = ({
 
 // ── Widget ─────────────────────────────────────────────────────────────────
 
+export interface SalesTrendChartWidgetProps {
+  alto?: number;
+  /**
+   * Tramo que debe medir el gráfico, impuesto desde FUERA (el calendario del
+   * Inicio).
+   *
+   * Pasar la prop —incluido `null`— vuelve el widget **controlado**: deja de
+   * ofrecer su propio selector y su botón «Volver a esta semana», porque dos
+   * controles sobre el mismo tramo acaban discrepando y uno de los dos miente
+   * sobre lo que se está midiendo. No pasarla (`undefined`) lo deja como
+   * estaba, con su selector propio.
+   */
+  rango?: { desde: string; hasta: string } | null;
+  /** Si es true, omite el Card y la CabeceraWidget interna para renderizarse dentro de un contenedor personalizado */
+  sinCard?: boolean;
+}
+
 export const SalesTrendChartWidget = observer(
   ({
     alto = 300,
     rango: rangoControlado,
-  }: {
-    alto?: number;
-    /**
-     * Tramo que debe medir el gráfico, impuesto desde FUERA (el calendario del
-     * Inicio).
-     *
-     * Pasar la prop —incluido `null`— vuelve el widget **controlado**: deja de
-     * ofrecer su propio selector y su botón «Volver a esta semana», porque dos
-     * controles sobre el mismo tramo acaban discrepando y uno de los dos miente
-     * sobre lo que se está midiendo. No pasarla (`undefined`) lo deja como
-     * estaba, con su selector propio.
-     */
-    rango?: { desde: string; hasta: string } | null;
-  }) => {
+    sinCard = false,
+  }: SalesTrendChartWidgetProps) => {
     const [rangoInterno, setRangoInterno] = useState<{ desde: string; hasta: string } | null>(null);
     const [calendarioOpen, setCalendarioOpen] = useState(false);
 
@@ -196,22 +201,8 @@ export const SalesTrendChartWidget = observer(
         : `${fmtCorto(rango.desde)} – ${fmtCorto(rango.hasta)}`
       : "Esta semana";
 
-    return (
-      <Card>
-        {/* Controlado: el tramo lo fija el calendario, así que aquí solo se
-            ENUNCIA. Un botón que abriera un selector para pisar la elección del
-            calendario dejaría dos fuentes de verdad para el mismo eje. */}
-        <CabeceraWidget
-          titulo="Volumen de pedidos"
-          extra={
-            controlado ? (
-              <span className="text-xs text-gray-400 dark:text-gray-500">{etiquetaRango}</span>
-            ) : undefined
-          }
-          accion={controlado ? undefined : etiquetaRango}
-          onAccion={controlado ? undefined : () => setCalendarioOpen(true)}
-        />
-
+    const contenido = (
+      <>
         {vacio ? (
           <SinDatos que="pedidos" alto={alto} />
         ) : (
@@ -237,6 +228,29 @@ export const SalesTrendChartWidget = observer(
             }}
           />
         )}
+      </>
+    );
+
+    if (sinCard) {
+      return contenido;
+    }
+
+    return (
+      <Card>
+        {/* Controlado: el tramo lo fija el calendario, así que aquí solo se
+            ENUNCIA. Un botón que abriera un selector para pisar la elección del
+            calendario dejaría dos fuentes de verdad para el mismo eje. */}
+        <CabeceraWidget
+          titulo="Volumen de pedidos"
+          extra={
+            controlado ? (
+              <span className="text-xs text-gray-400 dark:text-gray-500">{etiquetaRango}</span>
+            ) : undefined
+          }
+          accion={controlado ? undefined : etiquetaRango}
+          onAccion={controlado ? undefined : () => setCalendarioOpen(true)}
+        />
+        {contenido}
       </Card>
     );
   },

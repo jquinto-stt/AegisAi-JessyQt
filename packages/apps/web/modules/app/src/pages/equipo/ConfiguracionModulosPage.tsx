@@ -141,7 +141,7 @@ type ModuloConfigDef = InfoModuloNegocio & PresentacionModulo;
 const PRESENTACION_MODULOS: Record<IdModuloNegocio, PresentacionModulo> = {
   pedidos: {
     logo: <OrdersBrandLogo />,
-    rutasHabilitadas: ["/pedidos/inicio", "/pedidos", "/pedidos/crear", "/pedidos/historial", "/pedidos/analitica", "/pedidos/config"],
+    rutasHabilitadas: ["/pedidos/inicio", "/pedidos", "/pedidos/catalogo", "/pedidos/crear", "/pedidos/historial", "/pedidos/analitica", "/pedidos/config"],
     rolesRequeridos: "orders.read, orders.create, orders.move.*",
     capacidades: [
       "Tablero Kanban de órdenes en tiempo real con ciclo de vida completo",

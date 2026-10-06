@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 
 import { PageMeta } from "@/shell/meta";
+import { cn } from "@/utils";
 import { Badge } from "@/elements/ui/badge";
 import { Modal } from "@/elements/ui/modal";
 import { Button } from "@/elements/ui/button";
@@ -37,7 +38,9 @@ import {
   PrepQueueWidget,
   LogisticsDeliveryWidget,
   CalendarioInicioModal,
-  ResumenDiaWidget,
+  PedidoDestacadoCard,
+  ConfigureDisplayModal,
+  EstadosOverview,
 } from "./widgets";
 import {
   esHoy,
@@ -45,6 +48,7 @@ import {
   hoyYmd,
   mesActual,
   mesDeYmd,
+  MESES,
   mismoMes,
   rangoDelMesHastaHoy,
   ymdDeMesDia,
@@ -63,7 +67,10 @@ import {
   AlertCircle,
   Filter,
   CheckCircle2,
-  Clock
+  Clock,
+  Tv,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -74,11 +81,35 @@ let _audioCtx: AudioContext | null = null;
 let _ultimoDing = 0;
 let _campanitaTimer: ReturnType<typeof setInterval> | null = null;
 
+export function detenerCampanita() {
+  if (_campanitaTimer !== null) {
+    clearInterval(_campanitaTimer);
+    _campanitaTimer = null;
+  }
+  if (_audioCtx && _audioCtx.state !== "closed") {
+    try {
+      void _audioCtx.suspend();
+    } catch {
+      // Ignorar error de suspensión de contexto
+    }
+  }
+}
+
+// Detener inmediatamente cualquier temporizador residual al cargar el módulo
+detenerCampanita();
+
 function reproducirCampanita() {
   if (!pedidosStore.config.alertaAtencion.activo) {
     detenerCampanita();
     return;
   }
+  try {
+    if (localStorage.getItem("necto.sonido_alertas_silenciado") === "1") {
+      detenerCampanita();
+      return;
+    }
+  } catch {}
+
   const ahora = Date.now();
   if (ahora - _ultimoDing < 300) return;
   _ultimoDing = ahora;
@@ -115,61 +146,52 @@ function reproducirCampanita() {
 
 function iniciarCampanita(cadaSegundos: number, primerAviso: boolean) {
   detenerCampanita();
+  if (!pedidosStore.config.alertaAtencion.activo) return;
+  try {
+    if (localStorage.getItem("necto.sonido_alertas_silenciado") === "1") return;
+  } catch {}
   if (primerAviso) reproducirCampanita();
   _campanitaTimer = setInterval(reproducirCampanita, cadaSegundos * 1000);
-}
-
-function detenerCampanita() {
-  if (_campanitaTimer !== null) {
-    clearInterval(_campanitaTimer);
-    _campanitaTimer = null;
-  }
 }
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => detenerCampanita());
 }
 
-const BotonSilenciar = observer(() => {
+const BotonSilenciar = observer(({ className }: { className?: string }) => {
   const sonidoActivo = pedidosStore.config.alertaAtencion.activo;
-  const puedeSilenciar = puedeGuardarConfig();
   return (
     <button
       type="button"
-      disabled={!puedeSilenciar}
       onClick={(e) => {
         e.stopPropagation();
-        if (!puedeSilenciar) return;
+        const nuevoEstado = !sonidoActivo;
+        detenerCampanita();
         pedidosStore.updateConfig({
-          alertaAtencion: { ...pedidosStore.config.alertaAtencion, activo: !sonidoActivo },
+          alertaAtencion: { ...pedidosStore.config.alertaAtencion, activo: nuevoEstado },
         });
+        try {
+          if (!nuevoEstado) {
+            localStorage.setItem("necto.sonido_alertas_silenciado", "1");
+          } else {
+            localStorage.removeItem("necto.sonido_alertas_silenciado");
+          }
+        } catch {}
       }}
-      title={
-        !puedeSilenciar
-          ? motivoSinPermiso("settings.manage")
-          : sonidoActivo
-            ? "Silenciar alerta"
-            : "Activar alerta"
-      }
-      aria-pressed={!sonidoActivo}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
-        !puedeSilenciar
-          ? "cursor-not-allowed text-gray-300 dark:text-gray-600"
-          : sonidoActivo
-            ? "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
-            : "text-error-500 hover:bg-error-50 dark:hover:bg-error-500/10"
-      }`}
+      title={sonidoActivo ? "Timbre sonoro activo — Clic para silenciar por completo" : "Timbre silenciado — Clic para activar sonido"}
+      aria-label={sonidoActivo ? "Silenciar timbre de alertas" : "Activar timbre de alertas"}
+      className={cn(
+        "flex items-center justify-center rounded-xl transition-all cursor-pointer",
+        sonidoActivo
+          ? "bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800 animate-pulse"
+          : "bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:bg-gray-800 dark:text-gray-500 border border-gray-200 dark:border-gray-700",
+        className ?? "size-9"
+      )}
     >
       {sonidoActivo ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.5 8.5a5 5 0 010 7M18 6a9 9 0 010 12" />
-        </svg>
+        <Volume2 className="size-4" />
       ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M22 9l-6 6M16 9l6 6" />
-        </svg>
+        <VolumeX className="size-4" />
       )}
     </button>
   );
@@ -180,30 +202,34 @@ const CampanitaAtencion = observer(({ onClick }: { onClick: () => void }) => {
   const sonidoActivo = pedidosStore.config.alertaAtencion.activo;
   if (count === 0) return null;
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        if (sonidoActivo) reproducirCampanita();
-        onClick();
-      }}
-      title={`${count} requieren atención`}
-      className="relative inline-flex h-8 w-8 items-center justify-center rounded-full text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/10"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.8}
-        className={`h-5 w-5 origin-top ${sonidoActivo ? "animate-[wiggle_1.2s_ease-in-out_infinite]" : ""}`}
-        aria-hidden="true"
+    <div className="inline-flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick();
+        }}
+        title={`${count} pedidos requieren atención — Clic para ver`}
+        className="relative inline-flex size-8 items-center justify-center rounded-full text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer"
       >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-      </svg>
-      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-bold text-white">
-        {count}
-      </span>
-    </button>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.8}
+          className={`h-5 w-5 origin-top ${sonidoActivo ? "animate-[wiggle_1.2s_ease-in-out_infinite]" : ""}`}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+        </svg>
+        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-bold text-white">
+          {count}
+        </span>
+      </button>
+
+      {/* Botón de silenciar integrado junto a la campanita */}
+      <BotonSilenciar className="size-7" />
+    </div>
   );
 });
 
@@ -414,14 +440,17 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
           <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">Chat & Conversaciones</h2>
           <CampanitaAtencion onClick={onAbrir} />
         </div>
-        <button
-          type="button"
-          onClick={() => navigate("/conversaciones")}
-          className="flex size-9 items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
-          title="Ir a Conversaciones"
-        >
-          <ArrowUpRight className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <BotonSilenciar />
+          <button
+            type="button"
+            onClick={() => navigate("/conversaciones")}
+            className="flex size-9 items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+            title="Ir a Conversaciones"
+          >
+            <ArrowUpRight className="size-4" />
+          </button>
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -663,6 +692,7 @@ export const InicioPage = observer(() => {
   const operador = sessionStore.operadorSimulado;
   const esOperador = !!operador && operador.modulo === "pedidos";
 
+  const [displayOpen, setDisplayOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
   const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
 
@@ -693,12 +723,12 @@ export const InicioPage = observer(() => {
   const yaAvisado = useRef(false);
 
   useEffect(() => {
+    detenerCampanita();
     if (!alertaActiva) {
-      detenerCampanita();
       yaAvisado.current = false;
       return;
     }
-    iniciarCampanita(cadaSegundos, !yaAvisado.current);
+    iniciarCampanita(cadaSegundos, false);
     yaAvisado.current = true;
     return () => detenerCampanita();
   }, [alertaActiva, cadaSegundos]);
@@ -726,15 +756,35 @@ export const InicioPage = observer(() => {
       {/* ── HEADER SALUDO Y ACCIONES PRINCIPALES ── */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {saludoText}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
+              {saludoText}
+            </h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-400">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success-500" />
+              </span>
+              en vivo
+            </span>
+          </div>
           <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
             Resumen claro y en tiempo real del rendimiento operativo, pedidos y atención multicanal.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start sm:self-auto">
+          <BotonSilenciar className="h-10 w-10 bg-white dark:bg-gray-900 border-gray-200/90 shadow-theme-xs" />
+
+          <button
+            type="button"
+            onClick={() => setDisplayOpen(true)}
+            className="flex h-10 items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 text-xs sm:text-sm font-semibold text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            <Tv className="size-4 text-brand-500" />
+            <span>Modo Enfoque</span>
+          </button>
+
           <div title={puedeCrear ? undefined : motivoSinPermiso("orders.create")}>
             <button
               type="button"
@@ -758,41 +808,37 @@ export const InicioPage = observer(() => {
         </div>
       </div>
 
-      {/* ── FILA SUPERIOR: 4 TARJETAS KPI ── */}
-      <TopKpiCards />
+      {/* ── SECCIÓN HERO: PEDIDO DESTACADO (IZQ) + FLUJO DE COCINA Y DESPACHO (DER) ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 mb-6 items-stretch">
+        <PedidoDestacadoCard />
+        <EstadosOverview />
+      </div>
 
       {/* ── GRID PRINCIPAL DE 2 COLUMNAS (8 de 12 a la izquierda, 4 de 12 a la derecha) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* COLUMNA IZQUIERDA (2/3 del ancho) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Bloque Medio Izquierda: Programación & Tendencia */}
+          {/* Bloque Medio Izquierda: Tendencia de Ventas & Operaciones */}
           <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
             <div className="flex items-center justify-between gap-3 mb-5">
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-                  Programación de Pedidos & Envíos
+                  Tendencia de Ventas & Operaciones
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Calendario operativo y tendencia de volumen de ventas</p>
+                <p className="text-xs text-gray-400 mt-0.5">Volumen histórico de pedidos y transacciones</p>
               </div>
               <button
                 type="button"
                 onClick={() => setCalendarioOpen(true)}
                 className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
               >
-                <span>Hoy</span>
+                <span>{MESES[mes.month]} {mes.year}</span>
                 <ChevronDown className="size-3.5 text-gray-400" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 xl:grid-cols-3 items-start">
-              <div className="xl:col-span-2">
-                <SalesTrendChartWidget rango={rangoGrafico} />
-              </div>
-              <div className="space-y-4">
-                <div key={dia} className="animate-aparecer">
-                  <ResumenDiaWidget ymd={dia} onVerPedido={verPedido} />
-                </div>
-              </div>
+            <div>
+              <SalesTrendChartWidget rango={rangoGrafico} sinCard alto={300} />
             </div>
           </div>
 
@@ -837,6 +883,8 @@ export const InicioPage = observer(() => {
       )}
 
       {clientesOpen && <ClientesModal onClose={() => setClientesOpen(false)} onChat={abrirChat} />}
+
+      <ConfigureDisplayModal isOpen={displayOpen} onClose={() => setDisplayOpen(false)} />
 
       <ChatDrawer convId={chatDrawerConvId} onClose={() => setChatDrawerConvId(null)} />
     </>

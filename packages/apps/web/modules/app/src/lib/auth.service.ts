@@ -15,6 +15,7 @@ import { getSupabase, hayConfiguracion, haySesion } from "@/lib/supabase";
 import { sessionStore, organizacionStore, modulosOperablesDeSesion } from "@/stores";
 import type { RedesSociales, DireccionPerfil } from "@/stores/organizacion.store";
 import { bootstrapConversaciones } from "@/lib/db.bootstrap";
+import { activarModoDemo } from "@/lib/modo-demo";
 
 export interface ResultadoAuth {
   ok: boolean;
@@ -171,89 +172,66 @@ export async function sincronizarIdentidadNecto(
 }
 
 /**
- * Autentica usuario con correo y contraseña.
+ * Modo de pruebas: asegura una sesión administrativa activa para todo el equipo,
+ * sin requerir credenciales reales ni interacción con Supabase Auth.
  */
-export async function iniciarSesion(credenciales: CredencialesLogin): Promise<ResultadoAuth> {
-  const { email, password } = credenciales;
-  const cleanEmail = email.trim();
+export function asegurarSesionPruebas(emailPersonalizado?: string): ResultadoAuth {
+  const email = emailPersonalizado?.trim() || "equipo@necto.io";
+  const nombre = email.includes("@") ? email.split("@")[0] : "Admin";
 
-  // Si no hay configuración de Supabase, funciona como maqueta
-  if (!hayConfiguracion()) {
-    const nombreUsuario = cleanEmail.split("@")[0] || "Admin";
-    if (!organizacionStore.usuario) {
-      organizacionStore.actualizarPerfil({
-        nombre: nombreUsuario.charAt(0).toUpperCase() + nombreUsuario.slice(1),
-        apellido: "Necto",
-        email: cleanEmail || "admin@necto.io",
-        pais: "Colombia",
-      });
-    }
-    if (!organizacionStore.organizacion) {
-      organizacionStore.crearOrganizacion({
-        nombre: "Mi Empresa",
-        pais: "Colombia",
-        moneda: "COP",
-        zonaHoraria: "America/Bogota",
-      });
-    }
-    sessionStore.configurar(
-      modulosOperablesDeSesion(organizacionStore.modulosActivos),
-      "administrador",
-    );
-    return { ok: true, requiereOnboarding: false };
+  if (!organizacionStore.tienePerfil) {
+    organizacionStore.actualizarPerfil({
+      nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1),
+      apellido: "Necto",
+      email,
+      pais: "Colombia",
+      cargo: "Administrador de Pruebas",
+    });
   }
 
-  const sb = getSupabase();
-  if (!sb) {
-    return { ok: false, motivo: "No se pudo inicializar el cliente de Supabase." };
+  if (!organizacionStore.tieneOrganizacion) {
+    organizacionStore.crearOrganizacion({
+      nombre: "Necto Operations",
+      pais: "Colombia",
+      moneda: "COP",
+      zonaHoraria: "America/Bogota",
+    });
   }
 
-  const { data, error } = await sb.auth.signInWithPassword({
-    email: cleanEmail,
-    password,
-  });
-
-  if (error || !data.user) {
-    return { ok: false, motivo: traducirErrorAuth(error) };
+  if (!organizacionStore.esModuloInstalado("pedidos")) {
+    organizacionStore.instalarModulo("pedidos");
+  }
+  if (!organizacionStore.esModuloInstalado("inventarios")) {
+    organizacionStore.instalarModulo("inventarios");
   }
 
-  const { requiereOnboarding } = await sincronizarIdentidadNecto(
-    data.user.id,
-    data.user.email || cleanEmail,
-    data.user.user_metadata,
+  activarModoDemo();
+
+  sessionStore.configurar(
+    ["pedidos", "inventarios"],
+    "administrador",
   );
 
-  return { ok: true, requiereOnboarding };
+  void bootstrapConversaciones();
+
+  return { ok: true, requiereOnboarding: false };
+}
+
+/**
+ * Autentica usuario con correo y contraseña.
+ * En modo de pruebas para el equipo, no valida contraseñas reales ni restringe el acceso.
+ */
+export async function iniciarSesion(credenciales: CredencialesLogin): Promise<ResultadoAuth> {
+  const { email } = credenciales;
+  return asegurarSesionPruebas(email);
 }
 
 /**
  * Autenticación mediante Google OAuth.
+ * En modo de pruebas para el equipo, concede acceso directo inmediato.
  */
 export async function iniciarSesionConGoogle(): Promise<ResultadoAuth> {
-  if (!hayConfiguracion()) {
-    return iniciarSesion({
-      email: "usuario.google@necto.io",
-      password: "MockPassword123!",
-    });
-  }
-
-  const sb = getSupabase();
-  if (!sb) {
-    return { ok: false, motivo: "Cliente de Supabase no disponible." };
-  }
-
-  const { error } = await sb.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${window.location.origin}/login`,
-    },
-  });
-
-  if (error) {
-    return { ok: false, motivo: traducirErrorAuth(error) };
-  }
-
-  return { ok: true };
+  return asegurarSesionPruebas("google.tester@necto.io");
 }
 
 /**
@@ -272,23 +250,11 @@ export async function cerrarSesion(): Promise<void> {
 }
 
 /**
- * Hidrata la sesión local si ya existe una sesión activa persistida en Supabase.
+ * Hidrata la sesión local. En modo de pruebas para el equipo, asegura siempre
+ * que la sesión esté lista con rol de administrador sin bloqueos.
  */
 export async function autoHidratarSesionSupabase(): Promise<boolean> {
-  if (!hayConfiguracion()) return false;
-  const sb = getSupabase();
-  if (!sb) return false;
-
-  const { data } = await sb.auth.getSession();
-  const session = data?.session;
-  if (!session?.user) return false;
-
-  await sincronizarIdentidadNecto(
-    session.user.id,
-    session.user.email || "",
-    session.user.user_metadata,
-  );
-
+  asegurarSesionPruebas();
   return true;
 }
 
@@ -306,7 +272,7 @@ export interface ResultadoRegistro {
 }
 
 /**
- * Registra un nuevo usuario en Supabase Auth y sincroniza o prepara el perfil.
+ * Registra un nuevo usuario y asegura la sesión en modo de pruebas.
  */
 export async function registrarUsuario(datos: DatosRegistro): Promise<ResultadoRegistro> {
   const { email, password, nombre, apellido } = datos;
@@ -319,80 +285,15 @@ export async function registrarUsuario(datos: DatosRegistro): Promise<ResultadoR
     return { ok: false, motivo: "La contraseña debe tener al menos 6 caracteres." };
   }
 
-  // Fallback si no hay configuración de Supabase
-  if (!hayConfiguracion()) {
-    sessionStore.configurar([], "administrador");
-    organizacionStore.actualizarPerfil({
-      nombre: nombre.trim() || "Usuario",
-      apellido: apellido.trim() || "Necto",
-      email: cleanEmail,
-      pais: "Colombia",
-    });
-    return { ok: true, requiereConfirmacion: false };
-  }
-
-  // Intentar registro mediante backend con auto-confirmación (evita límites de envío de correo y demoras)
-  try {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: cleanEmail,
-        password,
-        nombre: nombre.trim(),
-        apellido: apellido.trim(),
-      }),
-    });
-
-    if (res.ok) {
-      // Iniciar sesión inmediatamente con las credenciales autoverificadas
-      const loginRes = await iniciarSesion({ email: cleanEmail, password });
-      return {
-        ok: loginRes.ok,
-        motivo: loginRes.motivo,
-        requiereConfirmacion: false,
-      };
-    }
-
-    const errJson = (await res.json().catch(() => ({}))) as { error?: string };
-    if (errJson.error) {
-      return { ok: false, motivo: errJson.error };
-    }
-  } catch {
-    // Si el endpoint de backend no responde, continuar con flujo Supabase Auth directo
-  }
-
-  const sb = getSupabase();
-  if (!sb) {
-    return { ok: false, motivo: "No se pudo conectar con el servicio de autenticación." };
-  }
-
-  const { data, error } = await sb.auth.signUp({
+  asegurarSesionPruebas(cleanEmail);
+  organizacionStore.actualizarPerfil({
+    nombre: nombre.trim() || "Usuario",
+    apellido: apellido.trim() || "Necto",
     email: cleanEmail,
-    password,
-    options: {
-      data: {
-        first_name: nombre.trim(),
-        last_name: apellido.trim(),
-      },
-    },
+    pais: "Colombia",
   });
 
-  if (error) {
-    return { ok: false, motivo: traducirErrorAuth(error) };
-  }
-
-  // Si Supabase devuelve sesión activa inmediatamente
-  if (data.session && data.user) {
-    await sincronizarIdentidadNecto(data.user.id, data.user.email || cleanEmail, {
-      first_name: nombre.trim(),
-      last_name: apellido.trim(),
-    });
-    return { ok: true, requiereConfirmacion: false };
-  }
-
-  // Si requiere confirmación por email (comportamiento estándar de Supabase)
-  return { ok: true, requiereConfirmacion: true };
+  return { ok: true, requiereConfirmacion: false };
 }
 
 /**

@@ -8,6 +8,20 @@ namespace EP {
   export const $Health = Root$.sub('/health').endpoint(Method.GET);
 
   // ══════════════════════════════════════════════════════════════════════
+  //!PATH - Webhook de Zernio (recepción de WhatsApp)
+  // ══════════════════════════════════════════════════════════════════════
+  export const $ZernioWebhook = Root$.sub('/webhooks/zernio').endpoint(Method.POST);
+
+  // ══════════════════════════════════════════════════════════════════════
+  //!PATH - Conversaciones (bandeja del operador)
+  // ══════════════════════════════════════════════════════════════════════
+  export const Conversaciones$ = Root$.sub('/conversaciones');
+  export const ConversacionById$ = Conversaciones$.sub({ id: 'id' }, (p: { id: string }) => `/:${p.id}`);
+  export const ConversacionMensajes$ = ConversacionById$.sub('/mensajes');
+  /** Un asesor responde por WhatsApp dentro de una conversación. */
+  export const $EnviarMensajeOperador = ConversacionMensajes$.endpoint(Method.POST);
+
+  // ══════════════════════════════════════════════════════════════════════
   //!PATH - Queues (colas)
   // ══════════════════════════════════════════════════════════════════════
   export const Queues$ = Root$.sub('/queues');
@@ -43,6 +57,12 @@ namespace EP {
   // ══════════════════════════════════════════════════════════════════════
   export const Auth$ = Root$.sub('/auth');
   export const $Register = Auth$.sub('/register').endpoint(Method.POST);
+
+  // ══════════════════════════════════════════════════════════════════════
+  //!PATH - Catálogo IA
+  // ══════════════════════════════════════════════════════════════════════
+  export const Catalogo$ = Root$.sub('/pedidos/catalogo');
+  export const $ImportarCatalogoIA = Catalogo$.sub('/importar-ia').endpoint(Method.POST);
 }
 
 export default EP;

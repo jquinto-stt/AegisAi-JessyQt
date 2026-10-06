@@ -5,6 +5,7 @@ export interface TelegramSendOptions {
   buttons?: string[];
   removeKeyboard?: boolean;
   requestContactButton?: string;
+  requestLocationButton?: string;
   customReplyMarkup?: any;
 }
 
@@ -34,12 +35,35 @@ export class TelegramBot {
         resize_keyboard: true,
         one_time_keyboard: true,
       };
+    } else if (options.requestLocationButton) {
+      const extraRows: { text: string }[][] = [];
+      if (options.buttons && options.buttons.length > 0) {
+        for (let i = 0; i < options.buttons.length; i += 2) {
+          extraRows.push(options.buttons.slice(i, i + 2).map((b) => ({ text: b })));
+        }
+      }
+      reply_markup = {
+        keyboard: [
+          [{ text: options.requestLocationButton, request_location: true }],
+          ...extraRows,
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: false,
+        is_persistent: true,
+      };
     } else if (options.customReplyMarkup) {
       reply_markup = options.customReplyMarkup;
     } else if (options.buttons && options.buttons.length > 0) {
-      const rows: { text: string }[][] = [];
+      const rows: Array<Array<{ text: string; request_location?: boolean; request_contact?: boolean }>> = [];
       for (let i = 0; i < options.buttons.length; i += 2) {
-        rows.push(options.buttons.slice(i, i + 2).map((b) => ({ text: b })));
+        const slice = options.buttons.slice(i, i + 2);
+        rows.push(slice.map((b) => {
+          const lower = b.toLowerCase();
+          if (lower.includes('enviar mi ubicación') || lower.includes('enviar ubicacion')) {
+            return { text: b, request_location: true };
+          }
+          return { text: b };
+        }));
       }
       reply_markup = {
         keyboard: rows,
@@ -67,13 +91,24 @@ export class TelegramBot {
       const data = (await res.json()) as any;
 
       if (!data.ok) {
-        // Fallback a texto plano si falla el parseo de HTML
+        console.warn(`[TelegramBot] ⚠️ Falló intento inicial (${data.description}). Ejecutando fallback...`);
+        // Fallback: texto plano y descarte de botones si el error fue por URL o markup
+        const esErrorBoton = data.description?.toLowerCase().includes('button') || data.description?.toLowerCase().includes('url');
+        const fallbackPayload: Record<string, any> = {
+          chat_id: chatId,
+          text,
+          reply_markup: esErrorBoton ? undefined : reply_markup,
+        };
+
         const resFb = await fetch(`${this.apiUrl}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(fallbackPayload),
         });
         const dataFb = (await resFb.json()) as any;
+        if (!dataFb.ok) {
+          console.error(`[TelegramBot] ❌ Error definitivo enviando mensaje a ${chatId}:`, dataFb.description);
+        }
         return {
           ok: Boolean(dataFb.ok),
           messageId: dataFb.result?.message_id ? String(dataFb.result.message_id) : undefined,
@@ -156,7 +191,15 @@ export class TelegramBot {
       userId: rawContact.user_id,
     } : undefined;
 
-    if (!msg || (!textRaw && !contact)) return;
+    const rawLocation = update.message?.location;
+    const location = rawLocation && typeof rawLocation.latitude === 'number' && typeof rawLocation.longitude === 'number'
+      ? {
+          latitude: rawLocation.latitude,
+          longitude: rawLocation.longitude,
+        }
+      : undefined;
+
+    if (!msg || (!textRaw && !contact && !location)) return;
 
     const from = update.message?.from || update.callback_query?.from;
     const fullName = [from?.first_name, from?.last_name].filter(Boolean).join(' ') || from?.username || 'Cliente';
@@ -166,9 +209,10 @@ export class TelegramBot {
       userId: from?.id || msg.chat.id,
       username: from?.username,
       fullName,
-      text: textRaw.trim(),
+      text: textRaw.trim() || (location ? `📍 [Ubicación GPS: ${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}]` : ''),
       messageId: msg.message_id,
       contact,
+      location,
     };
 
     try {

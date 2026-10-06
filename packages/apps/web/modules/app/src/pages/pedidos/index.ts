@@ -4,3 +4,5 @@ export { InicioPage } from "./InicioPage";
 export { HistorialPage } from "./HistorialPage";
 export { AnaliticaPage } from "./AnaliticaPage";
 export { ConfigPage } from "./ConfigPage";
+export { DisplayPedidosScreen } from "./DisplayPedidosScreen";
+export { CatalogoPage } from "./CatalogoPage";

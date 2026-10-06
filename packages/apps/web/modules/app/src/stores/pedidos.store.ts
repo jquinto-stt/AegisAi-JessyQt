@@ -293,6 +293,12 @@ export interface DatosBancariosConfig {
   efectivoActivo?: boolean;
   transferenciaActivo?: boolean;
   contraEntregaActivo?: boolean;
+  /** Habilita cobros con tarjeta y PSE mediante link de pago online. */
+  linkPagoActivo?: boolean;
+  /** Tipo de pasarela: 'globalpay' (integrada Redeban) o 'personalizado' (Wompi, Bold, etc.). */
+  linkPagoTipo?: "globalpay" | "personalizado";
+  /** URL base si el link de pago es personalizado (ej. enlace de cobro de Wompi / Bold). */
+  linkPagoUrl?: string;
 }
 
 /** Configuración de una columna personalizada en el tablero Kanban. */
@@ -413,7 +419,7 @@ const DEFAULT_CONFIG: PedidosConfig = {
   },
   tiemposObjetivo: {},
   alertaAtencion: {
-    activo: true,
+    activo: false,
     cadaSegundos: 30,
   },
   perfilComercial: "food",
@@ -428,6 +434,9 @@ const DEFAULT_CONFIG: PedidosConfig = {
     efectivoActivo: true,
     transferenciaActivo: true,
     contraEntregaActivo: true,
+    linkPagoActivo: true,
+    linkPagoTipo: "globalpay",
+    linkPagoUrl: "",
   },
 };
 
@@ -505,7 +514,11 @@ function loadConfig(): PedidosConfig {
         aliasModalidades: { ...(parsed.aliasModalidades ?? {}) },
         horario: { ...DEFAULT_CONFIG.horario, ...(parsed.horario ?? {}) },
         tiemposObjetivo: { ...(parsed.tiemposObjetivo ?? {}) },
-        alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion, ...(parsed.alertaAtencion ?? {}) },
+        alertaAtencion: {
+          ...DEFAULT_CONFIG.alertaAtencion,
+          ...(parsed.alertaAtencion ?? {}),
+          activo: false,
+        },
         perfilComercial: perfil,
         capacidadesActivas: Array.isArray(parsed.capacidadesActivas)
           ? parsed.capacidadesActivas

@@ -1,27 +1,22 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { sessionStore } from "@/stores";
+import { asegurarSesionPruebas } from "@/lib/auth.service";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// REQUIRE SESSION — puerta de sesión
+// REQUIRE SESSION — puerta de sesión (Modo Pruebas)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
  * RequireSession — puerta de entrada al shell de la aplicación.
  *
- * Contrato §2: sin una sesión utilizable (`accessContext.autenticado === false`)
- * se redirige a `/login`. Esto corrige el bug H2 del análisis, donde una sesión
- * sin configurar se comportaba como administrador y `/pedidos/config` se abría
- * escribiendo la URL con el almacenamiento vacío.
- *
- * Las rutas standalone (`/login`, `/seleccionar`, `/operador/*`) quedan FUERA de
- * esta puerta, así que el flujo `/login → /seleccionar → configurar()` no se
- * rompe: `configurar()` deja la sesión autenticada.
+ * En modo de pruebas para el equipo, asegura de forma transparente la sesión
+ * de administrador para que ningún usuario ni pantalla sufra bloqueos o
+ * redirecciones involuntarias a login.
  */
 export const RequireSession = observer(({ children }: { children: ReactNode }) => {
   if (!sessionStore.accessContext.autenticado) {
-    return <Navigate to="/login" replace />;
+    asegurarSesionPruebas();
   }
   return <>{children}</>;
 });

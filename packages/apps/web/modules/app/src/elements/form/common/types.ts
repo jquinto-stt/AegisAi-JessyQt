@@ -71,4 +71,7 @@ export interface FormFieldProps {
    * ID of the element that describes this field (e.g. a hint or error message).
    */
   "aria-describedby"?: string;
+
+  /** Whether the current value is invalid; forwarded to the native control. */
+  "aria-invalid"?: boolean;
 }

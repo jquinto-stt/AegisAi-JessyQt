@@ -10,6 +10,9 @@
     "webiai:bundle": "run-s bundle"
   },
   "dependencies": {
-    "@stt/repo-prueba.srv.api": "file:../.."
+    "@stt/repo-prueba.srv.api": "file:../..",
+    "@supabase/supabase-js": "^2.117.2",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5"
   }
 }

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { cn } from "@/utils";
 
 /**
@@ -72,6 +72,15 @@ export interface ModalProps {
    * @default `false`
    */
   isFullscreen?: boolean;
+
+  /** Accessible title id; when supplied the panel is exposed as a dialog. */
+  ariaLabelledBy?: string;
+
+  /**
+   * Move focus into the panel, keep Tab navigation inside it, and restore focus
+   * to the triggering element on close. Defaults to `false` for compatibility.
+   */
+  manageFocus?: boolean;
 }
 
 /**
@@ -94,10 +103,13 @@ export interface ModalProps {
  *
  * **Behavior:**
  * - Fully controlled — parent manages `isOpen` state.
- * - Closes on `Escape` key press.
- * - Closes on backdrop click (unless `isFullscreen`).
- * - Blocks page scroll when open (`overflow: hidden` on `<body>`).
- * - Cleans up scroll lock on unmount.
+  * - Closes on `Escape` key press.
+  * - Closes on backdrop click (unless `isFullscreen`).
+  * - Blocks page scroll when open (`overflow: hidden` on `<body>`).
+  * - Optional `manageFocus` moves focus into the panel, traps Tab navigation,
+  *   and restores the previously focused element when closed.
+  * - `ariaLabelledBy` adds accessible dialog semantics for titled dialogs.
+  * - Cleans up scroll lock on unmount.
  *
  * **Fullscreen mode:**
  * - No backdrop, no rounded corners, fills entire viewport.
@@ -119,10 +131,11 @@ export interface ModalProps {
  *   sites to the controlled pattern first, at which point
  *   `useMontajeAnimado` supplies the exit window.
  *
- * **Limitations:**
- * - No exit animation — see above; the entrance is the animated half.
- * - No `size` prop — width controlled via `className`.
- * - Does not trap focus — Tab can escape the modal.
+  * **Limitations:**
+  * - No exit animation — see above; the entrance is the animated half.
+  * - No `size` prop — width controlled via `className`.
+  * - Focus management is opt-in via `manageFocus` to avoid changing other
+  *   existing modal consumers implicitly.
  *
  * @example Basic confirmation
  * ```tsx
@@ -166,11 +179,14 @@ export const Modal: React.FC<ModalProps> = ({
   className,
   showCloseButton = true,
   isFullscreen = false,
+  ariaLabelledBy,
+  manageFocus = false,
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
       }
@@ -186,6 +202,23 @@ export const Modal: React.FC<ModalProps> = ({
   }, [isOpen, onClose]);
 
   useEffect(() => {
+    if (!isOpen || !manageFocus) return;
+
+    previouslyFocusedElement.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const firstField = modalRef.current?.querySelector<HTMLElement>(
+      "input:not([type='hidden']):not(:disabled), textarea:not(:disabled), select:not(:disabled)",
+    );
+    const fallbackButton = modalRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)");
+    (firstField ?? fallbackButton)?.focus();
+
+    return () => {
+      previouslyFocusedElement.current?.focus();
+      previouslyFocusedElement.current = null;
+    };
+  }, [isOpen, manageFocus]);
+
+  useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -198,6 +231,31 @@ export const Modal: React.FC<ModalProps> = ({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  function keepFocusInside(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (!manageFocus || event.key !== "Tab") return;
+
+    const focusable = Array.from(
+      modalRef.current?.querySelectorAll<HTMLElement>(
+        "a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex='-1'])",
+      ) ?? [],
+    ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || !modalRef.current?.contains(active))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || !modalRef.current?.contains(active))) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   const contentClasses = isFullscreen
     ? "w-full h-full"
@@ -236,6 +294,11 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         className={cn(contentClasses, animacionPanel, className)}
+        role={ariaLabelledBy ? "dialog" : undefined}
+        aria-modal={ariaLabelledBy ? true : undefined}
+        aria-labelledby={ariaLabelledBy}
+        tabIndex={manageFocus ? -1 : undefined}
+        onKeyDown={keepFocusInside}
         onClick={(e) => e.stopPropagation()}
       >
         {showCloseButton && (
