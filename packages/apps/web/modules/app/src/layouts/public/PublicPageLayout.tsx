@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
+import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 import { cn } from "@/utils";
 import { NectoLogo } from "../../compositions/shared/NectoLogo";
 import { sessionStore } from "@/stores";
@@ -62,10 +63,11 @@ export default function PublicPageLayout({
         )}
       >
         <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} />
+        <DecorativeCircles variant="brand" />
 
         <div className="relative z-10 mx-auto w-full max-w-5xl">
           <div className="flex items-center justify-between gap-4">
-            <img src="/images/logo/necto-full-white.svg" alt="Necto" className="h-7 w-auto" />
+            <img src="/images/logo/necto-full-pure-white.svg" alt="Necto" className="h-7 w-auto" />
 
             <button
               type="button"

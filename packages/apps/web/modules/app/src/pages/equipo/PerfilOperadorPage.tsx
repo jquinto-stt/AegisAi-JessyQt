@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Avatar } from "@/elements/ui/avatar";
-import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
@@ -11,9 +10,16 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import {
+  AdjustmentsHorizontalIcon,
   AlertIcon,
+  AngleDoubleDownIcon,
+  AngleDoubleUpIcon,
+  ArrowUturnLeftIcon,
   CheckCircleIcon,
+  ChevronLeftIcon,
   EyeIcon,
+  IdentificationIcon,
+  KeyIcon,
   LockIcon,
   PencilIcon,
   TrashBinIcon,
@@ -27,7 +33,7 @@ import {
   type Operador,
 } from "@/stores";
 import { puede } from "@/stores/acceso.utils";
-import { GrupoCapacidades, type FilaCapacidad } from "@/pages/config-layout";
+import { BloqueConfig, GrupoCapacidades, type FilaCapacidad } from "@/pages/config-layout";
 import { ESTADO_META, CATEGORIA_COLORES } from "./equipo.constants";
 import { aplicarPreset, aplicarToggle, normalizar, procedenciaDe } from "./excepciones";
 import {
@@ -85,22 +91,20 @@ export const PerfilOperadorPage = observer(() => {
     return (
       <>
         <PageMeta title="Persona no encontrada · Equipo" description="La persona no existe" />
-        <Card>
-          <div className="py-12 text-center">
-            <p className="text-theme-sm font-medium text-gray-700 dark:text-gray-300">
-              Esta persona ya no está en el equipo.
-            </p>
-            <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-              Puede que se haya eliminado de la organización.
-            </p>
-            <Link
-              to="/equipo"
-              className="mt-4 inline-block text-theme-sm font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
-            >
-              Volver al equipo
-            </Link>
-          </div>
-        </Card>
+        <div className="rounded-3xl border border-gray-100 bg-white py-12 text-center shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+          <p className="text-theme-sm font-medium text-ink-title dark:text-white">
+            Esta persona ya no está en el equipo.
+          </p>
+          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
+            Puede que se haya eliminado de la organización.
+          </p>
+          <Link
+            to="/equipo"
+            className="mt-4 inline-block text-theme-sm font-medium text-secondary-600 hover:text-secondary-700 dark:text-brand-400"
+          >
+            Volver al equipo
+          </Link>
+        </div>
       </>
     );
   }
@@ -328,14 +332,17 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
         to="/equipo"
         className="inline-flex items-center gap-1.5 text-theme-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
       >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        <span>← Volver a Equipo</span>
+        {/* El icono ya dice «atrás»: el texto no necesita además un «←». */}
+        <ChevronLeftIcon className="h-4 w-4" />
+        <span>Volver a Equipo</span>
       </Link>
 
       {/* ── 1. FICHA DEL MIEMBRO ────────────────────────────────────────────── */}
-      <Card className="p-6">
+      <BloqueConfig
+        icono={IdentificationIcon}
+        pregunta={op.nombre}
+        descripcion="Datos de contacto, estado de acceso y acciones sobre esta persona."
+      >
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <Avatar
@@ -347,10 +354,9 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               className="flex-shrink-0"
             />
             <div>
+              {/* El nombre ya es la `pregunta` del bloque: aquí solo van los
+                  distintivos de estado, para no repetir el nombre dos veces. */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-theme-2xl font-bold text-ink-title dark:text-white">
-                  {op.nombre}
-                </h1>
                 <Badge color={estado.color} size="xs">
                   {estado.label}
                 </Badge>
@@ -549,7 +555,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             </div>
           </div>
         )}
-      </Card>
+      </BloqueConfig>
 
       {/* ── ALERTA DE SOLICITUD PENDIENTE (SI CORRESPONDE) ────────────────── */}
       {op.estado === "pendiente" && (
@@ -586,14 +592,18 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
       )}
 
       {/* ── 2. SELECCIÓN DEL ROL ────────────────────────────────────────────── */}
-      <Card className="p-6">
+      <BloqueConfig
+        icono={KeyIcon}
+        pregunta="Rol asignado"
+        descripcion="El rol define los permisos base. Cualquier cambio reajusta sus capacidades automáticamente."
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h2 className="text-theme-md font-bold text-ink-title dark:text-white">
-              Rol Asignado
-            </h2>
+            <h3 className="text-theme-sm font-semibold text-ink-title dark:text-white">
+              Rol de la persona
+            </h3>
             <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-              El rol define los permisos base del operador. Cualquier cambio reajustará sus capacidades automáticamente.
+              Se aplica a todas sus capacidades, salvo los ajustes personales que verás abajo.
             </p>
           </div>
 
@@ -664,27 +674,32 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
               onClick={restablecerAlRol}
               disabled={!puedeGestionar}
               title={!puedeGestionar ? "Requiere el permiso «Gestionar equipo»." : undefined}
-              className={`text-theme-xs font-semibold ${
+              className={`inline-flex items-center gap-1.5 text-theme-xs font-semibold ${
                 puedeGestionar
                   ? "text-secondary-600 hover:underline dark:text-brand-400 cursor-pointer"
                   : "cursor-not-allowed text-gray-400 dark:text-gray-600"
               }`}
             >
+              <ArrowUturnLeftIcon className="h-3.5 w-3.5 flex-shrink-0" />
               Restablecer al rol original
             </button>
           </div>
         )}
-      </Card>
+      </BloqueConfig>
 
       {/* ── 3. REGLAS Y PERMISOS DE ACCESO ─────────────────────────────────── */}
-      <Card className="p-6">
+      <BloqueConfig
+        icono={AdjustmentsHorizontalIcon}
+        pregunta="Permisos y reglas de acceso"
+        descripcion="Capacidades por área. Activa o desactiva para conceder o revocar permisos específicos a esta persona."
+      >
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-theme-md font-bold text-ink-title dark:text-white">
-              Permisos y Reglas de Acceso
-            </h2>
+            <h3 className="text-theme-sm font-semibold text-ink-title dark:text-white">
+              Capacidades efectivas
+            </h3>
             <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-              Capacidades por área. Activa o desactiva interruptores para conceder o revocar permisos específicos.
+              Se pintan en Solo lectura mientras tu rol no incluya «Gestionar equipo».
             </p>
           </div>
 
@@ -702,10 +717,8 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 aria-label="Expandir todas las categorías"
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
               >
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                  <path d="M5 6l5 5 5-5" />
-                  <path d="M5 11l5 5 5-5" />
-                </svg>
+                {/* Doble chevron hacia abajo: las 18 filas se despliegan de una vez. */}
+                <AngleDoubleDownIcon className="h-3.5 w-3.5" />
               </button>
 
               <button
@@ -715,10 +728,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
                 aria-label="Contraer todas las categorías"
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white transition-colors cursor-pointer"
               >
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-                  <path d="M5 9l5-5 5 5" />
-                  <path d="M5 14l5-5 5 5" />
-                </svg>
+                <AngleDoubleUpIcon className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -819,7 +829,7 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
             );
           })}
         </div>
-      </Card>
+      </BloqueConfig>
 
       {/* ── 4. CONFIRMACIONES DE CICLO DE VIDA ─────────────────────────────── */}
       <Modal

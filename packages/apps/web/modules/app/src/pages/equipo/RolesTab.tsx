@@ -7,15 +7,15 @@ import { Modal } from "@/elements/ui/modal";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import {
+  AngleDoubleDownIcon,
+  AngleDoubleUpIcon,
   AlertIcon,
   CheckCircleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
   CopyIcon,
-  GridIcon,
-  GroupIcon,
+  KeyIcon,
   LockIcon,
   PlusIcon,
+  ShieldCheckIcon,
   TrashBinIcon,
 } from "@/icons";
 import {
@@ -188,6 +188,17 @@ export const RolesTab = observer(() => {
               >
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="flex items-center gap-2">
+                    {/* Cada fila lleva la misma metáfora que el bloque de
+                        identidad: un rol es un NOMBRE con un paquete de
+                        permisos detrás. Sin icono, la lista es una columna de
+                        texto donde solo el borde distingue lo seleccionado. */}
+                    <KeyIcon
+                      className={`h-4 w-4 shrink-0 ${
+                        esSeleccionado
+                          ? "text-brand-500 dark:text-brand-400"
+                          : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    />
                     <span
                       className={`truncate text-theme-sm font-semibold ${
                         esSeleccionado
@@ -474,7 +485,7 @@ const RolEditor = observer(({
           («¿Cómo se llama este rol y para qué sirve?»), no un sustantivo
           administrativo («Metadatos»). */}
       <BloqueConfig
-        icono={GridIcon}
+        icono={KeyIcon}
         pregunta="¿Cómo se llama este rol y para qué sirve?"
         descripcion={
           soloLectura
@@ -577,7 +588,7 @@ const RolEditor = observer(({
 
       {/* ═══ BLOQUE 2 · PERMISOS DEL ROL ════════════════════════════════════ */}
       <BloqueConfig
-        icono={GroupIcon}
+        icono={ShieldCheckIcon}
         pregunta="¿Qué puede hacer con este rol?"
         descripcion={
           soloLectura
@@ -622,7 +633,7 @@ const RolEditor = observer(({
               aria-label="Expandir todas las categorías"
               className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             >
-              <ChevronDownIcon className="h-3.5 w-3.5" />
+              <AngleDoubleDownIcon className="h-3.5 w-3.5" />
             </button>
 
             <button
@@ -632,7 +643,7 @@ const RolEditor = observer(({
               aria-label="Contraer todas las categorías"
               className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
             >
-              <ChevronUpIcon className="h-3.5 w-3.5" />
+              <AngleDoubleUpIcon className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

@@ -46,6 +46,8 @@ export {
   ArrowDownIcon,
   ChevronUpIcon,
   ChevronDownIcon,
+  ChevronDoubleDownIcon as AngleDoubleDownIcon,
+  ChevronDoubleUpIcon as AngleDoubleUpIcon,
   ChevronLeftIcon,
   ChevronUpIcon as AngleUpIcon,
   ChevronDownIcon as AngleDownIcon,
@@ -94,6 +96,16 @@ export {
   GlobeAltIcon,
   BuildingStorefrontIcon,
 
+  // ── gestión de roles y permisos (configuración › Equipo) ──────────────────
+  // Tres metáforas para tres bloques que no deben confundirse: quién es la
+  // persona (`IdentificationIcon`, arriba), qué rol tiene (`KeyIcon`) y qué
+  // capacidades efectivas resultan (`AdjustmentsHorizontalIcon`). El «volver»
+  // a los valores del rol usa `ArrowUturnLeftIcon` en vez de un chevron: no es
+  // navegación, es deshacer.
+  KeyIcon,
+  AdjustmentsHorizontalIcon,
+  ArrowUturnLeftIcon,
+
   // ── rubros del negocio (configuración › General › tipo de empresa) ────────
   // Ocho metáforas para ocho rubros, todas de Heroicons 24/outline. El selector
   // de tipo de empresa dejó de ser un desplegable y ahora pinta los ocho a la
@@ -113,6 +125,8 @@ export {
   // ── personas y comunicación ───────────────────────────────────────────────
   UsersIcon as GroupIcon,
   UserIcon,
+  UserPlusIcon,
+  ShieldCheckIcon,
   UserCircleIcon,
   ChatBubbleLeftIcon as ChatIcon,
   EnvelopeIcon,

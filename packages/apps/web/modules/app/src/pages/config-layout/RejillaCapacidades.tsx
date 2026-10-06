@@ -201,15 +201,13 @@ export function CapacidadFila({
   fila,
   soloLectura,
   onCambiar,
-  onAlternar,
 }: {
   fila: FilaCapacidad;
   soloLectura?: boolean;
   /** Cambio del interruptor. Si falta, la fila es inerte. */
   onCambiar?: (nuevo: boolean) => void;
-  onAlternar?: any;
 }) {
-  const inerte = soloLectura || (!onCambiar && !onAlternar);
+  const inerte = soloLectura || !onCambiar;
 
   return (
     <div
@@ -225,12 +223,14 @@ export function CapacidadFila({
           {fila.bloqueada && (
             <LockIcon className="h-3.5 w-3.5 flex-shrink-0 text-brand-600 dark:text-brand-400" />
           )}
-          <span className="truncate text-theme-xs font-medium text-gray-800 dark:text-gray-200">
+          <span className="truncate text-theme-xs font-medium text-ink-body dark:text-gray-200">
             {CAPACIDAD_LABEL[fila.cap]}
           </span>
           {fila.etiqueta}
         </div>
-        {fila.pie}
+        {/* El pie lleva su propio color (procedencia: verde «de más», rojo «de
+            menos»). Si no lo trae, hereda el gris de cuerpo. */}
+        {fila.pie && <div className="text-gray-500 dark:text-gray-400">{fila.pie}</div>}
       </div>
 
       {inerte ? (
