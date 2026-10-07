@@ -1,374 +1,251 @@
-import { useState, useRef } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
-import {
-  ArrowRightIcon,
-  ArrowUpTrayIcon,
-  PencilIcon,
-} from "@heroicons/react/24/outline";
 import { PageMeta } from "@/shell/meta";
-import { Label } from "@/elements/form/label";
-import { Input } from "@/elements/form/input";
 import { Button } from "@/elements/ui/button";
-import {
-  organizacionStore,
-  PAISES_CONFIG,
-  TAMANO_EQUIPO_POR_DEFECTO,
-  TAMANOS_EQUIPO,
-  TIPO_EMPRESA_POR_DEFECTO,
-  TIPOS_EMPRESA,
-  slugDe,
-} from "@/stores/organizacion.store";
+import { Card, CardTitle, CardDescription } from "@/elements/ui/card";
+import { sessionStore, type Modulo, type TipoSesion } from "@/stores/session.store";
 import { OnboardingLayout } from "./OnboardingLayout";
 
-// `TIPOS_EMPRESA` y `TAMANOS_EQUIPO` vivían aquí. Se mudaron al store, junto al
-// tipo que los guarda, porque la configuración de la organización ofrece las
-// MISMAS listas para editar lo mismo: dos copias del mismo vocabulario acaban
-// divergiendo, y esta ya lo había hecho —el default del store era «Retail &
-// Comercio», que no está en la lista—. El `slugDe` corre la misma suerte: la
-// vista previa «necto.app/…» tiene que enseñar el slug que se va a guardar, no
-// el resultado de un segundo algoritmo parecido.
+// ═══════════════════════════════════════════════════════════════════════════
+// ICONS
+// ═══════════════════════════════════════════════════════════════════════════
 
-const BRAND_MESSAGES_ORGANIZACION = [
+const AdminIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-7 w-7">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+  </svg>
+);
+
+const OperadorIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-7 w-7">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface RolOption {
+  id: TipoSesion;
+  titulo: string;
+  descripcion: string;
+  icon: () => ReactNode;
+}
+
+const ROLES: RolOption[] = [
   {
-    badge: "Tu Organización",
-    title: "Centraliza la operación de tu negocio.",
-    subtitle: "Un solo lugar donde conviven tus ventas, catálogo y equipo.",
+    id: "administrador",
+    titulo: "Administrador",
+    descripcion: "Acceso completo: configuración, equipo, reportes y ajustes del negocio.",
+    icon: AdminIcon,
   },
   {
-    badge: "Estandarización Regional",
-    title: "Moneda y horarios sincronizados.",
-    subtitle: "Tus reportes y transacciones operan automáticamente bajo el huso horario correcto.",
+    id: "operador",
+    titulo: "Operador",
+    descripcion: "Pide acceso al administrador: él revisa tu solicitud y te asigna un rol. Sin configuración del negocio.",
+    icon: OperadorIcon,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SELECTABLE CARD
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface SelectCardProps {
+  titulo: string;
+  descripcion: string;
+  icon: () => ReactNode;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+const SelectCard = ({ titulo, descripcion, icon: Icon, selected, onSelect }: SelectCardProps) => (
+  <button
+    type="button"
+    onClick={onSelect}
+    aria-pressed={selected}
+    className="group relative rounded-xl text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 w-full cursor-pointer"
+  >
+    <Card
+      className={`h-full transition-all ${
+        selected
+          ? "border-brand-500 bg-brand-50/60 ring-2 ring-brand-500/30 dark:border-brand-400 dark:bg-brand-500/10"
+          : "hover:border-brand-300 hover:shadow-theme-xs dark:hover:border-brand-500/40"
+      }`}
+    >
+      <div
+        className={`mb-5 flex h-14 max-w-14 items-center justify-center rounded-[10.5px] transition-colors ${
+          selected
+            ? "bg-brand-500 text-white"
+            : "bg-brand-50 text-brand-500 group-hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400"
+        }`}
+      >
+        <Icon />
+      </div>
+      <CardTitle>{titulo}</CardTitle>
+      <CardDescription>{descripcion}</CardDescription>
+    </Card>
+
+    {selected && (
+      <span className="absolute right-4 top-4 flex h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white shadow-theme-xs">
+        <CheckIcon />
+      </span>
+    )}
+  </button>
+);
+
+const BRAND_MESSAGES_ROL = [
+  {
+    badge: "Acceso Seguro",
+    title: "Define tu perfil de operación.",
+    subtitle: "El administrador gestiona todo el negocio; el operador se enfoca en la atención del día a día.",
   },
   {
-    badge: "Identidad de Marca",
-    title: "Reconocible para clientes y equipo.",
-    subtitle: "Personaliza tus comprobantes, pedidos y despachos con el logo de tu empresa.",
+    badge: "Control de Permisos",
+    title: "Roles diseñados para cada función.",
+    subtitle: "Protege la configuración clave de tu catálogo, precios y finanzas.",
+  },
+  {
+    badge: "Escalabilidad",
+    title: "Invita a tu equipo cuando lo necesites.",
+    subtitle: "Puedes sumar operadores adicionales y asignarles secciones específicas.",
   },
 ];
 
 export const OrganizacionOnboardingPage = observer(() => {
   const navigate = useNavigate();
-  const orgActual = organizacionStore.organizacion;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [rol, setRol] = useState<TipoSesion | null>(sessionStore.tipoSesion || "administrador");
 
-  // Sub-paso dentro de Organización: 1 (Datos) o 2 (Logo)
-  const [subPaso, setSubPaso] = useState<1 | 2>(1);
+  const esOperador = rol === "operador";
+  const modulos: Modulo[] = sessionStore.modulos.length > 0 ? sessionStore.modulos : ["pedidos"];
+  const modulosLabel =
+    modulos.length === 2
+      ? "Pedidos e Inventario"
+      : modulos.includes("pedidos")
+      ? "Pedidos & Fulfillment"
+      : "Inventario & Stock";
 
-  const [nombre, setNombre] = useState(orgActual?.nombre || "");
-  const [pais, setPais] = useState(orgActual?.pais || "Colombia");
-  const [tipoEmpresa, setTipoEmpresa] = useState(
-    orgActual?.tipoEmpresa || TIPO_EMPRESA_POR_DEFECTO
-  );
-  const [tamanoEquipo, setTamanoEquipo] = useState(
-    orgActual?.tamanoEquipo || TAMANO_EQUIPO_POR_DEFECTO
-  );
-  const [logoUrl, setLogoUrl] = useState<string | undefined>(orgActual?.logoUrl);
-  const [error, setError] = useState("");
+  const handleConfirmar = () => {
+    if (!rol) return;
 
-  const configPais = PAISES_CONFIG[pais] || PAISES_CONFIG["Colombia"];
+    sessionStore.configurar(modulos, rol);
 
-  // Sin nombre no hay vista previa: se enseña el slug REAL que se guardará, así
-  // que con el campo vacío no se anuncia «necto.app/mi-empresa», que es el
-  // fallback del store y no una dirección que este formulario haya propuesto.
-  const slugGenerado = nombre.trim() ? slugDe(nombre) : "";
-
-  const handleNextSubPaso = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!nombre.trim()) {
-      setError("Por favor ingresa el nombre de tu empresa o negocio.");
+    if (rol === "operador") {
+      navigate("/operador/registro");
       return;
     }
-    setError("");
-    setSubPaso(2);
-  };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (uploadEvent) => {
-        const result = uploadEvent.target?.result as string;
-        setLogoUrl(result);
-      };
-      reader.readAsDataURL(file);
+    // Si seleccionó pedidos, continúa al onboarding del perfil de negocio
+    if (modulos.includes("pedidos")) {
+      navigate("/onboarding/pedidos");
+      return;
     }
-  };
 
-  const handleFinalizarOrganizacion = () => {
-    organizacionStore.crearOrganizacion({
-      nombre,
-      pais,
-      moneda: configPais.moneda,
-      zonaHoraria: configPais.zonaHoraria,
-      tipoEmpresa,
-      tamanoEquipo,
-      logoUrl,
-    });
-
-    // Pasa a la encuesta final antes de entrar directo al workspace
-    navigate("/onboarding/encuesta?redirect=/modulos");
+    // Si solo tiene inventarios u otro módulo, entra directo
+    navigate(sessionStore.moduloEntryPath || "/pedidos/inicio");
   };
 
   return (
     <>
       <PageMeta
-        title="Crear Organización · Necto"
-        description="Define la organización de tu negocio"
+        title={esOperador ? "Solicita tu acceso · Necto" : "¿Con qué rol vas a entrar? · Necto"}
+        description="Selecciona tu rol de acceso a la plataforma"
       />
 
       <OnboardingLayout
         pasoActual={2}
         totalPasos={2}
-        pasoLabel="Organización"
-        onBack={subPaso === 2 ? () => setSubPaso(1) : () => navigate("/onboarding/perfil")}
-        brandMessages={BRAND_MESSAGES_ORGANIZACION}
+        pasoLabel="Rol de acceso"
+        brandMessages={BRAND_MESSAGES_ROL}
         brandSummary={{
-          eyebrow: "Tu empresa",
-          title: nombre || "Nombre de tu empresa",
+          eyebrow: "Paso 2 de 2",
+          title: esOperador ? "Solicitud de Operador" : "Rol Administrador",
           lines: [
-            slugGenerado ? `necto.app/${slugGenerado}` : "",
-            `${configPais.moneda} · ${pais}`,
-            `Zona horaria: ${configPais.zonaHoraria}`,
-            tipoEmpresa,
-          ].filter(Boolean),
+            `Módulos: ${modulosLabel}`,
+            esOperador ? "Requiere aprobación de admin" : "Acceso total y configuración",
+          ],
         }}
       >
         <div className="w-full">
-          {/* Encabezado del paso */}
-          <div className="mb-6 text-center sm:text-left">
+          <div className="mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-secondary-600 dark:text-brand-400">
-              Paso 2 de 2 — {subPaso} / 2 Personaliza tu organización
+              Paso 2 de 2 — Rol de acceso
             </span>
             <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-ink-title dark:text-white">
-              Personaliza tu organización
+              {esOperador ? "Solicita tu acceso" : "¿Con qué rol vas a entrar?"}
             </h1>
-            <p className="mt-1.5 text-sm text-ink-body dark:text-gray-400">
-              {subPaso === 1
-                ? "Configura tu empresa para ti y los miembros que se unan más adelante."
-                : "Agrega el logo de tu empresa para que todos tus reportes y clientes la reconozcan."}
+            <p className="mt-2 text-sm text-ink-body dark:text-gray-400">
+              {esOperador
+                ? `Vas a solicitar acceso a ${modulosLabel}. Un administrador revisará tu solicitud y te asignará un rol.`
+                : `Vas a entrar a ${modulosLabel}. Elige tu rol para continuar.`}
             </p>
           </div>
 
-          {error && (
-            <div className="mb-5 rounded-xl border border-error-200 bg-error-50 p-3 text-xs text-error-700 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-400">
-              {error}
-            </div>
-          )}
-
-          {/* SUB-PASO 1: Datos de la organización */}
-          {subPaso === 1 && (
-            <form onSubmit={handleNextSubPaso} className="space-y-4">
-              <div>
-                <Label htmlFor="companyName" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Nombre de la empresa <span className="text-secondary-600 dark:text-accent-300">*</span>
-                </Label>
-                <Input
-                  id="companyName"
-                  placeholder="Ej: Boutique Roma, Café Central, Consultoría Solís"
-                  value={nombre}
-                  onChange={(e) => {
-                    setNombre(e.target.value);
-                    setError("");
-                  }}
-                  className="mt-1.5 h-11"
-                />
-                {slugGenerado && (
-                  <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                    Identificador web:{" "}
-                    <span className="font-mono font-semibold text-secondary-600 dark:text-brand-400">
-                      necto.app/{slugGenerado}
-                    </span>
-                  </p>
-                )}
-              </div>
-
-              {/* País y Zona horaria / Moneda juntos con micro-copy natural */}
-              <div>
-                <Label htmlFor="countrySelect" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  País de operación <span className="text-secondary-600 dark:text-accent-300">*</span>
-                </Label>
-                <div className="mt-1.5 relative">
-                  <select
-                    id="countrySelect"
-                    value={pais}
-                    onChange={(e) => setPais(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
-                  >
-                    {Object.keys(PAISES_CONFIG).map((pKey) => (
-                      <option key={pKey} value={pKey}>
-                        {pKey} ({PAISES_CONFIG[pKey].moneda})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Explicación sutil y elegante en texto natural, sin badges artificiales */}
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Moneda base ({configPais.moneda}) y zona horaria ({configPais.zonaHoraria}) sincronizadas automáticamente con tu región.
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="companyType" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tipo de empresa <span className="text-secondary-600 dark:text-accent-300">*</span>
-                </Label>
-                <div className="mt-1.5 relative">
-                  <select
-                    id="companyType"
-                    value={tipoEmpresa}
-                    onChange={(e) => setTipoEmpresa(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
-                  >
-                    {TIPOS_EMPRESA.map((tipo) => (
-                      <option key={tipo} value={tipo}>
-                        {tipo}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="teamStrength" className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                  Tamaño del equipo <span className="text-secondary-600 dark:text-accent-300">*</span>
-                </Label>
-                <div className="mt-1.5 relative">
-                  <select
-                    id="teamStrength"
-                    value={tamanoEquipo}
-                    onChange={(e) => setTamanoEquipo(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-900 shadow-theme-xs transition-colors focus:border-secondary-500 focus:outline-hidden focus:ring-3 focus:ring-secondary-500/15 dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
-                  >
-                    {TAMANOS_EQUIPO.map((tam) => (
-                      <option key={tam} value={tam}>
-                        {tam}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400">
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/onboarding/perfil")}
-                  className="rounded-full px-5 text-sm font-semibold cursor-pointer"
-                >
-                  Volver
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
-                >
-                  Continuar
-                  <ArrowRightIcon className="size-4 ml-1.5 inline" />
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* SUB-PASO 2: Logo de la organización */}
-          {subPaso === 2 && (
-            <div className="flex flex-col items-center py-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            {ROLES.map((r) => (
+              <SelectCard
+                key={r.id}
+                titulo={r.titulo}
+                descripcion={r.descripcion}
+                icon={r.icon}
+                selected={rol === r.id}
+                onSelect={() => setRol(r.id)}
               />
+            ))}
+          </div>
 
-              {/* Círculo central con borde e ícono o previsualización */}
-              <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-2 border-secondary-500 bg-secondary-50/40 p-2 shadow-theme-inner dark:border-accent-400 dark:bg-brand-500/10">
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt="Logo Organización"
-                    className="h-full w-full rounded-full object-cover"
-                  />
-                ) : (
-                  <svg
-                    className="h-16 w-16 text-secondary-600 dark:text-brand-400"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                  </svg>
-                )}
-              </div>
+          <div className="pt-8 mt-6 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/onboarding/perfil")}
+              className="rounded-full px-6 text-xs font-semibold cursor-pointer"
+            >
+              ← Volver a Módulos
+            </Button>
 
-              {/* Botones de acción Subir Logo / Cambiar Logo */}
-              <div className="mt-8 flex w-full max-w-sm items-center justify-center gap-4">
+            <div className="flex items-center gap-3">
+              {esOperador && (
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                  onClick={() => navigate("/operador/login")}
+                  className="rounded-full px-6 text-xs font-semibold cursor-pointer"
                 >
-                  <ArrowUpTrayIcon className="mr-2 h-4 w-4" />
-                  Subir logo
+                  Simular
                 </Button>
+              )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    if (logoUrl) {
-                      setLogoUrl(undefined);
-                    } else {
-                      fileInputRef.current?.click();
-                    }
-                  }}
-                  className="flex-1 rounded-xl border-gray-300 py-2.5 font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+              <Button
+                type="button"
+                disabled={!rol}
+                onClick={handleConfirmar}
+                className="rounded-full px-8 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {esOperador ? "Solicitar acceso" : "Entrar"}
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4 ml-1.5 inline"
                 >
-                  <PencilIcon className="mr-2 h-4 w-4" />
-                  {logoUrl ? "Quitar logo" : "Cambiar logo"}
-                </Button>
-              </div>
-
-              {/* Botón Continuar */}
-              <div className="mt-10 w-full max-w-sm">
-                <Button
-                  type="button"
-                  onClick={handleFinalizarOrganizacion}
-                  className="w-full rounded-xl py-3 font-bold bg-brand-500 hover:bg-brand-600 text-white shadow-theme-lg shadow-brand-500/20 cursor-pointer"
-                >
-                  Continuar
-                </Button>
-                <div className="mt-3 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setSubPaso(1)}
-                    className="text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white cursor-pointer"
-                  >
-                    ← Volver a editar datos
-                  </button>
-                </div>
-              </div>
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+              </Button>
             </div>
-          )}
+          </div>
         </div>
       </OnboardingLayout>
     </>

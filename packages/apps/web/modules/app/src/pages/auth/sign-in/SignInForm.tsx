@@ -6,7 +6,13 @@ import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
 import { Checkbox } from "@/elements/form/checkbox";
 import { Button } from "@/elements/ui/button";
-import { organizacionStore } from "@/stores";
+import {
+  organizacionStore,
+  sessionStore,
+  pedidosStore,
+  inventariosStore,
+  operadoresStore,
+} from "@/stores";
 import {
   iniciarSesion,
   iniciarSesionConGoogle,
@@ -28,6 +34,11 @@ export default function SignInForm() {
   const ejecutarLogin = async (credenciales: { email: string; password: string }) => {
     setCargando(true);
     setErrorMensaje(null);
+
+    // Inicio normal restaura el seed con datos de prueba
+    pedidosStore.restaurarSeed();
+    inventariosStore.restaurarSeed();
+    operadoresStore.restaurarSeed();
 
     try {
       const res = await iniciarSesion({
@@ -51,6 +62,14 @@ export default function SignInForm() {
     } finally {
       setCargando(false);
     }
+  };
+
+  const simularDesdeCero = () => {
+    sessionStore.reset();
+    pedidosStore.iniciarDesdeCero();
+    inventariosStore.iniciarDesdeCero();
+    operadoresStore.iniciarDesdeCero();
+    navigate("/onboarding/perfil");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -240,6 +259,25 @@ export default function SignInForm() {
               </svg>
               Google
             </button>
+            <div className="mt-5">
+              <Button
+                className="w-full border-dashed"
+                size="sm"
+                variant="outline"
+                type="button"
+                onClick={simularDesdeCero}
+                startIcon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992h4.992M4.522 9.348a8.25 8.25 0 0113.803-3.03L20.015 9.5M19.478 14.652a8.25 8.25 0 01-13.803 3.03L3.985 14.5" />
+                  </svg>
+                }
+              >
+                Simular inicio desde 0
+              </Button>
+              <p className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
+                Reinicia módulo, rol y configuración para probar el onboarding.
+              </p>
+            </div>
             <div className="mt-5 space-y-2 text-center">
               <p className="text-sm font-normal text-gray-700 dark:text-gray-400">
                 ¿No tienes una cuenta?{" "}

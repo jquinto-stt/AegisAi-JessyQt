@@ -142,17 +142,6 @@ export function ModalReponerStock({
             />
           </div>
 
-          <div>
-            <Label htmlFor="repSede">Sede de recepción *</Label>
-            <Select
-              options={sedes.map((s) => ({
-                value: s.id,
-                label: s.nombre,
-              }))}
-              defaultValue={sedeId}
-              onChange={(val) => setSedeId(val)}
-            />
-          </div>
 
           <div>
             <Label htmlFor="repFecha">Fecha estimada de llegada</Label>

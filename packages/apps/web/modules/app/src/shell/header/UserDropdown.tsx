@@ -7,7 +7,6 @@ import {
   Cog6ToothIcon,
   GlobeAltIcon,
   InformationCircleIcon,
-  Squares2X2Icon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { sessionStore, organizacionStore } from "@/stores";
@@ -46,13 +45,6 @@ const UserDropdown = observer(() => {
       }
     : organizacionStore.usuario;
 
-  /**
-   * «¿el rol puede gestionar la organización?» — la misma capacidad que exige
-   * `/modulos` en `App.tsx`. Se lee por `hasPermission` y no por `esAdmin`
-   * (prohibido por el contrato de acceso, §1.8): el permiso es el hecho, el rol
-   * es una de sus fuentes.
-   */
-  const puedeIrAlLanzador = sessionStore.hasPermission("team.manage");
 
   const iniciales = usuario
     ? `${usuario.nombre.charAt(0)}${usuario.apellido?.charAt(0) ?? ""}`.toUpperCase()
@@ -199,44 +191,6 @@ const UserDropdown = observer(() => {
 
         {/* Separador */}
         <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-
-        {/* Workspace — de vuelta al Lanzador de Módulos (`/modulos`).
-            Va destacado —fondo de marca, no el gris de las opciones de arriba—
-            porque no es una preferencia de la cuenta: es salir de donde estás.
-            Separado del bloque de perfil por la misma línea que separa «Cerrar
-            sesión», para que se lea como acción de navegación y no de ajustes.
-
-            El rótulo es «Workspace» a secas. Decía «Cambiar de Módulo /
-            Workspace» y nombraba dos cosas que son la misma: `/modulos` es
-            «Módulos de la organización» y es el Lanzador; «Workspace» era el
-            nombre viejo de esa pantalla, retirado porque describía a la
-            ORGANIZACIÓN con el nombre de otra cosa. Aquí se conserva porque es
-            el término que el usuario reconoce, pero una sola vez y no en
-            conflicto con «Módulo».
-
-            COMPUERTA `team.manage`. `/modulos` gestiona la pertenencia de la
-            organización (instalar, desinstalar) y la ruta exige lo mismo que
-            `/configuracion` — ver `App.tsx`. Sin esta condición, un rol con
-            `orders.read` y sin `team.manage` vería la opción, la pulsaría y
-            aterrizaría en «No tienes acceso a esta sección»: un control visible
-            que el rol no puede ejecutar, que es lo que el contrato de acceso
-            manda **ocultar**. Es el mismo defecto que se retiró del pie del
-            sidebar (`Ayuda` sí, `Configuración` no) y de `SeccionSinConectar`;
-            no se reintroduce aquí por copiar la spec al pie de la letra. */}
-        {puedeIrAlLanzador && (
-          <>
-            <ShellDropdownItem
-              onItemClick={closeDropdown}
-              tag="a"
-              to="/modulos"
-              className="flex items-center gap-3 px-2.5 py-2 font-medium text-secondary-600 rounded-xl group text-sm bg-brand-50 hover:bg-brand-100 dark:text-brand-300 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 transition-colors"
-            >
-              <Squares2X2Icon className="size-4.5 text-brand-500 group-hover:text-brand-600 dark:text-brand-400" />
-              <span>Workspace</span>
-            </ShellDropdownItem>
-            <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-          </>
-        )}
 
         {/* Cerrar sesión */}
         <button

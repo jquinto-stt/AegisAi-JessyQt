@@ -50,7 +50,7 @@ export function ProductosTabla({
   /** Acción rápida para generar orden de compra si el stock está bajo o agotado. */
   onReponer?: (producto: Producto, cantidadActual: number) => void;
   /** Nombre de la sede que se está mirando, o `null` si son todas. */
-  sedeFiltrada: string | null;
+  sedeFiltrada?: string | null;
 }) {
   return (
     <div className="max-w-full overflow-x-auto">
@@ -156,13 +156,6 @@ export function ProductosTabla({
                       ? UNIDAD_META[producto.unidad].label.toLowerCase()
                       : UNIDAD_META[producto.unidad].plural}
                   </span>
-                  {!sedeFiltrada && productosStore.sedesActivas.length > 1 && (
-                    <div className="text-[11px] text-gray-400 dark:text-gray-500 font-normal mt-0.5 whitespace-nowrap">
-                      {productosStore.sedesActivas
-                        .map((s) => `${s.nombre.replace(/^Sede\s+/i, "")}: ${productosStore.cantidadDe(producto.id, [s.id])}`)
-                        .join(" · ")}
-                    </div>
-                  )}
                 </TableCell>
 
                 <TableCell className="px-5 py-3 text-end text-gray-500 text-theme-sm tabular-nums dark:text-gray-400">

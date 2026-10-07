@@ -7,7 +7,6 @@ import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/elements/ui/table";
 import {
-  ArrowsRightLeftIcon,
   ChartPieIcon,
   CheckCircleIcon,
   CubeIcon,
@@ -31,7 +30,6 @@ export const DashboardPage = observer(function DashboardPage() {
   const resumen = productosStore.resumen;
   const productos = productosStore.productosActivos;
   const ordenes = productosStore.ordenes;
-  const sedes = productosStore.sedesActivas;
 
   // Stock en mano total
   const stockEnMano = productos.reduce(
@@ -82,24 +80,15 @@ export const DashboardPage = observer(function DashboardPage() {
     <>
       <PageMeta
         title="Dashboard de Inventario — NECTO"
-        description="Centro de control operativo, valorización y logística multi-sede."
+        description="Centro de control operativo, valorización y existencias."
       />
 
       <ContenedorPagina>
         <CabeceraPagina
           titulo="Centro de Control de Inventario (WMS)"
-          descripcion="Visión consolidada de valorización, existencias por sede, compras y reposición."
+          descripcion="Visión consolidada de valorización, existencias, compras y reposición."
           acciones={
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/inventarios/sedes")}
-                className="cursor-pointer"
-              >
-                <ArrowsRightLeftIcon className="size-4 mr-1.5" />
-                Traslado Sedes
-              </Button>
               <Button
                 size="sm"
                 className="bg-brand-500 hover:bg-brand-600 text-white cursor-pointer"
@@ -184,7 +173,7 @@ export const DashboardPage = observer(function DashboardPage() {
                 {stockEnMano} <span className="text-sm font-normal text-gray-500">unidades</span>
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                Repartidas en {sedes.length} sedes operativas
+                Total de unidades en inventario
               </p>
             </div>
           </Card>
@@ -210,84 +199,7 @@ export const DashboardPage = observer(function DashboardPage() {
           </Card>
         </div>
 
-        {/* Fila 2: Distribución por Sedes Operativas */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                Distribución y Estado por Sede
-              </h3>
-              <p className="text-xs text-gray-500">
-                Existencias y salud de abastecimiento en cada bodega y sucursal.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/inventarios/sedes")}
-              className="cursor-pointer"
-            >
-              Administrar Sedes
-            </Button>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sedes.map((sede) => {
-              const res = productosStore.resumenSede(sede.id);
-
-              return (
-                <Card
-                  key={sede.id}
-                  className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-theme-xs bg-white dark:bg-gray-900 p-5 hover:border-gray-200 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-gray-900 dark:text-white text-sm">
-                      {sede.nombre}
-                    </span>
-                    <Badge color="light" size="sm">
-                      {res.totalProductos} SKUs
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5 truncate">
-                    {sede.direccion}
-                  </p>
-
-                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5 grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-[10px] uppercase font-semibold text-gray-400">Unidades</span>
-                      <p className="text-base font-bold text-gray-900 dark:text-white">
-                        {res.totalUnidades} u
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-[10px] uppercase font-semibold text-gray-400">Valorización</span>
-                      <p className="text-base font-bold text-brand-600 dark:text-brand-400">
-                        {formatearMoneda(res.valorizacion)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Estado de stock:</span>
-                    {res.agotados > 0 ? (
-                      <Badge variant="light" color="error" size="sm">
-                        {res.agotados} agotados
-                      </Badge>
-                    ) : res.porAgotar > 0 ? (
-                      <Badge variant="light" color="warning" size="sm">
-                        {res.porAgotar} por agotar
-                      </Badge>
-                    ) : (
-                      <Badge variant="light" color="success" size="sm">
-                        Abastecida
-                      </Badge>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Fila 3: Órdenes Pendientes de Recepción & Alertas Críticas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

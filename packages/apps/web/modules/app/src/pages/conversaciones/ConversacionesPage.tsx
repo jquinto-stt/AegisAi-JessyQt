@@ -58,46 +58,25 @@ export const ConversacionesPage = observer(() => {
   }, [seleccionadaId, bandeja]);
 
   return (
-    <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+    <div className="flex flex-1 min-h-0 flex-col overflow-hidden font-sans text-[#212121] dark:text-white/90">
       <PageMeta
-        title="Chat"
-        description="Consola de mensajería y WhatsApp — bandeja, chat y contexto del contacto"
+        title="Chats · Pedidos"
+        description="Consola de mensajería y WhatsApp en Pedidos — bandeja, chat y contexto del contacto"
       />
 
       {/* ── Cabecera de la página ────────────────────────────────────────── */}
-      {/* El título FALTABA. Medido con `outputs/modulos-verify/huella-modulos.mjs`:
-          `/conversaciones` y `/conversaciones/historial` eran las DOS ÚNICAS
-          pantallas de módulo sin `<h1>`. El primer elemento visible era el
-          conmutador, así que la pantalla no decía dónde estabas.
-
-          La fila ya era `justify-between` **con un solo hijo**: un
-          `justify-between` de un hijo no reparte nada. Estaba preparada para un
-          título a la izquierda y el conmutador a la derecha, y el título nunca
-          llegó.
-
-          `text-2xl font-bold text-ink-title`, el token de las demás pantallas de
-          módulo (`/pedidos/inicio:864`, `/asistente:64`) — no el `text-xl` de las
-          configuraciones: esto es una superficie de trabajo, no ajustes.
-
-          El conmutador toma sus tres colores de `@/pages/config-layout`, así que
-          el estado activo se pinta igual aquí que en el `Segmentado` de las
-          pantallas de configuración. */}
       <div className="shrink-0 mb-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Conversaciones</h1>
-          {/* Indicador de tiempo real. NO es un botón: la bandeja se actualiza
-              sola cada 3 s cuando llega un mensaje (ver `@/lib/tiempo-real`).
-              Se pinta solo si hay datos reales y el canal está activo — un punto
-              verde permanente sobre el seed sería la misma mentira que el aviso
-              de origen de datos existe para evitar. */}
+          <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] dark:text-white/90 tracking-tight">Chats</h1>
+          {/* Indicador de tiempo real */}
           {conversacionesStore.origenDatos === "real" && enVivo && (
             <span
-              className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-medium text-gray-500 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
+              className="flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-2.5 py-1 text-[12px] font-normal text-[#212121]/70 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
               title="La bandeja se actualiza sola cuando llega un mensaje"
             >
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-400 opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#97D6DF] opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF3F1A]" />
               </span>
               En vivo
             </span>
@@ -109,7 +88,7 @@ export const ConversacionesPage = observer(() => {
               href="https://wa.me/573145793333"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-[#20ba5a] hover:shadow-md hover:shadow-[#25D366]/20 active:scale-95"
+              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#20ba5a] hover:shadow-md hover:shadow-[#25D366]/20 active:scale-95"
               title="Abrir chat del bot en WhatsApp (+57 314 5793333)"
             >
               <WhatsAppIcon className="h-4 w-4 shrink-0" />
@@ -133,7 +112,7 @@ export const ConversacionesPage = observer(() => {
               href="https://t.me/NectoPedidosBot"
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-[#1d8bc0] hover:shadow-md hover:shadow-[#229ED9]/20 active:scale-95"
+              className="group inline-flex items-center gap-1.5 rounded-xl bg-[#229ED9] px-3 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#1d8bc0] hover:shadow-md hover:shadow-[#229ED9]/20 active:scale-95"
               title="Abrir chat del bot en Telegram (@NectoPedidosBot)"
             >
               <TelegramIcon className="h-4 w-4 shrink-0" />
@@ -158,21 +137,21 @@ export const ConversacionesPage = observer(() => {
           <button
             type="button"
             aria-current="page"
-            className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors ${claseSegmentoActivo}`}
+            className={`rounded-md px-3.5 py-1.5 text-[12px] font-bold transition-colors ${claseSegmentoActivo}`}
           >
             Chat en vivo
           </button>
           <button
             type="button"
             onClick={() => navigate("/conversaciones/historial")}
-            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${claseSegmentoInactivo}`}
+            className={`rounded-md px-3.5 py-1.5 text-[12px] font-normal transition-colors ${claseSegmentoInactivo}`}
           >
             Historial de atención
           </button>
           <button
             type="button"
             onClick={() => navigate("/conversaciones/analitica")}
-            className={`rounded-md px-3.5 py-1.5 text-xs font-medium transition-colors ${claseSegmentoInactivo}`}
+            className={`rounded-md px-3.5 py-1.5 text-[12px] font-normal transition-colors ${claseSegmentoInactivo}`}
           >
             Analítica
           </button>
@@ -262,7 +241,7 @@ export const ConversacionesPage = observer(() => {
           aria-label="Bandeja de chats"
           className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             bandejaExpandida
-              ? "flex w-full sm:w-[290px] xl:w-[310px] 2xl:w-[330px] border border-gray-200 opacity-100 mr-0 dark:border-gray-800"
+              ? "flex w-full sm:w-[290px] xl:w-[310px] 2xl:w-[330px] border border-[#ECECEC] opacity-100 mr-0 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -mr-4 sm:-mr-5"
           }`}
         >
@@ -274,19 +253,9 @@ export const ConversacionesPage = observer(() => {
         </aside>
 
         {/* ── Columna central: ChatBox (Cabecera, Mensajes y Composer) ── */}
-        <section className="flex flex-1 min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
+        <section className="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-[#ECECEC] bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:border-gray-800 dark:bg-white/[0.03]">
           {seleccionadaId !== null ? (
             <>
-              {/* La `key` es lo que hace VISIBLE el cambio de conversación. Sin ella React
-                  reutiliza la MISMA instancia de `ChatView` y solo le cambia las props, así
-                  que la clase de entrada nunca se vuelve a disparar y el hilo nuevo aparece
-                  de golpe. Con la `key`, cada conversación es un montaje nuevo y entra con
-                  un fundido de 200 ms.
-                  Consecuencia asumida: al remontar, el contenedor de mensajes vuelve a
-                  `scrollTop = 0`. Es el mismo punto de partida que ya tenía la primera
-                  conversación que se abría, así que el comportamiento queda CONSISTENTE
-                  entre el primer hilo y los siguientes. Aterrizar en el último mensaje es
-                  otra tarea (exige gestión de scroll) y no se aborda aquí. */}
               <ChatView
                 key={seleccionadaId}
                 convId={seleccionadaId}
@@ -298,7 +267,7 @@ export const ConversacionesPage = observer(() => {
               <Composer convId={seleccionadaId} />
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+            <div className="flex flex-1 items-center justify-center text-[14px] font-normal text-[#212121]/50 dark:text-gray-500">
               Selecciona una conversación para comenzar
             </div>
           )}
@@ -309,21 +278,21 @@ export const ConversacionesPage = observer(() => {
           aria-label="Panel de información del contacto"
           className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             panelExpandido && seleccionadaId !== null
-              ? "flex w-72 border border-gray-200 p-4 opacity-100 2xl:w-80 dark:border-gray-800"
+              ? "flex w-72 border border-[#ECECEC] p-4 opacity-100 2xl:w-80 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -ml-4 sm:-ml-5"
           }`}
         >
           {seleccionadaId !== null && (
             <div className="flex h-full min-w-[17rem] flex-col overflow-hidden 2xl:min-w-[19rem]">
-              <div className="flex items-center justify-between border-b border-gray-200 pb-3 dark:border-gray-800">
+              <div className="flex items-center justify-between border-b border-[#ECECEC] pb-3 dark:border-gray-800">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-300">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ECECEC] text-[#190088] dark:bg-white/5 dark:text-gray-300">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
+                  <h3 className="text-[14px] font-bold text-[#190088] dark:text-white/90">
                     Información del contacto
                   </h3>
                 </div>

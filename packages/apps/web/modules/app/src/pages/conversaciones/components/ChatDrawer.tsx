@@ -221,7 +221,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
       {/* Panel lateral: aquí SÍ se reactivan los eventos de puntero, porque el
           panel es la superficie con la que el operador interactúa. */}
       <aside
-        className={`relative flex h-full flex-col border-l border-gray-200 bg-white shadow-theme-xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${
+        className={`relative flex h-full flex-col border-l border-[#ECECEC] bg-white font-sans text-[#212121] shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${
           ancho === null ? ANCHO_PANEL : ""
         } ${visible ? "translate-x-0" : "translate-x-full"}`}
         style={{
@@ -260,8 +260,8 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           aria-orientation="vertical"
           aria-label="Arrastra para cambiar el ancho del panel"
           title="Arrastra para cambiar el ancho · doble clic para restablecer"
-          className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-brand-500 text-white shadow-theme-md transition-all hover:scale-105 hover:bg-brand-600 ${
-            arrastrando ? "scale-105 bg-brand-500" : ""
+          className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-[#FF3F1A] text-white shadow-md transition-all hover:scale-105 hover:bg-[#e03716] ${
+            arrastrando ? "scale-105 bg-[#FF3F1A]" : ""
           }`}
         >
           <svg
@@ -286,7 +286,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
         </div>
 
         {/* ── Cabecera: identidad + nº de pedido + acciones ── */}
-        <header className="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+        <header className="flex items-center justify-between gap-3 border-b border-[#ECECEC] px-4 py-3 dark:border-gray-800">
           <div className="flex min-w-0 items-center gap-3">
             <CanalAvatar
               canal={conv?.canal}
@@ -295,10 +295,10 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               status={conv ? statusDe(conv.estado) : "offline"}
             />
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-ink-title dark:text-white/90">
+              <h2 className="truncate text-[16px] font-bold text-[#190088] dark:text-white/90">
                 {nombre}
               </h2>
-              <p className="truncate text-xs text-gray-400 dark:text-gray-500">{telefono}</p>
+              <p className="truncate text-[12px] font-normal text-[#212121]/60 dark:text-gray-500">{telefono}</p>
             </div>
           </div>
 
@@ -308,34 +308,24 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
                 `convId` (tarjeta "Clientes") puede no haber ninguno, y un
                 contacto sin pedido no debe inventarse un número. */}
             {pedido && (
-              <Badge size="sm" color="light" className="tabular-nums">
+              <Badge size="sm" color="light" className="tabular-nums font-mono text-[12px]">
                 #{pedido.numero}
               </Badge>
             )}
-            {/* Estado del hilo. La forma de píldora ya dice que es un estado, así
-                que NO se le pone el rótulo «Estado» delante: repetirlo es ruido,
-                y el espacio de la cabecera es escaso. Lo que sí se evita —y era
-                el problema original— es que parezca un botón: una píldora con
-                fondo tenue, sin borde ni cursor, junto a dos controles que sí
-                llevan texto, se lee como dato. El color lo da el catálogo del
-                store, nunca un literal. */}
+            {/* Estado del hilo. */}
             {conv && (
               <Badge size="sm" color={badgeEstado(conv.estado)}>
                 {etiquetaEstado(conv.estado)}
               </Badge>
             )}
 
-            {/* Acciones con TEXTO, no solo icono: «Abrir en consola» y «Cerrar»
-                son inequívocas a la primera, mientras que un icono de flecha
-                saliente y una X exigen que el usuario los descifre. En pantallas
-                estrechas el texto se oculta y quedan los iconos, que siguen
-                llevando `aria-label`. */}
+            {/* Acciones con TEXTO */}
             <button
               type="button"
               onClick={abrirConsolaCompleta}
               title="Abrir esta conversación en la consola completa"
               aria-label="Abrir en consola completa"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-bold text-[#190088] transition-colors hover:bg-[#ECECEC]/60 cursor-pointer dark:text-[#97D6DF] dark:hover:bg-white/5"
             >
               <svg
                 width="16"
@@ -360,7 +350,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               onClick={onClose}
               title="Cerrar el panel (Esc)"
               aria-label="Cerrar el panel"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-bold text-[#212121]/70 transition-colors hover:bg-[#ECECEC]/60 hover:text-[#190088] cursor-pointer dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               <svg
                 width="16"
@@ -385,14 +375,12 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
         {conv ? (
           <>
             <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
-              {/* `sinCabecera`: la identidad del cliente y el nº de pedido ya
-                  viven en la cabecera del drawer; sin esto se duplicarían. */}
               <ChatView convId={conv.id} sinCabecera />
             </div>
             <div className="shrink-0">
               {cerrada ? (
-                <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{MOTIVO_CERRADA}</p>
+                <div className="border-t border-[#ECECEC] px-4 py-3 dark:border-gray-800">
+                  <p className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-500">{MOTIVO_CERRADA}</p>
                 </div>
               ) : (
                 <Composer convId={conv.id} />
@@ -401,7 +389,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           </>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ECECEC]/60 dark:bg-white/5">
               <svg
                 width="24"
                 height="24"
@@ -411,21 +399,25 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-400"
+                className="text-[#190088] dark:text-[#97D6DF]"
               >
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
             </div>
-            <h3 className="text-sm font-semibold text-ink-title dark:text-white/90">
+            <h3 className="text-[16px] font-bold text-[#190088] dark:text-white/90">
               Sin conversación
             </h3>
-            <p className="max-w-xs text-xs text-gray-400 dark:text-gray-500">
+            <p className="max-w-xs text-[14px] font-normal text-[#212121]/70 dark:text-gray-400">
               {nombre} todavía no tiene un hilo de WhatsApp. La conversación se inicia desde el
               dispositivo del cliente.
             </p>
-            <Button variant="outline" size="sm" onClick={abrirConsolaCompleta}>
+            <button
+              type="button"
+              onClick={abrirConsolaCompleta}
+              className="rounded-xl bg-[#190088] px-4 py-2 text-[12px] font-bold text-white transition-all hover:bg-[#14006f] cursor-pointer"
+            >
               Abrir la consola de chat
-            </Button>
+            </button>
           </div>
         )}
       </aside>

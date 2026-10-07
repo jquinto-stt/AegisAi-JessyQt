@@ -7,7 +7,7 @@ import { Tab } from "@/elements/ui/tabs";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
-import { operadoresStore, rolesStore, type Operador, type OperadorEstado } from "@/stores";
+import { operadoresStore, rolesStore, type Modulo, type Operador, type OperadorEstado } from "@/stores";
 import { PageMeta } from "@/shell/meta";
 import { ConfigHeader } from "@/pages/config-layout";
 import { PlusIcon } from "@/icons";
@@ -70,7 +70,11 @@ const FORM_VACIO: PersonaForm = {
   rolId: "",
 };
 
-export const EquipoPage = observer(() => {
+export interface EquipoPageProps {
+  modulo?: Modulo;
+}
+
+export const EquipoPage = observer(({ modulo = "pedidos" }: EquipoPageProps) => {
   const [vista, setVista] = useState<"equipo" | "roles">("equipo");
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<string>(FILTRO_ESTADO_TODAS);
@@ -87,8 +91,10 @@ export const EquipoPage = observer(() => {
    */
   const [tocados, setTocados] = useState<Partial<Record<CampoForm, boolean>>>({});
 
-  const equipo = operadoresStore.porModulo("pedidos");
-  const pendientes = operadoresStore.pendientesCount("pedidos");
+  const moduloActivo: Modulo = modulo;
+  const moduloLabel = moduloActivo === "inventarios" ? "Inventarios" : "Pedidos";
+  const equipo = operadoresStore.porModulo(moduloActivo);
+  const pendientes = operadoresStore.pendientesCount(moduloActivo);
 
   /**
    * Roles asignables: todos, menos el de administrador (no se reparte por error).
@@ -134,16 +140,12 @@ export const EquipoPage = observer(() => {
       return;
     }
 
-    operadoresStore.crear("pedidos", {
+    operadoresStore.crear(moduloActivo, {
       nombre: form.nombre.trim(),
       email: form.email.trim(),
       telefono: form.telefono.trim(),
       cargo: form.cargo.trim() || undefined,
       rolId: form.rolId,
-      // Nace ACTIVO: lo dio de alta el propio administrador y ya eligió un rol,
-      // así que no hay nada que aprobar. Antes nacía "pendiente" (el estado
-      // reservado a las solicitudes de /operador/registro) y la persona quedaba
-      // en el grupo "Pendientes de aprobación" con sus permisos ya configurados.
       estado: "activo",
     });
 
@@ -167,24 +169,17 @@ export const EquipoPage = observer(() => {
   return (
     <>
       <PageMeta
-        title="Equipo y perfiles"
-        description="Personas del módulo de Pedidos, sus roles y qué puede hacer cada una"
+        title={`Operadores · ${moduloLabel}`}
+        description={`Operadores del módulo de ${moduloLabel}, sus roles y qué puede hacer cada uno`}
       />
 
-      {/* Encabezado de la página. Lo pone la propia página porque ya no vive
-          dentro de un `ConfigShell`: al salir de Configuración recupera su
-          `<h1>` y su descripción, que es lo que le dice al usuario dónde está
-          sin depender del menú lateral.
-          Sin badge de pendientes aquí: el contador ya vive junto a la pestaña
-          «Pendientes», que es donde se actúa sobre él. Repetirlo en dos sitios
-          a la vez es ruido, no énfasis. */}
       <div className="mb-5">
         <ConfigHeader
-          titulo={vista === "roles" ? "Gestión de Roles" : "Equipo y perfiles"}
+          titulo={vista === "roles" ? "Gestión de Roles" : `Operadores · ${moduloLabel}`}
           descripcion={
             vista === "roles"
               ? "Un rol es un paquete de permisos con nombre. Se define una vez y se asigna a varias personas."
-              : "Las personas de tu negocio, el rol de cada una y qué puede hacer. El rol define los permisos; el perfil los muestra en detalle."
+              : `Las personas del módulo de ${moduloLabel}, el rol de cada una y qué puede hacer. El rol define los permisos; el perfil los muestra en detalle.`
           }
         />
       </div>
@@ -239,7 +234,7 @@ export const EquipoPage = observer(() => {
             className="px-5 py-2.5 text-sm font-semibold shadow-theme-xs transition-all hover:shadow-md active:scale-95"
             onClick={() => setVista("equipo")}
           >
-            ← Volver a equipo
+            ← Volver a operadores
           </Button>
         </div>
       )}

@@ -1,13 +1,8 @@
 import React from "react";
-import { useNavigate } from "react-router";
-import {
-  ArrowLeftIcon,
-} from "@heroicons/react/24/outline";
 import InteractiveDotGrid from "@/elements/common/InteractiveDotGrid";
 import { DecorativeCircles } from "@/elements/common/DecorativeCircles";
 import { cn } from "@/utils";
 import { NectoLogo } from "../../compositions/shared/NectoLogo";
-import { sessionStore } from "@/stores";
 import { LegalFooterLinks } from "../../legal/LegalFooterLinks";
 
 interface PublicPageLayoutProps {
@@ -40,12 +35,6 @@ export default function PublicPageLayout({
   heroColor = "blue",
   children,
 }: PublicPageLayoutProps) {
-  const navigate = useNavigate();
-  const isAuthenticated = sessionStore.isReady;
-
-  const backLabel = isAuthenticated ? "Volver a mi organización" : "Iniciar sesión";
-  const backTarget = isAuthenticated ? "/modulos" : "/login";
-
   return (
     <div
       className={cn(
@@ -74,15 +63,6 @@ export default function PublicPageLayout({
         <div className={cn("relative z-10 mx-auto w-full", contentWidth === "wide" ? "max-w-6xl" : "max-w-5xl")}>
           <div className="flex items-center justify-between gap-4">
             <img src="/images/logo/necto-full-pure-white.svg" alt="Necto" className="h-7 w-auto" />
-
-            <button
-              type="button"
-              onClick={() => navigate(backTarget)}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-theme-xs font-bold text-white backdrop-blur-sm transition-colors hover:bg-white/25"
-            >
-              <ArrowLeftIcon className="h-3.5 w-3.5" />
-              <span>{backLabel}</span>
-            </button>
           </div>
 
           <div className={cn("max-w-3xl space-y-4", compactHero ? "mt-10" : "mt-16")}>

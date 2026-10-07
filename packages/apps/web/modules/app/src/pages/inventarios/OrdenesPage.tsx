@@ -29,7 +29,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
   // Formulario nueva orden
   const [productoId, setProductoId] = useState(productosStore.productos[0]?.id || "");
   const [proveedorId, setProveedorId] = useState(productosStore.proveedores[0]?.id || "");
-  const [sedeId, setSedeId] = useState(productosStore.sedesActivas[0]?.id || "");
   const [cantidad, setCantidad] = useState("20");
   const [valorTotal, setValorTotal] = useState("");
   const [fechaEntrega, setFechaEntrega] = useState("");
@@ -42,7 +41,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
   const [editCantidad, setEditCantidad] = useState("");
   const [editValorTotal, setEditValorTotal] = useState("");
   const [editFechaEntrega, setEditFechaEntrega] = useState("");
-  const [editSedeId, setEditSedeId] = useState("");
 
   const ordenes = productosStore.ordenes;
 
@@ -60,8 +58,7 @@ export const OrdenesPage = observer(function OrdenesPage() {
     return (
       o.productoNombre.toLowerCase().includes(q) ||
       o.numero.toLowerCase().includes(q) ||
-      (o.proveedorNombre && o.proveedorNombre.toLowerCase().includes(q)) ||
-      (o.sedeNombre && o.sedeNombre.toLowerCase().includes(q))
+      (o.proveedorNombre && o.proveedorNombre.toLowerCase().includes(q))
     );
   });
 
@@ -76,7 +73,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
     const res = productosStore.crearOrden({
       productoId: prod.id,
       proveedorId,
-      sedeId,
       cantidad: cant,
       valorTotal: val,
       unidad: prod.unidad,
@@ -96,7 +92,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
     setEditCantidad(ord.cantidad.toString());
     setEditValorTotal(ord.valorTotal.toString());
     setEditFechaEntrega(ord.fechaEntregaEstimada);
-    setEditSedeId(ord.sedeId || productosStore.sedesActivas[0]?.id || "");
     setModalEditarAbierto(true);
   };
 
@@ -110,7 +105,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
       cantidad: cant,
       valorTotal: editValorTotal ? parseFloat(editValorTotal) : undefined,
       fechaEntregaEstimada: editFechaEntrega,
-      sedeId: editSedeId,
     });
 
     if (res.ok) {
@@ -235,7 +229,7 @@ export const OrdenesPage = observer(function OrdenesPage() {
           <CardHeader className="p-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="w-full sm:w-72">
               <SearchInput
-                placeholder="Buscar por producto, orden, proveedor o sede..."
+                placeholder="Buscar por producto, orden o proveedor..."
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
               />
@@ -257,9 +251,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
                   </TableCell>
                   <TableCell header className="px-5 py-3 text-xs text-gray-500">
                     Proveedor
-                  </TableCell>
-                  <TableCell header className="px-5 py-3 text-xs text-gray-500">
-                    Sede Destino
                   </TableCell>
                   <TableCell header className="px-5 py-3 text-xs text-gray-500 text-end">
                     Cantidad
@@ -290,9 +281,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
                     </TableCell>
                     <TableCell className="px-5 py-3 text-xs text-gray-500">
                       {ord.proveedorNombre}
-                    </TableCell>
-                    <TableCell className="px-5 py-3 text-xs font-medium text-gray-700 dark:text-gray-300">
-                      {ord.sedeNombre || "Sede Centro"}
                     </TableCell>
                     <TableCell className="px-5 py-3 text-end font-medium text-sm">
                       {ord.cantidad} {ord.unidad}
@@ -394,18 +382,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="ordSede">Sede de Destino *</Label>
-                <Select
-                  options={productosStore.sedesActivas.map((s) => ({
-                    value: s.id,
-                    label: s.nombre,
-                  }))}
-                  defaultValue={sedeId}
-                  onChange={(val: string) => setSedeId(val)}
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="ordCantidad">Cantidad *</Label>
@@ -498,17 +474,6 @@ export const OrdenesPage = observer(function OrdenesPage() {
             </div>
 
             <form onSubmit={handleGuardarEdicion} className="space-y-4">
-              <div>
-                <Label htmlFor="editOrdSede">Sede de Destino</Label>
-                <Select
-                  options={productosStore.sedesActivas.map((s) => ({
-                    value: s.id,
-                    label: s.nombre,
-                  }))}
-                  defaultValue={editSedeId}
-                  onChange={(val: string) => setEditSedeId(val)}
-                />
-              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>

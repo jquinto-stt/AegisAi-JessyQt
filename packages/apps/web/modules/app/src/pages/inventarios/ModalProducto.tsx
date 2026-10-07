@@ -523,20 +523,6 @@ export function ModalProducto({
               </div>
             </div>
 
-            {!esEdicion && productosStore.sedesActivas.length > 1 && (
-              <div>
-                <Label>Sede de ingreso de existencias iniciales</Label>
-                <Select
-                  aria-label="Sede de ingreso inicial"
-                  options={productosStore.sedesActivas.map((s) => ({
-                    value: s.id,
-                    label: s.nombre,
-                  }))}
-                  defaultValue={form.sedeInicialId || productosStore.sedesActivas[0]?.id}
-                  onChange={(v) => campo("sedeInicialId", v)}
-                />
-              </div>
-            )}
 
             <div>
               <Label htmlFor={idCampo("vencimiento")}>Fecha de vencimiento</Label>

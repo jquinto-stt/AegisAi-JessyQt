@@ -10,7 +10,6 @@ import ModuleSwitcher from "@/shell/header/ModuleSwitcher";
 import NotificationDropdown from "@/shell/header/NotificationDropdown";
 import UserDropdown from "@/shell/header/UserDropdown";
 import { AppSidebar } from "@/app/AppSidebar";
-import { AppFooter } from "@/shell/footer";
 import { sessionStore } from "@/stores";
 import { operadorSimuladoNombre, rolSimuladoNombre } from "@/stores/acceso.utils";
 import { inicialesDe } from "@/utils";
@@ -162,19 +161,20 @@ export const AppShell = () => {
 
   const esChatConversaciones =
     location.pathname === "/conversaciones" ||
-    location.pathname === "/conversaciones/";
+    location.pathname.startsWith("/conversaciones/") ||
+    location.pathname === "/pedidos/chats" ||
+    location.pathname.startsWith("/pedidos/chats/");
 
   const esTableroKanban =
     location.pathname === "/pedidos" ||
     location.pathname === "/pedidos/";
 
-  const esPantallaFija = esChatConversaciones || esTableroKanban;
+  const esPantallaFija = esChatConversaciones || esTableroKanban || esChatAsistente;
 
   return (
     <BaseAppShell
       sidebar={<AppSidebar />}
       header={<AppHeader />}
-      footer={esPantallaFija ? undefined : <AppFooter />}
       noCard={esChatAsistente}
       pantallaFija={esPantallaFija}
     >

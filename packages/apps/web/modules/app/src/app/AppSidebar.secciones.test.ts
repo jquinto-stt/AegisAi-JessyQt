@@ -32,7 +32,7 @@ const SRC = join(process.cwd(), "src");
 const RUTA_SIDEBAR = join(SRC, "app", "AppSidebar.tsx");
 
 /** Las secciones que NO son del módulo sino de la capa transversal. */
-const TRANSVERSALES = new Set(["asistente", "conversaciones"]);
+const TRANSVERSALES = new Set(["asistente"]);
 
 /**
  * Extrae los `seccionId` declarados para un módulo dentro de `ITEMS_MODULO`.

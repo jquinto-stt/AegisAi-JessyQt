@@ -91,10 +91,11 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
     { id: "catalogo", label: "Catálogo", path: "/pedidos/catalogo", capacidad: "orders.read" },
     { id: "crear", label: "Crear pedido", path: "/pedidos/crear", capacidad: "orders.create" },
     { id: "historial", label: "Historial", path: "/pedidos/historial", capacidad: "orders.read" },
+    { id: "chats", label: "Chats", path: "/pedidos/chats", capacidad: "channels.read" },
     { id: "analitica", label: "Analítica", path: "/pedidos/analitica", capacidad: "orders.read" },
     { id: "configuracion", label: "Configuración", path: "/pedidos/config", capacidad: "settings.read" },
+    { id: "operadores", label: "Operadores", path: "/pedidos/operadores", capacidad: "team.read" },
     { id: "asistente", label: "Asistente", path: "/asistente", capacidad: "assistant.use" },
-    { id: "conversaciones", label: "Conversaciones", path: "/conversaciones", capacidad: "channels.read" },
   ],
 
   /**
@@ -118,11 +119,11 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
   inventarios: [
     { id: "inicio", label: "Dashboard", path: "/inventarios", capacidad: "inventory.read" },
     { id: "productos", label: "Productos", path: "/inventarios/productos", capacidad: "inventory.read" },
-    { id: "sedes", label: "Sedes", path: "/inventarios/sedes", capacidad: "inventory.read" },
     { id: "ordenes", label: "Órdenes", path: "/inventarios/ordenes", capacidad: "inventory.read" },
     { id: "proveedores", label: "Proveedores", path: "/inventarios/proveedores", capacidad: "inventory.read" },
     { id: "reportes", label: "Reportes", path: "/inventarios/reportes", capacidad: "inventory.read" },
     { id: "configuracion", label: "Configuración", path: "/inventarios/config", capacidad: "inventory.read" },
+    { id: "operadores", label: "Operadores", path: "/inventarios/operadores", capacidad: "team.read" },
   ],
 };
 
@@ -303,6 +304,51 @@ const SEED: Operador[] = [
     avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
     estado: "inactivo",
     modulo: "pedidos",
+    rolId: "vendedor",
+  },
+  // ── Operadores de Inventarios ───────────────────────────────────────────
+  {
+    id: "inv1",
+    nombre: "Carlos Mendoza",
+    email: "carlos.mendoza@negocio.com",
+    telefono: "+57 301 234 5678",
+    cargo: "Supervisor de Bodega",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+    estado: "activo",
+    modulo: "inventarios",
+    rolId: "supervisor_pedidos",
+  },
+  {
+    id: "inv2",
+    nombre: "Mariana Duarte",
+    email: "mariana.duarte@negocio.com",
+    telefono: "+57 311 345 6789",
+    cargo: "Auxiliar de Inventarios",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+    estado: "activo",
+    modulo: "inventarios",
+    rolId: "vendedor",
+  },
+  {
+    id: "inv3",
+    nombre: "Jorge Rentería",
+    email: "jorge.renteria@negocio.com",
+    telefono: "+57 315 456 7890",
+    cargo: "Analista de Stock",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+    estado: "activo",
+    modulo: "inventarios",
+    rolId: "analista_inventarios",
+  },
+  {
+    id: "inv4",
+    nombre: "Felipe Restrepo",
+    email: "felipe.restrepo@negocio.com",
+    telefono: "+57 320 567 8901",
+    cargo: "Conteo y Picking",
+    avatarUrl: "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&auto=format&fit=crop&q=80",
+    estado: "pendiente",
+    modulo: "inventarios",
     rolId: "vendedor",
   },
 ];
@@ -512,6 +558,18 @@ export class OperadoresStore {
   /** Elimina un operador de la lista. */
   eliminar(id: string) {
     this.operadores = this.operadores.filter((o) => o.id !== id);
+    this.emit();
+  }
+
+  /** Vacia el equipo de operadores para "Simular inicio desde 0". */
+  iniciarDesdeCero() {
+    this.operadores = [];
+    this.emit();
+  }
+
+  /** Restaura los operadores de ejemplo (seed) para el inicio normal. */
+  restaurarSeed() {
+    this.operadores = [...SEED];
     this.emit();
   }
 }

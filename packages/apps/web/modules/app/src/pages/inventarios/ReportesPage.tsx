@@ -18,7 +18,6 @@ import { BOM_UTF8, construirCsv, descargarCsv, nombreArchivoCsv } from "@/lib/cs
 export const ReportesPage = observer(function ReportesPage() {
   const [tabActiva, setTabActiva] = useState<"resumen" | "movimientos">("resumen");
   const [busquedaMov, setBusquedaMov] = useState("");
-  const [filtroSedeMov, setFiltroSedeMov] = useState("todas");
   const [filtroTipoMov, setFiltroTipoMov] = useState<"todos" | "entradas" | "salidas">("todos");
 
   const productos = productosStore.productosActivos;
@@ -91,7 +90,6 @@ export const ReportesPage = observer(function ReportesPage() {
   });
 
   const movimientosFiltrados = movimientos.filter((m) => {
-    if (filtroSedeMov !== "todas" && m.sedeId !== filtroSedeMov) return false;
     if (filtroTipoMov === "entradas" && !m.esEntrada) return false;
     if (filtroTipoMov === "salidas" && m.esEntrada) return false;
     if (busquedaMov.trim()) {
@@ -388,7 +386,7 @@ export const ReportesPage = observer(function ReportesPage() {
                   Historial de Entradas y Salidas
                 </CardTitle>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Rastrea cualquier movimiento físico: compras recibidas, traslados, ajustes o mermas.
+                  Rastrea cualquier movimiento físico: compras recibidas, ajustes o mermas.
                 </p>
               </div>
 
@@ -401,18 +399,7 @@ export const ReportesPage = observer(function ReportesPage() {
                     onChange={(e) => setBusquedaMov(e.target.value)}
                   />
                 </div>
-                {sedes.length > 1 && (
-                  <div className="w-36">
-                    <Select
-                      options={[
-                        { value: "todas", label: "Todas las sedes" },
-                        ...sedes.map((s) => ({ value: s.id, label: s.nombre })),
-                      ]}
-                      defaultValue={filtroSedeMov}
-                      onChange={(v) => setFiltroSedeMov(v)}
-                    />
-                  </div>
-                )}
+
                 <div className="w-36">
                   <Select
                     options={[
@@ -444,9 +431,6 @@ export const ReportesPage = observer(function ReportesPage() {
                           Producto
                         </TableCell>
                         <TableCell header className="px-5 py-3 text-xs text-gray-500">
-                          Sede
-                        </TableCell>
-                        <TableCell header className="px-5 py-3 text-xs text-gray-500">
                           Movimiento
                         </TableCell>
                         <TableCell header className="px-5 py-3 text-xs text-gray-500 text-end">
@@ -474,9 +458,6 @@ export const ReportesPage = observer(function ReportesPage() {
                           <TableCell className="px-5 py-3 font-semibold text-gray-900 dark:text-white text-sm">
                             <span className="block truncate max-w-xs">{m.productoNombre}</span>
                             <span className="block text-xs font-normal text-gray-400">SKU: {m.codigo}</span>
-                          </TableCell>
-                          <TableCell className="px-5 py-3 text-xs text-gray-600 dark:text-gray-300">
-                            {m.sedeNombre}
                           </TableCell>
                           <TableCell className="px-5 py-3 text-xs">
                             <Badge

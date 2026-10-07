@@ -53,7 +53,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   };
 
   return (
-    <div className="sticky bottom-0 border-t border-gray-200 bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7">
+    <div className="shrink-0 border-t border-[#ECECEC] bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7 font-sans text-[#212121]">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -66,13 +66,13 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             title="Insertar emoji"
-            className="mr-3 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200 shrink-0"
+            className="mr-3 text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200 shrink-0"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
-                d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12ZM10.0001 9.23256C10.0001 8.5422 9.44042 7.98256 8.75007 7.98256C8.05971 7.98256 7.50007 8.5422 7.50007 9.23256V9.23266C7.50007 9.92301 8.05971 10.4827 8.75007 10.4827C9.44042 10.4827 10.0001 9.92301 10.0001 9.23266V9.23256ZM15.2499 7.98256C15.9403 7.98256 16.4999 8.5422 16.4999 9.23256V9.23266C16.4999 9.92301 15.9403 10.4827 15.2499 10.4827C14.5596 10.4827 13.9999 9.23201 13.9999 9.23266V9.23256C13.9999 8.5422 14.5596 7.98256 15.2499 7.98256ZM9.23014 13.7116C8.97215 13.3876 8.5003 13.334 8.17625 13.592C7.8522 13.85 7.79865 14.3219 8.05665 14.6459C8.97846 15.8037 10.4026 16.5481 12 16.5481C13.5975 16.5481 15.0216 15.8037 15.9434 14.6459C16.2014 14.3219 16.1479 13.85 15.8238 13.592C15.4998 13.334 15.0279 13.3876 14.7699 13.7116C14.1205 14.5274 13.1213 15.0481 12 15.0481C10.8788 15.0481 9.87961 14.5274 9.23014 13.7116Z"
+                d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM3.5 12C3.5 7.30558 7.30558 3.5 12 3.5C16.6944 3.5 20.5 7.30558 20.5 12C20.5 16.6944 16.6944 20.5 12 20.5C7.30558 20.5 3.5 16.6944 3.5 12ZM10.0001 9.23256C10.0001 8.5422 9.44042 7.98256 8.75007 7.98256C8.05971 7.98256 7.50007 8.5422 7.50007 9.23256V9.23266C7.50007 9.92301 8.05971 10.4827 8.75007 10.4827C9.44042 10.4827 10.0001 9.92301 10.0001 9.23266V9.23256ZM15.2499 7.98256C15.9403 7.98256 16.4999 8.5422 16.4999 9.23256V9.23266C16.4999 9.92301 15.9403 10.4827 15.2499 10.4827C14.5596 10.4827 13.9999 9.23201 13.9999 9.23266V9.23256ZM13.9999 8.5422 14.5596 7.98256 15.2499 7.98256ZM9.23014 13.7116C8.97215 13.3876 8.5003 13.334 8.17625 13.592C7.8522 13.85 7.79865 14.3219 8.05665 14.6459C8.97846 15.8037 10.4026 16.5481 12 16.5481C13.5975 16.5481 15.0216 15.8037 15.9434 14.6459C16.2014 14.3219 16.1479 13.85 15.8238 13.592C15.4998 13.334 15.0279 13.3876 14.7699 13.7116C14.1205 14.5274 13.1213 15.0481 12 15.0481C10.8788 15.0481 9.87961 14.5274 9.23014 13.7116Z"
               />
             </svg>
           </button>
@@ -91,16 +91,16 @@ export const Composer = observer(({ convId }: { convId: string }) => {
                   ? "El bot está atendiendo esta conversación"
                   : "Escribe un mensaje..."
             }
-            className="w-full bg-transparent border-0 outline-hidden h-10 text-[15px] text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
+            className="w-full bg-transparent border-0 outline-hidden h-10 text-[14px] sm:text-[16px] font-normal text-[#212121] placeholder:text-[#212121]/40 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
 
-        {/* Acciones de la derecha: adjunto, mic y botón de envío índigo */}
+        {/* Acciones de la derecha: adjunto, mic y botón de envío naranja NECTO */}
         <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
           <button
             type="button"
             title="Adjuntar archivo"
-            className="text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            className="text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
@@ -114,7 +114,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             title="Nota de voz"
-            className="text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-200"
+            className="text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200"
           >
             <svg className="h-5 w-5 stroke-current" viewBox="0 0 24 24" fill="none">
               <rect x="7" y="2.75" width="10" height="12.5" rx="5" strokeWidth="1.5" />
@@ -128,7 +128,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             type="submit"
             disabled={!puedeEnviar}
             title="Enviar mensaje"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary-600 dark:bg-accent-300 dark:text-ink-body text-white shadow-theme-xs transition-colors hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF3F1A] text-white shadow-theme-xs transition-colors hover:bg-[#FF3F1A]/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PaperPlaneIcon className="h-4.5 w-4.5 fill-current" />
           </button>
@@ -136,28 +136,21 @@ export const Composer = observer(({ convId }: { convId: string }) => {
       </form>
 
       {!puedeResponder && (
-        <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
+        <p className="mt-1 text-[12px] font-normal text-[#FF3F1A] dark:text-[#FF3F1A]">
           {motivoSinPermiso("channels.respond")}
         </p>
       )}
 
-      {/* Bloqueo por modo: NO es falta de permiso. No se reutiliza el mensaje de
-          `motivoSinPermiso` porque diría algo falso —quien mira sí tiene
-          `channels.respond`— y mandaría al operador a revisar permisos que no
-          son el problema. El camino para recuperar el teclado es "Tomar chat". */}
       {puedeResponder && esModoBot && (
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+        <p className="mt-1 text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
           La atención la lleva el bot. Pulsa «Tomar chat» para responder tú.
         </p>
       )}
 
-      {/* El envío NO llegó a WhatsApp. Es el aviso que faltaba: antes el mensaje
-          se pintaba en el hilo igual, así que el operador creía haber respondido
-          y el cliente nunca lo leyó. */}
       {conversacionesStore.ultimoErrorEnvio && (
         <div
           role="alert"
-          className="mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-xs text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
+          className="mt-1.5 flex items-start gap-2 rounded-lg border border-error-300/60 bg-error-50 px-2.5 py-1.5 text-[12px] font-normal text-error-900 dark:border-error-500/30 dark:bg-error-500/10 dark:text-error-200/90"
         >
           <span className="mt-px shrink-0" aria-hidden="true">
             ⚠
@@ -168,7 +161,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             onClick={() => {
               conversacionesStore.ultimoErrorEnvio = null;
             }}
-            className="shrink-0 font-medium underline underline-offset-2 hover:no-underline"
+            className="shrink-0 font-bold underline underline-offset-2 hover:no-underline"
           >
             Descartar
           </button>

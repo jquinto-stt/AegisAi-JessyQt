@@ -40,8 +40,9 @@ export type ResultadoAbrirChat =
 /** Firma mínima de `navigate` de react-router que este módulo necesita. */
 type Navegar = (to: string) => void;
 
-/** Ruta de la consola de conversaciones (única superficie de chat del sistema). */
-export const RUTA_CONVERSACIONES = "/conversaciones";
+/** Ruta de la consola de chats (superficie de chat en Pedidos). */
+export const RUTA_CONVERSACIONES = "/pedidos/chats";
+export const RUTA_CHATS = "/pedidos/chats";
 
 /**
  * Abre el hilo de WhatsApp de un contacto DENTRO del sistema.

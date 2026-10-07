@@ -37,7 +37,7 @@ import {
   ProveedoresPage,
 } from "@/pages/inventarios";
 import { SimuladorWhatsApp } from "@/pages/simulador";
-import { OperadorRegistroPage } from "@/pages/operador";
+import { OperadorRegistroPage, OperadorLoginPage } from "@/pages/operador";
 import { RequireSession } from "@/app/RequireSession";
 import { CapabilityGuard } from "@/app/CapabilityGuard";
 import Login from "@/pages/Login";
@@ -155,46 +155,22 @@ export default function App() {
         <Route path="/pedidos/catalogo" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><CatalogoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/crear" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.create"><CrearPedidoPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/historial" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosHistorialPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/chats" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/analitica" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="orders.read"><PedidosAnaliticaPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/pedidos/config" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="settings.read"><PedidosConfigPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/pedidos/operadores" element={<ModuloGuard modulo="pedidos"><CapabilityGuard capacidad="team.read"><EquipoPage modulo="pedidos" /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Módulo Inventarios.
-
-            ── Independiente de Pedidos, a propósito ────────────────────────
-            No hay ninguna ruta que cruce los dos módulos y ninguna pantalla de
-            Inventarios importa nada de `@/pages/pedidos`. Un conteo no nace de
-            un pedido ni lo descuenta: el stock de este módulo sale del kárdex
-            de conteos, y un pedido entregado NO lo mueve. Se declara aquí para
-            que quien lea las rutas no suponga lo contrario.
-
-            ── Capacidad por pantalla, no una sola ─────────────────────────
-            Leer, contar y configurar son capacidades distintas (invariante C5):
-              · `inventory.read`      → ver listados, detalle, catálogo, historial,
-                                        alertas, reportes y la configuración.
-              · `inventory.count`     → abrir un conteo nuevo.
-              · `inventory.configure` → guardar la configuración del módulo.
-            `inventory.finalize` NO se aplica en la ruta: cerrar un conteo se
-            decide dentro del detalle, contra el estado real de ese conteo (si
-            tiene líneas sin contar, finalizar está bloqueado). Una guarda de
-            ruta que dejara entrar a quien no puede firmar produciría un botón
-            que miente.
-
-            ── Guardar no es entrar ────────────────────────────────────────
-            `/inventarios/config` exige `inventory.read`, no `configure`: quien
-            solo consulta debe poder leer los valores vigentes para entender un
-            reporte, con los controles deshabilitados y el motivo escrito en la
-            propia pantalla. Exigir `configure` para mirar obligaría a conceder
-            escritura a quien solo necesita leer. */}
-        {/* Inventarios — rediseño Retail / WMS */}
+        {/* Módulo Inventarios */}
         <Route path="/inventarios" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DashboardPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/dashboard" element={<Navigate to="/inventarios" replace />} />
         <Route path="/inventarios/productos" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ProductosPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/productos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleProductoPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/sedes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><SedesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/sedes" element={<Navigate to="/inventarios/productos" replace />} />
         <Route path="/inventarios/ordenes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><OrdenesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/proveedores" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ProveedoresPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/reportes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosReportesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/config" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosConfigPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/operadores" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="team.read"><EquipoPage modulo="inventarios" /></CapabilityGuard></ModuloGuard>} />
 
         {/* Compatibilidad de rutas legacy */}
         <Route path="/inventarios/elementos" element={<Navigate to="/inventarios/productos" replace />} />
@@ -208,47 +184,23 @@ export default function App() {
         <Route path="/inventarios/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleProductoPage /></CapabilityGuard></ModuloGuard>} />
 
 
-        {/* Organización — DOS pantallas hermanas: configuración de la
-            organización y equipo. Las dos exigen `team.manage`.
-
-            ── Por qué están separadas ──────────────────────────────────────
-            `/configuracion` agrupa lo que se ajusta UNA VEZ: identidad, región
-            y qué módulos están encendidos. `/equipo` agrupa lo que se hace
-            CADA SEMANA: invitar a alguien, aprobar una solicitud, cambiar un
-            rol. Estuvieron unidas como pestañas de una sola pantalla y el
-            usuario las buscaba por separado: enterrar una tarea recurrente
-            dentro de «Configuración» obliga a dos clics y a saber de antemano
-            que está ahí. El sidebar las muestra seguidas.
-
-            `/configuracion` es la ruta canónica, frente a las configs por módulo
-            (`/pedidos/config`, `/conversaciones/config`, `/asistente/config`).
-
-            ── Compatibilidad ──────────────────────────────────────────────
-            `/configuracion?tab=equipo` era la pestaña de equipo y ahora
-            redirige a `/equipo` (la guarda vive en `ConfiguracionPage`, porque
-            resolverla aquí exigiría leer el query string en la tabla de rutas).
-            `/configuracion?tab=general` y `?tab=modulos` siguen funcionando.
-            `/equipo/:id` es el perfil de una persona, que se abre desde la
-            tabla de equipo. */}
+        {/* Organización */}
         <Route path="/configuracion" element={<CapabilityGuard capacidad="team.manage"><ConfiguracionPage /></CapabilityGuard>} />
-        <Route path="/equipo" element={<CapabilityGuard capacidad="team.manage"><EquipoPage /></CapabilityGuard>} />
+        <Route path="/equipo" element={<Navigate to="/pedidos/operadores" replace />} />
         <Route path="/equipo/:id" element={<CapabilityGuard capacidad="team.manage"><PerfilOperadorPage /></CapabilityGuard>} />
         <Route path="/organizacion/configuracion" element={<Navigate to="/configuracion?tab=modulos" replace />} />
         <Route path="/organizacion/modulos" element={<Navigate to="/configuracion?tab=modulos" replace />} />
 
-        {/* Redirecciones legacy para compatibilidad. Apuntan a `/equipo`, que es
-            el ÚNICO sitio donde se declara a dónde va el equipo: repetir el
-            destino final en cada alias es cómo tres rutas empiezan a discrepar. */}
-        <Route path="/pedidos/equipo" element={<Navigate to="/equipo" replace />} />
+        {/* Redirecciones legacy para compatibilidad */}
+        <Route path="/pedidos/equipo" element={<Navigate to="/pedidos/operadores" replace />} />
         <Route path="/pedidos/equipo/:id" element={<LegacyEquipoIdRedirect />} />
-        <Route path="/pedidos/operadores" element={<Navigate to="/equipo" replace />} />
 
         {/* Plugin Necto IA */}
         <Route path="/asistente" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistentePage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/asistente/config" element={<ModuloGuard modulo="asistente"><CapabilityGuard capacidad="assistant.use"><AsistenteConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* Plugin Canales WhatsApp */}
-        <Route path="/conversaciones" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><ConversacionesPage /></CapabilityGuard></ModuloGuard>} />
+        {/* Plugin Canales WhatsApp / Chats en Pedidos */}
+        <Route path="/conversaciones" element={<Navigate to="/pedidos/chats" replace />} />
         <Route path="/conversaciones/historial" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><HistorialAtencionPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/analitica" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.read"><AnaliticaConversacionesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/conversaciones/config" element={<ModuloGuard modulo="conversaciones"><CapabilityGuard capacidad="channels.manage"><ConversacionesConfigPage /></CapabilityGuard></ModuloGuard>} />
@@ -318,7 +270,7 @@ export default function App() {
 
       <Route path="/seleccionar" element={<SeleccionarPage />} />
       <Route path="/operador/registro" element={<OperadorRegistroPage />} />
-      <Route path="/operador/login" element={<RedireccionViendoComo />} />
+      <Route path="/operador/login" element={<OperadorLoginPage />} />
       <Route path="/wa" element={<SimuladorWhatsApp />} />
       <Route path="/" element={<Navigate to="/pedidos/inicio" replace />} />
       <Route path="*" element={<Navigate to="/pedidos/inicio" replace />} />

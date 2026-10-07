@@ -50,10 +50,10 @@ import {
  * para la misma pantalla —que es exactamente lo que pasó con `/workspaces` y
  * `/workspace/modulos`, hoy reducidas a redirecciones—.
  */
-const RUTA_LANZADOR = "/modulos";
+const RUTA_LANZADOR = "/dashboard";
 
 /** Tooltip común a los dos logos: dicen lo MISMO porque hacen lo mismo. */
-const TOOLTIP_LANZADOR = "Volver al selector de módulos";
+const TOOLTIP_LANZADOR = "NECTO";
 
 /**
  * Los logos llevan de vuelta al Lanzador de Módulos (`/modulos`).
@@ -308,29 +308,22 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
     { seccionId: "catalogo", Icono: TableIcon },
     { seccionId: "crear", Icono: PlusIcon },
     { seccionId: "historial", Icono: TaskIcon },
+    { seccionId: "chats", Icono: ChatIcon },
     { seccionId: "analitica", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
+    { seccionId: "operadores", Icono: GroupIcon },
   ],
   /**
-   * Inventarios: siete ítems, en el orden de la operación.
-   *
-   * El orden no imita al de Pedidos. En Pedidos se va de lo general (inicio) a
-   * lo específico (crear) porque las cuatro vistas son la misma mesa de trabajo
-   * mirada de distinta forma. Aquí el recorrido es lineal —contar hoy, mantener
-   * el catálogo, mirar lo que pasó, ajustar— y el sidebar lo refleja.
-   *
-   * **«Nuevo inventario» no es un ítem**: no se navega a crear un conteo, se
-   * llega desde el botón de la lista. Un ítem permanente para una acción de un
-   * solo uso ocupa sitio todos los días para un gesto que se hace una vez al mes.
+   * Inventarios: ocho ítems, en el orden de la operación.
    */
   inventarios: [
     { seccionId: "inicio", Icono: GridIcon },
     { seccionId: "productos", Icono: BoxIcon },
-    { seccionId: "sedes", Icono: FolderIcon },
     { seccionId: "ordenes", Icono: CheckLineIcon },
     { seccionId: "proveedores", Icono: GroupIcon },
     { seccionId: "reportes", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
+    { seccionId: "operadores", Icono: GroupIcon },
   ],
 };
 
@@ -407,40 +400,7 @@ const SidebarContent = observer(() => {
       <SimulacionBanner />
 
       <div className="flex flex-col gap-5">
-        {/* Canales (Conversaciones e Historial) — capa transversal de comunicaciones.
-            Tres estados, y ninguno es «desaparecer sin decir nada»:
-              · el rol no puede leer canales        → se oculta (contrato §4);
-              · puede y el conector está encendido  → la sección normal;
-              · puede y el conector está apagado    → la sección con el motivo. */}
-        {puedeVerCanales && canalesConectados && (
-          <div>
-            <MenuSectionHeader
-              title="Canales"
-              collapsible
-              isCollapsed={estaColapsado("canales")}
-              onToggle={() => toggleSeccion("canales")}
-            />
-            <div
-              className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                estaColapsado("canales") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
-              }`}
-            >
-              <ul className="flex flex-col gap-1">
-                <MenuItem icon={<ChatIcon />} name="Conversaciones" path="/conversaciones" isActive={isActive} />
-                <MenuItem icon={<TaskIcon />} name="Historial de atención" path="/conversaciones/historial" isActive={isActive} />
-                {sessionStore.hasPermission("channels.manage") && (
-                  <MenuItem icon={<PlugInIcon />} name="Configuración del canal" path="/conversaciones/config" isActive={isActive} />
-                )}
-              </ul>
-            </div>
-          </div>
-        )}
-        {puedeVerCanales && !canalesConectados && hayModuloActivo && (
-          <SeccionSinConectar
-            titulo="Canales"
-            motivo="El canal de WhatsApp está desconectado, así que Conversaciones e Historial de atención todavía no aparecen."
-          />
-        )}
+
 
         {/* Inteligencia (Necto Intelligence) — justo debajo de Canales, mismo criterio. */}
         {puedeVerAsistente && asistenteConectado && (
@@ -564,12 +524,6 @@ const SidebarContent = observer(() => {
                   name="Configuración"
                   path="/configuracion"
                   isActive={esRutaConfiguracion}
-                />
-                <MenuItem
-                  icon={<GroupIcon className="size-5" />}
-                  name="Equipo y perfiles"
-                  path="/equipo"
-                  isActive={esRutaEquipo}
                 />
               </ul>
             </div>

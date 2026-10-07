@@ -78,7 +78,6 @@ export const ProductosPage = observer(function ProductosPage() {
   const [consulta, setConsulta] = useState("");
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
   const [categoria, setCategoria] = useState(FILTRO_TODOS);
-  const [sede, setSede] = useState(FILTRO_TODOS);
   const [semaforo, setSemaforo] = useState(FILTRO_TODOS);
   const [pagina, setPagina] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -101,7 +100,7 @@ export const ProductosPage = observer(function ProductosPage() {
     productosStore.productosOrdenados,
     (id, sedes) => productosStore.cantidadDe(id, sedes),
     (producto, sedes) => productosStore.semaforoDe(producto, sedes),
-    { consulta, categoria, sede, semaforo, todos: FILTRO_TODOS },
+    { consulta, categoria, sede: FILTRO_TODOS, semaforo, todos: FILTRO_TODOS },
   );
 
   const paginaActual = paginaValida(pagina, filas.length, FILAS_POR_PAGINA);
@@ -110,7 +109,6 @@ export const ProductosPage = observer(function ProductosPage() {
 
   const filtrosPuestos =
     (categoria !== FILTRO_TODOS ? 1 : 0) +
-    (sede !== FILTRO_TODOS ? 1 : 0) +
     (semaforo !== FILTRO_TODOS ? 1 : 0);
 
   const hayFiltro = filtrosPuestos > 0 || consulta.trim().length > 0;
@@ -119,7 +117,6 @@ export const ProductosPage = observer(function ProductosPage() {
   function quitarFiltros() {
     setConsulta("");
     setCategoria(FILTRO_TODOS);
-    setSede(FILTRO_TODOS);
     setSemaforo(FILTRO_TODOS);
     setVersionFiltros((v) => v + 1);
     setPagina(0);
@@ -154,17 +151,10 @@ export const ProductosPage = observer(function ProductosPage() {
     { value: FILTRO_TODOS, label: "Todas las categorías" },
     ...productosStore.categorias.map((c) => ({ value: c, label: c })),
   ];
-  const opcionesSede = [
-    { value: FILTRO_TODOS, label: "Todas las sedes" },
-    ...productosStore.sedesActivas.map((s) => ({ value: s.id, label: s.nombre })),
-  ];
   const opcionesEstado = [
     { value: FILTRO_TODOS, label: "Todos los estados" },
     ...OPCIONES_SEMAFORO,
   ];
-
-  const sedeFiltrada =
-    sede === FILTRO_TODOS ? null : productosStore.nombreDeSede(sede);
 
   return (
     <ContenedorPagina>
@@ -272,20 +262,7 @@ export const ProductosPage = observer(function ProductosPage() {
                 setPagina(0);
               }}
             />
-            {productosStore.sedesActivas.length > 1 && (
-              <div className="w-full sm:w-48">
-                <Select
-                  key={`sede-bar-${versionFiltros}`}
-                  aria-label="Filtrar por sede"
-                  options={opcionesSede}
-                  defaultValue={sede}
-                  onChange={(v) => {
-                    setSede(v);
-                    setPagina(0);
-                  }}
-                />
-              </div>
-            )}
+
             <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
@@ -308,17 +285,7 @@ export const ProductosPage = observer(function ProductosPage() {
 
           {/* ── Filtros ─────────────────────────────────────────────────────── */}
           {filtrosAbiertos && (
-            <div className="grid gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-3 dark:bg-white/[0.02]">
-              <Select
-                key={`sede-${versionFiltros}`}
-                aria-label="Filtrar por sede"
-                options={opcionesSede}
-                defaultValue={sede}
-                onChange={(v) => {
-                  setSede(v);
-                  setPagina(0);
-                }}
-              />
+            <div className="grid gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 dark:bg-white/[0.02]">
               <Select
                 key={`categoria-${versionFiltros}`}
                 aria-label="Filtrar por categoría"
@@ -340,7 +307,7 @@ export const ProductosPage = observer(function ProductosPage() {
                 }}
               />
               {hayFiltro && (
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <Button variant="ghost" size="sm" onClick={quitarFiltros}>
                     Quitar los filtros
                   </Button>
@@ -377,7 +344,6 @@ export const ProductosPage = observer(function ProductosPage() {
                 <ProductosTabla
                   filas={visibles}
                   hoy={hoy}
-                  sedeFiltrada={sedeFiltrada}
                   onAbrir={(id) => navigate(`/inventarios/productos/${id}`)}
                   onReponer={(prod, cant) => {
                     setProductoAReponer(prod);

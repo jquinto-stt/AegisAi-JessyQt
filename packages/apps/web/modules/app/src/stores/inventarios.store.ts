@@ -1066,6 +1066,26 @@ export class InventariosStore {
       fecha: nowIso(),
     });
   }
+
+  /** Vacia inventarios y elementos para "Simular inicio desde 0" (sin datos previos). */
+  iniciarDesdeCero() {
+    this.elementos = [];
+    this.ubicaciones = [];
+    this.inventarios = [];
+    this.lineas = [];
+    this.evidencias = [];
+    this.eventos = [];
+  }
+
+  /** Restaura los datos de prueba (seed) de Inventario. */
+  restaurarSeed() {
+    this.elementos = ELEMENTOS_SEED.map((e) => ({ ...e }));
+    this.ubicaciones = UBICACIONES_SEED.map((u) => ({ ...u }));
+    this.inventarios = INVENTARIOS_SEED.map((i) => ({ ...i }));
+    this.lineas = LINEAS_SEED.map((l) => ({ ...l, evidenciaIds: [...l.evidenciaIds] }));
+    this.evidencias = EVIDENCIAS_SEED.map((e) => ({ ...e }));
+    this.eventos = EVENTOS_SEED.map((e) => ({ ...e, detalle: e.detalle ? { ...e.detalle } : undefined }));
+  }
 }
 
 export const inventariosStore = new InventariosStore();

@@ -200,20 +200,20 @@ const CrearPedidoRapidoModal = observer(
     };
 
     return (
-      <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
+      <Modal isOpen={isOpen} onClose={onClose} className="max-w-lg p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-900 border border-[#ECECEC] dark:border-gray-800 font-sans text-[#212121]">
+        <div className="flex items-center justify-between border-b border-[#ECECEC] pb-3 dark:border-gray-800">
           <div>
-            <h3 className="text-base font-bold text-ink-title dark:text-white/90">
+            <h3 className="text-[16px] font-bold text-[#190088] dark:text-white/90">
               Nuevo Pedido para {clienteNombre}
             </h3>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+            <p className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-500">
               Teléfono: {clienteTelefono}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5"
+            className="rounded-lg p-1 text-[#212121]/60 hover:bg-[#ECECEC] hover:text-[#190088] dark:hover:bg-white/5"
           >
             ✕
           </button>
@@ -222,17 +222,17 @@ const CrearPedidoRapidoModal = observer(
         <div className="mt-4 space-y-4 max-h-[70vh] overflow-y-auto pr-1 custom-scrollbar">
           {/* Modalidad de entrega */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+            <label className="text-[12px] font-bold text-[#190088] dark:text-gray-400">
               Modalidad de entrega
             </label>
             <div className="mt-1.5 grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setModalidad("domicilio")}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[12px] transition-colors ${
                   modalidad === "domicilio"
-                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-accent-500/40 dark:bg-brand-500/10 dark:text-brand-400"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+                    ? "border-[#190088] bg-[#190088]/10 text-[#190088] font-bold dark:border-[#97D6DF]/40 dark:bg-[#FF3F1A]/10 dark:text-[#97D6DF]"
+                    : "border-[#ECECEC] text-[#212121] hover:bg-[#ECECEC]/50 font-normal dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
                 🛵 Domicilio
@@ -240,10 +240,10 @@ const CrearPedidoRapidoModal = observer(
               <button
                 type="button"
                 onClick={() => setModalidad("retiro")}
-                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-medium transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[12px] transition-colors ${
                   modalidad === "retiro"
-                    ? "border-secondary-500 bg-secondary-50/70 text-secondary-600 dark:border-accent-500/40 dark:bg-brand-500/10 dark:text-brand-400"
-                    : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+                    ? "border-[#190088] bg-[#190088]/10 text-[#190088] font-bold dark:border-[#97D6DF]/40 dark:bg-[#FF3F1A]/10 dark:text-[#97D6DF]"
+                    : "border-[#ECECEC] text-[#212121] hover:bg-[#ECECEC]/50 font-normal dark:border-gray-700 dark:text-gray-300"
                 }`}
               >
                 🏪 Retiro en local
@@ -379,7 +379,7 @@ const CrearPedidoRapidoModal = observer(
                       <button
                         type="button"
                         onClick={() => setQty(cat.id, 1)}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-200 text-xs font-semibold text-gray-800 hover:bg-gray-300 dark:bg-white/10 dark:text-white"
+                        className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#ECECEC] text-[12px] font-bold text-[#190088] hover:bg-[#EFE6D3] dark:bg-white/10 dark:text-white"
                       >
                         +
                       </button>
@@ -392,7 +392,7 @@ const CrearPedidoRapidoModal = observer(
 
           {/* Notas de entrega */}
           <div>
-            <label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+            <label className="text-[12px] font-bold text-[#190088] dark:text-gray-400">
               Notas del pedido (opcional)
             </label>
             <input
@@ -400,13 +400,13 @@ const CrearPedidoRapidoModal = observer(
               placeholder="Ej: Apto 402, timbre blanco, salsa aparte"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              className="mt-1 h-9 w-full rounded-xl border border-gray-200 bg-white px-3 text-xs text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="mt-1 h-9 w-full rounded-xl border border-[#ECECEC] bg-white px-3 text-[12px] font-normal text-[#212121] placeholder:text-[#212121]/40 focus:border-[#190088] focus:outline-hidden dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
 
         {/* Acciones del Modal */}
-        <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-800">
+        <div className="mt-5 flex items-center justify-between border-t border-[#ECECEC] pt-3 dark:border-gray-800">
           <button
             type="button"
             onClick={() => {
@@ -415,7 +415,7 @@ const CrearPedidoRapidoModal = observer(
                 `/pedidos/crear?cliente=${encodeURIComponent(clienteNombre)}&telefono=${encodeURIComponent(clienteTelefono)}`,
               );
             }}
-            className="text-xs font-medium text-secondary-600 hover:underline dark:text-brand-400"
+            className="text-[12px] font-bold text-[#190088] hover:text-[#FF3F1A] hover:underline"
           >
             Abrir formulario avanzado →
           </button>
@@ -424,7 +424,7 @@ const CrearPedidoRapidoModal = observer(
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+              className="rounded-xl border border-[#ECECEC] px-3 py-1.5 text-[12px] font-normal text-[#212121] hover:bg-[#ECECEC]/50 dark:border-gray-700 dark:text-gray-300"
             >
               Cancelar
             </button>
@@ -432,7 +432,7 @@ const CrearPedidoRapidoModal = observer(
               type="button"
               disabled={itemsSeleccionados.length === 0}
               onClick={handleConfirmar}
-              className="rounded-xl bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-theme-xs hover:bg-brand-600 disabled:opacity-50"
+              className="rounded-xl bg-[#FF3F1A] px-4 py-1.5 text-[12px] font-bold text-white shadow-theme-xs hover:bg-[#FF3F1A]/90 disabled:opacity-50"
             >
               Crear Pedido ({money(totalCalculado)})
             </button>
@@ -461,33 +461,33 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
   const puedeAvanzar = siguiente !== null && puedeMoverA(siguiente);
 
   return (
-    <li className={`flex flex-col gap-2 rounded-xl border p-3.5 shadow-theme-xs transition-all ${
+    <li className={`flex flex-col gap-2 rounded-xl border p-3.5 shadow-theme-xs transition-all font-sans ${
       esCancelado
-        ? "border-gray-200/50 bg-gray-50/40 opacity-60 dark:border-gray-800/40 dark:bg-white/[0.01]"
-        : "border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900/60"
+        ? "border-[#ECECEC]/50 bg-[#ECECEC]/20 opacity-60 dark:border-gray-800/40 dark:bg-white/[0.01]"
+        : "border-[#ECECEC] bg-white dark:border-gray-800 dark:bg-gray-900/60"
     }`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-gray-800 dark:text-white/90">
+          <span className="text-[12px] font-bold text-[#190088] dark:text-white/90">
             {pedido.numero}
           </span>
-          <span className="text-[10px] text-gray-400 capitalize">
+          <span className="text-[12px] font-normal text-[#212121]/50 capitalize">
             • {pedidosStore.modalidadLabel(pedido.modalidad)}
           </span>
         </div>
-        <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+        <span className="text-[12px] font-bold text-[#212121] dark:text-gray-300">
           {total > 0 ? money(total) : ""}
         </span>
       </div>
 
-      <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2">
+      <p className="text-[12px] font-normal text-[#212121]/80 dark:text-gray-300 line-clamp-2">
         {resumen}
       </p>
 
       {/* Detalle de entrega y logística si es domicilio */}
       {pedido.modalidad === "domicilio" && pedido.direccionEntrega && (
-        <div className="flex flex-col gap-0.5 rounded-lg bg-gray-50 px-2.5 py-1.5 text-[11px] text-gray-600 dark:bg-white/[0.03] dark:text-gray-300">
-          <div className="flex items-center gap-1.5 font-medium">
+        <div className="flex flex-col gap-0.5 rounded-lg bg-[#ECECEC]/40 px-2.5 py-1.5 text-[12px] font-normal text-[#212121] dark:bg-white/[0.03] dark:text-gray-300">
+          <div className="flex items-center gap-1.5">
             <svg
               width="13"
               height="13"
@@ -497,7 +497,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-secondary-600 dark:text-accent-300 shrink-0"
+              className="text-[#190088] dark:text-[#97D6DF] shrink-0"
             >
               <rect x="1" y="3" width="15" height="13" />
               <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
@@ -506,11 +506,11 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             </svg>
             <span className="truncate">{pedido.direccionEntrega.calle}</span>
             {pedido.direccionEntrega.barrio && (
-              <span className="text-gray-400">({pedido.direccionEntrega.barrio})</span>
+              <span className="text-[#212121]/50">({pedido.direccionEntrega.barrio})</span>
             )}
           </div>
           {pedido.repartidor && (
-            <div className="text-[10px] text-accent-600 dark:text-accent-400">
+            <div className="text-[12px] text-[#190088] dark:text-[#97D6DF]">
               Repartidor: {pedido.repartidor}
             </div>
           )}
@@ -533,7 +533,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             </Badge>
           )}
           {pedido.metodoPago && !esCancelado && (
-            <span className="rounded-md border border-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 capitalize dark:border-gray-700 dark:text-gray-400">
+            <span className="rounded-md border border-[#ECECEC] px-1.5 py-0.5 text-[12px] font-normal text-[#212121]/70 capitalize dark:border-gray-700 dark:text-gray-400">
               {pedido.metodoPago.replace("_", " ")}
               {cambio > 0 && ` (Vuelto: ${money(cambio)})`}
             </span>
@@ -545,7 +545,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
             <button
               type="button"
               onClick={() => void confirmarPagoPedido(pedido.id)}
-              className="inline-flex items-center gap-1 rounded-md bg-accent-50 text-accent-700 hover:bg-accent-600 hover:text-white border border-accent-200 px-2 py-0.5 text-[10px] font-semibold transition-all cursor-pointer dark:bg-accent-950/40 dark:text-accent-400 dark:border-accent-800 dark:hover:bg-accent-600 dark:hover:text-white active:scale-95"
+              className="inline-flex items-center gap-1 rounded-md bg-[#97D6DF]/20 text-[#190088] hover:bg-[#97D6DF] border border-[#97D6DF]/40 px-2 py-0.5 text-[12px] font-bold transition-all cursor-pointer dark:bg-accent-950/40 dark:text-[#97D6DF] dark:border-accent-800 dark:hover:bg-accent-600 dark:hover:text-white active:scale-95"
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
@@ -559,7 +559,7 @@ const PedidoItemCard = observer(({ pedido }: { pedido: Pedido }) => {
               type="button"
               onClick={() => avanzarPedido(pedido.id)}
               title={`Avanzar a ${pedidosStore.estadoLabel(siguiente)}`}
-              className="rounded-lg bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20 cursor-pointer"
+              className="rounded-lg bg-[#ECECEC] px-2 py-0.5 text-[12px] font-bold text-[#190088] transition-colors hover:bg-[#EFE6D3] dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20 cursor-pointer"
             >
               Avanzar →
             </button>
@@ -713,16 +713,16 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
   };
 
   return (
-    <div className="flex flex-col gap-3 pb-3">
+    <div className="flex flex-col gap-3 pb-3 font-sans text-[#212121]">
       {/* ── 1. Tarjeta de Perfil del Cliente ── */}
-      <div className="flex flex-col items-center rounded-2xl border border-gray-200/80 bg-gray-50/60 p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
+      <div className="flex flex-col items-center rounded-2xl border border-[#ECECEC] bg-white p-3.5 text-center dark:border-gray-800 dark:bg-white/[0.02]">
         <CanalAvatar
           canal={conv.canal}
           nombre={nombre}
           size="large"
           status={statusDe(conv.estado)}
         />
-        <h3 className="mt-2 text-sm font-bold text-ink-title dark:text-white/90">
+        <h3 className="mt-2 text-[16px] font-bold text-[#190088] dark:text-white/90">
           {nombre}
         </h3>
 
@@ -731,9 +731,9 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           type="button"
           onClick={copiarTelefono}
           title="Copiar número de teléfono"
-          className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-gray-200/80 bg-white px-2.5 py-0.5 text-xs text-gray-600 transition-colors hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-white/5 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white"
+          className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-2.5 py-0.5 text-[12px] font-normal text-[#212121] transition-colors hover:border-[#190088] hover:text-[#190088] cursor-pointer dark:border-gray-700 dark:bg-white/5 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white"
         >
-          <span className="font-mono text-[11px]">{telefono}</span>
+          <span className="font-mono text-[12px]">{telefono}</span>
           {copiado ? (
             <svg
               width="12"
@@ -744,7 +744,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-accent-500"
+              className="text-[#FF3F1A]"
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -758,7 +758,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="text-gray-400"
+              className="text-[#212121]/40"
             >
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -772,7 +772,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           if (dirs.length === 0) return null;
           const principal = dirs[0];
           return (
-            <div className="mt-3 flex w-full items-center gap-2 rounded-xl border border-gray-200/60 bg-white/80 px-3 py-1.5 text-left text-xs text-gray-700 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300">
+            <div className="mt-3 flex w-full items-center gap-2 rounded-xl border border-[#ECECEC] bg-[#ECECEC]/30 px-3 py-1.5 text-left text-[12px] font-normal text-[#212121] dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300">
               <svg
                 width="14"
                 height="14"
@@ -782,34 +782,34 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="shrink-0 text-secondary-600 dark:text-accent-300"
+                className="shrink-0 text-[#190088] dark:text-[#97D6DF]"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span className="truncate font-medium">{principal.calle}</span>
+              <span className="truncate">{principal.calle}</span>
               {principal.barrio && (
-                <span className="shrink-0 text-gray-400">({principal.barrio})</span>
+                <span className="shrink-0 text-[#212121]/50">({principal.barrio})</span>
               )}
             </div>
           );
         })()}
 
         {/* Métricas del Contacto */}
-        <div className="mt-3 grid w-full grid-cols-2 gap-2 border-t border-gray-200/60 pt-3 dark:border-gray-800">
-          <div className="rounded-xl bg-white/70 p-2 text-center dark:bg-white/[0.02]">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <div className="mt-3 grid w-full grid-cols-2 gap-2 border-t border-[#ECECEC] pt-3 dark:border-gray-800">
+          <div className="rounded-xl bg-[#ECECEC]/30 p-2 text-center dark:bg-white/[0.02]">
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
               Pedidos
             </p>
-            <p className="text-base font-bold text-gray-800 dark:text-white">
+            <p className="text-[16px] font-bold text-[#212121] dark:text-white">
               {pedidos.length}
             </p>
           </div>
-          <div className="rounded-xl bg-white/70 p-2 text-center dark:bg-white/[0.02]">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          <div className="rounded-xl bg-[#ECECEC]/30 p-2 text-center dark:bg-white/[0.02]">
+            <p className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
               Total gastado
             </p>
-            <p className="text-base font-bold text-gray-800 dark:text-white">
+            <p className="text-[16px] font-bold text-[#212121] dark:text-white">
               {money(totalGastado)}
             </p>
           </div>
@@ -817,21 +817,21 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
       </div>
 
       {/* ── 2. Etapa del Pipeline CRM (Compacto horizontal) ── */}
-      <div className="rounded-2xl border border-gray-200/80 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-white/[0.02]">
+      <div className="rounded-2xl border border-[#ECECEC] bg-white p-3 dark:border-gray-800 dark:bg-white/[0.02]">
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-2">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            <label className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
               Pipeline
             </label>
             <span
-              className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+              className={`rounded-md px-2 py-0.5 text-[12px] font-bold ${
                 etapaActiva === "cliente"
-                  ? "bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400"
+                  ? "bg-[#97D6DF]/20 text-[#190088] border border-[#97D6DF]/40 dark:bg-[#97D6DF]/10 dark:text-[#97D6DF]"
                   : etapaActiva === "perdido"
-                    ? "bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400"
+                    ? "bg-[#FF3F1A]/10 text-[#FF3F1A] border border-[#FF3F1A]/30 dark:bg-[#FF3F1A]/10 dark:text-[#FF3F1A]"
                     : etapaActiva === "interesado"
-                      ? "bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400"
-                      : "bg-gray-200/70 text-gray-800 dark:bg-white/10 dark:text-gray-200"
+                      ? "bg-[#EFE6D3] text-[#190088] border border-[#190088]/20"
+                      : "bg-[#ECECEC] text-[#212121] dark:bg-white/10 dark:text-gray-200"
               }`}
             >
               {ETAPAS_CRM.find((e) => e.id === etapaActiva)?.label ?? etapaActiva}
@@ -843,13 +843,13 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
               type="button"
               onClick={restablecerAuto}
               title="Restablecer a detección automática según pedidos y chat"
-              className="text-[10px] font-medium text-secondary-600 hover:underline dark:text-brand-400"
+              className="text-[12px] font-normal text-[#190088] hover:underline cursor-pointer dark:text-[#97D6DF]"
             >
               Manual (auto ↺)
             </button>
           ) : (
             <span
-              className="text-[10px] text-gray-400 dark:text-gray-500"
+              className="text-[12px] font-normal text-[#212121]/50 dark:text-gray-500"
               title="Calculada automáticamente según pedidos y estado del chat"
             >
               Auto
@@ -864,16 +864,16 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             const isCompleted = estado === "completado";
             const isActive = estado === "activo";
 
-            let barColor = "bg-gray-200 hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20";
+            let barColor = "bg-[#ECECEC] hover:bg-gray-300 dark:bg-white/10 dark:hover:bg-white/20";
             if (isActive) {
               barColor =
                 etapa.id === "perdido"
-                  ? "bg-error-500"
+                  ? "bg-[#FF3F1A]"
                   : etapa.id === "cliente"
-                    ? "bg-accent-500"
-                    : "bg-brand-500 shadow-theme-xs";
+                    ? "bg-[#97D6DF]"
+                    : "bg-[#190088]";
             } else if (isCompleted) {
-              barColor = "bg-gray-700 hover:bg-gray-800 dark:bg-gray-400 dark:hover:bg-gray-300";
+              barColor = "bg-[#190088]/70 hover:bg-[#190088] dark:bg-gray-400 dark:hover:bg-gray-300";
             }
 
             return (
@@ -882,7 +882,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 type="button"
                 onClick={() => cambiarEtapa(etapa.id)}
                 title={`${etapa.label} (${isActive ? "Actual" : isCompleted ? "Completado" : "Pendiente"}) — Clic para cambiar`}
-                className="group flex flex-col items-center gap-1 focus:outline-hidden"
+                className="group flex flex-col items-center gap-1 focus:outline-hidden cursor-pointer"
               >
                 <div
                   className={`h-1.5 w-full rounded-full transition-all ${barColor} ${
@@ -890,12 +890,12 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                   }`}
                 />
                 <span
-                  className={`truncate text-[9.5px] transition-colors ${
+                  className={`truncate text-[12px] transition-colors ${
                     isActive
-                      ? "font-bold text-gray-900 dark:text-white"
+                      ? "font-bold text-[#190088] dark:text-white"
                       : isCompleted
-                        ? "font-medium text-gray-600 dark:text-gray-400"
-                        : "text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                        ? "font-normal text-[#212121] dark:text-gray-400"
+                        : "font-light text-[#212121]/50 dark:text-gray-500 group-hover:text-[#212121] dark:group-hover:text-gray-300"
                   }`}
                 >
                   {etapa.id === "en_conversacion" ? "En conv." : etapa.label}
@@ -908,7 +908,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
 
       {/* ── 3. Acciones Rápidas del Operador ── */}
       <div className="flex flex-col gap-2">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <label className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
           Acciones rápidas
         </label>
 
@@ -917,7 +917,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           <button
             type="button"
             onClick={() => setModalCrearOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-2.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 hover:shadow-theme-xs active:scale-[0.99]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FF3F1A] py-2.5 text-[14px] font-bold text-white shadow-xs transition-all hover:bg-[#e03716] active:scale-[0.99] cursor-pointer"
           >
             <svg
               width="15"
@@ -943,14 +943,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("menu")}
             title={`Enviar ${pedidosStore.config.perfilComercial === "food" ? "menú" : pedidosStore.config.perfilComercial === "services" ? "servicios" : "catálogo"} con precios al chat`}
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[12px] font-bold transition-all cursor-pointer ${
               plantillaEnviada === "menu"
-                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
-                : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                ? "border-[#97D6DF] bg-[#97D6DF]/20 text-[#190088] dark:border-[#97D6DF]/40 dark:bg-[#97D6DF]/10 dark:text-[#97D6DF]"
+                : "border-[#ECECEC] bg-white text-[#212121] hover:border-[#190088] hover:bg-[#ECECEC]/30 hover:text-[#190088] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "menu" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#190088] dark:text-[#97D6DF]">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -963,7 +963,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-500 dark:text-gray-400"
+                className="text-[#190088] dark:text-[#97D6DF]"
               >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -987,14 +987,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("ubicacion")}
             title="Solicitar dirección de entrega al cliente"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[12px] font-bold transition-all cursor-pointer ${
               plantillaEnviada === "ubicacion"
-                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
-                : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                ? "border-[#97D6DF] bg-[#97D6DF]/20 text-[#190088] dark:border-[#97D6DF]/40 dark:bg-[#97D6DF]/10 dark:text-[#97D6DF]"
+                : "border-[#ECECEC] bg-white text-[#212121] hover:border-[#190088] hover:bg-[#ECECEC]/30 hover:text-[#190088] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "ubicacion" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#190088] dark:text-[#97D6DF]">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -1007,7 +1007,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-500 dark:text-gray-400"
+                className="text-[#190088] dark:text-[#97D6DF]"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
@@ -1020,14 +1020,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
             type="button"
             onClick={() => enviarPlantilla("pago")}
             title="Enviar datos bancarios para pago"
-            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[11px] font-medium shadow-theme-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-[12px] font-bold transition-all cursor-pointer ${
               plantillaEnviada === "pago"
-                ? "border-accent-500/40 bg-accent-50 text-accent-700 dark:border-accent-500/30 dark:bg-accent-500/10 dark:text-accent-400"
-                : "border-gray-200/80 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                ? "border-[#97D6DF] bg-[#97D6DF]/20 text-[#190088] dark:border-[#97D6DF]/40 dark:bg-[#97D6DF]/10 dark:text-[#97D6DF]"
+                : "border-[#ECECEC] bg-white text-[#212121] hover:border-[#190088] hover:bg-[#ECECEC]/30 hover:text-[#190088] dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
             }`}
           >
             {plantillaEnviada === "pago" ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent-500">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#190088] dark:text-[#97D6DF]">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             ) : (
@@ -1040,7 +1040,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-gray-500 dark:text-gray-400"
+                className="text-[#190088] dark:text-[#97D6DF]"
               >
                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
                 <line x1="1" y1="10" x2="23" y2="10" />
@@ -1053,7 +1053,7 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
 
       {/* ── 4. Notas Internas del Cliente ── */}
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        <label className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
           Notas internas del cliente
         </label>
         <textarea
@@ -1061,21 +1061,21 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
           value={notasContacto}
           onChange={(e) => guardarNotas(e.target.value)}
           placeholder="Notas solo visibles para el equipo..."
-          className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50/70 p-2.5 text-xs text-gray-800 placeholder:text-gray-400 transition-colors focus:border-secondary-500 focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
+          className="mt-1 w-full rounded-xl border border-[#ECECEC] bg-white p-2.5 text-[14px] font-normal text-[#212121] placeholder:text-[#212121]/40 transition-colors focus:border-[#190088] focus:bg-white focus:outline-hidden dark:border-gray-800 dark:bg-gray-900 dark:text-white"
         />
       </div>
 
       {/* ── 5. Historial de Pedidos del Contacto ── */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          <label className="text-[12px] font-bold uppercase tracking-wider text-[#190088] dark:text-[#97D6DF]">
             Pedidos del cliente ({pedidos.length})
           </label>
           {pedidos.length > 0 && (
             <button
               type="button"
               onClick={() => navigate("/pedidos")}
-              className="text-[11px] font-semibold text-secondary-600 hover:underline dark:text-brand-400"
+              className="text-[12px] font-bold text-[#190088] hover:underline cursor-pointer dark:text-[#97D6DF]"
             >
               Ver Kanban →
             </button>
@@ -1083,14 +1083,14 @@ export const PanelContexto = observer(({ convId }: { convId: string | null }) =>
         </div>
 
         {pedidos.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-200/90 bg-gray-50/40 p-3 text-center dark:border-gray-800 dark:bg-white/[0.01]">
-            <p className="text-xs text-gray-400 dark:text-gray-500">
+          <div className="rounded-xl border border-dashed border-[#ECECEC] bg-white p-3 text-center dark:border-gray-800 dark:bg-white/[0.01]">
+            <p className="text-[14px] font-normal text-[#212121]/60 dark:text-gray-400">
               Sin pedidos registrados aún
             </p>
             <button
               type="button"
               onClick={() => setModalCrearOpen(true)}
-              className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-secondary-600 dark:text-accent-300 hover:underline"
+              className="mt-1.5 inline-flex items-center gap-1 text-[12px] font-bold text-[#FF3F1A] hover:underline cursor-pointer"
             >
               <svg
                 width="12"

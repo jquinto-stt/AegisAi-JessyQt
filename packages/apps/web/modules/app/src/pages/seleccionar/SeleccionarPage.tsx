@@ -225,9 +225,11 @@ export const SeleccionarPage = observer(() => {
 
           <div className="mt-8 flex items-center justify-end">
             <div className="flex items-center gap-3">
-              {/* El CTA dice lo que de verdad pasa: el administrador entra,
-                  el operador solicita acceso. Antes ambos decían "Entrar" y
-                  había un botón "Simular" aparte, que ya no existe. */}
+              {esOperador && (
+                <Button size="sm" variant="outline" onClick={() => navigate("/operador/login")}>
+                  Simular
+                </Button>
+              )}
               <Button size="sm" disabled={!tipoSesion} onClick={confirmar}>
                 {esOperador ? "Solicitar acceso" : "Entrar"}
               </Button>

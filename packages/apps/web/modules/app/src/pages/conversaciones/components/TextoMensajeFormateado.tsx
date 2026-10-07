@@ -16,7 +16,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
     if (/^<(b|strong)[ >]/i.test(t)) {
       const limpio = t.replace(/<\/?[^>]+(>|$)/g, "");
       return (
-        <strong key={key} className="font-semibold text-gray-900 dark:text-white">
+        <strong key={key} className="font-bold text-[#212121] dark:text-white">
           {limpio}
         </strong>
       );
@@ -24,7 +24,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
     // Negrita WhatsApp (*texto*)
     if (/^\*[^*\n]+\*$/.test(t)) {
       return (
-        <strong key={key} className="font-semibold text-gray-900 dark:text-white">
+        <strong key={key} className="font-bold text-[#212121] dark:text-white">
           {t.slice(1, -1)}
         </strong>
       );
@@ -35,7 +35,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
       return (
         <code
           key={key}
-          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-secondary-600 dark:bg-white/10 dark:text-brand-400"
+          className="rounded bg-[#ECECEC] px-1.5 py-0.5 font-mono text-[12px] text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]"
         >
           {limpio}
         </code>
@@ -46,7 +46,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
       return (
         <code
           key={key}
-          className="rounded bg-black/5 px-1.5 py-0.5 font-mono text-xs text-secondary-600 dark:bg-white/10 dark:text-brand-400"
+          className="rounded bg-[#ECECEC] px-1.5 py-0.5 font-mono text-[12px] text-[#190088] dark:bg-white/10 dark:text-[#97D6DF]"
         >
           {t.slice(1, -1)}
         </code>
@@ -56,7 +56,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
     if (/^<(i|em)[ >]/i.test(t)) {
       const limpio = t.replace(/<\/?[^>]+(>|$)/g, "");
       return (
-        <em key={key} className="italic text-gray-700 dark:text-gray-300">
+        <em key={key} className="italic text-[#212121]/80 dark:text-gray-300">
           {limpio}
         </em>
       );
@@ -64,7 +64,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
     // Cursiva WhatsApp (_texto_)
     if (/^_[^_\n]+_$/.test(t)) {
       return (
-        <em key={key} className="italic text-gray-700 dark:text-gray-300">
+        <em key={key} className="italic text-[#212121]/80 dark:text-gray-300">
           {t.slice(1, -1)}
         </em>
       );
@@ -76,7 +76,7 @@ function parsearInline(texto: string, baseKey: string): React.ReactNode[] {
 
 export const TextoMensajeFormateado: React.FC<TextoMensajeFormateadoProps> = ({
   texto,
-  className = "whitespace-pre-line leading-relaxed break-words [overflow-wrap:anywhere]",
+  className = "whitespace-pre-line leading-relaxed break-words [overflow-wrap:anywhere] font-sans",
 }) => {
   if (!texto) return null;
 
@@ -93,7 +93,7 @@ export const TextoMensajeFormateado: React.FC<TextoMensajeFormateadoProps> = ({
           return (
             <blockquote
               key={key}
-              className="my-2 rounded-r border-l-2 border-secondary-500/60 bg-gray-50/70 py-1.5 pl-3 pr-2.5 text-[13px] font-normal leading-relaxed text-gray-700 dark:border-accent-400/60 dark:bg-white/[0.04] dark:text-gray-300"
+              className="my-2 rounded-r border-l-2 border-[#190088] bg-[#ECECEC]/40 py-1.5 pl-3 pr-2.5 text-[14px] font-normal leading-relaxed text-[#212121] dark:border-[#97D6DF]/60 dark:bg-white/[0.04] dark:text-gray-300"
             >
               {parsearInline(contenido, key)}
             </blockquote>

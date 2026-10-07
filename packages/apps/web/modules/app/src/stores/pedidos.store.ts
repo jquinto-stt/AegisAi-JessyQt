@@ -2487,6 +2487,18 @@ export class PedidosStore {
   private metaEstado(e: PedidoEstado): { label: string; badge: ColorEstadoPedido; punto: string } {
     return META_ESTADO_PEDIDO[e] ?? { ...META_COLUMNA_PROPIA, label: this.estadoLabel(e) };
   }
+
+  /** Vacia pedidos y datos para "Simular inicio desde 0" (negocio nuevo sin pedidos). */
+  iniciarDesdeCero() {
+    this.pedidos = [];
+    this.seq = 0;
+  }
+
+  /** Restaura los pedidos de prueba (seed). */
+  restaurarSeed() {
+    this.pedidos = seed();
+    this.seq = 0;
+  }
 }
 
 export const pedidosStore = new PedidosStore();

@@ -61,16 +61,16 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       : bandeja.filter((conv) => intencionDe(conv.id) === filtroIntencion);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden font-sans text-[#212121]">
       {/* Cabecera: Título "Chats" + Botón colapsar + Menú de 3 puntos */}
       <div className="p-4 sm:p-5 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-bold text-ink-title dark:text-white/90">
+            <h3 className="text-[24px] font-bold text-[#190088] dark:text-white/90">
               Chats
             </h3>
             {conversacionesStore.totalNoLeidos > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-500 px-1.5 text-[10px] font-bold text-white shadow-theme-xs">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FF3F1A] px-1.5 text-[12px] font-bold text-white shadow-theme-xs">
                 {conversacionesStore.totalNoLeidos}
               </span>
             )}
@@ -83,15 +83,15 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 onClick={() => setMenuOpen(!menuOpen)}
                 className={`relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors ${
                   filtroEstado !== "todas"
-                    ? "bg-secondary-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400"
-                    : "text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-white/5 dark:hover:text-gray-300"
+                    ? "bg-[#190088]/10 text-[#190088] dark:bg-[#FF3F1A]/15 dark:text-[#97D6DF]"
+                    : "text-[#212121]/60 hover:bg-[#ECECEC] hover:text-[#190088] dark:hover:bg-white/5 dark:hover:text-gray-300"
                 }`}
                 aria-label="Filtrar por estado"
                 title="Filtrar por estado"
               >
                 <MoreDotIcon className="h-5 w-5" />
                 {filtroEstado !== "todas" && (
-                  <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-brand-500" />
+                  <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#FF3F1A]" />
                 )}
               </button>
             <Dropdown
@@ -106,10 +106,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                     conversacionesStore.setFiltro(f.valor);
                     setMenuOpen(false);
                   }}
-                  className={`text-xs ${
+                  className={`text-[12px] ${
                     filtroEstado === f.valor
-                      ? "font-semibold text-secondary-600 dark:text-brand-400 bg-secondary-50/50 dark:bg-brand-500/10"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                      ? "font-bold text-[#190088] dark:text-[#97D6DF] bg-[#190088]/10 dark:bg-[#FF3F1A]/10"
+                      : "font-normal text-[#212121] hover:bg-[#ECECEC] dark:text-gray-300 dark:hover:bg-white/5"
                   }`}
                 >
                   {f.etiqueta}
@@ -124,7 +124,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
         <div className="relative mt-3.5">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
             <svg
-              className="h-4 w-4 fill-gray-400 dark:fill-gray-500"
+              className="h-4 w-4 fill-[#212121]/40 dark:fill-gray-500"
               viewBox="0 0 20 20"
             >
               <path
@@ -139,7 +139,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             placeholder="Buscar..."
             value={conversacionesStore.busqueda}
             onChange={(e) => conversacionesStore.setBusqueda(e.target.value)}
-            className="h-10 w-full rounded-xl border border-gray-200 bg-gray-50/70 py-2 pl-9 pr-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-secondary-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-secondary-500/15 dark:border-gray-800 dark:bg-gray-900/60 dark:text-white/90 dark:placeholder:text-gray-500"
+            className="h-10 w-full rounded-xl border border-[#ECECEC] bg-[#ECECEC]/30 py-2 pl-9 pr-3 text-[14px] font-normal text-[#212121] placeholder:text-[#212121]/40 focus:border-[#190088] focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-[#190088]/15 dark:border-gray-800 dark:bg-gray-900/60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
 
@@ -152,10 +152,10 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                 key={f.valor}
                 type="button"
                 onClick={() => setFiltroIntencion(f.valor)}
-                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[12px] transition-colors ${
                   activo
-                    ? "bg-brand-500 text-white shadow-theme-xs"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200/80 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
+                    ? "bg-[#FF3F1A] text-white font-bold shadow-theme-xs"
+                    : "bg-[#ECECEC] text-[#212121] hover:bg-[#EFE6D3] font-normal dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10"
                 }`}
               >
                 {f.etiqueta}
@@ -168,7 +168,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
       {/* Lista de Chats */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-3 py-2 custom-scrollbar">
         {listaFiltrada.length === 0 ? (
-          <div className="flex h-36 items-center justify-center p-4 text-center text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex h-36 items-center justify-center p-4 text-center text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
             No se encontraron conversaciones.
           </div>
         ) : (
@@ -178,31 +178,19 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
               const intencion = intencionDe(conv.id);
 
-              // Pedido ACTIVO del contacto. Se resuelve con el selector canónico
-              // del store de Pedidos (`pedidoActivoDe`), que cruza por teléfono
-              // normalizado y descarta los terminales. Esta vista NO deriva el
-              // filtro por su cuenta: si lo hiciera, "activo" significaría aquí
-              // algo distinto que en el panel de contexto del chat.
-              // El cruce cruza la frontera Pedidos→Conversaciones en la capa de
-              // UI, nunca dentro de un store (invariante D2).
               const pedidoActivo = pedidosStore.pedidoActivoDe(conv.contacto.telefono);
 
               return (
                 <div
                   key={conv.id}
                   onClick={() => conversacionesStore.seleccionar(conv.id)}
-                  // La entrada describe «esta fila acaba de hacerse visible», no
-                  // «acaba de crearse». Como las filas llevan `key` estable, al
-                  // filtrar o buscar las que ya estaban NO se re-animan: solo
-                  // entran las que vuelven a coincidir, que es justo lo que el
-                  // usuario necesita ver aparecer.
                   style={{ animationDelay: retardoEscalonado(i) }}
                   className={`animate-entrada-lista group flex cursor-pointer items-center transition-colors ${
                     compacta ? "gap-2.5 rounded-lg px-3 py-1.5" : "gap-3 rounded-xl p-3"
                   } ${
                     seleccionada
-                      ? "bg-gray-100/90 dark:bg-white/[0.08]"
-                      : "hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                      ? "bg-[#ECECEC] dark:bg-white/[0.08]"
+                      : "hover:bg-[#ECECEC]/50 dark:hover:bg-white/[0.03]"
                   }`}
                 >
                   <div className="relative shrink-0">
@@ -217,7 +205,9 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-1">
                       <div className="flex min-w-0 items-center gap-1.5 flex-wrap">
-                        <h5 className="truncate text-sm font-semibold text-gray-800 dark:text-white/90">
+                        <h5 className={`truncate text-[14px] font-bold ${
+                          seleccionada ? "text-[#190088] dark:text-white" : "text-[#212121] dark:text-white/90"
+                        }`}>
                           {conv.contacto.nombre}
                         </h5>
                         <Badge
@@ -227,23 +217,15 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                           {INTENCION_LABEL[intencion]}
                         </Badge>
                         {conversacionesStore.requiereAtencionHumana(conv) && (
-                          // El rótulo es el del ESTADO, no una palabra propia de
-                          // esta lista. Decía «Asesor» mientras el filtro de
-                          // arriba decía «Requieren atención» y el badge del
-                          // historial decía «En espera»: tres nombres para el
-                          // mismo estado en la misma pantalla.
                           <span title={etiquetaEstado("en_espera")}>
                             <Badge size="xs" color="warning">
                               {etiquetaEstado("en_espera")}
                             </Badge>
                           </span>
                         )}
-                        {/* Badge del pedido activo: #PED-XXX + su estado actual.
-                            Etiqueta y color SIEMPRE del store de Pedidos — este
-                            módulo no tiene vocabulario propio de estados de pedido. */}
                         {pedidoActivo && (
                           <span
-                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-semibold text-gray-700 dark:text-gray-300"
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[#EFE6D3] dark:bg-gray-800 px-1.5 py-0.5 text-[12px] font-bold text-[#212121] dark:text-gray-300 border border-[#EFE6D3]"
                             title={`Pedido ${pedidoActivo.numero} · ${pedidosStore.estadoLabel(pedidoActivo.estado)}`}
                           >
                             <span className="tabular-nums">{pedidoActivo.numero}</span>
@@ -251,7 +233,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                           </span>
                         )}
                       </div>
-                      <span className="shrink-0 text-[11px] text-gray-400 dark:text-gray-500">
+                      <span className="shrink-0 text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
                         {tiempoRelativo(conv.ultimaActividad)}
                       </span>
                     </div>
@@ -264,14 +246,12 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                       }
                     >
                       <p
-                        className={`truncate text-gray-500 dark:text-gray-400 ${
-                          compacta ? "text-[11px]" : "text-xs"
-                        }`}
+                        className={`truncate text-[#212121]/70 dark:text-gray-400 text-[12px] font-normal`}
                       >
                         {preview}
                       </p>
                       {conv.noLeidos > 0 && (
-                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white shadow-theme-xs">
+                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-[#FF3F1A] px-1 text-[12px] font-bold text-white shadow-theme-xs">
                           {conv.noLeidos}
                         </span>
                       )}

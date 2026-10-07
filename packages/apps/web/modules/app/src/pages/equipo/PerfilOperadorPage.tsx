@@ -329,12 +329,12 @@ const PerfilContent = observer(({ op }: { op: Operador }) => {
 
       {/* Navegación hacia atrás */}
       <Link
-        to="/equipo"
+        to={op.modulo === "inventarios" ? "/inventarios/operadores" : "/pedidos/operadores"}
         className="inline-flex items-center gap-1.5 text-theme-xs font-medium text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white transition-colors"
       >
         {/* El icono ya dice «atrás»: el texto no necesita además un «←». */}
         <ChevronLeftIcon className="h-4 w-4" />
-        <span>Volver a Equipo</span>
+        <span>Volver a Operadores</span>
       </Link>
 
       {/* ── 1. FICHA DEL MIEMBRO ────────────────────────────────────────────── */}
