@@ -19,6 +19,7 @@ import { SeleccionarPage } from "@/pages/seleccionar";
 import { AsistentePage, AsistenteConfigPage } from "@/pages/asistente";
 import { ConversacionesPage, HistorialAtencionPage, AnaliticaConversacionesPage, ConversacionesConfigPage } from "@/pages/conversaciones";
 import {
+  DashboardPage,
   InventariosPage,
   CrearInventarioPage,
   DetalleInventarioPage,
@@ -29,6 +30,11 @@ import {
   AlertasPage as InventariosAlertasPage,
   ReportesPage as InventariosReportesPage,
   InventariosConfigPage,
+  ProductosPage,
+  DetalleProductoPage,
+  SedesPage,
+  OrdenesPage,
+  ProveedoresPage,
 } from "@/pages/inventarios";
 import { SimuladorWhatsApp } from "@/pages/simulador";
 import { OperadorRegistroPage } from "@/pages/operador";
@@ -179,21 +185,27 @@ export default function App() {
             reporte, con los controles deshabilitados y el motivo escrito en la
             propia pantalla. Exigir `configure` para mirar obligaría a conceder
             escritura a quien solo necesita leer. */}
-        <Route path="/inventarios" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/nuevo" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.count"><CrearInventarioPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/elementos" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ElementosPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/elementos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleElementoPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/ubicaciones" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><UbicacionesPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/historial" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosHistorialPage /></CapabilityGuard></ModuloGuard>} />
-        <Route path="/inventarios/alertas" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosAlertasPage /></CapabilityGuard></ModuloGuard>} />
+        {/* Inventarios — rediseño Retail / WMS */}
+        <Route path="/inventarios" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DashboardPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/dashboard" element={<Navigate to="/inventarios" replace />} />
+        <Route path="/inventarios/productos" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ProductosPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/productos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleProductoPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/sedes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><SedesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/ordenes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><OrdenesPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/proveedores" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><ProveedoresPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/reportes" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosReportesPage /></CapabilityGuard></ModuloGuard>} />
         <Route path="/inventarios/config" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosConfigPage /></CapabilityGuard></ModuloGuard>} />
 
-        {/* `:id` va AL FINAL de las rutas de Inventarios. React Router v7 ordena
-            por especificidad, pero declarar el comodín antes es cómo una ruta
-            estática acaba sirviendo un 404 silencioso si alguien cambia el
-            orden o añade un segmento nuevo sin leer esto. */}
-        <Route path="/inventarios/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleInventarioPage /></CapabilityGuard></ModuloGuard>} />
+        {/* Compatibilidad de rutas legacy */}
+        <Route path="/inventarios/elementos" element={<Navigate to="/inventarios/productos" replace />} />
+        <Route path="/inventarios/elementos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleElementoPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/ubicaciones" element={<Navigate to="/inventarios/sedes" replace />} />
+        <Route path="/inventarios/historial" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosHistorialPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/alertas" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosAlertasPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/nuevo" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.count"><CrearInventarioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/conteos" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><InventariosPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/conteos/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleInventarioPage /></CapabilityGuard></ModuloGuard>} />
+        <Route path="/inventarios/:id" element={<ModuloGuard modulo="inventarios"><CapabilityGuard capacidad="inventory.read"><DetalleProductoPage /></CapabilityGuard></ModuloGuard>} />
 
 
         {/* Organización — DOS pantallas hermanas: configuración de la

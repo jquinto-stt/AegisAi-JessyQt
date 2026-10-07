@@ -161,6 +161,31 @@ describe("AppSidebar · ITEMS_MODULO", () => {
     }
   });
 
+  it("ninguna sección del catálogo se queda sin ítem en el sidebar", () => {
+    // ── La dirección que faltaba, y costó una ronda entera ──────────────────
+    //
+    // Hasta el 07/10/2026 esta suite solo miraba en una dirección: que todo id
+    // del sidebar existiera en el catálogo. Añadir una sección al catálogo
+    // —`/inventarios/productos`— y olvidarla en `ITEMS_MODULO` **no ponía nada
+    // rojo**: la sección simplemente no se pintaba, la pantalla seguía siendo
+    // alcanzable escribiendo la URL a mano, y la captura de verificación se
+    // veía perfecta porque el sidebar no es suyo.
+    //
+    // Las transversales se excluyen: `asistente` y `conversaciones` se pintan
+    // en «Inteligencia» y «Canales», no en la lista del módulo. Exigirlas aquí
+    // sería pedir el defecto contrario.
+    for (const m of modulosCatalogo) {
+      const pintados = new Set(seccionesDelSidebar(fuente, m));
+      const sinPintar = SECCIONES[m as keyof typeof SECCIONES]
+        .map((s) => s.id)
+        .filter((id) => !TRANSVERSALES.has(id) && !pintados.has(id));
+      expect(
+        sinPintar,
+        `módulo «${m}»: secciones del catálogo sin ítem en el sidebar`,
+      ).toEqual([]);
+    }
+  });
+
   it("ninguna sección transversal se cuela en la lista de un módulo", () => {
     // `asistente` y `conversaciones` viven en los bloques «Inteligencia» y
     // «Canales». Aquí se pintarían por segunda vez.

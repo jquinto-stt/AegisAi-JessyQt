@@ -148,6 +148,13 @@ export type {
 
 export { NOMBRES_ACTORES, nombreDeActor, RESPONSABLE_POR_DEFECTO } from '@/stores/inventarios.seed';
 
+// Catálogo de productos — el inventario retail (decisión del 07/10/2026).
+// Convive con el módulo de conteos: son dos modelos distintos y cada uno tiene
+// su store, para que retirar uno no obligue a tocar el otro.
+export { productosStore, ProductosStore } from '@/stores/productos.store';
+export type { DatosProducto, ResultadoGuardado } from '@/stores/productos.store';
+export * from '@/domain/inventarios/productos.domain';
+
 // Dominio de Inventarios — tipos y funciones puras. Se re-exporta para que las
 // páginas importen de un solo sitio sin depender de la ruta interna del dominio.
 export * from '@/domain/inventarios/inventarios.domain';

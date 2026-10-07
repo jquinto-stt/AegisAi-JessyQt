@@ -29,6 +29,7 @@ import {
   PieChartIcon,
   BoxIconLine,
   BoxCubeIcon,
+  BoxIcon,
   TableIcon,
   FolderIcon,
   TimeIcon,
@@ -323,11 +324,11 @@ const ITEMS_MODULO: Record<Modulo, { seccionId: string; Icono: React.FC<React.SV
    * solo uso ocupa sitio todos los días para un gesto que se hace una vez al mes.
    */
   inventarios: [
-    { seccionId: "inicio", Icono: BoxCubeIcon },
-    { seccionId: "elementos", Icono: TableIcon },
-    { seccionId: "ubicaciones", Icono: FolderIcon },
-    { seccionId: "historial", Icono: TimeIcon },
-    { seccionId: "alertas", Icono: AlertHexaIcon },
+    { seccionId: "inicio", Icono: GridIcon },
+    { seccionId: "productos", Icono: BoxIcon },
+    { seccionId: "sedes", Icono: FolderIcon },
+    { seccionId: "ordenes", Icono: CheckLineIcon },
+    { seccionId: "proveedores", Icono: GroupIcon },
     { seccionId: "reportes", Icono: PieChartIcon },
     { seccionId: "configuracion", Icono: PlugInIcon },
   ],

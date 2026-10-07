@@ -116,11 +116,11 @@ export const SECCIONES: Record<Modulo, Seccion[]> = {
    * operar se gobiernan por capacidades distintas (invariante C5).
    */
   inventarios: [
-    { id: "inicio", label: "Inventarios", path: "/inventarios", capacidad: "inventory.read" },
-    { id: "elementos", label: "Elementos", path: "/inventarios/elementos", capacidad: "inventory.read" },
-    { id: "ubicaciones", label: "Ubicaciones", path: "/inventarios/ubicaciones", capacidad: "inventory.read" },
-    { id: "historial", label: "Historial", path: "/inventarios/historial", capacidad: "inventory.read" },
-    { id: "alertas", label: "Alertas", path: "/inventarios/alertas", capacidad: "inventory.read" },
+    { id: "inicio", label: "Dashboard", path: "/inventarios", capacidad: "inventory.read" },
+    { id: "productos", label: "Productos", path: "/inventarios/productos", capacidad: "inventory.read" },
+    { id: "sedes", label: "Sedes", path: "/inventarios/sedes", capacidad: "inventory.read" },
+    { id: "ordenes", label: "Órdenes", path: "/inventarios/ordenes", capacidad: "inventory.read" },
+    { id: "proveedores", label: "Proveedores", path: "/inventarios/proveedores", capacidad: "inventory.read" },
     { id: "reportes", label: "Reportes", path: "/inventarios/reportes", capacidad: "inventory.read" },
     { id: "configuracion", label: "Configuración", path: "/inventarios/config", capacidad: "inventory.read" },
   ],

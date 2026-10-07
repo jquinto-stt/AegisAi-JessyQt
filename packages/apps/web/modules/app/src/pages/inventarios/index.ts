@@ -11,6 +11,14 @@
 // No se exportan `inventarios.presentacion.ts` ni `inventarios.constants.ts`:
 // son vocabulario interno de las pantallas, no superficie del módulo.
 
+export { DashboardPage } from "./DashboardPage";
+export { ProductosPage } from "./ProductosPage";
+export { DetalleProductoPage } from "./DetalleProductoPage";
+export { SedesPage } from "./SedesPage";
+export { OrdenesPage } from "./OrdenesPage";
+export { ProveedoresPage } from "./ProveedoresPage";
+export { ReportesPage } from "./ReportesPage";
+export { InventariosConfigPage } from "./ConfigPage";
 export { InventariosPage, default as InventariosPageDefault } from "./InventariosPage";
 export { CrearInventarioPage } from "./CrearInventarioPage";
 export { DetalleInventarioPage } from "./DetalleInventarioPage";
@@ -19,8 +27,6 @@ export { DetalleElementoPage } from "./DetalleElementoPage";
 export { UbicacionesPage } from "./UbicacionesPage";
 export { HistorialPage } from "./HistorialPage";
 export { AlertasPage } from "./AlertasPage";
-export { ReportesPage } from "./ReportesPage";
-export { InventariosConfigPage } from "./ConfigPage";
 
 export { ModalAgregarElemento } from "./ModalAgregarElemento";
 export { ModalElemento } from "./ModalElemento";
