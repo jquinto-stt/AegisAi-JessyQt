@@ -43,4 +43,6 @@ packages/apps/web/modules/vcr-*
 packages/apps/web/modules/verify-*
 packages/apps/web/modules/vite-verify-out
 .kombai/
-
+artifacts-conv/
+inspiracion_modulo_inventario/
+scratch/
