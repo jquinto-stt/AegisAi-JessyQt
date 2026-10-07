@@ -16,6 +16,7 @@ import { CabeceraPagina, ContenedorPagina } from "./inventarios.ui";
 import { SinResultados } from "./inventarios.widgets";
 import { ProductosTabla } from "./ProductosTabla";
 import { ModalProducto } from "./ModalProducto";
+import { InventarioZeroState } from "./InventarioZeroState";
 import {
   FILTRO_TODOS,
   FILAS_POR_PAGINA,
@@ -162,13 +163,29 @@ export const ProductosPage = observer(function ProductosPage() {
         titulo="Productos"
         descripcion="Lo que vendes: cuánto tienes, cuánto te cuesta y qué se está acabando."
         acciones={
-          <Button
-            startIcon={<PlusIcon className="h-4 w-4" />}
-            onClick={() => setModalAbierto(true)}
-            disabled={!puedeEditar}
-          >
-            Añadir producto
-          </Button>
+          catalogoVacio ? undefined : (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (window.confirm("¿Seguro que deseas vaciar el inventario para probar el estado cero?")) {
+                    productosStore.vaciarInventario();
+                  }
+                }}
+                disabled={!puedeEditar}
+              >
+                Vaciar inventario (test)
+              </Button>
+              <Button
+                startIcon={<PlusIcon className="h-4 w-4" />}
+                onClick={() => setModalAbierto(true)}
+                disabled={!puedeEditar}
+              >
+                Añadir producto
+              </Button>
+            </div>
+          )
         }
       />
 
@@ -178,194 +195,180 @@ export const ProductosPage = observer(function ProductosPage() {
         </p>
       )}
 
-      {/* ── Resumen ─────────────────────────────────────────────────────── */}
-      <Card className="p-0 sm:p-0">
-        <CardBody className="p-5 sm:p-6">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5 xl:grid-cols-4">
-            <Metrica
-              rotulo="Categorías"
-              valor={resumen.categorias.toLocaleString("es-CO")}
-              pie="En tu catálogo"
-            />
-            <Metrica
-              rotulo="Productos"
-              valor={resumen.productos.toLocaleString("es-CO")}
-              pie={`Valen ${formatearMoneda(resumen.valorizacion)}`}
-            />
-            <Metrica
-              rotulo="Queda poco"
-              valor={resumen.porAgotar.toLocaleString("es-CO")}
-              pie="Conviene reponer"
-              alerta={resumen.porAgotar > 0}
-            />
-            <Metrica
-              rotulo="Agotados"
-              valor={resumen.agotados.toLocaleString("es-CO")}
-              pie="Sin existencias"
-              alerta={resumen.agotados > 0}
-            />
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* ── Barra de acciones ───────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SearchInput
-          value={consulta}
-          placeholder="Buscar por nombre, código o categoría…"
-          className="sm:flex-1"
-          onChange={(e) => {
-            setConsulta(e.target.value);
-            setPagina(0);
-          }}
-          onClear={() => {
-            setConsulta("");
-            setPagina(0);
-          }}
-        />
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            startIcon={<AdjustmentsHorizontalIcon className="h-4 w-4" />}
-            onClick={() => setFiltrosAbiertos((v) => !v)}
-            aria-expanded={filtrosAbiertos}
-          >
-            {filtrosPuestos > 0 ? `Filtros (${filtrosPuestos})` : "Filtros"}
-          </Button>
-          <Button
-            variant="outline"
-            startIcon={<DownloadIcon className="h-4 w-4" />}
-            onClick={descargar}
-            disabled={filas.length === 0}
-          >
-            Descargar lista
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Filtros ─────────────────────────────────────────────────────── */}
-      {filtrosAbiertos && (
-        <div className="grid gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-3 dark:bg-white/[0.02]">
-          {/* `Select` no acepta `id`, así que el nombre accesible va por
-              `aria-label`. La `key` con la versión de filtros es lo que hace
-              que «Quitar los filtros» se vea: el componente es no controlado
-              (solo `defaultValue`), y sin remontarlo el desplegable seguiría
-              enseñando el valor viejo mientras el estado ya está limpio. */}
-          <Select
-            key={`sede-${versionFiltros}`}
-            aria-label="Filtrar por sede"
-            options={opcionesSede}
-            defaultValue={sede}
-            onChange={(v) => {
-              setSede(v);
-              setPagina(0);
-            }}
-          />
-          <Select
-            key={`categoria-${versionFiltros}`}
-            aria-label="Filtrar por categoría"
-            options={opcionesCategoria}
-            defaultValue={categoria}
-            onChange={(v) => {
-              setCategoria(v);
-              setPagina(0);
-            }}
-          />
-          <Select
-            key={`estado-${versionFiltros}`}
-            aria-label="Filtrar por estado"
-            options={opcionesEstado}
-            defaultValue={semaforo}
-            onChange={(v) => {
-              setSemaforo(v);
-              setPagina(0);
-            }}
-          />
-          {hayFiltro && (
-            <div className="sm:col-span-3">
-              <Button variant="ghost" size="sm" onClick={quitarFiltros}>
-                Quitar los filtros
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Tabla ───────────────────────────────────────────────────────── */}
       {catalogoVacio ? (
-        <SinResultados
-          titulo="Todavía no hay productos"
-          detalle="Añade el primero para empezar a controlar lo que tienes y lo que se acaba."
-          accion={
-            <Button
-              startIcon={<PlusIcon className="h-4 w-4" />}
-              onClick={() => setModalAbierto(true)}
-              disabled={!puedeEditar}
-            >
-              Añadir producto
-            </Button>
-          }
-        />
-      ) : filas.length === 0 ? (
-        <SinResultados
-          titulo="Sin resultados"
-          detalle="Prueba con otras palabras o quita los filtros."
-          accion={
-            <Button variant="outline" onClick={quitarFiltros}>
-              Quitar los filtros
-            </Button>
-          }
+        <InventarioZeroState
+          onCrearManual={() => setModalAbierto(true)}
+          puedeEditar={puedeEditar}
         />
       ) : (
-        <Card className="p-0 sm:p-0">
-          <CardHeader>
-            <CardTitle className="mb-0">
-              Todos los productos
-              {/* El contador solo aparece con un filtro puesto: sin él, el
-                  total ya está en la tarjeta de resumen y repetirlo aquí es
-                  ruido. Con un filtro sí dice algo que no se ve en otro sitio
-                  —cuántos coinciden de los quince—. */}
-              {hayFiltro && (
-                <span className="ml-2 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
-                  {filas.length === 1 ? "1 coincide" : `${filas.length} coinciden`}
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
+        <>
+          {/* ── Resumen ─────────────────────────────────────────────────────── */}
+          <Card className="p-0 sm:p-0">
+            <CardBody className="p-5 sm:p-6">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 xl:grid-cols-4">
+                <Metrica
+                  rotulo="Categorías"
+                  valor={resumen.categorias.toLocaleString("es-CO")}
+                  pie="En tu catálogo"
+                />
+                <Metrica
+                  rotulo="Productos"
+                  valor={resumen.productos.toLocaleString("es-CO")}
+                  pie={`Valen ${formatearMoneda(resumen.valorizacion)}`}
+                />
+                <Metrica
+                  rotulo="Queda poco"
+                  valor={resumen.porAgotar.toLocaleString("es-CO")}
+                  pie="Conviene reponer"
+                  alerta={resumen.porAgotar > 0}
+                />
+                <Metrica
+                  rotulo="Agotados"
+                  valor={resumen.agotados.toLocaleString("es-CO")}
+                  pie="Sin existencias"
+                  alerta={resumen.agotados > 0}
+                />
+              </div>
+            </CardBody>
+          </Card>
 
-          <CardBody className="p-0 sm:p-0">
-            <ProductosTabla
-              filas={visibles}
-              hoy={hoy}
-              sedeFiltrada={sedeFiltrada}
-              onAbrir={(id) => navigate(`/inventarios/productos/${id}`)}
+          {/* ── Barra de acciones ───────────────────────────────────────────── */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <SearchInput
+              value={consulta}
+              placeholder="Buscar por nombre, código o categoría…"
+              className="sm:flex-1"
+              onChange={(e) => {
+                setConsulta(e.target.value);
+                setPagina(0);
+              }}
+              onClear={() => {
+                setConsulta("");
+                setPagina(0);
+              }}
             />
-          </CardBody>
-
-          {paginas > 1 && (
-            <div className="flex items-center justify-between gap-3 border-t border-gray-200 px-5 py-3.5 sm:px-6 dark:border-gray-800">
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => setPagina(paginaActual - 1)}
-                disabled={paginaActual === 0}
+                startIcon={<AdjustmentsHorizontalIcon className="h-4 w-4" />}
+                onClick={() => setFiltrosAbiertos((v) => !v)}
+                aria-expanded={filtrosAbiertos}
               >
-                Anterior
+                {filtrosPuestos > 0 ? `Filtros (${filtrosPuestos})` : "Filtros"}
               </Button>
-              <p className="text-gray-500 text-theme-xs dark:text-gray-400">
-                Página {paginaActual + 1} de {paginas}
-              </p>
               <Button
                 variant="outline"
-                size="sm"
-                onClick={() => setPagina(paginaActual + 1)}
-                disabled={paginaActual >= paginas - 1}
+                startIcon={<DownloadIcon className="h-4 w-4" />}
+                onClick={descargar}
+                disabled={filas.length === 0}
               >
-                Siguiente
+                Descargar lista
               </Button>
             </div>
+          </div>
+
+          {/* ── Filtros ─────────────────────────────────────────────────────── */}
+          {filtrosAbiertos && (
+            <div className="grid gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-3 dark:bg-white/[0.02]">
+              <Select
+                key={`sede-${versionFiltros}`}
+                aria-label="Filtrar por sede"
+                options={opcionesSede}
+                defaultValue={sede}
+                onChange={(v) => {
+                  setSede(v);
+                  setPagina(0);
+                }}
+              />
+              <Select
+                key={`categoria-${versionFiltros}`}
+                aria-label="Filtrar por categoría"
+                options={opcionesCategoria}
+                defaultValue={categoria}
+                onChange={(v) => {
+                  setCategoria(v);
+                  setPagina(0);
+                }}
+              />
+              <Select
+                key={`estado-${versionFiltros}`}
+                aria-label="Filtrar por estado"
+                options={opcionesEstado}
+                defaultValue={semaforo}
+                onChange={(v) => {
+                  setSemaforo(v);
+                  setPagina(0);
+                }}
+              />
+              {hayFiltro && (
+                <div className="sm:col-span-3">
+                  <Button variant="ghost" size="sm" onClick={quitarFiltros}>
+                    Quitar los filtros
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
-        </Card>
+
+          {/* ── Tabla o Sin Resultados de Búsqueda ───────────────────────────── */}
+          {filas.length === 0 ? (
+            <SinResultados
+              titulo="Sin resultados"
+              detalle="Prueba con otras palabras o quita los filtros."
+              accion={
+                <Button variant="outline" onClick={quitarFiltros}>
+                  Quitar los filtros
+                </Button>
+              }
+            />
+          ) : (
+            <Card className="p-0 sm:p-0">
+              <CardHeader>
+                <CardTitle className="mb-0">
+                  Todos los productos
+                  {hayFiltro && (
+                    <span className="ml-2 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
+                      {filas.length === 1 ? "1 coincide" : `${filas.length} coinciden`}
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+
+              <CardBody className="p-0 sm:p-0">
+                <ProductosTabla
+                  filas={visibles}
+                  hoy={hoy}
+                  sedeFiltrada={sedeFiltrada}
+                  onAbrir={(id) => navigate(`/inventarios/productos/${id}`)}
+                />
+              </CardBody>
+
+              {paginas > 1 && (
+                <div className="flex items-center justify-between gap-3 border-t border-gray-200 px-5 py-3.5 sm:px-6 dark:border-gray-800">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPagina(paginaActual - 1)}
+                    disabled={paginaActual === 0}
+                  >
+                    Anterior
+                  </Button>
+                  <p className="text-gray-500 text-theme-xs dark:text-gray-400">
+                    Página {paginaActual + 1} de {paginas}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPagina(paginaActual + 1)}
+                    disabled={paginaActual >= paginas - 1}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              )}
+            </Card>
+          )}
+        </>
       )}
 
       <ModalProducto

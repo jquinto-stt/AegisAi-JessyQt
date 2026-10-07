@@ -493,6 +493,216 @@ export class ProductosStore {
 
     return { ok: true, id: nuevoAjuste.id };
   }
+
+  // ── Gestión de Estado Cero y Carga Rápida ────────────────────────────────
+
+  vaciarInventario(): void {
+    this.productos = [];
+    this.existencias = [];
+    this.ajustes = [];
+  }
+
+  restaurarSeed(): void {
+    this.productos = JSON.parse(JSON.stringify(PRODUCTOS_SEED));
+    this.existencias = JSON.parse(JSON.stringify(EXISTENCIAS_SEED));
+    this.ajustes = JSON.parse(JSON.stringify(AJUSTES_SEED));
+  }
+
+  cargarPresetSector(sector: "minimarket" | "farmacia" | "ferreteria"): void {
+    const sedePrincipalId = this.sedes[0]?.id ?? "sede_centro";
+
+    const presets: Record<
+      "minimarket" | "farmacia" | "ferreteria",
+      Array<{
+        nombre: string;
+        categoria: string;
+        precioCompra: number;
+        unidad: UnidadMedida;
+        minimo: number;
+        vencimiento?: string | null;
+        stockInicial: number;
+      }>
+    > = {
+      minimarket: [
+        {
+          nombre: "Arroz Premium 1 kg",
+          categoria: "Alimentos",
+          precioCompra: 3800,
+          unidad: "paquete",
+          minimo: 10,
+          vencimiento: "2027-04-15",
+          stockInicial: 25,
+        },
+        {
+          nombre: "Aceite Vegetal 900 ml",
+          categoria: "Alimentos",
+          precioCompra: 7500,
+          unidad: "litro",
+          minimo: 8,
+          vencimiento: "2027-02-10",
+          stockInicial: 15,
+        },
+        {
+          nombre: "Leche Entera 1 L",
+          categoria: "Lácteos",
+          precioCompra: 3200,
+          unidad: "litro",
+          minimo: 12,
+          vencimiento: "2026-11-20",
+          stockInicial: 18,
+        },
+        {
+          nombre: "Café Molido Tradicional 250 g",
+          categoria: "Bebidas",
+          precioCompra: 6500,
+          unidad: "paquete",
+          minimo: 6,
+          vencimiento: "2027-08-30",
+          stockInicial: 12,
+        },
+        {
+          nombre: "Detergente Multiusos 1 kg",
+          categoria: "Aseo",
+          precioCompra: 5200,
+          unidad: "paquete",
+          minimo: 5,
+          stockInicial: 14,
+        },
+      ],
+      farmacia: [
+        {
+          nombre: "Acetaminofén 500 mg (Caja x 100)",
+          categoria: "Analgésicos",
+          precioCompra: 12000,
+          unidad: "caja",
+          minimo: 5,
+          vencimiento: "2028-01-30",
+          stockInicial: 15,
+        },
+        {
+          nombre: "Alcohol Antiséptico 70% 350 ml",
+          categoria: "Primeros Auxilios",
+          precioCompra: 4200,
+          unidad: "unidad",
+          minimo: 10,
+          vencimiento: "2027-10-15",
+          stockInicial: 30,
+        },
+        {
+          nombre: "Suero Oral Electrolitos 500 ml",
+          categoria: "Hidratación",
+          precioCompra: 5500,
+          unidad: "unidad",
+          minimo: 8,
+          vencimiento: "2027-06-20",
+          stockInicial: 20,
+        },
+        {
+          nombre: "Gasas Estériles (Paquete x 10)",
+          categoria: "Material Médico",
+          precioCompra: 2800,
+          unidad: "paquete",
+          minimo: 6,
+          stockInicial: 18,
+        },
+      ],
+      ferreteria: [
+        {
+          nombre: "Cinta Aislante Eléctrica 20 m",
+          categoria: "Electricidad",
+          precioCompra: 3200,
+          unidad: "unidad",
+          minimo: 10,
+          stockInicial: 40,
+        },
+        {
+          nombre: "Tornillo Goloso 1-1/2 (Caja x 100)",
+          categoria: "Fijaciones",
+          precioCompra: 9500,
+          unidad: "caja",
+          minimo: 4,
+          stockInicial: 12,
+        },
+        {
+          nombre: "Guantes de Nitrilo Industrial",
+          categoria: "Seguridad",
+          precioCompra: 6800,
+          unidad: "unidad",
+          minimo: 6,
+          stockInicial: 16,
+        },
+        {
+          nombre: "Silicona Multiusos Transparente 280 ml",
+          categoria: "Adhesivos",
+          precioCompra: 11000,
+          unidad: "unidad",
+          minimo: 5,
+          stockInicial: 10,
+        },
+      ],
+    };
+
+    const lista = presets[sector];
+    this.productos = [];
+    this.existencias = [];
+
+    lista.forEach((item, index) => {
+      const id = nuevoId("producto");
+      const codigo = `PRD-${sector.substring(0, 3).toUpperCase()}-${String(index + 1).padStart(3, "0")}`;
+      this.productos.push({
+        id,
+        nombre: item.nombre,
+        codigo,
+        categoria: item.categoria,
+        precioCompra: item.precioCompra,
+        unidad: item.unidad,
+        minimo: item.minimo,
+        vencimiento: item.vencimiento ?? null,
+        imagenDataUrl: null,
+        estado: "activo",
+        createdAt: new Date().toISOString(),
+      });
+
+      this.existencias.push({
+        productoId: id,
+        sedeId: sedePrincipalId,
+        cantidad: item.stockInicial,
+      });
+    });
+  }
+
+  importarProductosCsv(
+    items: Array<{
+      nombre: string;
+      categoria: string;
+      precioCompra: number;
+      unidad: UnidadMedida;
+      minimo: number;
+      stockInicial?: number;
+    }>,
+  ): { creados: number } {
+    let contador = 0;
+
+    for (const item of items) {
+      if (!item.nombre || !item.nombre.trim()) continue;
+      const res = this.crearProducto({
+        nombre: item.nombre.trim(),
+        codigo: "",
+        categoria: item.categoria || "General",
+        precioCompra: item.precioCompra || 0,
+        cantidadInicial: item.stockInicial || 0,
+        minimo: item.minimo || 5,
+        unidad: item.unidad || "unidad",
+        vencimiento: null,
+        imagenDataUrl: null,
+      });
+      if (res.ok) {
+        contador++;
+      }
+    }
+
+    return { creados: contador };
+  }
 }
 
 export const productosStore = new ProductosStore();

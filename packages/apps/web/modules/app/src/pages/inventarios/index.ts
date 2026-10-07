@@ -19,6 +19,7 @@ export { OrdenesPage } from "./OrdenesPage";
 export { ProveedoresPage } from "./ProveedoresPage";
 export { ReportesPage } from "./ReportesPage";
 export { InventariosConfigPage } from "./ConfigPage";
+export { InventarioZeroState } from "./InventarioZeroState";
 export { InventariosPage, default as InventariosPageDefault } from "./InventariosPage";
 export { CrearInventarioPage } from "./CrearInventarioPage";
 export { DetalleInventarioPage } from "./DetalleInventarioPage";
