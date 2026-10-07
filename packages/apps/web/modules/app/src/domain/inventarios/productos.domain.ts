@@ -72,6 +72,7 @@ export const UNIDADES_MEDIDA: readonly UnidadMedida[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 export type EstadoProducto = "activo" | "inactivo";
+export type TipoImpuesto = "exento" | "iva_0" | "iva_5" | "iva_19" | "impoconsumo";
 
 export interface Producto {
   id: string;
@@ -80,11 +81,21 @@ export interface Producto {
    * organización, sin distinguir mayúsculas ni tildes (ver `codigoProductoDuplicado`).
    */
   codigo: string;
+  /** Código de barras EAN-13 / UPC opcional para escaneo en caja o bodega. */
+  codigoBarras?: string | null;
   nombre: string;
   /** **Texto libre**, nunca unión cerrada: el usuario nombra sus categorías. */
   categoria: string;
   /** Precio al que se compra. Se usa para valorizar el inventario. */
   precioCompra: number;
+  /** Precio al que se vende al público o cliente final. */
+  precioVenta?: number;
+  /** Régimen o tarifa impositiva colombiana aplicada. */
+  impuesto?: TipoImpuesto;
+  /** Si está visible para pedir desde catálogo virtual / tienda WhatsApp. */
+  publicarEnCatalogo?: boolean;
+  /** Notas o especificaciones para el cliente y el bodeguero. */
+  descripcion?: string | null;
   /**
    * Cantidad a partir de la cual el producto se marca «Queda poco».
    *
@@ -96,8 +107,7 @@ export interface Producto {
   /** `YYYY-MM-DD`, o `null` si el producto no vence (aseo, ferretería…). */
   vencimiento: string | null;
   /**
-   * Foto embebida como `dataUrl`. **Sin backend se pierde al recargar**, y la
-   * ficha lo dice en texto secundario en vez de fingir que persiste.
+   * Foto embebida como `dataUrl`.
    */
   imagenDataUrl: string | null;
   /**
@@ -405,6 +415,8 @@ export function repartirEnSedes(
 export interface Proveedor {
   id: string;
   nombre: string;
+  /** Logo comercial o avatar corporativo del proveedor en dataUrl / URL. */
+  logoDataUrl?: string | null;
   productoPrincipal: string;
   categoria: string;
   telefono: string;

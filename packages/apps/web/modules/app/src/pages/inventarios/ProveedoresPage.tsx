@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { Card, CardBody, CardHeader, CardTitle } from "@/elements/ui/card";
@@ -11,6 +11,7 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import { PlusIcon, GroupIcon, DownloadIcon } from "@/icons";
+import { ArrowUpTrayIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { productosStore } from "@/stores/productos.store";
 import { CabeceraPagina, ContenedorPagina } from "./inventarios.ui";
 import { formatearMoneda } from "./productos.presentacion";
@@ -28,6 +29,8 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
   const [email, setEmail] = useState("");
   const [aceptaDevoluciones, setAceptaDevoluciones] = useState(true);
   const [precioBase, setPrecioBase] = useState("");
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const inputLogoRef = useRef<HTMLInputElement>(null);
 
   const proveedores = productosStore.proveedores;
 
@@ -47,6 +50,7 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
 
     productosStore.crearProveedor({
       nombre,
+      logoDataUrl,
       productoPrincipal,
       categoria,
       telefono,
@@ -61,6 +65,7 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
     setTelefono("");
     setEmail("");
     setPrecioBase("");
+    setLogoDataUrl(null);
   };
 
   return (
@@ -129,7 +134,27 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
                 {proveedoresFiltrados.map((prov) => (
                   <TableRow key={prov.id} className="hover:bg-gray-50/50 dark:hover:bg-white/[0.02]">
                     <TableCell className="px-5 py-3 font-semibold text-gray-900 dark:text-white text-sm">
-                      {prov.nombre}
+                      <div className="flex items-center gap-3">
+                        {prov.logoDataUrl ? (
+                          <img
+                            src={prov.logoDataUrl}
+                            alt={prov.nombre}
+                            className="h-8 w-8 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-white/10"
+                          />
+                        ) : (
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 font-bold text-xs ring-1 ring-brand-100 dark:ring-brand-500/20">
+                            {prov.nombre.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <span className="block truncate font-semibold text-gray-900 dark:text-white text-sm">
+                            {prov.nombre}
+                          </span>
+                          <span className="block truncate text-theme-xs text-gray-400 font-normal">
+                            {prov.categoria}
+                          </span>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="px-5 py-3 text-sm text-gray-700 dark:text-gray-300">
                       {prov.productoPrincipal}
@@ -178,6 +203,61 @@ export const ProveedoresPage = observer(function ProveedoresPage() {
                   placeholder="Ej. Distribuidora del Norte SAS"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="mb-1.5 block">Logo o distintivo comercial</Label>
+                {logoDataUrl ? (
+                  <div className="flex items-center gap-3 p-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/40">
+                    <img
+                      src={logoDataUrl}
+                      alt="Logo proveedor"
+                      className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7 px-2"
+                        onClick={() => inputLogoRef.current?.click()}
+                      >
+                        Cambiar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7 px-2 text-error-600"
+                        onClick={() => setLogoDataUrl(null)}
+                      >
+                        Quitar
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => inputLogoRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-brand-500 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] text-theme-xs text-gray-500 transition-colors"
+                  >
+                    <ArrowUpTrayIcon className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                    <span>Subir logo de la empresa (PNG, JPG)</span>
+                  </button>
+                )}
+                <input
+                  ref={inputLogoRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const r = new FileReader();
+                    r.onload = () => setLogoDataUrl(typeof r.result === "string" ? r.result : null);
+                    r.readAsDataURL(f);
+                  }}
                 />
               </div>
 

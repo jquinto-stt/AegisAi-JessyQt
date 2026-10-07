@@ -17,6 +17,7 @@ import {
   type ResumenCatalogo,
   type Sede,
   type SemaforoDisponibilidad,
+  type TipoImpuesto,
   type UnidadMedida,
 } from "@/domain/inventarios/productos.domain";
 import {
@@ -77,8 +78,13 @@ export interface ResultadoGuardado {
 export interface DatosProducto {
   nombre: string;
   codigo: string;
+  codigoBarras?: string | null;
   categoria: string;
   precioCompra: string | number | null;
+  precioVenta?: string | number | null;
+  impuesto?: TipoImpuesto;
+  publicarEnCatalogo?: boolean;
+  descripcion?: string | null;
   cantidadInicial: string | number | null;
   minimo: string | number | null;
   unidad: UnidadMedida;
@@ -215,12 +221,19 @@ export class ProductosStore {
       };
     }
 
+    const precioVenta = sanearNumero(datos.precioVenta);
+
     const producto: Producto = {
       id: nuevoId("prod"),
       codigo,
+      codigoBarras: datos.codigoBarras?.trim() || null,
       nombre,
       categoria: categoria.length > 0 ? categoria : "Sin categoría",
       precioCompra: precioCompra as number,
+      precioVenta: precioVenta !== null ? precioVenta : Math.round((precioCompra as number) * 1.3),
+      impuesto: datos.impuesto ?? "iva_19",
+      publicarEnCatalogo: datos.publicarEnCatalogo ?? true,
+      descripcion: datos.descripcion?.trim() || null,
       minimo: minimo as number,
       unidad: datos.unidad,
       vencimiento: datos.vencimiento,
@@ -277,10 +290,23 @@ export class ProductosStore {
       };
     }
 
+    const precioVenta = sanearNumero(datos.precioVenta);
+
     producto.nombre = nombre;
     producto.codigo = codigo;
+    producto.codigoBarras = datos.codigoBarras?.trim() || null;
     producto.categoria = datos.categoria.trim() || "Sin categoría";
     producto.precioCompra = precioCompra as number;
+    if (precioVenta !== null) {
+      producto.precioVenta = precioVenta;
+    }
+    if (datos.impuesto) {
+      producto.impuesto = datos.impuesto;
+    }
+    if (typeof datos.publicarEnCatalogo === "boolean") {
+      producto.publicarEnCatalogo = datos.publicarEnCatalogo;
+    }
+    producto.descripcion = datos.descripcion?.trim() || null;
     producto.minimo = minimo as number;
     producto.unidad = datos.unidad;
     producto.vencimiento = datos.vencimiento;
@@ -373,6 +399,7 @@ export class ProductosStore {
 
   crearProveedor(datos: {
     nombre: string;
+    logoDataUrl?: string | null;
     productoPrincipal: string;
     categoria: string;
     telefono: string;
@@ -386,6 +413,7 @@ export class ProductosStore {
     const nuevo: Proveedor = {
       id: nuevoId("prov"),
       nombre,
+      logoDataUrl: datos.logoDataUrl ?? null,
       productoPrincipal: datos.productoPrincipal.trim() || "Varios",
       categoria: datos.categoria.trim() || "General",
       telefono: datos.telefono.trim(),

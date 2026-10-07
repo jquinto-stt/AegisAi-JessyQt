@@ -215,9 +215,27 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
                       </p>
                     </div>
                     <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Precio Venta</p>
+                      <p className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {formatearMoneda(producto.precioVenta ?? Math.round(producto.precioCompra * 1.3))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Impuesto</p>
+                      <p className="font-semibold text-gray-900 dark:text-white mt-0.5 uppercase">
+                        {producto.impuesto ? producto.impuesto.replace("_", " ") : "IVA 19%"}
+                      </p>
+                    </div>
+                    <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Umbral Mínimo</p>
                       <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
                         {producto.minimo} {producto.unidad}s
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Catálogo Virtual</p>
+                      <p className="font-semibold text-gray-900 dark:text-white mt-0.5">
+                        {producto.publicarEnCatalogo !== false ? "Visible (Online)" : "Oculto"}
                       </p>
                     </div>
                     <div>
@@ -227,6 +245,15 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
                       </p>
                     </div>
                   </div>
+
+                  {producto.descripcion && (
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Descripción / Detalles</p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1 leading-relaxed">
+                        {producto.descripcion}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Datos del Proveedor */}
                   {proveedor && (

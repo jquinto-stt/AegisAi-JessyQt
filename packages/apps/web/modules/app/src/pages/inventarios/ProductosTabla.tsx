@@ -62,7 +62,7 @@ export function ProductosTabla({
               header
               className="px-5 py-3 font-medium text-gray-500 text-end text-theme-xs dark:text-gray-400"
             >
-              Precio de compra
+              Precios (Venta / Costo)
             </TableCell>
             <TableCell
               header
@@ -126,8 +126,13 @@ export function ProductosTabla({
                   </button>
                 </TableCell>
 
-                <TableCell className="px-5 py-3 text-end text-gray-500 text-theme-sm tabular-nums dark:text-gray-400">
-                  {formatearMoneda(producto.precioCompra)}
+                <TableCell className="px-5 py-3 text-end text-theme-sm tabular-nums">
+                  <span className="block font-semibold text-gray-800 dark:text-white/90">
+                    {formatearMoneda(producto.precioVenta ?? Math.round(producto.precioCompra * 1.3))}
+                  </span>
+                  <span className="block text-theme-xs text-gray-400 dark:text-gray-500">
+                    Costo {formatearMoneda(producto.precioCompra)}
+                  </span>
                 </TableCell>
 
                 <TableCell className="px-5 py-3 text-end text-theme-sm tabular-nums">
