@@ -1063,25 +1063,21 @@ export const AsistenteConfigPage = observer(() => {
                     />
                   </div>
 
-                  <div className={filaBase}>
-                    <Label2
-                      titulo="Tema de la aplicación"
-                      descripcion="Compartido con el resto de la aplicación, no solo con el asistente."
-                    />
-                    <Switch
-                      color={SWITCH_COLOR}
-                      checked={uiStore.theme === "dark"}
-                      onChange={(v) => uiStore.setTheme(v ? "dark" : "light")}
-                      aria-label="Tema oscuro"
-                    />
-                  </div>
                 </div>
               </Card>
             )}
 
-          {/* El pie de guardado NO existe en esta página: salvo el tema, que se
-              aplica al instante, no hay nada que persistir. Mostrar un botón
-              «Guardar» sin nada que guardar sería un control decorativo. */}
+          {/* El pie de guardado NO existe en esta página: nada de lo que se
+              ajusta aquí se persiste. Mostrar un botón «Guardar» sin nada que
+              guardar sería un control decorativo.
+
+              Aquí vivía además un interruptor de «Tema de la aplicación» —con
+              su propio comentario admitiendo que era «compartido con el resto de
+              la aplicación»—. Se retiró el 07/10: el tema es una preferencia de
+              TODA la app y su dueño único es el control de la cabecera, que
+              además ofrece «Sistema». Un módulo no es dueño de una preferencia
+              global, y dos superficies con dos vocabularios para el mismo ajuste
+              es justo lo que este proyecto rechaza. */}
         </ConfigShell>
       </div>
     </>

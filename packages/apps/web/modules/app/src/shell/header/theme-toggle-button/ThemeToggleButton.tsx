@@ -1,13 +1,27 @@
 /**
- * ThemeToggleButton — Dark/light mode toggle for the shell header.
+ * ThemeToggleButton — elige el tema de la aplicación desde la cabecera.
  *
- * Lives in the shell to keep the app chrome self-contained.
- * Two variants: "default" (bordered circle for headers) and "floating"
- * (brand-colored FAB for auth pages).
+ * Vive en el shell para que el cromo de la aplicación sea autosuficiente.
+ * Tres variantes: "default" (círculo con borde, para cabeceras), "floating"
+ * (FAB en color de marca, para las pantallas de acceso) y "compact".
+ *
+ * ── De conmutador a selector de tres estados (07/10) ──────────────────────
+ *
+ * Era un botón que alternaba claro ↔ oscuro, y el tema se podía cambiar además
+ * desde la configuración del asistente y desde la del canal: tres sitios y dos
+ * vocabularios para la misma preferencia, y «Sistema» solo existía en uno de
+ * ellos. Ahora este control es el DUEÑO ÚNICO de la preferencia y abre un menú
+ * con las tres opciones.
+ *
+ * El icono del botón sigue mostrando el tema EFECTIVO —sol en oscuro, luna en
+ * claro— para que el estado se lea de un vistazo sin abrir el menú.
  */
 
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { uiStore } from '@/stores';
+import { Dropdown, DropdownItem } from '@/elements/ui/dropdown';
+import { OPCIONES_TEMA, tituloDeTema } from './opciones-tema';
 
 interface ThemeToggleButtonProps {
   variant?: "default" | "floating" | "compact";
@@ -28,12 +42,22 @@ const variantClasses = {
  */
 export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = observer(
   ({ variant = "default", className = "" }) => {
+    const [abierto, setAbierto] = useState(false);
+    const preferencia = uiStore.themePreference;
+    const titulo = tituloDeTema(preferencia);
+
     return (
+      // El envoltorio `relative` es del MENÚ, no del botón: `Dropdown` se
+      // posiciona en `absolute right-0 mt-2` respecto a su ancestro posicionado.
+      <div className="relative inline-block">
       <button
-        onClick={() => uiStore.toggleTheme()}
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
         className={`${variantClasses[variant]} ${className}`.trim()}
-        title="Cambiar tema claro / oscuro"
-        aria-label="Cambiar tema claro / oscuro"
+        title={titulo}
+        aria-label={titulo}
+        aria-haspopup="menu"
+        aria-expanded={abierto}
       >
         {/* Los dos iconos van superpuestos y se turnan por OPACIDAD, ESCALA y
             GIRO, no por `display`. El intercambio anterior
@@ -83,6 +107,38 @@ export const ThemeToggleButton: React.FC<ThemeToggleButtonProps> = observer(
           </svg>
         </span>
       </button>
+
+      {/* Las tres opciones, con la elegida marcada. La marca es la MISMA que usa
+          el resto del producto para «elegido» (`secondary-50` + `secondary-600`,
+          y en oscuro el naranja de marca): un estado activo se pinta igual en
+          toda la app o deja de ser un lenguaje. */}
+      <Dropdown isOpen={abierto} onClose={() => setAbierto(false)} className="w-60 p-1.5">
+        {OPCIONES_TEMA.map((o) => {
+          const activa = o.value === preferencia;
+          return (
+            <DropdownItem
+              key={o.value}
+              onItemClick={() => {
+                uiStore.setThemePreference(o.value);
+                setAbierto(false);
+              }}
+              className={
+                activa
+                  ? "font-semibold text-secondary-600 dark:text-brand-400 bg-secondary-50/60 dark:bg-brand-500/10"
+                  : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+              }
+            >
+              <span className="flex flex-col items-start gap-0.5 text-left">
+                <span className="text-sm">{o.label}</span>
+                <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
+                  {o.descripcion}
+                </span>
+              </span>
+            </DropdownItem>
+          );
+        })}
+      </Dropdown>
+      </div>
     );
   }
 );

@@ -20,45 +20,55 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //   patrón que `ESTADO_CONVERSACION_LABEL` / `PLANTILLA_META` en el resto del
 //   proyecto: el vocabulario se declara junto al tipo que lo define.
 //
-// ── REVISIÓN DEL 07/10: SE RETIRAN LAS SECCIONES QUE NO AJUSTAN NADA ──────
+// ── REVISIÓN DEL 07/10: DE OCHO SECCIONES A SEIS ─────────────────────────
 //
-// La página tenía OCHO secciones y dos de ellas —«Perfil del canal» y
-// «Automatización y escalado»— no contenían ni un solo control: eran tres
-// lecturas y dos conteos. Una pantalla de CONFIGURACIÓN que dedica el 25 % de su
-// navegación a datos que no se pueden cambiar no es una pantalla de
-// configuración: es un panel informativo con un botón de guardar al lado. El
-// usuario lo dijo así: «actualmente configuración de conversación solo da
-// información y no es real».
+// La página tenía OCHO secciones y solo TRES estaban limpias. El usuario lo
+// dijo así: «actualmente configuración de conversación solo da información y no
+// es real». La revisión se hizo contra el código, no contra la impresión:
 //
-// Lo que se hizo con ese contenido, y por qué NO se borró sin más:
+//   RETIRADAS por no ajustar nada:
+//     · `perfil`         — tres datos de solo lectura. El número y el nombre del
+//                          canal son IDENTIDAD: pasan a la CABECERA de la
+//                          página, que es donde sirven de contexto, en vez de
+//                          ser una sección que hay que abrir para leerlos.
+//     · `automatizacion` — dos conteos y una leyenda. Los conteos viven en la
+//                          consola de conversaciones, que es donde se actúa
+//                          sobre ellos; repetirlos aquí era un informe dentro
+//                          de un formulario.
 //
-//   · El número y el nombre del canal son IDENTIDAD: siguen visibles, pero en
-//     la CABECERA de la página (son el contexto de todo lo que se ajusta
-//     debajo), no como una sección que hay que abrir para leer tres líneas.
-//   · Los conteos de atención (hilos del bot / con asesor) viven en la consola
-//     de conversaciones, que es donde se actúa sobre ellos. Repetirlos aquí
-//     era un informe dentro de un formulario.
+//   RETIRADA por ser una COPIA de otra pantalla:
+//     · `modulos`        — el mismo ajuste que «Módulos integrados» de
+//                          `/asistente/config`: las dos tarjetas llaman a
+//                          `integracionesStore.alternar(id)`, recorren el mismo
+//                          `entradas.map` y derivan el estado igual. Dos
+//                          superficies para un mismo valor es el defecto que
+//                          este proyecto rechaza. Además, el store declara por
+//                          escrito que «Conector» es vocabulario interno que NO
+//                          se pinta en ninguna superficie, y esta página pintaba
+//                          «Permiso: orders.read», «Proveedor» y
+//                          «Sincronización: En tiempo real».
 //
-// Y en su lugar entra `atencion`, que sí ajusta algo real: si el canal responde
-// solo. Ver `META_SECCION.atencion`.
+//   RETIRADO por ser una preferencia GLOBAL, no del canal:
+//     · el control de TEMA de `apariencia` — escribe en `uiStore`, que es el
+//                          store del shell, y afecta a toda la aplicación. Su
+//                          dueño único es el control de la cabecera
+//                          (`ThemeToggleButton`), que ahora ofrece las tres
+//                          opciones. La sección conserva lo que SÍ es del canal:
+//                          la densidad de la bandeja.
 //
-// ── REVISIÓN DEL 07/10: LOS RÓTULOS DEJAN DE MENTIR ──────────────────────
+//   RÓTULOS QUE MENTÍAN, corregidos:
+//     1. «Plantillas de mensaje» decía «Solo referencia · No se envía nada». Es
+//        FALSO: `pages/pedidos/pedidos.notificaciones.ts` publica la plantilla
+//        en el hilo del cliente cada vez que un pedido cambia de estado.
+//     2. «Aviso de pausa» editaba `plantillas.cancelado` —el MISMO campo que la
+//        fila «Cancelado»— y lo presentaba como un aviso «fuera de horario» que
+//        no existía en el código. Ahora es el ajuste real que decía ser
+//        (`avisoFueraHorario`), sobre un campo propio.
+//     3. La fila «Recibido» de las plantillas era un control muerto:
+//        `PLANTILLA_POR_ESTADO` excluye los estados de entrada.
 //
-// Tres controles afirmaban algo falso y se corrigieron contra el código:
-//
-//   1. «Plantillas de mensaje» decía «Solo referencia · No se envía nada». Es
-//      FALSO: `pages/pedidos/pedidos.notificaciones.ts` publica la plantilla en
-//      el hilo del cliente cada vez que un pedido cambia de estado. El rótulo
-//      se corrige a lo que de verdad ocurre.
-//   2. «Aviso de pausa» editaba `plantillas.cancelado` —el MISMO campo que la
-//      fila «Cancelado»— y lo presentaba como un aviso «fuera de horario» que
-//      no existía en ninguna parte del código. Se convierte en el ajuste REAL
-//      que decía ser: un aviso que sí se envía, y solo cuando el negocio está
-//      cerrado (`avisoFueraHorario`).
-//   3. La fila «Recibido» de las plantillas era un control muerto:
-//      `PLANTILLA_POR_ESTADO` excluye los estados de entrada, así que editar ese
-//      texto no llegaba nunca a ningún sitio. Se retira de la tabla (ver
-//      `FILAS_PLANTILLA`).
+//   AÑADIDA, porque sí ajusta algo real:
+//     · `atencion`       — si el canal responde solo. Ver `META_SECCION.atencion`.
 //
 // ALCANCE (lo que esta página NO es):
 //   La app es un mock 100 % frontend sin backend. NO existen —y por tanto NO se
@@ -75,11 +85,10 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 
 /**
  * Claves de las secciones de la página. La unión es la fuente de exhaustividad:
- * `SECCIONES_POR_GRUPO` y `META_SECCION` son `Record` sobre ella, así que añadir
+ * `seccionesPorGrupo` y `META_SECCION` son `Record` sobre ella, así que añadir
  * una sección sin darle grupo o metadatos es un error de compilación.
  */
 export type SeccionCanal =
-  | "modulos"
   | "plantillas"
   | "horario"
   | "atencion"
@@ -144,7 +153,6 @@ export interface MetaSeccion {
 
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
 export type IconoSeccion =
-  | "PlugInIcon"
   | "DocsIcon"
   | "TimeIcon"
   | "BoltIcon"
@@ -158,13 +166,6 @@ export type IconoSeccion =
  * navegación sea una edición explícita y no un efecto colateral de mover líneas.
  */
 export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
-  modulos: {
-    label: "Módulos conectados",
-    hint: "Módulos del negocio integrados con el canal de WhatsApp.",
-    pregunta: "¿Qué módulos acompañan al canal?",
-    grupo: "canal",
-    icono: "PlugInIcon",
-  },
   plantillas: {
     label: "Plantillas de mensaje",
     hint: "El texto que recibe el cliente cuando su pedido cambia de estado.",
@@ -201,9 +202,9 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
     icono: "AlertIcon",
   },
   apariencia: {
-    label: "Apariencia",
-    hint: "Preferencias locales de la interfaz. No afectan a datos del negocio.",
-    pregunta: "¿Cómo quieres ver la interfaz?",
+    label: "Bandeja",
+    hint: "Cuánto espacio ocupa cada hilo en la lista de conversaciones.",
+    pregunta: "¿Cómo quieres ver la lista de conversaciones?",
     grupo: "preferencias",
     icono: "EyeIcon",
   },
@@ -220,20 +221,15 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
  * en «Perfil del canal» —cuyo único control era un campo de solo lectura—
  * ofrecía «Guardar cambios» sobre algo que no se puede cambiar. Un botón que no
  * guarda nada es exactamente la superficie que este proyecto rechaza. Esas dos
- * secciones ya no existen (07/10); la lista se mantiene porque el motivo sigue
- * vigente para las dos que quedan fuera.
+ * secciones ya no existen (07/10).
  *
- * Quedan FUERA las dos que NO escriben en el borrador:
- *   · `atencion`   — se aplica AL INSTANTE: es un interruptor de operación, no
- *                    un ajuste con borrador. Pulsarlo cambia el comportamiento
- *                    del canal en ese momento.
- *   · `apariencia` — preferencia local: también se aplica al instante.
+ * Queda FUERA la que NO escribe en el borrador:
+ *   · `apariencia` — es una preferencia local que se aplica AL INSTANTE.
  *
- * Las dos siguen siendo alcanzables y siguen mostrando su contenido; lo que no
- * hacen es prometer un guardado que no existe.
+ * Sigue siendo alcanzable y sigue mostrando su contenido; lo que no hace es
+ * prometer un guardado que no existe.
  */
 export const SECCIONES_CON_PIE_DE_GUARDADO: readonly SeccionCanal[] = [
-  "modulos",
   "plantillas",
   "horario",
   "aviso",
@@ -261,10 +257,8 @@ type SeccionSinGuardado = Exclude<
  * pierde el pie sin decir nada.
  */
 export const NOTA_SIN_GUARDADO: Record<SeccionSinGuardado, string> = {
-  atencion:
-    "Este interruptor se aplica al instante: apaga o enciende las respuestas automáticas de todo el canal en el momento en que lo pulsas, sin pasar por Guardar. El traspaso de un hilo concreto entre el bot y un asesor se hace desde la consola de conversaciones.",
   apariencia:
-    "Los cambios de apariencia se aplican al instante y no viajan con la configuración del canal: son una preferencia de esta interfaz.",
+    "Este ajuste se aplica al instante y no viaja con la configuración del canal: es una preferencia de esta interfaz, no un ajuste del negocio. El tema de la aplicación no está aquí: se elige desde el botón de tema de la cabecera, porque afecta a toda la aplicación y no solo a este módulo.",
 };
 
 /**
@@ -282,7 +276,6 @@ export function notaSinGuardado(seccion: SeccionCanal): string | null {
 
 /** Orden de las secciones dentro de la navegación. */
 export const ORDEN_SECCIONES: SeccionCanal[] = [
-  "modulos",
   "plantillas",
   "horario",
   "atencion",
@@ -364,33 +357,14 @@ export const DIAS_ATENCION: { d: number; label: string; largo: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Tema de la interfaz, en el vocabulario de ESTA pantalla (español).
- *
- * Es el vocabulario de ESTA pantalla (español) para el mismo concepto que el
- * store llama `light | dark | system`. La traducción vive en la página, en dos
- * tablas de una línea, porque es una frontera entre dos vocabularios y no una
- * decisión repartida por el JSX.
- *
- * Desde el 07/10 el store SÍ recuerda la preferencia, así que «Sistema»
- * significa algo comprobable: sigue al sistema operativo y se conserva al
- * recargar. Antes era un `useState` que volvía a «Sistema» en cada visita
- * aunque el tema aplicado fuera otro — el control decía una cosa y el tema
- * aplicado era otra.
- */
-export type PreferenciaTema = "claro" | "oscuro" | "sistema";
-
-export const OPCIONES_TEMA: { value: PreferenciaTema; label: string }[] = [
-  { value: "claro", label: "Claro" },
-  { value: "oscuro", label: "Oscuro" },
-  { value: "sistema", label: "Sistema" },
-];
-
-/**
  * Densidad de la lista de conversaciones.
  *
  * Es una preferencia REAL desde el 07/10: se persiste en `uiStore` y
  * `BandejaLista` la lee para cambiar el espaciado de cada hilo. Antes era un
  * `useState` local que nadie leía: pulsar «Compacta» no cambiaba nada.
+ *
+ * El TEMA no se ofrece aquí: es una preferencia de toda la aplicación y su dueño
+ * único es el control de la cabecera. Ver la cabecera de este archivo.
  */
 export type { DensidadBandeja };
 
@@ -435,21 +409,6 @@ export const ESTADO_CANAL_LABEL: Record<EstadoCanal, string> = {
 export const ESTADO_CANAL_BADGE: Record<EstadoCanal, BadgeColor> = {
   atendiendo: "success",
   fuera_horario: "light",
-};
-
-/** Estado de integración de los módulos del negocio con el canal. */
-export type EstadoIntegracionCanal = "conectado" | "desconectado" | "no_disponible";
-
-export const ESTADO_INTEGRACION_LABEL: Record<EstadoIntegracionCanal, string> = {
-  conectado: "Conectado",
-  desconectado: "Desconectado",
-  no_disponible: "No disponible",
-};
-
-export const ESTADO_INTEGRACION_BADGE: Record<EstadoIntegracionCanal, BadgeColor> = {
-  conectado: "success",
-  desconectado: "light",
-  no_disponible: "warning",
 };
 
 /** Color de la pista del `Switch` cuando está encendido, por contexto de uso. */

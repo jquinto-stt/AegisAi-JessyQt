@@ -44,6 +44,14 @@ beforeEach(() => {
   instalarLocalStorageStub();
 });
 
+// Cada test importa los stores EN FRÍO (son singletons que leen `localStorage`
+// al construirse), así que el primer import de cada uno arrastra toda la cadena.
+// Con la suite corriendo en paralelo eso puede rozar el timeout por defecto de
+// 5 s y producir fallos intermitentes: un test que falla según la carga de la
+// máquina no es un test. El margen es explícito y se mide por test, no se
+// esconde con reintentos.
+vi.setConfig({ testTimeout: 20000 });
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });

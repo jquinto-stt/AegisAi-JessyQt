@@ -153,8 +153,18 @@ describe("Configuración del canal — una sola derivación por valor", () => {
   });
 });
 
-describe("Configuración del canal — la preferencia de tema no rompe el contrato del shell", () => {
-  it("escribir el tema efectivo en uiStore no altera la configuración de dominio", async () => {
+describe("La preferencia de interfaz no se filtra a la configuración del negocio", () => {
+  // ── De quién es esta regla, tras el 07/10 ─────────────────────────────────
+  //
+  // El control de tema vivía en la sección «Apariencia» de esta página; ahora su
+  // dueño único es el botón de tema de la CABECERA, porque el tema afecta a toda
+  // la aplicación. La regla que se comprueba aquí no depende de dónde esté el
+  // control: una preferencia de interfaz se escribe en `uiStore` y NUNCA en la
+  // configuración de dominio. Si eso se rompiera, cambiar de tema contaría como
+  // un cambio de canal y la página ofrecería «Guardar cambios» por una
+  // preferencia local.
+
+  it("escribir el tema en uiStore no altera la configuración de dominio", async () => {
     const { uiStore } = await import("@/shell/stores/ui.store");
     const { pedidosStore } = await import("@/stores/pedidos.store");
 
@@ -163,25 +173,18 @@ describe("Configuración del canal — la preferencia de tema no rompe el contra
     uiStore.setTheme("dark");
     expect(uiStore.theme).toBe("dark");
 
-    // La apariencia es preferencia de UI: no debe filtrarse a la config del
-    // negocio. Si lo hiciera, cambiar de tema contaría como cambio de canal.
     expect(JSON.stringify(pedidosStore.config)).toBe(configAntes);
   });
 
-  it("'sistema' no se escribe como tema literal en uiStore", async () => {
+  it("la densidad de la bandeja tampoco toca la configuración del negocio", async () => {
     const { uiStore } = await import("@/shell/stores/ui.store");
-    const { OPCIONES_TEMA } = await import(
-      "@/pages/conversaciones/configuracion.secciones"
-    );
+    const { pedidosStore } = await import("@/stores/pedidos.store");
 
-    // El store del shell solo modela light|dark; la página resuelve "sistema"
-    // antes de escribir. Se comprueba que el vocabulario de la página NO es el
-    // del store, que es justo por lo que hace falta la traducción.
-    const valores = OPCIONES_TEMA.map((o) => o.value);
-    expect(valores).toContain("sistema");
-    expect(["light", "dark"]).not.toContain("sistema");
+    const configAntes = JSON.stringify(pedidosStore.config);
 
-    uiStore.setTheme("light");
-    expect(uiStore.theme).toBe("light");
+    uiStore.setDensidadBandeja("compacta");
+
+    expect(uiStore.densidadBandeja).toBe("compacta");
+    expect(JSON.stringify(pedidosStore.config)).toBe(configAntes);
   });
 });

@@ -8,7 +8,6 @@ import {
   GRUPO_SECCION_LABEL,
   META_SECCION,
   OPCIONES_DENSIDAD,
-  OPCIONES_TEMA,
   ORDEN_GRUPOS,
   ORDEN_SECCIONES,
   seccionesPorGrupo,
@@ -65,9 +64,8 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 7 secciones que ajustan algo", () => {
+  it("la página tiene exactamente las 6 secciones que ajustan algo", () => {
     expect(ORDEN_SECCIONES).toEqual([
-      "modulos",
       "plantillas",
       "horario",
       "atencion",
@@ -77,23 +75,31 @@ describe("Catálogo de secciones del canal", () => {
     ]);
   });
 
-  it("las dos secciones de solo lectura siguen retiradas (07/10)", () => {
-    // «Perfil del canal» (tres lecturas) y «Automatización y escalado» (dos
-    // conteos) no contenían ni un control: el 25 % de la navegación de una
-    // pantalla de configuración llevaba a un panel que no se puede ajustar. La
-    // identidad del canal vive ahora en la CABECERA de la página y los conteos
-    // de atención en la consola, que es donde se actúa sobre ellos.
+  it("las tres secciones retiradas por no ajustar nada siguen fuera (07/10)", () => {
+    // · «Perfil del canal» — tres datos de solo lectura.
+    // · «Automatización y escalado» — dos conteos y una leyenda.
+    // · «Módulos conectados» — la MISMA línea de código que «Módulos
+    //   integrados» del asistente: `integracionesStore.alternar(id)`.
     //
     // Se afirma la AUSENCIA a propósito: sin esta comprobación, volver a
     // añadirlas pasaría desapercibido mientras el resto de la suite sigue verde.
     const claves: string[] = ORDEN_SECCIONES;
     expect(claves).not.toContain("perfil");
     expect(claves).not.toContain("automatizacion");
+    expect(claves).not.toContain("modulos");
   });
 
   it("la sección nueva de atención existe y está en el grupo de mensajería", () => {
     expect(ORDEN_SECCIONES).toContain("atencion");
     expect(META_SECCION.atencion.grupo).toBe("mensajeria");
+  });
+
+  it("la sección de preferencias habla de la bandeja, no del tema", () => {
+    // El tema es una preferencia de TODA la aplicación: su dueño único es el
+    // control de la cabecera (`ThemeToggleButton`). Si alguien vuelve a ofrecer
+    // aquí un control de tema, habrá otra vez dos superficies para un ajuste.
+    expect(META_SECCION.apariencia.label).toBe("Bandeja");
+    expect(META_SECCION.apariencia.grupo).toBe("preferencias");
   });
 
   it("toda sección tiene etiqueta y descripción no vacías", () => {
@@ -111,10 +117,16 @@ describe("Plantillas de mensaje — exhaustividad sobre lo que se ENVÍA", () =>
     // lista escrita aquí: una lista escrita en el test sería una tercera copia
     // de la misma decisión y podría quedarse corta sin que nadie lo note — que
     // es exactamente el defecto que este test cierra.
+    //
+    // El `import` es dinámico porque arrastra los stores, que son singletons y
+    // leen `localStorage` al construirse. El tercer argumento es el TIMEOUT: ese
+    // import tarda ~2,8 s en frío, y con la suite corriendo en paralelo rozaba
+    // los 5 s por defecto y el test fallaba de forma intermitente. Un test que
+    // falla según la carga de la máquina no es un test.
     const { PLANTILLA_POR_ESTADO } = await import("@/pages/pedidos/pedidos.notificaciones");
     const envia = Object.values(PLANTILLA_POR_ESTADO).sort();
     expect(FILAS_PLANTILLA.map((f) => f.key).sort()).toEqual(envia);
-  });
+  }, 20000);
 
   it("la fila «Recibido» ya no se ofrece: su texto no lo envía nadie (07/10)", () => {
     // `recibido` corresponde al estado de ENTRADA (`nuevo`), y el puente no
@@ -170,18 +182,26 @@ describe("Días de atención", () => {
 });
 
 describe("Preferencias locales de UI", () => {
-  it("el tema ofrece exactamente claro, oscuro y sistema", () => {
-    expect(OPCIONES_TEMA.map((o) => o.value)).toEqual(["claro", "oscuro", "sistema"]);
-  });
-
   it("la densidad ofrece exactamente compacta y cómoda", () => {
     expect(OPCIONES_DENSIDAD.map((o) => o.value)).toEqual(["compacta", "comoda"]);
   });
 
-  it("ninguna opción de preferencia está sin etiqueta", () => {
-    for (const o of [...OPCIONES_TEMA, ...OPCIONES_DENSIDAD]) {
+  it("ninguna opción de densidad está sin etiqueta", () => {
+    for (const o of OPCIONES_DENSIDAD) {
       expect(o.label.trim(), `la opción "${o.value}" no tiene etiqueta`).not.toBe("");
     }
+  });
+
+  it("el vocabulario del TEMA ya no vive aquí: es del shell (07/10)", async () => {
+    // El tema es una preferencia de toda la aplicación. Su vocabulario vive en
+    // `shell/header/theme-toggle-button/opciones-tema.ts`, junto al control que
+    // lo aplica. Si alguien vuelve a declararlo en este catálogo, habrá otra vez
+    // dos vocabularios para la misma preferencia.
+    const catalogo = (await import(
+      "@/pages/conversaciones/configuracion.secciones"
+    )) as Record<string, unknown>;
+    expect(catalogo.OPCIONES_TEMA).toBeUndefined();
+    expect(catalogo.PreferenciaTema).toBeUndefined();
   });
 });
 
@@ -208,15 +228,21 @@ describe("Estado del canal", () => {
   });
 });
 
-describe("Estado de integración de módulos con el canal", () => {
-  it("cada estado tiene etiqueta y color de badge", async () => {
-    const { ESTADO_INTEGRACION_LABEL, ESTADO_INTEGRACION_BADGE } = await import(
+describe("El estado de integración de módulos ya no vive en este catálogo", () => {
+  it("lo declara el asistente, que es el dueño de los módulos (07/10)", async () => {
+    // «conectado / desconectado / no disponible» se declaraba DOS veces: aquí y
+    // en `pages/asistente/configuracion.secciones.ts`. Con la sección «Módulos
+    // conectados» retirada, la copia de este catálogo sobraba. Se comprueba que
+    // no vuelve, y que la del asistente sigue en pie.
+    const catalogo = (await import(
       "@/pages/conversaciones/configuracion.secciones"
-    );
-    for (const e of ["conectado", "desconectado", "no_disponible"] as const) {
-      expect(ESTADO_INTEGRACION_LABEL[e].trim()).not.toBe("");
-      expect(ESTADO_INTEGRACION_BADGE[e]).toBeTruthy();
-    }
+    )) as Record<string, unknown>;
+    expect(catalogo.ESTADO_INTEGRACION_LABEL).toBeUndefined();
+    expect(catalogo.ESTADO_INTEGRACION_BADGE).toBeUndefined();
+
+    const asistente = await import("@/pages/asistente/configuracion.secciones");
+    expect(asistente.ESTADO_INTEGRACION_LABEL).toBeDefined();
+    expect(asistente.ESTADO_INTEGRACION_BADGE).toBeDefined();
   });
 });
 

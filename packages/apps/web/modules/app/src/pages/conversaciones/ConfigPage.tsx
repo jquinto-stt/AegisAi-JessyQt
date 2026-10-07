@@ -13,30 +13,21 @@ import TextArea from "@/elements/form/textarea";
 import {
   AlertIcon,
   BoltIcon,
-  CartIcon,
-  ChatIcon,
-  CheckCircleIcon,
   DocsIcon,
   EyeIcon,
   InfoIcon,
-  PlugInIcon,
   TimeIcon,
 } from "@/icons";
 import {
   conversacionesStore,
-  integracionesStore,
   organizacionStore,
   puedeEditarPlantillas,
   motivoSinPermiso,
   pedidosStore,
   uiStore,
-  MODULOS_INTEGRABLES,
-  ORDEN_MODULOS_INTEGRABLES,
-  type ModuloIntegrable,
   type PedidosConfig,
 } from "@/stores";
 import type { AvisoFueraHorario, PlantillasWhatsApp } from "@/stores/pedidos.store";
-import type { ThemePreference } from "@/shell/stores/ui.store";
 import {
   BloqueConfig,
   CampoConfig,
@@ -55,20 +46,15 @@ import {
   DIAS_ATENCION,
   ESTADO_CANAL_BADGE,
   ESTADO_CANAL_LABEL,
-  ESTADO_INTEGRACION_BADGE,
-  ESTADO_INTEGRACION_LABEL,
   FILAS_PLANTILLA,
   META_SECCION,
   notaSinGuardado,
   OPCIONES_DENSIDAD,
-  OPCIONES_TEMA,
   ORDEN_SECCIONES,
   SWITCH_COLOR,
   seccionesPorGrupo,
   type EstadoCanal,
-  type EstadoIntegracionCanal,
   type IconoSeccion,
-  type PreferenciaTema,
   type SeccionCanal,
 } from "@/pages/conversaciones/configuracion.secciones";
 
@@ -81,7 +67,6 @@ import {
 // sin registrarlo aquí es un error de compilación, no un icono en blanco.
 
 const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>>> = {
-  PlugInIcon,
   DocsIcon,
   TimeIcon,
   BoltIcon,
@@ -113,71 +98,6 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
  * editarlo sugeriría que cambiarlo reasocia los hilos existentes, y no lo hace.
  */
 const NUMERO_CANAL = "+57 300 555 1122";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TEMA: traducción entre el vocabulario de la página y el del store
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// La página habla en español («claro / oscuro / sistema») y el store del shell
-// en inglés (`light | dark | system`). Son dos vocabularios del mismo concepto,
-// y la frontera se cruza AQUÍ, en dos tablas de una línea — no repartida por el
-// JSX, donde una traducción suelta se puede olvidar.
-
-const TEMA_A_PREFERENCIA: Record<PreferenciaTema, ThemePreference> = {
-  claro: "light",
-  oscuro: "dark",
-  sistema: "system",
-};
-
-const PREFERENCIA_A_TEMA: Record<ThemePreference, PreferenciaTema> = {
-  light: "claro",
-  dark: "oscuro",
-  system: "sistema",
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PRESENTACIÓN DE LOS MÓDULOS INTEGRABLES
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// La tarjeta de un módulo es una VISTA del catálogo `MODULOS_INTEGRABLES`, no
-// una copia suya. Aquí vive solo lo que es presentación —el icono, su color, la
-// chapa de versión y el nombre del proveedor—; el estado, la descripción y las
-// capacidades se leen del catálogo.
-//
-// ── Por qué se separó (21/09) ─────────────────────────────────────────────
-// Antes eran dos bloques escritos a mano, uno por módulo. El de Inventario se
-// quedó afirmando «En desarrollo · Próximamente» con el interruptor
-// deshabilitado cuando el módulo ya tenía proveedor, cuatro rutas y su
-// `disponible: true` — y encima con el estado real ya calculado tres líneas más
-// arriba. Un control que miente, que es el defecto que el propio catálogo de
-// integrables dice por escrito que hay que evitar.
-//
-// Es `Record<ModuloIntegrable, …>`: añadir un módulo integrable sin darle
-// presentación es un error de compilación, no una tarjeta en blanco.
-
-interface PresentacionIntegrable {
-  /** Glifo del módulo. */
-  Icono: React.FC<React.SVGProps<SVGSVGElement>>;
-  /** Clases del cuadro del icono (fondo + tinta), en claro y en oscuro. */
-  tono: string;
-  /** Nombre del proveedor de datos, en el pie de la tarjeta. */
-  proveedor: string;
-  /** Chapa junto al nombre: versión del plugin. */
-  version: string;
-}
-
-const PRESENTACION_INTEGRABLE: Record<ModuloIntegrable, PresentacionIntegrable> = {
-  pedidos: {
-    Icono: CartIcon,
-    tono: "bg-secondary-50 text-secondary-600 dark:bg-brand-500/10 dark:text-brand-400",
-    proveedor: "Núcleo de Pedidos",
-    version: "Plugin oficial · v1.2",
-  },
-};
-
-/** Clases de la chapa de versión. Igual en los dos módulos, a propósito. */
-const TONO_VERSION =
-  "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // ESTADO DEL AVISO FUERA DE HORARIO
@@ -288,12 +208,14 @@ const ContextoCanal = observer(() => {
  * única derivación de cada valor; ninguna mantiene una copia propia.
  *
  * ── Estructura ────────────────────────────────────────────────────────────
- * Siete secciones en tres grupos (CANAL / MENSAJERÍA / PREFERENCIAS). Es
+ * Seis secciones en tres grupos (CANAL / MENSAJERÍA / PREFERENCIAS). Es
  * navegación por PESTAÑAS reales: solo una sección está montada a la vez, sin
  * scroll-spy ni secciones apiladas. El catálogo de secciones vive en
- * `configuracion.secciones.ts`, que además documenta por qué dos secciones
- * —«Perfil del canal» y «Automatización y escalado»— dejaron de existir el
- * 07/10: no contenían ni un control.
+ * `configuracion.secciones.ts`, que además documenta las cuatro secciones que
+ * dejaron de existir el 07/10: «Perfil del canal» y «Automatización y escalado»
+ * porque no contenían ni un control, «Módulos conectados» porque era la misma
+ * línea de código que «Módulos integrados» del asistente, y el control de tema
+ * porque es una preferencia de TODA la aplicación, no del canal.
  *
  * ── Estado ────────────────────────────────────────────────────────────────
  * Borrador local (`useState`) copiado de `pedidosStore.config` al montar, y
@@ -430,16 +352,16 @@ export const ConfigPage = observer(() => {
     setGuardado(false);
   };
 
-  // ── Preferencias de interfaz: se aplican AL INSTANTE, contra `uiStore` ──
+  // ── Preferencia de interfaz: se aplica AL INSTANTE, contra `uiStore` ──
   //
-  // No pasan por el borrador ni por Guardar: son preferencias de esta interfaz,
-  // no ajustes del negocio. El store es el dueño y persiste; la página solo
-  // traduce el vocabulario y pinta lo que el store dice. Antes esto era un
-  // `useState` local: el control volvía a «Sistema» al recargar aunque el tema
-  // aplicado fuera otro, y «Densidad» no lo leía nadie.
-  const preferenciaTema = PREFERENCIA_A_TEMA[uiStore.themePreference];
-
-  const aplicarTema = (v: PreferenciaTema) => uiStore.setThemePreference(TEMA_A_PREFERENCIA[v]);
+  // No pasa por el borrador ni por Guardar: es una preferencia de esta interfaz,
+  // no un ajuste del negocio. El store es el dueño y persiste; la página solo
+  // pinta lo que el store dice. Antes era un `useState` local que nadie leía:
+  // pulsar «Compacta» no cambiaba nada.
+  //
+  // El TEMA ya no está aquí. Era una preferencia de TODA la aplicación viviendo
+  // dentro de la configuración de un módulo, y con dos vocabularios distintos
+  // según la pantalla. Su dueño único es el control de la cabecera.
 
   // Estado del aviso fuera de horario, calculado una vez por render.
   const avisoEstado = estadoAviso(draft);
@@ -586,197 +508,6 @@ export const ConfigPage = observer(() => {
               )
             }
           >
-              {/* ───────────── MÓDULOS CONECTADOS ───────────── */}
-              {seccion === "modulos" && (
-                <>
-                  <BloqueConfig
-                    icono={ICONO_SECCION[meta.icono]}
-                    pregunta={meta.pregunta}
-                    descripcion="Habilita o desconecta módulos del negocio. Cada módulo conectado aporta capacidades operativas al bot y pestañas de contexto en cada conversación de WhatsApp."
-                  >
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/[0.04]">
-                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        Módulos activos:
-                      </span>
-                      <span className="text-sm font-bold text-gray-800 dark:text-white">
-                        {integracionesStore.modulosHabilitados.length} / {ORDEN_MODULOS_INTEGRABLES.length}
-                      </span>
-                    </div>
-
-                    <div className="mt-6 grid grid-cols-1 gap-5">
-                      {/* Una tarjeta por módulo del catálogo, en su orden canónico.
-                          Ninguna rama pregunta «¿es pedidos?»: el estado, la
-                          descripción y las capacidades se leen de
-                          `MODULOS_INTEGRABLES`, y solo el icono, su color y la
-                          chapa de versión son presentación. */}
-                      {integracionesStore.entradas.map(({ id, entrada }) => {
-                        const { Icono, tono, proveedor, version } =
-                          PRESENTACION_INTEGRABLE[id];
-                        const conectado = integracionesStore.estaConectado(id);
-
-                        // El estado se deriva de dos hechos independientes: si el
-                        // módulo existe (catálogo) y si está conectado (store). La
-                        // pantalla no decide nada por su cuenta.
-                        const estado: EstadoIntegracionCanal = !entrada.disponible
-                          ? "no_disponible"
-                          : conectado
-                            ? "conectado"
-                            : "desconectado";
-
-                        return (
-                          <div
-                            key={id}
-                            className="relative overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-5 shadow-theme-xs transition-all hover:border-gray-300 dark:border-white/10 dark:bg-gray-900/60 dark:hover:border-white/20"
-                          >
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                              <div className="flex items-start gap-4">
-                                <div
-                                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-theme-xs ${tono}`}
-                                >
-                                  <Icono className="h-6 w-6" />
-                                </div>
-
-                                <div className="min-w-0">
-                                  <div className="flex flex-wrap items-center gap-2.5">
-                                    <h3 className="text-base font-semibold text-ink-title dark:text-white">
-                                      Módulo de {entrada.label}
-                                    </h3>
-                                    <Badge color={ESTADO_INTEGRACION_BADGE[estado]} size="sm">
-                                      {ESTADO_INTEGRACION_LABEL[estado]}
-                                    </Badge>
-                                    <span
-                                      className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${TONO_VERSION}`}
-                                    >
-                                      {version}
-                                    </span>
-                                  </div>
-                                  <p className="mt-1.5 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                    {entrada.descripcion}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 self-end sm:self-start shrink-0">
-                                {/* El estado, también aquí, y no «Habilitado» /
-                                    «Deshabilitado»: en un módulo declarado sin
-                                    proveedor «Deshabilitado» sugeriría que basta
-                                    con pulsarlo. */}
-                                <span className="text-xs font-medium text-gray-400 dark:text-gray-500 sm:hidden">
-                                  {ESTADO_INTEGRACION_LABEL[estado]}
-                                </span>
-                                <Switch
-                                  color={SWITCH_COLOR}
-                                  checked={conectado}
-                                  // Dos motivos distintos para deshabilitar, y los
-                                  // dos ciertos: sin permiso de escritura no se
-                                  // toca, y un módulo sin proveedor no tiene nada
-                                  // que conectar.
-                                  disabled={soloLectura || !entrada.disponible}
-                                  onChange={() => integracionesStore.alternar(id)}
-                                  aria-label={`Conectar módulo ${entrada.label} al canal`}
-                                />
-                              </div>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
-                              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
-                                {entrada.disponible
-                                  ? "Capacidades habilitadas en el chat"
-                                  : "Capacidades planificadas"}
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {entrada.ejemplos.map((capacidad) => (
-                                  <span
-                                    key={capacidad}
-                                    className={
-                                      entrada.disponible
-                                        ? "inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/70 px-2.5 py-1 text-xs text-gray-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-gray-300"
-                                        : "inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-200 bg-gray-50/50 px-2.5 py-1 text-xs text-gray-500 dark:border-white/10 dark:bg-white/[0.02] dark:text-gray-400"
-                                    }
-                                  >
-                                    <CheckCircleIcon
-                                      className={`h-3.5 w-3.5 shrink-0 ${
-                                        entrada.disponible ? "text-accent-500" : "text-gray-400"
-                                      }`}
-                                    />
-                                    {capacidad}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Un módulo declarado que todavía no existe se
-                                explica; no se disfraza de módulo apagado. */}
-                            {!entrada.disponible && (
-                              <div className="mt-4">
-                                <Alert
-                                  variant="info"
-                                  title="Módulo declarado en el catálogo"
-                                  message="Este módulo está registrado en la arquitectura del sistema, pero todavía no tiene proveedor de herramientas. El interruptor se habilitará solo el día que lo tenga: no se puede conectar algo que aún no hay."
-                                />
-                              </div>
-                            )}
-
-                            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 dark:text-gray-500">
-                              <div className="flex items-center gap-4">
-                                <span>Proveedor: {proveedor}</span>
-                                {entrada.disponible && (
-                                  <span>Permiso: {entrada.capacidad}</span>
-                                )}
-                              </div>
-                              <span>
-                                {entrada.disponible
-                                  ? "Sincronización: En tiempo real"
-                                  : "Estado: Pendiente de conector"}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </BloqueConfig>
-
-                  {/* Segundo bloque, con su propia pregunta: qué cambia en la
-                      conversación. */}
-                  <BloqueConfig
-                    icono={ChatIcon}
-                    pregunta="¿Cómo cambia la conversación con ellos?"
-                    descripcion="Lo que ve el operador dentro de la bandeja de entrada según los módulos que tenga conectados."
-                  >
-                    <div className="space-y-6">
-                      <CampoConfig
-                        etiqueta="Pestañas activas en el chat"
-                        ayuda="Cada módulo conectado añade una pestaña de contexto operativo junto a los mensajes."
-                        ancho="max-w-none"
-                      >
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Badge color="light" size="sm">
-                            Conversación
-                          </Badge>
-                          {integracionesStore.modulosHabilitados.map((m) => (
-                            <Badge key={m} color="success" size="sm">
-                              {MODULOS_INTEGRABLES[m].label}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CampoConfig>
-
-                      <CampoConfig
-                        etiqueta="Disponibilidad para asesores"
-                        ayuda="Herramientas y vistas operativas habilitadas para los operadores del canal."
-                        ancho="max-w-none"
-                      >
-                        <span className="text-sm font-medium text-ink-body dark:text-white/90">
-                          {integracionesStore.estaConectado("pedidos")
-                            ? "Operativa con módulo de Pedidos"
-                            : "Canal básico (sin módulos operativos)"}
-                        </span>
-                      </CampoConfig>
-                    </div>
-                  </BloqueConfig>
-                </>
-              )}
-
               {/* ───────────── PLANTILLAS DE MENSAJE ───────────── */}
               {seccion === "plantillas" && (
                 <BloqueConfig
@@ -1107,21 +838,8 @@ export const ConfigPage = observer(() => {
 
                   <div className="space-y-6">
                     <CampoConfig
-                      etiqueta="Tema"
-                      ayuda="«Sistema» sigue la preferencia del sistema operativo y se conserva al volver a esta pantalla."
-                      ancho="max-w-none"
-                    >
-                      <Segmentado
-                        ariaLabel="Tema de la interfaz"
-                        opciones={OPCIONES_TEMA}
-                        valor={preferenciaTema}
-                        onChange={aplicarTema}
-                      />
-                    </CampoConfig>
-
-                    <CampoConfig
                       etiqueta="Densidad de la bandeja"
-                      ayuda="Cuánto espacio ocupa cada hilo en la lista de conversaciones."
+                      ayuda="Cuánto espacio ocupa cada hilo en la lista de conversaciones. Se aplica al instante."
                       ancho="max-w-none"
                     >
                       <Segmentado
