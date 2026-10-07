@@ -7,7 +7,6 @@ import {
   FILAS_PLANTILLA,
   GRUPO_SECCION_LABEL,
   META_SECCION,
-  OPCIONES_DENSIDAD,
   ORDEN_GRUPOS,
   ORDEN_SECCIONES,
   seccionesPorGrupo,
@@ -64,14 +63,13 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 6 secciones que ajustan algo", () => {
+  it("la página tiene exactamente las 5 secciones que ajustan algo", () => {
     expect(ORDEN_SECCIONES).toEqual([
       "plantillas",
       "horario",
       "atencion",
       "aviso",
       "alertas",
-      "apariencia",
     ]);
   });
 
@@ -94,12 +92,14 @@ describe("Catálogo de secciones del canal", () => {
     expect(META_SECCION.atencion.grupo).toBe("mensajeria");
   });
 
-  it("la sección de preferencias habla de la bandeja, no del tema", () => {
-    // El tema es una preferencia de TODA la aplicación: su dueño único es el
-    // control de la cabecera (`ThemeToggleButton`). Si alguien vuelve a ofrecer
-    // aquí un control de tema, habrá otra vez dos superficies para un ajuste.
-    expect(META_SECCION.apariencia.label).toBe("Bandeja");
-    expect(META_SECCION.apariencia.grupo).toBe("preferencias");
+  it("la sección de apariencia ya no vive aquí (07/10)", () => {
+    // El tema y la densidad de la lista son preferencias de TODA la aplicación y
+    // se administran en un solo sitio: `/configuracion → Apariencia`. Si alguien
+    // vuelve a ofrecer aquí un control de apariencia, habrá otra vez dos
+    // superficies para el mismo ajuste.
+    const claves: string[] = ORDEN_SECCIONES;
+    expect(claves).not.toContain("apariencia");
+    expect(META_SECCION).not.toHaveProperty("apariencia");
   });
 
   it("toda sección tiene etiqueta y descripción no vacías", () => {
@@ -181,30 +181,6 @@ describe("Días de atención", () => {
   });
 });
 
-describe("Preferencias locales de UI", () => {
-  it("la densidad ofrece exactamente compacta y cómoda", () => {
-    expect(OPCIONES_DENSIDAD.map((o) => o.value)).toEqual(["compacta", "comoda"]);
-  });
-
-  it("ninguna opción de densidad está sin etiqueta", () => {
-    for (const o of OPCIONES_DENSIDAD) {
-      expect(o.label.trim(), `la opción "${o.value}" no tiene etiqueta`).not.toBe("");
-    }
-  });
-
-  it("el vocabulario del TEMA ya no vive aquí: es del shell (07/10)", async () => {
-    // El tema es una preferencia de toda la aplicación. Su vocabulario vive en
-    // `shell/header/theme-toggle-button/opciones-tema.ts`, junto al control que
-    // lo aplica. Si alguien vuelve a declararlo en este catálogo, habrá otra vez
-    // dos vocabularios para la misma preferencia.
-    const catalogo = (await import(
-      "@/pages/conversaciones/configuracion.secciones"
-    )) as Record<string, unknown>;
-    expect(catalogo.OPCIONES_TEMA).toBeUndefined();
-    expect(catalogo.PreferenciaTema).toBeUndefined();
-  });
-});
-
 describe("Estado del canal", () => {
   it("cada estado tiene etiqueta y color de badge", () => {
     for (const e of ["atendiendo", "fuera_horario"] as const) {
@@ -225,6 +201,21 @@ describe("Estado del canal", () => {
     expect(ESTADO_CANAL_LABEL.fuera_horario).toBe("Fuera de horario");
     expect(ESTADO_CANAL_LABEL.atendiendo).toBe("Atendiendo ahora");
     expect(ESTADO_CANAL_BADGE.fuera_horario).not.toBe("warning");
+  });
+});
+
+describe("El vocabulario de apariencia ya no vive en este catálogo", () => {
+  it("ni el tema ni la densidad se declaran aquí (07/10)", async () => {
+    // Se mudaron a `pages/configuracion/apariencia.opciones.ts`, junto a la
+    // pantalla que los administra. Dos vocabularios para la misma preferencia es
+    // justo el defecto que esta revisión cierra.
+    const catalogo = (await import(
+      "@/pages/conversaciones/configuracion.secciones"
+    )) as Record<string, unknown>;
+    expect(catalogo.OPCIONES_TEMA).toBeUndefined();
+    expect(catalogo.PreferenciaTema).toBeUndefined();
+    expect(catalogo.OPCIONES_DENSIDAD).toBeUndefined();
+    expect(catalogo.DensidadBandeja).toBeUndefined();
   });
 });
 

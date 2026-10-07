@@ -104,17 +104,15 @@ export type SeccionAsistente =
   | "herramientas"
   | "modulos"
   | "historial"
-  | "alcance"
-  | "apariencia";
+  | "alcance";
 
 /** Grupos de la navegación vertical, en orden de aparición. */
-export type GrupoSeccionAsistente = "asistente" | "capacidades" | "preferencias";
+export type GrupoSeccionAsistente = "asistente" | "capacidades";
 
 /** Etiqueta del grupo tal como se pinta en la cabecera pequeña en mayúsculas. */
 export const GRUPO_SECCION_LABEL: Record<GrupoSeccionAsistente, string> = {
   asistente: "ASISTENTE",
   capacidades: "CAPACIDADES",
-  preferencias: "PREFERENCIAS",
 };
 
 /**
@@ -124,7 +122,6 @@ export const GRUPO_SECCION_LABEL: Record<GrupoSeccionAsistente, string> = {
 export const ORDEN_GRUPOS: GrupoSeccionAsistente[] = [
   "asistente",
   "capacidades",
-  "preferencias",
 ];
 
 /** Grupo al que pertenece cada sección. */
@@ -135,7 +132,6 @@ export const GRUPO_DE_SECCION: Record<SeccionAsistente, GrupoSeccionAsistente> =
   modulos: "capacidades",
   historial: "capacidades",
   alcance: "capacidades",
-  apariencia: "preferencias",
 };
 
 /** Iconos disponibles para las secciones (nombres del catálogo `@/icons`). */
@@ -145,8 +141,7 @@ export type IconoSeccion =
   | "PlugInIcon"
   | "GridIcon"
   | "TimeIcon"
-  | "LockIcon"
-  | "EyeIcon";
+  | "LockIcon";
 
 /** Metadatos de presentación de una sección. */
 export interface MetaSeccion {
@@ -159,7 +154,7 @@ export interface MetaSeccion {
 }
 
 /**
- * Metadatos de las 7 secciones. `Record` sobre la unión ⇒ exhaustivo por
+ * Metadatos de las 6 secciones. `Record` sobre la unión ⇒ exhaustivo por
  * construcción: no se puede añadir una sección sin etiquetarla.
  */
 export const META_SECCION: Record<SeccionAsistente, MetaSeccion> = {
@@ -193,11 +188,6 @@ export const META_SECCION: Record<SeccionAsistente, MetaSeccion> = {
     hint: "Qué NO hace el asistente. Es la parte más importante de esta pantalla.",
     icono: "LockIcon",
   },
-  apariencia: {
-    label: "Apariencia",
-    hint: "Preferencias locales de la interfaz del asistente.",
-    icono: "EyeIcon",
-  },
 };
 
 /** Orden canónico de las secciones dentro de su grupo. */
@@ -208,7 +198,6 @@ export const ORDEN_SECCIONES: SeccionAsistente[] = [
   "modulos",
   "historial",
   "alcance",
-  "apariencia",
 ];
 
 /**
@@ -399,54 +388,6 @@ export const LIMITES_ASISTENTE: LimiteAsistente[] = [
     titulo: "No sale de la aplicación",
     detalle:
       "No hay servidor, ni clave de API, ni modelo de lenguaje externo. Las preguntas y sus respuestas nunca salen de este navegador.",
-  },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════
-// APARIENCIA (preferencias locales)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/** Densidad del hilo de conversación del asistente. */
-export type DensidadAsistente = "comoda" | "compacta";
-
-export interface OpcionDensidad {
-  value: DensidadAsistente;
-  label: string;
-  detalle: string;
-}
-
-export const OPCIONES_DENSIDAD: OpcionDensidad[] = [
-  {
-    value: "comoda",
-    label: "Cómoda",
-    detalle: "Más aire entre mensajes. Mejor para leer respuestas largas con tablas.",
-  },
-  {
-    value: "compacta",
-    label: "Compacta",
-    detalle: "Más mensajes visibles sin desplazar. Mejor para repasar un hilo largo.",
-  },
-];
-
-/** Cuánto texto de una respuesta se muestra antes de plegarlo. */
-export type LongitudRespuesta = "completa" | "resumida";
-
-export interface OpcionRespuesta {
-  value: LongitudRespuesta;
-  label: string;
-  detalle: string;
-}
-
-export const OPCIONES_RESPUESTA: OpcionRespuesta[] = [
-  {
-    value: "completa",
-    label: "Completa",
-    detalle: "El asistente escribe todas las observaciones que haya encontrado.",
-  },
-  {
-    value: "resumida",
-    label: "Resumida",
-    detalle: "El asistente escribe solo los hechos, sin las observaciones.",
   },
 ];
 

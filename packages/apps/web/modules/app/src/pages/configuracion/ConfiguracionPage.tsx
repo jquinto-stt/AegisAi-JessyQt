@@ -2,15 +2,11 @@ import { observer } from "mobx-react-lite";
 import { useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
-import {
-  ArrowRightIcon,
-  ChevronLeftIcon,
-  IdentificationIcon,
-  PlugInIcon,
-} from "@/icons";
+import { ChevronLeftIcon, EyeIcon, IdentificationIcon, PlugInIcon } from "@/icons";
 import { organizacionStore } from "@/stores";
 import { ConfigHub, ConfigShell } from "@/pages/config-layout";
 
+import { AparienciaTab } from "./AparienciaTab";
 import { GeneralOrgTab } from "./GeneralOrgTab";
 import { ModulosTab } from "@/pages/equipo";
 
@@ -19,23 +15,49 @@ import { ModulosTab } from "@/pages/equipo";
 // ═══════════════════════════════════════════════════════════════════════════
 //
 // Al ingresar sin parámetro (`/configuracion`), muestra el selector inicial de
-// dos tarjetas:
+// TRES tarjetas:
 //   1. «Información de la sede» (nombre comercial, logo, país, moneda y rubro)
 //      — clave `general`, que es la que viaja en la URL
-//   2. Módulos e integraciones (Servicios y conexiones activas)
+//   2. «Módulos e integraciones» — clave `modulos`
+//   3. «Apariencia» — clave `apariencia`
 //
 // El rótulo visible y la CLAVE son independientes: la clave `general` se
 // conserva porque está en `?tab=general` y la leen guardas y tests; el rótulo
 // se cambió a «Información de la sede» porque «General» no describía su
 // contenido (06/10).
 //
-// Al hacer clic en una tarjeta, navega DENTRO de esa configuración
-// (`?tab=general` o `?tab=modulos`), mostrando la pantalla completa con un
-// botón «← Volver a Configuración» para regresar al selector.
+// ── Por qué «Apariencia» entró aquí (07/10) ───────────────────────────────
+//
+// El tema y las dos densidades se administraban desde cuatro sitios —el botón de
+// la cabecera, la configuración del asistente y la del canal— con tres
+// vocabularios, y dos de ellos no los leía nadie. Son preferencias de la
+// APLICACIÓN, no de un módulo, y esta es la pantalla de los ajustes que valen
+// para todo. Un módulo no es dueño de una preferencia global.
+//
+// ── Por qué las pestañas ya no se enlazan entre sí ────────────────────────
+//
+// Cada vista interna llevaba un «Ir a <la otra>» arriba a la derecha. Con dos
+// pestañas era un atajo razonable; con tres, el enlace elige arbitrariamente a
+// cuál de las dos otras lleva. Se retiró: el camino de vuelta al selector es uno
+// solo («Volver a Configuración») y desde ahí se elige.
 //
 // ═══════════════════════════════════════════════════════════════════════════
 
-export type ClaveConfig = "general" | "modulos";
+export type ClaveConfig = "general" | "modulos" | "apariencia";
+
+/** Cabecera de una vista interna: el camino de vuelta al selector. */
+const VolverAlSelector = ({ onVolver }: { onVolver: () => void }) => (
+  <div className="mb-6">
+    <button
+      type="button"
+      onClick={onVolver}
+      className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+    >
+      <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+      <span>Volver a Configuración</span>
+    </button>
+  </div>
+);
 
 export const ConfiguracionPage = observer(() => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -51,7 +73,7 @@ export const ConfiguracionPage = observer(() => {
     setSearchParams({});
   };
 
-  // ── VISTA INTERNA: CONFIGURACIÓN GENERAL ─────────────────────────────────
+  // ── VISTA INTERNA: INFORMACIÓN DE LA SEDE ────────────────────────────────
   if (tab === "general") {
     return (
       <div className="mx-auto max-w-5xl pb-12">
@@ -60,25 +82,7 @@ export const ConfiguracionPage = observer(() => {
           description="Datos generales, identidad y región de la organización"
         />
 
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={volverAlHub}
-            className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-          >
-            <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>Volver a Configuración</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => irA("modulos")}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 dark:text-gray-400"
-          >
-            <span>Ir a Módulos e integraciones</span>
-            <ArrowRightIcon className="h-3 w-3" />
-          </button>
-        </div>
+        <VolverAlSelector onVolver={volverAlHub} />
 
         <div className="animate-aparecer">
           <ConfigShell
@@ -102,25 +106,7 @@ export const ConfiguracionPage = observer(() => {
           description="Servicios y conexiones activas de la organización"
         />
 
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={volverAlHub}
-            className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
-          >
-            <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            <span>Volver a Configuración</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => irA("general")}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-brand-500 dark:text-gray-400"
-          >
-            <ChevronLeftIcon className="h-3 w-3" />
-            <span>Ir a General</span>
-          </button>
-        </div>
+        <VolverAlSelector onVolver={volverAlHub} />
 
         <div className="animate-aparecer">
           <ConfigShell
@@ -129,6 +115,34 @@ export const ConfiguracionPage = observer(() => {
             hint="Activa o desactiva capacidades y conecta servicios externos"
           >
             <ModulosTab />
+          </ConfigShell>
+        </div>
+      </div>
+    );
+  }
+
+  // ── VISTA INTERNA: APARIENCIA ────────────────────────────────────────────
+  //
+  // Es la administración de las preferencias de interfaz de la aplicación
+  // entera: el tema y las dos densidades. Se aplican al instante y se persisten
+  // en `uiStore`; por eso esta vista no tiene botón de guardar.
+  if (tab === "apariencia") {
+    return (
+      <div className="mx-auto max-w-5xl pb-12">
+        <PageMeta
+          title="Configuración · Apariencia"
+          description="Tema y densidad de la interfaz"
+        />
+
+        <VolverAlSelector onVolver={volverAlHub} />
+
+        <div className="animate-aparecer">
+          <ConfigShell
+            seccionKey="apariencia"
+            titulo="Apariencia"
+            hint="Tema y densidad de la interfaz. Se aplican al instante"
+          >
+            <AparienciaTab />
           </ConfigShell>
         </div>
       </div>
@@ -173,6 +187,12 @@ export const ConfiguracionPage = observer(() => {
             label: "Módulos e integraciones",
             hint: "Herramientas activas, catálogo de extensiones y conectores externos.",
             icono: PlugInIcon,
+          },
+          {
+            key: "apariencia",
+            label: "Apariencia",
+            hint: "Tema de la aplicación y densidad de la lista de conversaciones y del hilo del asistente.",
+            icono: EyeIcon,
           },
         ]}
         onEntrar={(k) => irA(k as ClaveConfig)}

@@ -14,7 +14,6 @@ import {
   AlertIcon,
   BoltIcon,
   DocsIcon,
-  EyeIcon,
   InfoIcon,
   TimeIcon,
 } from "@/icons";
@@ -24,7 +23,6 @@ import {
   puedeEditarPlantillas,
   motivoSinPermiso,
   pedidosStore,
-  uiStore,
   type PedidosConfig,
 } from "@/stores";
 import type { AvisoFueraHorario, PlantillasWhatsApp } from "@/stores/pedidos.store";
@@ -37,7 +35,6 @@ import {
   ConfigHub,
   ConfigShell,
   Label2,
-  Segmentado,
   VolverAlHub,
   type TarjetaHub,
 } from "@/pages/config-layout";
@@ -49,7 +46,6 @@ import {
   FILAS_PLANTILLA,
   META_SECCION,
   notaSinGuardado,
-  OPCIONES_DENSIDAD,
   ORDEN_SECCIONES,
   SWITCH_COLOR,
   seccionesPorGrupo,
@@ -72,7 +68,6 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
   BoltIcon,
   InfoIcon,
   AlertIcon,
-  EyeIcon,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -208,14 +203,14 @@ const ContextoCanal = observer(() => {
  * única derivación de cada valor; ninguna mantiene una copia propia.
  *
  * ── Estructura ────────────────────────────────────────────────────────────
- * Seis secciones en tres grupos (CANAL / MENSAJERÍA / PREFERENCIAS). Es
- * navegación por PESTAÑAS reales: solo una sección está montada a la vez, sin
- * scroll-spy ni secciones apiladas. El catálogo de secciones vive en
- * `configuracion.secciones.ts`, que además documenta las cuatro secciones que
- * dejaron de existir el 07/10: «Perfil del canal» y «Automatización y escalado»
- * porque no contenían ni un control, «Módulos conectados» porque era la misma
- * línea de código que «Módulos integrados» del asistente, y el control de tema
- * porque es una preferencia de TODA la aplicación, no del canal.
+ * Cinco secciones en dos grupos (CANAL / MENSAJERÍA). Es navegación por
+ * PESTAÑAS reales: solo una sección está montada a la vez, sin scroll-spy ni
+ * secciones apiladas. El catálogo vive en `configuracion.secciones.ts`, que
+ * documenta las CUATRO secciones retiradas el 07/10 y por qué: «Perfil del
+ * canal» y «Automatización y escalado» no contenían ni un control, «Módulos
+ * conectados» era la misma línea de código que «Módulos integrados» del
+ * asistente, y «Apariencia» —tema y densidad— es una preferencia de toda la
+ * aplicación, administrada en `/configuracion → Apariencia`.
  *
  * ── Estado ────────────────────────────────────────────────────────────────
  * Borrador local (`useState`) copiado de `pedidosStore.config` al montar, y
@@ -223,9 +218,9 @@ const ContextoCanal = observer(() => {
  * desde el store sin diálogo de confirmación (es una acción reversible: basta
  * volver a editar).
  *
- * Dos secciones NO usan el borrador porque se aplican al instante: `atencion`
- * (escribe en `conversacionesStore`) y `apariencia` (escribe en `uiStore`). Las
- * dos llevan su nota de por qué no hay botón de guardar.
+ * Una sección NO usa el borrador porque se aplica al instante: `atencion`
+ * (escribe en `conversacionesStore.respuestasAutomaticas`). Lleva su nota de por
+ * qué no hay botón de guardar.
  *
  * ── Autorización ──────────────────────────────────────────────────────────
  * La ruta exige `channels.manage`. Si además faltara para las plantillas (rol
@@ -351,17 +346,6 @@ export const ConfigPage = observer(() => {
     setDraft(copiaDe());
     setGuardado(false);
   };
-
-  // ── Preferencia de interfaz: se aplica AL INSTANTE, contra `uiStore` ──
-  //
-  // No pasa por el borrador ni por Guardar: es una preferencia de esta interfaz,
-  // no un ajuste del negocio. El store es el dueño y persiste; la página solo
-  // pinta lo que el store dice. Antes era un `useState` local que nadie leía:
-  // pulsar «Compacta» no cambiaba nada.
-  //
-  // El TEMA ya no está aquí. Era una preferencia de TODA la aplicación viviendo
-  // dentro de la configuración de un módulo, y con dos vocabularios distintos
-  // según la pantalla. Su dueño único es el control de la cabecera.
 
   // Estado del aviso fuera de horario, calculado una vez por render.
   const avisoEstado = estadoAviso(draft);
@@ -823,35 +807,6 @@ export const ConfigPage = observer(() => {
                 </BloqueConfig>
               )}
 
-              {/* ───────────── APARIENCIA ───────────── */}
-              {seccion === "apariencia" && (
-                <BloqueConfig
-                  icono={ICONO_SECCION[meta.icono]}
-                  pregunta={meta.pregunta}
-                  descripcion="Preferencias de esta interfaz. Se aplican al instante, no son ajustes del negocio y no viajan con la configuración del canal."
-                >
-                  <div className="mb-5">
-                    <Badge color="light" size="sm">
-                      Preferencia local
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-6">
-                    <CampoConfig
-                      etiqueta="Densidad de la bandeja"
-                      ayuda="Cuánto espacio ocupa cada hilo en la lista de conversaciones. Se aplica al instante."
-                      ancho="max-w-none"
-                    >
-                      <Segmentado
-                        ariaLabel="Densidad de la bandeja"
-                        opciones={OPCIONES_DENSIDAD}
-                        valor={uiStore.densidadBandeja}
-                        onChange={(v) => uiStore.setDensidadBandeja(v)}
-                      />
-                    </CampoConfig>
-                  </div>
-                </BloqueConfig>
-              )}
           </ConfigShell>
         </fieldset>
       </div>

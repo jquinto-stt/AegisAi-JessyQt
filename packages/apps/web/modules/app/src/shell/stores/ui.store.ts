@@ -15,11 +15,10 @@ export type Theme = 'light' | 'dark';
  *
  * ── Por qué son dos cosas distintas (07/10) ───────────────────────────────
  *
- * Hasta ahora el store solo modelaba `light | dark` y la página de configuración
- * del canal guardaba su propia preferencia en un `useState`. Eso tenía dos
- * consecuencias medibles: al recargar, el segmentado volvía a mostrar «Sistema»
- * aunque el tema aplicado fuera oscuro (el control decía una cosa y la interfaz
- * otra), y elegir «Sistema» no se recordaba ni seguía al SO.
+ * Hasta ahora el store solo modelaba `light | dark` y cada pantalla guardaba su
+ * propia preferencia en un `useState`. Eso tenía dos consecuencias medibles: al
+ * recargar, el control volvía a mostrar su valor por defecto aunque el tema
+ * aplicado fuera otro, y elegir «Sistema» no se recordaba ni seguía al SO.
  *
  * Con la preferencia en el store, «Sistema» significa algo: se resuelve contra
  * `prefers-color-scheme` y se vuelve a resolver si el sistema cambia de tema.
@@ -29,11 +28,20 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 /**
  * Densidad de la lista de conversaciones.
  *
- * Vive aquí —y no en un `useState` de la página— porque una preferencia que se
- * elige en una pantalla y no la lee nadie es un control que miente. La lee
+ * Vive aquí —y no en un `useState` de la pantalla que la ofrece— porque una
+ * preferencia que se elige y no la lee nadie es un control que miente. La lee
  * `BandejaLista`, que es quien cambia el espaciado de cada hilo.
  */
-export type DensidadBandeja = 'compacta' | 'comoda';
+export type DensidadBandeja = 'comoda' | 'compacta';
+
+/**
+ * Densidad del hilo del asistente.
+ *
+ * Misma regla que la anterior: se administra en `/configuracion → Apariencia` y
+ * la lee `ChatThread`, que es quien separa los mensajes. Antes era un `useState`
+ * local del panel de configuración del asistente que no leía nadie.
+ */
+export type DensidadAsistente = 'comoda' | 'compacta';
 
 /**
  * @kgId 85ab001c7fe0
@@ -43,6 +51,7 @@ export interface UIPreferences {
   themePreference: ThemePreference;
   sidebarExpanded: boolean;
   densidadBandeja: DensidadBandeja;
+  densidadAsistente: DensidadAsistente;
 }
 
 const STORAGE_KEY = 'webforge-ui-preferences';
@@ -51,8 +60,8 @@ const STORAGE_KEY = 'webforge-ui-preferences';
  * Preferencias de fábrica.
  *
  * `themePreference` arranca en `light` y no en `system` A PROPÓSITO: cambiar el
- * valor por defecto a `system` haría que una máquina con el SO en oscuro
- * abriera la aplicación en oscuro sin que nadie lo pidiera. Es un cambio de
+ * valor por defecto a `system` haría que una máquina con el SO en oscuro abriera
+ * la aplicación en oscuro sin que nadie lo pidiera. Es un cambio de
  * comportamiento que no toca a esta tarea; «Sistema» es una opción que el
  * usuario elige, no el estado inicial.
  */
@@ -61,6 +70,7 @@ const DEFAULT_PREFERENCES: UIPreferences = {
   themePreference: 'light',
   sidebarExpanded: true,
   densidadBandeja: 'comoda',
+  densidadAsistente: 'comoda',
 };
 
 /** Consulta del sistema operativo. Devuelve `null` donde no existe `matchMedia`. */
@@ -81,6 +91,11 @@ function resolverTema(preferencia: ThemePreference): Theme {
   return consultaSistema()?.matches ? 'dark' : 'light';
 }
 
+/** ¿`v` es una densidad válida? Guarda de forma para lo persistido. */
+function esDensidad(v: unknown): v is DensidadBandeja & DensidadAsistente {
+  return v === 'comoda' || v === 'compacta';
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // UI STORE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -99,6 +114,9 @@ class UIStore {
 
   /** Espaciado de la lista de conversaciones. */
   densidadBandeja: DensidadBandeja = DEFAULT_PREFERENCES.densidadBandeja;
+
+  /** Espaciado del hilo del asistente. */
+  densidadAsistente: DensidadAsistente = DEFAULT_PREFERENCES.densidadAsistente;
 
   // Header mobile menu
   headerMenuOpen: boolean = false;
@@ -158,6 +176,7 @@ class UIStore {
       themePreference: this.themePreference,
       sidebarExpanded: this.sidebarExpanded,
       densidadBandeja: this.densidadBandeja,
+      densidadAsistente: this.densidadAsistente,
     };
   }
 
@@ -170,6 +189,9 @@ class UIStore {
    * pide `dark` explícitamente no está pidiendo «lo que diga el sistema», así
    * que dejar la preferencia en `system` haría que el tema se deshiciera solo
    * en el siguiente cambio de tema del SO.
+   *
+   * Es lo que usa el atajo de la cabecera. La ADMINISTRACIÓN de la preferencia
+   * —incluida la opción «Sistema»— vive en `/configuracion → Apariencia`.
    */
   setTheme(theme: Theme): void {
     this.theme = theme;
@@ -183,8 +205,8 @@ class UIStore {
   }
 
   /**
-   * Cambia la PREFERENCIA de tema. Es lo que usa el control segmentado de
-   * apariencia: `system` resuelve contra el SO, y el resto fija el tema.
+   * Cambia la PREFERENCIA de tema. Es lo que usa el control de apariencia:
+   * `system` resuelve contra el SO, y el resto fija el tema.
    */
   setThemePreference(preferencia: ThemePreference): void {
     this.themePreference = preferencia;
@@ -196,6 +218,12 @@ class UIStore {
   /** Cambia la densidad de la lista de conversaciones. */
   setDensidadBandeja(densidad: DensidadBandeja): void {
     this.densidadBandeja = densidad;
+    this.saveToStorage();
+  }
+
+  /** Cambia la densidad del hilo del asistente. */
+  setDensidadAsistente(densidad: DensidadAsistente): void {
+    this.densidadAsistente = densidad;
     this.saveToStorage();
   }
 
@@ -244,6 +272,7 @@ class UIStore {
     this.sidebarHovered = false;
     this.headerMenuOpen = false;
     this.densidadBandeja = DEFAULT_PREFERENCES.densidadBandeja;
+    this.densidadAsistente = DEFAULT_PREFERENCES.densidadAsistente;
     this.applyThemeToDOM();
     this.saveToStorage();
   }
@@ -336,8 +365,11 @@ class UIStore {
             if (parsed.themePreference) {
               this.themePreference = parsed.themePreference;
             }
-            if (parsed.densidadBandeja) {
+            if (esDensidad(parsed.densidadBandeja)) {
               this.densidadBandeja = parsed.densidadBandeja;
+            }
+            if (esDensidad(parsed.densidadAsistente)) {
+              this.densidadAsistente = parsed.densidadAsistente;
             }
           } catch {
             // ignore
@@ -374,8 +406,12 @@ class UIStore {
         if (typeof parsed.sidebarExpanded === 'boolean') {
           this.sidebarExpanded = parsed.sidebarExpanded;
         }
-        if (parsed.densidadBandeja === 'compacta' || parsed.densidadBandeja === 'comoda') {
+        // Guarda de forma: un valor corrupto en el fichero no rompe el arranque.
+        if (esDensidad(parsed.densidadBandeja)) {
           this.densidadBandeja = parsed.densidadBandeja;
+        }
+        if (esDensidad(parsed.densidadAsistente)) {
+          this.densidadAsistente = parsed.densidadAsistente;
         }
       }
     } catch {

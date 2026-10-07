@@ -1,6 +1,5 @@
 import type { SwitchColor } from "@/elements/form/switch";
 import type { BadgeColor } from "@/elements/ui/badge";
-import type { DensidadBandeja } from "@/shell/stores/ui.store";
 import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -20,11 +19,12 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //   patrón que `ESTADO_CONVERSACION_LABEL` / `PLANTILLA_META` en el resto del
 //   proyecto: el vocabulario se declara junto al tipo que lo define.
 //
-// ── REVISIÓN DEL 07/10: DE OCHO SECCIONES A SEIS ─────────────────────────
+// ── REVISIÓN DEL 07/10: DE OCHO SECCIONES A CINCO ────────────────────────
 //
 // La página tenía OCHO secciones y solo TRES estaban limpias. El usuario lo
 // dijo así: «actualmente configuración de conversación solo da información y no
-// es real». La revisión se hizo contra el código, no contra la impresión:
+// es real». La revisión se hizo contra el código, no contra la impresión. El
+// criterio que la ordenó fue UNO: **un dueño por ajuste**.
 //
 //   RETIRADAS por no ajustar nada:
 //     · `perfil`         — tres datos de solo lectura. El número y el nombre del
@@ -40,21 +40,19 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //     · `modulos`        — el mismo ajuste que «Módulos integrados» de
 //                          `/asistente/config`: las dos tarjetas llaman a
 //                          `integracionesStore.alternar(id)`, recorren el mismo
-//                          `entradas.map` y derivan el estado igual. Dos
-//                          superficies para un mismo valor es el defecto que
-//                          este proyecto rechaza. Además, el store declara por
-//                          escrito que «Conector» es vocabulario interno que NO
-//                          se pinta en ninguna superficie, y esta página pintaba
-//                          «Permiso: orders.read», «Proveedor» y
-//                          «Sincronización: En tiempo real».
+//                          `entradas.map` y derivan el estado igual. Además, el
+//                          store declara por escrito que «Conector» es
+//                          vocabulario interno que NO se pinta en ninguna
+//                          superficie, y esta página pintaba «Permiso:
+//                          orders.read», «Proveedor» y «Sincronización: En
+//                          tiempo real».
 //
-//   RETIRADO por ser una preferencia GLOBAL, no del canal:
-//     · el control de TEMA de `apariencia` — escribe en `uiStore`, que es el
-//                          store del shell, y afecta a toda la aplicación. Su
-//                          dueño único es el control de la cabecera
-//                          (`ThemeToggleButton`), que ahora ofrece las tres
-//                          opciones. La sección conserva lo que SÍ es del canal:
-//                          la densidad de la bandeja.
+//   RETIRADA por ser una preferencia GLOBAL, no del canal:
+//     · `apariencia`     — el tema Y la densidad de la lista. La apariencia se
+//                          administra en un solo sitio, `/configuracion →
+//                          Apariencia`, que es la pantalla de los ajustes que
+//                          valen para toda la aplicación. Un módulo no es dueño
+//                          de una preferencia global.
 //
 //   RÓTULOS QUE MENTÍAN, corregidos:
 //     1. «Plantillas de mensaje» decía «Solo referencia · No se envía nada». Es
@@ -74,8 +72,7 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //   La app es un mock 100 % frontend sin backend. NO existen —y por tanto NO se
 //   muestran— facturación, plan, créditos, claves de API, memoria del asistente,
 //   modelos, conectores ni control de datos. Cada sección de abajo se apoya en
-//   un campo REAL de `pedidosStore.config` o de `conversacionesStore` —o se
-//   declara explícitamente como preferencia local de interfaz— y tiene un
+//   un campo REAL de `pedidosStore.config` o de `conversacionesStore` y tiene un
 //   efecto comprobable. Inventar un valor de negocio para llenar una tarjeta
 //   sería un defecto, no una funcionalidad.
 
@@ -88,22 +85,15 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
  * `seccionesPorGrupo` y `META_SECCION` son `Record` sobre ella, así que añadir
  * una sección sin darle grupo o metadatos es un error de compilación.
  */
-export type SeccionCanal =
-  | "plantillas"
-  | "horario"
-  | "atencion"
-  | "aviso"
-  | "alertas"
-  | "apariencia";
+export type SeccionCanal = "plantillas" | "horario" | "atencion" | "aviso" | "alertas";
 
 /** Grupos de la navegación vertical, en orden de aparición. */
-export type GrupoSeccionCanal = "canal" | "mensajeria" | "preferencias";
+export type GrupoSeccionCanal = "canal" | "mensajeria";
 
 /** Etiqueta del grupo tal como se pinta en la cabecera pequeña en mayúsculas. */
 export const GRUPO_SECCION_LABEL: Record<GrupoSeccionCanal, string> = {
   canal: "CANAL",
   mensajeria: "MENSAJERÍA",
-  preferencias: "PREFERENCIAS",
 };
 
 /**
@@ -111,7 +101,7 @@ export const GRUPO_SECCION_LABEL: Record<GrupoSeccionCanal, string> = {
  * orden de la navegación no dependa del orden de inserción de un objeto, que es
  * un detalle de implementación y no una decisión de diseño.
  */
-export const ORDEN_GRUPOS: GrupoSeccionCanal[] = ["canal", "mensajeria", "preferencias"];
+export const ORDEN_GRUPOS: GrupoSeccionCanal[] = ["canal", "mensajeria"];
 
 /** Metadatos de presentación de una sección. */
 export interface MetaSeccion {
@@ -152,13 +142,7 @@ export interface MetaSeccion {
 }
 
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
-export type IconoSeccion =
-  | "DocsIcon"
-  | "TimeIcon"
-  | "BoltIcon"
-  | "InfoIcon"
-  | "AlertIcon"
-  | "EyeIcon";
+export type IconoSeccion = "DocsIcon" | "TimeIcon" | "BoltIcon" | "InfoIcon" | "AlertIcon";
 
 /**
  * Metadatos por sección. El orden de las claves de este objeto NO define el
@@ -201,13 +185,6 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
     grupo: "mensajeria",
     icono: "AlertIcon",
   },
-  apariencia: {
-    label: "Bandeja",
-    hint: "Cuánto espacio ocupa cada hilo en la lista de conversaciones.",
-    pregunta: "¿Cómo quieres ver la lista de conversaciones?",
-    grupo: "preferencias",
-    icono: "EyeIcon",
-  },
 };
 
 /**
@@ -224,10 +201,11 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
  * secciones ya no existen (07/10).
  *
  * Queda FUERA la que NO escribe en el borrador:
- *   · `apariencia` — es una preferencia local que se aplica AL INSTANTE.
- *
- * Sigue siendo alcanzable y sigue mostrando su contenido; lo que no hace es
- * prometer un guardado que no existe.
+ *   · `atencion` — es un interruptor de OPERACIÓN que se aplica AL INSTANTE.
+ *     Pulsarlo cambia el comportamiento del canal en ese momento y persiste en
+ *     `conversacionesStore`; no pasa por «Guardar cambios». Ofrecerle el pie
+ *     sería prometer un guardado que no existe — y el botón guardaría, además,
+ *     un borrador de `pedidosStore` que esa sección ni toca.
  */
 export const SECCIONES_CON_PIE_DE_GUARDADO: readonly SeccionCanal[] = [
   "plantillas",
@@ -257,8 +235,8 @@ type SeccionSinGuardado = Exclude<
  * pierde el pie sin decir nada.
  */
 export const NOTA_SIN_GUARDADO: Record<SeccionSinGuardado, string> = {
-  apariencia:
-    "Este ajuste se aplica al instante y no viaja con la configuración del canal: es una preferencia de esta interfaz, no un ajuste del negocio. El tema de la aplicación no está aquí: se elige desde el botón de tema de la cabecera, porque afecta a toda la aplicación y no solo a este módulo.",
+  atencion:
+    "Este interruptor se aplica al instante: apaga o enciende las respuestas automáticas de todo el canal en el momento en que lo pulsas, sin pasar por Guardar. El traspaso de un hilo concreto entre el bot y un asesor se hace desde la consola de conversaciones.",
 };
 
 /**
@@ -281,7 +259,6 @@ export const ORDEN_SECCIONES: SeccionCanal[] = [
   "atencion",
   "aviso",
   "alertas",
-  "apariencia",
 ];
 
 /**
@@ -350,27 +327,6 @@ export const DIAS_ATENCION: { d: number; label: string; largo: string }[] = [
   { d: 5, label: "Vie", largo: "Viernes" },
   { d: 6, label: "Sáb", largo: "Sábado" },
   { d: 0, label: "Dom", largo: "Domingo" },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PREFERENCIAS LOCALES DE UI
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Densidad de la lista de conversaciones.
- *
- * Es una preferencia REAL desde el 07/10: se persiste en `uiStore` y
- * `BandejaLista` la lee para cambiar el espaciado de cada hilo. Antes era un
- * `useState` local que nadie leía: pulsar «Compacta» no cambiaba nada.
- *
- * El TEMA no se ofrece aquí: es una preferencia de toda la aplicación y su dueño
- * único es el control de la cabecera. Ver la cabecera de este archivo.
- */
-export type { DensidadBandeja };
-
-export const OPCIONES_DENSIDAD: { value: DensidadBandeja; label: string }[] = [
-  { value: "compacta", label: "Compacta" },
-  { value: "comoda", label: "Cómoda" },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════

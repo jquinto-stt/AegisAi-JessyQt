@@ -675,7 +675,18 @@ export interface ConfigHubProps {
  * variante oscura y el hover desaparecería en tema oscuro.
  */
 export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }: ConfigHubProps) {
+  // ── El número de columnas lo fija el número de TARJETAS ───────────────────
+  //
+  // No es un detalle estético: con 2 tarjetas a 4 columnas la fila queda medio
+  // vacía, y con 3 a 4 columnas sobra una pista entera y las tarjetas se
+  // estrechan de más. Cada caso tiene su ancho máximo para que las tarjetas
+  // conserven un tamaño legible.
+  //
+  // Los grupos por número de columnas siguen siendo la unidad de comparación del
+  // arnés (`verificar-config-hub.mjs`): todas las pantallas del MISMO tamaño
+  // deben medir lo mismo, y la divergencia entre grupos es deliberada.
   const esDoble = tarjetas.length === 2;
+  const esTriple = tarjetas.length === 3;
 
   return (
     <ul
@@ -683,7 +694,9 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
         "grid grid-cols-1 gap-6 sm:grid-cols-2",
         esDoble
           ? "max-w-2xl mx-auto"
-          : "lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
+          : esTriple
+            ? "lg:grid-cols-3 max-w-5xl mx-auto"
+            : "lg:grid-cols-3 xl:grid-cols-4 max-w-7xl mx-auto",
       )}
     >
       {tarjetas.map((t) => {

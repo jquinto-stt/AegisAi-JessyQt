@@ -17,8 +17,6 @@ import {
   NIVEL_DESCRIPCION,
   NIVELES_OPERATIVOS,
   NIVEL_LABEL,
-  OPCIONES_DENSIDAD,
-  OPCIONES_RESPUESTA,
   ORDEN_GRUPOS,
   ORDEN_SECCIONES,
   TERMINOS_CAUSALES_PROHIBIDOS,
@@ -109,12 +107,18 @@ describe("catálogo de secciones — agrupación", () => {
     }
   });
 
-  it("la página tiene exactamente las 7 secciones del diseño", () => {
+  it("la página tiene exactamente las 6 secciones del diseño", () => {
     // `modulos` (Módulos integrados) se añadió DESPUÉS de `herramientas` y
     // antes de `historial`: va en el grupo CAPACIDADES y justo detrás de la
     // lista de herramientas, porque es la sección que explica POR QUÉ hay las
-    // que hay. La aserción se mantiene exhaustiva a propósito: una sección
-    // nueva sin decisión de dónde va es exactamente lo que esta prueba frena.
+    // que hay.
+    //
+    // `apariencia` se RETIRÓ el 07/10: sus tres controles o sobraban o mentían
+    // —el tema era una preferencia global que se cambiaba desde tres sitios, y
+    // las dos densidades eran `useState` que ningún componente leía—. La
+    // apariencia se administra ahora en `/configuracion → Apariencia`. La
+    // aserción se mantiene exhaustiva a propósito: una sección nueva sin decisión
+    // de dónde va es exactamente lo que esta prueba frena.
     expect(ORDEN_SECCIONES).toEqual([
       "perfil",
       "motor",
@@ -122,15 +126,16 @@ describe("catálogo de secciones — agrupación", () => {
       "modulos",
       "historial",
       "alcance",
-      "apariencia",
     ]);
   });
 
-  it("los 3 grupos se llaman ASISTENTE / CAPACIDADES / PREFERENCIAS", () => {
+  it("quedan 2 grupos: ASISTENTE / CAPACIDADES", () => {
+    // El grupo PREFERENCIAS se quedó sin secciones al retirarse `apariencia`, y
+    // `seccionesPorGrupo()` filtra los grupos vacíos: mantenerlo declarado sería
+    // una cabecera sin nada debajo.
     expect(ORDEN_GRUPOS.map((g) => GRUPO_SECCION_LABEL[g])).toEqual([
       "ASISTENTE",
       "CAPACIDADES",
-      "PREFERENCIAS",
     ]);
   });
 });
@@ -311,47 +316,6 @@ describe("catálogo de límites del asistente", () => {
   it("declara explícitamente que no hay servidor externo", () => {
     const texto = LIMITES_ASISTENTE.map((l) => l.detalle).join(" ").toLowerCase();
     expect(texto.includes("servidor") || texto.includes("navegador")).toBe(true);
-  });
-});
-
-describe("catálogo de preferencias de apariencia", () => {
-  // Nota: la intención es comparar CONJUNTOS de valores, no órdenes.
-  // Un `.sort()` sin comparador ordena lexicográficamente ("compacta" < "comoda"),
-  // lo que haría fallar la aserción por el orden del catálogo y no por su contenido.
-  // Se compara como conjunto ordenado con criterio explícito.
-  const comoConjunto = (valores: string[]) => [...valores].sort((a, b) => a.localeCompare(b));
-
-  it("las opciones de densidad son exactamente comoda y compacta", () => {
-    expect(comoConjunto(OPCIONES_DENSIDAD.map((o) => o.value))).toEqual(
-      comoConjunto(["comoda", "compacta"]),
-    );
-  });
-
-  it("las opciones de longitud son exactamente completa y resumida", () => {
-    expect(comoConjunto(OPCIONES_RESPUESTA.map((o) => o.value))).toEqual(
-      comoConjunto(["completa", "resumida"]),
-    );
-  });
-
-  it("ninguna lista de opciones repite un valor", () => {
-    for (const lista of [OPCIONES_DENSIDAD, OPCIONES_RESPUESTA]) {
-      const valores = lista.map((o) => o.value);
-      expect(new Set(valores).size).toBe(valores.length);
-    }
-  });
-
-  it("toda opción de densidad tiene etiqueta y detalle", () => {
-    for (const o of OPCIONES_DENSIDAD) {
-      expect(o.label).toBeTruthy();
-      expect(o.detalle).toBeTruthy();
-    }
-  });
-
-  it("toda opción de longitud tiene etiqueta y detalle", () => {
-    for (const o of OPCIONES_RESPUESTA) {
-      expect(o.label).toBeTruthy();
-      expect(o.detalle).toBeTruthy();
-    }
   });
 });
 

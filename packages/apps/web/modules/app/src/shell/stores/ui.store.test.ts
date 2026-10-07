@@ -73,6 +73,45 @@ describe("Densidad de la bandeja", () => {
   });
 });
 
+describe("Densidad del hilo del asistente", () => {
+  // Misma regla que la de la bandeja, y por la misma razón: era un `useState`
+  // del panel de configuración del asistente que ningún componente leía. El
+  // lector es `ChatThread`.
+  it("arranca en «cómoda»", async () => {
+    const { uiStore } = await import("@/shell/stores/ui.store");
+    expect(uiStore.densidadAsistente).toBe("comoda");
+  });
+
+  it("cambiarla la persiste, y sobrevive a una recarga", async () => {
+    const { uiStore } = await import("@/shell/stores/ui.store");
+    uiStore.setDensidadAsistente("compacta");
+
+    const guardado = JSON.parse(localStorage.getItem(CLAVE) ?? "{}");
+    expect(guardado.densidadAsistente).toBe("compacta");
+
+    vi.resetModules();
+    const { uiStore: recargado } = await import("@/shell/stores/ui.store");
+    expect(recargado.densidadAsistente).toBe("compacta");
+  });
+
+  it("las dos densidades son independientes", async () => {
+    // Son dos vistas distintas: apretar la lista de conversaciones no debe
+    // apretar el hilo del asistente. Si compartieran campo, una elección
+    // cambiaría la otra sin que el usuario lo pidiera.
+    const { uiStore } = await import("@/shell/stores/ui.store");
+    uiStore.setDensidadBandeja("compacta");
+
+    expect(uiStore.densidadBandeja).toBe("compacta");
+    expect(uiStore.densidadAsistente).toBe("comoda");
+  });
+
+  it("un valor corrupto no rompe el arranque", async () => {
+    localStorage.setItem(CLAVE, JSON.stringify({ densidadAsistente: "enorme" }));
+    const { uiStore } = await import("@/shell/stores/ui.store");
+    expect(uiStore.densidadAsistente).toBe("comoda");
+  });
+});
+
 describe("Preferencia de tema", () => {
   it("«sistema» se guarda como preferencia y resuelve un tema concreto", async () => {
     const { uiStore } = await import("@/shell/stores/ui.store");

@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { AssistantMessage } from "@/assistant";
+import { uiStore } from "@/stores";
 import { MessageBubble } from "./MessageBubble";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -23,12 +24,21 @@ import { MessageBubble } from "./MessageBubble";
  */
 export const ChatThread = observer(
   ({ mensajes, pensando }: { mensajes: AssistantMessage[]; pensando?: boolean }) => {
+    // Densidad del hilo (Configuración → Apariencia). Es la razón por la que ese
+    // control dejó de mentir: hasta el 07/10 era un `useState` del panel de
+    // configuración que ningún componente leía, así que elegir «Compacta» no
+    // cambiaba nada. El `observer` de arriba hace que al cambiarla el hilo se
+    // reacomode solo.
+    const compacta = uiStore.densidadAsistente === "compacta";
+
     // Sin mensajes y sin actividad: la página muestra el estado vacío con tarjetas.
     if (mensajes.length === 0 && !pensando) return null;
 
     return (
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        <div className="mx-auto flex max-w-2xl flex-col gap-2">
+      <div className={`flex-1 overflow-y-auto px-4 ${compacta ? "py-4" : "py-6"}`}>
+        <div
+          className={`mx-auto flex max-w-2xl flex-col ${compacta ? "gap-1" : "gap-2"}`}
+        >
           {mensajes.map((m) => (
             <MessageBubble key={m.id} message={m} />
           ))}

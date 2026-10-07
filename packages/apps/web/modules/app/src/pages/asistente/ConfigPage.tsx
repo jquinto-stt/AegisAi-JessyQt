@@ -26,7 +26,6 @@ import {
   ConfigHub,
   ConfigShell,
   Label2,
-  Segmentado,
   VolverAlHub,
   claseFila,
   type TarjetaHub,
@@ -51,18 +50,14 @@ import {
   NIVEL_BADGE,
   NIVEL_DESCRIPCION,
   NIVEL_LABEL,
-  OPCIONES_DENSIDAD,
-  OPCIONES_RESPUESTA,
   ORDEN_SECCIONES,
   SWITCH_COLOR,
   TERMINOS_CAUSALES_PROHIBIDOS,
   nivelOperativo,
   seccionesPorGrupo,
   type ConfianzaInferencia,
-  type DensidadAsistente,
   type EstadoIntegracion,
   type IconoSeccion,
-  type LongitudRespuesta,
   type NivelTool,
   type SeccionAsistente,
   type TipoInferencia,
@@ -116,7 +111,6 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
   GridIcon,
   TimeIcon,
   LockIcon,
-  EyeIcon,
 };
 
 /** Clases compartidas por las filas etiqueta/control de las tarjetas. */
@@ -149,8 +143,6 @@ export const AsistenteConfigPage = observer(() => {
 
   // Preferencias locales. No se persisten en el dominio (no hay campo para
   // ellas) y por eso se declaran explícitamente como Preferencias de interfaz.
-  const [densidad, setDensidad] = useState<DensidadAsistente>("comoda");
-  const [longitud, setLongitud] = useState<LongitudRespuesta>("completa");
 
   // ── Estado REAL del asistente ─────────────────────────────────────────
   //
@@ -1017,67 +1009,28 @@ export const AsistenteConfigPage = observer(() => {
               </>
             )}
 
-            {/* ───────────── APARIENCIA ───────────── */}
-            {seccion === "apariencia" && (
-              <Card>
-                <CardHead>Presentación del asistente</CardHead>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Preferencias de esta interfaz. No afectan a lo que el asistente
-                  responde ni a los datos que consulta.
-                </p>
-
-                <div className="mt-4">
-                  <div className={filaBase}>
-                    <Label2
-                      titulo="Densidad del hilo"
-                      descripcion={
-                        OPCIONES_DENSIDAD.find((o) => o.value === densidad)?.detalle ?? ""
-                      }
-                    />
-                    <Segmentado
-                      opciones={OPCIONES_DENSIDAD.map((o) => ({
-                        value: o.value,
-                        label: o.label,
-                      }))}
-                      valor={densidad}
-                      onChange={(v) => setDensidad(v as DensidadAsistente)}
-                      ariaLabel="Densidad del hilo"
-                    />
-                  </div>
-
-                  <div className={filaBase}>
-                    <Label2
-                      titulo="Longitud de las respuestas"
-                      descripcion={
-                        OPCIONES_RESPUESTA.find((o) => o.value === longitud)?.detalle ?? ""
-                      }
-                    />
-                    <Segmentado
-                      opciones={OPCIONES_RESPUESTA.map((o) => ({
-                        value: o.value,
-                        label: o.label,
-                      }))}
-                      valor={longitud}
-                      onChange={(v) => setLongitud(v as LongitudRespuesta)}
-                      ariaLabel="Longitud de las respuestas"
-                    />
-                  </div>
-
-                </div>
-              </Card>
-            )}
-
           {/* El pie de guardado NO existe en esta página: nada de lo que se
               ajusta aquí se persiste. Mostrar un botón «Guardar» sin nada que
               guardar sería un control decorativo.
 
-              Aquí vivía además un interruptor de «Tema de la aplicación» —con
-              su propio comentario admitiendo que era «compartido con el resto de
-              la aplicación»—. Se retiró el 07/10: el tema es una preferencia de
-              TODA la app y su dueño único es el control de la cabecera, que
-              además ofrece «Sistema». Un módulo no es dueño de una preferencia
-              global, y dos superficies con dos vocabularios para el mismo ajuste
-              es justo lo que este proyecto rechaza. */}
+              ── Aquí vivía la sección «Apariencia» (retirada el 07/10) ────────
+              Tenía TRES controles y los tres sobraban o mentían:
+
+                · «Tema de la aplicación» — un interruptor binario para una
+                  preferencia de TODA la aplicación, con su propio comentario
+                  admitiendo que era «compartido con el resto». El tema se
+                  cambiaba desde tres sitios con dos vocabularios.
+                · «Densidad del hilo» — un `useState` local que NINGÚN
+                  componente leía: pulsarlo no cambiaba nada.
+                · «Longitud de las respuestas» — igual de muerto, y además
+                  prometía algo que este motor no puede hacer: el motor de
+                  reglas local no tiene parámetro de longitud, así que
+                  «Resumida» no tenía a quién pedirle un resumen.
+
+              Las tres se administran ahora donde corresponde: la apariencia en
+              `/configuracion → Apariencia` (con lectores de verdad: `BandejaLista`
+              y `ChatThread`), y la longitud no se ofrece porque no se puede
+              honrar. */}
         </ConfigShell>
       </div>
     </>
