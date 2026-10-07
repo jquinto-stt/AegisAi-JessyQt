@@ -6,7 +6,6 @@ import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
-import { Card } from "@/elements/ui/card";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Switch } from "@/elements/form/switch";
@@ -14,7 +13,6 @@ import TextArea from "@/elements/form/textarea";
 import {
   AlertIcon,
   BoltIcon,
-  BoxCubeIcon,
   CartIcon,
   ChatIcon,
   CheckCircleIcon,
@@ -27,21 +25,21 @@ import {
 import {
   conversacionesStore,
   integracionesStore,
-  puede,
+  organizacionStore,
   puedeEditarPlantillas,
   motivoSinPermiso,
   pedidosStore,
   uiStore,
-  ATENCION_LABEL,
-  etiquetaEstado,
   MODULOS_INTEGRABLES,
   ORDEN_MODULOS_INTEGRABLES,
   type ModuloIntegrable,
   type PedidosConfig,
 } from "@/stores";
-import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
+import type { AvisoFueraHorario, PlantillasWhatsApp } from "@/stores/pedidos.store";
+import type { ThemePreference } from "@/shell/stores/ui.store";
 import {
-  CardHead,
+  BloqueConfig,
+  CampoConfig,
   ChipDia,
   ConfigAcciones,
   ConfigHeader,
@@ -49,14 +47,10 @@ import {
   ConfigShell,
   Label2,
   Segmentado,
-  ToggleRow,
   VolverAlHub,
-  claseFila,
   type TarjetaHub,
 } from "@/pages/config-layout";
 
-/** Alias del token compartido de fila, para no tocar cada uso en el cuerpo. */
-const filaBase = claseFila;
 import {
   DIAS_ATENCION,
   ESTADO_CANAL_BADGE,
@@ -65,12 +59,12 @@ import {
   ESTADO_INTEGRACION_LABEL,
   FILAS_PLANTILLA,
   META_SECCION,
+  notaSinGuardado,
   OPCIONES_DENSIDAD,
   OPCIONES_TEMA,
   ORDEN_SECCIONES,
   SWITCH_COLOR,
   seccionesPorGrupo,
-  type DensidadBandeja,
   type EstadoCanal,
   type EstadoIntegracionCanal,
   type IconoSeccion,
@@ -87,7 +81,6 @@ import {
 // sin registrarlo aquí es un error de compilación, no un icono en blanco.
 
 const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>>> = {
-  ChatIcon,
   PlugInIcon,
   DocsIcon,
   TimeIcon,
@@ -98,8 +91,18 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// METADATOS DEL CANAL
+// IDENTIDAD DEL CANAL — contexto de la cabecera, no una sección
 // ═══════════════════════════════════════════════════════════════════════════
+//
+// Hasta el 07/10 esto era la sección «Perfil del canal»: tres datos de SOLO
+// LECTURA dentro de una pantalla de configuración, con su propia tarjeta en el
+// menú de entrada. Abrir una sección para leer tres líneas que no se pueden
+// cambiar es lo que hacía que la página pareciera informativa en vez de
+// configurable.
+//
+// Los datos no se han perdido ni se han escondido: son el CONTEXTO de todo lo
+// que se ajusta debajo (las plantillas y el aviso los escribe este negocio, en
+// este número), así que viven en la cabecera, a la vista en todas las secciones.
 
 /**
  * Número de WhatsApp del negocio.
@@ -111,31 +114,26 @@ const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>
  */
 const NUMERO_CANAL = "+57 300 555 1122";
 
-/**
- * Nombre visible del negocio en el canal.
- *
- * Es un dato de PRESENTACIÓN del canal: no existe un campo de nombre comercial
- * en `PedidosConfig` (que solo guarda ajustes operativos), así que no se puede
- * editar desde aquí ni se finge que sí. Se expone como lectura para dar contexto
- * a las plantillas, que son el contenido que el cliente ve.
- */
-const NOMBRE_VISIBLE_CANAL = "Necto";
+// ═══════════════════════════════════════════════════════════════════════════
+// TEMA: traducción entre el vocabulario de la página y el del store
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// La página habla en español («claro / oscuro / sistema») y el store del shell
+// en inglés (`light | dark | system`). Son dos vocabularios del mismo concepto,
+// y la frontera se cruza AQUÍ, en dos tablas de una línea — no repartida por el
+// JSX, donde una traducción suelta se puede olvidar.
 
-// ═══════════════════════════════════════════════════════════════════════════
-// LAYOUT COMPARTIDO
-// ═══════════════════════════════════════════════════════════════════════════
-//
-// La fila etiqueta/control, el encabezado de tarjeta, la etiqueta con
-// descripción, el control segmentado y el chip de día viven ahora en
-// `@/pages/config-layout`, junto con la cabecera de página y la navegación de
-// secciones. Se importan en vez de redeclararse: antes esta página y la de
-// Pedidos tenían cada una su copia y habían divergido, así que el mismo ajuste
-// se veía distinto según por dónde entraras.
-//
-// `filaBase` es un alias local del token compartido `claseFila`: el cuerpo de la
-// página tiene decenas de filas ya escritas contra ese nombre. Aliasarlo en vez
-// de reescribirlas mantiene el diff del refactor legible y, sobre todo, hace
-// que TODAS hereden el token único — que es el objetivo.
+const TEMA_A_PREFERENCIA: Record<PreferenciaTema, ThemePreference> = {
+  claro: "light",
+  oscuro: "dark",
+  sistema: "system",
+};
+
+const PREFERENCIA_A_TEMA: Record<ThemePreference, PreferenciaTema> = {
+  light: "claro",
+  dark: "oscuro",
+  system: "sistema",
+};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PRESENTACIÓN DE LOS MÓDULOS INTEGRABLES
@@ -153,10 +151,6 @@ const NOMBRE_VISIBLE_CANAL = "Necto";
 // `disponible: true` — y encima con el estado real ya calculado tres líneas más
 // arriba. Un control que miente, que es el defecto que el propio catálogo de
 // integrables dice por escrito que hay que evitar.
-//
-// La copia no fue el problema: fue el síntoma. El problema es que la tarjeta
-// pudiera afirmar del módulo algo distinto de lo que el asistente tiene
-// registrado. Con una sola fuente, no puede.
 //
 // Es `Record<ModuloIntegrable, …>`: añadir un módulo integrable sin darle
 // presentación es un error de compilación, no una tarjeta en blanco.
@@ -186,6 +180,101 @@ const TONO_VERSION =
   "bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400";
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ESTADO DEL AVISO FUERA DE HORARIO
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// El aviso depende de TRES hechos: que el horario esté activo (si no, el negocio
+// se considera abierto siempre y el aviso no tiene cuándo aplicarse), que el
+// interruptor esté encendido y que el mensaje tenga texto. La función dice en
+// presente cuál de los tres falta, para que el usuario lo sepa ANTES de guardar
+// en vez de preguntarse después por qué nadie recibe nada.
+//
+// Es una función pura sobre el borrador y no un `if` dentro del JSX: así el
+// mismo cálculo sirve para el color y para el texto, y no hay dos ramas que
+// puedan contradecirse.
+
+function estadoAviso(draft: PedidosConfig): {
+  variant: "info" | "warning";
+  title: string;
+  message: string;
+} {
+  const { activo, mensaje } = draft.avisoFueraHorario;
+
+  if (!draft.horario.activo) {
+    return {
+      variant: "info",
+      title: "Todavía no se envía",
+      message:
+        "El horario de atención está desactivado, así que el negocio se considera abierto a cualquier hora y este aviso no tiene cuándo aplicarse. Configura un horario en la sección anterior para que pueda enviarse.",
+    };
+  }
+
+  if (!activo) {
+    return {
+      variant: "info",
+      title: "Apagado",
+      message:
+        "El cliente que escriba fuera de horario no recibe nada: su mensaje queda en la bandeja esperando a que alguien lo atienda.",
+    };
+  }
+
+  if (mensaje.trim() === "") {
+    return {
+      variant: "warning",
+      title: "Encendido, pero sin texto",
+      message:
+        "El aviso está activado y el mensaje está vacío, así que no se enviaría nada. Escribe el texto que quieres que reciba el cliente.",
+    };
+  }
+
+  return {
+    variant: "info",
+    title: "Se enviará fuera de horario",
+    message: `El cliente que escriba fuera de la franja ${draft.horario.apertura}–${draft.horario.cierre} recibirá este mensaje. Si vuelve a escribir sin que nadie le haya contestado, no se le repite.`,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTEXTO DEL CANAL — la cabecera
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Nombre con el que el negocio aparece en el canal.
+ *
+ * Sale del nombre de la ORGANIZACIÓN (`organizacionStore`), que es el dato real
+ * que existe en el modelo. Antes era la constante literal «Necto» —el nombre de
+ * la aplicación—, y presentaba la marca del producto como si fuera el nombre
+ * comercial del negocio del usuario.
+ */
+const ContextoCanal = observer(() => {
+  const nombre = organizacionStore.organizacion?.nombre?.trim() ?? "";
+
+  // Estado de atención DERIVADO del horario real, con `estaAbierto()`. No hay
+  // un booleano «conectado» en el modelo y no se inventa uno: un segundo
+  // booleano sería un sitio más donde afirmar lo mismo que ya dice el horario,
+  // y los dos podrían divergir.
+  const estado: EstadoCanal = pedidosStore.estaAbierto() ? "atendiendo" : "fuera_horario";
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <div className="min-w-0">
+        {nombre !== "" && (
+          <p className="truncate text-sm font-semibold text-ink-body dark:text-white/90">
+            {nombre}
+          </p>
+        )}
+        <p className="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+          {NUMERO_CANAL}
+        </p>
+      </div>
+      <Badge color={ESTADO_CANAL_BADGE[estado]} size="sm">
+        {ESTADO_CANAL_LABEL[estado]}
+      </Badge>
+    </div>
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // PÁGINA
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -199,10 +288,12 @@ const TONO_VERSION =
  * única derivación de cada valor; ninguna mantiene una copia propia.
  *
  * ── Estructura ────────────────────────────────────────────────────────────
- * Navegación vertical de 7 secciones en 3 grupos (CANAL / MENSAJERÍA /
- * PREFERENCIAS). Es navegación por PESTAÑAS reales: solo una sección está
- * montada a la vez, sin scroll-spy ni secciones apiladas. El catálogo de
- * secciones vive en `configuracion.secciones.ts`.
+ * Siete secciones en tres grupos (CANAL / MENSAJERÍA / PREFERENCIAS). Es
+ * navegación por PESTAÑAS reales: solo una sección está montada a la vez, sin
+ * scroll-spy ni secciones apiladas. El catálogo de secciones vive en
+ * `configuracion.secciones.ts`, que además documenta por qué dos secciones
+ * —«Perfil del canal» y «Automatización y escalado»— dejaron de existir el
+ * 07/10: no contenían ni un control.
  *
  * ── Estado ────────────────────────────────────────────────────────────────
  * Borrador local (`useState`) copiado de `pedidosStore.config` al montar, y
@@ -210,14 +301,18 @@ const TONO_VERSION =
  * desde el store sin diálogo de confirmación (es una acción reversible: basta
  * volver a editar).
  *
+ * Dos secciones NO usan el borrador porque se aplican al instante: `atencion`
+ * (escribe en `conversacionesStore`) y `apariencia` (escribe en `uiStore`). Las
+ * dos llevan su nota de por qué no hay botón de guardar.
+ *
  * ── Autorización ──────────────────────────────────────────────────────────
- * La ruta exige `channels.manage`. Si además faltara para las plantillas
- * (rol con `settings.manage` pero sin `channels.manage` entrando por otra ruta),
- * la página entra en **modo solo lectura**: se muestra un aviso arriba, los
- * campos quedan en un `<fieldset disabled>` y los dos botones quedan
- * deshabilitados pero VISIBLES. Se deshabilita en vez de ocultar porque ocultar
- * el botón de guardado haría creer que la página no guarda nada — el mismo
- * criterio que `pages/pedidos/ConfigPage.tsx`.
+ * La ruta exige `channels.manage`. Si además faltara para las plantillas (rol
+ * con `settings.manage` pero sin `channels.manage` entrando por otra ruta), la
+ * página entra en **modo solo lectura**: se muestra un aviso arriba, los campos
+ * quedan en un `<fieldset disabled>` y los dos botones quedan deshabilitados
+ * pero VISIBLES. Se deshabilita en vez de ocultar porque ocultar el botón de
+ * guardado haría creer que la página no guarda nada — el mismo criterio que
+ * `pages/pedidos/ConfigPage.tsx`.
  */
 export const ConfigPage = observer(() => {
   // ── La sección activa vive en la URL (`?seccion=`) ────────────────────────
@@ -226,8 +321,8 @@ export const ConfigPage = observer(() => {
   // desde una incidencia siempre aterrizaba en «Perfil del canal». Con el
   // parámetro, cada sección es direccionable — y **sin parámetro se pinta el hub
   // de tarjetas**, porque es la pantalla de entrada. Elegir una sección «por
-  // defecto» escondería las otras siete detrás de una nav que el usuario no ha
-  // visto. Mismo criterio que `pages/pedidos/ConfigPage.tsx`.
+  // defecto» escondería las otras detrás de una nav que el usuario no ha visto.
+  // Mismo criterio que `pages/pedidos/ConfigPage.tsx`.
   const [searchParams, setSearchParams] = useSearchParams();
 
   const seccionParam = searchParams.get("seccion");
@@ -248,10 +343,6 @@ export const ConfigPage = observer(() => {
 
   const [guardado, setGuardado] = useState(false);
 
-  // ── Preferencias locales de UI (sin fuente de verdad de negocio) ──
-  const [tema, setTema] = useState<PreferenciaTema>("sistema");
-  const [densidad, setDensidad] = useState<DensidadBandeja>("comoda");
-
   // ── Borrador: copia profunda de la config persistida ──
   // Se clonan los sub-objetos y arrays para que editar el borrador NO mute el
   // store antes de guardar. Sin el clon, `draft.horario.dias` sería el MISMO
@@ -267,6 +358,7 @@ export const ConfigPage = observer(() => {
     horario: { ...pedidosStore.config.horario, dias: [...pedidosStore.config.horario.dias] },
     tiemposObjetivo: { ...pedidosStore.config.tiemposObjetivo },
     alertaAtencion: { ...pedidosStore.config.alertaAtencion },
+    avisoFueraHorario: { ...pedidosStore.config.avisoFueraHorario },
   });
 
   const [draft, setDraft] = useState<PedidosConfig>(copiaDe);
@@ -275,18 +367,8 @@ export const ConfigPage = observer(() => {
   // `channels.manage` gobierna TODA la página (es la capacidad de la ruta), así
   // que el modo solo lectura se evalúa una vez. `motivoSinPermiso` construye el
   // texto desde `CAPACIDAD_LABEL`: ninguna pantalla escribe el motivo a mano.
-  const puedeGestionarCanal = puedeEditarPlantillas();
-  const soloLectura = !puedeGestionarCanal;
+  const soloLectura = !puedeEditarPlantillas();
   const motivo = motivoSinPermiso("channels.manage");
-
-  // ── Navegación: el hub sale del catálogo ──
-  //
-  // Aquí vivía un `useMemo` que armaba `GrupoNav[]` para la columna lateral.
-  // La columna se sustituyó por el hub de tarjetas, que NO agrupa: una
-  // cuadrícula ya es agrupación, y repetir los rótulos CANAL / MENSAJERÍA /
-  // PREFERENCIAS encima de cada fila serían tres cabeceras para ocho tarjetas.
-  // `tarjetasHub` (más arriba) aplana el mismo catálogo. El catálogo sigue
-  // siendo el dueño del vocabulario; lo que cambió es cómo se presenta.
 
   // ── Setters del borrador ──
   // Todos marcan `guardado = false`: cualquier edición invalida el aviso de
@@ -301,16 +383,10 @@ export const ConfigPage = observer(() => {
     setGuardado(false);
   };
 
-  /**
-   * Edita el texto del aviso de pausa.
-   *
-   * Se apoya en la plantilla `cancelado` en vez de un campo nuevo: es el único
-   * texto del modelo que se usa como mensaje de cierre cuando el canal no puede
-   * atender, y crear un campo aparte sería un segundo sitio donde guardar el
-   * mismo mensaje. La sección "Plantillas de mensaje" edita el MISMO valor, para
-   * que las dos superficies no puedan discrepar.
-   */
-  const setPlantillaVigilada = (value: string) => setPlantilla("cancelado", value);
+  const setAviso = <K extends keyof AvisoFueraHorario>(k: K, v: AvisoFueraHorario[K]) => {
+    setDraft((prev) => ({ ...prev, avisoFueraHorario: { ...prev.avisoFueraHorario, [k]: v } }));
+    setGuardado(false);
+  };
 
   const setHorario = <K extends keyof PedidosConfig["horario"]>(k: K, v: PedidosConfig["horario"][K]) => {
     setDraft((prev) => ({ ...prev, horario: { ...prev.horario, [k]: v } }));
@@ -354,32 +430,23 @@ export const ConfigPage = observer(() => {
     setGuardado(false);
   };
 
-  // Preferencia de tema: el store del shell solo modela `light | dark`, así que
-  // "sistema" se resuelve AQUÍ antes de escribir en él. No se amplía el contrato
-  // de `uiStore`, compartido por toda la aplicación.
-  const aplicarTema = (v: PreferenciaTema) => {
-    setTema(v);
-    if (v === "sistema") return; // "sistema" no impone un tema: deja el actual.
-    uiStore.setTheme(v === "oscuro" ? "dark" : "light");
-  };
+  // ── Preferencias de interfaz: se aplican AL INSTANTE, contra `uiStore` ──
+  //
+  // No pasan por el borrador ni por Guardar: son preferencias de esta interfaz,
+  // no ajustes del negocio. El store es el dueño y persiste; la página solo
+  // traduce el vocabulario y pinta lo que el store dice. Antes esto era un
+  // `useState` local: el control volvía a «Sistema» al recargar aunque el tema
+  // aplicado fuera otro, y «Densidad» no lo leía nadie.
+  const preferenciaTema = PREFERENCIA_A_TEMA[uiStore.themePreference];
 
-  /**
-   * Estado de conexión del canal, DERIVADO del horario real.
-   *
-   * No hay un campo "conectado" en la configuración, así que no se inventa uno
-   * ni se guarda un badge propio: un segundo booleano sería un sitio más donde
-   * afirmar lo mismo que ya dice `horario.activo`, y ambos podrían divergir. Se
-   * deriva del único ajuste real de disponibilidad que existe en el modelo, y la
-   * etiqueta sale de `ESTADO_CANAL_LABEL` — nunca de un literal en el JSX.
-   */
-  const estadoCanal: EstadoCanal = draft.horario.activo ? "conectado" : "pausado";
+  const aplicarTema = (v: PreferenciaTema) => uiStore.setThemePreference(TEMA_A_PREFERENCIA[v]);
+
+  // Estado del aviso fuera de horario, calculado una vez por render.
+  const avisoEstado = estadoAviso(draft);
 
   // ── Encabezado de la sección activa ──
   // Las tarjetas del hub salen del catálogo (`seccionesPorGrupo`), no de una
-  // lista copiada: una sección nueva aparece aquí sola. Se aplana el
-  // agrupamiento porque el hub ya agrupa por sí mismo —una cuadrícula— y
-  // repetir los rótulos CANAL / MENSAJERÍA / PREFERENCIAS encima de cada fila
-  // añadiría tres cabeceras para ocho tarjetas.
+  // lista copiada: una sección nueva aparece aquí sola.
   const tarjetasHub: TarjetaHub[] = useMemo(
     () =>
       seccionesPorGrupo()
@@ -411,6 +478,7 @@ export const ConfigPage = observer(() => {
           <ConfigHeader
             titulo="Configuración del canal"
             descripcion="Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+            acciones={<ContextoCanal />}
           />
         </div>
 
@@ -431,7 +499,8 @@ export const ConfigPage = observer(() => {
       <div className="mb-5">
         <ConfigHeader
           titulo="Configuración del canal"
-          descripcion="Identidad del canal, plantillas, horario, escalado y alertas de WhatsApp."
+          descripcion="Módulos, plantillas, horario, atención automática y alertas del canal."
+          acciones={<ContextoCanal />}
         />
       </div>
 
@@ -471,162 +540,67 @@ export const ConfigPage = observer(() => {
         <fieldset disabled={soloLectura} className="m-0 min-w-0 border-0 p-0">
           {/* El `key={seccion}` es lo que dispara el fundido: al cambiar de
               sección React desmonta el panel entero y monta uno nuevo, y el
-              nuevo reproduce `animate-aparecer`.
-
-              Fundido PURO, sin desplazamiento: el panel nuevo ocupa el sitio del
-              anterior, así que moverlo sugeriría que viene de algún lado. */}
+              nuevo reproduce `animate-aparecer`. */}
           <ConfigShell
             seccionKey={seccion}
             titulo={meta.label}
             hint={meta.hint}
             footer={
-              <>
-                {/* Pie fijo: siempre visible, en toda sección. Se compone con
-                    `ConfigAcciones` —el mismo patrón de botones que las otras
-                    dos pantallas— y no con `ButtonsGroup`, que fija un ancho
-                    mínimo y rompería la alineación a la derecha. */}
-                <ConfigAcciones
-                  fija
-                  mensaje={
-                    guardado ? (
-                      <span className="text-sm text-accent-600 dark:text-accent-500">
-                        Guardado ✓
-                      </span>
-                    ) : undefined
-                  }
-                >
-                  <Button variant="outline" onClick={descartar} disabled={soloLectura}>
-                    Descartar cambios
-                  </Button>
-                  <Button onClick={guardar} disabled={!puedeGuardar}>
-                    Guardar cambios
-                  </Button>
-                </ConfigAcciones>
+              // El pie de guardado SOLO va donde hay algo que guardar.
+              //
+              // Donde no hay pie, va la nota que dice por qué: quitar el botón
+              // en silencio deja al usuario buscando uno que ya no existe.
+              notaSinGuardado(seccion) === null ? (
+                <>
+                  {/* Se compone con `ConfigAcciones` —el mismo patrón de botones
+                      que las otras pantallas— y no con `ButtonsGroup`, que fija
+                      un ancho mínimo y rompería la alineación a la derecha. */}
+                  <ConfigAcciones
+                    fija
+                    mensaje={
+                      guardado ? (
+                        <span className="text-sm text-accent-600 dark:text-accent-500">
+                          Guardado ✓
+                        </span>
+                      ) : undefined
+                    }
+                  >
+                    <Button variant="outline" onClick={descartar} disabled={soloLectura}>
+                      Descartar cambios
+                    </Button>
+                    <Button onClick={guardar} disabled={!puedeGuardar}>
+                      Guardar cambios
+                    </Button>
+                  </ConfigAcciones>
 
-                {soloLectura && (
-                  <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
-                    {motivo}
-                  </p>
-                )}
-              </>
+                  {soloLectura && (
+                    <p className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
+                      {motivo}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-6 border-t border-gray-200 pt-4 text-xs leading-relaxed text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  {notaSinGuardado(seccion)}
+                </p>
+              )
             }
           >
-              {/* ───────────── PERFIL DEL CANAL ───────────── */}
-              {seccion === "perfil" && (
-                <>
-                  <Card>
-                    <CardHead>Identidad del canal</CardHead>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Datos de identificación de la línea de WhatsApp conectada.
-                    </p>
-
-                    <div className="mt-4">
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Número conectado"
-                          descripcion="Es la clave por la que los pedidos encuentran su conversación."
-                        />
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm font-medium tabular-nums text-gray-800 dark:text-white/90">
-                            {NUMERO_CANAL}
-                          </span>
-                          <Badge color={ESTADO_CANAL_BADGE[estadoCanal]} size="sm">
-                            {ESTADO_CANAL_LABEL[estadoCanal]}
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Nombre visible"
-                          descripcion="Cómo aparece el negocio en la bandeja y en el simulador."
-                        />
-                        <div className="w-full sm:w-72">
-                          <Input
-                            id="canal-nombre"
-                            value={NOMBRE_VISIBLE_CANAL}
-                            readOnly
-                            aria-label="Nombre visible del canal"
-                          />
-                          <p className="mt-1.5 text-xs text-gray-400">
-                            El nombre comercial se gestiona con los datos del negocio.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card>
-                    <CardHead>Pausa del canal</CardHead>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Estado de la línea y de la cola de atención. El número y el nombre son datos
-                      de identidad del canal: no se editan desde aquí.
-                    </p>
-
-                    <div className="mt-4">
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Número conectado"
-                          descripcion="Clave por la que cada pedido encuentra su conversación."
-                        />
-                        <span className="text-sm font-medium tabular-nums text-gray-800 dark:text-white/90">
-                          {NUMERO_CANAL}
-                        </span>
-                      </div>
-
-                      <div className={filaBase}>
-                        <Label2 titulo="Nombre visible" descripcion="Cómo aparece el negocio en el canal." />
-                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
-                          {NOMBRE_VISIBLE_CANAL}
-                        </span>
-                      </div>
-
-                      <div className={filaBase}>
-                        <Label2
-                          titulo={`Hilos ${etiquetaEstado("en_espera").toLowerCase()}`}
-                          descripcion="Hilos que pidieron un asesor humano y siguen sin respuesta."
-                        />
-                        {/* Selector del store, no un conteo en la vista. Es el
-                            MISMO valor que muestra la tarjeta de Inicio: si se
-                            contara aquí, dos superficies podrían discrepar.
-
-                            El rótulo usa la etiqueta CANÓNICA del estado en vez
-                            de «Clientes esperando», que era un cuarto nombre
-                            para el mismo `en_espera`. Así la cifra del filtro,
-                            la del badge y la de esta fila dicen lo mismo. */}
-                        <Badge
-                          color={
-                            conversacionesStore.totalRequierenAtencion > 0 ? "warning" : "success"
-                          }
-                          size="sm"
-                        >
-                          {conversacionesStore.totalRequierenAtencion}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Card>
-                </>
-              )}
-
               {/* ───────────── MÓDULOS CONECTADOS ───────────── */}
               {seccion === "modulos" && (
                 <>
-                  <Card>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <CardHead>Módulos conectados al canal</CardHead>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Habilita o desconecta módulos del negocio. Cada módulo conectado aporta capacidades operativas al bot y pestañas de contexto en cada conversación de WhatsApp.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/[0.04]">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                          Módulos activos:
-                        </span>
-                        <span className="text-sm font-bold text-gray-800 dark:text-white">
-                          {integracionesStore.modulosHabilitados.length} / {ORDEN_MODULOS_INTEGRABLES.length}
-                        </span>
-                      </div>
+                  <BloqueConfig
+                    icono={ICONO_SECCION[meta.icono]}
+                    pregunta={meta.pregunta}
+                    descripcion="Habilita o desconecta módulos del negocio. Cada módulo conectado aporta capacidades operativas al bot y pestañas de contexto en cada conversación de WhatsApp."
+                  >
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 dark:bg-white/[0.04]">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Módulos activos:
+                      </span>
+                      <span className="text-sm font-bold text-gray-800 dark:text-white">
+                        {integracionesStore.modulosHabilitados.length} / {ORDEN_MODULOS_INTEGRABLES.length}
+                      </span>
                     </div>
 
                     <div className="mt-6 grid grid-cols-1 gap-5">
@@ -760,20 +734,21 @@ export const ConfigPage = observer(() => {
                         );
                       })}
                     </div>
-                  </Card>
+                  </BloqueConfig>
 
-                  <Card>
-                    <CardHead>Impacto de los módulos en las conversaciones</CardHead>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Cómo se reflejan estos plugins en la experiencia del operador dentro de la bandeja de entrada.
-                    </p>
-
-                    <div className="mt-4">
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Pestañas activas en el chat"
-                          descripcion="Cada módulo conectado añade una pestaña de contexto operativo junto a los mensajes."
-                        />
+                  {/* Segundo bloque, con su propia pregunta: qué cambia en la
+                      conversación. */}
+                  <BloqueConfig
+                    icono={ChatIcon}
+                    pregunta="¿Cómo cambia la conversación con ellos?"
+                    descripcion="Lo que ve el operador dentro de la bandeja de entrada según los módulos que tenga conectados."
+                  >
+                    <div className="space-y-6">
+                      <CampoConfig
+                        etiqueta="Pestañas activas en el chat"
+                        ayuda="Cada módulo conectado añade una pestaña de contexto operativo junto a los mensajes."
+                        ancho="max-w-none"
+                      >
                         <div className="flex flex-wrap items-center gap-1.5">
                           <Badge color="light" size="sm">
                             Conversación
@@ -784,39 +759,48 @@ export const ConfigPage = observer(() => {
                             </Badge>
                           ))}
                         </div>
-                      </div>
+                      </CampoConfig>
 
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Disponibilidad para asesores"
-                          descripcion="Herramientas y vistas operativas habilitadas para los operadores del canal."
-                        />
-                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                      <CampoConfig
+                        etiqueta="Disponibilidad para asesores"
+                        ayuda="Herramientas y vistas operativas habilitadas para los operadores del canal."
+                        ancho="max-w-none"
+                      >
+                        <span className="text-sm font-medium text-ink-body dark:text-white/90">
                           {integracionesStore.estaConectado("pedidos")
                             ? "Operativa con módulo de Pedidos"
                             : "Canal básico (sin módulos operativos)"}
                         </span>
-                      </div>
+                      </CampoConfig>
                     </div>
-                  </Card>
+                  </BloqueConfig>
                 </>
               )}
 
               {/* ───────────── PLANTILLAS DE MENSAJE ───────────── */}
               {seccion === "plantillas" && (
-                <Card>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardHead>Mensajes por transición</CardHead>
-                    <Badge color="light" size="sm">
-                      Solo referencia
-                    </Badge>
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Estos textos se envían solos al hilo del cliente cuando su pedido llega a cada estado."
+                >
+                  {/* ── El rótulo decía «Solo referencia» y era FALSO ────────
+                      Hasta el 07/10 esta sección afirmaba «No se envía nada a
+                      WhatsApp: sirve como referencia del mensaje en cada paso».
+                      No era cierto: `pages/pedidos/pedidos.notificaciones.ts`
+                      publica la plantilla del estado nuevo en la conversación del
+                      cliente cada vez que el pedido avanza. Un aviso que
+                      tranquiliza al usuario sobre algo que no pasa es tan malo
+                      como un control que miente. */}
+                  <div className="mb-5">
+                    <Alert
+                      variant="info"
+                      title="Se envían de verdad"
+                      message="Cada plantilla entra en la conversación del cliente cuando su pedido llega a ese estado. Si el cliente no tiene una conversación abierta, no se envía nada: no se inventa un hilo."
+                    />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Guion sugerido para el equipo. En este mock <strong>no se envía nada</strong> a
-                    WhatsApp; el texto sirve como referencia del mensaje en cada paso.
-                  </p>
 
-                  <div className="mt-4">
+                  <div>
                     {FILAS_PLANTILLA.map(({ key, label }, i) => (
                       <div
                         key={key}
@@ -842,35 +826,52 @@ export const ConfigPage = observer(() => {
                       </div>
                     ))}
                   </div>
-                </Card>
+                </BloqueConfig>
               )}
 
               {/* ───────────── HORARIO DE ATENCIÓN ───────────── */}
-              {seccion === "horario" && (
-                <Card>
-                  <CardHead>Horario de atención</CardHead>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Días y horas en que el negocio recibe pedidos. Fuera de horario se puede sugerir
-                    programar el pedido.
-                  </p>
+              {/*
+                Los días y las horas vivían dentro de `{draft.horario.activo && …}`.
+                Con el horario apagado —que es el valor de fábrica— la sección
+                quedaba en un título y una fila: un solo control. Se leía como una
+                pantalla rota, no como un ajuste apagado.
 
-                  <div className="mt-4">
-                    <div className={filaBase}>
-                      <Label2
-                        titulo="Aplicar horario"
-                        descripcion="Si está desactivado, el canal atiende a cualquier hora."
-                      />
+                Ahora el contenido se ve SIEMPRE y se deshabilita con
+                `fieldset disabled` —el mismo patrón que el modo solo lectura de
+                esta página— acompañado del motivo escrito. Un ajuste
+                desactivado se muestra desactivado; esconderlo hace creer que no
+                existe.
+              */}
+              {seccion === "horario" && (
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Días y horas en que el negocio recibe pedidos. Fuera de horario se puede sugerir programar el pedido, y el canal puede responder con su aviso."
+                >
+                  <div className="space-y-6">
+                    <CampoConfig
+                      etiqueta="Aplicar horario"
+                      ayuda="Si está desactivado, el negocio se considera abierto a cualquier hora."
+                      ancho="max-w-none"
+                    >
                       <Switch
                         checked={draft.horario.activo}
                         onChange={(v) => setHorario("activo", v)}
                         color={SWITCH_COLOR}
                         aria-label="Aplicar horario de atención"
                       />
-                    </div>
-                  </div>
+                    </CampoConfig>
 
-                  {draft.horario.activo && (
-                    <div className="mt-5 space-y-5 border-t border-gray-100 pt-5 dark:border-white/5">
+                    {/* `disabled:opacity-50` en el PROPIO fieldset, y no en cada
+                        control: `fieldset disabled` desactiva el comportamiento
+                        de todo lo que hay dentro, pero NO lo atenúa —el atenuado
+                        de `Input` y `ChipDia` vive en su prop `disabled`, que aquí
+                        no se pasa—. Sin esta clase, los días y las horas se veían
+                        como si se pudieran pulsar y no hacían nada. */}
+                    <fieldset
+                      disabled={!draft.horario.activo}
+                      className="m-0 min-w-0 space-y-5 border-0 p-0 transition-opacity disabled:opacity-50"
+                    >
                       <div>
                         <Label htmlFor="canal-horario-dias">Días de atención</Label>
                         <div className="flex flex-wrap gap-2" id="canal-horario-dias">
@@ -891,7 +892,7 @@ export const ConfigPage = observer(() => {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:max-w-md">
+                      <div className="grid grid-cols-1 gap-4 sm:max-w-md sm:grid-cols-2">
                         <div>
                           <Label htmlFor="canal-horario-apertura">Apertura</Label>
                           <Input
@@ -914,219 +915,224 @@ export const ConfigPage = observer(() => {
                       </div>
 
                       {/* El borde rojo del campo, por sí solo, no explica el
-                          bloqueo: se acompaña del motivo textual, igual que en
-                          la configuración de pedidos. */}
+                          bloqueo: se acompaña del motivo textual. */}
                       {horarioInvalido && (
                         <p className="mt-2 text-xs text-error-500">
                           La hora de cierre debe ser mayor que la de apertura.
                         </p>
                       )}
-                    </div>
-                  )}
-                </Card>
+                    </fieldset>
+
+                    {!draft.horario.activo && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Activa el horario para poder elegir los días y las horas.
+                      </p>
+                    )}
+                  </div>
+                </BloqueConfig>
               )}
 
-              {/* ───────────── AUTOMATIZACIÓN Y ESCALADO ───────────── */}
-              {seccion === "automatizacion" && (
-                <>
-                  <Card>
-                    <CardHead>Atención en el canal</CardHead>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Cómo se reparte la atención entre el bot y los asesores. Se lee del estado
-                      real de los hilos.
-                    </p>
+              {/* ───────────── ATENCIÓN AUTOMÁTICA ───────────── */}
+              {/*
+                Sección NUEVA del 07/10. Ocupa el hueco que dejó «Automatización y
+                escalado», que era un informe de solo lectura: dos conteos y una
+                leyenda, cero controles. En vez de documentar cómo se reparte la
+                atención, aquí se AJUSTA si el canal responde solo.
 
-                    <div className="mt-4">
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Hilos que lleva el bot"
-                          descripcion="Conversaciones en modo bot: el cliente recibe solo respuestas automáticas."
+                El interruptor escribe en `conversacionesStore` y se aplica al
+                instante; por eso esta sección no lleva pie de guardado.
+              */}
+              {seccion === "atencion" && (
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Cuando está encendido, el canal contesta solo a los mensajes que entran. Apagarlo no cambia quién lleva cada conversación: solo detiene la respuesta automática."
+                >
+                  <div className="space-y-6">
+                    <CampoConfig
+                      etiqueta="Respuestas automáticas"
+                      ayuda="Se aplica al instante, sin pasar por Guardar: quien lo apaga espera que el canal deje de contestar ya."
+                      ancho="max-w-none"
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Switch
+                          checked={conversacionesStore.respuestasAutomaticas}
+                          onChange={(v) => conversacionesStore.setRespuestasAutomaticas(v)}
+                          color={SWITCH_COLOR}
+                          aria-label="Respuestas automáticas del canal"
                         />
-                        {/* Conteo DERIVADO de la lista del store, no almacenado:
-                            la atención por hilo es la fuente de verdad. */}
-                        <Badge color="primary" size="sm">
-                          {conversacionesStore.conversaciones.filter(
-                            (c) => c.atencion === "bot",
-                          ).length}
-                        </Badge>
+                        <span className="text-sm font-medium text-ink-body dark:text-white/90">
+                          {conversacionesStore.respuestasAutomaticas
+                            ? "Encendidas: el canal contesta solo"
+                            : "Apagadas: nadie contesta automáticamente"}
+                        </span>
                       </div>
+                    </CampoConfig>
 
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Hilos con asesor"
-                          descripcion="Conversaciones ya escaladas a una persona del equipo."
-                        />
-                        <Badge color="info" size="sm">
-                          {conversacionesStore.conversaciones.filter(
-                            (c) => c.atencion === "humano",
-                          ).length}
-                        </Badge>
-                      </div>
-
-                      <div className={filaBase}>
-                        <Label2
-                          titulo="Etiquetas de atención"
-                          descripcion="Vocabulario del eje de atención, tal como se rotula en la consola."
-                        />
-                        <div className="flex flex-wrap gap-2">
-                          <Badge color="primary" size="sm">
-                            {ATENCION_LABEL.bot}
-                          </Badge>
-                          <Badge color="info" size="sm">
-                            {ATENCION_LABEL.humano}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/*
-                    Bloque INFORMATIVO, de solo lectura. Documenta el invariante
-                    de handoff que gobierna la consola de conversaciones, para que
-                    quien configura el canal entienda por qué un mensaje de
-                    negocio no aparece en un hilo tomado por el bot. El
-                    invariante se aplica en los stores y no se puede editar
-                    desde aquí: exponer un interruptor sugeriría que la regla es
-                    opcional, y no lo es.
-                  */}
-                  <Alert
-                    variant="info"
-                    title="Cómo funciona el traspaso bot ↔ asesor"
-                    message="Mientras la atención está en modo bot, ningún mensaje del negocio entra al hilo: el cliente recibe solo respuestas automáticas. Al pasar a un asesor, el bot deja de responder y el hilo queda a cargo de esa persona. El traspaso se hace desde la consola de conversaciones, no desde esta página."
-                  />
-                </>
-              )}
-
-              {/* ───────────── AVISO DE PAUSA ───────────── */}
-              {seccion === "aviso" && (
-                <Card>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardHead>Aviso de pausa</CardHead>
-                    <Badge color="light" size="sm">
-                      Solo referencia
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Texto de referencia para el equipo. En este mock <strong>no se envía nada</strong>:
-                    sirve como guion del aviso que vería el cliente fuera de horario.
-                  </p>
-
-                  <div className="mt-4 border-t border-gray-100 pt-5 dark:border-white/5">
-                    <Label htmlFor="canal-pausa-mensaje">Mensaje del aviso</Label>
-                    <TextArea
-                      rows={3}
-                      placeholder="Estamos fuera de horario. Te responderemos en cuanto abramos."
-                      value={draft.plantillas.cancelado}
-                      onChange={(v) => setPlantillaVigilada(v)}
-                      maxLength={280}
-                      aria-label="Mensaje del aviso de pausa"
-                    />
-                    <p className="mt-1.5 text-xs text-gray-400">
-                      {draft.plantillas.cancelado.length}/280 caracteres.
-                    </p>
-                  </div>
-
-                  <div className="mt-4">
+                    {/* El invariante de handoff, que gobierna la consola. Es la
+                        explicación que hace falta para entender la diferencia
+                        entre este interruptor y el eje de atención por hilo. No
+                        se puede editar desde aquí: exponer un interruptor para la
+                        regla sugeriría que es opcional, y no lo es. */}
                     <Alert
                       variant="info"
-                      title="Fuera de horario"
-                      message={
-                        draft.horario.activo
-                          ? `El canal atiende ${draft.horario.dias.length} días, de ${draft.horario.apertura} a ${draft.horario.cierre}.`
-                          : "El horario de atención está desactivado, así que el canal no aplica ningún aviso por franja horaria."
-                      }
+                      title="Esto no es el eje de atención por conversación"
+                      message="Que un hilo lo lleve el bot o un asesor se decide conversación por conversación, desde la consola: «Tomar chat» y «Devolver al bot». Este interruptor es del canal entero: apagado, ningún hilo recibe respuesta automática —ni la del bot ni el aviso de fuera de horario—, ni siquiera los que lleva el bot. Mientras un hilo está en manos de un asesor, el bot no responde en él: el cliente recibe solo lo que escriba esa persona."
                     />
                   </div>
-                </Card>
+                </BloqueConfig>
+              )}
+
+              {/* ───────────── AVISO FUERA DE HORARIO ───────────── */}
+              {/*
+                Reescrita el 07/10. Antes se llamaba «Aviso de pausa», editaba
+                `plantillas.cancelado` —el MISMO campo que la fila «Cancelado» de
+                las plantillas, con lo que dos pantallas escribían un solo
+                valor— y su copy lo describía como un aviso «fuera de horario»
+                que no existía en el código. Tres defectos en una sección:
+                duplicaba un campo, mentía sobre cuándo se enviaba, y no enviaba
+                nada.
+
+                Ahora es el ajuste real que decía ser, sobre un campo propio
+                (`avisoFueraHorario`), y el puente
+                `pages/conversaciones/atencion.automatica.ts` lo envía de verdad.
+              */}
+              {seccion === "aviso" && (
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Lo que recibe el cliente que escribe con el negocio cerrado. Se envía una sola vez por racha: si vuelve a escribir sin que nadie le haya contestado, no se le repite."
+                >
+                  <div className="space-y-6">
+                    <CampoConfig
+                      etiqueta="Responder fuera de horario"
+                      ayuda="Usa el horario de la sección anterior. Con el horario desactivado, el negocio se considera abierto a cualquier hora y este aviso no se envía nunca."
+                      ancho="max-w-none"
+                    >
+                      <Switch
+                        checked={draft.avisoFueraHorario.activo}
+                        onChange={(v) => setAviso("activo", v)}
+                        color={SWITCH_COLOR}
+                        aria-label="Responder fuera de horario"
+                      />
+                    </CampoConfig>
+
+                    <CampoConfig
+                      etiqueta="Mensaje del aviso"
+                      htmlFor="canal-aviso-mensaje"
+                      ayuda="Sustituye a la respuesta del bot: el cliente recibe el aviso en lugar de la respuesta automática, no las dos."
+                      ancho="max-w-none"
+                    >
+                      <TextArea
+                        rows={3}
+                        placeholder="¡Gracias por escribirnos! Estamos fuera de horario; te respondemos en cuanto abramos."
+                        value={draft.avisoFueraHorario.mensaje}
+                        onChange={(v) => setAviso("mensaje", v)}
+                        maxLength={280}
+                        disabled={!draft.avisoFueraHorario.activo}
+                        aria-label="Mensaje del aviso fuera de horario"
+                      />
+                      <p className="mt-1.5 text-xs text-gray-400">
+                        {draft.avisoFueraHorario.mensaje.length}/280 caracteres.
+                      </p>
+                    </CampoConfig>
+
+                    {/* El estado del aviso se DERIVA de los tres hechos que lo
+                        gobiernan y se dice en presente: si no puede enviarse, el
+                        usuario lo sabe antes de guardar, no después de
+                        preguntarse por qué nadie contesta. */}
+                    <Alert
+                      variant={avisoEstado.variant}
+                      title={avisoEstado.title}
+                      message={avisoEstado.message}
+                    />
+                  </div>
+                </BloqueConfig>
               )}
 
               {/* ───────────── ALERTAS ───────────── */}
               {seccion === "alertas" && (
-                <Card>
-                  <CardHead>Alerta sonora</CardHead>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Sonido recurrente mientras haya clientes que requieren atención. Se puede
-                    silenciar temporalmente desde el modal de Clientes en Inicio.
-                  </p>
-
-                  <div className="mt-4">
-                    <div className={filaBase}>
-                      <Label2
-                        titulo="Alerta sonora"
-                        descripcion="Repite el aviso hasta que se atiendan los clientes pendientes."
-                      />
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Sonido recurrente mientras haya clientes que requieren atención. Se puede silenciar temporalmente desde el modal de Clientes en Inicio."
+                >
+                  <div className="space-y-6">
+                    <CampoConfig
+                      etiqueta="Alerta sonora"
+                      ayuda="Repite el aviso hasta que se atiendan los clientes pendientes."
+                      ancho="max-w-none"
+                    >
                       <Switch
                         checked={draft.alertaAtencion.activo}
                         onChange={(v) => setAlerta("activo", v)}
                         color={SWITCH_COLOR}
                         aria-label="Alerta sonora de clientes pendientes"
                       />
-                    </div>
+                    </CampoConfig>
 
-                    <div className={filaBase}>
-                      <Label2
-                        titulo="Repetir cada (segundos)"
-                        descripcion="Mínimo 5 s. Por defecto 30 s."
+                    <CampoConfig
+                      etiqueta="Repetir cada (segundos)"
+                      ayuda="Mínimo 5 s. Por defecto 30 s."
+                      htmlFor="canal-alerta-cada"
+                      ancho="w-32"
+                    >
+                      <Input
+                        id="canal-alerta-cada"
+                        type="number"
+                        value={draft.alertaAtencion.cadaSegundos}
+                        disabled={!draft.alertaAtencion.activo}
+                        onChange={(e) =>
+                          setAlerta("cadaSegundos", Math.max(5, Number(e.target.value) || 30))
+                        }
+                        aria-label="Segundos entre repeticiones de la alerta"
                       />
-                      <div className="w-32">
-                        <Input
-                          id="canal-alerta-cada"
-                          type="number"
-                          value={draft.alertaAtencion.cadaSegundos}
-                          disabled={!draft.alertaAtencion.activo}
-                          onChange={(e) =>
-                            setAlerta("cadaSegundos", Math.max(5, Number(e.target.value) || 30))
-                          }
-                          aria-label="Segundos entre repeticiones de la alerta"
-                        />
-                      </div>
-                    </div>
+                    </CampoConfig>
                   </div>
-                </Card>
+                </BloqueConfig>
               )}
 
               {/* ───────────── APARIENCIA ───────────── */}
               {seccion === "apariencia" && (
-                <Card>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardHead>Apariencia</CardHead>
+                <BloqueConfig
+                  icono={ICONO_SECCION[meta.icono]}
+                  pregunta={meta.pregunta}
+                  descripcion="Preferencias de esta interfaz. Se aplican al instante, no son ajustes del negocio y no viajan con la configuración del canal."
+                >
+                  <div className="mb-5">
                     <Badge color="light" size="sm">
                       Preferencia local
                     </Badge>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Preferencias de esta interfaz. No son ajustes del negocio y no viajan con la
-                    configuración del canal.
-                  </p>
 
-                  <div className="mt-4">
-                    <div className={filaBase}>
-                      <Label2
-                        titulo="Tema"
-                        descripcion="«Sistema» sigue la preferencia del sistema operativo sin imponer una."
-                      />
+                  <div className="space-y-6">
+                    <CampoConfig
+                      etiqueta="Tema"
+                      ayuda="«Sistema» sigue la preferencia del sistema operativo y se conserva al volver a esta pantalla."
+                      ancho="max-w-none"
+                    >
                       <Segmentado
                         ariaLabel="Tema de la interfaz"
                         opciones={OPCIONES_TEMA}
-                        valor={tema}
+                        valor={preferenciaTema}
                         onChange={aplicarTema}
                       />
-                    </div>
+                    </CampoConfig>
 
-                    <div className={filaBase}>
-                      <Label2
-                        titulo="Densidad de la bandeja"
-                        descripcion="Cuánto espacio ocupa cada hilo en la lista de conversaciones."
-                      />
+                    <CampoConfig
+                      etiqueta="Densidad de la bandeja"
+                      ayuda="Cuánto espacio ocupa cada hilo en la lista de conversaciones."
+                      ancho="max-w-none"
+                    >
                       <Segmentado
                         ariaLabel="Densidad de la bandeja"
                         opciones={OPCIONES_DENSIDAD}
-                        valor={densidad}
-                        onChange={setDensidad}
+                        valor={uiStore.densidadBandeja}
+                        onChange={(v) => uiStore.setDensidadBandeja(v)}
                       />
-                    </div>
+                    </CampoConfig>
                   </div>
-                </Card>
+                </BloqueConfig>
               )}
           </ConfigShell>
         </fieldset>

@@ -273,6 +273,8 @@ export interface PedidosConfig {
    * `activo` enciende/apaga el sonido; `cadaSegundos` calibra cada cuánto suena.
    */
   alertaAtencion: AlertaAtencion;
+  /** Aviso automático al cliente que escribe con el negocio cerrado. */
+  avisoFueraHorario: AvisoFueraHorario;
   /** Perfil comercial del negocio (ej. 'food', 'fashion', 'services', 'general'). */
   perfilComercial?: import("../domain/pedidos/pedidos.profiles.js").BusinessProfileType;
   /** Capacidades comerciales activas para la tienda */
@@ -333,6 +335,31 @@ export interface AlertaAtencion {
   activo: boolean;
   /** Cada cuántos segundos vuelve a sonar (por defecto 30). */
   cadaSegundos: number;
+}
+
+/**
+ * Aviso automático para el cliente que escribe con el negocio cerrado (07/10).
+ *
+ * ── Por qué vive aquí y no en el canal ────────────────────────────────────
+ *
+ * El disparador es el HORARIO (`horario`), que ya vive en esta config, y quien
+ * lo envía es el canal de conversaciones. Guardarlo junto a su disparador es lo
+ * que evita que los dos puedan discrepar.
+ *
+ * ── Qué reemplaza ─────────────────────────────────────────────────────────
+ *
+ * La sección «Aviso de pausa» de la configuración del canal editaba
+ * `plantillas.cancelado` —el MISMO campo que la fila «Cancelado»— mientras su
+ * copy lo describía como un aviso «fuera de horario». Las dos cosas eran
+ * falsas: no existía ningún aviso por horario, y el texto que se editaba ahí se
+ * enviaba al CANCELAR un pedido, no al cerrar el negocio. Este campo es el
+ * ajuste real que aquella sección decía ser.
+ */
+export interface AvisoFueraHorario {
+  /** ¿Se responde automáticamente al cliente que escribe fuera de horario? */
+  activo: boolean;
+  /** Texto que recibe el cliente. Vacío = no se envía nada. */
+  mensaje: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -421,6 +448,13 @@ const DEFAULT_CONFIG: PedidosConfig = {
   alertaAtencion: {
     activo: false,
     cadaSegundos: 30,
+  },
+  // Apagado de fábrica: un negocio que no ha configurado su horario no debe
+  // empezar a contestar «estamos cerrados» a nadie. Se enciende a conciencia.
+  avisoFueraHorario: {
+    activo: false,
+    mensaje:
+      "¡Gracias por escribirnos! Estamos fuera de horario; te respondemos en cuanto abramos.",
   },
   perfilComercial: "food",
   capacidadesActivas: [...BUSINESS_PROFILES.food.defaultCapabilities],
@@ -519,6 +553,14 @@ function loadConfig(): PedidosConfig {
           ...(parsed.alertaAtencion ?? {}),
           activo: false,
         },
+        // A diferencia de la alerta sonora, este NO se fuerza a `false` al
+        // cargar: no es un aviso que moleste a nadie en la máquina del
+        // operador, es lo que recibe el cliente, y apagarlo en cada arranque
+        // haría que el ajuste se deshiciera solo.
+        avisoFueraHorario: {
+          ...DEFAULT_CONFIG.avisoFueraHorario,
+          ...(parsed.avisoFueraHorario ?? {}),
+        },
         perfilComercial: perfil,
         capacidadesActivas: Array.isArray(parsed.capacidadesActivas)
           ? parsed.capacidadesActivas
@@ -541,6 +583,7 @@ function loadConfig(): PedidosConfig {
     plantillas: { ...DEFAULT_CONFIG.plantillas },
     horario: { ...DEFAULT_CONFIG.horario },
     alertaAtencion: { ...DEFAULT_CONFIG.alertaAtencion },
+    avisoFueraHorario: { ...DEFAULT_CONFIG.avisoFueraHorario },
     capacidadesActivas: [...DEFAULT_CONFIG.capacidadesActivas!],
     columnasPersonalizadas: undefined,
     datosBancarios: { ...DEFAULT_CONFIG.datosBancarios },

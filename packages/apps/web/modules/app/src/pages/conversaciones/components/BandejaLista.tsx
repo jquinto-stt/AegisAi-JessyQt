@@ -8,6 +8,7 @@ import { MoreDotIcon } from "@/icons";
 import { retardoEscalonado } from "@/utils";
 import { conversacionesStore, etiquetaEstado } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
+import { uiStore } from "@/shell/stores/ui.store";
 import type { FiltroBandeja, FiltroIntencion } from "@/stores/conversaciones.types";
 import {
   intencionDe,
@@ -47,6 +48,12 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
   const bandeja = conversacionesStore.bandeja;
   const filtroEstado = conversacionesStore.filtro;
   const seleccionadaId = conversacionesStore.seleccionadaId;
+
+  // Densidad de la lista (Configuración del canal → Apariencia). Es una
+  // preferencia REAL: se persiste en `uiStore` y esta lista la lee, que es lo
+  // que la distingue de un control que no cambia nada. El `observer` de arriba
+  // hace que al cambiarla en configuración la lista se reacomode sola.
+  const compacta = uiStore.densidadBandeja === "compacta";
 
   const listaFiltrada =
     filtroIntencion === "todas"
@@ -165,7 +172,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
             No se encontraron conversaciones.
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className={compacta ? "space-y-0.5" : "space-y-1"}>
             {listaFiltrada.map((conv, i) => {
               const seleccionada = seleccionadaId === conv.id;
               const preview = ultimoTexto(conv.id) || conv.contacto.telefono;
@@ -190,7 +197,9 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                   // entran las que vuelven a coincidir, que es justo lo que el
                   // usuario necesita ver aparecer.
                   style={{ animationDelay: retardoEscalonado(i) }}
-                  className={`animate-entrada-lista group flex cursor-pointer items-center gap-3 rounded-xl p-3 transition-colors ${
+                  className={`animate-entrada-lista group flex cursor-pointer items-center transition-colors ${
+                    compacta ? "gap-2.5 rounded-lg px-3 py-1.5" : "gap-3 rounded-xl p-3"
+                  } ${
                     seleccionada
                       ? "bg-gray-100/90 dark:bg-white/[0.08]"
                       : "hover:bg-gray-50 dark:hover:bg-white/[0.03]"
@@ -200,7 +209,7 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                     <CanalAvatar
                       canal={conv.canal}
                       nombre={conv.contacto.nombre}
-                      size="large"
+                      size={compacta ? "medium" : "large"}
                       status={statusDe(conv.estado)}
                     />
                   </div>
@@ -247,8 +256,18 @@ export const BandejaLista = observer(({ onToggle, bandejaExpandida = true }: Ban
                       </span>
                     </div>
 
-                    <div className="mt-0.5 flex items-center justify-between gap-2">
-                      <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                    <div
+                      className={
+                        compacta
+                          ? "mt-0 flex items-center justify-between gap-2"
+                          : "mt-0.5 flex items-center justify-between gap-2"
+                      }
+                    >
+                      <p
+                        className={`truncate text-gray-500 dark:text-gray-400 ${
+                          compacta ? "text-[11px]" : "text-xs"
+                        }`}
+                      >
                         {preview}
                       </p>
                       {conv.noLeidos > 0 && (

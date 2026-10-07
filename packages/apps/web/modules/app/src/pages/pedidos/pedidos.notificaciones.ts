@@ -36,8 +36,18 @@ import type { DesenlaceNovedad } from "./novedad.utils";
  * "hacia delante" que merezcan avisar al cliente (acaba de pedir; agradecerle
  * el pedido que él mismo hizo no aporta). El mapa es fail-closed: un estado que
  * no esté aquí no envía nada, en vez de enviar un texto por defecto inventado.
+ *
+ * ── Por qué está EXPORTADO (07/10) ────────────────────────────────────────
+ *
+ * Es el conjunto de plantillas que de verdad se envían, así que es el contrato
+ * que la configuración del canal debe ofrecer: una fila editable por cada clave
+ * de este mapa, y ninguna más. Estaba sin exportar, y por eso la página ofrecía
+ * también la fila «Recibido» —una clave que este mapa no usa— y el usuario
+ * podía editar un texto que no llegaba a ningún sitio. El test de exhaustividad
+ * de `FILAS_PLANTILLA` compara ahora contra este mapa, así que las dos listas no
+ * pueden volver a divergir.
  */
-const PLANTILLA_POR_ESTADO: Partial<Record<PedidoEstado, keyof typeof pedidosStore.config.plantillas>> = {
+export const PLANTILLA_POR_ESTADO: Partial<Record<PedidoEstado, keyof typeof pedidosStore.config.plantillas>> = {
   confirmado: "confirmado",
   en_preparacion: "enPreparacion",
   listo: "listo",

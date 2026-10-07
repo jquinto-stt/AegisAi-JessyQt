@@ -266,6 +266,15 @@ interface EstadoPersistido {
   conversaciones: Conversacion[];
   mensajesPorConv: Record<string, Mensaje[]>;
   eventosPorConv: Record<string, EventoSistema[]>;
+  /**
+   * Interruptor de respuestas automáticas del canal (07/10).
+   *
+   * Es OPCIONAL en el fichero a propósito: las sesiones guardadas antes de que
+   * existiera este ajuste no traen la clave, y su ausencia debe leerse como el
+   * valor de fábrica (`true`), no como `false`. Tratar «no está» como «apagado»
+   * apagaría el bot a todo el mundo al desplegar.
+   */
+  respuestasAutomaticas?: boolean;
 }
 
 /**
@@ -292,6 +301,9 @@ function loadEstado(): EstadoPersistido | null {
       conversaciones: parsed.conversaciones,
       mensajesPorConv: parsed.mensajesPorConv as Record<string, Mensaje[]>,
       eventosPorConv: parsed.eventosPorConv as Record<string, EventoSistema[]>,
+      ...(typeof parsed.respuestasAutomaticas === "boolean"
+        ? { respuestasAutomaticas: parsed.respuestasAutomaticas }
+        : {}),
     };
   } catch {
     // Entorno sin localStorage o JSON inválido: se opera con seed/memoria.
@@ -363,6 +375,8 @@ export class ConversacionesStore {
       this.conversaciones = persistido.conversaciones;
       this.mensajesPorConv = recordToMap(persistido.mensajesPorConv);
       this.eventosPorConv = recordToMap(persistido.eventosPorConv);
+      // Ausente en sesiones anteriores al 07/10 ⇒ valor de fábrica (encendido).
+      this.respuestasAutomaticas = persistido.respuestasAutomaticas ?? true;
     } else {
       this.cargarSeed(CONVERSACIONES_SEED);
     }
@@ -428,6 +442,27 @@ export class ConversacionesStore {
    * cuestan al cliente dos notificaciones.
    */
   enviandoMensaje = false;
+
+  /**
+   * ¿El canal responde por su cuenta? Es el interruptor «Atención automática»
+   * de la configuración del canal (07/10).
+   *
+   * ── Qué gobierna exactamente, y qué NO ───────────────────────────────────
+   *
+   * Gobierna la respuesta AUTOMÁTICA de esta aplicación: apagado, el bot deja
+   * de contestar a los mensajes que entran (`simularRespuestaBot` sale sin
+   * hacer nada) y el aviso de fuera de horario tampoco se envía, porque también
+   * es una respuesta automática. Es un interruptor de OPERACIÓN —se apaga
+   * mientras alguien revisa el canal, por ejemplo— y por eso se aplica al
+   * instante y no pasa por el borrador de la configuración.
+   *
+   * NO es el eje de atención por hilo (`Conversacion.atencion`). Aquel responde
+   * «¿quién lleva ESTE hilo?» y se cambia desde la consola con «Tomar chat» y
+   * «Devolver al bot»; este responde «¿responde el canal solo, en general?».
+   * Son dos preguntas distintas y por eso son dos campos distintos: derivar una
+   * de la otra haría imposible tener el canal en automático con un hilo tomado.
+   */
+  respuestasAutomaticas = true;
 
   /**
    * Carga el estado desde Supabase.
@@ -546,6 +581,7 @@ export class ConversacionesStore {
         conversaciones: this.conversaciones,
         mensajesPorConv: mapToRecord(this.mensajesPorConv),
         eventosPorConv: mapToRecord(this.eventosPorConv),
+        respuestasAutomaticas: this.respuestasAutomaticas,
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
     } catch {
@@ -976,7 +1012,26 @@ export class ConversacionesStore {
    * del bot y la conversación no está cerrada, dispara la respuesta automática
    * (Req 5.1); la lógica real la implementa la tarea 3.12.
    */
-  enviarComoCliente(convId: string, texto: string): void {
+  /**
+   * @param opciones.responderConBot
+   *   `false` para NO disparar la respuesta automática de este mensaje.
+   *
+   *   ── Por qué existe (07/10) ──────────────────────────────────────────────
+   *
+   *   El aviso de fuera de horario (`pages/conversaciones/atencion.automatica.ts`)
+   *   sustituye a la respuesta del bot: el cliente escribe con el negocio
+   *   cerrado y recibe UNA cosa, el aviso. Sin esta opción, el mensaje
+   *   dispararía el bot por el camino normal y el cliente recibiría dos
+   *   respuestas distintas a la vez — la del bot y el aviso —, que es peor que
+   *   no responder.
+   *
+   *   Por defecto `true`: el camino normal no cambia.
+   */
+  enviarComoCliente(
+    convId: string,
+    texto: string,
+    opciones?: { responderConBot?: boolean },
+  ): void {
     const conv = this.getConversacion(convId);
     if (!conv) return;
     if (texto.trim() === "") return; // vacío / solo espacios: no-op (Req 6.3)
@@ -987,10 +1042,28 @@ export class ConversacionesStore {
     conv.ultimaActividad = nowIso();
     this.persistir();
 
-    if (conv.atencion === "bot" && conv.estado !== "cerrada") {
+    if (
+      opciones?.responderConBot !== false &&
+      conv.atencion === "bot" &&
+      conv.estado !== "cerrada"
+    ) {
       // async fire-and-forget: la respuesta del bot es un efecto posterior.
       void this.simularRespuestaBot(convId);
     }
+  }
+
+  /**
+   * Enciende o apaga las respuestas automáticas del canal y lo persiste.
+   *
+   * La escritura es inmediata y no pasa por el borrador de la configuración: es
+   * un interruptor de operación, y quien lo pulsa espera que el canal deje de
+   * contestar YA, no después de guardar. Se persiste para que sobreviva a una
+   * recarga — un interruptor que se deshace solo al recargar es un control que
+   * miente.
+   */
+  setRespuestasAutomaticas(activo: boolean): void {
+    this.respuestasAutomaticas = activo;
+    this.persistir();
   }
 
   /**
@@ -1318,6 +1391,10 @@ export class ConversacionesStore {
   async simularRespuestaBot(convId: string): Promise<void> {
     const conv = this.getConversacion(convId);
     if (!conv) return;
+    // Interruptor del canal (07/10): con las respuestas automáticas apagadas el
+    // bot no contesta en NINGÚN hilo. Es la guarda que hace real el ajuste de
+    // «Atención automática»: sin ella, el interruptor no cambiaría nada.
+    if (!this.respuestasAutomaticas) return;
     if (conv.atencion !== "bot") return; // solo el bot responde en modo bot (Req 5.1)
     if (conv.estado === "cerrada") return; // no responder en conversación cerrada
 

@@ -1,5 +1,6 @@
 import type { SwitchColor } from "@/elements/form/switch";
 import type { BadgeColor } from "@/elements/ui/badge";
+import type { DensidadBandeja } from "@/shell/stores/ui.store";
 import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -19,13 +20,54 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //   patrón que `ESTADO_CONVERSACION_LABEL` / `PLANTILLA_META` en el resto del
 //   proyecto: el vocabulario se declara junto al tipo que lo define.
 //
+// ── REVISIÓN DEL 07/10: SE RETIRAN LAS SECCIONES QUE NO AJUSTAN NADA ──────
+//
+// La página tenía OCHO secciones y dos de ellas —«Perfil del canal» y
+// «Automatización y escalado»— no contenían ni un solo control: eran tres
+// lecturas y dos conteos. Una pantalla de CONFIGURACIÓN que dedica el 25 % de su
+// navegación a datos que no se pueden cambiar no es una pantalla de
+// configuración: es un panel informativo con un botón de guardar al lado. El
+// usuario lo dijo así: «actualmente configuración de conversación solo da
+// información y no es real».
+//
+// Lo que se hizo con ese contenido, y por qué NO se borró sin más:
+//
+//   · El número y el nombre del canal son IDENTIDAD: siguen visibles, pero en
+//     la CABECERA de la página (son el contexto de todo lo que se ajusta
+//     debajo), no como una sección que hay que abrir para leer tres líneas.
+//   · Los conteos de atención (hilos del bot / con asesor) viven en la consola
+//     de conversaciones, que es donde se actúa sobre ellos. Repetirlos aquí
+//     era un informe dentro de un formulario.
+//
+// Y en su lugar entra `atencion`, que sí ajusta algo real: si el canal responde
+// solo. Ver `META_SECCION.atencion`.
+//
+// ── REVISIÓN DEL 07/10: LOS RÓTULOS DEJAN DE MENTIR ──────────────────────
+//
+// Tres controles afirmaban algo falso y se corrigieron contra el código:
+//
+//   1. «Plantillas de mensaje» decía «Solo referencia · No se envía nada». Es
+//      FALSO: `pages/pedidos/pedidos.notificaciones.ts` publica la plantilla en
+//      el hilo del cliente cada vez que un pedido cambia de estado. El rótulo
+//      se corrige a lo que de verdad ocurre.
+//   2. «Aviso de pausa» editaba `plantillas.cancelado` —el MISMO campo que la
+//      fila «Cancelado»— y lo presentaba como un aviso «fuera de horario» que
+//      no existía en ninguna parte del código. Se convierte en el ajuste REAL
+//      que decía ser: un aviso que sí se envía, y solo cuando el negocio está
+//      cerrado (`avisoFueraHorario`).
+//   3. La fila «Recibido» de las plantillas era un control muerto:
+//      `PLANTILLA_POR_ESTADO` excluye los estados de entrada, así que editar ese
+//      texto no llegaba nunca a ningún sitio. Se retira de la tabla (ver
+//      `FILAS_PLANTILLA`).
+//
 // ALCANCE (lo que esta página NO es):
 //   La app es un mock 100 % frontend sin backend. NO existen —y por tanto NO se
 //   muestran— facturación, plan, créditos, claves de API, memoria del asistente,
 //   modelos, conectores ni control de datos. Cada sección de abajo se apoya en
-//   un campo REAL de `pedidosStore.config` o se declara explícitamente como
-//   preferencia local de interfaz. Inventar un valor de negocio para llenar una
-//   tarjeta sería un defecto, no una funcionalidad.
+//   un campo REAL de `pedidosStore.config` o de `conversacionesStore` —o se
+//   declara explícitamente como preferencia local de interfaz— y tiene un
+//   efecto comprobable. Inventar un valor de negocio para llenar una tarjeta
+//   sería un defecto, no una funcionalidad.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SECCIONES
@@ -37,11 +79,10 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
  * una sección sin darle grupo o metadatos es un error de compilación.
  */
 export type SeccionCanal =
-  | "perfil"
   | "modulos"
   | "plantillas"
   | "horario"
-  | "automatizacion"
+  | "atencion"
   | "aviso"
   | "alertas"
   | "apariencia";
@@ -69,6 +110,25 @@ export interface MetaSeccion {
   label: string;
   /** Descripción de una línea bajo el título del panel. */
   hint: string;
+  /**
+   * Pregunta que titula el bloque de contenido, en el lenguaje de
+   * `BloqueConfig`.
+   *
+   * ── Por qué una PREGUNTA y no un rótulo ─────────────────────────────────
+   *
+   * El panel de una sección agrupaba tarjetas con un título corto («Identidad
+   * del canal», «Pausa del canal»), y el resultado era un volcado de filas: no
+   * se sabía qué decisión tomaba el usuario en esa pantalla. Un bloque titulado
+   * con una pregunta obliga a que el contenido CONTESTE algo, y deja fuera lo
+   * que no contesta nada — que era la mitad de las filas.
+   *
+   * Es el mismo criterio que ya rige en `configuracion` y en `equipo`, donde el
+   * bloque se titula con la pregunta del usuario y no con el nombre del grupo.
+   *
+   * Vive aquí y no en el JSX por la razón de siempre: escrita a mano en la
+   * página, la pregunta de una sección podría contradecir su `hint`.
+   */
+  pregunta: string;
   /** Grupo al que pertenece. */
   grupo: GrupoSeccionCanal;
   /**
@@ -84,7 +144,6 @@ export interface MetaSeccion {
 
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
 export type IconoSeccion =
-  | "ChatIcon"
   | "PlugInIcon"
   | "DocsIcon"
   | "TimeIcon"
@@ -99,63 +158,134 @@ export type IconoSeccion =
  * navegación sea una edición explícita y no un efecto colateral de mover líneas.
  */
 export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
-  perfil: {
-    label: "Perfil del canal",
-    hint: "Identidad del canal y disponibilidad para atender.",
-    grupo: "canal",
-    icono: "ChatIcon",
-  },
   modulos: {
     label: "Módulos conectados",
     hint: "Módulos del negocio integrados con el canal de WhatsApp.",
+    pregunta: "¿Qué módulos acompañan al canal?",
     grupo: "canal",
     icono: "PlugInIcon",
   },
   plantillas: {
     label: "Plantillas de mensaje",
-    hint: "Guion sugerido para cada transición del pipeline. Solo referencia.",
+    hint: "El texto que recibe el cliente cuando su pedido cambia de estado.",
+    pregunta: "¿Qué le escribes al cliente en cada paso?",
     grupo: "canal",
     icono: "DocsIcon",
   },
   horario: {
     label: "Horario de atención",
     hint: "Días y horas en que el canal atiende pedidos.",
+    pregunta: "¿A qué horas atiende tu canal?",
     grupo: "canal",
     icono: "TimeIcon",
   },
-  automatizacion: {
-    label: "Automatización y escalado",
-    hint: "Quién responde y cómo se pasa el hilo a un asesor.",
+  atencion: {
+    label: "Atención automática",
+    hint: "Si el canal responde solo mientras nadie lo está atendiendo.",
+    pregunta: "¿Responde el canal por su cuenta?",
     grupo: "mensajeria",
     icono: "BoltIcon",
   },
   aviso: {
-    label: "Aviso de pausa",
-    hint: "Mensaje que ve el cliente mientras la atención está en pausa.",
+    label: "Aviso fuera de horario",
+    hint: "Lo que recibe el cliente que escribe con el negocio cerrado.",
+    pregunta: "¿Qué le dices al cliente que escribe fuera de horario?",
     grupo: "mensajeria",
     icono: "InfoIcon",
   },
   alertas: {
     label: "Alertas",
     hint: "Aviso sonoro cuando hay clientes que requieren atención.",
+    pregunta: "¿Cómo te avisamos de un cliente esperando?",
     grupo: "mensajeria",
     icono: "AlertIcon",
   },
   apariencia: {
     label: "Apariencia",
     hint: "Preferencias locales de la interfaz. No afectan a datos del negocio.",
+    pregunta: "¿Cómo quieres ver la interfaz?",
     grupo: "preferencias",
     icono: "EyeIcon",
   },
 };
 
-/** Orden de las secciones dentro de la navegación. */
-export const ORDEN_SECCIONES: SeccionCanal[] = [
-  "perfil",
+/**
+ * Secciones cuyo contenido escribe en el BORRADOR y por tanto necesitan el pie
+ * de «Descartar / Guardar cambios».
+ *
+ * ── Por qué esta lista existe, y qué defecto corrige ──────────────────────
+ *
+ * El pie se pintaba en las ocho secciones, sin condición. En «Automatización y
+ * escalado» —cuyo contenido eran dos conteos y una leyenda, cero controles— y
+ * en «Perfil del canal» —cuyo único control era un campo de solo lectura—
+ * ofrecía «Guardar cambios» sobre algo que no se puede cambiar. Un botón que no
+ * guarda nada es exactamente la superficie que este proyecto rechaza. Esas dos
+ * secciones ya no existen (07/10); la lista se mantiene porque el motivo sigue
+ * vigente para las dos que quedan fuera.
+ *
+ * Quedan FUERA las dos que NO escriben en el borrador:
+ *   · `atencion`   — se aplica AL INSTANTE: es un interruptor de operación, no
+ *                    un ajuste con borrador. Pulsarlo cambia el comportamiento
+ *                    del canal en ese momento.
+ *   · `apariencia` — preferencia local: también se aplica al instante.
+ *
+ * Las dos siguen siendo alcanzables y siguen mostrando su contenido; lo que no
+ * hacen es prometer un guardado que no existe.
+ */
+export const SECCIONES_CON_PIE_DE_GUARDADO: readonly SeccionCanal[] = [
   "modulos",
   "plantillas",
   "horario",
-  "automatizacion",
+  "aviso",
+  "alertas",
+];
+
+/**
+ * Las secciones que NO llevan pie de guardado. Se DERIVA de la lista de arriba
+ * en vez de escribirse otra vez, para que las dos no puedan discrepar.
+ */
+type SeccionSinGuardado = Exclude<
+  SeccionCanal,
+  (typeof SECCIONES_CON_PIE_DE_GUARDADO)[number]
+>;
+
+/**
+ * Qué se le dice al usuario donde no hay botón de guardar.
+ *
+ * El silencio no vale: quitar el pie sin explicar por qué deja al usuario
+ * buscando el botón que ya no está. Cada nota dice **por qué** esa sección no
+ * se guarda desde aquí y **dónde** se cambia lo que muestra.
+ *
+ * El tipo es `Record` sobre las secciones sin pie, así que añadir una sección
+ * nueva y olvidar su nota es un error de compilación — no una pantalla que
+ * pierde el pie sin decir nada.
+ */
+export const NOTA_SIN_GUARDADO: Record<SeccionSinGuardado, string> = {
+  atencion:
+    "Este interruptor se aplica al instante: apaga o enciende las respuestas automáticas de todo el canal en el momento en que lo pulsas, sin pasar por Guardar. El traspaso de un hilo concreto entre el bot y un asesor se hace desde la consola de conversaciones.",
+  apariencia:
+    "Los cambios de apariencia se aplican al instante y no viajan con la configuración del canal: son una preferencia de esta interfaz.",
+};
+
+/**
+ * Nota de una sección, o `null` si esa sección sí se guarda.
+ *
+ * Existe para que la página no tenga que estrechar el tipo a mano: la única
+ * conversión entre `SeccionCanal` y `SeccionSinGuardado` vive aquí, junto a las
+ * dos tablas que la hacen cierta, y no repartida por el JSX.
+ */
+export function notaSinGuardado(seccion: SeccionCanal): string | null {
+  return seccion in NOTA_SIN_GUARDADO
+    ? NOTA_SIN_GUARDADO[seccion as SeccionSinGuardado]
+    : null;
+}
+
+/** Orden de las secciones dentro de la navegación. */
+export const ORDEN_SECCIONES: SeccionCanal[] = [
+  "modulos",
+  "plantillas",
+  "horario",
+  "atencion",
   "aviso",
   "alertas",
   "apariencia",
@@ -176,24 +306,31 @@ export function seccionesPorGrupo(): { grupo: GrupoSeccionCanal; secciones: Secc
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PLANTILLAS — una fila por transición del pipeline
+// PLANTILLAS — una fila por transición que REALMENTE se envía
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Fila editable por cada plantilla del pipeline, en el ORDEN del pipeline.
+ * Fila editable por cada plantilla que el canal ENVÍA de verdad, en el ORDEN
+ * del pipeline.
  *
- * `key` es `keyof PlantillasWhatsApp`, no un string libre: si mañana se añade
- * una transición a `PedidosConfig.plantillas`, esta tabla queda incompleta y el
- * test de exhaustividad falla. Es la garantía de que la página no se olvide de
- * una plantilla nueva — el defecto silencioso que este catálogo existe para
- * impedir.
+ * ── Por qué NO están las siete claves del modelo (07/10) ──────────────────
  *
- * `estado` es la clave del pipeline (`PedidoEstado`) que corresponde a cada
- * plantilla, para poder contrastar la fila contra el vocabulario de Pedidos sin
- * reescribir la etiqueta.
+ * `PlantillasWhatsApp` tiene siete claves, pero `PLANTILLA_POR_ESTADO`
+ * (`pages/pedidos/pedidos.notificaciones.ts`) mapea SEIS estados: `recibido`
+ * queda fuera porque corresponde a los estados de ENTRADA (`nuevo`,
+ * `programado`), y esos no avisan — el cliente acaba de pedir y agradecerle el
+ * pedido que él mismo hizo no aporta.
+ *
+ * La consecuencia era un control que mentía: la fila «Recibido» se podía
+ * editar, se guardaba, y su texto no llegaba nunca a ningún hilo. Ofrecer un
+ * campo cuyo valor no tiene destino es peor que no ofrecerlo.
+ *
+ * `key` sigue siendo `keyof PlantillasWhatsApp` (no un string libre), así que
+ * una clave mal escrita es un error de compilación. Lo que el test comprueba
+ * ahora es la igualdad con el conjunto que el puente envía, que es la fuente
+ * que de verdad decide: si mañana se añade una transición, el test cae.
  */
 export const FILAS_PLANTILLA: { key: keyof PlantillasWhatsApp; label: string }[] = [
-  { key: "recibido", label: "Recibido" },
   { key: "confirmado", label: "Confirmado" },
   { key: "enPreparacion", label: "En preparación" },
   { key: "listo", label: "Listo" },
@@ -227,13 +364,18 @@ export const DIAS_ATENCION: { d: number; label: string; largo: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Tema de la interfaz. Tres estados: claro, oscuro y **sistema**.
+ * Tema de la interfaz, en el vocabulario de ESTA pantalla (español).
  *
- * El store de shell (`uiStore`) solo modela `light | dark`; "sistema" es un
- * estado de la PREFERENCIA (qué eligió el usuario) que no coincide con el tema
- * EFECTIVO (cuál está aplicado). La página mantiene la preferencia y resuelve el
- * tema efectivo antes de escribir en `uiStore.setTheme`. No se amplía el store
- * del shell para no cambiar un contrato compartido por toda la app.
+ * Es el vocabulario de ESTA pantalla (español) para el mismo concepto que el
+ * store llama `light | dark | system`. La traducción vive en la página, en dos
+ * tablas de una línea, porque es una frontera entre dos vocabularios y no una
+ * decisión repartida por el JSX.
+ *
+ * Desde el 07/10 el store SÍ recuerda la preferencia, así que «Sistema»
+ * significa algo comprobable: sigue al sistema operativo y se conserva al
+ * recargar. Antes era un `useState` que volvía a «Sistema» en cada visita
+ * aunque el tema aplicado fuera otro — el control decía una cosa y el tema
+ * aplicado era otra.
  */
 export type PreferenciaTema = "claro" | "oscuro" | "sistema";
 
@@ -243,8 +385,14 @@ export const OPCIONES_TEMA: { value: PreferenciaTema; label: string }[] = [
   { value: "sistema", label: "Sistema" },
 ];
 
-/** Densidad de la bandeja de conversaciones. */
-export type DensidadBandeja = "compacta" | "comoda";
+/**
+ * Densidad de la lista de conversaciones.
+ *
+ * Es una preferencia REAL desde el 07/10: se persiste en `uiStore` y
+ * `BandejaLista` la lee para cambiar el espaciado de cada hilo. Antes era un
+ * `useState` local que nadie leía: pulsar «Compacta» no cambiaba nada.
+ */
+export type { DensidadBandeja };
 
 export const OPCIONES_DENSIDAD: { value: DensidadBandeja; label: string }[] = [
   { value: "compacta", label: "Compacta" },
@@ -256,20 +404,37 @@ export const OPCIONES_DENSIDAD: { value: DensidadBandeja; label: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Estado de conexión del canal. Se declara como unión + catálogo, no como un
- * booleano suelto, porque la presentación (etiqueta y color) necesita un sitio
- * donde vivir y ese sitio no es el JSX.
+ * Estado de atención del canal AHORA MISMO.
+ *
+ * Se DERIVA de `pedidosStore.estaAbierto()` y no de un campo propio: no hay un
+ * booleano «conectado» en el modelo y no se inventa uno, porque un segundo
+ * booleano sería un sitio más donde afirmar lo mismo que ya dice el horario, y
+ * los dos podrían divergir.
+ *
+ * ── Por qué no se llama «pausado» (corregido el 07/10) ────────────────────
+ *
+ * La versión anterior derivaba el estado de `horario.activo` y rotulaba el caso
+ * falso como «Atención en pausa». Eso era exactamente al revés: con el horario
+ * DESACTIVADO el canal atiende a cualquier hora, así que «en pausa» describía
+ * lo contrario de lo que pasaba. Los dos estados son ahora los dos estados
+ * reales de `estaAbierto()`: atiende, o está fuera de horario.
  */
-export type EstadoCanal = "conectado" | "pausado";
+export type EstadoCanal = "atendiendo" | "fuera_horario";
 
 export const ESTADO_CANAL_LABEL: Record<EstadoCanal, string> = {
-  conectado: "Conectado",
-  pausado: "Atención en pausa",
+  atendiendo: "Atendiendo ahora",
+  fuera_horario: "Fuera de horario",
 };
 
+/**
+ * Colores de la píldora. «Fuera de horario» va en `light` y NO en `warning`:
+ * estar cerrado a las 3 de la mañana es el funcionamiento normal del negocio,
+ * no una alarma. El naranja de `warning` es la rampa de la marca y convertiría
+ * una situación prevista en una incidencia.
+ */
 export const ESTADO_CANAL_BADGE: Record<EstadoCanal, BadgeColor> = {
-  conectado: "success",
-  pausado: "warning",
+  atendiendo: "success",
+  fuera_horario: "light",
 };
 
 /** Estado de integración de los módulos del negocio con el canal. */
@@ -289,4 +454,3 @@ export const ESTADO_INTEGRACION_BADGE: Record<EstadoIntegracionCanal, BadgeColor
 
 /** Color de la pista del `Switch` cuando está encendido, por contexto de uso. */
 export const SWITCH_COLOR: SwitchColor = "blue";
-

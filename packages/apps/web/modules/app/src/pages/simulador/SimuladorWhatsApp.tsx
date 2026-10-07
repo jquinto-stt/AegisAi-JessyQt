@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
 import { inicialesDe } from "@/utils";
 import { conversacionesStore } from "@/stores/conversaciones.store";
+import { clienteEscribe } from "@/pages/conversaciones/atencion.automatica";
 import type {
   Conversacion,
   ItemLineaTiempo,
@@ -187,7 +188,10 @@ const ConversacionActiva = observer(({ conv }: { conv: Conversacion }) => {
       return;
     }
 
-    conversacionesStore.enviarComoCliente(conv.id, texto);
+    // El envío pasa por el puente de atención automática y NO directo por el
+    // store: es el único sitio que sabe si el negocio está cerrado y hay que
+    // responder con el aviso fuera de horario en lugar de con el bot.
+    clienteEscribe(conv.id, texto);
     setTexto("");
     setError(null);
 

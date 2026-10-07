@@ -65,17 +65,35 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 8 secciones del diseño", () => {
+  it("la página tiene exactamente las 7 secciones que ajustan algo", () => {
     expect(ORDEN_SECCIONES).toEqual([
-      "perfil",
       "modulos",
       "plantillas",
       "horario",
-      "automatizacion",
+      "atencion",
       "aviso",
       "alertas",
       "apariencia",
     ]);
+  });
+
+  it("las dos secciones de solo lectura siguen retiradas (07/10)", () => {
+    // «Perfil del canal» (tres lecturas) y «Automatización y escalado» (dos
+    // conteos) no contenían ni un control: el 25 % de la navegación de una
+    // pantalla de configuración llevaba a un panel que no se puede ajustar. La
+    // identidad del canal vive ahora en la CABECERA de la página y los conteos
+    // de atención en la consola, que es donde se actúa sobre ellos.
+    //
+    // Se afirma la AUSENCIA a propósito: sin esta comprobación, volver a
+    // añadirlas pasaría desapercibido mientras el resto de la suite sigue verde.
+    const claves: string[] = ORDEN_SECCIONES;
+    expect(claves).not.toContain("perfil");
+    expect(claves).not.toContain("automatizacion");
+  });
+
+  it("la sección nueva de atención existe y está en el grupo de mensajería", () => {
+    expect(ORDEN_SECCIONES).toContain("atencion");
+    expect(META_SECCION.atencion.grupo).toBe("mensajeria");
   });
 
   it("toda sección tiene etiqueta y descripción no vacías", () => {
@@ -86,21 +104,23 @@ describe("Catálogo de secciones del canal", () => {
   });
 });
 
-describe("Plantillas de mensaje — exhaustividad sobre el pipeline", () => {
-  it("FILAS_PLANTILLA cubre TODAS las claves de PlantillasWhatsApp", () => {
-    // El tipo de la clave se comprueba en compilación; aquí se comprueba que la
-    // tabla no se quede corta cuando el modelo crezca.
-    const enFilas = FILAS_PLANTILLA.map((f) => f.key).sort();
-    const esperadas: (keyof PlantillasWhatsApp)[] = [
-      "recibido",
-      "confirmado",
-      "enPreparacion",
-      "listo",
-      "enCamino",
-      "entregado",
-      "cancelado",
-    ];
-    expect(enFilas).toEqual([...esperadas].sort());
+describe("Plantillas de mensaje — exhaustividad sobre lo que se ENVÍA", () => {
+  it("FILAS_PLANTILLA es exactamente el conjunto de plantillas que el puente envía", async () => {
+    // La fuente que decide qué se envía es `PLANTILLA_POR_ESTADO`
+    // (`pedidos.notificaciones.ts`). Se compara contra ella y NO contra una
+    // lista escrita aquí: una lista escrita en el test sería una tercera copia
+    // de la misma decisión y podría quedarse corta sin que nadie lo note — que
+    // es exactamente el defecto que este test cierra.
+    const { PLANTILLA_POR_ESTADO } = await import("@/pages/pedidos/pedidos.notificaciones");
+    const envia = Object.values(PLANTILLA_POR_ESTADO).sort();
+    expect(FILAS_PLANTILLA.map((f) => f.key).sort()).toEqual(envia);
+  });
+
+  it("la fila «Recibido» ya no se ofrece: su texto no lo envía nadie (07/10)", () => {
+    // `recibido` corresponde al estado de ENTRADA (`nuevo`), y el puente no
+    // avisa en los estados de entrada. Ofrecer el campo era un control muerto:
+    // se editaba, se guardaba y su texto no llegaba nunca a un hilo.
+    expect(FILAS_PLANTILLA.map((f) => f.key)).not.toContain("recibido");
   });
 
   it("no hay plantilla repetida (cada transición se edita en una sola fila)", () => {
@@ -115,10 +135,18 @@ describe("Plantillas de mensaje — exhaustividad sobre el pipeline", () => {
   });
 
   it("el orden de las filas sigue el pipeline del dominio", () => {
-    // `recibido` (nuevo) primero y `cancelado` (terminal alternativo) último: si
-    // alguien reordena la tabla, el orden deja de contar la historia del pedido.
-    expect(FILAS_PLANTILLA[0].key).toBe("recibido");
+    // Del primer aviso tras confirmar hasta el desenlace: `confirmado` abre y
+    // `cancelado` (terminal alternativo) cierra. Si alguien reordena la tabla,
+    // el orden deja de contar la historia del pedido.
+    expect(FILAS_PLANTILLA[0].key).toBe("confirmado");
     expect(FILAS_PLANTILLA[FILAS_PLANTILLA.length - 1].key).toBe("cancelado");
+  });
+
+  it("toda clave de la tabla existe de verdad en el modelo de plantillas", () => {
+    // El tipo `keyof PlantillasWhatsApp` lo garantiza en compilación; esto deja
+    // escrito que la tabla no puede inventarse una clave.
+    const claves: (keyof PlantillasWhatsApp)[] = FILAS_PLANTILLA.map((f) => f.key);
+    expect(claves.length).toBeGreaterThan(0);
   });
 });
 
@@ -159,14 +187,24 @@ describe("Preferencias locales de UI", () => {
 
 describe("Estado del canal", () => {
   it("cada estado tiene etiqueta y color de badge", () => {
-    for (const e of ["conectado", "pausado"] as const) {
+    for (const e of ["atendiendo", "fuera_horario"] as const) {
       expect(ESTADO_CANAL_LABEL[e].trim()).not.toBe("");
       expect(ESTADO_CANAL_BADGE[e]).toBeTruthy();
     }
   });
 
   it("los dos estados se distinguen visualmente (no comparten color)", () => {
-    expect(ESTADO_CANAL_BADGE.conectado).not.toBe(ESTADO_CANAL_BADGE.pausado);
+    expect(ESTADO_CANAL_BADGE.atendiendo).not.toBe(ESTADO_CANAL_BADGE.fuera_horario);
+  });
+
+  it("«fuera de horario» NO se pinta como alarma (07/10)", () => {
+    // Estar cerrado a las tres de la mañana es el funcionamiento normal del
+    // negocio. El rótulo anterior —«Atención en pausa»— además describía lo
+    // contrario de lo que pasaba: se derivaba de `horario.activo === false`, y
+    // con el horario DESACTIVADO el canal atiende a cualquier hora.
+    expect(ESTADO_CANAL_LABEL.fuera_horario).toBe("Fuera de horario");
+    expect(ESTADO_CANAL_LABEL.atendiendo).toBe("Atendiendo ahora");
+    expect(ESTADO_CANAL_BADGE.fuera_horario).not.toBe("warning");
   });
 });
 
