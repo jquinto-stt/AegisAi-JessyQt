@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
@@ -27,8 +27,13 @@ const BRAND_MESSAGES_PERFIL = [
 
 export const PerfilOnboardingPage = observer(() => {
   const navigate = useNavigate();
-  const usuarioActual = organizacionStore.usuario;
 
+  useEffect(() => {
+    // Redirección fluida al onboarding unificado del Workspace para evitar pedir el país dos veces
+    navigate("/onboarding/organizacion", { replace: true });
+  }, [navigate]);
+
+  const usuarioActual = organizacionStore.usuario;
   const [pais, setPais] = useState(usuarioActual?.pais || "Colombia");
 
   const handleSubmit = (e?: React.FormEvent) => {

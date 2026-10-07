@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import {
   ArrowRightIcon,
+  BuildingStorefrontIcon,
   ChatBubbleOvalLeftIcon,
   CubeIcon,
   PlusIcon,
@@ -166,15 +167,23 @@ export const ModulosPage = observer(() => {
           {/* Cabecera de la organización */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-6 dark:border-gray-800">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold text-ink-title dark:bg-brand-500/10 dark:text-brand-300 mb-2">
-                <span className="size-2 rounded-full bg-brand-500" />
-                {org?.nombre || "Mi Organización"} · {org?.moneda || "COP"}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <div className="inline-flex items-center gap-2 rounded-full bg-secondary-50 px-3 py-1 text-xs font-semibold text-ink-title dark:bg-brand-500/10 dark:text-brand-300">
+                  <span className="size-2 rounded-full bg-brand-500" />
+                  {org?.nombre || "Mi Organización"} · {org?.moneda || "COP"}
+                </div>
+                {organizacionStore.sedeActiva && (
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-2xs dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                    <BuildingStorefrontIcon className="size-3.5 text-secondary-600 dark:text-accent-300" />
+                    <span>Sede: <strong>{organizacionStore.sedeActiva.nombre}</strong></span>
+                  </div>
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
                 Módulos del Negocio
               </h1>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Gestiona las aplicaciones operativas activas en tu organización.
+                Gestiona las aplicaciones operativas activas en tu organización y sedes.
               </p>
             </div>
 

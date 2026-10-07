@@ -21,8 +21,8 @@ interface PublicPageLayoutProps {
   contentWidth?: "prose" | "wide";
   /** Banda del hero compacta. */
   compactHero?: boolean;
-  /** Color de la banda hero: 'green' (#17B363 para documentos legales) o 'orange' (#FF3F1A de marca). */
-  heroColor?: "orange" | "green";
+  /** Color de la banda hero: 'blue' (#190088 oficial), 'green' (#17B363 legal) o 'orange'. */
+  heroColor?: "blue" | "green" | "orange";
   children: React.ReactNode;
 }
 
@@ -37,7 +37,7 @@ export default function PublicPageLayout({
   heroExtra,
   contentWidth = "wide",
   compactHero = false,
-  heroColor = "orange",
+  heroColor = "blue",
   children,
 }: PublicPageLayoutProps) {
   const navigate = useNavigate();
@@ -52,20 +52,26 @@ export default function PublicPageLayout({
         "flex min-h-screen flex-col bg-white text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100",
         heroColor === "green"
           ? "selection:bg-[#17b363] selection:text-white"
-          : "selection:bg-brand-500 selection:text-white"
+          : heroColor === "orange"
+          ? "selection:bg-brand-500 selection:text-white"
+          : "selection:bg-[#190088] selection:text-white"
       )}
     >
       <section
         className={cn(
           "relative overflow-hidden px-5 pt-6 text-white sm:px-10 lg:px-16",
-          heroColor === "green" ? "bg-[#17b363]" : "bg-brand-500",
+          heroColor === "green"
+            ? "bg-[#17b363]"
+            : heroColor === "orange"
+            ? "bg-brand-500"
+            : "bg-[#190088]",
           compactHero ? "pb-10" : "pb-14"
         )}
       >
         <InteractiveDotGrid dotGap={26} baseRadius={1.5} activeRadius={3.0} glowDistance={150} />
-        <DecorativeCircles variant="brand" />
+        <DecorativeCircles variant={heroColor === "blue" ? "indigo" : "brand"} />
 
-        <div className="relative z-10 mx-auto w-full max-w-5xl">
+        <div className={cn("relative z-10 mx-auto w-full", contentWidth === "wide" ? "max-w-6xl" : "max-w-5xl")}>
           <div className="flex items-center justify-between gap-4">
             <img src="/images/logo/necto-full-pure-white.svg" alt="Necto" className="h-7 w-auto" />
 
@@ -97,7 +103,7 @@ export default function PublicPageLayout({
         <div
           className={cn(
             "mx-auto w-full px-5 py-14 sm:px-10",
-            contentWidth === "prose" ? "max-w-4xl lg:px-8" : "max-w-5xl lg:px-16"
+            contentWidth === "prose" ? "max-w-4xl lg:px-8" : "max-w-6xl lg:px-10"
           )}
         >
           {children}
@@ -105,7 +111,7 @@ export default function PublicPageLayout({
       </main>
 
       <footer className="border-t border-gray-100 bg-white px-5 py-8 sm:px-10 lg:px-16 dark:border-gray-800 dark:bg-gray-950">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className={cn("mx-auto flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between", contentWidth === "wide" ? "max-w-6xl" : "max-w-5xl")}>
           <NectoLogo size="xs" />
           <LegalFooterLinks />
         </div>

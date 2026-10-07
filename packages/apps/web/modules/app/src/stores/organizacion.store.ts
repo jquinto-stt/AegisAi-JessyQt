@@ -93,6 +93,24 @@ export interface OrganizacionWorkspace {
   fechaCreacion: string;
 }
 
+/**
+ * Sede o punto de operación del Workspace.
+ *
+ * El Workspace agrupa la empresa matriz y la facturación consolidada; las Sedes
+ * son los puntos operativos físicos o sucursales donde operan los módulos
+ * (pedidos, inventarios, etc.). Toda organización nace con al menos una «Sede Principal».
+ */
+export interface SedeWorkspace {
+  id: string;
+  nombre: string;
+  direccion?: string;
+  ciudad?: string;
+  telefono?: string;
+  esPrincipal: boolean;
+  activa: boolean;
+  fechaCreacion: string;
+}
+
 export const PAISES_CONFIG: Record<
   string,
   { moneda: string; zonaHoraria: string; label: string }
@@ -190,6 +208,8 @@ const STORAGE_KEY = "necto.organizacion.v1";
 interface OrganizacionStorage {
   usuario: UsuarioPerfil | null;
   organizacion: OrganizacionWorkspace | null;
+  sedes?: SedeWorkspace[];
+  sedeActivaId?: string | null;
   /** Pertenencia de módulos de esta organización. Es nivel 2. */
   modulos: Record<IdModuloNegocio, EstadoModuloNegocio>;
 }
@@ -275,9 +295,25 @@ function loadStorage(): OrganizacionStorage {
     if (typeof parsed !== "object" || parsed === null) return vacio();
 
     const datos = parsed as Partial<OrganizacionStorage>;
+    const org = datos.organizacion ?? null;
+    let sedes = Array.isArray(datos.sedes) ? datos.sedes : [];
+    if (!sedes.length && org?.nombre) {
+      sedes = [
+        {
+          id: "sede_principal",
+          nombre: `${org.nombre} — Principal`,
+          esPrincipal: true,
+          activa: true,
+          fechaCreacion: org.fechaCreacion || new Date().toISOString(),
+        },
+      ];
+    }
+
     return {
       usuario: datos.usuario ?? null,
-      organizacion: datos.organizacion ?? null,
+      organizacion: org,
+      sedes,
+      sedeActivaId: datos.sedeActivaId ?? (sedes[0]?.id ?? null),
       modulos: normalizarModulos(datos.modulos),
     };
   } catch {
@@ -341,6 +377,8 @@ export function slugDe(nombre: string): string {
 export class OrganizacionStore {
   usuario: UsuarioPerfil | null = null;
   organizacion: OrganizacionWorkspace | null = null;
+  sedes: SedeWorkspace[] = [];
+  sedeActivaId: string | null = null;
 
   /**
    * Pertenencia de módulos de esta organización. **Nivel 2 — fuente de verdad.**
@@ -358,6 +396,8 @@ export class OrganizacionStore {
     const saved = loadStorage();
     this.usuario = saved.usuario;
     this.organizacion = saved.organizacion;
+    this.sedes = saved.sedes ?? [];
+    this.sedeActivaId = saved.sedeActivaId ?? (this.sedes[0]?.id ?? null);
     this.modulos = saved.modulos;
     makeAutoObservable(this);
   }
@@ -366,8 +406,41 @@ export class OrganizacionStore {
     persistStorage({
       usuario: this.usuario,
       organizacion: this.organizacion,
+      sedes: this.sedes,
+      sedeActivaId: this.sedeActivaId,
       modulos: this.modulos,
     });
+  }
+
+  get sedeActiva(): SedeWorkspace | null {
+    if (!this.sedes.length) return null;
+    return this.sedes.find((s) => s.id === this.sedeActivaId) ?? this.sedes[0] ?? null;
+  }
+
+  cambiarSede(sedeId: string) {
+    if (this.sedes.some((s) => s.id === sedeId)) {
+      this.sedeActivaId = sedeId;
+      this.persist();
+    }
+  }
+
+  crearSede(datos: { nombre: string; direccion?: string; ciudad?: string; telefono?: string }) {
+    const nuevaSede: SedeWorkspace = {
+      id: `sede_${Date.now()}`,
+      nombre: datos.nombre.trim(),
+      direccion: datos.direccion?.trim(),
+      ciudad: datos.ciudad?.trim(),
+      telefono: datos.telefono?.trim(),
+      esPrincipal: this.sedes.length === 0,
+      activa: true,
+      fechaCreacion: new Date().toISOString(),
+    };
+    this.sedes.push(nuevaSede);
+    if (!this.sedeActivaId) {
+      this.sedeActivaId = nuevaSede.id;
+    }
+    this.persist();
+    return nuevaSede;
   }
 
   // ── Getters de estado del onboarding ──────────────────────────────────────
@@ -562,6 +635,7 @@ export class OrganizacionStore {
 
   crearOrganizacion(datos: {
     nombre?: string;
+    nombreSede?: string;
     pais?: string;
     moneda?: string;
     zonaHoraria?: string;
@@ -601,6 +675,19 @@ export class OrganizacionStore {
       // que la organización y la plataforma pudieran dar respuestas distintas.
       fechaCreacion: this.organizacion?.fechaCreacion ?? new Date().toISOString(),
     };
+
+    // Creación automática de la primera sede física/operativa (Sede Principal)
+    const nombreSede = datos.nombreSede?.trim() || `${nombre} — Principal`;
+    const sedePrincipal: SedeWorkspace = {
+      id: "sede_principal",
+      nombre: nombreSede,
+      esPrincipal: true,
+      activa: true,
+      fechaCreacion: new Date().toISOString(),
+    };
+    this.sedes = [sedePrincipal];
+    this.sedeActivaId = sedePrincipal.id;
+
     this.persist();
   }
 
