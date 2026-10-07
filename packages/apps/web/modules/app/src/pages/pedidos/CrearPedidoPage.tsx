@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
+import { Alert } from "@/elements/ui/alert";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
@@ -12,6 +13,11 @@ import { pedidosStore, puedeCrearPedido, puedeGestionarProgramados, motivoSinPer
 import type { ModalidadPedido, PedidoItem, MetodoPago, DireccionEntrega } from "@/stores";
 import { BUSINESS_PROFILES } from "@/domain/pedidos/pedidos.profiles";
 import { ProgramarModal } from "./ProgramarModal";
+import {
+  datosParaTransferir,
+  mediosDeCobroHabilitados,
+  mensajeDeCobro,
+} from "./cobros";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -35,6 +41,15 @@ interface CreatedInfo {
   numero: string;
   cliente: string;
   modalidadLabel: string;
+  /**
+   * Cómo se cobró el pedido.
+   *
+   * Se guarda AQUÍ y no se lee del estado del formulario porque `resetForm()`
+   * corre justo después de crear el pedido: cuando la confirmación se pinta, el
+   * formulario ya volvió a «efectivo» y la pantalla diría que se cobró en
+   * efectivo un pedido que se cobró por transferencia.
+   */
+  metodoPago?: MetodoPago;
   /** ISO programado, si el pedido se creó como programado. */
   programadoPara?: string;
   direccion?: string;
@@ -124,6 +139,23 @@ const DeliveryHandIcon = ({ className = "h-5 w-5" }: { className?: string }) => 
   </svg>
 );
 
+/**
+ * Glifo de cada medio de cobro, por su `MetodoPago`.
+ *
+ * Es `Record<MetodoPago, …>`: añadir un medio al vocabulario del dominio sin
+ * darle icono es un error de compilación, no un botón sin dibujo en el selector.
+ *
+ * Va DESPUÉS de las cuatro definiciones de icono —y no junto a las tres
+ * primeras— porque un `const` no se eleva: referenciar `DeliveryHandIcon` antes
+ * de su línea es un error de compilación, no un `undefined` silencioso.
+ */
+const ICONO_METODO_PAGO: Record<MetodoPago, React.FC<{ className?: string }>> = {
+  efectivo: CashIcon,
+  transferencia: TransferIcon,
+  tarjeta: CardIcon,
+  contra_entrega: DeliveryHandIcon,
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -152,13 +184,30 @@ export const CrearPedidoPage = observer(() => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<CreatedInfo | null>(null);
 
+  /** Acuse de «copiado» del mensaje de cobro. Se apaga solo a los 2 s. */
+  const [copiadoCobro, setCopiadoCobro] = useState(false);
+
   // ── Logística, dirección y pago ──
   const [calle, setCalle] = useState("");
   const [barrio, setBarrio] = useState("");
   const [referencia, setReferencia] = useState("");
   const [indicaciones, setIndicaciones] = useState("");
   const [costoEnvio, setCostoEnvio] = useState<number>(5000);
-  const [metodoPago, setMetodoPago] = useState<MetodoPago>("efectivo");
+  const [metodoPago, setMetodoPago] = useState<MetodoPago>(
+    () => mediosDeCobroHabilitados(pedidosStore.config.datosBancarios)[0]?.id ?? "efectivo",
+  );
+
+  /**
+   * Los medios que el negocio acepta HOY, derivados de la configuración.
+   *
+   * Se lee de `pedidosStore.config.datosBancarios` en cada render (es
+   * observable) y no de una copia: si el negocio apaga un medio desde
+   * configuración, el selector de esta pantalla lo refleja.
+   */
+  const mediosDeCobro = mediosDeCobroHabilitados(pedidosStore.config.datosBancarios);
+
+  /** Datos que hay que darle al cliente que va a transferir. `null` = no hay ninguno. */
+  const transferencia = datosParaTransferir(pedidosStore.config.datosBancarios);
   const [pagaCon, setPagaCon] = useState<string>("");
   const [repartidor, setRepartidor] = useState<string>("");
   const [mesa, setMesa] = useState<string>("");
@@ -210,7 +259,7 @@ export const CrearPedidoPage = observer(() => {
     setReferencia("");
     setIndicaciones("");
     setCostoEnvio(5000);
-    setMetodoPago("efectivo");
+    setMetodoPago(mediosDeCobroHabilitados(pedidosStore.config.datosBancarios)[0]?.id ?? "efectivo");
     setPagaCon("");
     setRepartidor("");
     setMesa("");
@@ -353,6 +402,7 @@ export const CrearPedidoPage = observer(() => {
       numero: pedido.numero,
       cliente: pedido.cliente,
       modalidadLabel: pedidosStore.modalidadLabel(pedido.modalidad),
+      metodoPago,
       programadoPara: pedido.programadoPara,
       direccion: direccionEntrega
         ? `${direccionEntrega.calle}${direccionEntrega.referencia ? ` (${direccionEntrega.referencia})` : ""}`
@@ -365,6 +415,21 @@ export const CrearPedidoPage = observer(() => {
 
   // ── Confirmación (reemplaza el formulario) ──
   if (created) {
+    /**
+     * El mensaje de cobro del pedido recién creado.
+     *
+     * Se compone AQUÍ y no en el formulario porque necesita la referencia REAL
+     * del pedido: el enlace de pago lleva el número, y hasta que el pedido no
+     * existe no hay número. Compuesto solo con lo que el negocio configuró —
+     * titular, cuentas, enlace e indicaciones—, así que si no configuró nada
+     * sale vacío y el bloque no se pinta.
+     */
+    const mensajeCobro = mensajeDeCobro(
+      pedidosStore.config.datosBancarios,
+      created.numero,
+      window.location.origin,
+    );
+
     return (
       <>
         <PageMeta title="Pedido creado" description="Pedido creado con éxito" />
@@ -415,6 +480,42 @@ export const CrearPedidoPage = observer(() => {
                   </div>
                 )}
               </div>
+
+              {/*
+                Lo que hay que decirle al cliente para que pague.
+
+                Es el cierre del circuito de «Cuentas y cobros»: titular, cuentas,
+                enlace de pago e indicaciones compuestos en un mensaje listo para
+                pegar en el chat. Antes la configuración prometía exactamente esto
+                («las indicaciones que el bot y la tienda envían al cliente») y
+                nada lo hacía: los once controles no tenían lector.
+
+                Se omite entero cuando el negocio no configuró nada —`mensajeDeCobro`
+                devuelve cadena vacía—, en vez de pintar un bloque en blanco.
+              */}
+              {mensajeCobro !== "" && (
+                <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left dark:border-gray-700 dark:bg-gray-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                      Mensaje de cobro para el cliente
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(mensajeCobro);
+                        setCopiadoCobro(true);
+                        setTimeout(() => setCopiadoCobro(false), 2000);
+                      }}
+                      className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1 text-[11px] font-semibold text-gray-600 transition-colors hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
+                    >
+                      {copiadoCobro ? "Copiado ✓" : "Copiar"}
+                    </button>
+                  </div>
+                  <pre className="mt-2 whitespace-pre-wrap font-sans text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+                    {mensajeCobro}
+                  </pre>
+                </div>
+              )}
 
               <div className="mt-6 flex items-start gap-2 rounded-xl bg-secondary-50 p-3 text-left dark:bg-brand-500/10">
                 <svg viewBox="0 0 24 24" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-secondary-600 dark:text-accent-300">
@@ -832,20 +933,27 @@ export const CrearPedidoPage = observer(() => {
               />
               <h2 className="text-sm font-semibold text-ink-title dark:text-white/90">Método de pago</h2>
             </div>
+            {/* Los medios salen de la CONFIGURACIÓN (`datosBancarios`), no de una
+                lista escrita aquí. Antes los cuatro estaban a mano y los
+                interruptores de «Cuentas y cobros» no quitaban ninguno: se podía
+                apagar «Contra entrega» y el selector seguía ofreciéndolo. */}
+            {mediosDeCobro.length === 0 ? (
+              <Alert
+                variant="warning"
+                title="El negocio no acepta ningún medio de cobro"
+                message="Los cuatro están apagados en Configuración → Cuentas y cobros, así que este pedido no se puede cobrar desde aquí. Enciende al menos uno para poder registrarlo."
+              />
+            ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { id: "efectivo", label: "Efectivo", icon: CashIcon },
-                { id: "transferencia", label: "Transferencia", icon: TransferIcon },
-                { id: "tarjeta", label: "Tarjeta", icon: CardIcon },
-                { id: "contra_entrega", label: "Contra entrega", icon: DeliveryHandIcon },
-              ].map((mp) => {
+              {mediosDeCobro.map((mp) => {
                 const activo = metodoPago === mp.id;
-                const IconComponent = mp.icon;
+                const IconComponent = ICONO_METODO_PAGO[mp.id];
                 return (
                   <button
                     key={mp.id}
                     type="button"
-                    onClick={() => setMetodoPago(mp.id as MetodoPago)}
+                    onClick={() => setMetodoPago(mp.id)}
+                    title={mp.descripcion}
                     className={
                       "flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors " +
                       (activo
@@ -859,6 +967,7 @@ export const CrearPedidoPage = observer(() => {
                 );
               })}
             </div>
+            )}
 
             {(metodoPago === "efectivo" || metodoPago === "contra_entrega") && (
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -893,6 +1002,53 @@ export const CrearPedidoPage = observer(() => {
                       </p>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/*
+              Datos de la transferencia: lo que el operador le dicta al cliente.
+
+              Antes esto no se enseñaba en NINGUNA parte. La configuración de
+              «Cuentas y cobros» prometía por escrito que «el bot y la tienda
+              comunican al cliente» estas cuentas, y no las leía nadie: el
+              operador tenía que sabérselas de memoria o salir de la pantalla.
+
+              No se ofrece copiar aquí porque el mensaje completo incluye el
+              enlace de pago, y el enlace lleva la referencia del pedido — que
+              todavía no existe. Eso se copia en la confirmación, cuando ya hay
+              número.
+            */}
+            {metodoPago === "transferencia" && transferencia && (
+              <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  Cuentas para la transferencia
+                </p>
+
+                {transferencia.titular && (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Titular:{" "}
+                    <span className="font-medium text-gray-800 dark:text-white/90">
+                      {transferencia.titular}
+                    </span>
+                  </p>
+                )}
+
+                <ul className="mt-2 space-y-1">
+                  {transferencia.cuentas.map((cuenta) => (
+                    <li key={cuenta.etiqueta} className="flex items-baseline justify-between gap-3 text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">{cuenta.etiqueta}</span>
+                      <span className="select-all font-mono font-medium text-gray-800 dark:text-white/90">
+                        {cuenta.valor}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {transferencia.instrucciones && (
+                  <p className="mt-3 border-t border-dashed border-gray-200 pt-2 text-xs text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                    {transferencia.instrucciones}
+                  </p>
                 )}
               </div>
             )}

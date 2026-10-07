@@ -109,6 +109,25 @@ export const META_ESTADO_PEDIDO: Record<
   cancelado: { label: "Cancelado", badge: "error", punto: "bg-error-500" },
 };
 
+/**
+ * Presentación de respaldo para una columna PROPIA del tablero.
+ *
+ * Una columna que el negocio crea (`col_…`) NO es un estado del pipeline y por
+ * tanto no está en `META_ESTADO_PEDIDO`. Sin este respaldo, `estadoBadgeColor` y
+ * `estadoDotClass` reventaban con un `TypeError` al pintar un pedido que
+ * estuviera en una de ellas.
+ *
+ * Consecuencia real, hasta el 07/10: la función de columnas propias estaba VIVA
+ * en el store —crear, renombrar, reordenar, eliminar, y `columnasTablero` las
+ * devolvía— y usarla rompía el tablero. El gris neutro es lo correcto: una
+ * columna propia es una etapa que el negocio se ha inventado, y no es ni buena
+ * ni mala noticia.
+ */
+const META_COLUMNA_PROPIA: { badge: ColorEstadoPedido; punto: string } = {
+  badge: "light",
+  punto: "bg-gray-400",
+};
+
 /** Modalidad de entrega del pedido (genérica, sin identidad de negocio). */
 export type Modalidad = "retiro" | "domicilio" | "en_sitio";
 
@@ -1211,9 +1230,25 @@ export class PedidosStore {
    * pipeline efectivo (por desactivar `confirmado`/`en_camino`) al siguiente
    * estado activo disponible. Evita que queden inaccesibles tras cambiar config.
    */
+  /**
+   * ¿`estado` es una columna PROPIA del tablero?
+   *
+   * Una columna creada por el negocio (`col_…`) es un destino VÁLIDO —el tablero
+   * la pinta y se puede arrastrar un pedido dentro con `moverAColumna`— aunque no
+   * sea un estado del pipeline. Sin esta comprobación, `migrarPedidosVarados` la
+   * trataba como un estado inválido y devolvía sus pedidos a la primera columna
+   * del pipeline en el siguiente guardado de configuración: la columna propia se
+   * vaciaba sola y el trabajo del operador se perdía sin que nadie lo tocara.
+   */
+  private esColumnaPropia(estado: PedidoEstado): boolean {
+    return (this.config.columnasPersonalizadas ?? []).some((c) => c.id === estado);
+  }
+
   private migrarPedidosVarados(): void {
     for (const p of this.pedidos) {
       if (this.esTerminal(p.estado) || p.estado === "programado") continue;
+      // Una columna propia está donde el negocio la puso: no está varada.
+      if (this.esColumnaPropia(p.estado)) continue;
       const pipeline = this.pipelineDe(p);
       if (pipeline.includes(p.estado)) continue; // sigue siendo válido
       // Estado varado: buscar el primer estado activo posterior según el orden
@@ -2291,12 +2326,24 @@ export class PedidosStore {
 
   /** Color semántico del Badge (Elements) según el estado. */
   estadoBadgeColor(e: PedidoEstado): "info" | "primary" | "warning" | "success" | "light" | "error" {
-    return META_ESTADO_PEDIDO[e].badge;
+    return this.metaEstado(e).badge;
   }
 
   /** Color del punto/acento de columna del tablero según el estado. */
   estadoDotClass(e: PedidoEstado): string {
-    return META_ESTADO_PEDIDO[e].punto;
+    return this.metaEstado(e).punto;
+  }
+
+  /**
+   * Metadatos de presentación de un estado, TOLERANDO una columna propia.
+   *
+   * Es el único acceso a `META_ESTADO_PEDIDO` que recibe un id que puede no ser
+   * un estado del pipeline: el tablero pinta las columnas de
+   * `columnasPersonalizadas`, y una columna creada por el negocio no está en esa
+   * tabla. Indexarla a pelo reventaba la pantalla — ver `META_COLUMNA_PROPIA`.
+   */
+  private metaEstado(e: PedidoEstado): { label: string; badge: ColorEstadoPedido; punto: string } {
+    return META_ESTADO_PEDIDO[e] ?? { ...META_COLUMNA_PROPIA, label: this.estadoLabel(e) };
   }
 }
 

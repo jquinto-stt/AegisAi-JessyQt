@@ -63,21 +63,22 @@ describe("Catálogo de secciones del canal", () => {
     expect(total).toBe(ORDEN_SECCIONES.length);
   });
 
-  it("la página tiene exactamente las 5 secciones que ajustan algo", () => {
+  it("la página tiene exactamente las 4 secciones que ajustan algo", () => {
     expect(ORDEN_SECCIONES).toEqual([
       "plantillas",
-      "horario",
       "atencion",
       "aviso",
       "alertas",
     ]);
   });
 
-  it("las tres secciones retiradas por no ajustar nada siguen fuera (07/10)", () => {
+  it("las secciones retiradas siguen fuera (07/10)", () => {
     // · «Perfil del canal» — tres datos de solo lectura.
     // · «Automatización y escalado» — dos conteos y una leyenda.
     // · «Módulos conectados» — la MISMA línea de código que «Módulos
     //   integrados» del asistente: `integracionesStore.alternar(id)`.
+    // · «Horario de atención» — las horas de apertura son del NEGOCIO: gobiernan
+    //   `pedidosStore.estaAbierto()` y se editan en `/pedidos/config → Tiempos`.
     //
     // Se afirma la AUSENCIA a propósito: sin esta comprobación, volver a
     // añadirlas pasaría desapercibido mientras el resto de la suite sigue verde.
@@ -85,6 +86,7 @@ describe("Catálogo de secciones del canal", () => {
     expect(claves).not.toContain("perfil");
     expect(claves).not.toContain("automatizacion");
     expect(claves).not.toContain("modulos");
+    expect(claves).not.toContain("horario");
   });
 
   it("la sección nueva de atención existe y está en el grupo de mensajería", () => {

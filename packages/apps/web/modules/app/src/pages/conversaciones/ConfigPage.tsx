@@ -7,7 +7,6 @@ import { Alert } from "@/elements/ui/alert";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Input } from "@/elements/form/input";
-import { Label } from "@/elements/form/label";
 import { Switch } from "@/elements/form/switch";
 import TextArea from "@/elements/form/textarea";
 import {
@@ -15,7 +14,6 @@ import {
   BoltIcon,
   DocsIcon,
   InfoIcon,
-  TimeIcon,
 } from "@/icons";
 import {
   conversacionesStore,
@@ -29,7 +27,6 @@ import type { AvisoFueraHorario, PlantillasWhatsApp } from "@/stores/pedidos.sto
 import {
   BloqueConfig,
   CampoConfig,
-  ChipDia,
   ConfigAcciones,
   ConfigHeader,
   ConfigHub,
@@ -40,7 +37,6 @@ import {
 } from "@/pages/config-layout";
 
 import {
-  DIAS_ATENCION,
   ESTADO_CANAL_BADGE,
   ESTADO_CANAL_LABEL,
   FILAS_PLANTILLA,
@@ -64,7 +60,6 @@ import {
 
 const ICONO_SECCION: Record<IconoSeccion, React.FC<React.SVGProps<SVGSVGElement>>> = {
   DocsIcon,
-  TimeIcon,
   BoltIcon,
   InfoIcon,
   AlertIcon,
@@ -108,19 +103,22 @@ const NUMERO_CANAL = "+57 300 555 1122";
 // mismo cálculo sirve para el color y para el texto, y no hay dos ramas que
 // puedan contradecirse.
 
-function estadoAviso(draft: PedidosConfig): {
+function estadoAviso(
+  aviso: AvisoFueraHorario,
+  horario: PedidosConfig["horario"],
+): {
   variant: "info" | "warning";
   title: string;
   message: string;
 } {
-  const { activo, mensaje } = draft.avisoFueraHorario;
+  const { activo, mensaje } = aviso;
 
-  if (!draft.horario.activo) {
+  if (!horario.activo) {
     return {
       variant: "info",
       title: "Todavía no se envía",
       message:
-        "El horario de atención está desactivado, así que el negocio se considera abierto a cualquier hora y este aviso no tiene cuándo aplicarse. Configura un horario en la sección anterior para que pueda enviarse.",
+        "El horario de atención está desactivado, así que el negocio se considera abierto a cualquier hora y este aviso no tiene cuándo aplicarse. Actívalo en Configuración de Pedidos → Tiempos y horarios para que pueda enviarse.",
     };
   }
 
@@ -145,7 +143,7 @@ function estadoAviso(draft: PedidosConfig): {
   return {
     variant: "info",
     title: "Se enviará fuera de horario",
-    message: `El cliente que escriba fuera de la franja ${draft.horario.apertura}–${draft.horario.cierre} recibirá este mensaje. Si vuelve a escribir sin que nadie le haya contestado, no se le repite.`,
+    message: `El cliente que escriba fuera de la franja ${horario.apertura}–${horario.cierre} recibirá este mensaje. Si vuelve a escribir sin que nadie le haya contestado, no se le repite.`,
   };
 }
 
@@ -203,14 +201,15 @@ const ContextoCanal = observer(() => {
  * única derivación de cada valor; ninguna mantiene una copia propia.
  *
  * ── Estructura ────────────────────────────────────────────────────────────
- * Cinco secciones en dos grupos (CANAL / MENSAJERÍA). Es navegación por
+ * Cuatro secciones en dos grupos (CANAL / MENSAJERÍA). Es navegación por
  * PESTAÑAS reales: solo una sección está montada a la vez, sin scroll-spy ni
  * secciones apiladas. El catálogo vive en `configuracion.secciones.ts`, que
- * documenta las CUATRO secciones retiradas el 07/10 y por qué: «Perfil del
+ * documenta las CINCO secciones retiradas el 07/10 y por qué: «Perfil del
  * canal» y «Automatización y escalado» no contenían ni un control, «Módulos
  * conectados» era la misma línea de código que «Módulos integrados» del
- * asistente, y «Apariencia» —tema y densidad— es una preferencia de toda la
- * aplicación, administrada en `/configuracion → Apariencia`.
+ * asistente, «Apariencia» —tema y densidad— es una preferencia de toda la
+ * aplicación, y «Horario de atención» es del NEGOCIO: gobierna
+ * `pedidosStore.estaAbierto()` y se edita en `/pedidos/config → Tiempos`.
  *
  * ── Estado ────────────────────────────────────────────────────────────────
  * Borrador local (`useState`) copiado de `pedidosStore.config` al montar, y
@@ -262,9 +261,9 @@ export const ConfigPage = observer(() => {
 
   // ── Borrador: copia profunda de la config persistida ──
   // Se clonan los sub-objetos y arrays para que editar el borrador NO mute el
-  // store antes de guardar. Sin el clon, `draft.horario.dias` sería el MISMO
-  // array que el del store y `toggleDia` escribiría en el estado confirmado en
-  // cada clic — el borrador dejaría de ser un borrador.
+  // store antes de guardar. Sin el clon, `draft.plantillas` sería el MISMO objeto
+  // que el del store y `setPlantilla` escribiría en el estado confirmado en cada
+  // tecla — el borrador dejaría de ser un borrador.
   const copiaDe = (): PedidosConfig => ({
     ...pedidosStore.config,
     modalidades: [...pedidosStore.config.modalidades],
@@ -272,7 +271,6 @@ export const ConfigPage = observer(() => {
     catalogo: pedidosStore.config.catalogo.map((c) => ({ ...c })),
     aliasEstados: { ...pedidosStore.config.aliasEstados },
     aliasModalidades: { ...pedidosStore.config.aliasModalidades },
-    horario: { ...pedidosStore.config.horario, dias: [...pedidosStore.config.horario.dias] },
     tiemposObjetivo: { ...pedidosStore.config.tiemposObjetivo },
     alertaAtencion: { ...pedidosStore.config.alertaAtencion },
     avisoFueraHorario: { ...pedidosStore.config.avisoFueraHorario },
@@ -290,11 +288,10 @@ export const ConfigPage = observer(() => {
   // ── Setters del borrador ──
   // Todos marcan `guardado = false`: cualquier edición invalida el aviso de
   // "Guardado", que si no quedaría afirmando algo falso.
-  const set = <K extends keyof PedidosConfig>(k: K, v: PedidosConfig[K]) => {
-    setDraft((prev) => ({ ...prev, [k]: v }));
-    setGuardado(false);
-  };
-
+  //
+  // No hay un `set(clave, valor)` genérico: cada sección que queda escribe en su
+  // propio sub-objeto, y un setter de clave arbitraria solo servía a las que se
+  // retiraron. Se quitó con ellas.
   const setPlantilla = (key: keyof PlantillasWhatsApp, value: string) => {
     setDraft((prev) => ({ ...prev, plantillas: { ...prev.plantillas, [key]: value } }));
     setGuardado(false);
@@ -302,21 +299,6 @@ export const ConfigPage = observer(() => {
 
   const setAviso = <K extends keyof AvisoFueraHorario>(k: K, v: AvisoFueraHorario[K]) => {
     setDraft((prev) => ({ ...prev, avisoFueraHorario: { ...prev.avisoFueraHorario, [k]: v } }));
-    setGuardado(false);
-  };
-
-  const setHorario = <K extends keyof PedidosConfig["horario"]>(k: K, v: PedidosConfig["horario"][K]) => {
-    setDraft((prev) => ({ ...prev, horario: { ...prev.horario, [k]: v } }));
-    setGuardado(false);
-  };
-
-  const toggleDia = (d: number) => {
-    setDraft((prev) => {
-      const dias = prev.horario.dias.includes(d)
-        ? prev.horario.dias.filter((x) => x !== d)
-        : [...prev.horario.dias, d].sort((a, b) => a - b);
-      return { ...prev, horario: { ...prev.horario, dias } };
-    });
     setGuardado(false);
   };
 
@@ -329,8 +311,12 @@ export const ConfigPage = observer(() => {
   };
 
   // ── Derivaciones de validación (no se guardan: se recalculan) ──
-  const horarioInvalido = draft.horario.activo && draft.horario.cierre <= draft.horario.apertura;
-  const puedeGuardar = !soloLectura && !horarioInvalido;
+  //
+  // Ya no hay ninguna: la única que existía era la del horario, y el horario se
+  // edita en `/pedidos/config`, donde vive su validación. Un `puedeGuardar`
+  // atado a un campo que esta página no toca bloquearía el guardado por algo que
+  // el usuario no puede arreglar desde aquí.
+  const puedeGuardar = !soloLectura;
 
   const guardar = () => {
     // Defensa en profundidad: la ruta ya exige `channels.manage`, y aun así no
@@ -348,7 +334,7 @@ export const ConfigPage = observer(() => {
   };
 
   // Estado del aviso fuera de horario, calculado una vez por render.
-  const avisoEstado = estadoAviso(draft);
+  const avisoEstado = estadoAviso(draft.avisoFueraHorario, pedidosStore.config.horario);
 
   // ── Encabezado de la sección activa ──
   // Las tarjetas del hub salen del catálogo (`seccionesPorGrupo`), no de una
@@ -540,109 +526,6 @@ export const ConfigPage = observer(() => {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </BloqueConfig>
-              )}
-
-              {/* ───────────── HORARIO DE ATENCIÓN ───────────── */}
-              {/*
-                Los días y las horas vivían dentro de `{draft.horario.activo && …}`.
-                Con el horario apagado —que es el valor de fábrica— la sección
-                quedaba en un título y una fila: un solo control. Se leía como una
-                pantalla rota, no como un ajuste apagado.
-
-                Ahora el contenido se ve SIEMPRE y se deshabilita con
-                `fieldset disabled` —el mismo patrón que el modo solo lectura de
-                esta página— acompañado del motivo escrito. Un ajuste
-                desactivado se muestra desactivado; esconderlo hace creer que no
-                existe.
-              */}
-              {seccion === "horario" && (
-                <BloqueConfig
-                  icono={ICONO_SECCION[meta.icono]}
-                  pregunta={meta.pregunta}
-                  descripcion="Días y horas en que el negocio recibe pedidos. Fuera de horario se puede sugerir programar el pedido, y el canal puede responder con su aviso."
-                >
-                  <div className="space-y-6">
-                    <CampoConfig
-                      etiqueta="Aplicar horario"
-                      ayuda="Si está desactivado, el negocio se considera abierto a cualquier hora."
-                      ancho="max-w-none"
-                    >
-                      <Switch
-                        checked={draft.horario.activo}
-                        onChange={(v) => setHorario("activo", v)}
-                        color={SWITCH_COLOR}
-                        aria-label="Aplicar horario de atención"
-                      />
-                    </CampoConfig>
-
-                    {/* `disabled:opacity-50` en el PROPIO fieldset, y no en cada
-                        control: `fieldset disabled` desactiva el comportamiento
-                        de todo lo que hay dentro, pero NO lo atenúa —el atenuado
-                        de `Input` y `ChipDia` vive en su prop `disabled`, que aquí
-                        no se pasa—. Sin esta clase, los días y las horas se veían
-                        como si se pudieran pulsar y no hacían nada. */}
-                    <fieldset
-                      disabled={!draft.horario.activo}
-                      className="m-0 min-w-0 space-y-5 border-0 p-0 transition-opacity disabled:opacity-50"
-                    >
-                      <div>
-                        <Label htmlFor="canal-horario-dias">Días de atención</Label>
-                        <div className="flex flex-wrap gap-2" id="canal-horario-dias">
-                          {DIAS_ATENCION.map(({ d, label, largo }) => (
-                            <ChipDia
-                              key={d}
-                              activo={draft.horario.dias.includes(d)}
-                              label={label}
-                              titulo={largo}
-                              onClick={() => toggleDia(d)}
-                            />
-                          ))}
-                        </div>
-                        <p className="mt-2 text-xs text-gray-400">
-                          {draft.horario.dias.length === 0
-                            ? "Sin días seleccionados: el horario no aplica ningún día."
-                            : `${draft.horario.dias.length} de 7 días seleccionados.`}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-4 sm:max-w-md sm:grid-cols-2">
-                        <div>
-                          <Label htmlFor="canal-horario-apertura">Apertura</Label>
-                          <Input
-                            id="canal-horario-apertura"
-                            type="time"
-                            value={draft.horario.apertura}
-                            onChange={(e) => setHorario("apertura", e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="canal-horario-cierre">Cierre</Label>
-                          <Input
-                            id="canal-horario-cierre"
-                            type="time"
-                            value={draft.horario.cierre}
-                            onChange={(e) => setHorario("cierre", e.target.value)}
-                            error={horarioInvalido}
-                          />
-                        </div>
-                      </div>
-
-                      {/* El borde rojo del campo, por sí solo, no explica el
-                          bloqueo: se acompaña del motivo textual. */}
-                      {horarioInvalido && (
-                        <p className="mt-2 text-xs text-error-500">
-                          La hora de cierre debe ser mayor que la de apertura.
-                        </p>
-                      )}
-                    </fieldset>
-
-                    {!draft.horario.activo && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Activa el horario para poder elegir los días y las horas.
-                      </p>
-                    )}
                   </div>
                 </BloqueConfig>
               )}

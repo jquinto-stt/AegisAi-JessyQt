@@ -47,6 +47,14 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
 //                          orders.read», «Proveedor» y «Sincronización: En
 //                          tiempo real».
 //
+//   RETIRADA por tener su dueño en el módulo de Pedidos:
+//     · `horario`        — las horas de apertura son del NEGOCIO, no del canal:
+//                          gobiernan `pedidosStore.estaAbierto()`, que decide si
+//                          un pedido se registra hoy o se sugiere programarlo. Se
+//                          editaba en las dos pantallas sobre el mismo campo.
+//                          Aquí se LEE —la sección «Aviso fuera de horario» lo
+//                          necesita— y se edita en `/pedidos/config → Tiempos`.
+//
 //   RETIRADA por ser una preferencia GLOBAL, no del canal:
 //     · `apariencia`     — el tema Y la densidad de la lista. La apariencia se
 //                          administra en un solo sitio, `/configuracion →
@@ -85,7 +93,7 @@ import type { PlantillasWhatsApp } from "@/stores/pedidos.store";
  * `seccionesPorGrupo` y `META_SECCION` son `Record` sobre ella, así que añadir
  * una sección sin darle grupo o metadatos es un error de compilación.
  */
-export type SeccionCanal = "plantillas" | "horario" | "atencion" | "aviso" | "alertas";
+export type SeccionCanal = "plantillas" | "atencion" | "aviso" | "alertas";
 
 /** Grupos de la navegación vertical, en orden de aparición. */
 export type GrupoSeccionCanal = "canal" | "mensajeria";
@@ -142,7 +150,7 @@ export interface MetaSeccion {
 }
 
 /** Iconos disponibles para la navegación de secciones (subconjunto de `@/icons`). */
-export type IconoSeccion = "DocsIcon" | "TimeIcon" | "BoltIcon" | "InfoIcon" | "AlertIcon";
+export type IconoSeccion = "DocsIcon" | "BoltIcon" | "InfoIcon" | "AlertIcon";
 
 /**
  * Metadatos por sección. El orden de las claves de este objeto NO define el
@@ -156,13 +164,6 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
     pregunta: "¿Qué le escribes al cliente en cada paso?",
     grupo: "canal",
     icono: "DocsIcon",
-  },
-  horario: {
-    label: "Horario de atención",
-    hint: "Días y horas en que el canal atiende pedidos.",
-    pregunta: "¿A qué horas atiende tu canal?",
-    grupo: "canal",
-    icono: "TimeIcon",
   },
   atencion: {
     label: "Atención automática",
@@ -209,7 +210,6 @@ export const META_SECCION: Record<SeccionCanal, MetaSeccion> = {
  */
 export const SECCIONES_CON_PIE_DE_GUARDADO: readonly SeccionCanal[] = [
   "plantillas",
-  "horario",
   "aviso",
   "alertas",
 ];
@@ -255,7 +255,6 @@ export function notaSinGuardado(seccion: SeccionCanal): string | null {
 /** Orden de las secciones dentro de la navegación. */
 export const ORDEN_SECCIONES: SeccionCanal[] = [
   "plantillas",
-  "horario",
   "atencion",
   "aviso",
   "alertas",

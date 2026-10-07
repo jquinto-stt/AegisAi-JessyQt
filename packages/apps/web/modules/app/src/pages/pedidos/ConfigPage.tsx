@@ -9,12 +9,23 @@ import { Badge } from "@/elements/ui/badge";
 import { Switch } from "@/elements/form/switch";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
-import { BoltIcon, CartIcon, DollarLineIcon, GridIcon, PlusIcon, TimeIcon, TrashBinIcon } from "@/icons";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  BoltIcon,
+  CartIcon,
+  DollarLineIcon,
+  GridIcon,
+  PlusIcon,
+  TimeIcon,
+  TrashBinIcon,
+} from "@/icons";
 import { pedidosStore, puedeGuardarConfig, motivoSinPermiso } from "@/stores";
 import type {
   Modalidad,
   PedidosConfig,
   CatalogoItem,
+  ColumnaPersonalizada,
   EstadoConfigurable,
 } from "@/stores/pedidos.store";
 import { catalogoDesdePreset } from "@/stores/pedidos.store";
@@ -22,6 +33,7 @@ import {
   BUSINESS_PROFILES,
   type BusinessProfileType,
 } from "@/domain/pedidos/pedidos.profiles";
+import { enlaceDePago, mensajeDeCobro } from "./cobros";
 import {
   CardHead,
   ChipDia,
@@ -254,6 +266,63 @@ export const ConfigPage = observer(() => {
       return { ...prev, tiemposObjetivo: t };
     });
     setGuardado(false);
+  };
+
+  // ── Columnas del tablero ──────────────────────────────────────────────────
+  //
+  // El store ya sabía hacer todo esto (`agregarColumna`, `renombrarColumna`,
+  // `eliminarColumna`, `reordenarColumnas`, `columnasTablero`) y el tablero ya
+  // pintaba las columnas y dejaba arrastrar pedidos dentro. Lo que NO existía era
+  // ninguna pantalla que las configurara: la capacidad estaba viva y era
+  // inalcanzable.
+  //
+  // Se edita sobre el BORRADOR —y no llamando a los métodos del store— para que
+  // «Descartar cambios» siga significando algo: los métodos del store escriben
+  // al instante con `updateConfig`, y usarlos aquí convertiría cada clic en un
+  // guardado silencioso.
+  const [nuevaColumna, setNuevaColumna] = useState("");
+
+  /**
+   * Las columnas del tablero, tal como están en el borrador.
+   *
+   * Sin configuración propia son las del pipeline por defecto —los estados
+   * activos menos `entregado`, que es terminal y vive en el historial—, que es
+   * exactamente lo que devuelve `columnasTablero` en el store. Se derivan aquí
+   * en vez de llamar a `asegurarColumnasPersonalizadas()`, que ESCRIBE en el
+   * store: editar la pantalla no puede mutar la configuración confirmada.
+   */
+  const columnas: ColumnaPersonalizada[] =
+    draft.columnasPersonalizadas ??
+    pedidosStore.estadosActivos
+      .filter((e) => e !== "entregado")
+      .map((e) => ({ id: e, label: pedidosStore.estadoLabel(e) }));
+
+  const moverColumna = (id: string, delta: -1 | 1) => {
+    const desde = columnas.findIndex((c) => c.id === id);
+    const hasta = desde + delta;
+    if (desde < 0 || hasta < 0 || hasta >= columnas.length) return;
+    const copia = [...columnas];
+    [copia[desde], copia[hasta]] = [copia[hasta], copia[desde]];
+    set("columnasPersonalizadas", copia);
+  };
+
+  const quitarColumna = (id: string) => {
+    // Mínimo una: un tablero sin columnas no tiene dónde poner un pedido.
+    if (columnas.length <= 1) return;
+    set(
+      "columnasPersonalizadas",
+      columnas.filter((c) => c.id !== id),
+    );
+  };
+
+  const agregarColumna = () => {
+    const limpio = nuevaColumna.trim();
+    if (limpio === "") return;
+    set("columnasPersonalizadas", [
+      ...columnas,
+      { id: `col_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, label: limpio },
+    ]);
+    setNuevaColumna("");
   };
 
   const addItem = () =>
@@ -669,6 +738,110 @@ export const ConfigPage = observer(() => {
                     </div>
                   </div>
                 </Card>
+
+                {/*
+                  Columnas del tablero.
+
+                  Esta tarjeta es la superficie que le faltaba a una capacidad que
+                  ya existía entera en el store —crear, renombrar, reordenar,
+                  eliminar— y que el tablero ya sabía pintar y aceptar por
+                  arrastre. Sin ella, `columnasPersonalizadas` era una función
+                  viva e inalcanzable.
+
+                  El rótulo de un estado del pipeline NO se edita aquí: se edita
+                  arriba, en «Estados en tablero». Dos campos para el mismo
+                  nombre serían dos superficies para un valor, que es el defecto
+                  que esta revisión persigue.
+                */}
+                <Card>
+                  <CardHead>Columnas del tablero</CardHead>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Las columnas que ves en el tablero, en este orden. Añade las que
+                    necesite tu operación y arrastra los pedidos dentro de ellas.
+                  </p>
+
+                  <div className="mt-4 space-y-2">
+                    {columnas.map((col, i) => {
+                      const esDelPipeline = ESTADOS_CONFIG.includes(
+                        col.id as EstadoConfigurable,
+                      );
+                      const nombre = pedidosStore.estadoLabel(col.id as never);
+                      return (
+                        <div
+                          key={col.id}
+                          className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 dark:border-gray-800"
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gray-100 text-[11px] font-semibold text-gray-500 dark:bg-white/[0.06] dark:text-gray-400">
+                            {i + 1}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-sm text-gray-800 dark:text-white/90">
+                            {nombre}
+                          </span>
+                          {!esDelPipeline && (
+                            <Badge color="light" size="xs">
+                              Propia
+                            </Badge>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => moverColumna(col.id, -1)}
+                            disabled={i === 0}
+                            aria-label={`Subir la columna ${nombre}`}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/5 dark:hover:text-gray-200"
+                          >
+                            <ArrowUpIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moverColumna(col.id, 1)}
+                            disabled={i === columnas.length - 1}
+                            aria-label={`Bajar la columna ${nombre}`}
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/5 dark:hover:text-gray-200"
+                          >
+                            <ArrowDownIcon className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => quitarColumna(col.id)}
+                            disabled={columnas.length <= 1}
+                            aria-label={`Eliminar la columna ${nombre}`}
+                            title={
+                              columnas.length <= 1
+                                ? "El tablero necesita al menos una columna"
+                                : `Eliminar «${nombre}»`
+                            }
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-error-50 hover:text-error-500 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-error-500/10"
+                          >
+                            <TrashBinIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      id="nueva-columna"
+                      placeholder="Nombre de la columna nueva"
+                      value={nuevaColumna}
+                      onChange={(e) => setNuevaColumna(e.target.value)}
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={agregarColumna}
+                      disabled={nuevaColumna.trim() === ""}
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      Añadir columna
+                    </Button>
+                  </div>
+
+                  <p className="mt-2 text-[11px] text-gray-400">
+                    Una columna propia no cambia el pipeline: es un cajón extra del
+                    tablero. Los pedidos entran en ella arrastrándolos desde otra
+                    columna.
+                  </p>
+                </Card>
               </div>
             )}
 
@@ -682,7 +855,9 @@ export const ConfigPage = observer(() => {
                   <Card>
                     <CardHead>Cuentas bancarias y billeteras móviles</CardHead>
                     <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Cuentas que el bot y la tienda comunican al cliente para recibir pagos por transferencia.
+                      Las cuentas a las que el cliente transfiere. Al registrar un pedido por
+                      transferencia, el operador las ve en el formulario, y la confirmación le da el
+                      mensaje de cobro listo para copiar.
                     </p>
 
                     <div className="mt-4 space-y-4">
@@ -809,6 +984,30 @@ export const ConfigPage = observer(() => {
                   </Card>
                 </div>
 
+                {/*
+                  El mensaje de cobro COMPLETO, tal como se le ofrece al operador
+                  al crear un pedido. Es la prueba de que los controles de esta
+                  sección producen algo: se compone con la MISMA función que usa
+                  la confirmación de «Crear pedido», y solo con lo configurado.
+
+                  Va FUERA de la tarjeta de pasarela —y no dentro— porque esa
+                  tarjeta solo se pinta si el link de pago está encendido: las
+                  cuentas de transferencia se le comunican al cliente igual, tenga
+                  o no link.
+                */}
+                {mensajeDeCobro(draft.datosBancarios, "P-001", window.location.origin) !== "" && (
+                  <Card>
+                    <CardHead>Mensaje de cobro para el cliente</CardHead>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Esto es lo que el operador copia al confirmar un pedido. Se compone solo con lo
+                      que esté configurado aquí arriba.
+                    </p>
+                    <pre className="mt-3 whitespace-pre-wrap rounded-xl border border-gray-200 bg-gray-50 p-3.5 font-sans text-xs leading-relaxed text-gray-700 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-300">
+                      {mensajeDeCobro(draft.datosBancarios, "P-001", window.location.origin)}
+                    </pre>
+                  </Card>
+                )}
+
                 {/* Pasarela y Configuración del Link de Pago */}
                 {draft.datosBancarios?.linkPagoActivo !== false && (
                   <Card>
@@ -882,25 +1081,28 @@ export const ConfigPage = observer(() => {
                             onChange={(e) => setDatoBancario("linkPagoUrl", e.target.value)}
                           />
                           <p className="mt-1 text-[11px] text-gray-400">
-                            El bot de WhatsApp y las órdenes compartirán este enlace exacto para que el cliente pague su orden.
+                            Con un enlace externo, cada pedido cobrado en línea apunta a esta URL. Sin
+                            él, se usa el checkout propio de la aplicación.
                           </p>
                         </div>
                       )}
 
-                      {/* Vista previa del enlace generado */}
+                      {/* Vista previa del enlace, derivada con la MISMA función que
+                          usa la pantalla de crear pedido. Antes este bloque
+                          construía la URL a mano, así que podía enseñar una cosa
+                          y el pedido usar otra. */}
                       <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/80 p-3.5 dark:border-gray-800 dark:bg-gray-800/40">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                            Enlace generado para el cliente:
+                            Enlace que recibirá el cliente:
                           </span>
                           <Badge color="light" size="xs">Ejemplo pedido #P-001</Badge>
                         </div>
                         <p className="mt-1.5 font-mono text-xs text-brand-500 dark:text-brand-400 break-all select-all">
-                          {draft.datosBancarios?.linkPagoTipo === "personalizado" && draft.datosBancarios?.linkPagoUrl
-                            ? draft.datosBancarios.linkPagoUrl
-                            : `${window.location.origin}/checkout/P-001`}
+                          {enlaceDePago(draft.datosBancarios, "P-001", window.location.origin)}
                         </p>
                       </div>
+
                     </div>
                   </Card>
                 )}
@@ -909,7 +1111,9 @@ export const ConfigPage = observer(() => {
                 <Card>
                   <CardHead>Instrucciones de cobro para el cliente</CardHead>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Mensaje o indicaciones que el bot y la tienda envían al cliente al confirmar su orden.
+                    Cierran el mensaje de cobro que el operador copia al confirmar un pedido: van
+                    después de las cuentas y del enlace. Si se dejan vacías, el mensaje termina en las
+                    cuentas.
                   </p>
 
                   <div className="mt-4">
@@ -1033,44 +1237,22 @@ export const ConfigPage = observer(() => {
                         </div>
                       </div>
 
-                      <ToggleRow
-                        titulo="Campana sonora"
-                        descripcion="Aviso mientras existan pedidos pendientes de atención."
-                        control={
-                          <Switch
-                            checked={draft.alertaAtencion.activo}
-                            onChange={(v) => set("alertaAtencion", { ...draft.alertaAtencion, activo: v })}
-                            aria-label="Campana sonora de pedidos pendientes"
-                          />
-                        }
-                      />
+                      {/*
+                        La «Campana sonora» se retiró de aquí el 07/10.
 
-                      {draft.alertaAtencion.activo && (
-                        <div className={claseFila}>
-                          <Label2
-                            titulo="Repetir cada"
-                            descripcion="Frecuencia del aviso sonoro mientras haya pedidos sin atender."
-                            htmlFor="alerta-cada"
-                          />
-                          <div className="flex w-28 shrink-0 items-center gap-2">
-                            <Input
-                              id="alerta-cada"
-                              type="number"
-                              min="5"
-                              step={5}
-                              value={draft.alertaAtencion.cadaSegundos}
-                              onChange={(e) =>
-                                set("alertaAtencion", {
-                                  ...draft.alertaAtencion,
-                                  cadaSegundos: Math.max(5, Number(e.target.value) || 30),
-                                })
-                              }
-                              className="text-right font-semibold"
-                            />
-                            <span className="text-xs text-gray-400">seg</span>
-                          </div>
-                        </div>
-                      )}
+                        Se editaba en DOS sitios —esta tarjeta y la sección
+                        «Alertas» de la configuración del canal— sobre el mismo
+                        campo (`alertaAtencion`), y su lector está en
+                        `/pedidos/inicio`. Es una alerta de la BANDEJA: suena
+                        mientras haya clientes esperando en conversaciones, no
+                        solo por pedidos demorados. Su dueño es el canal, así que
+                        aquí se deja constancia en vez de un segundo control.
+                      */}
+                      <p className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800/80 dark:text-gray-400">
+                        La campana sonora se configura en{" "}
+                        <strong>Configuración del canal → Alertas</strong>: avisa mientras haya
+                        clientes esperando en la bandeja, no solo por pedidos demorados.
+                      </p>
                     </div>
                   </Card>
                 </div>

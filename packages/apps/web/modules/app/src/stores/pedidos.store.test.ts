@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { PedidosStore, catalogoDesdePreset, type Pedido, type Modalidad } from "./pedidos.store";
+import { PedidosStore, META_ESTADO_PEDIDO, catalogoDesdePreset, type Pedido, type Modalidad } from "./pedidos.store";
 import { BUSINESS_PROFILES } from "../domain/pedidos/pedidos.profiles";
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1304,6 +1304,47 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
       store.eliminarColumna(colId);
       expect(store.columnasTablero).not.toContain(colId);
       expect(store.getPedido(p.id)!.estado).not.toBe(colId);
+    });
+
+    it("una columna propia NO revienta al pedirle su badge ni su punto", () => {
+      // `estadoBadgeColor` y `estadoDotClass` indexaban `META_ESTADO_PEDIDO` sin
+      // guarda, y una columna propia no está en esa tabla. El tablero pide las
+      // dos para pintar cada tarjeta (líneas 402 y 1148 de `TableroPage`), así
+      // que la función de columnas propias estaba viva y usarla rompía la
+      // pantalla con un `TypeError`.
+      const store = new PedidosStore();
+      const colId = store.agregarColumna("En revisión de calidad");
+
+      expect(() => store.estadoBadgeColor(colId as any)).not.toThrow();
+      expect(() => store.estadoDotClass(colId as any)).not.toThrow();
+      expect(store.estadoBadgeColor(colId as any)).toBe("light");
+      expect(store.estadoDotClass(colId as any)).toBe("bg-gray-400");
+
+      // Y un estado real conserva exactamente el color de su tabla.
+      expect(store.estadoBadgeColor("nuevo")).toBe(META_ESTADO_PEDIDO.nuevo.badge);
+      expect(store.estadoDotClass("listo")).toBe(META_ESTADO_PEDIDO.listo.punto);
+    });
+
+    it("un pedido en una columna propia SOBREVIVE a un guardado de configuración", () => {
+      // `migrarPedidosVarados` corre en CADA `updateConfig` y solo miraba el
+      // pipeline de estados. Una columna propia no está en él, así que la
+      // consideraba un estado varado y devolvía sus pedidos a la primera columna:
+      // la columna se vaciaba sola en el siguiente guardado de configuración y el
+      // trabajo del operador se perdía sin que nadie hubiera tocado el pedido.
+      const store = new PedidosStore();
+      const colId = store.agregarColumna("En revisión de calidad");
+      const p = store.crearPedido({
+        cliente: "Sofía Test",
+        telefono: "+573009998877",
+        modalidad: "retiro",
+        items: [{ nombre: "Test", cantidad: 1 }],
+      });
+      expect(store.moverAColumna(p.id, colId)).toBe(true);
+
+      // Cualquier guardado de configuración dispara la migración.
+      store.updateConfig({ umbralUrgencia: 20 });
+
+      expect(store.getPedido(p.id)!.estado).toBe(colId);
     });
   });
 });
