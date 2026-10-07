@@ -445,7 +445,7 @@ const HeatmapActividad = observer(
  * Filtros: estado, modalidad, rango de fecha, búsqueda. El filtrado usa
  * filtrarHistorial (helper puro y testeado).
  */
-export const HistorialPage = observer(() => {
+export const HistorialPage = observer(({ sinHeader = false }: { sinHeader?: boolean }) => {
   const [filtros, setFiltros] = useState<HistorialFiltros>(FILTROS_VACIOS);
   const [detalleId, setDetalleId] = useState<string | null>(null);
 
@@ -461,14 +461,18 @@ export const HistorialPage = observer(() => {
 
   return (
     <>
-      <PageMeta title="Historial de pedidos" description="Pedidos entregados y cancelados" />
+      {!sinHeader && (
+        <>
+          <PageMeta title="Historial de pedidos" description="Pedidos entregados y cancelados" />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Historial</h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Pedidos ya cerrados: entregados y cancelados.
-        </p>
-      </div>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-ink-title dark:text-white/90">Historial</h1>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Pedidos ya cerrados: entregados y cancelados.
+            </p>
+          </div>
+        </>
+      )}
 
       {/* Filtros */}
       <Card className="mb-6">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import type { ApexOptions } from "apexcharts";
 import { observer } from "mobx-react-lite";
 
@@ -13,12 +13,13 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/elements/u
 import { Input } from "@/elements/form/input";
 import { Select } from "@/elements/form/select";
 import { DatePicker } from "@/elements/form/date-picker";
-import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, MoreDotIcon, CalenderIcon, ShootingStarIcon } from "@/icons";
+import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, TaskIcon, MoreDotIcon, CalenderIcon, ShootingStarIcon } from "@/icons";
 import { uiStore, pedidosStore, ETIQUETA_PAGO } from "@/stores";
 import { puede } from "@/stores/acceso.utils";
 import { retardoEscalonado } from "@/utils";
 import type { PedidoEstado } from "@/stores";
 import { SinDatos } from "./SinDatos";
+import { HistorialPage } from "./HistorialPage";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PALETA OFICIAL NECTO
@@ -137,14 +138,19 @@ const CardTitle = ({ title, hint }: { title: string; hint?: string }) => (
 // PÁGINA
 // ═══════════════════════════════════════════════════════════════════════════
 
-type Vista = "metricas" | "lista";
+type Vista = "metricas" | "historial" | "lista";
 
 export const AnaliticaPage = observer(() => {
   const isDark = uiStore.isDarkMode;
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // ── Estado de la vista ───────────────────────────────────────────────────
-  const [vista, setVista] = useState<Vista>("metricas");
+  const vistaInicial =
+    searchParams.get("vista") === "historial" || searchParams.get("vista") === "lista"
+      ? "historial"
+      : "metricas";
+  const [vista, setVista] = useState<Vista>(vistaInicial);
   const [periodo, setPeriodo] = useState<Periodo>("7d");
   const [periodoAbierto, setPeriodoAbierto] = useState(false);
 
@@ -516,7 +522,7 @@ export const AnaliticaPage = observer(() => {
               {(
                 [
                   { id: "metricas" as Vista, label: "Métricas", Icon: GridIcon },
-                  { id: "lista" as Vista, label: "Vista Lista", Icon: TableIcon },
+                  { id: "historial" as Vista, label: "Historial", Icon: TaskIcon },
                 ]
               ).map(({ id, label, Icon }) => {
                 const activo = vista === id;
@@ -526,8 +532,11 @@ export const AnaliticaPage = observer(() => {
                     type="button"
                     role="tab"
                     aria-selected={activo}
-                    onClick={() => setVista(id)}
-                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    onClick={() => {
+                      setVista(id);
+                      setSearchParams(id === "historial" ? { vista: "historial" } : {});
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                       activo
                         ? "bg-accent-500 text-white shadow-theme-xs"
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -540,45 +549,48 @@ export const AnaliticaPage = observer(() => {
               })}
             </div>
 
-            {/* Selector de periodo (funcional) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setPeriodoAbierto((v) => !v)}
-                aria-haspopup="listbox"
-                aria-expanded={periodoAbierto}
-                className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                <span>{etiquetaPeriodo(periodo)}</span>
-                <ChevronDown />
-              </button>
+            {/* Selector de periodo y exportar CSV (visibles en Métricas) */}
+            {vista === "metricas" && (
+              <>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setPeriodoAbierto((v) => !v)}
+                    aria-haspopup="listbox"
+                    aria-expanded={periodoAbierto}
+                    className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    <span>{etiquetaPeriodo(periodo)}</span>
+                    <ChevronDown />
+                  </button>
 
-              <Dropdown isOpen={periodoAbierto} onClose={() => setPeriodoAbierto(false)} className="w-52 p-1">
-                <div role="listbox" aria-label="Periodo">
-                  {OPCIONES_PERIODO.map((op) => (
-                    <DropdownItem
-                      key={op.value}
-                      onClick={() => {
-                        setPeriodo(op.value);
-                        setPagina(1);
-                      }}
-                      onItemClick={() => setPeriodoAbierto(false)}
-                      className={periodo === op.value ? "font-semibold text-accent-600 dark:text-accent-400" : ""}
-                    >
-                      <span className="flex flex-col">
-                        <span>{op.label}</span>
-                        <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500">{op.hint}</span>
-                      </span>
-                    </DropdownItem>
-                  ))}
+                  <Dropdown isOpen={periodoAbierto} onClose={() => setPeriodoAbierto(false)} className="w-52 p-1">
+                    <div role="listbox" aria-label="Periodo">
+                      {OPCIONES_PERIODO.map((op) => (
+                        <DropdownItem
+                          key={op.value}
+                          onClick={() => {
+                            setPeriodo(op.value);
+                            setPagina(1);
+                          }}
+                          onItemClick={() => setPeriodoAbierto(false)}
+                          className={periodo === op.value ? "font-semibold text-accent-600 dark:text-accent-400" : ""}
+                        >
+                          <span className="flex flex-col">
+                            <span>{op.label}</span>
+                            <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500">{op.hint}</span>
+                          </span>
+                        </DropdownItem>
+                      ))}
+                    </div>
+                  </Dropdown>
                 </div>
-              </Dropdown>
-            </div>
 
-            {/* Exportar CSV */}
-            <Button size="sm" variant="outline" startIcon={<DownloadIcon className="h-4 w-4" />} onClick={exportar}>
-              Descargar CSV
-            </Button>
+                <Button size="sm" variant="outline" startIcon={<DownloadIcon className="h-4 w-4" />} onClick={exportar}>
+                  Descargar CSV
+                </Button>
+              </>
+            )}
 
             {/* Acceso directo a NECTO AI.
                 Píldora con **anillo degradado, relleno claro y texto en
@@ -1026,151 +1038,11 @@ export const AnaliticaPage = observer(() => {
           </>
         ) : (
           /* ══════════════════════════════════════════════════════════════
-              VISTA LISTA
+              HISTORIAL DE PEDIDOS
           ══════════════════════════════════════════════════════════════ */
-          <Card className="p-0 sm:p-0">
-            {/* Filtros rápidos + búsqueda */}
-            <div className="flex flex-col gap-4 border-b border-gray-100 p-4 sm:flex-row sm:items-end sm:justify-between dark:border-gray-800">
-              <div className="grid flex-1 grid-cols-1 gap-3 sm:max-w-xl sm:grid-cols-2">
-                <Input
-                  type="text"
-                  placeholder="Buscar por cliente, pedido o teléfono…"
-                  value={filtros.busqueda}
-                  onChange={(e) => {
-                    setFiltros((f) => ({ ...f, busqueda: e.target.value }));
-                    setPagina(1);
-                  }}
-                  aria-label="Buscar pedidos"
-                />
-                {/* `Select` del catálogo es no controlado (estado interno +
-                    `defaultValue`): no acepta `value`, así que se remonta con
-                    `key` cuando cambia el filtro para mantenerlo sincronizado. */}
-                <Select
-                  key={`estado-${filtros.estado}`}
-                  options={opcionesEstado}
-                  defaultValue={filtros.estado}
-                  onChange={(v) => {
-                    setFiltros((f) => ({ ...f, estado: v as FiltroEstado }));
-                    setPagina(1);
-                  }}
-                  aria-label="Filtrar por estado"
-                />
-              </div>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {paginaActual.totalItems} de {pedidosDelRango.length} pedidos
-              </p>
-            </div>
-
-            {/* Tabla */}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {COLUMNAS.map((c) => (
-                    <TableCell key={c.key} header>
-                      <button
-                        type="button"
-                        onClick={() => alternarOrden(c.key)}
-                        aria-label={`Ordenar por ${c.label}`}
-                        className={`inline-flex items-center gap-1 uppercase tracking-wider transition-colors hover:text-gray-700 dark:hover:text-gray-200 ${
-                          orden.columna === c.key ? "text-accent-600 dark:text-accent-400" : ""
-                        } ${c.align === "right" ? "ml-auto" : ""}`}
-                      >
-                        {c.label}
-                        <span aria-hidden="true" className="text-[9px] leading-none">
-                          {orden.columna === c.key ? (orden.direccion === "asc" ? "▲" : "▼") : "◇"}
-                        </span>
-                      </button>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginaActual.items.length === 0 ? (
-                  <TableRow>
-                    <TableCell>
-                      {SIN_RESULTADOS}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginaActual.items.map((p) => (
-                    <TableRow key={p.id}>
-                      <TableCell>
-                        <span className="font-medium text-gray-900 dark:text-white">{p.numero}</span>
-                      </TableCell>
-                      <TableCell>{p.cliente}</TableCell>
-                      <TableCell>
-                        <span className="text-gray-500 dark:text-gray-400">{p.telefono}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge color={p.origen === "whatsapp" ? "success" : "info"} size="sm" variant="light">
-                          {pedidosStore.origenLabel(p.origen)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{pedidosStore.modalidadLabel(p.modalidad)}</TableCell>
-                      <TableCell>
-                        <span className="block text-right font-medium text-gray-900 dark:text-white">
-                          {money(pedidosStore.totalPedido(p))}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
-                          {pedidosStore.estadoLabel(p.estado)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-gray-500 dark:text-gray-400">{fechaLegibleCsv(p.createdAt)}</span>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-
-            {/* Paginador */}
-            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-100 p-4 sm:flex-row dark:border-gray-800">
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <span>Filas por página</span>
-                <select
-                  value={porPagina}
-                  onChange={(e) => {
-                    setPorPagina(Number(e.target.value));
-                    setPagina(1);
-                  }}
-                  aria-label="Filas por página"
-                  className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                >
-                  {TAMANOS_PAGINA.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                  disabled={paginaActual.pagina <= 1}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                >
-                  Anterior
-                </button>
-                <span className="text-gray-500 dark:text-gray-400">
-                  Página {paginaActual.pagina} de {paginaActual.totalPaginas}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPagina((p) => Math.min(paginaActual.totalPaginas, p + 1))}
-                  disabled={paginaActual.pagina >= paginaActual.totalPaginas}
-                  className="rounded-lg border border-gray-200 px-3 py-1.5 font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                >
-                  Siguiente
-                </button>
-              </div>
-            </div>
-          </Card>
+          <div className="mt-1">
+            <HistorialPage sinHeader />
+          </div>
         )}
       </div>
     </>
