@@ -1256,6 +1256,23 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
       expect(store.tieneCapacidad("modifiers")).toBe(false);
     });
 
+    it("cambiar de perfil NO reemplaza los pedidos salvo que se pida expresamente", () => {
+      // `resetPedidosDemo` era `true` por defecto, así que cualquier llamada que
+      // solo quería cambiar de perfil borraba la operación entera y la sustituía
+      // por cinco pedidos de ejemplo. La configuración lo hacía con un clic en
+      // «Activar perfil», sin confirmación: el botón no decía que era
+      // destructivo, y solo lo insinuaba DESPUÉS de haberlo pulsado una vez.
+      // Un efecto destructivo se pide; no se hereda por omisión.
+      const antes = store.pedidos.map((p) => p.id);
+      expect(antes.length).toBeGreaterThan(0);
+
+      store.setPerfilComercial("fashion");
+      expect(store.pedidos.map((p) => p.id)).toEqual(antes);
+
+      store.setPerfilComercial("fashion", true);
+      expect(store.pedidos.map((p) => p.id)).not.toEqual(antes);
+    });
+
     it("permite obtener un pedido como OrderCore y dar de alta desde OrderCore", () => {
       const p = store.crearPedido({
         cliente: "Carla Ropa",
