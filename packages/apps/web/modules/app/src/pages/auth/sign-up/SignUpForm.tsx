@@ -64,7 +64,7 @@ export default function SignUpForm() {
         return;
       }
 
-      navigate("/onboarding/organizacion");
+      navigate("/onboarding/perfil");
     } catch {
       setErrorMensaje("Ocurrió un error inesperado al conectar con el servidor.");
     } finally {
