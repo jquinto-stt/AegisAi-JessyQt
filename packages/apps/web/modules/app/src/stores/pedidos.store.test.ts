@@ -1346,6 +1346,90 @@ describe("PedidosStore — Logística de entrega, CRM de direcciones y pagos", (
 
       expect(store.getPedido(p.id)!.estado).toBe(colId);
     });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UN DUEÑO POR AJUSTE — los interruptores, los alias y las columnas
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // Los cuatro casos de abajo describen un solo defecto: la lista
+    // `columnasPersonalizadas` se comportaba como si fuera dueña de cosas que no
+    // son suyas —la EXISTENCIA de una etapa y su NOMBRE—, y ganaba en silencio
+    // sobre el control que sí las gobierna. El usuario apagaba «Confirmado» o
+    // renombraba una etapa y no pasaba nada, sin ningún error a la vista.
+
+    it("apagar un paso del pipeline quita su columna aunque la lista personalizada la tenga", () => {
+      const store = new PedidosStore();
+
+      // Tocar el editor de columnas deja la lista persistida CON las etapas
+      // dentro: es el estado en el que el defecto aparecía.
+      store.agregarColumna("En revisión de calidad");
+      expect(store.config.columnasPersonalizadas!.map((c) => c.id)).toContain("confirmado");
+
+      store.updateConfig({ usarConfirmado: false });
+      expect(store.columnasTablero).not.toContain("confirmado");
+
+      // Y volver a encenderlo la devuelve, en su sitio: apagar no es perder.
+      store.updateConfig({ usarConfirmado: true });
+      expect(store.columnasTablero).toContain("confirmado");
+    });
+
+    it("el alias de una etapa manda sobre el nombre congelado de la columna", () => {
+      const store = new PedidosStore();
+      store.agregarColumna("En revisión de calidad");
+
+      // La lista guarda una COPIA del nombre que la etapa tenía al sembrarse.
+      const congelado = store.config.columnasPersonalizadas!.find((c) => c.id === "nuevo")!.label;
+      expect(congelado).toBe("Pendiente de pago");
+
+      store.updateConfig({ aliasEstados: { nuevo: "Por pagar" } });
+
+      // La copia sigue ahí —es un dato viejo, no se borra— pero ya NO es la que
+      // se pinta: el nombre lo fija el alias, que es el campo que el usuario
+      // acaba de escribir.
+      expect(store.config.columnasPersonalizadas!.find((c) => c.id === "nuevo")!.label).toBe(
+        "Pendiente de pago",
+      );
+      expect(store.estadoLabel("nuevo")).toBe("Por pagar");
+    });
+
+    it("una columna propia conserva su nombre: no tiene alias que lo sustituya", () => {
+      const store = new PedidosStore();
+      const colId = store.agregarColumna("En revisión de calidad");
+
+      store.updateConfig({ aliasEstados: { nuevo: "Por pagar" } });
+
+      expect(store.estadoLabel(colId as any)).toBe("En revisión de calidad");
+    });
+
+    it("renombrar una etapa del sistema escribe el alias, no la copia de la columna", () => {
+      const store = new PedidosStore();
+      store.agregarColumna("En revisión de calidad");
+
+      store.renombrarColumna("listo", "Ya está");
+
+      // Se escribe donde `estadoLabel` lo lee. Escribirlo en la lista de
+      // columnas sería escribirlo donde nadie mira.
+      expect(store.config.aliasEstados.listo).toBe("Ya está");
+      expect(store.estadoLabel("listo")).toBe("Ya está");
+    });
+
+    it("un pedido en una etapa apagada se migra aunque esté en la lista de columnas", () => {
+      const store = new PedidosStore();
+      const p = store.crearPedido({
+        cliente: "Nora Test",
+        telefono: "+573001110000",
+        modalidad: "retiro",
+        items: [{ nombre: "Test", cantidad: 1 }],
+      });
+      store.moverAColumna(p.id, "confirmado");
+      store.agregarColumna("En revisión de calidad");
+
+      store.updateConfig({ usarConfirmado: false });
+
+      // La columna ya no se pinta, así que un pedido dentro sería invisible.
+      expect(store.columnasTablero).not.toContain("confirmado");
+      expect(store.getPedido(p.id)!.estado).not.toBe("confirmado");
+    });
   });
 });
 

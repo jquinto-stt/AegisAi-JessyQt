@@ -436,6 +436,124 @@ const ORIGEN_ORDEN: Origen[] = ["whatsapp", "operador"];
  */
 const ESTADOS_VENTA: PedidoEstado[] = ["confirmado", "en_preparacion", "listo", "en_camino", "entregado"];
 
+// ═══════════════════════════════════════════════════════════════════════════
+// REGLAS PURAS DEL PIPELINE Y DE LAS COLUMNAS
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// ── Por qué son funciones de módulo y no métodos privados ─────────────────
+//
+// `/pedidos/config` edita un BORRADOR: los interruptores del pipeline y el
+// editor de columnas tienen que verse entre sí ANTES de guardar (apagar
+// «Confirmado» y ver la columna desaparecer de la lista, sin pulsar Guardar).
+//
+// Eso es exactamente el sitio donde nace un segundo dueño de la regla: la
+// pantalla derivaba las columnas por su cuenta con una copia de la lógica del
+// store, y las dos podían discrepar. Aquí se declara UNA vez y la consumen los
+// dos: el store con su config confirmada, la página con su borrador.
+
+/**
+ * ¿`id` es una columna PROPIA del tablero —una que el negocio se inventó— y no
+ * una etapa del sistema?
+ *
+ * La versión anterior preguntaba si el id estaba en `columnasPersonalizadas`, y
+ * eso convertía a TODA etapa en «propia» en cuanto el usuario tocaba el editor:
+ * `asegurarColumnasPersonalizadas()` copia las etapas activas dentro de la lista.
+ * Con la comprobación vieja, `migrarPedidosVarados` daba por buena cualquier
+ * etapa —incluidas las que el usuario acababa de APAGAR— y los pedidos que
+ * estaban en ella se quedaban varados en una columna que ya no se pintaba.
+ */
+export function esColumnaPropiaDe(id: string): boolean {
+  return !ORDEN_ESTADOS.includes(id as PedidoEstado);
+}
+
+/**
+ * Las etapas activas según los interruptores. Fuente ÚNICA del pipeline efectivo.
+ *
+ * Recibe solo los dos booleanos —y no la config entera— para poder resolverla
+ * contra un borrador sin construir un `PedidosConfig` completo.
+ */
+export function estadosActivosDe(
+  cfg: Pick<PedidosConfig, "usarConfirmado" | "usarEnCamino">,
+): PedidoEstado[] {
+  return PIPELINE_FULL.filter((e) => {
+    if (e === "confirmado" && !cfg.usarConfirmado) return false;
+    if (e === "en_camino" && !cfg.usarEnCamino) return false;
+    return true;
+  });
+}
+
+/**
+ * Las columnas del tablero: qué etapas se ven y en qué orden.
+ *
+ * ── Un dueño por ajuste (07/10) ────────────────────────────────────────────
+ *
+ * Aquí vivían DOS dueños del mismo hecho y se contradecían:
+ *
+ *   · `usarConfirmado` / `usarEnCamino` deciden si una etapa EXISTE.
+ *   · `columnasPersonalizadas` decide el ORDEN y las columnas propias.
+ *
+ * La versión anterior devolvía la lista personalizada tal cual, así que en
+ * cuanto el usuario reordenaba una columna la lista quedaba persistida con
+ * `confirmado` y `en_camino` dentro, y **apagar sus interruptores dejaba de
+ * hacer nada**: el control seguía ahí, se dejaba pulsar, y el tablero no
+ * cambiaba. Un control que miente.
+ *
+ * La regla es explícita y en una sola dirección: la lista personalizada aporta
+ * el ORDEN y las columnas propias; la EXISTENCIA de una etapa la decide
+ * `estadosActivos`. Una etapa apagada desaparece aunque esté en la lista, y una
+ * etapa encendida que falte vuelve —al final, en orden de pipeline—, para que
+ * apagar y volver a encender no la pierda.
+ */
+export function componerColumnas(
+  activas: readonly PedidoEstado[],
+  propias: ColumnaPersonalizada[] | undefined,
+): PedidoEstado[] {
+  const visibles: PedidoEstado[] = activas.filter((e) => e !== "entregado");
+  if (!propias || propias.length === 0) return visibles;
+
+  const ordenadas: PedidoEstado[] = [];
+  for (const c of propias) {
+    const id = c.id as PedidoEstado;
+    if (esColumnaPropiaDe(c.id) || visibles.includes(id)) {
+      if (!ordenadas.includes(id)) ordenadas.push(id);
+    }
+  }
+  for (const e of visibles) {
+    if (!ordenadas.includes(e)) ordenadas.push(e);
+  }
+  return ordenadas;
+}
+
+/**
+ * El rótulo de un estado o de una columna. UN dueño por nombre.
+ *
+ * ── Por qué una etapa del sistema NO lee su nombre de la columna ──────────
+ *
+ * La versión anterior preguntaba primero a `columnasPersonalizadas` y solo
+ * después al alias. Como la lista de columnas se siembra copiando el nombre que
+ * la etapa tenía EN ESE MOMENTO (`asegurarColumnasPersonalizadas`), el nombre
+ * quedaba congelado: renombrar «Pendiente de pago» a «Por pagar» en «Nombres
+ * personalizados» no cambiaba nada en el tablero, porque la copia vieja ganaba.
+ * Dos superficies para un valor, y la que perdía era la que el usuario acababa
+ * de escribir.
+ *
+ * El reparto ahora es el que la propia pantalla documenta: los NOMBRES de las
+ * etapas del sistema los fija el alias (`aliasEstados`) y la lista de columnas
+ * solo aporta ORDEN. Una columna PROPIA sí lleva su nombre dentro, porque no
+ * tiene alias ni otro sitio donde vivir.
+ */
+export function etiquetaDeEstado(
+  id: PedidoEstado,
+  cfg: Pick<PedidosConfig, "aliasEstados" | "columnasPersonalizadas">,
+): string {
+  if (esColumnaPropiaDe(id)) {
+    const propia = cfg.columnasPersonalizadas?.find((c) => c.id === id);
+    return propia?.label?.trim() || (id as string);
+  }
+  const alias = cfg.aliasEstados[id as EstadoConfigurable];
+  return alias && alias.trim() ? alias.trim() : (ESTADO_LABEL[id] ?? (id as string));
+}
+
 const DEFAULT_CONFIG: PedidosConfig = {
   usarConfirmado: true,
   usarEnCamino: true,
@@ -1182,8 +1300,17 @@ export class PedidosStore {
    * Cambia el perfil comercial del negocio (preset de onboarding / configuración).
    * Actualiza las capacidades activas por defecto, catálogo, alias de estados,
    * modalidades y pedidos representativos de esa industria.
+   *
+   * ── `resetPedidosDemo` es `false` por defecto, y eso es deliberado ────────
+   *
+   * Reemplaza TODOS los pedidos del negocio por cinco de ejemplo. Tenía el
+   * valor `true` por defecto, así que cualquier llamada que solo quería cambiar
+   * de perfil borraba la operación entera por omisión — y la configuración lo
+   * hacía con un clic en «Activar perfil», sin confirmación. Un efecto
+   * destructivo se pide explícitamente o no ocurre: quien quiere datos de
+   * ejemplo —el onboarding de una cuenta nueva— pasa `true` a la vista.
    */
-  setPerfilComercial(perfil: BusinessProfileType, resetPedidosDemo = true): void {
+  setPerfilComercial(perfil: BusinessProfileType, resetPedidosDemo = false): void {
     const preset = BUSINESS_PROFILES[perfil] ?? BUSINESS_PROFILES.food;
     this.updateConfig({
       perfilComercial: perfil,
@@ -1231,17 +1358,24 @@ export class PedidosStore {
    * estado activo disponible. Evita que queden inaccesibles tras cambiar config.
    */
   /**
-   * ¿`estado` es una columna PROPIA del tablero?
+   * ¿`id` es una columna PROPIA del tablero —una que el negocio se inventó— y no
+   * una etapa del sistema?
    *
-   * Una columna creada por el negocio (`col_…`) es un destino VÁLIDO —el tablero
-   * la pinta y se puede arrastrar un pedido dentro con `moverAColumna`— aunque no
-   * sea un estado del pipeline. Sin esta comprobación, `migrarPedidosVarados` la
-   * trataba como un estado inválido y devolvía sus pedidos a la primera columna
-   * del pipeline en el siguiente guardado de configuración: la columna propia se
-   * vaciaba sola y el trabajo del operador se perdía sin que nadie lo tocara.
+   * ── Por qué la pregunta es «¿está en `ORDEN_ESTADOS`?» y no «¿está en la
+   * lista de columnas?» ────────────────────────────────────────────────────
+   *
+   * La versión anterior preguntaba lo segundo, y eso convertía a TODA etapa del
+   * pipeline en «propia» en cuanto el usuario tocaba el editor de columnas:
+   * `asegurarColumnasPersonalizadas()` copia las etapas activas dentro de la
+   * lista, así que la lista acaba conteniendo `confirmado`, `listo`, etc. Con la
+   * comprobación vieja, `migrarPedidosVarados` daba por buena cualquier etapa
+   * —incluidas las que el usuario acababa de APAGAR— y los pedidos que estaban
+   * en ella se quedaban varados en una columna que ya no se pintaba.
+   *
+   * Una columna propia es, por definición, la que NO es un estado del sistema.
    */
-  private esColumnaPropia(estado: PedidoEstado): boolean {
-    return (this.config.columnasPersonalizadas ?? []).some((c) => c.id === estado);
+  private esColumnaPropia(id: string): boolean {
+    return esColumnaPropiaDe(id);
   }
 
   private migrarPedidosVarados(): void {
@@ -1269,26 +1403,22 @@ export class PedidosStore {
    * Filtra `confirmado`/`en_camino` cuando están desactivados.
    */
   get estadosActivos(): PedidoEstado[] {
-    return PIPELINE_FULL.filter((e) => {
-      if (e === "confirmado" && !this.config.usarConfirmado) return false;
-      if (e === "en_camino" && !this.config.usarEnCamino) return false;
-      return true;
-    });
+    return estadosActivosDe(this.config);
+  }
+
+  /** Columnas del tablero. La regla vive en `componerColumnas` (arriba). */
+  get columnasTablero(): PedidoEstado[] {
+    return componerColumnas(this.estadosActivos, this.config.columnasPersonalizadas);
   }
 
   /**
-   * Columnas del tablero: estados activos del pipeline (sin `entregado`, que
-   * es terminal y vive en el historial). El tablero muestra el trabajo en curso.
-   * Si se configuraron columnas personalizadas, devuelve los IDs de dichas columnas.
+   * Garantiza que la lista de columnas personalizadas esté inicializada.
+   *
+   * El `label` que copia de cada etapa del sistema es solo una SEMILLA para el
+   * primer pintado: `estadoLabel()` no lo lee (un alias posterior lo pisaría sin
+   * efecto). Se conserva porque el editor lo usa como texto inicial mientras la
+   * lista es nueva, y porque una columna propia sí lo necesita.
    */
-  get columnasTablero(): PedidoEstado[] {
-    if (this.config.columnasPersonalizadas && this.config.columnasPersonalizadas.length > 0) {
-      return this.config.columnasPersonalizadas.map((c) => c.id as PedidoEstado);
-    }
-    return this.estadosActivos.filter((e) => e !== "entregado");
-  }
-
-  /** Garantiza que la lista de columnas personalizadas esté inicializada */
   asegurarColumnasPersonalizadas(): ColumnaPersonalizada[] {
     if (!this.config.columnasPersonalizadas || this.config.columnasPersonalizadas.length === 0) {
       this.config.columnasPersonalizadas = this.estadosActivos
@@ -1312,14 +1442,30 @@ export class PedidosStore {
     return id;
   }
 
-  /** Renombra una columna existente del tablero */
+  /**
+   * Renombra una columna del tablero.
+   *
+   * Una etapa del SISTEMA se renombra por su alias: es el único sitio del que
+   * `estadoLabel` lee su nombre. Escribirlo en la lista de columnas sería
+   * escribirlo donde ya nadie lo lee (ver `estadoLabel`). Una columna PROPIA lo
+   * lleva dentro, porque no tiene alias ni otro sitio donde vivir.
+   */
   renombrarColumna(id: string, nuevoLabel: string): void {
-    const cols = [...this.asegurarColumnasPersonalizadas()];
-    const target = cols.find((c) => c.id === id);
-    if (target && nuevoLabel.trim()) {
-      target.label = nuevoLabel.trim();
+    const limpio = nuevoLabel.trim();
+    if (!limpio) return;
+
+    if (this.esColumnaPropia(id)) {
+      const cols = [...this.asegurarColumnasPersonalizadas()];
+      const target = cols.find((c) => c.id === id);
+      if (!target) return;
+      target.label = limpio;
       this.updateConfig({ columnasPersonalizadas: [...cols] });
+      return;
     }
+
+    this.updateConfig({
+      aliasEstados: { ...this.config.aliasEstados, [id as EstadoConfigurable]: limpio },
+    });
   }
 
   /** Elimina una columna del tablero y migra sus pedidos a la primera columna disponible */
@@ -2285,14 +2431,9 @@ export class PedidosStore {
 
   // ── Display helpers ────────────────────────────────────────────────────────
 
-  /** Etiqueta de estado, honrando columnas personalizadas y alias de config si existen. */
+  /** Etiqueta de estado. La regla vive en `etiquetaDeEstado` (arriba). */
   estadoLabel(e: PedidoEstado): string {
-    if (this.config.columnasPersonalizadas) {
-      const custom = this.config.columnasPersonalizadas.find((c) => c.id === e);
-      if (custom) return custom.label;
-    }
-    const alias = this.config.aliasEstados[e as EstadoConfigurable];
-    return alias && alias.trim() ? alias.trim() : (ESTADO_LABEL[e] ?? (e as string));
+    return etiquetaDeEstado(e, this.config);
   }
 
   /** Etiqueta de modalidad, honrando el alias de la config (C) si existe. */
