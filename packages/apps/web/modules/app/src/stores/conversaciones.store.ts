@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 
 import type { AssistantMessage } from "@/assistant";
 import type { BadgeColor } from "@/elements/ui/badge";
@@ -479,44 +479,46 @@ export class ConversacionesStore {
     this.origenDatos = "cargando";
     const res = await cargarTodo();
 
-    switch (res.estado) {
-      case "ok":
-        this.conversaciones = res.datos.conversaciones;
-        this.mensajesPorConv = res.datos.mensajesPorConv;
-        // Los eventos de sistema no existen en la base todavía: se vacían para
-        // que no queden mezclados los del seed con datos reales. Mezclar los dos
-        // orígenes sería peor que no tener eventos: una línea de tiempo con
-        // anotaciones inventadas sobre conversaciones reales.
-        this.eventosPorConv = new Map();
-        this.origenDatos = "real";
-        this.motivoSeed = "";
-        break;
+    runInAction(() => {
+      switch (res.estado) {
+        case "ok":
+          this.conversaciones = res.datos.conversaciones;
+          this.mensajesPorConv = res.datos.mensajesPorConv;
+          // Los eventos de sistema no existen en la base todavía: se vacían para
+          // que no queden mezclados los del seed con datos reales. Mezclar los dos
+          // orígenes sería peor que no tener eventos: una línea de tiempo con
+          // anotaciones inventadas sobre conversaciones reales.
+          this.eventosPorConv = new Map();
+          this.origenDatos = "real";
+          this.motivoSeed = "";
+          break;
 
-      case "sin_configuracion":
-        this.origenDatos = "seed";
-        this.motivoSeed = "Sin configuración de Supabase: mostrando datos de ejemplo.";
-        break;
+        case "sin_configuracion":
+          this.origenDatos = "seed";
+          this.motivoSeed = "Sin configuración de Supabase: mostrando datos de ejemplo.";
+          break;
 
-      case "sin_sesion":
-        this.origenDatos = "seed";
-        this.motivoSeed =
-          "Sin sesión autenticada: las políticas RLS filtran a cero y la bandeja no puede leer. Mostrando datos de ejemplo.";
-        break;
+        case "sin_sesion":
+          this.origenDatos = "seed";
+          this.motivoSeed =
+            "Sin sesión autenticada: las políticas RLS filtran a cero y la bandeja no puede leer. Mostrando datos de ejemplo.";
+          break;
 
-      case "sin_permiso":
-        this.origenDatos = "seed";
-        this.motivoSeed = `Sin permiso para leer conversaciones. ${res.detalle}`;
-        break;
+        case "sin_permiso":
+          this.origenDatos = "seed";
+          this.motivoSeed = `Sin permiso para leer conversaciones. ${res.detalle}`;
+          break;
 
-      case "error":
-        this.origenDatos = "seed";
-        this.motivoSeed = `Error al leer de la base: ${res.detalle}`;
-        break;
-    }
+        case "error":
+          this.origenDatos = "seed";
+          this.motivoSeed = `Error al leer de la base: ${res.detalle}`;
+          break;
+      }
 
-    // Se persiste igual que tras cualquier otra mutación, para que el estado que
-    // ve la UI y el que se guarda no diverjan.
-    this.persistir();
+      // Se persiste igual que tras cualquier otra mutación, para que el estado que
+      // ve la UI y el que se guarda no diverjan.
+      this.persistir();
+    });
   }
 
   /**
@@ -535,10 +537,12 @@ export class ConversacionesStore {
     // Se reemplaza por la lista fresca conservando solo lo que no vino de la
     // base (mensajes locales aún sin persistir). Ordenar por timestamp mantiene
     // la línea de tiempo coherente cuando se mezclan.
-    this.mensajesPorConv.set(
-      convId,
-      [...porId.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
-    );
+    runInAction(() => {
+      this.mensajesPorConv.set(
+        convId,
+        [...porId.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+      );
+    });
   }
 
   /**
@@ -1117,20 +1121,24 @@ export class ConversacionesStore {
     try {
       const res = await enviarMensajeOperador(convId, texto);
 
-      if (!res.ok) {
-        // NO se pinta la burbuja: el mensaje no salió, así que mostrarlo sería
-        // afirmar algo falso. Se avisa y se deja el texto donde estaba.
-        this.ultimoErrorEnvio = res.detalle;
-        return;
-      }
+      runInAction(() => {
+        if (!res.ok) {
+          // NO se pinta la burbuja: el mensaje no salió, así que mostrarlo sería
+          // afirmar algo falso. Se avisa y se deja el texto donde estaba.
+          this.ultimoErrorEnvio = res.detalle;
+          return;
+        }
 
-      // Salido y guardado: ahora sí, la burbuja es verdad.
-      this.agregarMensaje(convId, "negocio", texto, moduloContexto);
-      conv.ultimaActividad = res.enviadoEn;
-      this.persistir();
+        // Salido y guardado: ahora sí, la burbuja es verdad.
+        this.agregarMensaje(convId, "negocio", texto, moduloContexto);
+        conv.ultimaActividad = res.enviadoEn;
+        this.persistir();
+      });
       void this.refrescarMensajes(convId);
     } finally {
-      this.enviandoMensaje = false;
+      runInAction(() => {
+        this.enviandoMensaje = false;
+      });
     }
   }
 
@@ -1227,7 +1235,9 @@ export class ConversacionesStore {
       // No se revierte el estado local: la UI debe mostrar lo que el operador
       // pidió, junto al motivo de que no se aplicó. Revertirlo en silencio
       // dejaría al operador creyendo que pulsó y no pasó nada.
-      this.ultimoErrorModo = `No se pudo cambiar el modo en la base: ${res.detalle}`;
+      runInAction(() => {
+        this.ultimoErrorModo = `No se pudo cambiar el modo en la base: ${res.detalle}`;
+      });
       return;
     }
     // El tiempo real ya recarga la fila; este refresco es por si el canal está
@@ -1423,12 +1433,14 @@ export class ConversacionesStore {
       history,
     });
 
-    this.agregarMensajeBot(
-      convId,
-      resultado.texto,
-      resultado.payload,
-      resultado.modulo,
-    );
+    runInAction(() => {
+      this.agregarMensajeBot(
+        convId,
+        resultado.texto,
+        resultado.payload,
+        resultado.modulo,
+      );
+    });
   }
 
   /**

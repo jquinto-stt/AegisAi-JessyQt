@@ -7,15 +7,22 @@ import { Button } from "@/elements/ui/button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/elements/ui/card";
 import { Select } from "@/elements/form/select";
 import { SearchInput } from "@/elements";
-import { AdjustmentsHorizontalIcon, DownloadIcon, PlusIcon } from "@/icons";
+import {
+  AdjustmentsHorizontalIcon,
+  ArrowDownTrayIcon,
+  CheckCircleIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 import { BOM_UTF8, construirCsv, descargarCsv, nombreArchivoCsv, ymdLocal } from "@/lib/csv";
 import { puedeGestionarCatalogo } from "@/stores";
 import { productosStore } from "@/stores/productos.store";
+import type { Producto } from "@/domain/inventarios/productos.domain";
 import { CabeceraPagina, ContenedorPagina } from "./inventarios.ui";
 import { SinResultados } from "./inventarios.widgets";
 import { ProductosTabla } from "./ProductosTabla";
 import { ModalProducto } from "./ModalProducto";
+import { ModalReponerStock } from "./ModalReponerStock";
 import { InventarioZeroState } from "./InventarioZeroState";
 import {
   FILTRO_TODOS,
@@ -75,6 +82,10 @@ export const ProductosPage = observer(function ProductosPage() {
   const [semaforo, setSemaforo] = useState(FILTRO_TODOS);
   const [pagina, setPagina] = useState(0);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalReponerAbierto, setModalReponerAbierto] = useState(false);
+  const [productoAReponer, setProductoAReponer] = useState<Producto | null>(null);
+  const [cantidadProductoAReponer, setCantidadProductoAReponer] = useState<number | undefined>(undefined);
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
   // Cambiar esta clave obliga a los `<Select>` a remontarse: son componentes no
   // controlados (solo aceptan `defaultValue`), así que sin remontarlos «Quitar
   // filtros» limpiaría el estado de React pero el desplegable seguiría
@@ -189,6 +200,20 @@ export const ProductosPage = observer(function ProductosPage() {
         }
       />
 
+      {mensajeExito && (
+        <div className="flex items-center gap-3 rounded-xl border border-success-200 bg-success-50 p-4 text-sm text-success-800 dark:border-success-900/50 dark:bg-success-950/20 dark:text-success-300">
+          <CheckCircleIcon className="h-5 w-5 shrink-0 text-success-600 dark:text-success-400" />
+          <p className="flex-1 font-medium">{mensajeExito}</p>
+          <button
+            type="button"
+            onClick={() => setMensajeExito(null)}
+            className="text-xs font-semibold underline hover:no-underline"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
       {!puedeEditar && (
         <p className="rounded-xl bg-gray-100 px-3.5 py-2.5 text-sm text-gray-600 dark:bg-white/5 dark:text-gray-300">
           {TEXTO_SOLO_LECTURA}
@@ -247,6 +272,20 @@ export const ProductosPage = observer(function ProductosPage() {
                 setPagina(0);
               }}
             />
+            {productosStore.sedesActivas.length > 1 && (
+              <div className="w-full sm:w-48">
+                <Select
+                  key={`sede-bar-${versionFiltros}`}
+                  aria-label="Filtrar por sede"
+                  options={opcionesSede}
+                  defaultValue={sede}
+                  onChange={(v) => {
+                    setSede(v);
+                    setPagina(0);
+                  }}
+                />
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
@@ -258,7 +297,7 @@ export const ProductosPage = observer(function ProductosPage() {
               </Button>
               <Button
                 variant="outline"
-                startIcon={<DownloadIcon className="h-4 w-4" />}
+                startIcon={<ArrowDownTrayIcon className="h-4 w-4" />}
                 onClick={descargar}
                 disabled={filas.length === 0}
               >
@@ -340,6 +379,11 @@ export const ProductosPage = observer(function ProductosPage() {
                   hoy={hoy}
                   sedeFiltrada={sedeFiltrada}
                   onAbrir={(id) => navigate(`/inventarios/productos/${id}`)}
+                  onReponer={(prod, cant) => {
+                    setProductoAReponer(prod);
+                    setCantidadProductoAReponer(cant);
+                    setModalReponerAbierto(true);
+                  }}
                 />
               </CardBody>
 
@@ -378,6 +422,21 @@ export const ProductosPage = observer(function ProductosPage() {
         categorias={productosStore.categorias}
         soloLectura={!puedeEditar}
         onGuardar={(datos) => productosStore.crearProducto(datos)}
+      />
+
+      <ModalReponerStock
+        abierto={modalReponerAbierto}
+        onCerrar={() => {
+          setModalReponerAbierto(false);
+          setProductoAReponer(null);
+          setCantidadProductoAReponer(undefined);
+        }}
+        producto={productoAReponer}
+        cantidadActual={cantidadProductoAReponer ?? 0}
+        onOrdenCreada={(ordenId) => {
+          setMensajeExito(`¡Orden #${ordenId} de reposición generada con éxito!`);
+          setTimeout(() => setMensajeExito(null), 5000);
+        }}
       />
     </ContenedorPagina>
   );

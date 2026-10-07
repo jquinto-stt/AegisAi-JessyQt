@@ -10,7 +10,13 @@ import { Modal } from "@/elements/ui/modal";
 import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
-import { PlusIcon, CheckLineIcon, DownloadIcon } from "@/icons";
+import {
+  PlusIcon,
+  CheckCircleIcon,
+  TruckIcon,
+  PencilSquareIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { productosStore } from "@/stores/productos.store";
 import { CabeceraPagina, ContenedorPagina } from "./inventarios.ui";
 import { formatearMoneda } from "./productos.presentacion";
@@ -23,10 +29,20 @@ export const OrdenesPage = observer(function OrdenesPage() {
   // Formulario nueva orden
   const [productoId, setProductoId] = useState(productosStore.productos[0]?.id || "");
   const [proveedorId, setProveedorId] = useState(productosStore.proveedores[0]?.id || "");
+  const [sedeId, setSedeId] = useState(productosStore.sedesActivas[0]?.id || "");
   const [cantidad, setCantidad] = useState("20");
   const [valorTotal, setValorTotal] = useState("");
   const [fechaEntrega, setFechaEntrega] = useState("");
   const [notificar, setNotificar] = useState(true);
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+
+  // Formulario editar orden
+  const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
+  const [ordenAEditar, setOrdenAEditar] = useState<EstadoOrdenCompra extends any ? any : null>(null);
+  const [editCantidad, setEditCantidad] = useState("");
+  const [editValorTotal, setEditValorTotal] = useState("");
+  const [editFechaEntrega, setEditFechaEntrega] = useState("");
+  const [editSedeId, setEditSedeId] = useState("");
 
   const ordenes = productosStore.ordenes;
 
@@ -34,6 +50,7 @@ export const OrdenesPage = observer(function OrdenesPage() {
   const totalOrdenes = ordenes.length;
   const enCamino = ordenes.filter((o) => o.estado === "en_camino" || o.estado === "confirmada");
   const valorEnCamino = enCamino.reduce((acc, o) => acc + o.valorTotal, 0);
+  const recibidas = ordenes.filter((o) => o.estado === "recibida");
   const retrasadas = ordenes.filter((o) => o.estado === "retrasada");
   const devueltas = ordenes.filter((o) => o.estado === "devuelta");
 
@@ -43,7 +60,8 @@ export const OrdenesPage = observer(function OrdenesPage() {
     return (
       o.productoNombre.toLowerCase().includes(q) ||
       o.numero.toLowerCase().includes(q) ||
-      (o.proveedorNombre && o.proveedorNombre.toLowerCase().includes(q))
+      (o.proveedorNombre && o.proveedorNombre.toLowerCase().includes(q)) ||
+      (o.sedeNombre && o.sedeNombre.toLowerCase().includes(q))
     );
   });
 
@@ -55,9 +73,10 @@ export const OrdenesPage = observer(function OrdenesPage() {
     const cant = parseInt(cantidad, 10);
     const val = valorTotal ? parseFloat(valorTotal) : prod.precioCompra * cant;
 
-    productosStore.crearOrden({
+    const res = productosStore.crearOrden({
       productoId: prod.id,
       proveedorId,
+      sedeId,
       cantidad: cant,
       valorTotal: val,
       unidad: prod.unidad,
@@ -65,19 +84,81 @@ export const OrdenesPage = observer(function OrdenesPage() {
       notificar,
     });
 
+    if (res.ok) {
+      setMensajeExito("Orden de compra creada y enviada a proveedor.");
+      setTimeout(() => setMensajeExito(null), 4000);
+    }
     setModalAbierto(false);
+  };
+
+  const handleAbrirEditar = (ord: any) => {
+    setOrdenAEditar(ord);
+    setEditCantidad(ord.cantidad.toString());
+    setEditValorTotal(ord.valorTotal.toString());
+    setEditFechaEntrega(ord.fechaEntregaEstimada);
+    setEditSedeId(ord.sedeId || productosStore.sedesActivas[0]?.id || "");
+    setModalEditarAbierto(true);
+  };
+
+  const handleGuardarEdicion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ordenAEditar) return;
+    const cant = parseInt(editCantidad, 10);
+    if (!cant || cant <= 0) return;
+
+    const res = productosStore.actualizarOrden(ordenAEditar.id, {
+      cantidad: cant,
+      valorTotal: editValorTotal ? parseFloat(editValorTotal) : undefined,
+      fechaEntregaEstimada: editFechaEntrega,
+      sedeId: editSedeId,
+    });
+
+    if (res.ok) {
+      setMensajeExito(`Orden ${ordenAEditar.numero} actualizada correctamente.`);
+      setTimeout(() => setMensajeExito(null), 4000);
+      setModalEditarAbierto(false);
+      setOrdenAEditar(null);
+    }
+  };
+
+  const handleCancelar = (ordenId: string) => {
+    const orden = productosStore.ordenPorId(ordenId);
+    if (!orden) return;
+    if (window.confirm(`¿Seguro que deseas cancelar la orden ${orden.numero}? Se anulará la mercancía en camino.`)) {
+      const res = productosStore.cancelarOrden(ordenId);
+      if (res.ok) {
+        setMensajeExito(`Orden ${orden.numero} cancelada exitosamente.`);
+        setTimeout(() => setMensajeExito(null), 4000);
+      }
+    }
+  };
+
+  const handleRecibir = (ordenId: string) => {
+    const orden = productosStore.ordenPorId(ordenId);
+    if (!orden) return;
+    const res = productosStore.recibirOrden(ordenId);
+    if (res.ok) {
+      setMensajeExito(
+        `Mercancía recibida: se sumaron ${orden.cantidad} unidades al stock de ${orden.sedeNombre || "la sede"}.`,
+      );
+      setTimeout(() => setMensajeExito(null), 5000);
+    }
   };
 
   const getEstadoBadge = (estado: EstadoOrdenCompra) => {
     switch (estado) {
+      case "recibida":
+        return <Badge variant="light" color="success">✓ Recibida en bodega</Badge>;
       case "confirmada":
         return <Badge variant="light" color="primary">Confirmada</Badge>;
       case "en_camino":
-        return <Badge variant="light" color="success">En camino</Badge>;
+        return <Badge variant="light" color="warning">En camino</Badge>;
       case "retrasada":
-        return <Badge variant="light" color="warning">Retrasada</Badge>;
+        return <Badge variant="light" color="error">Retrasada</Badge>;
       case "devuelta":
         return <Badge variant="light" color="error">Devuelta</Badge>;
+      case "cancelada":
+        return <Badge variant="light" color="light">Cancelada</Badge>;
       default:
         return <Badge variant="light" color="light">{estado}</Badge>;
     }
@@ -106,6 +187,22 @@ export const OrdenesPage = observer(function OrdenesPage() {
           }
         />
 
+        {mensajeExito && (
+          <div className="mb-4 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircleIcon className="size-5 text-emerald-600 shrink-0" />
+              <span>{mensajeExito}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMensajeExito(null)}
+              className="text-xs text-emerald-700 hover:underline"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+
         {/* Tarjeta Resumen Superior ("Overall Orders") */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-theme-xs bg-white dark:bg-gray-900 p-5">
@@ -121,15 +218,15 @@ export const OrdenesPage = observer(function OrdenesPage() {
           </Card>
 
           <Card className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-theme-xs bg-white dark:bg-gray-900 p-5">
-            <span className="text-xs font-semibold uppercase text-amber-600 dark:text-amber-400">Retrasadas</span>
-            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{retrasadas.length}</p>
-            <p className="text-xs text-gray-400 mt-1">Excedieron fecha estimada</p>
+            <span className="text-xs font-semibold uppercase text-emerald-600 dark:text-emerald-400">Recibidas en Bodega</span>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">{recibidas.length}</p>
+            <p className="text-xs text-gray-400 mt-1">Stock ya ingresado al sistema</p>
           </Card>
 
           <Card className="rounded-2xl border border-gray-100 dark:border-white/5 shadow-theme-xs bg-white dark:bg-gray-900 p-5">
-            <span className="text-xs font-semibold uppercase text-red-600 dark:text-red-400">Devueltas</span>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{devueltas.length}</p>
-            <p className="text-xs text-gray-400 mt-1">Por no conformidad o daño</p>
+            <span className="text-xs font-semibold uppercase text-amber-600 dark:text-amber-400">Retrasadas</span>
+            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{retrasadas.length}</p>
+            <p className="text-xs text-gray-400 mt-1">Excedieron fecha estimada</p>
           </Card>
         </div>
 
@@ -138,7 +235,7 @@ export const OrdenesPage = observer(function OrdenesPage() {
           <CardHeader className="p-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="w-full sm:w-72">
               <SearchInput
-                placeholder="Buscar por producto, orden o proveedor..."
+                placeholder="Buscar por producto, orden, proveedor o sede..."
                 value={consulta}
                 onChange={(e) => setConsulta(e.target.value)}
               />
@@ -161,6 +258,9 @@ export const OrdenesPage = observer(function OrdenesPage() {
                   <TableCell header className="px-5 py-3 text-xs text-gray-500">
                     Proveedor
                   </TableCell>
+                  <TableCell header className="px-5 py-3 text-xs text-gray-500">
+                    Sede Destino
+                  </TableCell>
                   <TableCell header className="px-5 py-3 text-xs text-gray-500 text-end">
                     Cantidad
                   </TableCell>
@@ -172,6 +272,9 @@ export const OrdenesPage = observer(function OrdenesPage() {
                   </TableCell>
                   <TableCell header className="px-5 py-3 text-xs text-gray-500">
                     Estado
+                  </TableCell>
+                  <TableCell header className="px-5 py-3 text-xs text-gray-500 text-end">
+                    Acción
                   </TableCell>
                 </TableRow>
               </TableHeader>
@@ -188,6 +291,9 @@ export const OrdenesPage = observer(function OrdenesPage() {
                     <TableCell className="px-5 py-3 text-xs text-gray-500">
                       {ord.proveedorNombre}
                     </TableCell>
+                    <TableCell className="px-5 py-3 text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {ord.sedeNombre || "Sede Centro"}
+                    </TableCell>
                     <TableCell className="px-5 py-3 text-end font-medium text-sm">
                       {ord.cantidad} {ord.unidad}
                     </TableCell>
@@ -199,6 +305,45 @@ export const OrdenesPage = observer(function OrdenesPage() {
                     </TableCell>
                     <TableCell className="px-5 py-3">
                       {getEstadoBadge(ord.estado)}
+                    </TableCell>
+                    <TableCell className="px-5 py-3 text-end">
+                      {ord.estado === "recibida" ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                          <CheckCircleIcon className="size-3.5" />
+                          Ingresado
+                        </span>
+                      ) : ord.estado === "cancelada" ? (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+                          Cancelada
+                        </span>
+                      ) : (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium cursor-pointer shadow-theme-xs text-xs px-2.5 py-1"
+                            onClick={() => handleRecibir(ord.id)}
+                          >
+                            <CheckCircleIcon className="size-3.5 mr-1" />
+                            Recibir
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2.5 py-1"
+                            onClick={() => handleAbrirEditar(ord)}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2.5 py-1 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/40"
+                            onClick={() => handleCancelar(ord.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -227,7 +372,7 @@ export const OrdenesPage = observer(function OrdenesPage() {
                     label: `${p.nombre} (SKU: ${p.codigo})`,
                   }))}
                   defaultValue={productoId}
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     setProductoId(val);
                     const prod = productosStore.productoPorId(val);
                     if (prod && cantidad) {
@@ -245,7 +390,19 @@ export const OrdenesPage = observer(function OrdenesPage() {
                     label: p.nombre,
                   }))}
                   defaultValue={proveedorId}
-                  onChange={(val) => setProveedorId(val)}
+                  onChange={(val: string) => setProveedorId(val)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ordSede">Sede de Destino *</Label>
+                <Select
+                  options={productosStore.sedesActivas.map((s) => ({
+                    value: s.id,
+                    label: s.nombre,
+                  }))}
+                  defaultValue={sedeId}
+                  onChange={(val: string) => setSedeId(val)}
                 />
               </div>
 
@@ -318,6 +475,96 @@ export const OrdenesPage = observer(function OrdenesPage() {
                   className="bg-brand-500 hover:bg-brand-600 text-white"
                 >
                   Generar Orden
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Modal>
+
+        {/* Modal Editar Orden */}
+        <Modal
+          isOpen={modalEditarAbierto}
+          onClose={() => setModalEditarAbierto(false)}
+          className="max-w-md p-6"
+        >
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Editar Orden {ordenAEditar?.numero}
+              </h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Producto: <span className="font-semibold text-gray-700 dark:text-gray-300">{ordenAEditar?.productoNombre}</span> · Proveedor: {ordenAEditar?.proveedorNombre}
+              </p>
+            </div>
+
+            <form onSubmit={handleGuardarEdicion} className="space-y-4">
+              <div>
+                <Label htmlFor="editOrdSede">Sede de Destino</Label>
+                <Select
+                  options={productosStore.sedesActivas.map((s) => ({
+                    value: s.id,
+                    label: s.nombre,
+                  }))}
+                  defaultValue={editSedeId}
+                  onChange={(val: string) => setEditSedeId(val)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="editOrdCantidad">Cantidad *</Label>
+                  <Input
+                    id="editOrdCantidad"
+                    type="number"
+                    min="1"
+                    required
+                    value={editCantidad}
+                    onChange={(e) => {
+                      setEditCantidad(e.target.value);
+                      const prod = productosStore.productoPorId(ordenAEditar?.productoId);
+                      if (prod && e.target.value) {
+                        setEditValorTotal((prod.precioCompra * parseInt(e.target.value, 10)).toString());
+                      }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editOrdValor">Valor Total ($COP)</Label>
+                  <Input
+                    id="editOrdValor"
+                    type="number"
+                    value={editValorTotal}
+                    onChange={(e) => setEditValorTotal(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="editOrdFecha">Fecha Estimada de Entrega</Label>
+                <Input
+                  id="editOrdFecha"
+                  type="date"
+                  required
+                  value={editFechaEntrega}
+                  onChange={(e) => setEditFechaEntrega(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-white/5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setModalEditarAbierto(false)}
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-brand-500 hover:bg-brand-600 text-white"
+                >
+                  Guardar Cambios
                 </Button>
               </div>
             </form>

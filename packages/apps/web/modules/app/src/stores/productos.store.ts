@@ -18,8 +18,29 @@ import {
   type Sede,
   type SemaforoDisponibilidad,
   type TipoImpuesto,
+  type TrasladoSede,
   type UnidadMedida,
 } from "@/domain/inventarios/productos.domain";
+
+export interface ConfiguracionInventario {
+  umbralMinimoDefecto: number;
+  notificarVencimientoEmail: boolean;
+  diasAnticipacionVencimiento: number;
+  moneda: string;
+  prefijoSku: string;
+  prefijoOrden: string;
+}
+
+const CONFIG_STORAGE_KEY = "necto_inventario_config_v1";
+
+const CONFIG_DEFECTO: ConfiguracionInventario = {
+  umbralMinimoDefecto: 5,
+  notificarVencimientoEmail: true,
+  diasAnticipacionVencimiento: 15,
+  moneda: "COP",
+  prefijoSku: "PRD",
+  prefijoOrden: "ORD",
+};
 import {
   AJUSTES_SEED,
   CATEGORIAS_SEED,
@@ -86,6 +107,7 @@ export interface DatosProducto {
   publicarEnCatalogo?: boolean;
   descripcion?: string | null;
   cantidadInicial: string | number | null;
+  sedeInicialId?: string;
   minimo: string | number | null;
   unidad: UnidadMedida;
   vencimiento: string | null;
@@ -104,6 +126,8 @@ export class ProductosStore {
   proveedores: Proveedor[] = PROVEEDORES_SEED.map((p) => ({ ...p }));
   ordenes: OrdenCompra[] = ORDENES_SEED.map((o) => ({ ...o }));
   ajustes: AjusteStock[] = AJUSTES_SEED.map((a) => ({ ...a }));
+  traslados: TrasladoSede[] = [];
+  configuracion: ConfiguracionInventario = CONFIG_DEFECTO;
 
   /**
    * Categorías que ofrece el desplegable.
@@ -114,7 +138,33 @@ export class ProductosStore {
   categorias: string[] = [...CATEGORIAS_SEED];
 
   constructor() {
+    this.configuracion = this.cargarConfiguracion();
     makeAutoObservable(this);
+  }
+
+  cargarConfiguracion(): ConfiguracionInventario {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        const guardado = window.localStorage.getItem(CONFIG_STORAGE_KEY);
+        if (guardado) {
+          return { ...CONFIG_DEFECTO, ...JSON.parse(guardado) };
+        }
+      }
+    } catch {
+      // Ignorar fallo de almacenamiento
+    }
+    return { ...CONFIG_DEFECTO };
+  }
+
+  actualizarConfiguracion(cambios: Partial<ConfiguracionInventario>): void {
+    this.configuracion = { ...this.configuracion, ...cambios };
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.configuracion));
+      }
+    } catch {
+      // Ignorar fallo de almacenamiento
+    }
   }
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -175,6 +225,44 @@ export class ProductosStore {
           (e) => e.productoId === productoId && e.sedeId === sede.id,
         )?.cantidad ?? 0,
     }));
+  }
+
+  /**
+   * Resumen operativo y financiero para una sede concreta.
+   */
+  resumenSede(sedeId: string): {
+    totalProductos: number;
+    totalUnidades: number;
+    valorizacion: number;
+    porAgotar: number;
+    agotados: number;
+  } {
+    const existenciasSede = this.existencias.filter((e) => e.sedeId === sedeId);
+    let totalUnidades = 0;
+    let valorizacion = 0;
+    let porAgotar = 0;
+    let agotados = 0;
+    const prodsVistos = new Set<string>();
+
+    for (const ex of existenciasSede) {
+      const p = this.productoPorId(ex.productoId);
+      if (!p || p.estado !== "activo") continue;
+      prodsVistos.add(p.id);
+      totalUnidades += ex.cantidad;
+      valorizacion += p.precioCompra * ex.cantidad;
+
+      const sem = semaforoDe(ex.cantidad, p.minimo);
+      if (sem === "bajo") porAgotar++;
+      if (sem === "agotado") agotados++;
+    }
+
+    return {
+      totalProductos: prodsVistos.size,
+      totalUnidades,
+      valorizacion,
+      porAgotar,
+      agotados,
+    };
   }
 
   /** ¿Hay algún producto que exija atención? Alimenta el contador del resumen. */
@@ -243,8 +331,13 @@ export class ProductosStore {
     };
 
     this.productos.push(producto);
+    const targetSedeId = datos.sedeInicialId || this.sedesActivas[0]?.id;
     this.existencias.push(
-      ...repartirEnSedes(producto.id, cantidadInicial as number, this.sedes),
+      ...this.sedes.map((s) => ({
+        productoId: producto.id,
+        sedeId: s.id,
+        cantidad: s.id === targetSedeId ? (cantidadInicial as number) : 0,
+      })),
     );
     if (!this.categorias.includes(producto.categoria)) {
       this.categorias = [...this.categorias, producto.categoria].sort((a, b) =>
@@ -426,6 +519,36 @@ export class ProductosStore {
     return { ok: true, id: nuevo.id };
   }
 
+  actualizarProveedor(
+    id: string,
+    datos: {
+      nombre: string;
+      logoDataUrl?: string | null;
+      productoPrincipal: string;
+      categoria: string;
+      telefono: string;
+      email: string;
+      aceptaDevoluciones: boolean;
+      precioBase?: number;
+    },
+  ): ResultadoGuardado {
+    const prov = this.proveedorPorId(id);
+    if (!prov) return { ok: false, motivo: "El proveedor no existe" };
+    const nombre = datos.nombre.trim();
+    if (!nombre) return { ok: false, motivo: "Escribe el nombre del proveedor" };
+
+    prov.nombre = nombre;
+    if (datos.logoDataUrl !== undefined) prov.logoDataUrl = datos.logoDataUrl;
+    prov.productoPrincipal = datos.productoPrincipal.trim() || prov.productoPrincipal;
+    prov.categoria = datos.categoria.trim() || prov.categoria;
+    prov.telefono = datos.telefono.trim();
+    prov.email = datos.email.trim();
+    prov.aceptaDevoluciones = datos.aceptaDevoluciones;
+    if (datos.precioBase !== undefined) prov.precioBase = datos.precioBase;
+
+    return { ok: true, id };
+  }
+
   // ── Órdenes de compra ─────────────────────────────────────────────────────
 
   ordenPorId(id: string | null | undefined): OrdenCompra | undefined {
@@ -436,6 +559,7 @@ export class ProductosStore {
   crearOrden(datos: {
     productoId: string;
     proveedorId?: string;
+    sedeId?: string;
     cantidad: number;
     valorTotal: number;
     unidad: string;
@@ -445,6 +569,7 @@ export class ProductosStore {
     const producto = this.productoPorId(datos.productoId);
     if (!producto) return { ok: false, motivo: "Selecciona un producto válido" };
     const proveedor = this.proveedorPorId(datos.proveedorId);
+    const sede = datos.sedeId ? this.sedePorId(datos.sedeId) : this.sedesActivas[0];
 
     const correlativo = `ORD-2026-${(this.ordenes.length + 1).toString().padStart(3, "0")}`;
     const nueva: OrdenCompra = {
@@ -454,6 +579,8 @@ export class ProductosStore {
       productoNombre: producto.nombre,
       proveedorId: proveedor?.id,
       proveedorNombre: proveedor?.nombre || "Proveedor general",
+      sedeId: sede?.id,
+      sedeNombre: sede?.nombre,
       valorTotal: datos.valorTotal,
       cantidad: datos.cantidad,
       unidad: datos.unidad,
@@ -472,11 +599,239 @@ export class ProductosStore {
     return { ok: true, id: nueva.id };
   }
 
+  actualizarOrden(
+    id: string,
+    datos: {
+      cantidad?: number;
+      valorTotal?: number;
+      fechaEntregaEstimada?: string;
+      sedeId?: string;
+    },
+  ): ResultadoGuardado {
+    const orden = this.ordenPorId(id);
+    if (!orden) return { ok: false, motivo: "Esa orden no existe" };
+    if (orden.estado === "recibida") {
+      return { ok: false, motivo: "No se puede modificar una orden ya recibida en bodega" };
+    }
+    if (orden.estado === "cancelada") {
+      return { ok: false, motivo: "No se puede modificar una orden cancelada" };
+    }
+
+    if (datos.cantidad !== undefined && datos.cantidad > 0 && datos.cantidad !== orden.cantidad) {
+      const delta = datos.cantidad - orden.cantidad;
+      orden.cantidad = datos.cantidad;
+      if (orden.proveedorId) {
+        const prov = this.proveedorPorId(orden.proveedorId);
+        if (prov) {
+          prov.enCamino = Math.max(0, prov.enCamino + delta);
+        }
+      }
+    }
+
+    if (datos.valorTotal !== undefined && datos.valorTotal >= 0) {
+      orden.valorTotal = datos.valorTotal;
+    }
+
+    if (datos.fechaEntregaEstimada) {
+      orden.fechaEntregaEstimada = datos.fechaEntregaEstimada;
+    }
+
+    if (datos.sedeId) {
+      const sede = this.sedePorId(datos.sedeId);
+      if (sede) {
+        orden.sedeId = sede.id;
+        orden.sedeNombre = sede.nombre;
+      }
+    }
+
+    return { ok: true, id };
+  }
+
+  cancelarOrden(id: string): ResultadoGuardado {
+    const orden = this.ordenPorId(id);
+    if (!orden) return { ok: false, motivo: "Esa orden no existe" };
+    if (orden.estado === "recibida") {
+      return { ok: false, motivo: "No se puede cancelar una orden que ya fue ingresada al stock" };
+    }
+    if (orden.estado === "cancelada") {
+      return { ok: false, motivo: "La orden ya se encuentra cancelada" };
+    }
+
+    // Descontar mercancía en camino si estaba activa
+    if (
+      orden.proveedorId &&
+      (orden.estado === "confirmada" || orden.estado === "en_camino" || orden.estado === "retrasada")
+    ) {
+      const prov = this.proveedorPorId(orden.proveedorId);
+      if (prov) {
+        prov.enCamino = Math.max(0, prov.enCamino - orden.cantidad);
+      }
+    }
+
+    orden.estado = "cancelada";
+    return { ok: true, id };
+  }
+
   cambiarEstadoOrden(id: string, estado: EstadoOrdenCompra): ResultadoGuardado {
     const orden = this.ordenPorId(id);
     if (!orden) return { ok: false, motivo: "Esa orden no existe" };
     orden.estado = estado;
     return { ok: true, id };
+  }
+
+  /**
+   * Recepción de mercancía física en la sede de destino.
+   * Aumenta las existencias reales, descuenta mercancía en camino y registra el ingreso.
+   */
+  recibirOrden(id: string, sedeDestinoId?: string): ResultadoGuardado {
+    const orden = this.ordenPorId(id);
+    if (!orden) return { ok: false, motivo: "Esa orden no existe" };
+    if (orden.estado === "recibida") {
+      return { ok: false, motivo: "Esta orden ya fue recibida previamente" };
+    }
+
+    const targetSedeId = sedeDestinoId || orden.sedeId || this.sedesActivas[0]?.id;
+    if (!targetSedeId) {
+      return { ok: false, motivo: "No hay una sede disponible para recibir la mercancía" };
+    }
+
+    const producto = this.productoPorId(orden.productoId);
+    if (!producto) {
+      return { ok: false, motivo: "El producto ya no existe en el catálogo" };
+    }
+
+    const targetSede = this.sedePorId(targetSedeId);
+
+    // 1. Aumentar existencias en la sede correspondiente
+    const existencia = this.existencias.find(
+      (e) => e.productoId === orden.productoId && e.sedeId === targetSedeId,
+    );
+    const anterior = existencia?.cantidad ?? 0;
+    const nuevaCantidad = anterior + orden.cantidad;
+
+    if (existencia) {
+      existencia.cantidad = nuevaCantidad;
+    } else {
+      this.existencias.push({
+        productoId: orden.productoId,
+        sedeId: targetSedeId,
+        cantidad: nuevaCantidad,
+      });
+    }
+
+    // 2. Descontar mercancía en camino del proveedor
+    if (orden.proveedorId) {
+      const prov = this.proveedorPorId(orden.proveedorId);
+      if (prov) {
+        prov.enCamino = Math.max(0, prov.enCamino - orden.cantidad);
+      }
+    }
+
+    // 3. Registrar ajuste de trazabilidad
+    this.ajustes.unshift({
+      id: nuevoId("ajuste"),
+      productoId: orden.productoId,
+      sedeId: targetSedeId,
+      cantidadAnterior: anterior,
+      cantidadNueva: nuevaCantidad,
+      motivo: "ingreso_manual",
+      notas: `Recepción de orden ${orden.numero} (${orden.proveedorNombre || "Proveedor"}) en ${targetSede?.nombre || "Bodega"}`,
+      fecha: new Date().toISOString(),
+    });
+
+    // 4. Actualizar estado de la orden
+    orden.estado = "recibida";
+    orden.sedeId = targetSedeId;
+    orden.sedeNombre = targetSede?.nombre;
+    orden.recibidaAt = new Date().toISOString();
+
+    return { ok: true, id: orden.id };
+  }
+
+  /**
+   * Traslado de stock entre dos sedes físicas.
+   * Valida disponibilidad en origen, descuenta en origen e incrementa en destino.
+   */
+  trasladarStock(datos: {
+    productoId: string;
+    sedeOrigenId: string;
+    sedeDestinoId: string;
+    cantidad: number;
+    motivo?: string;
+  }): ResultadoGuardado {
+    if (datos.sedeOrigenId === datos.sedeDestinoId) {
+      return { ok: false, motivo: "La sede de origen y destino deben ser distintas" };
+    }
+    if (datos.cantidad <= 0) {
+      return { ok: false, motivo: "La cantidad a trasladar debe ser mayor a 0" };
+    }
+    const producto = this.productoPorId(datos.productoId);
+    if (!producto) {
+      return { ok: false, motivo: "Producto no encontrado en el catálogo" };
+    }
+    const sedeOrigen = this.sedePorId(datos.sedeOrigenId);
+    const sedeDestino = this.sedePorId(datos.sedeDestinoId);
+    if (!sedeOrigen || !sedeDestino) {
+      return { ok: false, motivo: "Sede de origen o destino no válida" };
+    }
+
+    const existenciaOrigen = this.existencias.find(
+      (e) => e.productoId === datos.productoId && e.sedeId === datos.sedeOrigenId,
+    );
+    const disponibleOrigen = existenciaOrigen?.cantidad ?? 0;
+    if (disponibleOrigen < datos.cantidad) {
+      return {
+        ok: false,
+        motivo: `Stock insuficiente en ${sedeOrigen.nombre} (disponible: ${disponibleOrigen})`,
+      };
+    }
+
+    // Descontar en origen
+    existenciaOrigen!.cantidad -= datos.cantidad;
+
+    // Incrementar en destino
+    const existenciaDestino = this.existencias.find(
+      (e) => e.productoId === datos.productoId && e.sedeId === datos.sedeDestinoId,
+    );
+    if (existenciaDestino) {
+      existenciaDestino.cantidad += datos.cantidad;
+    } else {
+      this.existencias.push({
+        productoId: datos.productoId,
+        sedeId: datos.sedeDestinoId,
+        cantidad: datos.cantidad,
+      });
+    }
+
+    const correlativo = `TRS-${Date.now().toString().slice(-4)}`;
+    const nuevoTraslado: TrasladoSede = {
+      id: nuevoId("trs"),
+      numero: correlativo,
+      productoId: producto.id,
+      productoNombre: producto.nombre,
+      sedeOrigenId: sedeOrigen.id,
+      sedeOrigenNombre: sedeOrigen.nombre,
+      sedeDestinoId: sedeDestino.id,
+      sedeDestinoNombre: sedeDestino.nombre,
+      cantidad: datos.cantidad,
+      motivo: datos.motivo || "Rebalanceo operativo",
+      createdAt: new Date().toISOString(),
+    };
+    this.traslados.unshift(nuevoTraslado);
+
+    // Registrar kárdex de salida en origen
+    this.ajustes.unshift({
+      id: nuevoId("ajuste"),
+      productoId: producto.id,
+      sedeId: sedeOrigen.id,
+      cantidadAnterior: disponibleOrigen,
+      cantidadNueva: existenciaOrigen!.cantidad,
+      motivo: "traslado",
+      notas: `Salida por traslado hacia ${sedeDestino.nombre} (${correlativo})`,
+      fecha: new Date().toISOString(),
+    });
+
+    return { ok: true, id: nuevoTraslado.id };
   }
 
   // ── Ajustes de Stock ──────────────────────────────────────────────────────

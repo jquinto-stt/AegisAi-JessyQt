@@ -426,7 +426,13 @@ export interface Proveedor {
   precioBase?: number;
 }
 
-export type EstadoOrdenCompra = "confirmada" | "en_camino" | "retrasada" | "devuelta";
+export type EstadoOrdenCompra =
+  | "confirmada"
+  | "en_camino"
+  | "recibida"
+  | "retrasada"
+  | "devuelta"
+  | "cancelada";
 
 export interface OrdenCompra {
   id: string;
@@ -435,12 +441,29 @@ export interface OrdenCompra {
   productoNombre: string;
   proveedorId?: string;
   proveedorNombre?: string;
+  sedeId?: string;
+  sedeNombre?: string;
   valorTotal: number;
   cantidad: number;
   unidad: string;
   fechaEntregaEstimada: string;
   estado: EstadoOrdenCompra;
+  recibidaAt?: string | null;
   notificar: boolean;
+  createdAt: string;
+}
+
+export interface TrasladoSede {
+  id: string;
+  numero: string;
+  productoId: string;
+  productoNombre: string;
+  sedeOrigenId: string;
+  sedeOrigenNombre: string;
+  sedeDestinoId: string;
+  sedeDestinoNombre: string;
+  cantidad: number;
+  motivo?: string;
   createdAt: string;
 }
 

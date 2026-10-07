@@ -511,8 +511,9 @@ export function componerColumnas(
   const visibles: PedidoEstado[] = activas.filter((e) => e !== "entregado");
   if (!propias || propias.length === 0) return visibles;
 
+  const lista = propias;
   const ordenadas: PedidoEstado[] = [];
-  for (const c of propias) {
+  for (const c of lista) {
     const id = c.id as PedidoEstado;
     if (esColumnaPropiaDe(c.id) || visibles.includes(id)) {
       if (!ordenadas.includes(id)) ordenadas.push(id);

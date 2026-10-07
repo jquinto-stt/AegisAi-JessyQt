@@ -6,7 +6,6 @@ import { Select } from "@/elements/form/select";
 import { Label } from "@/elements/form/label";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
-import { PlusIcon, BoxCubeIcon, CheckLineIcon } from "@/icons";
 import { ArrowUpTrayIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 
@@ -15,7 +14,11 @@ import type {
   TipoImpuesto,
   UnidadMedida,
 } from "@/domain/inventarios/productos.domain";
-import type { DatosProducto, ResultadoGuardado } from "@/stores/productos.store";
+import {
+  productosStore,
+  type DatosProducto,
+  type ResultadoGuardado,
+} from "@/stores/productos.store";
 import {
   MAX_BYTES_IMAGEN,
   OPCIONES_UNIDAD,
@@ -44,6 +47,7 @@ interface Formulario {
   publicarEnCatalogo: boolean;
   descripcion: string;
   cantidadInicial: string;
+  sedeInicialId: string;
   unidad: UnidadMedida;
   vencimiento: string;
   minimo: string;
@@ -62,6 +66,7 @@ const VACIO: Formulario = {
   publicarEnCatalogo: true,
   descripcion: "",
   cantidadInicial: "10",
+  sedeInicialId: "",
   unidad: "unidad",
   vencimiento: "",
   minimo: "5",
@@ -83,6 +88,7 @@ function desdeProducto(p: Producto): Formulario {
     publicarEnCatalogo: p.publicarEnCatalogo ?? true,
     descripcion: p.descripcion ?? "",
     cantidadInicial: "",
+    sedeInicialId: "",
     unidad: p.unidad,
     vencimiento: p.vencimiento ?? "",
     minimo: String(p.minimo),
@@ -117,6 +123,7 @@ export function ModalProducto({
     setForm(producto ? desdeProducto(producto) : {
       ...VACIO,
       codigo: `PRD-${Math.floor(100 + Math.random() * 900)}`,
+      sedeInicialId: productosStore.sedesActivas[0]?.id || "",
     });
     setError(null);
   }, [abierto, producto]);
@@ -181,6 +188,7 @@ export function ModalProducto({
       publicarEnCatalogo: form.publicarEnCatalogo,
       descripcion: form.descripcion.trim() || null,
       cantidadInicial: esEdicion ? 0 : form.cantidadInicial,
+      sedeInicialId: form.sedeInicialId || productosStore.sedesActivas[0]?.id,
       minimo: form.minimo,
       unidad: form.unidad,
       vencimiento: form.vencimiento.trim() === "" ? null : form.vencimiento,
@@ -514,6 +522,21 @@ export function ModalProducto({
                 </div>
               </div>
             </div>
+
+            {!esEdicion && productosStore.sedesActivas.length > 1 && (
+              <div>
+                <Label>Sede de ingreso de existencias iniciales</Label>
+                <Select
+                  aria-label="Sede de ingreso inicial"
+                  options={productosStore.sedesActivas.map((s) => ({
+                    value: s.id,
+                    label: s.nombre,
+                  }))}
+                  defaultValue={form.sedeInicialId || productosStore.sedesActivas[0]?.id}
+                  onChange={(v) => campo("sedeInicialId", v)}
+                />
+              </div>
+            )}
 
             <div>
               <Label htmlFor={idCampo("vencimiento")}>Fecha de vencimiento</Label>

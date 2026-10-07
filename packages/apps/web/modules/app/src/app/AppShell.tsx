@@ -175,7 +175,7 @@ export const AppShell = () => {
       sidebar={<AppSidebar />}
       header={<AppHeader />}
       footer={esPantallaFija ? undefined : <AppFooter />}
-      noCard={esChatAsistente || esTableroKanban}
+      noCard={esChatAsistente}
       pantallaFija={esPantallaFija}
     >
       <Outlet />

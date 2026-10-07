@@ -29,11 +29,9 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
   CalendarDaysIcon,
-  ChatBubbleLeftIcon,
   CheckIcon,
   EllipsisHorizontalIcon,
   MagnifyingGlassIcon,
-  PaperClipIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -207,11 +205,8 @@ const PedidoCard = observer(
     // Resumen de items para la descripción estilo maqueta
     const descripcionItems = pedidosStore.resumenItems(pedido);
 
-    // Si el pedido tiene portada (por ejemplo, el primer pedido de preparación para replicar el preview de la imagen)
-    const tieneCover = pedido.id === "pd-3" || pedido.id === "pd-f3";
-
-    const itemsCount = Array.isArray(pedido.items) ? pedido.items.length : 0;
     const primerItemNombre = pedido.items?.[0]?.nombre;
+    const [isDragging, setIsDragging] = useState(false);
 
     return (
       <div
@@ -219,8 +214,12 @@ const PedidoCard = observer(
         tabIndex={0}
         draggable
         onDragStart={(e) => {
+          setIsDragging(true);
           e.dataTransfer.setData("text/plain", pedido.id);
           e.dataTransfer.effectAllowed = "move";
+        }}
+        onDragEnd={() => {
+          setIsDragging(false);
         }}
         onClick={onDetalle}
         onKeyDown={(e) => {
@@ -229,7 +228,11 @@ const PedidoCard = observer(
             onDetalle();
           }
         }}
-        className={`group relative cursor-pointer rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+        className={`group relative cursor-grab active:cursor-grabbing select-none rounded-2xl border bg-white p-4 sm:p-5 shadow-theme-xs transition-all duration-200 ease-out hover:shadow-theme-md hover:border-secondary-300 dark:bg-gray-900/90 dark:hover:border-brand-600 ${
+          isDragging
+            ? "opacity-40 scale-[0.98] ring-2 ring-brand-400/50 shadow-theme-xl rotate-1 cursor-grabbing"
+            : ""
+        } ${
           urgente
             ? "border-error-300 dark:border-error-800"
             : "border-gray-100 dark:border-gray-800"
@@ -260,40 +263,13 @@ const PedidoCard = observer(
           </p>
         )}
 
-        {/* Imagen de previsualización (cover banner) idéntica a la maqueta de referencia */}
-        {tieneCover && (
-          <div className="mt-3.5 overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800">
-            <img
-              src="/images/kanban-cover.jpg"
-              alt="Preview"
-              className="h-28 sm:h-32 w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-        )}
-
-        {/* Metadatos inferiores: Fecha/Tiempo, Comentarios (items), Enlaces (chat), y Tag */}
+        {/* Metadatos inferiores: Fecha/Tiempo y Tag */}
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-50 dark:border-gray-800/60 text-xs text-gray-400 dark:text-gray-400">
-          <div className="flex items-center gap-3 font-medium">
-            <div className="flex items-center gap-1.5">
-              <CalendarDaysIcon className="size-3.5 text-gray-400" />
-              <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
-                {fechaAmigable()}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <ChatBubbleLeftIcon className="size-3.5 text-gray-400" />
-              <span className="text-[11px] text-gray-500 dark:text-gray-400">
-                {itemsCount}
-              </span>
-            </div>
-
-            {pedido.direccionEntrega && (
-              <div className="flex items-center gap-1" title={pedido.direccionEntrega.calle}>
-                <PaperClipIcon className="size-3.5 text-gray-400" />
-                <span className="text-[11px] text-gray-500 dark:text-gray-400">1</span>
-              </div>
-            )}
+          <div className="flex items-center gap-1.5 font-medium">
+            <CalendarDaysIcon className="size-3.5 text-gray-400" />
+            <span className="text-[11px] sm:text-xs text-gray-600 dark:text-gray-300">
+              {fechaAmigable()}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -1242,6 +1218,190 @@ const VistaToggle = ({ vista, onChange }: { vista: VistaTablero; onChange: (v: V
   );
 };
 
+interface ColumnaKanbanProps {
+  estado: PedidoEstado;
+  colIndex: number;
+  columnas: PedidoEstado[];
+  items: Pedido[];
+  menuColumnaId: string | null;
+  setMenuColumnaId: (id: string | null) => void;
+  setNuevoLabelEdit: (label: string) => void;
+  setModalRenombrar: (val: { id: string; label: string } | null) => void;
+  onDetalle: (id: string) => void;
+  onCancelar: (id: string) => void;
+  onConfirmarEntrega: (id: string) => void;
+  onChat: (id: string) => void;
+}
+
+const ColumnaKanban = observer(({
+  estado,
+  colIndex,
+  columnas,
+  items,
+  menuColumnaId,
+  setMenuColumnaId,
+  setNuevoLabelEdit,
+  setModalRenombrar,
+  onDetalle,
+  onCancelar,
+  onConfirmarEntrega,
+  onChat,
+}: ColumnaKanbanProps) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        setIsDragOver(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setIsDragOver(false);
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragOver(false);
+        const id = e.dataTransfer.getData("text/plain");
+        if (id) {
+          pedidosStore.moverAColumna(id, estado);
+        }
+      }}
+      className={`flex flex-col h-full max-h-full min-h-0 rounded-3xl transition-all duration-200 ease-out overflow-hidden p-3 sm:p-4 ${
+        isDragOver
+          ? "bg-brand-50/50 ring-2 ring-brand-400/60 border-brand-300 dark:bg-brand-950/30 dark:border-brand-500/50 dark:ring-brand-500/30 scale-[1.01]"
+          : "bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60"
+      }`}
+    >
+      {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos */}
+      <div className="shrink-0 mb-3 flex items-center justify-between px-1.5 pt-1 relative">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-sm sm:text-base font-bold text-ink-title dark:text-white">
+            {pedidosStore.estadoLabel(estado)}
+          </h2>
+          <span className="flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-gray-700 shadow-theme-xs border border-gray-100 dark:border-gray-700/80 dark:bg-gray-800 dark:text-gray-200">
+            {items.length}
+          </span>
+        </div>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuColumnaId(menuColumnaId === estado ? null : estado);
+            }}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
+          >
+            <EllipsisHorizontalIcon className="size-4" />
+          </button>
+
+          {menuColumnaId === estado && (
+            <div
+              className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuColumnaId(null);
+                  setNuevoLabelEdit(pedidosStore.estadoLabel(estado));
+                  setModalRenombrar({ id: estado, label: pedidosStore.estadoLabel(estado) });
+                }}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+              >
+                <PencilIcon className="size-3.5 text-gray-400" />
+                <span>Renombrar</span>
+              </button>
+
+              {colIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCols = [...columnas];
+                    const temp = newCols[colIndex - 1];
+                    newCols[colIndex - 1] = newCols[colIndex];
+                    newCols[colIndex] = temp;
+                    pedidosStore.reordenarColumnas(newCols);
+                    setMenuColumnaId(null);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  <ArrowLeftIcon className="size-3.5 text-gray-400" />
+                  <span>Mover a la izquierda</span>
+                </button>
+              )}
+
+              {colIndex < columnas.length - 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newCols = [...columnas];
+                    const temp = newCols[colIndex + 1];
+                    newCols[colIndex + 1] = newCols[colIndex];
+                    newCols[colIndex] = temp;
+                    pedidosStore.reordenarColumnas(newCols);
+                    setMenuColumnaId(null);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  <ArrowRightIcon className="size-3.5 text-gray-400" />
+                  <span>Mover a la derecha</span>
+                </button>
+              )}
+
+              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuColumnaId(null);
+                  pedidosStore.eliminarColumna(estado);
+                }}
+                className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer"
+              >
+                <TrashIcon className="size-3.5 text-error-500" />
+                <span>Eliminar columna</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de tarjetas Kanban con scroll interno independiente */}
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3.5 [scrollbar-width:thin]">
+        {items.map((p, i) => (
+          <div
+            key={p.id}
+            className="animate-entrada-lista"
+            style={{ animationDelay: retardoEscalonado(i) }}
+          >
+            <PedidoCard
+              pedido={p}
+              onDetalle={() => onDetalle(p.id)}
+              onCancelar={() => onCancelar(p.id)}
+              onConfirmarEntrega={() => onConfirmarEntrega(p.id)}
+              onChat={() => onChat(p.id)}
+            />
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
+            Sin pedidos
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1664,231 +1824,120 @@ export const TableroPage = observer(() => {
                             : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                         }`}
                       >
-                        <span className="truncate">Pagado</span>
-                        {pedidosStore.totalPagados > 0 && (
-                          <span className="flex size-4 items-center justify-center rounded-full bg-accent-100 text-[10px] font-bold text-accent-800 dark:bg-accent-950 dark:text-accent-300 shrink-0">
-                            {pedidosStore.totalPagados}
-                          </span>
-                        )}
+                        <span className="truncate">Pagados</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="my-2.5 border-t border-gray-100 dark:border-gray-800" />
+                  {/* Divisor */}
+                  <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
 
-                  {/* Ordenar por */}
+                  {/* Ordenación */}
                   <div>
-                    <p className="px-1 mb-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ordenar por</p>
-                    <div className="space-y-0.5">
+                    <p className="px-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ordenar por</p>
+                    <div className="space-y-1">
                       {[
-                        { id: "reciente", label: "Más reciente" },
-                        { id: "antiguo", label: "Más antiguo" },
+                        { id: "reciente", label: "Más recientes primero" },
+                        { id: "antiguo", label: "Más antiguos primero" },
                         { id: "monto", label: "Mayor importe" },
                         { id: "urgente", label: "Urgentes primero" },
                       ].map((op) => (
                         <button
                           key={op.id}
                           type="button"
-                          onClick={() => {
-                            setCriterioOrden(op.id as CriterioOrden);
-                            setMenuFilterOpen(false);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                          onClick={() => setCriterioOrden(op.id as typeof criterioOrden)}
+                          className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                             criterioOrden === op.id
-                              ? "bg-secondary-50 text-secondary-600 dark:bg-accent-950/60 dark:text-accent-400 font-semibold"
-                              : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800"
+                              ? "bg-secondary-50 font-semibold text-secondary-700 dark:bg-accent-950/40 dark:text-accent-300"
+                              : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                           }`}
                         >
                           <span>{op.label}</span>
-                          {criterioOrden === op.id && <CheckIcon className="size-3.5" />}
+                          {criterioOrden === op.id && <CheckIcon className="size-3.5 text-secondary-600 dark:text-accent-400" />}
                         </button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Botón reset si hay filtros activos */}
+                  {(busquedaTablero.trim() || criterioOrden !== "reciente" || filtroPago !== "todos") && (
+                    <div className="mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBusquedaTablero("");
+                          setCriterioOrden("reciente");
+                          setFiltroPago("todos");
+                        }}
+                        className="w-full rounded-lg py-1.5 text-center text-xs font-semibold text-brand-600 hover:bg-brand-50 dark:text-brand-400 dark:hover:bg-brand-950/30 transition-colors cursor-pointer"
+                      >
+                        Limpiar todos los filtros
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
           </div>
 
-          {/* Botón primario: Add New Task + */}
+          {/* Botón "+ Añadir tarea" (Navega a /pedidos/crear) */}
           <button
             type="button"
             onClick={() => navigate("/pedidos/crear")}
-            className="flex h-10 items-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-4 text-xs sm:text-sm font-semibold text-white shadow-theme-xs transition-colors cursor-pointer whitespace-nowrap"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-theme-xs transition-colors cursor-pointer shrink-0"
           >
-            <span>Add New Task</span>
-            <PlusIcon className="size-4 stroke-[2.5] shrink-0" />
+            <PlusIcon className="size-4 stroke-2" />
+            <span>Añadir tarea</span>
           </button>
         </div>
       </div>
 
-      {/* Pedidos programados (arriba del kanban, no como columna del pipeline) */}
+      {/* PEDIDOS PROGRAMADOS PARA FECHAS FUTURAS */}
       {verProgramados && (
         <ProgramadosSection
-          focusId={focusId}
           onCancelar={(p) => abrirCancelar(p.id)}
           onReprogramar={(p) => abrirReprogramar(p.id)}
           onVerTodos={() => setVerTodosProgramados(true)}
           onDetalle={(id) => setDetalleId(id)}
+          focusId={focusId}
         />
       )}
 
       {/* Tablero — vista Kanban o Lista */}
       {vista === "kanban" ? (
         <div
-          className={`animate-aparecer flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 md:grid-cols-2 ${
+          className={`animate-aparecer flex-1 min-h-0 h-full overflow-x-auto grid grid-cols-1 gap-6 ${
             columnasVisibles.length === 1
-              ? "xl:grid-cols-1 max-w-xl mx-auto"
+              ? "max-w-md w-full mr-auto"
               : columnasVisibles.length === 2
-              ? "xl:grid-cols-2"
+              ? "md:grid-cols-2 max-w-3xl w-full mr-auto"
               : columnasVisibles.length === 3
-              ? "xl:grid-cols-3"
+              ? "md:grid-cols-2 xl:grid-cols-3 max-w-5xl w-full mr-auto"
               : columnasVisibles.length === 4
-              ? "xl:grid-cols-4"
-              : "xl:grid-cols-5"
+              ? "md:grid-cols-2 xl:grid-cols-4 w-full"
+              : "md:grid-cols-2 xl:grid-cols-5 w-full"
           }`}
         >
           {columnasVisibles.map((estado, colIndex) => {
             const items = pedidosDeColumna(estado);
             return (
-              <div
+              <ColumnaKanban
                 key={estado}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const id = e.dataTransfer.getData("text/plain");
-                  if (id) {
-                    pedidosStore.moverAColumna(id, estado);
-                  }
-                }}
-                className="flex flex-col h-full max-h-full min-h-0 rounded-3xl bg-gray-50/90 dark:bg-white/[0.02] border border-gray-100/80 dark:border-gray-800/60 p-3 sm:p-4 transition-colors overflow-hidden"
-              >
-                {/* Cabecera de la columna con nombre, contador suave y botón de tres puntos ... */}
-                <div className="shrink-0 mb-3 flex items-center justify-between px-1.5 pt-1 relative">
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="text-sm sm:text-base font-bold text-ink-title dark:text-white">
-                      {pedidosStore.estadoLabel(estado)}
-                    </h2>
-                    <span className="flex size-6 items-center justify-center rounded-full bg-white text-xs font-bold text-gray-700 shadow-theme-xs border border-gray-100 dark:border-gray-700/80 dark:bg-gray-800 dark:text-gray-200">
-                      {items.length}
-                    </span>
-                  </div>
-
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuColumnaId(menuColumnaId === estado ? null : estado);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      aria-label={`Opciones de columna ${pedidosStore.estadoLabel(estado)}`}
-                    >
-                      <EllipsisHorizontalIcon className="size-4" />
-                    </button>
-
-                    {menuColumnaId === estado && (
-                      <div
-                        className="absolute right-0 top-full mt-1 z-40 w-48 overflow-hidden rounded-2xl border border-gray-100 bg-white py-1.5 shadow-theme-xl dark:border-gray-800 dark:bg-gray-900"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuColumnaId(null);
-                            setNuevoLabelEdit(pedidosStore.estadoLabel(estado));
-                            setModalRenombrar({ id: estado, label: pedidosStore.estadoLabel(estado) });
-                          }}
-                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
-                        >
-                          <PencilIcon className="size-3.5 text-gray-400" />
-                          <span>Renombrar</span>
-                        </button>
-
-                        {colIndex > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newCols = [...columnas];
-                              const temp = newCols[colIndex - 1];
-                              newCols[colIndex - 1] = newCols[colIndex];
-                              newCols[colIndex] = temp;
-                              pedidosStore.reordenarColumnas(newCols);
-                              setMenuColumnaId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
-                          >
-                            <ArrowLeftIcon className="size-3.5 text-gray-400" />
-                            <span>Mover a la izquierda</span>
-                          </button>
-                        )}
-
-                        {colIndex < columnas.length - 1 && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newCols = [...columnas];
-                              const temp = newCols[colIndex + 1];
-                              newCols[colIndex + 1] = newCols[colIndex];
-                              newCols[colIndex] = temp;
-                              pedidosStore.reordenarColumnas(newCols);
-                              setMenuColumnaId(null);
-                            }}
-                            className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800 cursor-pointer"
-                          >
-                            <ArrowRightIcon className="size-3.5 text-gray-400" />
-                            <span>Mover a la derecha</span>
-                          </button>
-                        )}
-
-                        <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuColumnaId(null);
-                            pedidosStore.eliminarColumna(estado);
-                          }}
-                          className="flex w-full items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-950/40 cursor-pointer"
-                        >
-                          <TrashIcon className="size-3.5 text-error-500" />
-                          <span>Eliminar columna</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Lista de tarjetas Kanban con scroll interno independiente */}
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-3.5 [scrollbar-width:thin]">
-                  {items.map((p, i) => (
-                    <div
-                      key={p.id}
-                      className="animate-entrada-lista"
-                      style={{ animationDelay: retardoEscalonado(i) }}
-                    >
-                      <PedidoCard
-                        pedido={p}
-                        onDetalle={() => setDetalleId(p.id)}
-                        onCancelar={() => abrirCancelar(p.id)}
-                        onConfirmarEntrega={() => abrirEntrega(p.id)}
-                        onChat={() => setChatDrawerPedidoId(p.id)}
-                      />
-                    </div>
-                  ))}
-                  {items.length === 0 && (
-                    <div className="flex flex-1 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200/80 py-12 text-center text-xs font-medium text-gray-400 dark:border-gray-800/80">
-                      Sin pedidos
-                    </div>
-                  )}
-                </div>
-              </div>
+                estado={estado}
+                colIndex={colIndex}
+                columnas={columnas}
+                items={items}
+                menuColumnaId={menuColumnaId}
+                setMenuColumnaId={setMenuColumnaId}
+                setNuevoLabelEdit={setNuevoLabelEdit}
+                setModalRenombrar={setModalRenombrar}
+                onDetalle={(id) => setDetalleId(id)}
+                onCancelar={abrirCancelar}
+                onConfirmarEntrega={abrirEntrega}
+                onChat={(id) => setChatDrawerPedidoId(id)}
+              />
             );
           })}
-
         </div>
       ) : (
         <ListaView

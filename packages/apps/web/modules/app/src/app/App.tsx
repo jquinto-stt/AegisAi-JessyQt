@@ -309,6 +309,8 @@ export default function App() {
       {/* Carta / Catálogo digital Externo (Acceso Libre) */}
       <Route path="/menu" element={<MenuCatalogoPage />} />
       <Route path="/carta" element={<MenuCatalogoPage />} />
+      <Route path="/catalogo" element={<MenuCatalogoPage />} />
+      <Route path="/pedidos/menu" element={<MenuCatalogoPage />} />
 
       {/* Pantalla Display de Sala / Mostrador (Fullscreen TV) */}
       <Route path="/pedidos/display" element={<DisplayPedidosScreen />} />

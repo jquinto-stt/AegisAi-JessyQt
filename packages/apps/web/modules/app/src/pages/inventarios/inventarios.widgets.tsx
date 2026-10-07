@@ -1,5 +1,5 @@
 import { Badge } from "@/elements/ui/badge";
-import { InfoIcon } from "@/icons";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
 import {
   diferenciaDe,
@@ -274,7 +274,7 @@ export function SinResultados({
   return (
     <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 p-8 sm:p-12 text-center dark:border-gray-800 dark:bg-white/[0.01]">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400">
-        <InfoIcon className="h-6 w-6" />
+        <InformationCircleIcon className="h-6 w-6" />
       </div>
       <p className="mt-3.5 text-base font-semibold text-ink-title dark:text-white">{titulo}</p>
       {detalle && (

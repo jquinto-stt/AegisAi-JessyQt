@@ -2,15 +2,15 @@ import { useRef, useState } from "react";
 import { Button } from "@/elements/ui/button";
 import { Badge } from "@/elements/ui/badge";
 import {
-  BoxIcon,
-  PlusIcon,
-  DownloadIcon,
-  InfoIcon,
-  CheckLineIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
   BuildingStorefrontIcon,
-  FileIcon,
-} from "@/icons";
-import { ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+  CheckCircleIcon,
+  CubeIcon,
+  DocumentTextIcon,
+  InformationCircleIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { productosStore } from "@/stores/productos.store";
 import { descargarCsv, BOM_UTF8 } from "@/lib/csv";
 import type { UnidadMedida } from "@/domain/inventarios/productos.domain";
@@ -132,7 +132,7 @@ export const InventarioZeroState: React.FC<InventarioZeroStateProps> = ({
       {/* ── Encabezado Hero Original ──────────────────────────────────────── */}
       <div className="text-center max-w-2xl mx-auto mb-10">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 mb-4 shadow-sm border border-brand-100 dark:border-brand-500/20">
-          <BoxIcon className="w-8 h-8" />
+          <CubeIcon className="w-8 h-8" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
           Configura tus primeros productos
@@ -144,7 +144,7 @@ export const InventarioZeroState: React.FC<InventarioZeroStateProps> = ({
 
         {mensajeImportacion && (
           <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400 text-theme-sm font-medium border border-success-200 dark:border-success-500/20">
-            <CheckLineIcon className="w-4 h-4" />
+            <CheckCircleIcon className="w-4 h-4" />
             <span>{mensajeImportacion}</span>
           </div>
         )}
@@ -189,7 +189,7 @@ export const InventarioZeroState: React.FC<InventarioZeroStateProps> = ({
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <FileIcon className="w-5 h-5" />
+                <DocumentTextIcon className="w-5 h-5" />
               </div>
               <Badge color="light" size="sm">
                 Recomendado masivo
@@ -209,7 +209,7 @@ export const InventarioZeroState: React.FC<InventarioZeroStateProps> = ({
               variant="outline"
               size="sm"
               className="w-full justify-center text-theme-xs"
-              startIcon={<DownloadIcon className="w-3.5 h-3.5" />}
+              startIcon={<ArrowDownTrayIcon className="w-3.5 h-3.5" />}
               onClick={descargarPlantilla}
             >
               Descargar plantilla (.csv)
@@ -289,7 +289,7 @@ export const InventarioZeroState: React.FC<InventarioZeroStateProps> = ({
       {/* ── Barra Informativa de Buenas Prácticas ────────────────────────── */}
       <div className="mt-8 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-theme-xs text-gray-600 dark:text-gray-300">
         <div className="flex items-center gap-2">
-          <InfoIcon className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
+          <InformationCircleIcon className="w-4 h-4 text-brand-600 dark:text-brand-400 shrink-0" />
           <span>
             <strong>¿Quieres restablecer la demostración completa?</strong> Puedes volver al dataset inicial con
             14 productos multisede y órdenes de compra en cualquier momento.

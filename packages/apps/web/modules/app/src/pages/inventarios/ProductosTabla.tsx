@@ -1,9 +1,11 @@
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/elements/ui/table";
 import { Badge } from "@/elements/ui/badge";
-import { BoxCubeIcon } from "@/icons";
+import { ArrowPathIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { cn } from "@/utils";
+import type { Producto } from "@/domain/inventarios/productos.domain";
 
 import { DIAS_AVISO_VENCIMIENTO, SEMAFORO_META, UNIDAD_META } from "./productos.constants";
+import { productosStore } from "@/stores/productos.store";
 import {
   formatearCantidad,
   formatearMoneda,
@@ -38,12 +40,15 @@ export function ProductosTabla({
   filas,
   hoy,
   onAbrir,
+  onReponer,
   sedeFiltrada,
 }: {
   filas: FilaProducto[];
   /** `YYYY-MM-DD` local. Entra como parámetro para que la tabla sea determinista. */
   hoy: string;
   onAbrir: (productoId: string) => void;
+  /** Acción rápida para generar orden de compra si el stock está bajo o agotado. */
+  onReponer?: (producto: Producto, cantidadActual: number) => void;
   /** Nombre de la sede que se está mirando, o `null` si son todas. */
   sedeFiltrada: string | null;
 }) {
@@ -151,6 +156,13 @@ export function ProductosTabla({
                       ? UNIDAD_META[producto.unidad].label.toLowerCase()
                       : UNIDAD_META[producto.unidad].plural}
                   </span>
+                  {!sedeFiltrada && productosStore.sedesActivas.length > 1 && (
+                    <div className="text-[11px] text-gray-400 dark:text-gray-500 font-normal mt-0.5 whitespace-nowrap">
+                      {productosStore.sedesActivas
+                        .map((s) => `${s.nombre.replace(/^Sede\s+/i, "")}: ${productosStore.cantidadDe(producto.id, [s.id])}`)
+                        .join(" · ")}
+                    </div>
+                  )}
                 </TableCell>
 
                 <TableCell className="px-5 py-3 text-end text-gray-500 text-theme-sm tabular-nums dark:text-gray-400">
@@ -170,9 +182,25 @@ export function ProductosTabla({
                 </TableCell>
 
                 <TableCell className="px-5 py-3">
-                  <Badge size="sm" color={meta.color}>
-                    {meta.label}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge size="sm" color={meta.color}>
+                      {meta.label}
+                    </Badge>
+                    {onReponer && (semaforo === "agotado" || semaforo === "bajo") && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReponer(producto, cantidad);
+                        }}
+                        className="inline-flex items-center gap-1 rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-600 transition-colors hover:bg-brand-100 hover:text-brand-700 dark:bg-brand-950/40 dark:text-brand-400 dark:hover:bg-brand-900/50"
+                        title="Crear orden de compra rápida"
+                      >
+                        <ArrowPathIcon className="h-3 w-3" />
+                        Reponer
+                      </button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             );
@@ -202,7 +230,7 @@ function Miniatura({ producto }: { producto: FilaProducto["producto"] }) {
   }
   return (
     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 ring-1 ring-gray-200 dark:bg-white/5 dark:text-gray-500 dark:ring-white/10">
-      <BoxCubeIcon className="h-4 w-4" />
+      <PhotoIcon className="h-4 w-4" />
     </span>
   );
 }

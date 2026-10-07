@@ -10,19 +10,19 @@ import { Input } from "@/elements/form/input";
 import { Label } from "@/elements/form/label";
 import { Select } from "@/elements/form/select";
 import {
-  BoxCubeIcon,
-  DownloadIcon,
-  TimeIcon,
-  ArrowRightIcon,
-  CheckLineIcon,
-  AlertHexaIcon,
+  ClockIcon,
+  ExclamationTriangleIcon,
+  PencilSquareIcon,
+  PhotoIcon,
   PlusIcon,
-} from "@/icons";
+  ShoppingBagIcon,
+} from "@heroicons/react/24/outline";
 import { productosStore } from "@/stores/productos.store";
 import { CabeceraPagina, ContenedorPagina, EnlaceVolver } from "./inventarios.ui";
 import { formatearMoneda } from "./productos.presentacion";
 import { SEMAFORO_META } from "./productos.constants";
 import { ModalProducto } from "./ModalProducto";
+import { ModalReponerStock } from "./ModalReponerStock";
 
 type TabTipo = "overview" | "purchases" | "adjustments" | "history";
 
@@ -32,6 +32,7 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
 
   const [tabActiva, setTabActiva] = useState<TabTipo>("overview");
   const [modalEditarAbierto, setModalEditarAbierto] = useState(false);
+  const [modalReponerAbierto, setModalReponerAbierto] = useState(false);
 
   // Estado para modal/formulario de ajuste rápido
   const [ajusteSedeId, setAjusteSedeId] = useState("");
@@ -113,11 +114,21 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
                 size="sm"
                 onClick={() => setModalEditarAbierto(true)}
               >
+                <PencilSquareIcon className="size-4 mr-1.5" />
                 Editar producto
               </Button>
               <Button
                 size="sm"
-                className="bg-brand-500 hover:bg-brand-600 text-white"
+                variant="outline"
+                className="text-brand-600 dark:text-brand-400 border-brand-200 dark:border-brand-900/40 cursor-pointer"
+                onClick={() => setModalReponerAbierto(true)}
+              >
+                <ShoppingBagIcon className="size-4 mr-1.5" />
+                Reponer Stock
+              </Button>
+              <Button
+                size="sm"
+                className="bg-brand-500 hover:bg-brand-600 text-white cursor-pointer"
                 onClick={() => {
                   setTabActiva("adjustments");
                   setMostrarFormAjuste(true);
@@ -351,7 +362,7 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <BoxCubeIcon className="size-12" />
+                      <PhotoIcon className="size-12" />
                     )}
                   </div>
 
@@ -654,7 +665,7 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
               <div className="space-y-4">
                 <div className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 dark:border-white/5">
                   <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-                    <TimeIcon className="size-5" />
+                    <ClockIcon className="size-5" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -672,7 +683,7 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
                     className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 dark:border-white/5"
                   >
                     <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                      <AlertHexaIcon className="size-5" />
+                      <ExclamationTriangleIcon className="size-5" />
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -697,6 +708,17 @@ export const DetalleProductoPage = observer(function DetalleProductoPage() {
           categorias={productosStore.categorias}
           soloLectura={false}
           onGuardar={(datos) => productosStore.actualizarProducto(producto.id, datos)}
+        />
+
+        {/* Modal de reposición rápida */}
+        <ModalReponerStock
+          abierto={modalReponerAbierto}
+          onCerrar={() => setModalReponerAbierto(false)}
+          producto={producto}
+          cantidadActual={stockTotal}
+          onOrdenCreada={() => {
+            setTabActiva("purchases");
+          }}
         />
       </ContenedorPagina>
     </>

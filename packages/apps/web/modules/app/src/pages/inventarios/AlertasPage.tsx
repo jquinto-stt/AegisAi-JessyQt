@@ -6,7 +6,7 @@ import { PageMeta } from "@/shell/meta";
 import { Button } from "@/elements/ui/button";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
-import { AlertHexaIcon } from "@/icons";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { inventariosStore, type TipoAlerta } from "@/stores";
 import { CabeceraPagina, ContenedorPagina } from "./inventarios.ui";
 import { SinResultados } from "./inventarios.widgets";
@@ -196,7 +196,7 @@ export const AlertasPage = observer(function AlertasPage() {
                               : "bg-brand-50 text-secondary-600 dark:bg-brand-500/15 dark:text-brand-400",
                         )}
                       >
-                        <AlertHexaIcon className="h-5 w-5" />
+                        <ExclamationTriangleIcon className="h-5 w-5" />
                       </span>
 
                       <div className="min-w-0">
