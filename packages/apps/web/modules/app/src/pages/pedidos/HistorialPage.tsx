@@ -7,10 +7,8 @@ import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
 import { Modal } from "@/elements/ui/modal";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/elements/ui/table";
-import { Input } from "@/elements/form/input";
-import { Label } from "@/elements/form/label";
-import { Select } from "@/elements/form/select";
-import { DatePicker } from "@/elements/form/date-picker";
+import { MagnifyingGlassIcon, CalenderIcon } from "@/icons";
+import { CalendarioRangoDropdown } from "./CalendarioRangoDropdown";
 import { pedidosStore, ETIQUETA_PAGO, puedeEscribirCliente } from "@/stores";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import type { Pedido } from "@/stores/pedidos.store";
@@ -331,13 +329,19 @@ const HeatmapActividad = observer(
         <div className="flex flex-wrap items-center gap-3">
           {/* Selector de días: solo cuando NO hay rango del filtro (el filtro manda) */}
           {!rangoManual && (
-            <div className="w-40">
-              <Select
-                key={`rango-${rangoIdx}`}
-                options={RANGOS_DIAS.map((d) => ({ value: String(d), label: `${d} días` }))}
-                defaultValue={String(dias)}
-                onChange={(v) => setRangoIdx(RANGOS_DIAS.indexOf(Number(v) as (typeof RANGOS_DIAS)[number]))}
-              />
+            <div className="relative">
+              <select
+                aria-label="Rango de días para el mapa de calor"
+                value={String(dias)}
+                onChange={(e) => setRangoIdx(RANGOS_DIAS.indexOf(Number(e.target.value) as (typeof RANGOS_DIAS)[number]))}
+                className="h-8 rounded-lg border border-gray-200 bg-white px-2.5 pr-7 text-xs font-medium text-gray-700 shadow-2xs transition-colors hover:border-gray-300 focus:border-brand-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 cursor-pointer"
+              >
+                {RANGOS_DIAS.map((d) => (
+                  <option key={d} value={String(d)}>
+                    {d} días
+                  </option>
+                ))}
+              </select>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -445,9 +449,31 @@ const HeatmapActividad = observer(
  * Filtros: estado, modalidad, rango de fecha, búsqueda. El filtrado usa
  * filtrarHistorial (helper puro y testeado).
  */
-export const HistorialPage = observer(({ sinHeader = false }: { sinHeader?: boolean }) => {
-  const [filtros, setFiltros] = useState<HistorialFiltros>(FILTROS_VACIOS);
-  const [detalleId, setDetalleId] = useState<string | null>(null);
+export const HistorialPage = observer(
+  ({
+    sinHeader = false,
+    rangoExterno,
+  }: {
+    sinHeader?: boolean;
+    rangoExterno?: { desde: string; hasta: string } | null;
+  }) => {
+    const [filtros, setFiltros] = useState<HistorialFiltros>(() => ({
+      ...FILTROS_VACIOS,
+      desde: rangoExterno?.desde || "",
+      hasta: rangoExterno?.hasta || "",
+    }));
+    const [detalleId, setDetalleId] = useState<string | null>(null);
+
+    // Sincronizar filtros de fecha cuando el rango externo cambia (selector de periodo superior)
+    useEffect(() => {
+      if (rangoExterno !== undefined) {
+        setFiltros((prev) => ({
+          ...prev,
+          desde: rangoExterno?.desde || "",
+          hasta: rangoExterno?.hasta || "",
+        }));
+      }
+    }, [rangoExterno?.desde, rangoExterno?.hasta]);
 
   const terminales = pedidosStore.historial;
   const resultado = filtrarHistorial(terminales, filtros);
@@ -474,81 +500,122 @@ export const HistorialPage = observer(({ sinHeader = false }: { sinHeader?: bool
         </>
       )}
 
-      {/* Filtros */}
-      <Card className="mb-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <div>
-            <Label htmlFor="f-busqueda">Buscar</Label>
-            <Input
-              id="f-busqueda"
-              placeholder="Cliente o número"
+      {/* ── BARRA DE FILTROS Y BÚSQUEDA OPERATIVA ── */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 shadow-2xs space-y-3 mb-6">
+        {/* Fila 1: Buscador en tiempo real + Contador de resultados + Botón Limpiar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar por cliente o # de pedido..."
               value={filtros.busqueda}
               onChange={(e) => set("busqueda", e.target.value)}
+              className="w-full h-10 pl-10 pr-8 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-[#190088] dark:focus:border-[#97D6DF] transition-all"
             />
+            {filtros.busqueda && (
+              <button
+                type="button"
+                onClick={() => set("busqueda", "")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs cursor-pointer"
+                title="Limpiar búsqueda"
+              >
+                ✕
+              </button>
+            )}
           </div>
-          <div>
-            <Label htmlFor="f-estado">Estado</Label>
-            <Select
-              key={`estado-${hayFiltros ? "f" : "v"}`}
-              options={[
-                { value: "", label: "Todos" },
-                { value: "entregado", label: "Entregado" },
-                { value: "cancelado", label: "Cancelado" },
-              ]}
-              defaultValue={filtros.estado}
-              placeholder="Todos"
-              onChange={(v) => set("estado", v as HistorialFiltros["estado"])}
-            />
-          </div>
-          <div>
-            <Label htmlFor="f-modalidad">Modalidad</Label>
-            <Select
-              key={`modalidad-${hayFiltros ? "f" : "v"}`}
-              options={[
-                { value: "", label: "Todas" },
-                ...pedidosStore.config.modalidades.map((m) => ({ value: m, label: pedidosStore.modalidadLabel(m) })),
-              ]}
-              defaultValue={filtros.modalidad}
-              placeholder="Todas"
-              onChange={(v) => set("modalidad", v as HistorialFiltros["modalidad"])}
-            />
-          </div>
-          <div>
-            <Label htmlFor="f-desde">Desde</Label>
-            <DatePicker
-              key={`desde-${hayFiltros ? "f" : "v"}`}
-              id="f-desde"
-              defaultDate={filtros.desde || undefined}
-              placeholder="dd/mm/aaaa"
-              onChange={(_dates, dateStr) => set("desde", dateStr)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="f-hasta">Hasta</Label>
-            <DatePicker
-              key={`hasta-${hayFiltros ? "f" : "v"}`}
-              id="f-hasta"
-              defaultDate={filtros.hasta || undefined}
-              placeholder="dd/mm/aaaa"
-              onChange={(_dates, dateStr) => set("hasta", dateStr)}
-            />
+
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+              {resultado.length} {resultado.length === 1 ? "pedido" : "pedidos"}
+            </span>
+
+            {hayFiltros && (
+              <button
+                type="button"
+                onClick={limpiar}
+                className="text-xs font-bold text-[#FF3F1A] hover:bg-[#FF3F1A]/10 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
         </div>
-        {hayFiltros && (
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {resultado.length} resultado{resultado.length === 1 ? "" : "s"}
-            </span>
-            <button
-              type="button"
-              onClick={limpiar}
-              className="text-xs font-medium text-secondary-600 hover:text-secondary-600 dark:text-brand-400"
-            >
-              Limpiar filtros
-            </button>
+
+        {/* Fila 2: Chips de Estado, Modalidad y Rango de Fecha Integrado */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs">
+          {/* Chips de Estado */}
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-950 p-1 rounded-xl border border-gray-200/80 dark:border-gray-800">
+            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 px-2">Estado:</span>
+            {[
+              { id: "", label: "Todos" },
+              { id: "entregado", label: "Entregado", dot: "bg-emerald-500" },
+              { id: "cancelado", label: "Cancelado", dot: "bg-red-500" },
+            ].map((op) => {
+              const activo = filtros.estado === op.id;
+              return (
+                <button
+                  key={op.id}
+                  type="button"
+                  onClick={() => set("estado", op.id as HistorialFiltros["estado"])}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    activo
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold shadow-2xs"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {op.dot && <span className={`w-1.5 h-1.5 rounded-full ${op.dot}`} />}
+                  <span>{op.label}</span>
+                </button>
+              );
+            })}
           </div>
-        )}
-      </Card>
+
+          {/* Chips de Modalidad */}
+          <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-950 p-1 rounded-xl border border-gray-200/80 dark:border-gray-800">
+            <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 px-2">Modalidad:</span>
+            {[
+              { id: "", label: "Todas" },
+              ...pedidosStore.config.modalidades.map((m) => ({
+                id: m,
+                label: pedidosStore.modalidadLabel(m),
+              })),
+            ].map((op) => {
+              const activo = filtros.modalidad === op.id;
+              return (
+                <button
+                  key={op.id}
+                  type="button"
+                  onClick={() => set("modalidad", op.id as HistorialFiltros["modalidad"])}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                    activo
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold shadow-2xs"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                  }`}
+                >
+                  {op.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selector de Rango de Fecha con Calendario Desplegable */}
+          <CalendarioRangoDropdown
+            compacto
+            desde={filtros.desde}
+            hasta={filtros.hasta}
+            onChange={(d, h) => {
+              set("desde", d);
+              set("hasta", h);
+            }}
+            onLimpiar={() => {
+              set("desde", "");
+              set("hasta", "");
+            }}
+            placeholder="Filtrar por fecha"
+          />
+        </div>
+      </div>
 
       {/* Heatmap de actividad — bidireccional con el filtro Desde/Hasta:
           si el filtro tiene rango, el heatmap se adapta; y al seleccionar dos

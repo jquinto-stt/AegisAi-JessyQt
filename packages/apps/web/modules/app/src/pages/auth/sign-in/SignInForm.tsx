@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowRightIcon, BoltIcon } from "@heroicons/react/24/outline";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import { Label } from "@/elements/form/label";
 import { Input } from "@/elements/form/input";
@@ -16,7 +15,6 @@ import {
 import {
   iniciarSesion,
   iniciarSesionConGoogle,
-  asegurarSesionPruebas,
 } from "@/lib/auth.service";
 
 /**
@@ -103,43 +101,6 @@ export default function SignInForm() {
             <p className="text-sm text-gray-500 dark:text-gray-400">Ingresa tus credenciales para acceder a tu panel de control.</p>
           </div>
 
-          {/* Banner Informativo de Modo de Pruebas.
-              La superficie va en el cyan de la paleta —el color que el encargo
-              asigna a «información / fondos suaves»— y NO en `brand-50`: los
-              peldaños claros del naranja son melocotón y la tarjeta entera se
-              leía ROSA, que es lo contrario de la identidad. La tinta del
-              titular es el azul de marca y el cuerpo el «Dark» de la paleta. */}
-          <div className="p-4 mb-6 rounded-2xl bg-accent-100 border border-accent-300/80 dark:bg-accent-950/40 dark:border-accent-500/40 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl bg-brand-500 text-white shrink-0 mt-0.5 shadow-sm">
-                <BoltIcon className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-ink-title dark:text-accent-100">
-                    Modo de Pruebas Activo
-                  </h2>
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-accent-200/70 text-accent-900 rounded-full dark:bg-accent-500/20 dark:text-accent-100">
-                    Acceso libre
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-ink-body dark:text-gray-200/90 leading-relaxed">
-                  El inicio de sesión real ha sido desactivado para que el equipo pueda probar la plataforma sin contraseñas ni bloqueos.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    asegurarSesionPruebas();
-                    navigate("/pedidos/inicio");
-                  }}
-                  className="mt-3 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 active:scale-95 transition-all rounded-xl shadow-sm cursor-pointer"
-                >
-                  Entrar directamente al sistema
-                  <ArrowRightIcon className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
 
           <div>
             {errorMensaje && (
@@ -167,12 +128,10 @@ export default function SignInForm() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div>
-                  <Label>
-                    Correo electrónico <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(opcional en pruebas)</span>
-                  </Label>
+                  <Label>Correo electrónico</Label>
                   <Input
                     type="email"
-                    placeholder="equipo@necto.io"
+                    placeholder="tu@empresa.com"
                     value={email}
                     disabled={cargando}
                     onChange={(e) => {
@@ -182,13 +141,11 @@ export default function SignInForm() {
                   />
                 </div>
                 <div>
-                  <Label>
-                    Contraseña <span className="text-xs font-normal text-gray-400 dark:text-gray-500">(opcional en pruebas)</span>
-                  </Label>
+                  <Label>Contraseña</Label>
                   <div className="relative">
                     <Input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Cualquier contraseña"
+                      placeholder="Ingresa tu contraseña"
                       value={password}
                       disabled={cargando}
                       onChange={(e) => {

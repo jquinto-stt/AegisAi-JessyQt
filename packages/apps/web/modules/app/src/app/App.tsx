@@ -259,6 +259,7 @@ export default function App() {
       <Route path="/pagos/:ref" element={<CheckoutGlobalPayPage />} />
 
       {/* Carta / Catálogo digital Externo (Acceso Libre) */}
+      <Route path="/catalogo-clientes" element={<MenuCatalogoPage />} />
       <Route path="/menu" element={<MenuCatalogoPage />} />
       <Route path="/carta" element={<MenuCatalogoPage />} />
       <Route path="/catalogo" element={<MenuCatalogoPage />} />

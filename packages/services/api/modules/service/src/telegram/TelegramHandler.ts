@@ -456,7 +456,7 @@ export class TelegramHandler {
     if (nextState === 'CATALOGO_ACTIVO') {
       const nombreCliente = clientePerfilSiguiente?.nombre || estadoConv.clientePerfil?.nombre || fullName || 'Cliente';
       if (baseUrl.startsWith('https://')) {
-        const menuUrl = `${baseUrl}/menu?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent('Sede Principal')}&direccion=${encodeURIComponent(borradorFinal?.direccion || 'Medellín')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(borradorFinal?.modalidad || 'retiro')}`;
+        const menuUrl = `${baseUrl}/catalogo-clientes?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent('Sede Principal')}&direccion=${encodeURIComponent(borradorFinal?.direccion || 'Medellín')}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(borradorFinal?.modalidad || 'retiro')}`;
         textoFinal += `\n\n🔗 <b>Catálogo interactivo:</b> <a href="${menuUrl}">Abrir catálogo en línea</a>`;
       }
     } else if (nluResult.intent === 'CONSULTA_ESTADO_PEDIDO') {

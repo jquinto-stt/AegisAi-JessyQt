@@ -28,6 +28,7 @@ import {
 import type { Pedido } from "@/stores/pedidos.store";
 import type { ConversacionCanal } from "@/stores";
 import { ChatDrawer } from "@/pages/conversaciones/components/ChatDrawer";
+import { DetallePedidoModal } from "./DetallePedidoModal";
 import {
   money,
   relativo,
@@ -200,35 +201,34 @@ const CampanitaAtencion = observer(({ onClick }: { onClick: () => void }) => {
   const count = pedidosStore.urgentes.length;
   const sonidoActivo = pedidosStore.config.alertaAtencion.activo;
   if (count === 0) return null;
+  // Solo la campanita. El timbre lo pinta `BotonSilenciar` UNA vez por
+  // superficie, y lo monta quien usa la campanita: aquí dentro quedaba un
+  // segundo altavoz pegado al primero (dos bocinas en la misma cabecera) y,
+  // peor, desaparecía junto con la campanita cuando no había urgentes.
   return (
-    <div className="inline-flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        title={`${count} pedidos requieren atención — Clic para ver`}
-        className="relative inline-flex size-8 items-center justify-center rounded-full text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer"
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      title={`${count} pedidos requieren atención — Clic para ver`}
+      className="relative inline-flex size-8 items-center justify-center rounded-full text-error-500 transition-colors hover:bg-error-50 dark:hover:bg-error-500/10 cursor-pointer"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.8}
+        className={`h-5 w-5 origin-top ${sonidoActivo ? "animate-[wiggle_1.2s_ease-in-out_infinite]" : ""}`}
+        aria-hidden="true"
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.8}
-          className={`h-5 w-5 origin-top ${sonidoActivo ? "animate-[wiggle_1.2s_ease-in-out_infinite]" : ""}`}
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-        </svg>
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-bold text-white">
-          {count}
-        </span>
-      </button>
-
-      {/* Botón de silenciar integrado junto a la campanita */}
-      <BotonSilenciar className="size-7" />
-    </div>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+      </svg>
+      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error-500 px-1 text-[10px] font-bold text-white">
+        {count}
+      </span>
+    </button>
   );
 });
 
@@ -436,17 +436,10 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
           <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">Chat & Conversaciones</h2>
           <CampanitaAtencion onClick={onAbrir} />
         </div>
-        <div className="flex items-center gap-2">
-          <BotonSilenciar />
-          <button
-            type="button"
-            onClick={() => navigate("/conversaciones")}
-            className="flex size-9 items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
-            title="Ir a Conversaciones"
-          >
-            <ArrowUpRightIcon className="size-4" />
-          </button>
-        </div>
+        {/* El acceso a Conversaciones es el botón del pie («Ver todas las
+            conversaciones»): un segundo botón arriba para el mismo destino era
+            el mismo atajo dos veces. */}
+        <BotonSilenciar />
       </div>
 
       {items.length === 0 ? (
@@ -508,9 +501,12 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
         </div>
       )}
 
+      {/* Va a la consola de Conversaciones, no al modal de filtro: «ver todas»
+          significa todas, y el modal solo lista las cinco de la tarjeta con un
+          segmento puesto. */}
       <button
         type="button"
-        onClick={onAbrir}
+        onClick={() => navigate("/conversaciones")}
         className="mt-4 w-full rounded-xl border border-dashed border-gray-200 py-2.5 text-center text-xs font-semibold text-gray-500 transition-colors hover:border-secondary-300 hover:text-secondary-600 dark:border-gray-800 dark:text-gray-400 dark:hover:border-brand-500 cursor-pointer"
       >
         Ver todas las conversaciones ({filas.length})
@@ -690,6 +686,11 @@ export const InicioPage = observer(() => {
   const [displayOpen, setDisplayOpen] = useState(false);
   const [clientesOpen, setClientesOpen] = useState(false);
   const [chatDrawerConvId, setChatDrawerConvId] = useState<string | null>(null);
+  // El drawer también se abre por PEDIDO (desde el detalle): quien invoca el
+  // detalle de una tarjeta no tiene por qué conocer el hilo de conversación.
+  const [chatDrawerPedidoId, setChatDrawerPedidoId] = useState<string | null>(null);
+  // Detalle del pedido abierto EN Inicio (modal), no navegando al tablero.
+  const [detalleId, setDetalleId] = useState<string | null>(null);
 
   const [calendarioOpen, setCalendarioOpen] = useState(false);
   const [mes, setMes] = useState<MesCalendario>(() => mesActual());
@@ -730,10 +731,14 @@ export const InicioPage = observer(() => {
 
   const abrirChat = (id: string) => {
     setClientesOpen(false);
+    setChatDrawerPedidoId(null);
     setChatDrawerConvId(id);
   };
 
   const verPedido = (id: string) => navigate(`/pedidos?detalle=${id}`);
+
+  const detalle = detalleId ? pedidosStore.getPedido(detalleId) ?? null : null;
+  const pedidoDelDrawer = chatDrawerPedidoId ? pedidosStore.getPedido(chatDrawerPedidoId) ?? null : null;
 
   const puedeCrear = puedeCrearPedido();
 
@@ -805,7 +810,7 @@ export const InicioPage = observer(() => {
 
       {/* ── SECCIÓN HERO: PEDIDO PRIORITARIO (IZQ) + FLUJO OPERATIVO DE PEDIDOS (DER) ── */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 mb-6 items-stretch">
-        <PedidoDestacadoCard />
+        <PedidoDestacadoCard onVerDetalle={setDetalleId} />
         <EstadosOverview />
       </div>
 
@@ -882,7 +887,31 @@ export const InicioPage = observer(() => {
 
       <ConfigureDisplayModal isOpen={displayOpen} onClose={() => setDisplayOpen(false)} />
 
-      <ChatDrawer convId={chatDrawerConvId} onClose={() => setChatDrawerConvId(null)} />
+      {/* Detalle del pedido, AQUÍ. Antes la tarjeta de atención inmediata
+          navegaba a `/pedidos?detalle=…` y sacaba al usuario de Inicio. */}
+      {detalle && (
+        <DetallePedidoModal
+          pedido={detalle}
+          onClose={() => setDetalleId(null)}
+          onChat={() => {
+            // El detalle se cierra para que el drawer quede como única
+            // superficie modal visible (misma regla que en el tablero).
+            setDetalleId(null);
+            setChatDrawerPedidoId(detalle.id);
+          }}
+        />
+      )}
+
+      {/* Una sola instancia del drawer: `convId` manda sobre `pedido`, y los dos
+          estados son mutuamente excluyentes por construcción. */}
+      <ChatDrawer
+        convId={chatDrawerConvId}
+        pedido={pedidoDelDrawer}
+        onClose={() => {
+          setChatDrawerConvId(null);
+          setChatDrawerPedidoId(null);
+        }}
+      />
     </>
   );
 });

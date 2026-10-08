@@ -16,6 +16,7 @@ import {
   TrashBinIcon,
   PencilIcon,
   EyeIcon,
+  ChevronDownIcon,
 } from '@/icons';
 import { getSupabase, ESQUEMA } from '@/lib/supabase';
 import { PageMeta } from '@/shell/meta';
@@ -185,10 +186,32 @@ export const CatalogoPage: React.FC = observer(() => {
   const [productoEnEdicion, setProductoEnEdicion] = useState<ProductoCatalogoItem | null>(null);
   const [esNuevoProducto, setEsNuevoProducto] = useState<boolean>(false);
 
+  // Menú desplegable "Agregar productos"
+  const [menuAgregarAbierto, setMenuAgregarAbierto] = useState<boolean>(false);
+  const menuAgregarRef = useRef<HTMLDivElement>(null);
+
   // Alerta informativa
   const [alerta, setAlerta] = useState<{ tipo: 'exito' | 'error'; mensaje: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cerrar menú desplegable al hacer clic fuera
+  useEffect(() => {
+    const handleClickAfuera = (e: MouseEvent) => {
+      if (menuAgregarRef.current && !menuAgregarRef.current.contains(e.target as Node)) {
+        setMenuAgregarAbierto(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuAgregarAbierto(false);
+    };
+    document.addEventListener('mousedown', handleClickAfuera);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickAfuera);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   // 1. Cargar catálogo de Supabase al montar
   useEffect(() => {
@@ -480,515 +503,638 @@ export const CatalogoPage: React.FC = observer(() => {
         title="Catálogo"
         description="Productos y precios que ven tus clientes"
       />
-      <div className="min-h-screen bg-gray-50/70 dark:bg-gray-950 p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* ── Encabezado principal ──
-          El cuadro del icono iba en `bg-brand-50` + `border-brand-100` +
-          `text-brand-500`: los peldaños CLAROS del naranja son un melocotón que
-          se lee rosa, y es el mismo defecto que ya se corrigió en el login. Se
-          usa el tono de icono que el resto de la app ya declara para una
-          cabecera de sección. */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200/80 dark:border-gray-800 shadow-theme-xs">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-secondary-50 dark:bg-brand-500/10 flex items-center justify-center text-secondary-600 dark:text-brand-400 shadow-theme-xs">
-            <DocsIcon className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl md:text-2xl font-bold text-ink-title dark:text-white tracking-tight">
-                Catálogo
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-estado-verde text-ink-body border border-accent-200 dark:border-accent-500/20">
-                En línea
-              </span>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Administra los productos y precios que ven tus clientes en Telegram y en el catálogo web.
-            </p>
-          </div>
-        </div>
-
-        {/* Acciones principales */}
-        <div className="flex items-center flex-wrap gap-2.5">
-          <button
-            onClick={() => setMostrarImportador(!mostrarImportador)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-          >
-            <DocsIcon className="w-4 h-4" />
-            Cargar catálogo (PDF / Excel)
-          </button>
-
-          <Link
-            to="/menu"
-            target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-          >
-            <EyeIcon className="w-4 h-4 text-gray-400" />
-            Ver catálogo público
-          </Link>
-
-          <button
-            onClick={guardarCatalogo}
-            disabled={guardando || (!hayCambiosPendientes && productos.length === 0)}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-theme-xs ${
-              hayCambiosPendientes
-                ? 'bg-brand-500 hover:bg-brand-600 text-white shadow-theme-sm ring-2 ring-brand-500/40 ring-offset-2 dark:ring-offset-gray-900'
-                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-95'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            <CheckLineIcon className="w-4 h-4" />
-            {guardando ? 'Guardando...' : 'Guardar y Publicar'}
-            {hayCambiosPendientes && <span className="w-2 h-2 rounded-full bg-white" />}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Banner de Alerta / Éxito ── */}
-      {alerta && (
-        <div
-          className={`p-4 rounded-2xl flex items-center justify-between border ${
-            alerta.tipo === 'exito'
-              ? 'bg-accent-50 border-accent-200 text-accent-700 dark:bg-accent-500/10 dark:border-accent-500/30 dark:text-accent-400'
-              : 'bg-error-50 border-error-200 text-error-700 dark:bg-error-500/10 dark:border-error-500/30 dark:text-error-400'
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {alerta.tipo === 'exito' ? (
-              <CheckCircleIcon className="w-5 h-5 text-accent-600 dark:text-accent-400 shrink-0" />
-            ) : (
-              <AlertIcon className="w-5 h-5 text-error-600 dark:text-error-400 shrink-0" />
-            )}
-            <p className="text-sm font-medium">{alerta.mensaje}</p>
-          </div>
-          <button
-            onClick={() => setAlerta(null)}
-            className="text-xs font-semibold underline hover:opacity-80 ml-4"
-          >
-            Cerrar
-          </button>
-        </div>
-      )}
-
-      {/* ── Panel desplegable: cargar catálogo (PDF / Excel / plantilla) ── */}
-      {mostrarImportador && (
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-theme-sm space-y-5">
-          <div className="flex items-center justify-between">
+      <div className="w-full min-h-screen bg-gray-50/50 dark:bg-gray-950 px-4 sm:px-6 lg:px-8 py-5 space-y-4 font-sans">
+        {/* ── Barra Superior Unificada: Cabecera, Acciones y Filtros ── */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 shadow-2xs space-y-3.5">
+          {/* Fila 1: Título y Botones de Acción */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-500 text-white flex items-center justify-center">
-                <FileIcon className="w-5 h-5" />
+              <div className="h-10 w-10 rounded-xl bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15 flex items-center justify-center text-[#190088] dark:text-[#97D6DF] shrink-0">
+                <DocsIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-ink-title dark:text-white">
-                  Cargar catálogo desde archivo
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Sube tu lista de precios en PDF, una hoja de Excel o una foto. No necesitas un formato estricto.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setMostrarImportador(false)}
-              className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <CloseLineIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* ── Barra de Facilidades para el Cliente ── */}
-          <div className="p-4 bg-brand-50/50 dark:bg-brand-500/5 rounded-2xl border border-brand-100 dark:border-brand-500/20 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <InfoIcon className="w-4 h-4 text-brand-500 shrink-0 mt-0.5" />
-              <div className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  ¿No tienes un archivo con formato especial? ¡No hay problema!
-                </span>
-                <p className="mt-0.5">
-                  Puedes subir tu <strong>volante impreso, lista de precios en PDF o tu inventario actual</strong>. Nuestro sistema extraerá los productos, los precios en pesos colombianos y les asignará automáticamente fotos profesionales de alta resolución.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={descargarPlantillaExcel}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-theme-xs"
-              >
-                <DownloadIcon className="w-3.5 h-3.5 text-brand-500" />
-                Descargar Plantilla Excel de Ejemplo (.csv)
-              </button>
-
-              <button
-                type="button"
-                onClick={cargarCatalogoEjemplo}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-all shadow-theme-xs"
-              >
-                <CheckCircleIcon className="w-3.5 h-3.5" />
-                Cargar catálogo de ejemplo (Demo)
-              </button>
-            </div>
-          </div>
-
-          {/* Pestañas: Archivo vs Texto */}
-          <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
-            <button
-              onClick={() => setMetodoCarga('archivo')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                metodoCarga === 'archivo'
-                  ? 'bg-brand-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
-              }`}
-            >
-              Subir Archivo (PDF, Excel o Foto)
-            </button>
-            <button
-              onClick={() => setMetodoCarga('texto')}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                metodoCarga === 'texto'
-                  ? 'bg-brand-500 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
-              }`}
-            >
-              Escribir o pegar texto
-            </button>
-          </div>
-
-          {metodoCarga === 'archivo' ? (
-            <div
-              onDragOver={(e) => { e.preventDefault(); setDragActivo(true); }}
-              onDragLeave={(e) => { e.preventDefault(); setDragActivo(false); }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragActivo(false);
-                if (e.dataTransfer.files?.[0]) validarArchivo(e.dataTransfer.files[0]);
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
-                dragActivo
-                  ? 'border-brand-500 bg-brand-50/30 dark:bg-brand-500/10'
-                  : 'border-gray-300 dark:border-gray-700 hover:border-brand-500 bg-gray-50/50 dark:bg-gray-900/60'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg"
-                onChange={(e) => e.target.files?.[0] && validarArchivo(e.target.files[0])}
-                className="hidden"
-              />
-
-              <div className="flex flex-col items-center space-y-2.5">
-                <div className="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500">
-                  <DocsIcon className="w-6 h-6" />
+                <div className="flex items-center gap-2">
+                  <h1 className="text-lg sm:text-xl font-bold text-[#190088] dark:text-white tracking-tight">
+                    Catálogo
+                  </h1>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                    En línea
+                  </span>
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                    · {productos.length} {productos.length === 1 ? 'producto' : 'productos'}
+                  </span>
                 </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                  Administra los productos y precios que ven tus clientes en Telegram y en tu catálogo web.
+                </p>
+              </div>
+            </div>
 
-                {archivo ? (
-                  <div className="flex items-center gap-3 p-3 bg-brand-50 dark:bg-brand-500/10 rounded-xl border border-brand-200 dark:border-brand-500/30">
-                    <FileIcon className="w-5 h-5 text-brand-500" />
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{archivo.name}</p>
-                      <p className="text-xs text-gray-500">{(archivo.size / 1024).toFixed(1)} KB — Listo para procesar</p>
-                    </div>
+            <div className="flex items-center flex-wrap gap-2">
+              <Link
+                to="/catalogo-clientes"
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700 shadow-2xs transition-colors"
+              >
+                <EyeIcon className="w-3.5 h-3.5 text-gray-400" />
+                <span>Ver catálogo</span>
+              </Link>
+
+              {/* Menú desplegable unificado: Agregar productos */}
+              <div className="relative" ref={menuAgregarRef}>
+                <button
+                  type="button"
+                  onClick={() => setMenuAgregarAbierto(!menuAgregarAbierto)}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-semibold hover:opacity-90 active:scale-98 shadow-2xs transition-all cursor-pointer"
+                >
+                  <PlusIcon className="w-3.5 h-3.5" />
+                  <span>Agregar productos</span>
+                  <ChevronDownIcon
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      menuAgregarAbierto ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {menuAgregarAbierto && (
+                  <div className="absolute right-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/90 dark:border-gray-800 shadow-xl py-1.5 z-40 animate-fadeIn">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuAgregarAbierto(false);
+                        abrirModalNuevo();
+                      }}
+                      className="w-full flex items-start gap-2.5 px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 group-hover:bg-[#190088] group-hover:text-white transition-colors shrink-0">
+                        <PlusIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900 dark:text-white">Nuevo producto</div>
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                          Crear un producto individualmente
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuAgregarAbierto(false);
+                        setMostrarImportador(true);
+                      }}
+                      className="w-full flex items-start gap-2.5 px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 group-hover:bg-[#190088] group-hover:text-white transition-colors shrink-0">
+                        <DocsIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-900 dark:text-white">Importar productos</div>
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                          Subir archivo Excel, CSV o PDF
+                        </div>
+                      </div>
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                      Arrastra tu archivo aquí o haz clic para seleccionarlo
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Compatible con PDF, Excel (.xlsx, .xls), CSV o una foto nítida de tu lista de precios.
-                    </p>
-                  </>
                 )}
               </div>
+
+              {hayCambiosPendientes && (
+                <button
+                  type="button"
+                  onClick={guardarCatalogo}
+                  disabled={guardando}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white shadow-sm ring-2 ring-[#FF3F1A]/30 ring-offset-1 dark:ring-offset-gray-900 animate-pulse cursor-pointer"
+                >
+                  <CheckLineIcon className="w-3.5 h-3.5" />
+                  <span>{guardando ? 'Guardando...' : 'Guardar y Publicar'}</span>
+                </button>
+              )}
             </div>
-          ) : (
-            <textarea
-              value={textoManual}
-              onChange={(e) => setTextoManual(e.target.value)}
-              placeholder="Ejemplo:&#10;Hamburguesa Especial - Carne 200g, tocineta y queso - $26.000&#10;Papas Francesas - Con sal marina - $12.000&#10;Limonada Natural - $6.500"
-              className="w-full h-32 p-4 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
-          )}
-
-          {errorCarga && (
-            <div className="p-3 bg-error-50 dark:bg-error-500/10 border border-error-200 dark:border-error-500/30 rounded-xl text-xs text-error-700 dark:text-error-400 flex items-center gap-2">
-              <AlertIcon className="w-4 h-4 shrink-0" />
-              <span>{errorCarga}</span>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-gray-400">
-              Tus productos actuales no se eliminarán; se sumarán o actualizarán con los nuevos.
-            </span>
-
-            <button
-              onClick={ejecutarImportacion}
-              disabled={procesandoArchivo || (!archivo && !textoManual.trim())}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold shadow-theme-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <FileIcon className="w-4 h-4" />
-              <span>{procesandoArchivo ? (mensajeProgreso || 'Procesando...') : 'Cargar Productos'}</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Barra de Filtrado, Búsqueda y Modos de Vista ── */}
-      <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl border border-gray-200/80 dark:border-gray-800 shadow-theme-xs space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          {/* Barra de búsqueda */}
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por producto, categoría o descripción..."
-              className="w-full px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex items-center gap-2">
-            {/* Toggle Cuadrícula / Lista */}
-            <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+          {/* Fila 2: Buscador, Categorías y Toggle de Vista */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              {/* Buscador */}
+              <div className="relative w-full max-w-xs shrink-0">
+                <input
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Buscar por producto, categoría..."
+                  className="w-full pl-3.5 pr-8 py-1.5 rounded-xl bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:border-[#190088] dark:focus:border-[#97D6DF]"
+                />
+                {busqueda && (
+                  <button
+                    type="button"
+                    onClick={() => setBusqueda('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <CloseLineIcon className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Pestañas de categorías */}
+              {categorias.length > 1 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none flex-1">
+                  {categorias.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCategoriaActiva(cat)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+                        categoriaActiva === cat
+                          ? 'bg-[#190088] text-white shadow-2xs dark:bg-white dark:text-gray-900'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Toggle de Cuadrícula / Lista */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl shrink-0 self-end md:self-auto">
               <button
+                type="button"
                 onClick={() => setVistaModo('cuadricula')}
                 title="Vista en tarjetas"
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
                   vistaModo === 'cuadricula'
-                    ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-theme-xs'
+                    ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-2xs'
                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
               >
                 <GridIcon className="w-4 h-4" />
               </button>
               <button
+                type="button"
                 onClick={() => setVistaModo('lista')}
-                title="Vista en lista"
-                className={`p-2 rounded-lg transition-all ${
+                title="Vista en tabla"
+                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
                   vistaModo === 'lista'
-                    ? 'bg-white dark:bg-gray-700 text-brand-500 shadow-theme-xs'
+                    ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-2xs'
                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
               >
                 <ListIcon className="w-4 h-4" />
               </button>
             </div>
-
-            <button
-              onClick={abrirModalNuevo}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold shadow-theme-xs transition-all"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Nuevo producto
-            </button>
           </div>
         </div>
 
-        {/* Pestañas de categorías */}
-        {categorias.length > 1 && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {categorias.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategoriaActiva(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
-                  categoriaActiva === cat
-                    ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-theme-xs'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+        {/* ── Banner de Alerta / Éxito ── */}
+        {alerta && (
+          <div
+            className={`p-3.5 rounded-2xl flex items-center justify-between border shadow-2xs animate-fadeIn ${
+              alerta.tipo === 'exito'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400'
+                : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              {alerta.tipo === 'exito' ? (
+                <CheckCircleIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : (
+                <AlertIcon className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+              )}
+              <p className="text-xs sm:text-sm font-medium">{alerta.mensaje}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAlerta(null)}
+              className="text-xs font-semibold underline hover:opacity-80 ml-3"
+            >
+              Cerrar
+            </button>
           </div>
         )}
-      </div>
 
-      {/* ── Vista de Productos: Cuadrícula de Tarjetas Visuales ── */}
-      {cargandoInicial ? (
-        <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
-          <p className="text-sm font-medium">Cargando catálogo...</p>
-        </div>
-      ) : productosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-gray-900 rounded-3xl p-12 text-center border border-gray-200/80 dark:border-gray-800 space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 mx-auto flex items-center justify-center">
-            <DocsIcon className="w-7 h-7" />
-          </div>
-          <div>
-            <h3 className="text-base font-bold text-ink-title dark:text-white">
-              No hay productos para mostrar
-            </h3>
-            <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
-              Agrega tu primer producto con "Nuevo producto", carga el catálogo de ejemplo o sube tu archivo en PDF o Excel.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={cargarCatalogoEjemplo}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-semibold transition-all"
-            >
-              <CheckCircleIcon className="w-4 h-4 text-brand-500" />
-              Cargar catálogo de ejemplo
-            </button>
-            <button
-              onClick={() => setMostrarImportador(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold shadow-theme-xs transition-all"
-            >
-              <DocsIcon className="w-4 h-4" />
-              Cargar catálogo desde archivo
-            </button>
-          </div>
-        </div>
-      ) : vistaModo === 'cuadricula' ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {productosFiltrados.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => abrirModalEditar(item)}
-              className={`group bg-white dark:bg-gray-900 rounded-3xl border transition-all duration-200 hover:shadow-theme-md hover:-translate-y-0.5 cursor-pointer overflow-hidden flex flex-col justify-between ${
-                item.disponible
-                  ? 'border-gray-200/80 dark:border-gray-800'
-                  : 'border-gray-200/60 dark:border-gray-800/60 opacity-60'
-              }`}
-            >
-              {/* Imagen del producto con badge de categoría */}
-              {/*
-                El hueco de la imagen va en tinta oscura, no en `gray-100`: el
-                precio y las píldoras viven ENCIMA de esta caja, y sobre el gris
-                claro el blanco del precio leía a 1.18:1. Con la foto aún sin
-                cargar —o caída— el precio tiene que seguir leyéndose.
-              */}
-              <div className="relative h-44 w-full bg-gray-900 dark:bg-gray-800 overflow-hidden">
-                <img
-                  src={item.imagen}
-                  alt={item.nombre}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = FOTO_POR_DEFECTO;
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                {/* Categoría Tag */}
-                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/90 dark:bg-gray-900/90 text-gray-800 dark:text-gray-200 backdrop-blur-md shadow-theme-xs">
-                  {item.categoria}
-                </span>
-
-                {/* Switch de Disponibilidad */}
-                <button
-                  onClick={(e) => toggleDisponibilidad(item.id, e)}
-                  title={item.disponible ? 'Pausar producto' : 'Habilitar producto'}
-                  className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold shadow-theme-xs transition-all ${
-                    item.disponible
-                      ? 'bg-estado-verde text-ink-body'
-                      : 'bg-gray-600 text-gray-200'
-                  }`}
-                >
-                  {item.disponible ? 'Disponible' : 'Agotado'}
-                </button>
-
-                {/* Precio en Card */}
-                <div className="absolute bottom-3 left-3">
-                  <span className="text-xl font-bold text-white drop-shadow-md">
-                    {formatearCOP(item.precio)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Contenido */}
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+        {/* ── Modal de Carga de Archivo (Upload File) ── */}
+        {mostrarImportador && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-200 dark:border-gray-800 space-y-5 max-h-[92vh] overflow-y-auto">
+              {/* Header del modal */}
+              <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="font-bold text-sm text-ink-title dark:text-white line-clamp-1">
-                    {item.nombre}
-                  </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-                    {item.descripcion || 'Sin descripción.'}
+                  <h3 className="text-xl font-bold text-[#190088] dark:text-white">
+                    Importar productos
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Sube tu catálogo o lista de precios en PDF, Excel o foto para importar productos automáticamente.
+                    {' '}¿Prefieres registrar uno a uno?{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMostrarImportador(false);
+                        abrirModalNuevo();
+                      }}
+                      className="text-[#FF3F1A] font-bold hover:underline cursor-pointer"
+                    >
+                      Crear producto individual
+                    </button>
                   </p>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
-                  <span className="text-xs font-semibold text-brand-500 dark:text-brand-400 flex items-center gap-1">
-                    <PencilIcon className="w-3.5 h-3.5" />
-                    Editar
-                  </span>
+                <button
+                  type="button"
+                  onClick={() => setMostrarImportador(false)}
+                  className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Cerrar"
+                >
+                  <CloseLineIcon className="w-5 h-5" />
+                </button>
+              </div>
 
+              {/* Pestañas: Archivo vs Texto */}
+              <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setMetodoCarga('archivo')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    metodoCarga === 'archivo'
+                      ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  Subir Archivo (PDF, Excel o Foto)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMetodoCarga('texto')}
+                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    metodoCarga === 'texto'
+                      ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                  }`}
+                >
+                  Escribir o pegar texto
+                </button>
+              </div>
+
+              {metodoCarga === 'archivo' ? (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setDragActivo(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); setDragActivo(false); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragActivo(false);
+                    if (e.dataTransfer.files?.[0]) validarArchivo(e.dataTransfer.files[0]);
+                  }}
+                  className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-10 text-center transition-all ${
+                    dragActivo
+                      ? 'border-[#FF3F1A] bg-[#FF3F1A]/5'
+                      : 'border-[#97D6DF] dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 hover:border-[#FF3F1A]/70'
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg"
+                    onChange={(e) => e.target.files?.[0] && validarArchivo(e.target.files[0])}
+                    className="hidden"
+                  />
+
+                  <div className="flex flex-col items-center">
+                    {/* Icono central de capas / upload en tono coral / fucsia como en la referencia */}
+                    <div className="w-14 h-14 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shadow-xs mb-3">
+                      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                        <polyline points="2 17 12 22 22 17" />
+                        <polyline points="2 12 12 17 22 12" />
+                      </svg>
+                    </div>
+
+                    {archivo ? (
+                      <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs max-w-md w-full">
+                        <div className="p-2 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A]">
+                          <FileIcon className="w-5 h-5" />
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{archivo.name}</p>
+                          <p className="text-xs text-gray-500">{(archivo.size / 1024).toFixed(1)} KB — Listo para procesar</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setArchivo(null); }}
+                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600"
+                          title="Quitar archivo"
+                        >
+                          <CloseLineIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Arrastra y suelta tu archivo aquí, o
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="mt-3 px-6 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-2xs transition-all hover:scale-[1.02]"
+                        >
+                          Examinar archivos
+                        </button>
+                      </>
+                    )}
+
+                    {/* Bullet points de especificaciones idénticos al estilo de la referencia */}
+                    <div className="mt-6 pt-5 border-t border-gray-200/80 dark:border-gray-700/80 w-full text-left text-xs text-gray-500 dark:text-gray-400 space-y-1.5 max-w-md mx-auto">
+                      <p className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        Puedes subir archivos PDF, Excel (.xlsx, .xls), CSV o imágenes (PNG, JPG)
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        Tamaño máximo de archivo: 10 MB
+                      </p>
+                      <p className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+                        Extracción automática de productos, precios y fotos temáticas sugeridas
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <textarea
+                    value={textoManual}
+                    onChange={(e) => setTextoManual(e.target.value)}
+                    placeholder="Ejemplo:&#10;Producto A - Descripción breve del producto - $28.000&#10;Producto B - Variante de producto - $15.000&#10;Producto C - Con empaque ecológico - $8.500"
+                    className="w-full h-36 p-4 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Escribe un producto por línea con su precio y descripción.
+                  </p>
+                </div>
+              )}
+
+              {errorCarga && (
+                <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl text-xs text-red-700 dark:text-red-400 flex items-center gap-2">
+                  <AlertIcon className="w-4 h-4 shrink-0" />
+                  <span>{errorCarga}</span>
+                </div>
+              )}
+
+              {/* Barra de atajos para el usuario */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={(e) => eliminarProducto(item.id, e)}
-                    title="Eliminar producto"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-error-600 hover:bg-error-50 dark:hover:bg-error-500/10 transition-colors"
+                    type="button"
+                    onClick={descargarPlantillaExcel}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors"
                   >
-                    <TrashBinIcon className="w-4 h-4" />
+                    <DownloadIcon className="w-3.5 h-3.5 text-gray-500" />
+                    Descargar plantilla (.csv)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cargarCatalogoEjemplo}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#97D6DF]/20 hover:bg-[#97D6DF]/30 text-xs font-semibold text-[#190088] dark:text-[#97D6DF] transition-colors"
+                  >
+                    <CheckCircleIcon className="w-3.5 h-3.5" />
+                    Cargar demo
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarImportador(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={ejecutarImportacion}
+                    disabled={procesandoArchivo || (!archivo && !textoManual.trim())}
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-xs font-bold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <FileIcon className="w-4 h-4" />
+                    <span>{procesandoArchivo ? (mensajeProgreso || 'Procesando...') : 'Cargar Productos'}</span>
                   </button>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        /* ── Vista en Lista Rápida ── */
-        <div className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/80 dark:border-gray-800 shadow-theme-xs overflow-hidden">
-          <div className="divide-y divide-gray-100 dark:divide-gray-800/60">
+          </div>
+        )}
+
+        {/* ── Vista de Productos: Cuadrícula o Tabla ── */}
+        {cargandoInicial ? (
+          <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
+            <p className="text-sm font-medium">Cargando catálogo...</p>
+          </div>
+        ) : productosFiltrados.length === 0 ? (
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-12 text-center border border-gray-200/80 dark:border-gray-800 space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#97D6DF]/20 dark:bg-[#97D6DF]/15 text-[#190088] dark:text-[#97D6DF] mx-auto flex items-center justify-center">
+              <DocsIcon className="w-7 h-7" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                No hay productos para mostrar
+              </h3>
+              <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
+                Agrega tu primer producto con "Nuevo producto", carga el catálogo de ejemplo o sube tu archivo en PDF o Excel.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={cargarCatalogoEjemplo}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 text-sm font-semibold transition-all"
+              >
+                <CheckCircleIcon className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                Cargar catálogo de ejemplo
+              </button>
+              <button
+                type="button"
+                onClick={() => setMostrarImportador(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-sm font-semibold shadow-2xs transition-all"
+              >
+                <DocsIcon className="w-4 h-4" />
+                Cargar catálogo desde archivo
+              </button>
+            </div>
+          </div>
+        ) : vistaModo === 'cuadricula' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4">
             {productosFiltrados.map((item) => (
               <div
                 key={item.id}
                 onClick={() => abrirModalEditar(item)}
-                className="p-4 hover:bg-gray-50/80 dark:hover:bg-gray-800/30 flex items-center justify-between gap-4 cursor-pointer transition-colors"
+                className={`group bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer overflow-hidden flex flex-col justify-between ${
+                  item.disponible
+                    ? 'border-gray-200/80 dark:border-gray-800'
+                    : 'border-gray-200/60 dark:border-gray-800/60 opacity-60'
+                }`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0">
-                    <img
-                      src={item.imagen}
-                      alt={item.nombre}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = FOTO_POR_DEFECTO;
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-ink-title dark:text-white text-sm">
-                      {item.nombre}
-                    </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 max-w-md">
-                      {item.descripcion}
-                    </p>
-                    <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-md font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
-                      {item.categoria}
-                    </span>
-                  </div>
-                </div>
+                {/* Imagen del producto con badge de categoría */}
+                <div className="relative h-36 sm:h-40 w-full bg-gray-900 dark:bg-gray-800 overflow-hidden">
+                  <img
+                    src={item.imagen}
+                    alt={item.nombre}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = FOTO_POR_DEFECTO;
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
 
-                <div className="flex items-center gap-4 shrink-0">
-                  <span className="font-bold text-base text-gray-900 dark:text-white">
-                    {formatearCOP(item.precio)}
+                  {/* Categoría Tag */}
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/95 dark:bg-gray-900/95 text-gray-800 dark:text-gray-200 backdrop-blur-xs shadow-2xs truncate max-w-[55%]">
+                    {item.categoria}
                   </span>
 
+                  {/* Switch de Disponibilidad */}
                   <button
+                    type="button"
                     onClick={(e) => toggleDisponibilidad(item.id, e)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                    title={item.disponible ? 'Pausar producto' : 'Habilitar producto'}
+                    className={`absolute top-2 right-2 px-2 py-0.5 rounded-md text-[10px] font-bold shadow-2xs transition-all ${
                       item.disponible
-                        ? 'bg-accent-50 text-accent-700 dark:bg-accent-500/10 dark:text-accent-400 border border-accent-200 dark:border-accent-500/30'
-                        : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-700 text-gray-200'
                     }`}
                   >
                     {item.disponible ? 'Disponible' : 'Agotado'}
                   </button>
 
-                  <button
-                    onClick={(e) => eliminarProducto(item.id, e)}
-                    className="p-1.5 text-gray-400 hover:text-error-600 transition-colors"
-                  >
-                    <TrashBinIcon className="w-4 h-4" />
-                  </button>
+                  {/* Precio en Card */}
+                  <div className="absolute bottom-2 left-2">
+                    <span className="text-sm sm:text-base font-bold text-white drop-shadow-md tabular-nums">
+                      {formatearCOP(item.precio)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Contenido */}
+                <div className="p-3 flex-1 flex flex-col justify-between space-y-1.5">
+                  <div>
+                    <h4 className="font-bold text-xs sm:text-[13px] text-[#190088] dark:text-white line-clamp-1 group-hover:text-[#FF3F1A] transition-colors">
+                      {item.nombre}
+                    </h4>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
+                      {item.descripcion || 'Sin descripción'}
+                    </p>
+                  </div>
+
+                  <div className="pt-1.5 flex items-center justify-between border-t border-gray-100 dark:border-gray-800/80">
+                    <span className="text-[11px] font-semibold text-gray-500 hover:text-[#190088] dark:text-gray-400 dark:hover:text-white flex items-center gap-1 transition-colors">
+                      <PencilIcon className="w-3 h-3" />
+                      Editar
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => eliminarProducto(item.id, e)}
+                      title="Eliminar producto"
+                      className="p-1 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    >
+                      <TrashBinIcon className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          /* ── Vista en Lista / Tabla Operativa ── */
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/75 dark:bg-gray-800/50 text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="py-3 px-4">Producto</th>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4">Precio ($COP)</th>
+                    <th className="py-3 px-4 text-center">Disponibilidad</th>
+                    <th className="py-3 px-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
+                  {productosFiltrados.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => abrirModalEditar(item)}
+                      className="hover:bg-gray-50/80 dark:hover:bg-gray-800/40 cursor-pointer transition-colors group"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 border border-gray-200/60 dark:border-gray-700">
+                            <img
+                              src={item.imagen}
+                              alt={item.nombre}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = FOTO_POR_DEFECTO;
+                              }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-sm text-[#190088] dark:text-white truncate">
+                              {item.nombre}
+                            </h4>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs md:max-w-md">
+                              {item.descripcion || 'Sin descripción'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="inline-block text-xs px-2.5 py-0.5 rounded-md font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                          {item.categoria}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="font-bold text-sm text-gray-900 dark:text-white tabular-nums">
+                          {formatearCOP(item.precio)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={(e) => toggleDisponibilidad(item.id, e)}
+                          className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-2xs ${
+                            item.disponible
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30'
+                              : 'bg-gray-200 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                          }`}
+                        >
+                          {item.disponible ? 'Disponible' : 'Agotado'}
+                        </button>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => abrirModalEditar(item)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-[#190088] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            title="Editar producto"
+                          >
+                            <PencilIcon className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => eliminarProducto(item.id, e)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            title="Eliminar producto"
+                          >
+                            <TrashBinIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
       {/* ── Modal de Edición Visual de Producto con Galería de Fotos Sugeridas ── */}
       {productoEnEdicion && (

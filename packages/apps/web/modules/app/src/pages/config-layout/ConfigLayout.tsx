@@ -632,6 +632,8 @@ export interface TarjetaHub {
   hint: string;
   /** Icono, ya resuelto por la página. */
   icono: IconoConfig;
+  /** Badge o indicador distintivo opcional en la tarjeta. */
+  badge?: string;
 }
 
 export interface ConfigHubProps {
@@ -715,17 +717,26 @@ export function ConfigHub({ tarjetas, onEntrar, accion = "Entrar a configurar" }
               )}
             >
               <div>
-                {/* Icono en contenedor redondeado */}
-                <span
-                  className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50/90 text-gray-700 transition-colors border border-gray-100",
-                    "group-hover:bg-[#FF3F1A]/10 group-hover:text-[#FF3F1A]",
-                    "dark:bg-white/[0.04] dark:border-gray-800 dark:text-gray-300 dark:group-hover:bg-[#FF3F1A]/15 dark:group-hover:text-[#FF3F1A]",
+                {/* Cabecera de la tarjeta: Icono y Badge distintivo opcional */}
+                <div className="flex items-start justify-between gap-3">
+                  <span
+                    className={cn(
+                      "flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50/90 text-gray-700 transition-colors border border-gray-100",
+                      "group-hover:bg-[#FF3F1A]/10 group-hover:text-[#FF3F1A]",
+                      "dark:bg-white/[0.04] dark:border-gray-800 dark:text-gray-300 dark:group-hover:bg-[#FF3F1A]/15 dark:group-hover:text-[#FF3F1A]",
+                    )}
+                    aria-hidden="true"
+                  >
+                    <Icono className="h-7 w-7 stroke-[1.75]" />
+                  </span>
+
+                  {t.badge && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase bg-amber-500/10 text-amber-700 border border-amber-500/30 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      {t.badge}
+                    </span>
                   )}
-                  aria-hidden="true"
-                >
-                  <Icono className="h-7 w-7 stroke-[1.75]" />
-                </span>
+                </div>
 
                 {/* Título en azul profundo NECTO (#190088) y descripción */}
                 <div className="mt-5">

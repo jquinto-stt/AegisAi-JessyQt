@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { pedidosStore, type Modalidad, type Pedido } from "@/stores";
 import { avanzarPedido } from "../pedidos.notificaciones";
@@ -32,11 +31,22 @@ function formatMinutos(isoString?: string): string {
   return `${hrs}h ${mins % 60}m`;
 }
 
+export interface PedidoDestacadoCardProps {
+  /**
+   * Abre el detalle del pedido prioritario SIN salir de la pantalla que monta
+   * la tarjeta: el detalle es un modal y lo pinta quien monta la tarjeta, así
+   * que quien decide la navegación es la página, no la tarjeta.
+   *
+   * Existe porque la tarjeta navegaba a `/pedidos?detalle=…`: ver el pedido
+   * sacaba al usuario de Inicio y había que volver para seguir con lo demás.
+   */
+  onVerDetalle: (id: string) => void;
+}
+
 /**
  * PedidoDestacadoCard — Tarjeta de pedido prioritario en formato universal.
  */
-export const PedidoDestacadoCard = observer(() => {
-  const navigate = useNavigate();
+export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCardProps) => {
   const [filtro, setFiltro] = useState<FiltroModalidad>("todas");
 
   // Filtrar pedidos activos no terminales
@@ -172,7 +182,7 @@ export const PedidoDestacadoCard = observer(() => {
             {pedidoActivo && (
               <button
                 type="button"
-                onClick={() => navigate(`/pedidos?detalle=${pedidoActivo.id}`)}
+                onClick={() => onVerDetalle(pedidoActivo.id)}
                 className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-[#212121] shadow-xs transition-colors hover:bg-[#ECECEC] cursor-pointer"
               >
                 <span>Ver detalle</span>

@@ -465,6 +465,7 @@ export const ConfigPage = observer(() => {
     label: META_SECCION[k].label,
     hint: META_SECCION[k].hint,
     icono: META_SECCION[k].icono,
+    badge: k === "perfil" ? "Solo desarrollo" : undefined,
   }));
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -571,12 +572,24 @@ export const ConfigPage = observer(() => {
                 pregunta="¿Qué vende tu negocio?"
                 descripcion="Elegir un perfil adapta las capacidades, los campos de producto, el catálogo sugerido y la terminología. No toca los pedidos que ya tienes."
               >
+                {/* Banner distintivo de modo desarrollo */}
+                <div className="mb-4 flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:bg-amber-400/10 dark:text-amber-300 dark:border-amber-400/20">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white font-bold text-[10px] tracking-wider uppercase">
+                    DEV
+                  </span>
+                  <span>
+                    <strong>Herramienta de desarrollo:</strong> Esta sección permite alternar perfiles comerciales para pruebas y ajustes del módulo de pedidos.
+                  </span>
+                </div>
+
                 <div
                   role="radiogroup"
                   aria-label="Perfil de negocio"
                   className="grid grid-cols-1 gap-4 sm:grid-cols-2"
                 >
-                  {(Object.keys(BUSINESS_PROFILES) as BusinessProfileType[]).map((key) => {
+                  {(Object.keys(BUSINESS_PROFILES) as BusinessProfileType[])
+                    .filter((key) => key !== "services")
+                    .map((key) => {
                     const p = BUSINESS_PROFILES[key];
                     const seleccionado = (draft.perfilComercial ?? "food") === key;
 
@@ -659,8 +672,6 @@ export const ConfigPage = observer(() => {
                     descripcion={
                       draft.perfilComercial === "fashion"
                         ? "Paso previo de aceptación antes de empaque y rotulado."
-                        : draft.perfilComercial === "services"
-                        ? "Paso previo de confirmación de cita en la agenda."
                         : "Paso previo de aceptación antes de preparación."
                     }
                     control={
@@ -1345,7 +1356,7 @@ export const ConfigPage = observer(() => {
 
                 No es el Catálogo (`/pedidos/catalogo`): aquel es la mercancía real
                 —categoría, foto, descripción, disponibilidad— y lo que ve el
-                cliente en `/menu`. Esta lista es un atajo de nombre+precio para
+                cliente en `/catalogo-clientes`. Esta lista es un atajo de nombre+precio para
                 autocompletar el formulario de Crear pedido. Se llamaba «Catálogo
                 rápido» y el nombre hacía creer que duplicaba el Catálogo.
                ═════════════════════════════════════════════════════════════════════ */}

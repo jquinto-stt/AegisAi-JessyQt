@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import type { ApexOptions } from "apexcharts";
 import { observer } from "mobx-react-lite";
 
@@ -8,18 +8,16 @@ import { Chart } from "@/elements/ui/chart";
 import { Card } from "@/elements/ui/card";
 import { Badge } from "@/elements/ui/badge";
 import { Button } from "@/elements/ui/button";
-import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/elements/ui/table";
 import { Input } from "@/elements/form/input";
 import { Select } from "@/elements/form/select";
-import { DatePicker } from "@/elements/form/date-picker";
-import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, TaskIcon, MoreDotIcon, CalenderIcon, ShootingStarIcon } from "@/icons";
+import { DownloadIcon, ChevronDownIcon, GridIcon, TableIcon, TaskIcon, MoreDotIcon, CalenderIcon } from "@/icons";
 import { uiStore, pedidosStore, ETIQUETA_PAGO } from "@/stores";
-import { puede } from "@/stores/acceso.utils";
 import { retardoEscalonado } from "@/utils";
 import type { PedidoEstado } from "@/stores";
 import { SinDatos } from "./SinDatos";
 import { HistorialPage } from "./HistorialPage";
+import { CalendarioRangoDropdown } from "./CalendarioRangoDropdown";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PALETA OFICIAL NECTO
@@ -43,9 +41,7 @@ import {
   TAMANOS_PAGINA,
   construirCsv,
   descargarCsv,
-  diasCubiertos,
   diasDeSerie,
-  diasDelRango,
   etiquetaPeriodo,
   fechaLegibleCsv,
   filasCsv,
@@ -53,7 +49,6 @@ import {
   nombreArchivoCsv,
   ordenarLista,
   paginar,
-  promediosDePedidos,
   rangoDePeriodo,
   ymdLocal,
 } from "./analitica.utils";
@@ -71,8 +66,7 @@ const money = (n: number) => `$${Math.round(n).toLocaleString("es-CO")}`;
 /** Entero con separador de miles local. */
 const num = (n: number) => Math.round(n).toLocaleString("es-CO");
 
-/** Promedio con un decimal solo cuando hace falta (no inventa precisión). */
-const promedio = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
 
 /** Porcentaje con un decimal, como lo devuelve el store. */
 const pct = (n: number) => `${n}%`;
@@ -142,7 +136,6 @@ type Vista = "metricas" | "historial" | "lista";
 
 export const AnaliticaPage = observer(() => {
   const isDark = uiStore.isDarkMode;
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // ── Estado de la vista ───────────────────────────────────────────────────
@@ -152,19 +145,6 @@ export const AnaliticaPage = observer(() => {
       : "metricas";
   const [vista, setVista] = useState<Vista>(vistaInicial);
   const [periodo, setPeriodo] = useState<Periodo>("7d");
-  const [periodoAbierto, setPeriodoAbierto] = useState(false);
-
-  // Selector de calendario personalizado
-  const [calendarioAbierto, setCalendarioAbierto] = useState(false);
-  // Fechas por defecto del calendario en día LOCAL: `toISOString()` desplaza al
-  // UTC y en UTC-5 adelantaba el día a partir de las 19:00, así que el rango
-  // arrancaba un día corrido.
-  const [fechaDesde, setFechaDesde] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return ymdLocal(d);
-  });
-  const [fechaHasta, setFechaHasta] = useState(() => ymdLocal(new Date()));
   const [rangoPersonalizado, setRangoPersonalizado] = useState<{ desde: string; hasta: string } | null>(null);
 
   // Filtros y orden de la vista lista.
@@ -246,18 +226,8 @@ export const AnaliticaPage = observer(() => {
   const estadosPresentes = ORDEN_ESTADO.filter((e) => serieEstado.some((d) => d.porEstado[e] > 0));
   const totalEnVentana = (e: PedidoEstado) => serieEstado.reduce((s, d) => s + d.porEstado[e], 0);
 
-  // Promedios: el divisor es la ventana real. Con "todo el historial" no hay
-  // ventana fija, así que se usan los días que de verdad cubren los pedidos.
-  const diasCubiertosVentana = rango
-    ? diasDelRango(rango.desde, rango.hasta)
-    : diasCubiertos(pedidosDelRango.map((p) => p.createdAt));
-  const promedios = promediosDePedidos(totalPedidos, diasCubiertosVentana);
-
-  // Métricas de proceso (globales por definición: el tiempo de ciclo y lo que
-  // está en curso no son "del periodo", son "ahora").
+  // Métricas de proceso
   const tiempoCiclo = pedidosStore.tiempoPromedioCicloMin;
-  const enCurso = pedidosStore.totalEnCurso;
-  const programados = pedidosStore.totalProgramados;
 
   /** Rango del periodo en texto corto, para los pies de tarjeta. */
   const etiquetaRango = rango ? `${diaCorto(rango.desde)} – ${diaCorto(rango.hasta)}` : "Todo el historial";
@@ -280,7 +250,10 @@ export const AnaliticaPage = observer(() => {
    * nunca contradice la pantalla.
    */
   const exportar = () => {
-    const filas = vista === "lista" ? visibles : pedidosDelRango;
+    const filas =
+      vista === "historial" || vista === "lista"
+        ? pedidosDelRango.filter((p) => p.estado === "entregado" || p.estado === "cancelado")
+        : pedidosDelRango;
     const csv = construirCsv(
       [...CSV_ENCABEZADOS],
       filasCsv(filas, {
@@ -335,30 +308,7 @@ export const AnaliticaPage = observer(() => {
   // el orden y el color salen del catálogo de `analitica.utils` para que un
   // gráfico y su leyenda no puedan discrepar.
 
-  // Sparkline de la tarjeta "En curso": volumen real de los últimos 11 días.
-  const sparklineData = pedidosStore.volumenPorDia(11).map((d) => d.total);
 
-  const sparklineOptions: ApexOptions = {
-    chart: {
-      type: "area",
-      sparkline: { enabled: true },
-      fontFamily: "Outfit, Inter, system-ui, sans-serif",
-    },
-    colors: [ORANGE],
-    stroke: { curve: "smooth", width: 2.2 },
-    fill: {
-      type: "gradient",
-      gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 95, 100] },
-    },
-    tooltip: {
-      theme: isDark ? "dark" : "light",
-      fixed: { enabled: false },
-      x: { show: false },
-      y: { title: { formatter: () => "Pedidos: " } },
-      marker: { show: false },
-    },
-  };
-  const sparklineSeries = [{ name: "Pedidos", data: sparklineData }];
 
   // Barras del gráfico principal: pedidos por día de la ventana elegida.
   const volumenOptions: ApexOptions = {
@@ -403,14 +353,7 @@ export const AnaliticaPage = observer(() => {
 
   const volumenSeries = [{ name: "Pedidos", data: volumenDiario.map((d) => d.total) }];
 
-  // ── Promedios de la tarjeta "En curso" ───────────────────────────────────
-  // La tasa diaria es real (total ÷ días de la ventana); semanal y mensual son
-  // esa misma tasa proyectada, y así se rotulan: "promedio", no "total".
-  const promediosFilas = [
-    { etiqueta: "Promedio diario", valor: promedio(promedios.diario) },
-    { etiqueta: "Promedio semanal", valor: num(promedios.semanal) },
-    { etiqueta: "Promedio mensual", valor: num(promedios.mensual) },
-  ];
+
 
   // ── Barras apiladas: pedidos por estado a lo largo de la ventana ─────────
   // Una serie por estado PRESENTE en el periodo, no cuatro categorías fijas.
@@ -508,7 +451,7 @@ export const AnaliticaPage = observer(() => {
               Analítica de pedidos
             </h1>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Desempeño operativo y financiero del módulo de pedidos
+              Consulta el comportamiento de tus pedidos y sus principales resultados.
             </p>
           </div>
 
@@ -549,93 +492,64 @@ export const AnaliticaPage = observer(() => {
               })}
             </div>
 
-            {/* Selector de periodo y exportar CSV (visibles en Métricas) */}
-            {vista === "metricas" && (
-              <>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setPeriodoAbierto((v) => !v)}
-                    aria-haspopup="listbox"
-                    aria-expanded={periodoAbierto}
-                    className="dropdown-toggle inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
-                  >
-                    <span>{etiquetaPeriodo(periodo)}</span>
-                    <ChevronDown />
-                  </button>
+            {/* Selector de periodo y exportar CSV (estandarizados para Métricas e Historial) */}
+            {/* Selector de periodo y rango con calendario desplegable */}
+            <CalendarioRangoDropdown
+              desde={rango?.desde ?? ""}
+              hasta={rango?.hasta ?? ""}
+              alineacion="right"
+              etiquetaActiva={rangoPersonalizado ? undefined : etiquetaPeriodo(periodo)}
+              onChange={(d, h) => {
+                if (!d && !h) {
+                  setPeriodo("todo");
+                  setRangoPersonalizado(null);
+                } else if (d && h) {
+                  setRangoPersonalizado({ desde: d, hasta: h });
+                }
+                setPagina(1);
+              }}
+              onLimpiar={() => {
+                setPeriodo("todo");
+                setRangoPersonalizado(null);
+                setPagina(1);
+              }}
+              presets={[
+                {
+                  id: "7d",
+                  label: "Últimos 7 días",
+                  hint: "La última semana",
+                  getRango: () => {
+                    setPeriodo("7d");
+                    setRangoPersonalizado(null);
+                    return rangoDePeriodo("7d");
+                  },
+                },
+                {
+                  id: "30d",
+                  label: "Últimos 30 días",
+                  hint: "El último mes",
+                  getRango: () => {
+                    setPeriodo("30d");
+                    setRangoPersonalizado(null);
+                    return rangoDePeriodo("30d");
+                  },
+                },
+                {
+                  id: "todo",
+                  label: "Todo el historial",
+                  hint: "Sin límite de fecha",
+                  getRango: () => {
+                    setPeriodo("todo");
+                    setRangoPersonalizado(null);
+                    return null;
+                  },
+                },
+              ]}
+            />
 
-                  <Dropdown isOpen={periodoAbierto} onClose={() => setPeriodoAbierto(false)} className="w-52 p-1">
-                    <div role="listbox" aria-label="Periodo">
-                      {OPCIONES_PERIODO.map((op) => (
-                        <DropdownItem
-                          key={op.value}
-                          onClick={() => {
-                            setPeriodo(op.value);
-                            setPagina(1);
-                          }}
-                          onItemClick={() => setPeriodoAbierto(false)}
-                          className={periodo === op.value ? "font-semibold text-accent-600 dark:text-accent-400" : ""}
-                        >
-                          <span className="flex flex-col">
-                            <span>{op.label}</span>
-                            <span className="text-[11px] font-normal text-gray-400 dark:text-gray-500">{op.hint}</span>
-                          </span>
-                        </DropdownItem>
-                      ))}
-                    </div>
-                  </Dropdown>
-                </div>
-
-                <Button size="sm" variant="outline" startIcon={<DownloadIcon className="h-4 w-4" />} onClick={exportar}>
-                  Descargar CSV
-                </Button>
-              </>
-            )}
-
-            {/* Acceso directo a NECTO AI.
-                Píldora con **anillo degradado, relleno claro y texto en
-                degradado**, más el destello de `ShootingStarIcon` — un icono que
-                ya estaba en el proyecto sin un solo consumidor.
-
-                El degradado recorre las **tres rampas de marca** en orden
-                luminoso: `brand-500` (naranja NECTO) → `secondary-300` (violeta)
-                → `accent-300` (cian). El original usaba esas mismas tres rampas
-                pero terminaba en azul `#190088`, tan oscuro que un extremo del
-                anillo se fundía con el fondo y el conjunto se leía sucio. Aquí
-                las tres son claras, así que el recorrido se lee como color, no
-                como mancha.
-
-                **Animación al pasar el ratón** — el degradado va a doble ancho
-                (`bg-[length:200%_100%]`) y el hover desplaza su posición de 0% a
-                100%: los colores de NECTO **fluyen a través del anillo**. Se
-                suma un halo cálido, el botón levanta 1px y el destello gira. La
-                animación es la del propio degradado, así que no hace falta ni un
-                `@keyframes` nuevo.
-
-                **El texto lleva tonos MÁS OSCUROS que el anillo, y no es un
-                descuido.** `accent-300` (#97d6df) sobre blanco da 1.62:1 de
-                contraste: ilegible. El anillo puede permitírselo porque es
-                decoración; el texto no. Por eso el texto va por
-                `brand-700` → `secondary-400` → `accent-700` (5.9:1, 8.1:1 y
-                5.8:1) y los tonos claros se quedan en el anillo.
-
-                Solo se ofrece a quien puede entrar: `/asistente` está guardada
-                por `assistant.use`. */}
-            {puede("assistant.use") && (
-              <button
-                type="button"
-                onClick={() => navigate("/asistente")}
-                title="Abrir NECTO AI — asistente interno"
-                className="group inline-flex h-9 shrink-0 items-center rounded-full bg-gradient-to-r from-brand-500 via-secondary-300 to-accent-300 bg-[length:200%_100%] bg-[position:0%_50%] p-[1.5px] shadow-theme-md shadow-secondary-300/25 transition-all duration-500 ease-out hover:-translate-y-px hover:bg-[position:100%_50%] hover:shadow-theme-lg hover:shadow-brand-500/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
-              >
-                <span className="flex h-full items-center gap-2 rounded-full bg-white px-3.5 dark:bg-accent-900">
-                  <ShootingStarIcon className="h-4 w-4 shrink-0 text-secondary-600 transition-transform duration-300 ease-out group-hover:rotate-[18deg] group-hover:scale-110 dark:text-brand-400" />
-                  <span className="whitespace-nowrap bg-gradient-to-r from-brand-700 via-secondary-400 to-accent-700 bg-clip-text text-xs font-semibold text-transparent dark:from-brand-300 dark:via-secondary-200 dark:to-accent-200">
-                    NECTO AI
-                  </span>
-                </span>
-              </button>
-            )}
+            <Button size="sm" variant="outline" startIcon={<DownloadIcon className="h-4 w-4" />} onClick={exportar}>
+              Descargar CSV
+            </Button>
           </div>
         </div>
 
@@ -648,7 +562,7 @@ export const AnaliticaPage = observer(() => {
                 se calculaban ingresos, ticket promedio y tasa de cancelación y
                 se descartaban sin pintarlos.
             ════════════════════════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               <KpiCard
                 title="Pedidos del periodo"
                 value={num(totalPedidos)}
@@ -678,12 +592,6 @@ export const AnaliticaPage = observer(() => {
                 value={tiempoCiclo > 0 ? `${num(tiempoCiclo)} min` : "—"}
                 subtitle="De la creación a la entrega"
                 retardo={retardoEscalonado(4)}
-              />
-              <KpiCard
-                title="En curso ahora"
-                value={num(enCurso)}
-                subtitle={`${num(programados)} programado${programados === 1 ? "" : "s"} esperando`}
-                retardo={retardoEscalonado(5)}
               />
             </div>
 
@@ -734,98 +642,30 @@ export const AnaliticaPage = observer(() => {
                     })}
                   </div>
 
-                  {/* Botón de Calendario libre */}
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setCalendarioAbierto((v) => !v)}
-                      aria-label="Elegir rango en calendario"
-                      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium shadow-theme-xs transition-all ${
-                        rangoPersonalizado
-                          ? "border-secondary-500 bg-brand-500/10 text-secondary-600 dark:text-accent-300 dark:border-accent-500 dark:bg-brand-500/20"
-                          : "border-gray-200/90 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                      }`}
-                      title="Seleccionar rango de fechas libremente"
-                    >
-                      <CalenderIcon className={`h-4 w-4 ${rangoPersonalizado ? "text-secondary-600 dark:text-accent-300" : "text-gray-500 dark:text-gray-400"}`} />
-                      <span>
-                        {rangoPersonalizado
-                          ? `${diaCorto(rangoPersonalizado.desde)} - ${diaCorto(rangoPersonalizado.hasta)}`
-                          : "Calendario"}
-                      </span>
-                    </button>
-
-                    {calendarioAbierto && (
-                      <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xl dark:border-gray-700 dark:bg-gray-900">
-                        <div className="mb-3 flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-800">
-                          <span className="text-xs font-semibold text-gray-900 dark:text-white">Rango personalizado</span>
-                          <button
-                            type="button"
-                            onClick={() => setCalendarioAbierto(false)}
-                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                        {/* Calendario REAL del catálogo (`DatePicker`, flatpickr
-                            en modo `range`), no dos `<input type="date">`.
-                            Los dos campos nativos obligaban a teclear o abrir el
-                            date-picker del navegador dos veces y no mostraban el
-                            rango: un control de fecha sin calendario visible no es
-                            un selector de rango. El `DatePicker` es el mismo
-                            componente que ya usa la Inicio para su rango, así que
-                            ambas superficies eligen fechas con el mismo control. */}
-                        <DatePicker
-                          id="analitica-rango"
-                          mode="range"
-                          placeholder="Elige un día o un rango"
-                          defaultDate={
-                            rangoPersonalizado
-                              ? [rangoPersonalizado.desde, rangoPersonalizado.hasta]
-                              : [fechaDesde, fechaHasta]
-                          }
-                          onChange={(fechas) => {
-                            // Fecha LOCAL vía `ymdLocal` (no `toISOString`, que
-                            // desplaza al UTC): el rango se compara contra días de
-                            // calendario local.
-                            const arr = (fechas as Date[]).map((d) => ymdLocal(d));
-                            setFechaDesde(arr[0] ?? fechaDesde);
-                            // Un solo clic en modo `range` devuelve 1 fecha: el
-                            // "hasta" sigue a "desde" (un día suelto) en vez de
-                            // quedarse con el valor anterior y formar un rango falso.
-                            setFechaHasta(arr[1] ?? arr[0] ?? fechaHasta);
-                          }}
-                        />
-
-                        <div className="mt-3 flex items-center justify-end gap-2 border-t border-gray-100 pt-2 dark:border-gray-800">
-                          {rangoPersonalizado && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setRangoPersonalizado(null);
-                                setCalendarioAbierto(false);
-                              }}
-                              className="rounded-md px-2.5 py-1 text-xs text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                            >
-                              Limpiar
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (fechaDesde && fechaHasta) {
-                                setRangoPersonalizado({ desde: fechaDesde, hasta: fechaHasta });
-                                setCalendarioAbierto(false);
-                              }
-                            }}
-                            className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white shadow-theme-xs hover:bg-brand-600 transition-colors cursor-pointer"
-                          >
-                            Aplicar rango
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Selector de Calendario para el Gráfico */}
+                  <CalendarioRangoDropdown
+                    desde={rangoPersonalizado?.desde ?? ""}
+                    hasta={rangoPersonalizado?.hasta ?? ""}
+                    alineacion="right"
+                    placeholder="Calendario"
+                    etiquetaActiva={
+                      rangoPersonalizado
+                        ? `${diaCorto(rangoPersonalizado.desde)} – ${diaCorto(rangoPersonalizado.hasta)}`
+                        : undefined
+                    }
+                    onChange={(d, h) => {
+                      if (!d && !h) {
+                        setRangoPersonalizado(null);
+                      } else {
+                        setRangoPersonalizado({ desde: d, hasta: h });
+                      }
+                      setPagina(1);
+                    }}
+                    onLimpiar={() => {
+                      setRangoPersonalizado(null);
+                      setPagina(1);
+                    }}
+                  />
                 </div>
               </div>
 
@@ -839,15 +679,13 @@ export const AnaliticaPage = observer(() => {
             </div>
 
             {/* ════════════════════════════════════════════════════════════
-                SECCIÓN MEDIA: canal + modalidad + ritmo de pedidos
-                Las tres tarjetas leen del store: reparto por canal de entrada,
-                reparto por modalidad de entrega y estado vivo del tablero.
+                SECCIÓN MEDIA: Canales de entrada y Modalidades de entrega
             ════════════════════════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Card 1: Pedidos por canal de entrada */}
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
-                  <CardTitle title="Pedidos por canal" hint={`WhatsApp y mostrador · ${etiquetaRango}`} />
+                  <CardTitle title="¿Cómo llegan tus pedidos?" hint={`WhatsApp, mostrador y web · ${etiquetaRango}`} />
 
                   <div className="mt-4 space-y-3">
                     {filasCanal.map((f) => (
@@ -874,10 +712,13 @@ export const AnaliticaPage = observer(() => {
 
                 <button
                   type="button"
-                  onClick={() => setVista("lista")}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  onClick={() => {
+                    setVista("historial");
+                    setSearchParams({ vista: "historial" });
+                  }}
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
                 >
-                  <span>Ver los pedidos del periodo</span>
+                  <span>Ver pedidos en historial</span>
                   <span aria-hidden="true">→</span>
                 </button>
               </div>
@@ -886,7 +727,7 @@ export const AnaliticaPage = observer(() => {
               <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
                 <div>
                   <CardTitle
-                    title="Modalidades de entrega"
+                    title="¿Cómo se entregan?"
                     hint={`${pedidosStore.config.modalidades.map((m) => pedidosStore.modalidadLabel(m)).join(", ")} · ${etiquetaRango}`}
                   />
 
@@ -915,55 +756,15 @@ export const AnaliticaPage = observer(() => {
 
                 <button
                   type="button"
-                  onClick={() => setVista("lista")}
-                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+                  onClick={() => {
+                    setVista("historial");
+                    setSearchParams({ vista: "historial" });
+                  }}
+                  className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200/80 py-2.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:bg-gray-50 hover:text-gray-900 dark:border-gray-800 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white cursor-pointer"
                 >
-                  <span>Ver los pedidos del periodo</span>
+                  <span>Ver pedidos en historial</span>
                   <span aria-hidden="true">→</span>
                 </button>
-              </div>
-
-              {/* Card 3: Pedidos en curso (estado vivo del tablero) */}
-              <div className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
-                <div>
-                  <CardTitle
-                    title="Pedidos en curso"
-                    hint={`En vivo ahora · promedios de ${etiquetaRango}`}
-                  />
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-500/70 opacity-75" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500" />
-                    </span>
-                    <span className="text-2xl font-bold tracking-tight text-gray-800 dark:text-white">
-                      {num(enCurso)}
-                    </span>
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">en curso</span>
-                  </div>
-                  <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
-                    {num(programados)} programado{programados === 1 ? "" : "s"} esperando su hora
-                  </p>
-
-                  <div className="my-2">
-                    {sparklineData.some((n) => n > 0) ? (
-                      <Chart type="area" series={sparklineSeries} options={sparklineOptions} height={110} />
-                    ) : (
-                      <p className="flex h-[110px] items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">
-                        Sin pedidos en los últimos 11 días.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 divide-x divide-gray-100 border-t border-gray-100 pt-3 text-center dark:divide-gray-800 dark:border-gray-800">
-                  {promediosFilas.map((p) => (
-                    <div key={p.etiqueta}>
-                      <p className="text-base font-bold text-gray-800 dark:text-white">{p.valor}</p>
-                      <p className="text-[10px] text-gray-400 dark:text-gray-500">{p.etiqueta}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
 
@@ -1041,7 +842,7 @@ export const AnaliticaPage = observer(() => {
               HISTORIAL DE PEDIDOS
           ══════════════════════════════════════════════════════════════ */
           <div className="mt-1">
-            <HistorialPage sinHeader />
+            <HistorialPage sinHeader rangoExterno={rango} />
           </div>
         )}
       </div>

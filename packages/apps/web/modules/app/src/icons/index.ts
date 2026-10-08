@@ -33,6 +33,7 @@
 export {
   // ── acciones ──────────────────────────────────────────────────────────────
   PlusIcon,
+  MagnifyingGlassIcon,
   XMarkIcon as CloseIcon,
   XMarkIcon as CloseLineIcon,
   CheckIcon as CheckLineIcon,
@@ -49,6 +50,7 @@ export {
   ChevronDoubleDownIcon as AngleDoubleDownIcon,
   ChevronDoubleUpIcon as AngleDoubleUpIcon,
   ChevronLeftIcon,
+  ChevronRightIcon,
   ChevronUpIcon as AngleUpIcon,
   ChevronDownIcon as AngleDownIcon,
   EllipsisHorizontalIcon as MoreDotIcon,
