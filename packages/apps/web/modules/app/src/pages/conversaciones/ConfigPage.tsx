@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
@@ -239,8 +239,11 @@ export const ConfigPage = observer(() => {
   // de tarjetas**, porque es la pantalla de entrada. Elegir una sección «por
   // defecto» escondería las otras detrás de una nav que el usuario no ha visto.
   // Mismo criterio que `pages/pedidos/ConfigPage.tsx`.
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const from = searchParams.get("from");
+  const canal = searchParams.get("canal");
   const seccionParam = searchParams.get("seccion");
   const seccion: SeccionCanal | null = esSeccionValida(seccionParam) ? seccionParam : null;
 
@@ -254,8 +257,19 @@ export const ConfigPage = observer(() => {
     return v !== null && (ORDEN_SECCIONES as string[]).includes(v);
   }
 
-  const entrarASeccion = (k: string) => setSearchParams({ seccion: k });
-  const volverAlHub = () => setSearchParams({});
+  const entrarASeccion = (k: string) => {
+    const params: Record<string, string> = { seccion: k };
+    if (from) params.from = from;
+    if (canal) params.canal = canal;
+    setSearchParams(params);
+  };
+
+  const volverAlHub = () => {
+    const params: Record<string, string> = {};
+    if (from) params.from = from;
+    if (canal) params.canal = canal;
+    setSearchParams(params);
+  };
 
   const [guardado, setGuardado] = useState(false);
 
@@ -366,10 +380,27 @@ export const ConfigPage = observer(() => {
           description="Ajustes del canal de WhatsApp"
         />
 
+        <div className="mb-4">
+          <VolverAlHub
+            onVolver={() => {
+              if (from) {
+                navigate(from);
+              } else {
+                navigate("/pedidos/config?seccion=integraciones");
+              }
+            }}
+            etiqueta="Volver a Integraciones"
+          />
+        </div>
+
         <div className="mb-7">
           <ConfigHeader
-            titulo="Configuración del canal"
-            descripcion="Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+            titulo={canal === "telegram" ? "Configuración de Telegram" : "Configuración del canal"}
+            descripcion={
+              canal === "telegram"
+                ? "Ajustes del bot de Telegram, respuestas automáticas y notificaciones."
+                : "Elige qué quieres ajustar. Cada opción abre su propia pantalla."
+            }
             acciones={<ContextoCanal />}
           />
         </div>
@@ -419,8 +450,21 @@ export const ConfigPage = observer(() => {
           haría nada, que es exactamente lo que este proyecto no acepta.
           Volver no es editar, así que no debe desactivarse con la edición.
         */}
-        <div className="mb-3">
+        <div className="mb-3 flex items-center justify-between">
           <VolverAlHub onVolver={volverAlHub} />
+          <button
+            type="button"
+            onClick={() => {
+              if (from) {
+                navigate(from);
+              } else {
+                navigate("/pedidos/config?seccion=integraciones");
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors dark:text-gray-400 dark:hover:text-white"
+          >
+            <span>Volver a Integraciones</span>
+          </button>
         </div>
 
         {/* ═══════════ Panel de contenido: UNA sección montada ═══════════ */}

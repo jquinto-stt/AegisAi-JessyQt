@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { useNavigate } from "react-router";
 import { observer } from "mobx-react-lite";
 import { pedidosStore, type PedidoEstado } from "@/stores";
 import {
-  ArrowUpRightIcon,
   CheckBadgeIcon,
-  ChevronRightIcon,
   ClockIcon,
   InboxStackIcon,
   ShoppingBagIcon,
@@ -137,12 +134,11 @@ const ETAPAS: EtapaMeta[] = [
 ];
 
 /**
- * EstadosOverview — Distribución compacta del flujo operativo de pedidos.
- * Diseñado con tipografía DM Sans y la paleta cromática oficial de NECTO.
+ * EstadosOverview — Distribución del flujo operativo de pedidos en 6 tarjetas
+ * individuales en una sola línea horizontal.
  */
 export const EstadosOverview = observer(() => {
   const navigate = useNavigate();
-  const [hoveredEtapa, setHoveredEtapa] = useState<string | null>(null);
 
   /** Destino de una etapa: el suyo propio, o el tablero filtrado por sus estados. */
   const destinoDe = (etapa: EtapaMeta) =>
@@ -156,125 +152,63 @@ export const EstadosOverview = observer(() => {
     return { ...etapa, cantidad };
   });
 
-  // Denominador de la barra: solo las etapas que la barra dibuja.
+  // Denominador: solo las etapas activas en el flujo
   const totalActivos = etapasConteo.reduce(
     (acc, e) => acc + (e.enBarra === false ? 0 : e.cantidad),
     0,
   );
 
   return (
-    <div className="flex flex-col justify-between h-full rounded-2xl border border-[#ECECEC] bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 min-h-[310px] font-sans">
-      {/* Encabezado limpio sin contadores redundantes */}
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-[16px] sm:text-[24px] font-bold text-[#190088] dark:text-[#97D6DF] leading-tight">
-              Flujo de pedidos
-            </h3>
-            <p className="text-[12px] font-normal text-[#212121]/70 dark:text-gray-400 mt-0.5">
-              Distribución operativa por etapa
-            </p>
-          </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
+      {etapasConteo.map((etapa) => {
+        const Icon = etapa.icon;
+        const porcentaje =
+          totalActivos > 0 && etapa.enBarra !== false
+            ? Math.round((etapa.cantidad / totalActivos) * 100)
+            : null;
 
-          <button
-            type="button"
-            onClick={() => navigate("/pedidos")}
-            className="inline-flex items-center gap-1 text-[12px] font-bold text-[#190088] hover:text-[#FF3F1A] dark:text-[#97D6DF] dark:hover:text-white cursor-pointer transition-colors"
+        return (
+          <div
+            key={etapa.id}
+            onClick={() => navigate(destinoDe(etapa))}
+            className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-3.5 sm:p-4 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between"
           >
-            <span>Ver tablero</span>
-            <ArrowUpRightIcon className="size-3.5" />
-          </button>
-        </div>
-
-        {/* Barra horizontal segmentada con gaps y animaciones al pasar el mouse */}
-        <div className="mt-4 mb-3">
-          <div className="flex h-7 w-full items-center gap-1.5 sm:gap-2">
-            {totalActivos === 0 ? (
+            <div className="flex items-center justify-between gap-2">
               <div
-                className="h-full w-full rounded-md bg-[#ECECEC] dark:bg-gray-800 transition-colors"
-                title="Sin pedidos activos"
-              />
-            ) : (
-              etapasConteo.map((etapa) => {
-                if (etapa.enBarra === false || etapa.cantidad === 0) return null;
-                const porcentaje = (etapa.cantidad / totalActivos) * 100;
-                const isHovered = hoveredEtapa === etapa.id;
-                const isAnyHovered = hoveredEtapa !== null;
-
-                return (
-                  <div
-                    key={etapa.id}
-                    style={{ flex: `${etapa.cantidad} 1 0%` }}
-                    className={`h-full rounded-md ${etapa.colorClases.barColor} transition-all duration-300 ease-out cursor-pointer ${
-                      isHovered
-                        ? "scale-y-115 -translate-y-0.5 shadow-md brightness-110 ring-2 ring-white/80 dark:ring-white/30 z-10"
-                        : isAnyHovered
-                        ? "opacity-50 scale-y-95"
-                        : "hover:scale-y-110 hover:-translate-y-0.5 shadow-2xs"
-                    }`}
-                    title={`${etapa.nombre}: ${etapa.cantidad} (${Math.round(porcentaje)}%) — ${etapa.destino ? "Clic para ver en el historial" : "Clic para filtrar en tablero"}`}
-                    onMouseEnter={() => setHoveredEtapa(etapa.id)}
-                    onMouseLeave={() => setHoveredEtapa(null)}
-                    onClick={() => navigate(destinoDe(etapa))}
-                  />
-                );
-              })
-            )}
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-[12px] font-light text-[#212121]/60 dark:text-gray-500">
-            <span>Ingreso de órdenes</span>
-            <span>Entrega final</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid 2 columnas × 3 filas: 6 etapas (nuevos, confirmados, preparación,
-          listos, en ruta y cancelados) con animación coordinada. */}
-      <div className="my-2 grid grid-cols-2 gap-2.5 sm:gap-3">
-        {etapasConteo.map((etapa) => {
-          const Icon = etapa.icon;
-          const isHovered = hoveredEtapa === etapa.id;
-
-          return (
-            <button
-              key={etapa.id}
-              type="button"
-              onMouseEnter={() => setHoveredEtapa(etapa.id)}
-              onMouseLeave={() => setHoveredEtapa(null)}
-              onClick={() => navigate(destinoDe(etapa))}
-              className={`group flex flex-col justify-between rounded-xl border p-3 text-left transition-all duration-200 ease-out cursor-pointer ${
-                isHovered
-                  ? "border-[#97D6DF] bg-white shadow-theme-sm -translate-y-0.5 dark:border-[#97D6DF]/80 dark:bg-gray-800"
-                  : "border-[#ECECEC] bg-[#ECECEC]/30 hover:border-[#97D6DF] hover:bg-white hover:shadow-theme-xs hover:-translate-y-0.5 dark:border-gray-800 dark:bg-gray-800/40 dark:hover:border-[#97D6DF]/60 dark:hover:bg-gray-800"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div
-                  className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 ${
-                    isHovered ? "scale-110 shadow-xs" : "group-hover:scale-110"
-                  }`}
-                >
-                  <Icon className="size-4" />
-                </div>
-                <span className={`text-[24px] font-bold font-mono tracking-tight tabular-nums transition-colors ${
-                  isHovered ? "text-[#FF3F1A] dark:text-[#97D6DF]" : "text-[#190088] dark:text-white"
-                }`}>
-                  {etapa.cantidad}
-                </span>
+                className={`flex size-9 sm:size-10 items-center justify-center rounded-xl ${etapa.colorClases.badgeBg} ${etapa.colorClases.iconColor} transition-transform duration-200 group-hover:scale-105`}
+              >
+                <Icon className="size-4.5 sm:size-5" />
               </div>
-
-              <div className="mt-2 flex items-center justify-between gap-1">
-                <span className="text-[12px] sm:text-[14px] font-bold text-[#212121] dark:text-gray-200 truncate">
-                  {etapa.nombre}
+              {porcentaje !== null ? (
+                <span className="inline-flex items-center rounded-full bg-accent-50 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
+                  {porcentaje}%
                 </span>
-                <ChevronRightIcon className={`size-3.5 transition-all shrink-0 ${
-                  isHovered ? "text-[#FF3F1A] translate-x-0.5" : "text-[#212121]/30 group-hover:text-[#190088] group-hover:translate-x-0.5 dark:text-gray-600 dark:group-hover:text-[#97D6DF]"
-                }`} />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                  Historial
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3">
+              <p className="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 truncate">
+                {etapa.nombre}
+              </p>
+              <p className="mt-0.5 text-xl sm:text-2xl font-bold tracking-tight text-ink-title dark:text-white">
+                {etapa.cantidad.toLocaleString()}
+              </p>
+              <p className="mt-0.5 text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 truncate">
+                {etapa.id === "nuevos" && "Por gestionar"}
+                {etapa.id === "confirmados" && "Verificados"}
+                {etapa.id === "preparacion" && "En cocina / armado"}
+                {etapa.id === "listos" && "Por entregar"}
+                {etapa.id === "camino" && "En ruta"}
+                {etapa.id === "cancelados" && "Cerrados"}
+              </p>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 });

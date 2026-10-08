@@ -212,3 +212,34 @@ export function esHoy(ymd: string): boolean {
 export function esFuturo(ymd: string): boolean {
   return ymd > hoyYmd();
 }
+
+/**
+ * Devuelve los 7 días ("YYYY-MM-DD") de la semana que contiene a `ymd`,
+ * empezando siempre en lunes.
+ */
+export function diasDeLaSemana(ymd: string): string[] {
+  const d = new Date(`${ymd}T00:00:00`);
+  const offsetDesdeLunes = (d.getDay() + 6) % 7;
+  const lunes = sumarDias(ymd, -offsetDesdeLunes);
+  return Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i));
+}
+
+/**
+ * Título de la semana para el encabezado (ej. "Mayo 2026" o "Abril - Mayo 2026").
+ */
+export function tituloSemana(dias: string[]): string {
+  if (!dias.length) return "";
+  const dInicio = dias[0];
+  const dFin = dias[dias.length - 1];
+  const mInicio = mesDeYmd(dInicio);
+  const mFin = mesDeYmd(dFin);
+
+  if (mInicio.year === mFin.year && mInicio.month === mFin.month) {
+    return `${MESES[mInicio.month]} ${mInicio.year}`;
+  }
+  if (mInicio.year === mFin.year) {
+    return `${MESES[mInicio.month]} - ${MESES[mFin.month]} ${mFin.year}`;
+  }
+  return `${MESES[mInicio.month]} ${mInicio.year} - ${MESES[mFin.month]} ${mFin.year}`;
+}
+

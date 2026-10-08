@@ -16,7 +16,7 @@ export const BotonHandoff = observer(({ convId }: { convId: string }) => {
       <button
         type="button"
         onClick={() => conversacionesStore.devolver(convId)}
-        className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#ECECEC] bg-white px-3 py-1.5 text-[12px] font-bold text-[#212121] shadow-theme-xs transition-all hover:bg-[#ECECEC]/60 hover:text-[#190088] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 font-sans"
+        className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 font-sans"
       >
         Devolver al bot
       </button>
@@ -28,7 +28,7 @@ export const BotonHandoff = observer(({ convId }: { convId: string }) => {
       <button
         type="button"
         onClick={() => conversacionesStore.devolverAlBot(convId)}
-        className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#ECECEC] bg-white px-3 py-1.5 text-[12px] font-bold text-[#212121] shadow-theme-xs transition-all hover:bg-[#ECECEC]/60 hover:text-[#190088] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 font-sans"
+        className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-theme-xs transition-all hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 font-sans"
       >
         Devolver al bot
       </button>
@@ -45,7 +45,7 @@ export const BotonHandoff = observer(({ convId }: { convId: string }) => {
     <button
       type="button"
       onClick={() => conversacionesStore.tomar(convId, operadorId)}
-      className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#190088] px-3.5 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-all hover:bg-[#190088]/90 active:scale-95 font-sans"
+      className="shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-theme-xs transition-all hover:bg-brand-600 active:scale-95 font-sans"
     >
       Tomar chat
     </button>

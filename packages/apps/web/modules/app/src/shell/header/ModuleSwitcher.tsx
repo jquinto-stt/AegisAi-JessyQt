@@ -72,9 +72,7 @@ const ICONO_MODULO: Record<Modulo, React.FC<React.SVGProps<SVGSVGElement>>> = {
 /**
  * Nombre visible de un módulo, tomado del catálogo.
  *
- * `nombreCorto`, no `nombre`: el pill tiene `max-w-[160px] truncate`, así que
- * «Pedidos & Fulfillment» se leería «Pedidos & Fulfillm…». `nombre` es la razón
- * social y vive en la ficha del catálogo, donde hay espacio para venderla.
+ * Usa `nombreCorto`, que coincide con `nombre`. El pill tiene `max-w-[160px] truncate`.
  */
 function nombreModulo(modulo: Modulo): string {
   return CATALOGO_MODULOS[modulo]?.nombreCorto ?? modulo;

@@ -1,26 +1,25 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useNavigate } from "react-router";
 import { PageMeta } from "@/shell/meta";
 import { conversacionesStore } from "@/stores/conversaciones.store";
 import { tiempoRealActivo } from "@/lib/tiempo-real";
 import { BandejaLista } from "@/pages/conversaciones/components/BandejaLista";
-import { ChatView } from "@/pages/conversaciones/components/ChatView";
+import { ChatView, type VistaChat } from "@/pages/conversaciones/components/ChatView";
 import { Composer } from "@/pages/conversaciones/components/Composer";
 import { PanelContexto } from "@/pages/conversaciones/components/PanelContexto";
 import { WhatsAppIcon, TelegramIcon } from "@/pages/conversaciones/components/CanalAvatar";
-import {
-  claseSegmentoActivo,
-  claseSegmentoInactivo,
-  claseSegmentoTrack,
-} from "@/pages/config-layout";
 
 export const ConversacionesPage = observer(() => {
-  const navigate = useNavigate();
   const [bandejaExpandida, setBandejaExpandida] = useState(true);
   const [panelExpandido, setPanelExpandido] = useState(false);
+  const [vistaChat, setVistaChat] = useState<VistaChat>("conversacion");
   const seleccionadaId = conversacionesStore.seleccionadaId;
   const bandeja = conversacionesStore.bandeja;
+
+  // Al cambiar de contacto seleccionado, volver a la vista principal de conversación
+  useEffect(() => {
+    setVistaChat("conversacion");
+  }, [seleccionadaId]);
 
   // El canal de Realtime se enciende en el bootstrap, no aquí: montar la
   // suscripción en un componente la abre y la cierra con cada navegación, y el
@@ -67,16 +66,16 @@ export const ConversacionesPage = observer(() => {
       {/* ── Cabecera de la página ────────────────────────────────────────── */}
       <div className="shrink-0 mb-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-[24px] sm:text-[36px] font-bold text-[#190088] dark:text-white/90 tracking-tight">Chats</h1>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90 tracking-tight">Chats</h1>
           {/* Indicador de tiempo real */}
           {conversacionesStore.origenDatos === "real" && enVivo && (
             <span
-              className="flex items-center gap-1.5 rounded-full border border-[#ECECEC] bg-white px-2.5 py-1 text-[12px] font-normal text-[#212121]/70 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
+              className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-normal text-gray-600 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400"
               title="La bandeja se actualiza sola cuando llega un mensaje"
             >
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#97D6DF] opacity-75" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF3F1A]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500" />
               </span>
               En vivo
             </span>
@@ -132,29 +131,6 @@ export const ConversacionesPage = observer(() => {
               </svg>
             </a>
           </div>
-        </div>
-        <div className={claseSegmentoTrack}>
-          <button
-            type="button"
-            aria-current="page"
-            className={`rounded-md px-3.5 py-1.5 text-[12px] font-bold transition-colors ${claseSegmentoActivo}`}
-          >
-            Chat en vivo
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/conversaciones/historial")}
-            className={`rounded-md px-3.5 py-1.5 text-[12px] font-normal transition-colors ${claseSegmentoInactivo}`}
-          >
-            Historial de atención
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/conversaciones/analitica")}
-            className={`rounded-md px-3.5 py-1.5 text-[12px] font-normal transition-colors ${claseSegmentoInactivo}`}
-          >
-            Analítica
-          </button>
         </div>
       </div>
 
@@ -263,6 +239,8 @@ export const ConversacionesPage = observer(() => {
                 panelExpandido={panelExpandido}
                 onToggleBandeja={handleToggleBandeja}
                 bandejaExpandida={bandejaExpandida}
+                vista={vistaChat}
+                onCambiarVista={setVistaChat}
               />
               <Composer convId={seleccionadaId} />
             </>
@@ -278,28 +256,31 @@ export const ConversacionesPage = observer(() => {
           aria-label="Panel de información del contacto"
           className={`shrink-0 flex-col overflow-hidden rounded-2xl bg-white shadow-theme-xs transition-all duration-300 ease-in-out dark:bg-white/[0.03] ${
             panelExpandido && seleccionadaId !== null
-              ? "flex w-72 border border-[#ECECEC] p-4 opacity-100 2xl:w-80 dark:border-gray-800"
+              ? "flex w-72 border border-gray-200 p-4 opacity-100 2xl:w-80 dark:border-gray-800"
               : "flex w-0 max-w-0 border-0 p-0 opacity-0 pointer-events-none -ml-4 sm:-ml-5"
           }`}
         >
           {seleccionadaId !== null && (
             <div className="flex h-full min-w-[17rem] flex-col overflow-hidden 2xl:min-w-[19rem]">
-              <div className="flex items-center justify-between border-b border-[#ECECEC] pb-3 dark:border-gray-800">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3 dark:border-gray-800">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#ECECEC] text-[#190088] dark:bg-white/5 dark:text-gray-300">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-white/5 dark:text-gray-300">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </div>
-                  <h3 className="text-[14px] font-bold text-[#190088] dark:text-white/90">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-white/90">
                     Información del contacto
                   </h3>
                 </div>
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto pt-3 custom-scrollbar">
-                <PanelContexto convId={seleccionadaId} />
+                <PanelContexto
+                  convId={seleccionadaId}
+                  onVerHistorialPedidos={() => setVistaChat("pedidos")}
+                />
               </div>
             </div>
           )}

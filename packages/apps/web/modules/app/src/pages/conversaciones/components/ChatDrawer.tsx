@@ -221,7 +221,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
       {/* Panel lateral: aquí SÍ se reactivan los eventos de puntero, porque el
           panel es la superficie con la que el operador interactúa. */}
       <aside
-        className={`relative flex h-full flex-col border-l border-[#ECECEC] bg-white font-sans text-[#212121] shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${
+        className={`relative flex h-full flex-col border-l border-gray-200 bg-white font-sans text-gray-800 shadow-2xl transition-transform duration-300 ease-out dark:border-gray-800 dark:bg-gray-900 ${
           ancho === null ? ANCHO_PANEL : ""
         } ${visible ? "translate-x-0" : "translate-x-full"}`}
         style={{
@@ -239,17 +239,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           cursor: arrastrando ? "col-resize" : undefined,
         }}
       >
-        {/* ── Manija de redimensionado, en el BORDE del panel ──
-            Va en el borde izquierdo y a media altura, no en la cabecera: es ahí
-            donde el gesto ocurre y donde el ojo busca «por dónde estiro esto».
-            Una manija en la cabecera dice «hay una opción más»; una en el borde
-            dice «este borde se mueve», que es lo que de verdad pasa.
-            La retícula 3×3 en naranja de marca es la señal universal de arrastre
-            y la única nota de color del panel fuera de los datos, así que se
-            encuentra sola sin competir con nada.
-            Es un `div` con `role="separator"`, NO un botón: no ejecuta una
-            acción, así que no debe robar un tabulador ni fingir que se pulsa.
-            Arrastrar cambia el ancho; doble clic lo restablece. */}
+        {/* ── Manija de redimensionado, en el BORDE del panel ── */}
         <div
           onPointerDown={(e) => {
             e.preventDefault();
@@ -260,8 +250,8 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           aria-orientation="vertical"
           aria-label="Arrastra para cambiar el ancho del panel"
           title="Arrastra para cambiar el ancho · doble clic para restablecer"
-          className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-[#FF3F1A] text-white shadow-md transition-all hover:scale-105 hover:bg-[#e03716] ${
-            arrastrando ? "scale-105 bg-[#FF3F1A]" : ""
+          className={`absolute -left-3.5 top-1/2 z-20 flex h-10 w-7 -translate-y-1/2 cursor-col-resize items-center justify-center rounded-md bg-brand-500 text-white shadow-md transition-all hover:scale-105 hover:bg-brand-600 ${
+            arrastrando ? "scale-105 bg-brand-500" : ""
           }`}
         >
           <svg
@@ -286,7 +276,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
         </div>
 
         {/* ── Cabecera: identidad + nº de pedido + acciones ── */}
-        <header className="flex items-center justify-between gap-3 border-b border-[#ECECEC] px-4 py-3 dark:border-gray-800">
+        <header className="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 dark:border-gray-800">
           <div className="flex min-w-0 items-center gap-3">
             <CanalAvatar
               canal={conv?.canal}
@@ -295,24 +285,19 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               status={conv ? statusDe(conv.estado) : "offline"}
             />
             <div className="min-w-0">
-              <h2 className="truncate text-[16px] font-bold text-[#190088] dark:text-white/90">
+              <h2 className="truncate text-base font-semibold text-gray-800 dark:text-white/90">
                 {nombre}
               </h2>
-              <p className="truncate text-[12px] font-normal text-[#212121]/60 dark:text-gray-500">{telefono}</p>
+              <p className="truncate text-xs font-normal text-gray-500 dark:text-gray-400">{telefono}</p>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5">
-            {/* Nº de pedido: identifica el contexto comercial del hilo. Solo se
-                muestra si el drawer se abrió POR un pedido: si se abrió por
-                `convId` (tarjeta "Clientes") puede no haber ninguno, y un
-                contacto sin pedido no debe inventarse un número. */}
             {pedido && (
-              <Badge size="sm" color="light" className="tabular-nums font-mono text-[12px]">
+              <Badge size="sm" color="light" className="tabular-nums font-mono text-xs">
                 #{pedido.numero}
               </Badge>
             )}
-            {/* Estado del hilo. */}
             {conv && (
               <Badge size="sm" color={badgeEstado(conv.estado)}>
                 {etiquetaEstado(conv.estado)}
@@ -325,7 +310,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               onClick={abrirConsolaCompleta}
               title="Abrir esta conversación en la consola completa"
               aria-label="Abrir en consola completa"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-bold text-[#190088] transition-colors hover:bg-[#ECECEC]/60 cursor-pointer dark:text-[#97D6DF] dark:hover:bg-white/5"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-brand-600 transition-colors hover:bg-gray-100 cursor-pointer dark:text-brand-400 dark:hover:bg-white/5"
             >
               <svg
                 width="16"
@@ -350,7 +335,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
               onClick={onClose}
               title="Cerrar el panel (Esc)"
               aria-label="Cerrar el panel"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-bold text-[#212121]/70 transition-colors hover:bg-[#ECECEC]/60 hover:text-[#190088] cursor-pointer dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 cursor-pointer dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
             >
               <svg
                 width="16"
@@ -379,8 +364,8 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
             </div>
             <div className="shrink-0">
               {cerrada ? (
-                <div className="border-t border-[#ECECEC] px-4 py-3 dark:border-gray-800">
-                  <p className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-500">{MOTIVO_CERRADA}</p>
+                <div className="border-t border-gray-200 px-4 py-3 dark:border-gray-800">
+                  <p className="text-xs font-normal text-gray-500 dark:text-gray-400">{MOTIVO_CERRADA}</p>
                 </div>
               ) : (
                 <Composer convId={conv.id} />
@@ -389,7 +374,7 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
           </>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ECECEC]/60 dark:bg-white/5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5">
               <svg
                 width="24"
                 height="24"
@@ -399,22 +384,22 @@ export const ChatDrawer = observer(({ pedido = null, convId = null, onClose }: C
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className="text-[#190088] dark:text-[#97D6DF]"
+                className="text-brand-500 dark:text-brand-400"
               >
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
             </div>
-            <h3 className="text-[16px] font-bold text-[#190088] dark:text-white/90">
+            <h3 className="text-base font-semibold text-gray-800 dark:text-white/90">
               Sin conversación
             </h3>
-            <p className="max-w-xs text-[14px] font-normal text-[#212121]/70 dark:text-gray-400">
+            <p className="max-w-xs text-sm font-normal text-gray-500 dark:text-gray-400">
               {nombre} todavía no tiene un hilo de WhatsApp. La conversación se inicia desde el
               dispositivo del cliente.
             </p>
             <button
               type="button"
               onClick={abrirConsolaCompleta}
-              className="rounded-xl bg-[#190088] px-4 py-2 text-[12px] font-bold text-white transition-all hover:bg-[#14006f] cursor-pointer"
+              className="rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-brand-600 cursor-pointer shadow-theme-xs"
             >
               Abrir la consola de chat
             </button>

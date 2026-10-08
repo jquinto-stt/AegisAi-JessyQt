@@ -20,6 +20,7 @@ export { UrgentChatsWidget } from "./UrgentChatsWidget";
 export { PrepQueueWidget } from "./PrepQueueWidget";
 export { LogisticsDeliveryWidget } from "./LogisticsDeliveryWidget";
 export { CalendarioInicioWidget, CalendarioInicioModal } from "./CalendarioInicioWidget";
+export { CalendarioSemanalWidget } from "./CalendarioSemanalWidget";
 export { ResumenDiaWidget } from "./ResumenDiaWidget";
 export { PedidoDestacadoCard } from "./PedidoDestacadoCard";
 export { ConfigureDisplayModal } from "./ConfigureDisplayModal";

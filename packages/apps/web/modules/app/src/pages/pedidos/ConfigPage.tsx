@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { PageMeta } from "@/shell/meta";
 import { Alert } from "@/elements/ui/alert";
 import { Button } from "@/elements/ui/button";
@@ -23,6 +23,7 @@ import {
   GridIcon,
   PageIcon,
   PencilIcon,
+  PlugInIcon,
   PlusIcon,
   ShieldCheckIcon,
   TableIcon,
@@ -30,7 +31,8 @@ import {
   TrashBinIcon,
   TruckDelivery,
 } from "@/icons";
-import { pedidosStore, puedeGuardarConfig, motivoSinPermiso } from "@/stores";
+import { organizacionStore, pedidosStore, puedeGuardarConfig, motivoSinPermiso } from "@/stores";
+import { cn } from "@/utils";
 import type {
   Modalidad,
   PedidosConfig,
@@ -114,10 +116,49 @@ const DIAS_SEMANA: { d: number; label: string; largo: string }[] = [
   { d: 0, label: "Dom", largo: "Domingo" },
 ];
 
-type ClaveSeccion = "flujo" | "pagos" | "perfil" | "tiempos" | "catalogo";
+function WhatsAppIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zm0 10.162a3.999 3.999 0 110-7.998 3.999 3.999 0 010 7.998zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+}
+
+function TelegramIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.196 1.006.128.832.942z" />
+    </svg>
+  );
+}
+
+type ClaveSeccion = "flujo" | "pagos" | "perfil" | "tiempos" | "catalogo" | "integraciones";
 
 /** Orden de la columna de secciones. `flujo` primero: es la seccion por defecto. */
-const ORDEN_SECCIONES: ClaveSeccion[] = ["flujo", "pagos", "perfil", "tiempos", "catalogo"];
+const ORDEN_SECCIONES: ClaveSeccion[] = [
+  "flujo",
+  "pagos",
+  "perfil",
+  "tiempos",
+  "catalogo",
+  "integraciones",
+];
 
 /**
  * Metadatos de cada seccion. La etiqueta y el consejo los pinta `ConfigShell`,
@@ -157,6 +198,11 @@ const META_SECCION: Record<
     label: "Productos frecuentes",
     hint: "Ítems sugeridos con precio para cargar pedidos sin teclear.",
     icono: CartIcon,
+  },
+  integraciones: {
+    label: "Integraciones",
+    hint: "Canales de venta y mensajería (WhatsApp, Instagram, Facebook y Telegram).",
+    icono: PlugInIcon,
   },
 };
 
@@ -210,6 +256,7 @@ export const ConfigPage = observer(() => {
   // **Sin parámetro NO se elige una sección por defecto**: se pinta el hub de
   // tarjetas. Es la pantalla de entrada, y elegir una sección «por defecto»
   // escondería las demás detrás de una navegación que el usuario no ha visto.
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const seccionParam = searchParams.get("seccion");
@@ -233,6 +280,51 @@ export const ConfigPage = observer(() => {
   const [draft, setDraft] = useState<PedidosConfig>(() => copiaDe(pedidosStore.config));
 
   const [guardado, setGuardado] = useState(false);
+
+  // ── Canales e integraciones (estado sincronizado con organizacionStore) ──
+  const [canalesActivos, setCanalesActivos] = useState<{
+    whatsapp: boolean;
+    instagram: boolean;
+    facebook: boolean;
+    telegram: boolean;
+  }>(() => {
+    const waStore = organizacionStore.esConectorActivo("pedidos", "whatsapp");
+    try {
+      const guardado = localStorage.getItem("pedidos_canales_integraciones");
+      if (guardado) {
+        const parsed = JSON.parse(guardado);
+        return {
+          whatsapp: parsed.whatsapp !== undefined ? Boolean(parsed.whatsapp) : waStore,
+          instagram: Boolean(parsed.instagram),
+          facebook: Boolean(parsed.facebook),
+          telegram: parsed.telegram !== undefined ? Boolean(parsed.telegram) : true,
+        };
+      }
+    } catch {}
+    return {
+      whatsapp: waStore,
+      instagram: false,
+      facebook: false,
+      telegram: true,
+    };
+  });
+
+  const toggleCanal = (
+    canal: "whatsapp" | "instagram" | "facebook" | "telegram",
+    nuevoEstado: boolean,
+  ) => {
+    setCanalesActivos((prev) => {
+      const actualizado = { ...prev, [canal]: nuevoEstado };
+      try {
+        localStorage.setItem("pedidos_canales_integraciones", JSON.stringify(actualizado));
+      } catch {}
+      return actualizado;
+    });
+
+    if (canal === "whatsapp") {
+      organizacionStore.setConectorActivo("pedidos", "whatsapp", nuevoEstado);
+    }
+  };
 
   // ── Permisos ──
   const puedeEditar = puedeGuardarConfig();
@@ -1430,6 +1522,269 @@ export const ConfigPage = observer(() => {
                     </div>
                   </>
                 )}
+              </BloqueConfig>
+            )}
+
+            {/* ═════════════════════════════════════════════════════════════════════
+                SECCIÓN: INTEGRACIONES Y CANALES DE VENTA
+               ═════════════════════════════════════════════════════════════════════ */}
+            {seccion === "integraciones" && (
+              <BloqueConfig
+                icono={PlugInIcon}
+                pregunta="Conecta tus canales de venta y mensajería"
+                descripcion="Centraliza la recepción de pedidos, notificaciones de despacho y atención omnicanal en un solo lugar."
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* WhatsApp Business */}
+                  <div
+                    className={cn(
+                      "relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all dark:bg-gray-900/60",
+                      canalesActivos.whatsapp
+                        ? "border-gray-200/80 hover:border-emerald-500/40 hover:shadow-md dark:border-gray-800"
+                        : "border-gray-200/50 opacity-80 dark:border-gray-800/60",
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex h-11 w-11 items-center justify-center rounded-xl",
+                              canalesActivos.whatsapp
+                                ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500",
+                            )}
+                          >
+                            <WhatsAppIcon className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                              WhatsApp Business
+                            </h4>
+                            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                              Bandeja omnicanal
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Badge color={canalesActivos.whatsapp ? "success" : "light"}>
+                            {canalesActivos.whatsapp ? "Activo" : "Inactivo"}
+                          </Badge>
+                          <Switch
+                            checked={canalesActivos.whatsapp}
+                            onChange={(val) => toggleCanal("whatsapp", val)}
+                            label=""
+                          />
+                        </div>
+                      </div>
+
+                      <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Bandeja omnicanal y notificaciones automáticas de pedidos a clientes.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {canalesActivos.whatsapp ? "Sincronización en tiempo real" : "Canal desactivado"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canalesActivos.whatsapp}
+                        onClick={() =>
+                          navigate(
+                            "/conversaciones/config?canal=whatsapp&from=/pedidos/config?seccion=integraciones",
+                          )
+                        }
+                      >
+                        Configurar bot
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Instagram */}
+                  <div
+                    className={cn(
+                      "relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all dark:bg-gray-900/60",
+                      canalesActivos.instagram
+                        ? "border-gray-200/80 hover:border-pink-500/40 hover:shadow-md dark:border-gray-800"
+                        : "border-gray-200/50 opacity-80 dark:border-gray-800/60",
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex h-11 w-11 items-center justify-center rounded-xl",
+                              canalesActivos.instagram
+                                ? "bg-gradient-to-tr from-amber-500/20 via-pink-500/20 to-purple-500/20 text-pink-600 dark:text-pink-400"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500",
+                            )}
+                          >
+                            <InstagramIcon className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                              Instagram
+                            </h4>
+                            <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                              Direct Messages
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Badge color={canalesActivos.instagram ? "success" : "light"}>
+                            {canalesActivos.instagram ? "Activo" : "Inactivo"}
+                          </Badge>
+                          <Switch
+                            checked={canalesActivos.instagram}
+                            onChange={(val) => toggleCanal("instagram", val)}
+                            label=""
+                          />
+                        </div>
+                      </div>
+
+                      <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Recepción de pedidos por mensajes directos (DM) y catálogo interactivo en historias y chat.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                        Meta Graph API
+                      </span>
+                      <Button size="sm" variant="outline" disabled={!canalesActivos.instagram}>
+                        Conectar cuenta
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Facebook */}
+                  <div
+                    className={cn(
+                      "relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all dark:bg-gray-900/60",
+                      canalesActivos.facebook
+                        ? "border-gray-200/80 hover:border-blue-500/40 hover:shadow-md dark:border-gray-800"
+                        : "border-gray-200/50 opacity-80 dark:border-gray-800/60",
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex h-11 w-11 items-center justify-center rounded-xl",
+                              canalesActivos.facebook
+                                ? "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500",
+                            )}
+                          >
+                            <FacebookIcon className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                              Facebook
+                            </h4>
+                            <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                              Messenger & Fan Page
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Badge color={canalesActivos.facebook ? "success" : "light"}>
+                            {canalesActivos.facebook ? "Activo" : "Inactivo"}
+                          </Badge>
+                          <Switch
+                            checked={canalesActivos.facebook}
+                            onChange={(val) => toggleCanal("facebook", val)}
+                            label=""
+                          />
+                        </div>
+                      </div>
+
+                      <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Gestión de ventas, respuestas a comentarios de publicaciones y sincronización con Messenger.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                      <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                        Facebook Business
+                      </span>
+                      <Button size="sm" variant="outline" disabled={!canalesActivos.facebook}>
+                        Conectar página
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Telegram */}
+                  <div
+                    className={cn(
+                      "relative flex flex-col justify-between rounded-2xl border bg-white p-5 shadow-sm transition-all dark:bg-gray-900/60",
+                      canalesActivos.telegram
+                        ? "border-gray-200/80 hover:border-sky-500/40 hover:shadow-md dark:border-gray-800"
+                        : "border-gray-200/50 opacity-80 dark:border-gray-800/60",
+                    )}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "flex h-11 w-11 items-center justify-center rounded-xl",
+                              canalesActivos.telegram
+                                ? "bg-sky-500/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400"
+                                : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500",
+                            )}
+                          >
+                            <TelegramIcon className="h-6 w-6" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                              Telegram
+                            </h4>
+                            <span className="text-[11px] font-medium text-sky-600 dark:text-sky-400">
+                              Bot & Mini App
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <Badge color={canalesActivos.telegram ? "success" : "light"}>
+                            {canalesActivos.telegram ? "Activo" : "Inactivo"}
+                          </Badge>
+                          <Switch
+                            checked={canalesActivos.telegram}
+                            onChange={(val) => toggleCanal("telegram", val)}
+                            label=""
+                          />
+                        </div>
+                      </div>
+
+                      <p className="mt-3.5 text-xs leading-relaxed text-gray-600 dark:text-gray-400">
+                        Bot de atención automatizada, alertas de nuevos pedidos y mini app de catálogo para clientes.
+                      </p>
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800/80">
+                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                        {canalesActivos.telegram ? "Telegram Bot API" : "Canal desactivado"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!canalesActivos.telegram}
+                        onClick={() =>
+                          navigate(
+                            "/conversaciones/config?canal=telegram&from=/pedidos/config?seccion=integraciones",
+                          )
+                        }
+                      >
+                        Configurar bot
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </BloqueConfig>
             )}
           </ConfigShell>

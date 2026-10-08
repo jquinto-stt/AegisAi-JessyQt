@@ -54,7 +54,7 @@ const VolverAlSelector = ({ onVolver }: { onVolver: () => void }) => (
       className="group inline-flex cursor-pointer items-center gap-2 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
     >
       <ChevronLeftIcon className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-      <span>Volver a Configuración</span>
+      <span>Volver a Ajustes Generales</span>
     </button>
   </div>
 );
@@ -78,7 +78,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Configuración · Información de la sede"
+          title="Ajustes Generales · Información de la sede"
           description="Datos generales, identidad y región de la organización"
         />
 
@@ -102,7 +102,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Configuración · Módulos e integraciones"
+          title="Ajustes Generales · Módulos e integraciones"
           description="Servicios y conexiones activas de la organización"
         />
 
@@ -130,7 +130,7 @@ export const ConfiguracionPage = observer(() => {
     return (
       <div className="mx-auto max-w-5xl pb-12">
         <PageMeta
-          title="Configuración · Apariencia"
+          title="Ajustes Generales · Apariencia"
           description="Tema y densidad de la interfaz"
         />
 
@@ -156,18 +156,18 @@ export const ConfiguracionPage = observer(() => {
   return (
     <div className="animate-aparecer">
       <PageMeta
-        title="Configuración"
-        description="Centro de configuración de la organización"
+        title="Ajustes Generales"
+        description="Centro de ajustes generales de la organización"
       />
 
       <div className="mb-10 text-center">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3.5 py-1 text-xs font-semibold text-brand-700 dark:text-brand-400">
           <span className="h-2 w-2 rounded-full bg-brand-500" />
-          <span>Configuración del sistema</span>
+          <span>Ajustes Generales</span>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink-title dark:text-white">
-          Configuración {nombreOrg ? `· ${nombreOrg}` : ""}
+          Ajustes Generales {nombreOrg ? `· ${nombreOrg}` : ""}
         </h1>
         <p className="mx-auto mt-3 max-w-md text-sm sm:text-base text-gray-500 dark:text-gray-400">
           Selecciona la sección que deseas gestionar para tu negocio.

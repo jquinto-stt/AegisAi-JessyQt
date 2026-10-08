@@ -4,47 +4,39 @@ import { pedidosStore, type Modalidad, type Pedido } from "@/stores";
 import { avanzarPedido } from "../pedidos.notificaciones";
 import { money } from "./widgets.comunes";
 import {
-  ArrowUpRightIcon,
   BuildingStorefrontIcon,
+  ChevronDownIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-// Heroicons no tiene equivalente para estos glifos del dominio
-// (cocina / reparto / salón): se quedan en lucide.
 import { Bike, UtensilsCrossed } from "lucide-react";
 
 type FiltroModalidad = "todas" | Modalidad;
 
 const MODALIDADES: { id: FiltroModalidad; label: string }[] = [
   { id: "todas", label: "Todas las modalidades" },
-  { id: "retiro", label: "Retiro en local / tienda" },
+  { id: "retiro", label: "Retiro en local" },
   { id: "domicilio", label: "Envío a domicilio" },
-  { id: "en_sitio", label: "Atención en local" },
+  { id: "en_sitio", label: "Atención en sitio" },
 ];
 
 function formatMinutos(isoString?: string): string {
-  if (!isoString) return "";
+  if (!isoString) return "Recién creado";
   const diffMs = Date.now() - new Date(isoString).getTime();
   const mins = Math.max(0, Math.floor(diffMs / 60000));
   if (mins < 1) return "Recién creado";
   if (mins < 60) return `${mins} min`;
   const hrs = Math.floor(mins / 60);
-  return `${hrs}h ${mins % 60}m`;
+  const remMins = mins % 60;
+  return `${hrs}h ${remMins}m`;
 }
 
 export interface PedidoDestacadoCardProps {
-  /**
-   * Abre el detalle del pedido prioritario SIN salir de la pantalla que monta
-   * la tarjeta: el detalle es un modal y lo pinta quien monta la tarjeta, así
-   * que quien decide la navegación es la página, no la tarjeta.
-   *
-   * Existe porque la tarjeta navegaba a `/pedidos?detalle=…`: ver el pedido
-   * sacaba al usuario de Inicio y había que volver para seguir con lo demás.
-   */
   onVerDetalle: (id: string) => void;
 }
 
 /**
- * PedidoDestacadoCard — Tarjeta de pedido prioritario en formato universal.
+ * PedidoDestacadoCard — Tarjeta de pedido prioritario en formato de alta visibilidad.
+ * Sigue estrictamente la paleta de marca NECTO (#190088, #FF3F1A, #97D6DF).
  */
 export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCardProps) => {
   const [filtro, setFiltro] = useState<FiltroModalidad>("todas");
@@ -63,7 +55,6 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
 
   const siguienteEstado = pedidoActivo ? pedidosStore.siguienteEstado(pedidoActivo) : null;
   const labelSiguiente = siguienteEstado ? pedidosStore.estadoLabel(siguienteEstado) : "Completar";
-  // Quitar etiquetas técnicas o paréntesis como (en guía)
   const labelLimpio = labelSiguiente.replace(/\s*\([^)]*\)/g, "").trim();
 
   const handleAvanzar = () => {
@@ -71,126 +62,141 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
     avanzarPedido(pedidoActivo.id);
   };
 
+  const itemPrincipal = pedidoActivo?.items?.[0];
+  const fotoItem =
+    (itemPrincipal as { foto?: string })?.foto ||
+    "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=300&q=80";
+
   return (
-    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-2xl bg-[#190088] p-5 sm:p-6 text-white shadow-theme-md min-h-[310px] font-sans">
-
+    <div className="relative overflow-hidden flex flex-col justify-between h-full rounded-3xl bg-[#190088] p-6 sm:p-8 lg:p-9 text-white shadow-xl min-h-[360px] font-sans border border-white/10">
       {/* Contenido en capa superior */}
-      <div className="relative z-10 flex flex-col justify-between h-full">
-        {/* Encabezado de la tarjeta */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A] opacity-80" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FF3F1A]" />
-              </span>
-              <span className="rounded-full bg-white px-2.5 py-0.5 text-[12px] font-bold uppercase tracking-wider text-[#FF3F1A] shadow-2xs">
-                Pedido Prioritario
-              </span>
-              {pedidoActivo && (
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-[12px] font-extrabold uppercase tracking-wider shadow-2xs ${
-                    pedidoActivo.estado === "listo"
-                      ? "bg-[#97D6DF] text-[#190088]"
-                      : "bg-white text-[#190088]"
-                  }`}
-                >
-                  {pedidosStore.estadoLabel(pedidoActivo.estado)}
-                </span>
-              )}
-            </div>
-            <h2 className="mt-1.5 text-[16px] sm:text-[24px] font-bold text-white leading-tight">
-              {pedidoActivo ? "Atención inmediata requerida" : "Sin pedidos pendientes"}
-            </h2>
-          </div>
-
-          {/* Selector de modalidad */}
-          <select
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value as FiltroModalidad)}
-            aria-label="Filtrar por modalidad"
-            className="max-w-[55%] truncate rounded-xl border border-white/30 bg-white/15 px-3 py-1.5 text-[12px] sm:text-[14px] font-semibold text-white outline-none backdrop-blur-sm transition-colors hover:bg-white/25 focus:border-white [&>option]:text-[#212121] cursor-pointer"
-          >
-            {MODALIDADES.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Cuerpo principal con datos del pedido */}
+      <div className="relative z-10 flex flex-col justify-between h-full gap-6">
         {pedidoActivo ? (
-          <div className="my-4 space-y-3">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[40px] sm:text-[52px] font-extrabold tracking-tight text-white drop-shadow-md font-mono leading-none">
-                {pedidoActivo.numero}
-              </span>
-            </div>
+          <>
+            {/* Sección principal: ocupa el espacio vertical con proporciones generosas */}
+            <div className="my-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center py-2">
+              {/* Columna Izquierda: Código gigante, Estado, Cliente y Total */}
+              <div className="lg:col-span-5 flex flex-col justify-center gap-3 sm:gap-4 min-w-0">
+                {/* Código principal prominente */}
+                <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black font-mono tracking-tight text-white leading-none drop-shadow-md">
+                  {pedidoActivo.numero}
+                </h2>
 
-            <div className="flex flex-wrap items-center gap-2 text-[14px]">
-              <span className="font-bold text-[16px] text-white tracking-wide">{pedidoActivo.cliente}</span>
-              <span className="text-white/40">·</span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-2.5 py-1 text-[12px] font-semibold text-white backdrop-blur-sm border border-white/25">
-                {pedidoActivo.modalidad === "retiro" && <BuildingStorefrontIcon className="size-3.5" />}
-                {pedidoActivo.modalidad === "domicilio" && <Bike className="size-3.5" />}
-                {pedidoActivo.modalidad === "en_sitio" && <BuildingStorefrontIcon className="size-3.5" />}
-                <span>{pedidosStore.modalidadLabel(pedidoActivo.modalidad)}</span>
-              </span>
-              <span className="text-white/40">·</span>
-              <span className="font-black text-[17px] text-[#97D6DF] drop-shadow-xs">
-                {money(pedidosStore.totalPedido(pedidoActivo))}
-              </span>
-              {Boolean(pedidoActivo.estadoDesde || pedidoActivo.createdAt) && (
-                <>
-                  <span className="text-white/40">·</span>
-                  <span className="text-[12px] font-mono font-bold text-white bg-black/40 border border-white/20 px-2.5 py-0.5 rounded-md">
+                {/* Badge de prioridad y estado con punto naranja */}
+                <div className="inline-flex items-center gap-2.5 self-start rounded-full bg-white/10 border border-white/20 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-white/95 backdrop-blur-xs">
+                  <span>
+                    Pedido Prioritario ({pedidosStore.estadoLabel(pedidoActivo.estado)})
+                  </span>
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF3F1A] opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#FF3F1A]" />
+                  </span>
+                </div>
+
+                {/* Cliente con icono de modalidad grande */}
+                <div className="flex items-center gap-3 text-xl sm:text-2xl md:text-3xl font-bold text-white">
+                  {pedidoActivo.modalidad === "domicilio" ? (
+                    <Bike className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                  ) : pedidoActivo.modalidad === "retiro" ? (
+                    <BuildingStorefrontIcon className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                  ) : (
+                    <UtensilsCrossed className="size-6 sm:size-7 md:size-8 text-[#97D6DF] shrink-0" />
+                  )}
+                  <span className="truncate">{pedidoActivo.cliente}</span>
+                </div>
+
+                {/* Total en tipografía mono muy grande */}
+                <div className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white font-mono tracking-tight leading-none">
+                  {money(pedidosStore.totalPedido(pedidoActivo))}
+                </div>
+
+                {/* Píldora de tiempo */}
+                <div className="inline-flex items-center gap-2 self-start rounded-xl bg-black/40 border border-white/20 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white/90">
+                  <span className="text-white/70">Tiempo en estado:</span>
+                  <span className="font-mono font-bold text-white">
                     {formatMinutos(pedidoActivo.estadoDesde || pedidoActivo.createdAt)}
                   </span>
-                </>
-              )}
+                </div>
+              </div>
+
+              {/* Columna Derecha: Tarjeta de producto notablemente más larga y amplia */}
+              <div className="lg:col-span-7 flex items-center justify-end w-full">
+                <div className="w-full rounded-3xl border border-white/20 bg-white/10 p-5 sm:p-6 lg:p-7 flex flex-col sm:flex-row items-center gap-5 sm:gap-6 backdrop-blur-xs shadow-inner">
+                  {/* Imagen grande del producto */}
+                  <div className="relative size-32 sm:size-36 md:size-44 lg:size-48 rounded-2xl overflow-hidden bg-black/30 shrink-0 border border-white/20 shadow-md">
+                    <img
+                      src={fotoItem}
+                      alt={itemPrincipal?.nombre || "Producto"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  {/* Detalle y texto amplio para ocupar el largo de la tarjeta */}
+                  <div className="min-w-0 flex-1 flex flex-col justify-between py-1 text-left w-full gap-2">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base text-[#97D6DF] mt-0.5 shrink-0 font-bold">•</span>
+                      <p className="text-base sm:text-lg md:text-xl font-black text-white leading-snug line-clamp-3">
+                        {itemPrincipal
+                          ? `${itemPrincipal.cantidad}× ${itemPrincipal.nombre}`
+                          : "1× Ítem en pedido"}
+                      </p>
+                    </div>
+
+                    {itemPrincipal?.precio ? (
+                      <p className="text-xs sm:text-sm text-white/80 pl-4 font-semibold">
+                        Valor unitario: {money(itemPrincipal.precio)}
+                      </p>
+                    ) : null}
+
+                    {pedidoActivo.items.length > 1 && (
+                      <p className="text-xs sm:text-sm text-[#97D6DF] pl-4 font-bold">
+                        +{pedidoActivo.items.length - 1} producto(s) adicional(es) en esta orden
+                      </p>
+                    )}
+
+                    <div className="mt-3 pl-4">
+                      <button
+                        type="button"
+                        onClick={() => onVerDetalle(pedidoActivo.id)}
+                        className="inline-flex items-center gap-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 px-4.5 py-2 text-xs sm:text-sm font-bold text-white transition-colors cursor-pointer"
+                      >
+                        <span>Más info.</span>
+                        <ChevronDownIcon className="size-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Resumen de items con alto contraste */}
-            <div className="rounded-xl bg-black/35 border border-white/20 p-3 text-[13px] text-white font-medium shadow-inner">
-              <p className="truncate text-white">
-                {pedidoActivo.items.map((it) => `${it.cantidad}× ${it.nombre}`).join("  •  ")}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="my-6 text-center sm:text-left">
-            <p className="text-[24px] font-bold text-white">Todos los pedidos al día</p>
-            <p className="mt-1 text-[12px] text-white/85 font-normal">
-              No hay pedidos activos que requieran atención en esta modalidad.
-            </p>
-          </div>
-        )}
+            {/* Pie de acciones con mayor altura y presencia */}
+            <div className="flex flex-col sm:flex-row items-center gap-3.5 pt-3 border-t border-white/15">
+              <button
+                type="button"
+                onClick={handleAvanzar}
+                className="w-full sm:flex-[1.6] flex items-center justify-center gap-2.5 rounded-2xl bg-[#FF3F1A] hover:bg-[#e03514] px-6 py-4 text-base sm:text-lg font-bold text-white shadow-md transition-all active:scale-98 cursor-pointer border border-white/10"
+              >
+                <CheckCircleIcon className="size-5 shrink-0" />
+                <span>Avanzar a: {labelLimpio}</span>
+              </button>
 
-        {/* Pie de tarjeta con acciones rápidas para el pedido prioritario */}
-        <div className="border-t border-white/20 pt-3.5">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleAvanzar}
-              disabled={!pedidoActivo}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#FF3F1A] px-4 py-2.5 text-[14px] font-bold text-white shadow-md transition-all hover:bg-[#e5351a] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer border border-white/10"
-            >
-              <CheckCircleIcon className="size-4" />
-              <span>{pedidoActivo ? `Avanzar a: ${labelLimpio}` : "Sin acción"}</span>
-            </button>
-            {pedidoActivo && (
               <button
                 type="button"
                 onClick={() => onVerDetalle(pedidoActivo.id)}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-[14px] font-bold text-[#212121] shadow-xs transition-colors hover:bg-[#ECECEC] cursor-pointer"
+                className="w-full sm:flex-1 flex items-center justify-center gap-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/25 px-6 py-4 text-base sm:text-lg font-bold text-white shadow-xs transition-all active:scale-98 cursor-pointer"
               >
-                <span>Ver detalle</span>
-                <ArrowUpRightIcon className="size-3.5" />
+                <span>Pausar / Reportar</span>
               </button>
-            )}
+            </div>
+          </>
+        ) : (
+          <div className="my-auto py-12 text-center">
+            <p className="text-2xl sm:text-3xl font-bold text-white">Todos los pedidos al día</p>
+            <p className="mt-2 text-sm sm:text-base text-white/80 font-normal">
+              No hay pedidos que requieran atención inmediata en este momento.
+            </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

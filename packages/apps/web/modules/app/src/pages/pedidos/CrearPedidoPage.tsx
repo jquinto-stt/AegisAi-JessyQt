@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { observer } from "mobx-react-lite";
 import { PageMeta } from "@/shell/meta";
@@ -172,9 +172,22 @@ export const CrearPedidoPage = observer(() => {
   const puedeCrear = puedeCrearPedido();
   const puedeProgramar = puedeGestionarProgramados();
 
-  const [cliente, setCliente] = useState(() => searchParams.get("cliente") ?? "");
-  const [telefono, setTelefono] = useState(() => searchParams.get("telefono") ?? "");
-  const [modalidad, setModalidad] = useState<ModalidadPedido>(modalidadesDisponibles[0] ?? "retiro");
+  const initialCliente = searchParams.get("cliente") ?? "";
+  const initialTelefono = searchParams.get("telefono") ?? "";
+  const initialDirs = initialTelefono ? pedidosStore.direccionesDe(initialTelefono) : [];
+  const initialCalle = searchParams.get("calle") ?? initialDirs[0]?.calle ?? "";
+  const initialBarrio = searchParams.get("barrio") ?? initialDirs[0]?.barrio ?? "";
+  const initialReferencia = searchParams.get("referencia") ?? initialDirs[0]?.referencia ?? "";
+  const initialIndicaciones = searchParams.get("indicaciones") ?? initialDirs[0]?.indicaciones ?? "";
+
+  const [cliente, setCliente] = useState(() => initialCliente);
+  const [telefono, setTelefono] = useState(() => initialTelefono);
+  const [modalidad, setModalidad] = useState<ModalidadPedido>(() => {
+    if (initialCalle && modalidadesDisponibles.includes("domicilio")) {
+      return "domicilio";
+    }
+    return modalidadesDisponibles[0] ?? "retiro";
+  });
   const [notas, setNotas] = useState("");
   const [items, setItems] = useState<ItemFila[]>([{ nombre: "", cantidad: 1 }]);
   const [programar, setProgramar] = useState(false);
@@ -188,14 +201,37 @@ export const CrearPedidoPage = observer(() => {
   const [copiadoCobro, setCopiadoCobro] = useState(false);
 
   // ── Logística, dirección y pago ──
-  const [calle, setCalle] = useState("");
-  const [barrio, setBarrio] = useState("");
-  const [referencia, setReferencia] = useState("");
-  const [indicaciones, setIndicaciones] = useState("");
+  const [calle, setCalle] = useState(() => initialCalle);
+  const [barrio, setBarrio] = useState(() => initialBarrio);
+  const [referencia, setReferencia] = useState(() => initialReferencia);
+  const [indicaciones, setIndicaciones] = useState(() => initialIndicaciones);
   const [costoEnvio, setCostoEnvio] = useState<number>(5000);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>(
     () => mediosDeCobroHabilitados(pedidosStore.config.datosBancarios)[0]?.id ?? "efectivo",
   );
+
+  useEffect(() => {
+    const qCliente = searchParams.get("cliente");
+    const qTelefono = searchParams.get("telefono");
+    if (qCliente !== null) setCliente(qCliente);
+    if (qTelefono !== null) {
+      setTelefono(qTelefono);
+      const dirs = pedidosStore.direccionesDe(qTelefono);
+      const qCalle = searchParams.get("calle") ?? dirs[0]?.calle;
+      const qBarrio = searchParams.get("barrio") ?? dirs[0]?.barrio;
+      const qRef = searchParams.get("referencia") ?? dirs[0]?.referencia;
+      const qInd = searchParams.get("indicaciones") ?? dirs[0]?.indicaciones;
+      if (qCalle) {
+        setCalle(qCalle);
+        if (modalidadesDisponibles.includes("domicilio")) {
+          setModalidad("domicilio");
+        }
+      }
+      if (qBarrio) setBarrio(qBarrio);
+      if (qRef) setReferencia(qRef);
+      if (qInd) setIndicaciones(qInd);
+    }
+  }, [searchParams, modalidadesDisponibles]);
 
   /**
    * Los medios que el negocio acepta HOY, derivados de la configuración.

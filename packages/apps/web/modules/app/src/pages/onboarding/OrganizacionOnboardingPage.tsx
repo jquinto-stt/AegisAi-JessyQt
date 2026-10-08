@@ -130,7 +130,7 @@ export const OrganizacionOnboardingPage = observer(() => {
     modulos.length === 2
       ? "Pedidos e Inventario"
       : modulos.includes("pedidos")
-      ? "Pedidos & Fulfillment"
+      ? "Pedidos"
       : "Inventario & Stock";
 
   const handleConfirmar = () => {

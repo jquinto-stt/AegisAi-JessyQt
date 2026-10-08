@@ -53,7 +53,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
   };
 
   return (
-    <div className="shrink-0 border-t border-[#ECECEC] bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7 font-sans text-[#212121]">
+    <div className="shrink-0 border-t border-gray-200 bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7 font-sans text-gray-800 dark:text-white/90">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -66,7 +66,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             title="Insertar emoji"
-            className="mr-3 text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200 shrink-0"
+            className="mr-3 text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300 shrink-0"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
@@ -91,7 +91,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
                   ? "El bot está atendiendo esta conversación"
                   : "Escribe un mensaje..."
             }
-            className="w-full bg-transparent border-0 outline-hidden h-10 text-[14px] sm:text-[16px] font-normal text-[#212121] placeholder:text-[#212121]/40 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
+            className="w-full bg-transparent border-0 outline-hidden h-10 text-sm sm:text-base font-normal text-gray-800 placeholder:text-gray-400 focus:border-0 focus:ring-0 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-60 dark:text-white/90 dark:placeholder:text-gray-500"
           />
         </div>
 
@@ -100,7 +100,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             title="Adjuntar archivo"
-            className="text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200"
+            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
           >
             <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
               <path
@@ -114,7 +114,7 @@ export const Composer = observer(({ convId }: { convId: string }) => {
           <button
             type="button"
             title="Nota de voz"
-            className="text-[#212121]/50 transition-colors hover:text-[#190088] dark:hover:text-gray-200"
+            className="text-gray-400 transition-colors hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
           >
             <svg className="h-5 w-5 stroke-current" viewBox="0 0 24 24" fill="none">
               <rect x="7" y="2.75" width="10" height="12.5" rx="5" strokeWidth="1.5" />
@@ -128,21 +128,21 @@ export const Composer = observer(({ convId }: { convId: string }) => {
             type="submit"
             disabled={!puedeEnviar}
             title="Enviar mensaje"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FF3F1A] text-white shadow-theme-xs transition-colors hover:bg-[#FF3F1A]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-9 w-9 xl:h-10 xl:w-10 items-center justify-center rounded-lg xl:rounded-xl bg-brand-500 text-white shadow-theme-xs transition-colors hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <PaperPlaneIcon className="h-4.5 w-4.5 fill-current" />
+            <PaperPlaneIcon className="h-4 w-4 xl:h-4.5 xl:w-4.5 fill-current" />
           </button>
         </div>
       </form>
 
       {!puedeResponder && (
-        <p className="mt-1 text-[12px] font-normal text-[#FF3F1A] dark:text-[#FF3F1A]">
+        <p className="mt-1 text-xs font-normal text-error-500">
           {motivoSinPermiso("channels.respond")}
         </p>
       )}
 
       {puedeResponder && esModoBot && (
-        <p className="mt-1 text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
+        <p className="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">
           La atención la lleva el bot. Pulsa «Tomar chat» para responder tú.
         </p>
       )}

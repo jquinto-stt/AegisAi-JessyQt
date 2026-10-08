@@ -36,14 +36,13 @@ import {
 } from "./widgets";
 import {
   KpiProgramadosWidget,
-  SalesTrendChartWidget,
   PrepQueueWidget,
   LogisticsDeliveryWidget,
   CalendarioInicioModal,
+  CalendarioSemanalWidget,
   PedidoDestacadoCard,
   ConfigureDisplayModal,
   EstadosOverview,
-  EstadoPagoDonutCard,
 } from "./widgets";
 import {
   esHoy,
@@ -53,7 +52,6 @@ import {
   mesDeYmd,
   MESES,
   mismoMes,
-  rangoDelMesHastaHoy,
   ymdDeMesDia,
   type MesCalendario,
 } from "./inicio.calendario";
@@ -418,19 +416,30 @@ const ClientesModal = observer(
 /**
  * WIDGET TARJETA DE CHAT (Ubicada en la posición "Feature Events" de la maqueta de referencia)
  */
-const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void; onChat: (convId: string) => void }) => {
-  const navigate = useNavigate();
-  const filas = filasDeClientes();
-  const urgentes = filas
-    .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
-    .sort((a, b) => a.conv.ultimaActividad.localeCompare(b.conv.ultimaActividad));
-  const resto = filas
-    .filter((f) => estadoAtencionDe(f.conv) !== "pide_asesor")
-    .sort((a, b) => b.conv.ultimaActividad.localeCompare(a.conv.ultimaActividad));
-  const items = [...urgentes, ...resto].slice(0, 5);
+const ClientesCardWidget = observer(
+  ({
+    onAbrir,
+    onChat,
+    className = "",
+  }: {
+    onAbrir: () => void;
+    onChat: (convId: string) => void;
+    className?: string;
+  }) => {
+    const navigate = useNavigate();
+    const filas = filasDeClientes();
+    const urgentes = filas
+      .filter((f) => estadoAtencionDe(f.conv) === "pide_asesor")
+      .sort((a, b) => a.conv.ultimaActividad.localeCompare(b.conv.ultimaActividad));
+    const resto = filas
+      .filter((f) => estadoAtencionDe(f.conv) !== "pide_asesor")
+      .sort((a, b) => b.conv.ultimaActividad.localeCompare(a.conv.ultimaActividad));
+    const items = [...urgentes, ...resto].slice(0, 4);
 
-  return (
-    <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
+    return (
+      <div
+        className={`rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 flex flex-col justify-between ${className}`}
+      >
       <div className="flex items-center justify-between gap-2 mb-5">
         <div className="flex items-center gap-2">
           <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">Chat & Conversaciones</h2>
@@ -515,108 +524,7 @@ const ClientesCardWidget = observer(({ onAbrir, onChat }: { onAbrir: () => void;
   );
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// TOP 4 KPI CARDS (Réplica exacta de la estructura de la maqueta de referencia)
-// ═══════════════════════════════════════════════════════════════════════════
 
-const TopKpiCards = observer(() => {
-  const navigate = useNavigate();
-
-  // KPIs calculados
-  const totalPedidos = pedidosStore.pedidos.length;
-  const totalVentas = pedidosStore.ingresoTotalEntregados();
-  const tasaExito = Math.max(0, 100 - pedidosStore.tasaCancelacion());
-  const totalClientes = conversacionesStore.conversaciones.length || 56;
-
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6">
-      {/* Kpi 1: Total Pedidos */}
-      <div
-        onClick={() => navigate("/pedidos")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-secondary-50 text-secondary-600 dark:bg-accent-950/60 dark:text-accent-300">
-            <UsersIcon className="size-5" />
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
-            +5.6%
-          </span>
-        </div>
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Total Pedidos</p>
-          <p className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {totalPedidos.toLocaleString()}
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">vs. mes anterior</p>
-        </div>
-      </div>
-
-      {/* Kpi 2: Sales Revenue */}
-      <div
-        onClick={() => navigate("/pedidos/analitica")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-accent-50 text-accent-600 dark:bg-accent-950/60 dark:text-accent-400">
-            <CurrencyDollarIcon className="size-5" />
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
-            +7.9%
-          </span>
-        </div>
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Ventas Totales</p>
-          <p className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {money(totalVentas > 0 ? totalVentas : 160000)}
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Ingresos acumulados</p>
-        </div>
-      </div>
-
-      {/* Kpi 3: Submission Rate / Cumplimiento */}
-      <div
-        onClick={() => navigate("/pedidos/analitica")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-error-50 text-error-600 dark:bg-error-950/60 dark:text-error-400">
-            <ArrowTrendingUpIcon className="size-5" />
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-950/50 dark:text-accent-400">
-            +5.6%
-          </span>
-        </div>
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Tasa de Entrega</p>
-          <p className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {tasaExito}%
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Envíos completados</p>
-        </div>
-      </div>
-
-      {/* Kpi 4: Sales Leads / Clientes */}
-      <div
-        onClick={() => navigate("/conversaciones")}
-        className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-5 shadow-theme-xs transition-all duration-200 hover:shadow-theme-md hover:border-secondary-200 dark:border-gray-800 dark:bg-gray-900"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex size-11 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400">
-            <ChatBubbleLeftIcon className="size-5" />
-          </div>
-        </div>
-        <div className="mt-4">
-          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Clientes & Leads</p>
-          <p className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-ink-title dark:text-white">
-            {totalClientes}
-          </p>
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Canales activos</p>
-        </div>
-      </div>
-    </div>
-  );
-});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PEDIDOS EN CURSO (Ubicado en la posición "Employee List" de la maqueta)
@@ -624,13 +532,17 @@ const TopKpiCards = observer(() => {
 
 const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string) => void }) => {
   const navigate = useNavigate();
-  const tabla = pedidosStore.enCurso().slice(0, 5);
+  const enCurso = pedidosStore.enCurso();
+  const tabla = (enCurso.length > 0 ? enCurso : pedidosStore.pedidos)
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, 3);
 
   return (
     <div>
       {tabla.length === 0 ? (
         <div className="py-8 text-center">
-          <ListaVacia>Sin pedidos en curso.</ListaVacia>
+          <ListaVacia>Sin pedidos registrados.</ListaVacia>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -642,6 +554,7 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
                 <TableCell header>Modalidad</TableCell>
                 <TableCell header>Total</TableCell>
                 <TableCell header>Estado</TableCell>
+                <TableCell header>Tiempo</TableCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -663,6 +576,9 @@ const PedidosEnCursoCard = observer(({ onVerPedido }: { onVerPedido: (id: string
                     <Badge color={pedidosStore.estadoBadgeColor(p.estado)} size="sm">
                       {pedidosStore.estadoLabel(p.estado)}
                     </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-gray-400">
+                    {relativo(pedidosStore.minutosEnEstado(p))}
                   </TableCell>
                 </TableRow>
               ))}
@@ -709,8 +625,6 @@ export const InicioPage = observer(() => {
     setMes(mesActual());
     setDia(hoyYmd());
   };
-
-  const rangoGrafico = rangoDelMesHastaHoy(mes);
 
   const alerta = pedidosStore.config.alertaAtencion;
   const hayUrgentes = pedidosStore.urgentes.length > 0;
@@ -808,48 +722,21 @@ export const InicioPage = observer(() => {
         </div>
       </div>
 
-      {/* ── SECCIÓN HERO: PEDIDO PRIORITARIO (IZQ) + FLUJO OPERATIVO DE PEDIDOS (DER) ── */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 mb-6 items-stretch">
-        <PedidoDestacadoCard onVerDetalle={setDetalleId} />
+      {/* ── FILA 1: FLUJO OPERATIVO DE PEDIDOS (6 ETAPAS DEL PIPELINE) ── */}
+      <div className="mb-6">
         <EstadosOverview />
       </div>
 
-      {/* ── GRID PRINCIPAL DE 2 COLUMNAS (8 de 12 a la izquierda, 4 de 12 a la derecha) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* COLUMNA IZQUIERDA (2/3 del ancho) */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Bloque Medio Izquierda: Tendencia de Ventas & Operaciones */}
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between gap-3 mb-5">
-              <div>
-                <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
-                  Tendencia de Ventas & Operaciones
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Volumen histórico de pedidos y transacciones</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCalendarioOpen(true)}
-                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 cursor-pointer"
-              >
-                <span>{MESES[mes.month]} {mes.year}</span>
-                <ChevronDownIcon className="size-3.5 text-gray-400" />
-              </button>
-            </div>
-
-            <div>
-              <SalesTrendChartWidget rango={rangoGrafico} sinCard alto={300} />
-            </div>
-          </div>
-
-          {/* Bloque Inferior Izquierda: Pedidos Recientes */}
-          <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900">
-            <div className="flex items-center justify-between gap-3 mb-4">
+      {/* ── FILA 2: PEDIDOS RECIENTES & ACTIVIDAD (ANCHO ~60%) + CALENDARIO SEMANAL (~40%) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch mb-6">
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+          <div className="rounded-3xl border border-gray-100 bg-white p-5 sm:p-6 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-ink-title dark:text-white">
                   Pedidos Recientes & Actividad
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">Últimas transacciones recibidas en tiempo real</p>
+                <p className="text-xs text-gray-400 mt-0.5">Últimas transacciones y estado operativo en tiempo real</p>
               </div>
               <button
                 type="button"
@@ -865,10 +752,29 @@ export const InicioPage = observer(() => {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA (1/3 del ancho): Posición "Feature Events" -> TARJETA DE CHAT REAL + DONUT DE PAGO */}
-        <div className="lg:col-span-4 space-y-6">
-          <ClientesCardWidget onAbrir={() => setClientesOpen(true)} onChat={abrirChat} />
-          <EstadoPagoDonutCard />
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+          <CalendarioSemanalWidget
+            seleccion={dia}
+            onSeleccion={setDia}
+            onAbrirModalCompleto={() => setCalendarioOpen(true)}
+            onVerPedido={verPedido}
+            className="h-full"
+          />
+        </div>
+      </div>
+
+      {/* ── FILA 3: CHAT & CONVERSACIONES (~40%) + ATENCIÓN INMEDIATA REQUERIDA (ANCHO ~60%) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col">
+          <ClientesCardWidget
+            onAbrir={() => setClientesOpen(true)}
+            onChat={abrirChat}
+            className="h-full"
+          />
+        </div>
+
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col">
+          <PedidoDestacadoCard onVerDetalle={setDetalleId} />
         </div>
       </div>
 

@@ -157,7 +157,7 @@ const UserDropdown = observer(() => {
               className="flex items-center gap-3 px-2.5 py-2 font-medium text-gray-700 rounded-xl group text-sm hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800/70 dark:hover:text-white transition-colors"
             >
               <Cog6ToothIcon className="size-4.5 text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-200" />
-              <span>Configuración de la organización</span>
+              <span>Ajustes Generales</span>
             </ShellDropdownItem>
           </li>
 

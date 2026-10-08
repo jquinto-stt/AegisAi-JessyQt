@@ -286,12 +286,11 @@ const SubIntegrationCard = observer(({
 const ModuloMaestroCard = observer(({
   def,
   onOpenModuloDetails,
-  onOpenIntegrationDetails,
   onDesinstalar,
 }: {
   def: ModuloConfigDef;
   onOpenModuloDetails: (def: ModuloConfigDef) => void;
-  onOpenIntegrationDetails: (item: SubIntegracionDef) => void;
+  onOpenIntegrationDetails?: (item: SubIntegracionDef) => void;
   onDesinstalar: (def: ModuloConfigDef) => void;
 }) => {
   const navigate = useNavigate();
@@ -301,54 +300,6 @@ const ModuloMaestroCard = observer(({
   const nectoIaActivo = organizacionStore.esConectorActivo(def.id, "necto_ia");
   const whatsappActivo = organizacionStore.esConectorActivo(def.id, "whatsapp");
   const disponible = plataformaStore.esModuloDisponible(def.id);
-
-  // Integraciones específicas asociadas a este módulo con el diseño de referencia
-  const integraciones: SubIntegracionDef[] = [
-    {
-      id: "necto_ia",
-      nombre: "Necto Intelligence (IA)",
-      descripcion:
-        def.id === "pedidos"
-          ? "Copiloto con IA para consultar pedidos, analizar ventas y respuestas automáticas."
-          : "Consultas instantáneas de existencias y productos con bajo stock.",
-      logo: <NectoIaIntegrationLogo />,
-      activo: nectoIaActivo,
-      onToggle: () => organizacionStore.toggleConector(def.id, "necto_ia"),
-      rutaConfig: def.id === "pedidos" ? "/asistente/config" : undefined,
-      detalles: {
-        categoria: "Plugin / Inteligencia Artificial",
-        beneficios: [
-          "Conexión con las herramientas del módulo para responder preguntas en tiempo real",
-          "Generación de reportes ejecutivos diarios y comparativas de ventas",
-          "Sugerencias contextuales de respuesta automática para clientes en espera",
-        ],
-        rutasHabilitadas: ["/asistente", "/asistente/config"],
-        rolesRequeridos: "assistant.use",
-      },
-    },
-    {
-      id: "whatsapp",
-      nombre: "WhatsApp Business",
-      descripcion:
-        def.id === "pedidos"
-          ? "Bandeja omnicanal y notificaciones automáticas de pedidos a clientes."
-          : "Atención de consultas de catálogo y disponibilidad vía WhatsApp.",
-      logo: <WhatsAppIntegrationLogo />,
-      activo: whatsappActivo,
-      onToggle: () => organizacionStore.toggleConector(def.id, "whatsapp"),
-      rutaConfig: def.id === "pedidos" ? "/conversaciones/config" : undefined,
-      detalles: {
-        categoria: "Plugin / Canal de Mensajería",
-        beneficios: [
-          "Envío de plantillas automáticas de estado al avanzar pedidos (confirmado, en camino, listo)",
-          "Bandeja unificada para que el equipo atienda mensajes de WhatsApp",
-          "Recepción de pedidos asistida por chat y bot de atención",
-        ],
-        rutasHabilitadas: ["/conversaciones", "/conversaciones/historial", "/conversaciones/config"],
-        rolesRequeridos: "channels.read, channels.respond, channels.manage",
-      },
-    },
-  ];
 
   return (
     <div
@@ -446,24 +397,6 @@ const ModuloMaestroCard = observer(({
         </div>
       </div>
 
-      {/* ── 2. SUBSECCIÓN DE INTEGRACIONES ── */}
-      <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <h4 className="mb-3 text-sm font-semibold text-ink-title dark:text-white">
-          Integraciones
-        </h4>
-
-        {/* Tarjetas de integración */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {integraciones.map((it) => (
-            <SubIntegrationCard
-              key={it.id}
-              item={it}
-              parentActivo={esActivo}
-              onOpenDetails={onOpenIntegrationDetails}
-            />
-          ))}
-        </div>
-      </div>
     </div>
   );
 });

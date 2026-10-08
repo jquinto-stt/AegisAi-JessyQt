@@ -422,7 +422,7 @@ const SidebarContent = observer(() => {
               <ul className="flex flex-col gap-1">
                 <MenuItem
                   icon={<Cog6ToothIcon className="size-5" />}
-                  name="Configuración"
+                  name="Ajustes Generales"
                   path="/configuracion"
                   isActive={esRutaConfiguracion}
                 />

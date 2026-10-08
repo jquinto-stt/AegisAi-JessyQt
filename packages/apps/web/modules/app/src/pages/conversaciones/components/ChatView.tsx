@@ -2,10 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { Avatar } from "@/elements/ui/avatar";
 import { Badge } from "@/elements/ui/badge";
-import { Dropdown, DropdownItem } from "@/elements/ui/dropdown";
 import { Modal } from "@/elements/ui/modal";
-import { MoreDotIcon, EyeIcon, ArrowRightIcon, AiIcon } from "@/icons";
-import { conversacionesStore, etiquetaEstado, ETIQUETA_RESOLVER } from "@/stores/conversaciones.store";
+import { EyeIcon, ArrowRightIcon, AiIcon } from "@/icons";
+import { conversacionesStore, etiquetaEstado } from "@/stores/conversaciones.store";
 import { pedidosStore } from "@/stores/pedidos.store";
 import { formatoMoneda } from "@/utils";
 import {
@@ -43,17 +42,20 @@ interface ChatViewProps {
    * arquitectura de información que hay que evitar.
    */
   sinCabecera?: boolean;
+  /** Vista activa controlada desde el exterior (ej. desde el panel lateral de contacto). */
+  vista?: VistaChat;
+  /** Callback para sincronizar cambios de vista activa. */
+  onCambiarVista?: (vista: VistaChat) => void;
 }
 
 /**
  * Vista activa del panel del chat.
  *
  * `"conversacion"` es el hilo de mensajes —la vista por defecto y la única que
- * existe siempre— y cualquier otro valor es el id de un módulo conectado al
- * asistente. Se declara como unión sobre `ModuloIntegrable` y no como `string`
- * para que añadir un módulo al catálogo siga siendo un cambio tipado.
+ * existe siempre—, `"pedidos"` es el historial comercial del contacto, y cualquier
+ * otro valor es el id de un módulo conectado al asistente.
  */
-type VistaChat = "conversacion" | ModuloIntegrable;
+export type VistaChat = "conversacion" | "pedidos" | ModuloIntegrable;
 
 export const ChatView = observer(({
   convId,
@@ -62,12 +64,14 @@ export const ChatView = observer(({
   onToggleBandeja,
   bandejaExpandida = true,
   sinCabecera = false,
+  vista: vistaProp,
+  onCambiarVista: onCambiarVistaProp,
 }: ChatViewProps) => {
-  const [menuOpen, setMenuOpen] = useState(false);
 
-  // Vista activa del panel del chat: la conversación, o el contexto de uno de
-  // los módulos conectados al asistente.
-  const [vista, setVista] = useState<VistaChat>("conversacion");
+  // Vista activa del panel del chat: la conversación, el historial de pedidos, o el contexto de un módulo conectado.
+  const [vistaLocal, setVistaLocal] = useState<VistaChat>("conversacion");
+  const vistaActual = vistaProp ?? vistaLocal;
+  const setVista = onCambiarVistaProp ?? setVistaLocal;
 
   // Paginación y control de scroll
   const [limiteMensajes, setLimiteMensajes] = useState(25);
@@ -102,33 +106,20 @@ export const ChatView = observer(({
   };
 
   // ── Pestañas de contexto ─────────────────────────────────────────────────
-  //
-  // Cada módulo CONECTADO al asistente (IA → Módulos integrados) aporta una
-  // pestaña que muestra lo que ese módulo sabe de ESTE contacto. Son dos
-  // condiciones distintas y hacen falta las dos:
-  //
-  //   1. El asistente está conectado al módulo. Lo decide el administrador en
-  //      `/asistente/config`; aquí solo se LEE. El chat no configura nada.
-  //   2. El rol puede leer ese módulo. Sin esto, la pestaña enseñaría el
-  //      contexto de un módulo que el operador no alcanza — una fuga de alcance.
-  //
-  // El filtro sale de `modulosConContexto`, que ya resuelve el catálogo y la
-  // disponibilidad. Aquí no se pregunta «¿es Pedidos?» en ningún sitio.
   const modulosContexto = integracionesStore.modulosConContexto.filter((m) =>
     puede(m.capacidad),
   );
 
-  // Si la pestaña activa deja de existir —el administrador desconectó el módulo
-  // mientras el operador tenía el chat abierto— se vuelve a la conversación. Se
-  // DERIVA en el render en vez de corregirse con un efecto: un efecto daría un
-  // render de más y, durante ese frame, una pestaña fantasma ya inexistente.
-  const vistaActiva: VistaChat = modulosContexto.some((m) => m.id === vista)
-    ? vista
-    : "conversacion";
+  // Vista activa derivada: "conversacion" y "pedidos" son de primera clase siempre válidas.
+  const vistaActiva: VistaChat =
+    vistaActual === "conversacion" || vistaActual === "pedidos"
+      ? vistaActual
+      : modulosContexto.some((m) => m.id === vistaActual)
+        ? vistaActual
+        : "conversacion";
 
-  // Entrada del catálogo del módulo activo, para poder rotular su panel. Es la
-  // misma lista que pinta las pestañas, así que la etiqueta no puede divergir.
   const moduloActivo = modulosContexto.find((m) => m.id === vistaActiva) ?? null;
+  const pedidosContacto = conv ? pedidosStore.porTelefono(conv.contacto.telefono) : [];
 
   if (!conv) {
     return (
@@ -145,7 +136,7 @@ export const ChatView = observer(({
           cabecera con la identidad del cliente y el nº de pedido. */}
       {/* ── Cabecera del Chat ── */}
       {!sinCabecera && (
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#ECECEC] bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7 font-sans">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3.5 dark:border-gray-800 dark:bg-transparent sm:px-6 sm:py-4 xl:px-7 font-sans">
         <div className="flex items-center gap-3">
           {onToggleBandeja && (
             <button
@@ -155,8 +146,8 @@ export const ChatView = observer(({
               aria-label={bandejaExpandida ? "Colapsar chats" : "Mostrar lista de chats"}
               className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
                 !bandejaExpandida
-                  ? "border-[#190088]/30 bg-[#190088]/10 text-[#190088] shadow-theme-xs dark:border-[#97D6DF]/20 dark:bg-[#FF3F1A]/10 dark:text-[#97D6DF]"
-                  : "border-[#ECECEC] bg-white text-[#212121]/70 hover:border-[#190088]/40 hover:bg-[#ECECEC]/40 hover:text-[#190088] dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  ? "border-brand-500/30 bg-brand-50 text-brand-600 shadow-theme-xs dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
               }`}
             >
               <svg
@@ -187,16 +178,16 @@ export const ChatView = observer(({
             status={statusDe(conv.estado)}
           />
           <div>
-            <h4 className="text-[16px] font-bold text-[#190088] dark:text-white/90">
+            <h4 className="text-sm font-semibold text-gray-800 dark:text-white/90">
               {conv.contacto.nombre}
             </h4>
-            <span className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
               {conv.contacto.telefono}
             </span>
           </div>
         </div>
 
-        {/* Acciones superiores: Handoff, Alternar información y Menú */}
+        {/* Acciones superiores: Handoff y Alternar información de contacto */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Botón Tomar / Devolver */}
           <BotonHandoff convId={conv.id} />
@@ -207,16 +198,15 @@ export const ChatView = observer(({
               type="button"
               onClick={onTogglePanel}
               title={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
-              aria-label={panelExpandido ? "Ocultar información del contacto" : "Ver información del contacto"}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all ${
+              className={`shrink-0 inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-theme-xs transition-all font-sans cursor-pointer ${
                 panelExpandido
-                  ? "border-[#190088]/30 bg-[#190088]/10 text-[#190088] shadow-theme-xs dark:border-[#97D6DF]/20 dark:bg-[#FF3F1A]/10 dark:text-[#97D6DF]"
-                  : "border-[#ECECEC] bg-white text-[#212121]/70 shadow-theme-xs hover:border-[#190088]/40 hover:bg-[#ECECEC]/40 hover:text-[#190088] dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white"
+                  ? "border-brand-500 bg-brand-50 text-brand-600 dark:border-brand-500/40 dark:bg-brand-500/10 dark:text-brand-400"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
               }`}
             >
               <svg
-                width="16"
-                height="16"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -224,49 +214,12 @@ export const ChatView = observer(({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M15 3v18" />
-                {panelExpandido ? (
-                  <path d="M10 9l3 3-3 3" />
-                ) : (
-                  <path d="M12 9l-3 3 3 3" />
-                )}
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
+              <span>INF. Contacto</span>
             </button>
           )}
-
-          {/* Menú de opciones */}
-          <div className="relative inline-block">
-            <button
-              type="button"
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-[#212121]/60 transition-colors hover:bg-[#ECECEC] hover:text-[#190088] dark:hover:bg-white/5 dark:hover:text-white"
-              aria-label="Más opciones"
-            >
-              <MoreDotIcon className="h-5 w-5" />
-            </button>
-            <Dropdown
-              isOpen={menuOpen}
-              onClose={() => setMenuOpen(false)}
-              className="w-48 p-1.5"
-            >
-              {conv.estado !== "cerrada" ? (
-                <DropdownItem
-                  onItemClick={() => {
-                    conversacionesStore.cerrar(conv.id);
-                    setMenuOpen(false);
-                  }}
-                  className="text-[12px] font-normal text-error-600 hover:bg-error-50 dark:text-error-400 dark:hover:bg-error-500/10"
-                >
-                  {ETIQUETA_RESOLVER}
-                </DropdownItem>
-              ) : (
-                <div className="px-3 py-1.5 text-[12px] font-normal text-[#212121]/50">
-                  {etiquetaEstado("cerrada")}
-                </div>
-              )}
-            </Dropdown>
-          </div>
         </div>
       </div>
       )}
@@ -275,7 +228,7 @@ export const ChatView = observer(({
       <div
         role="tablist"
         aria-label="Vistas de la conversación"
-        className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-[#ECECEC] px-3 py-2 sm:px-5 dark:border-gray-800 font-sans"
+        className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-gray-200 px-3 py-2 sm:px-5 dark:border-gray-800 font-sans"
       >
         <TabContexto
           activo={vistaActiva === "conversacion"}
@@ -284,15 +237,37 @@ export const ChatView = observer(({
           Conversación
         </TabContexto>
 
-        {modulosContexto.map((m) => (
-          <TabContexto
-            key={m.id}
-            activo={vistaActiva === m.id}
-            onClick={() => setVista(m.id)}
-          >
-            {m.label}
-          </TabContexto>
-        ))}
+        <TabContexto
+          activo={vistaActiva === "pedidos"}
+          onClick={() => setVista("pedidos")}
+        >
+          <span className="flex items-center gap-1.5">
+            <span>Historial de pedidos</span>
+            {pedidosContacto.length > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                  vistaActiva === "pedidos"
+                    ? "bg-white text-brand-500"
+                    : "bg-gray-200/70 text-gray-700 dark:bg-white/10 dark:text-gray-300"
+                }`}
+              >
+                {pedidosContacto.length}
+              </span>
+            )}
+          </span>
+        </TabContexto>
+
+        {modulosContexto
+          .filter((m) => m.id !== "pedidos")
+          .map((m) => (
+            <TabContexto
+              key={m.id}
+              activo={vistaActiva === m.id}
+              onClick={() => setVista(m.id)}
+            >
+              {m.label}
+            </TabContexto>
+          ))}
       </div>
 
       {vistaActiva === "conversacion" ? (
@@ -302,14 +277,14 @@ export const ChatView = observer(({
         aria-label="Conversación"
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="relative flex-1 space-y-6 overflow-y-auto px-5 py-5 custom-scrollbar sm:px-6 sm:py-6 xl:space-y-7 xl:px-8 xl:py-7 font-sans"
+        className="relative flex-1 space-y-5 overflow-y-auto bg-gray-50/60 dark:bg-gray-900/40 px-5 py-5 custom-scrollbar sm:px-6 sm:py-6 xl:space-y-6 xl:px-8 xl:py-7 font-sans"
       >
         {hayMasMensajes && (
           <div className="flex justify-center py-2">
             <button
               type="button"
               onClick={() => setLimiteMensajes((prev) => prev + 25)}
-              className="rounded-full bg-[#ECECEC] border border-[#ECECEC] px-4 py-1.5 text-[12px] font-bold text-[#190088] shadow-xs hover:bg-[#EFE6D3] transition-colors dark:bg-[#FF3F1A]/10 dark:border-[#97D6DF]/20 dark:text-[#97D6DF]"
+              className="rounded-full bg-white border border-gray-200 px-4 py-1.5 text-xs font-semibold text-gray-700 shadow-xs hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
             >
               ↑ Cargar {items.length - limiteMensajes} mensajes anteriores
             </button>
@@ -318,7 +293,7 @@ export const ChatView = observer(({
 
         {items.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="rounded-full bg-[#ECECEC] px-4 py-2 text-center text-[12px] font-normal text-[#212121]/60 dark:bg-white/5 dark:text-gray-500">
+            <p className="rounded-full bg-gray-200/70 px-4 py-1.5 text-center text-xs font-normal text-gray-500 dark:bg-white/10 dark:text-gray-400">
               Esta conversación aún no tiene mensajes.
             </p>
           </div>
@@ -331,7 +306,7 @@ export const ChatView = observer(({
                   key={item.data.id}
                   className="animate-entrada-lista my-3 flex justify-center"
                 >
-                  <span className="rounded-full bg-[#ECECEC]/90 px-3.5 py-1 text-center text-[12px] font-normal text-[#212121]/70 dark:bg-white/[0.05] dark:text-gray-400">
+                  <span className="rounded-full bg-gray-200/70 px-3 py-1 text-center text-xs font-normal text-gray-500 dark:bg-white/10 dark:text-gray-400">
                     • {item.data.texto}
                   </span>
                 </div>
@@ -342,7 +317,7 @@ export const ChatView = observer(({
             const esCliente = m.autor === "cliente";
             const esBot = m.autor === "bot";
 
-            // ── 1. CLIENTE: IZQUIERDA con Avatar y burbuja Gris Claro (#ECECEC) ──
+            // ── 1. CLIENTE: IZQUIERDA con Avatar y burbuja Blanca / TailAdmin ──
             if (esCliente) {
               return (
                 <div key={m.id} className="animate-entrada-lista flex items-start gap-3 sm:gap-3.5">
@@ -354,14 +329,13 @@ export const ChatView = observer(({
                     />
                   </div>
                   <div className="flex flex-col items-start max-w-[85%] sm:max-w-lg lg:max-w-xl">
-                    <div className="w-fit max-w-full rounded-2xl rounded-tl-sm bg-[#ECECEC] px-4 py-3 text-[14px] sm:text-[16px] leading-relaxed text-[#212121] shadow-theme-xs dark:bg-white/[0.07] dark:text-white/90">
-                      <p className="mb-1 text-[12px] font-bold text-[#190088] dark:text-[#97D6DF]">
+                    <div className="w-fit max-w-full rounded-2xl rounded-tl-sm bg-white border border-gray-200/80 px-4 py-3 text-sm leading-relaxed text-gray-800 shadow-xs dark:border-gray-800 dark:bg-gray-800 dark:text-white/90">
+                      <p className="mb-1 text-xs font-semibold text-brand-500 dark:text-brand-400">
                         {conv.contacto.nombre}
                       </p>
                       <TextoMensajeFormateado texto={m.contenido.texto} />
                     </div>
-                    <div className="mt-1 flex items-center gap-1.5 pl-1 text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
-                      <EyeIcon className="h-3.5 w-3.5" />
+                    <div className="mt-1 flex items-center gap-1.5 pl-1 text-[11px] font-normal text-gray-400 dark:text-gray-500">
                       <span>{horaDe(m.timestamp)}</span>
                     </div>
                   </div>
@@ -369,7 +343,7 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja Cyan NECTO (#97D6DF/15) + Inspección IA + Pedido Inline ──
+            // ── 2. BOT CON ATENCIÓN INTELIGENTE: Avatar Robot + Burbuja TailAdmin ──
             if (esBot) {
               const traza = getBotTrazabilidad(m, conv.estado);
               const puedeIrModulo =
@@ -386,22 +360,22 @@ export const ChatView = observer(({
                   <BotAvatar />
 
                   <div className="flex flex-col items-start w-fit max-w-[88%] sm:max-w-xl lg:max-w-2xl min-w-0">
-                    {/* Burbuja principal del bot: fondo Cyan NECTO (#97D6DF/15) adaptable */}
-                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tl-sm border border-[#97D6DF]/60 bg-[#97D6DF]/15 px-4 py-3 text-[14px] sm:text-[16px] leading-relaxed text-[#212121] shadow-theme-xs break-words [overflow-wrap:anywhere] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                    {/* Burbuja principal del bot: adaptable TailAdmin */}
+                    <div className="w-fit min-w-0 max-w-full rounded-2xl rounded-tl-sm border border-gray-200 bg-white px-4 py-3 text-sm leading-relaxed text-gray-800 shadow-xs break-words [overflow-wrap:anywhere] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                       {/* Cabecera sutil: Identidad IA + Botón discreto de trazabilidad on-demand */}
-                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[#97D6DF]/40 pb-1.5 dark:border-gray-700">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-gray-100 pb-1.5 dark:border-gray-700">
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[12px] font-bold text-[#190088] dark:text-[#97D6DF]">
+                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                             {traza.nombreBot}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-[#97D6DF] px-2 py-0.5 text-[12px] font-bold text-[#190088] dark:bg-[#97D6DF]/30 dark:text-[#97D6DF]">
+                          <span className="inline-flex items-center rounded-full bg-brand-50 border border-brand-200/80 px-2 py-0.5 text-[10px] font-bold text-brand-600 dark:bg-brand-500/10 dark:border-brand-500/20 dark:text-brand-400">
                             IA
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => setTrazaSeleccionada({ mensaje: m, traza })}
-                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-normal text-[#212121]/70 transition-colors hover:bg-white/80 hover:text-[#190088] dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
                           title="Inspeccionar trazabilidad técnica IA"
                         >
                           <AiIcon className="h-3 w-3" />
@@ -414,10 +388,10 @@ export const ChatView = observer(({
 
                       {/* Tarjeta interactiva de pedido asociado si existe */}
                       {pedidoId && (
-                        <div className="mt-3 w-full rounded-xl border border-[#ECECEC] bg-white/95 p-3 shadow-xs dark:border-gray-700 dark:bg-gray-900/80">
+                        <div className="mt-3 w-full rounded-xl border border-gray-200 bg-white p-3 shadow-xs dark:border-gray-700 dark:bg-gray-900/80">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[14px] font-bold tabular-nums text-[#190088] dark:text-white">
+                              <span className="text-sm font-semibold tabular-nums text-gray-800 dark:text-white">
                                 {pedidoAsociado ? pedidoAsociado.numero : `#${pedidoId}`}
                               </span>
                               {pedidoAsociado && (
@@ -440,14 +414,14 @@ export const ChatView = observer(({
                               )}
                             </div>
                             {pedidoAsociado && (
-                              <span className="text-[12px] font-bold tabular-nums text-[#212121] dark:text-white">
+                              <span className="text-xs font-semibold tabular-nums text-gray-800 dark:text-white">
                                 {formatoMoneda(pedidosStore.totalPedido(pedidoAsociado))}
                               </span>
                             )}
                           </div>
 
-                          <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-[#ECECEC] pt-2 dark:border-gray-800/60">
-                            <span className="text-[12px] font-normal text-[#212121]/70 dark:text-gray-400">
+                          <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-gray-100 pt-2 dark:border-gray-700/60">
+                            <span className="text-xs font-normal text-gray-500 dark:text-gray-400">
                               {pedidoAsociado?.items && pedidoAsociado.items.length > 0
                                 ? `${pedidoAsociado.items.length} ${pedidoAsociado.items.length === 1 ? "artículo" : "artículos"}`
                                 : "Detalle del pedido"}
@@ -455,7 +429,7 @@ export const ChatView = observer(({
                             <button
                               type="button"
                               onClick={() => setVista("pedidos")}
-                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[12px] font-bold text-[#190088] transition-colors hover:text-[#FF3F1A] dark:text-[#97D6DF] dark:hover:text-[#FF3F1A]"
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-brand-600 transition-colors hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
                             >
                               <span>Ver pedido</span>
                               <ArrowRightIcon className="h-3 w-3" />
@@ -466,16 +440,16 @@ export const ChatView = observer(({
 
                       {/* Acción contextual si no hay pedido pero sí módulo vinculado */}
                       {!pedidoId && traza.accion && puedeIrModulo && (
-                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#97D6DF]/40 pt-2 dark:border-gray-700">
+                        <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-100 pt-2 dark:border-gray-700">
                           <button
                             type="button"
                             onClick={() => setVista(traza.modulo!)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#97D6DF] bg-white px-2.5 py-1 text-[12px] font-bold text-[#190088] shadow-theme-xs transition-colors hover:bg-[#97D6DF]/20 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-xs font-medium text-brand-600 shadow-theme-xs transition-colors hover:bg-brand-50 dark:border-gray-700 dark:bg-gray-800 dark:text-brand-400 dark:hover:bg-brand-500/10"
                           >
                             <span>{traza.accion}</span>
                             <ArrowRightIcon className="h-3 w-3" />
                           </button>
-                          <span className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-400">
+                          <span className="text-xs font-normal text-gray-400">
                             {horaDe(m.timestamp)}
                           </span>
                         </div>
@@ -483,7 +457,7 @@ export const ChatView = observer(({
 
                       {/* Timestamp del mensaje cuando no hay botón de acción */}
                       {(pedidoId || !traza.accion || !puedeIrModulo) && (
-                        <div className="mt-2 flex items-center justify-end gap-1 text-[12px] font-normal text-[#212121]/50 dark:text-gray-400">
+                        <div className="mt-2 flex items-center justify-end gap-1 text-xs font-normal text-gray-400">
                           <EyeIcon className="h-3.5 w-3.5" />
                           <span>{horaDe(m.timestamp)}</span>
                         </div>
@@ -494,19 +468,19 @@ export const ChatView = observer(({
               );
             }
 
-            // ── 3. ASESOR HUMANO (Equipo): DERECHA con Azul Profundo NECTO (#190088) ──
+            // ── 3. ASESOR HUMANO (Equipo): DERECHA con Naranja NECTO (bg-brand-500) según Repo-prueba-master ──
             return (
               <div key={m.id} className="animate-entrada-lista flex justify-end">
                 <div className="flex flex-col items-end max-w-[85%] sm:max-w-lg lg:max-w-xl">
-                  <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-[#190088] dark:bg-[#190088] px-4 py-3 text-left text-[14px] sm:text-[16px] leading-relaxed text-white shadow-theme-xs">
+                  <div className="w-fit max-w-full rounded-2xl rounded-tr-sm bg-brand-500 dark:bg-brand-500 px-4 py-3 text-left text-sm leading-relaxed text-white shadow-theme-xs">
                     {/* Distintivo claro de Asesor Humano */}
-                    <div className="mb-1 flex items-center justify-end gap-1.5 text-[12px] font-bold text-white/90">
-                      <span className="inline-block h-2 w-2 rounded-full bg-[#97D6DF]" />
-                      <span>Asesor Humano</span>
+                    <div className="mb-1 flex items-center justify-end gap-1.5 text-xs font-medium text-white/90">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-white" />
+                      <span>Asesor</span>
                     </div>
                     <TextoMensajeFormateado texto={m.contenido.texto} className="text-white" />
                   </div>
-                  <p className="mt-1 pr-1 text-right text-[12px] font-normal text-[#212121]/50 dark:text-gray-500">
+                  <p className="mt-1 pr-1 text-right text-[11px] font-normal text-gray-400 dark:text-gray-500">
                     {horaDe(m.timestamp)}
                   </p>
                 </div>
@@ -519,20 +493,20 @@ export const ChatView = observer(({
           <button
             type="button"
             onClick={scrollToBottom}
-            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-[#FF3F1A] px-4 py-1.5 text-[12px] font-bold text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
+            className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-brand-500 hover:bg-brand-600 px-4 py-1.5 text-xs font-medium text-white shadow-lg transition-all hover:scale-105 active:scale-95 z-20"
           >
             ↓ Nuevos mensajes
           </button>
         )}
       </div>
       ) : (
-        /* Cuerpo de la pestaña de un módulo */
+        /* Cuerpo de la pestaña de un módulo o Historial de pedidos */
         <div
           role="tabpanel"
-          aria-label={moduloActivo?.label ?? "Contexto del módulo"}
+          aria-label={vistaActiva === "pedidos" ? "Historial de pedidos" : (moduloActivo?.label ?? "Contexto del módulo")}
           className="min-h-0 flex-1 overflow-hidden font-sans"
         >
-          <ContextoModulo convId={convId} modulo={vistaActiva} />
+          <ContextoModulo convId={convId} modulo={vistaActiva as ModuloIntegrable} />
         </div>
       )}
 
@@ -540,40 +514,40 @@ export const ChatView = observer(({
       <Modal
         isOpen={Boolean(trazaSeleccionada)}
         onClose={() => setTrazaSeleccionada(null)}
-        className="max-w-md p-6 font-sans text-[#212121]"
+        className="max-w-md p-6 font-sans text-gray-800 dark:text-white/90"
       >
         {trazaSeleccionada && (
           <div>
-            <div className="flex items-center gap-3 border-b border-[#ECECEC] pb-3.5 dark:border-gray-800">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#97D6DF]/20 text-[#190088] dark:bg-[#97D6DF]/30 dark:text-[#97D6DF]">
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-3.5 dark:border-gray-800">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
                 <AiIcon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-[16px] font-bold text-[#190088] dark:text-white">
+                <h3 className="text-base font-semibold text-gray-800 dark:text-white">
                   Trazabilidad de Inteligencia Artificial
                 </h3>
-                <p className="text-[12px] font-normal text-[#212121]/60 dark:text-gray-400">
+                <p className="text-xs font-normal text-gray-500 dark:text-gray-400">
                   {trazaSeleccionada.traza.nombreBot} · {horaDe(trazaSeleccionada.mensaje.timestamp)}
                 </p>
               </div>
             </div>
 
-            <div className="mt-4 space-y-3.5 text-[12px]">
+            <div className="mt-4 space-y-3.5 text-xs">
               <div>
-                <span className="font-bold text-[#190088] dark:text-gray-300">
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
                   Flujo de ejecución e intención
                 </span>
-                <p className="mt-1.5 rounded-lg border border-[#97D6DF]/40 bg-[#97D6DF]/10 p-2.5 font-normal leading-relaxed text-[#212121] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                <p className="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 p-2.5 font-normal leading-relaxed text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                   {trazaSeleccionada.traza.flujo}
                 </p>
               </div>
 
               <div className="flex items-center justify-between py-1">
-                <span className="font-normal text-[#212121]/70 dark:text-gray-400">
+                <span className="font-normal text-gray-500 dark:text-gray-400">
                   Módulo de contexto
                 </span>
                 <span
-                  className="inline-flex items-center rounded-md border border-[#97D6DF]/40 bg-[#97D6DF]/20 px-2 py-0.5 text-[12px] font-bold text-[#190088]"
+                  className="inline-flex items-center rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-600 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400"
                 >
                   {trazaSeleccionada.traza.tag}
                 </span>
@@ -581,10 +555,10 @@ export const ChatView = observer(({
 
               {trazaSeleccionada.traza.accion && (
                 <div className="flex items-center justify-between py-1">
-                  <span className="font-normal text-[#212121]/70 dark:text-gray-400">
+                  <span className="font-normal text-gray-500 dark:text-gray-400">
                     Acción sugerida
                   </span>
-                  <span className="font-bold text-[#190088] dark:text-[#97D6DF]">
+                  <span className="font-semibold text-brand-600 dark:text-brand-400">
                     {trazaSeleccionada.traza.accion}
                   </span>
                 </div>
@@ -592,17 +566,17 @@ export const ChatView = observer(({
 
               {trazaSeleccionada.mensaje.payload?.pedidoId && (
                 <div className="flex items-center justify-between py-1">
-                  <span className="font-normal text-[#212121]/70 dark:text-gray-400">
+                  <span className="font-normal text-gray-500 dark:text-gray-400">
                     Pedido vinculado
                   </span>
-                  <span className="font-bold text-[#190088] dark:text-white">
+                  <span className="font-semibold text-gray-800 dark:text-white">
                     #{trazaSeleccionada.mensaje.payload.pedidoId}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#ECECEC] pt-3 dark:border-gray-800">
+            <div className="mt-6 flex items-center justify-end gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
               {trazaSeleccionada.traza.modulo &&
                 modulosContexto.some((mod) => mod.id === trazaSeleccionada.traza.modulo) && (
                   <button
@@ -612,7 +586,7 @@ export const ChatView = observer(({
                       setTrazaSeleccionada(null);
                       setVista(mod);
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#190088] px-3.5 py-1.5 text-[12px] font-bold text-white shadow-theme-xs transition-colors hover:bg-[#190088]/90"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-medium text-white shadow-theme-xs transition-colors hover:bg-brand-600"
                   >
                     <span>Abrir módulo {trazaSeleccionada.traza.modulo}</span>
                     <ArrowRightIcon className="h-3 w-3" />
@@ -621,7 +595,7 @@ export const ChatView = observer(({
               <button
                 type="button"
                 onClick={() => setTrazaSeleccionada(null)}
-                className="rounded-lg border border-[#ECECEC] px-3.5 py-1.5 text-[12px] font-normal text-[#212121] hover:bg-[#ECECEC]/50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-lg border border-gray-200 px-3.5 py-1.5 text-xs font-normal text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Cerrar
               </button>
@@ -656,10 +630,10 @@ function TabContexto({
       aria-selected={activo}
       onClick={onClick}
       className={
-        "shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-[12px] transition-colors " +
+        "shrink-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition-colors " +
         (activo
-          ? "bg-[#FF3F1A] text-white font-bold shadow-theme-xs"
-          : "text-[#212121]/70 hover:text-[#190088] hover:bg-[#ECECEC]/60 font-normal dark:text-gray-400 dark:hover:text-white")
+          ? "bg-brand-500 text-white font-medium shadow-theme-xs"
+          : "text-gray-500 hover:text-gray-800 hover:bg-gray-100 font-normal dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5")
       }
     >
       {children}
@@ -684,7 +658,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Verificación de menú + [Catálogo de pedidos] + Validación operativa",
       tag: "+Pedidos",
       tagClass:
-        "bg-[#97D6DF]/20 text-[#190088] border-[#97D6DF]/40",
+        "bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20",
       modulo: "pedidos",
       accion: m.payload?.pedidoId ? `Ver pedido #${m.payload.pedidoId}` : "Ver catálogo de pedidos",
     };
@@ -701,7 +675,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
       flujo: "Derivación asistida + [Mesa de ayuda] + Solicitud de handoff",
       tag: "+Handoff",
       tagClass:
-        "bg-[#FF3F1A]/10 text-[#FF3F1A] border-[#FF3F1A]/30",
+        "bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/10 dark:text-brand-400 dark:border-brand-500/20",
     };
   }
 
@@ -711,7 +685,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
     flujo: "Atención inteligente + [Base de conocimiento] + Respuesta conversacional",
     tag: "+FAQ",
     tagClass:
-      "bg-[#97D6DF]/20 text-[#190088] border-[#97D6DF]/40",
+      "bg-gray-100 text-gray-700 border-gray-200 dark:bg-white/10 dark:text-gray-300 dark:border-gray-700",
   };
 }
 
@@ -721,7 +695,7 @@ function getBotTrazabilidad(m: Mensaje, estadoConv?: string): BotTrazabilidad {
 function BotAvatar() {
   return (
     <div className="relative h-9 w-9 shrink-0 sm:h-10 sm:w-10">
-      <div className="flex h-full w-full items-center justify-center rounded-full bg-[#97D6DF]/25 text-[#190088] shadow-theme-xs ring-1 ring-[#97D6DF]/60 dark:bg-[#97D6DF]/20 dark:text-[#97D6DF]">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100 text-gray-700 shadow-theme-xs ring-1 ring-gray-200 dark:bg-white/10 dark:text-gray-300 dark:ring-gray-700">
         <svg
           width="20"
           height="20"
@@ -740,7 +714,7 @@ function BotAvatar() {
         </svg>
       </div>
       <div
-        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#190088] text-white shadow-theme-xs ring-2 ring-white dark:ring-gray-900"
+        className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-white shadow-theme-xs ring-2 ring-white dark:ring-gray-900"
         title="Agente IA de atención"
       >
         <svg

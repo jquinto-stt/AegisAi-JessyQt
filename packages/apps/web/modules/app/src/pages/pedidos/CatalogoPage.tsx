@@ -707,7 +707,7 @@ export const CatalogoPage: React.FC = observer(() => {
             <button
               type="button"
               onClick={() => setAlerta(null)}
-              className="text-xs font-semibold underline hover:opacity-80 ml-3"
+              className="text-xs font-semibold underline hover:opacity-80 ml-3 cursor-pointer"
             >
               Cerrar
             </button>
@@ -716,12 +716,12 @@ export const CatalogoPage: React.FC = observer(() => {
 
         {/* ── Modal de Carga de Archivo (Upload File) ── */}
         {mostrarImportador && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-900 w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-200 dark:border-gray-800 space-y-5 max-h-[92vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-5xl xl:max-w-6xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-gray-200 dark:border-gray-800 space-y-6 max-h-[92vh] overflow-y-auto">
               {/* Header del modal */}
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-[#190088] dark:text-white">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#190088] dark:text-white">
                     Importar productos
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -743,169 +743,277 @@ export const CatalogoPage: React.FC = observer(() => {
                 <button
                   type="button"
                   onClick={() => setMostrarImportador(false)}
-                  className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="p-2 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                   title="Cerrar"
                 >
                   <CloseLineIcon className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Pestañas: Archivo vs Texto */}
-              <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setMetodoCarga('archivo')}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                    metodoCarga === 'archivo'
-                      ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
-                      : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
-                  }`}
-                >
-                  Subir Archivo (PDF, Excel o Foto)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMetodoCarga('texto')}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                    metodoCarga === 'texto'
-                      ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
-                      : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
-                  }`}
-                >
-                  Escribir o pegar texto
-                </button>
-              </div>
+              {/* Grid 2 columnas: Izquierda (Upload form) | Derecha (Guía & Reglas) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* ── Columna Izquierda: Carga de archivo y texto (7 cols) ── */}
+                <div className="lg:col-span-7 space-y-4">
+                  {/* Pestañas: Archivo vs Texto */}
+                  <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setMetodoCarga('archivo')}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        metodoCarga === 'archivo'
+                          ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Subir Archivo (PDF, Excel o Foto)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMetodoCarga('texto')}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                        metodoCarga === 'texto'
+                          ? 'bg-white dark:bg-gray-700 text-[#190088] dark:text-white shadow-xs'
+                          : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+                      }`}
+                    >
+                      Escribir o pegar texto
+                    </button>
+                  </div>
 
-              {metodoCarga === 'archivo' ? (
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragActivo(true); }}
-                  onDragLeave={(e) => { e.preventDefault(); setDragActivo(false); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragActivo(false);
-                    if (e.dataTransfer.files?.[0]) validarArchivo(e.dataTransfer.files[0]);
-                  }}
-                  className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-10 text-center transition-all ${
-                    dragActivo
-                      ? 'border-[#FF3F1A] bg-[#FF3F1A]/5'
-                      : 'border-[#97D6DF] dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 hover:border-[#FF3F1A]/70'
-                  }`}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg"
-                    onChange={(e) => e.target.files?.[0] && validarArchivo(e.target.files[0])}
-                    className="hidden"
-                  />
+                  {metodoCarga === 'archivo' ? (
+                    <div
+                      onDragOver={(e) => { e.preventDefault(); setDragActivo(true); }}
+                      onDragLeave={(e) => { e.preventDefault(); setDragActivo(false); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragActivo(false);
+                        if (e.dataTransfer.files?.[0]) validarArchivo(e.dataTransfer.files[0]);
+                      }}
+                      className={`relative border-2 border-dashed rounded-3xl p-6 sm:p-8 text-center transition-all ${
+                        dragActivo
+                          ? 'border-[#FF3F1A] bg-[#FF3F1A]/5'
+                          : 'border-[#97D6DF] dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 hover:border-[#FF3F1A]/70'
+                      }`}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.xlsx,.xls,.csv,.png,.jpg,.jpeg"
+                        onChange={(e) => e.target.files?.[0] && validarArchivo(e.target.files[0])}
+                        className="hidden"
+                      />
 
-                  <div className="flex flex-col items-center">
-                    {/* Icono central de capas / upload en tono coral / fucsia como en la referencia */}
-                    <div className="w-14 h-14 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shadow-xs mb-3">
-                      <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
-                        <polyline points="2 17 12 22 22 17" />
-                        <polyline points="2 12 12 17 22 12" />
-                      </svg>
+                      <div className="flex flex-col items-center">
+                        {/* Icono central de capas / upload */}
+                        <div className="w-14 h-14 rounded-2xl bg-[#FF3F1A]/10 text-[#FF3F1A] flex items-center justify-center shadow-xs mb-3">
+                          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                            <polyline points="2 17 12 22 22 17" />
+                            <polyline points="2 12 12 17 22 12" />
+                          </svg>
+                        </div>
+
+                        {archivo ? (
+                          <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs max-w-md w-full">
+                            <div className="p-2 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A]">
+                              <FileIcon className="w-5 h-5" />
+                            </div>
+                            <div className="text-left flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{archivo.name}</p>
+                              <p className="text-xs text-gray-500">{(archivo.size / 1024).toFixed(1)} KB — Listo para procesar</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setArchivo(null); }}
+                              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600"
+                              title="Quitar archivo"
+                            >
+                              <CloseLineIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Arrastra y suelta tu archivo aquí, o
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="mt-3 px-6 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-2xs transition-all hover:scale-[1.02] cursor-pointer"
+                            >
+                              Examinar archivos
+                            </button>
+                          </>
+                        )}
+
+                        {/* Bullet points de especificaciones */}
+                        <div className="mt-5 pt-4 border-t border-gray-200/80 dark:border-gray-700/80 w-full text-left text-xs text-gray-500 dark:text-gray-400 space-y-1.5 max-w-md mx-auto">
+                          <p className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                            Puedes subir archivos PDF, Excel (.xlsx, .xls), CSV o imágenes (PNG, JPG)
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                            Tamaño máximo de archivo: 10 MB
+                          </p>
+                          <p className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0" />
+                            Extracción automática de productos, precios y fotos temáticas sugeridas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <textarea
+                        value={textoManual}
+                        onChange={(e) => setTextoManual(e.target.value)}
+                        placeholder="Ejemplo:&#10;Producto A - Descripción breve del producto - $28.000&#10;Producto B - Variante de producto - $15.000&#10;Producto C - Con empaque ecológico - $8.500"
+                        className="w-full h-44 p-4 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]"
+                      />
+                      <p className="text-xs text-gray-400">
+                        Escribe un producto por línea con su precio y descripción.
+                      </p>
+                    </div>
+                  )}
+
+                  {errorCarga && (
+                    <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl text-xs text-red-700 dark:text-red-400 flex items-center gap-2">
+                      <AlertIcon className="w-4 h-4 shrink-0" />
+                      <span>{errorCarga}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Columna Derecha: Guía de Pasos y Reglas (5 cols) ── */}
+                <div className="lg:col-span-5 space-y-4">
+                  {/* Tarjeta 1: ¿Cómo funciona? / Pasos */}
+                  <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/20 p-4 sm:p-5 space-y-3.5">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <InfoIcon className="w-4 h-4 text-[#190088] dark:text-[#97D6DF]" />
+                        ¿Cómo funciona la importación?
+                      </h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Sigue este proceso de 4 pasos para subir tu catálogo:
+                      </p>
                     </div>
 
-                    {archivo ? (
-                      <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xs max-w-md w-full">
-                        <div className="p-2 rounded-lg bg-[#FF3F1A]/10 text-[#FF3F1A]">
-                          <FileIcon className="w-5 h-5" />
-                        </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{archivo.name}</p>
-                          <p className="text-xs text-gray-500">{(archivo.size / 1024).toFixed(1)} KB — Listo para procesar</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setArchivo(null); }}
-                          className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600"
-                          title="Quitar archivo"
-                        >
-                          <CloseLineIcon className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Arrastra y suelta tu archivo aquí, o
+                    <div className="space-y-2.5 text-xs text-gray-600 dark:text-gray-300">
+                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+                        <span className="w-5 h-5 rounded-md bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-white font-bold flex items-center justify-center text-[11px] shrink-0">
+                          1
+                        </span>
+                        <p className="leading-snug">
+                          <strong className="text-gray-900 dark:text-white">Descarga la plantilla:</strong> Descarga el archivo base (.csv) para ver las columnas requeridas.
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="mt-3 px-6 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-800 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-2xs transition-all hover:scale-[1.02]"
-                        >
-                          Examinar archivos
-                        </button>
-                      </>
-                    )}
+                      </div>
 
-                    {/* Bullet points de especificaciones idénticos al estilo de la referencia */}
-                    <div className="mt-6 pt-5 border-t border-gray-200/80 dark:border-gray-700/80 w-full text-left text-xs text-gray-500 dark:text-gray-400 space-y-1.5 max-w-md mx-auto">
-                      <p className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                        Puedes subir archivos PDF, Excel (.xlsx, .xls), CSV o imágenes (PNG, JPG)
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                        Tamaño máximo de archivo: 10 MB
-                      </p>
-                      <p className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                        Extracción automática de productos, precios y fotos temáticas sugeridas
-                      </p>
+                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+                        <span className="w-5 h-5 rounded-md bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-white font-bold flex items-center justify-center text-[11px] shrink-0">
+                          2
+                        </span>
+                        <p className="leading-snug">
+                          <strong className="text-gray-900 dark:text-white">Completa los datos:</strong> Llena los nombres, precios numéricos y categorías de tus productos.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+                        <span className="w-5 h-5 rounded-md bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-white font-bold flex items-center justify-center text-[11px] shrink-0">
+                          3
+                        </span>
+                        <p className="leading-snug">
+                          <strong className="text-gray-900 dark:text-white">Sube tu archivo:</strong> Arrastra tu Excel, CSV, PDF o foto del menú al recuadro y presiona <em>Cargar Productos</em>.
+                        </p>
+                      </div>
+
+                      <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 shadow-2xs">
+                        <span className="w-5 h-5 rounded-md bg-[#190088]/10 text-[#190088] dark:bg-white/10 dark:text-white font-bold flex items-center justify-center text-[11px] shrink-0">
+                          4
+                        </span>
+                        <p className="leading-snug">
+                          <strong className="text-gray-900 dark:text-white">Revisa y publica:</strong> El sistema extraerá los productos y podrás editarlos o asignarles fotos antes de guardar.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tarjeta 2: Reglas clave de formato */}
+                  <div className="rounded-2xl border border-gray-200/90 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/20 p-4 sm:p-5 space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                      Reglas y recomendaciones
+                    </h4>
+
+                    <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A] mt-1.5 shrink-0" />
+                        <p>
+                          <strong className="text-gray-800 dark:text-gray-200">Precios numéricos:</strong> Escribe valores enteros como <code>25000</code> o <code>25.000</code> sin el signo de pesos <code>$</code>.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A] mt-1.5 shrink-0" />
+                        <p>
+                          <strong className="text-gray-800 dark:text-gray-200">Columnas reconocidas:</strong> <code>Producto</code>, <code>Categoria</code>, <code>Descripcion</code>, <code>Precio COP</code>.
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF3F1A] mt-1.5 shrink-0" />
+                        <p>
+                          <strong className="text-gray-800 dark:text-gray-200">Fotos o PDFs físicos:</strong> Asegúrate de que el texto y los precios tengan buena iluminación y legibilidad.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Botones de descarga y demo como en la referencia */}
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={descargarPlantillaExcel}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-800 dark:text-gray-200 shadow-2xs transition-all cursor-pointer"
+                      >
+                        <DownloadIcon className="w-3.5 h-3.5 text-[#FF3F1A]" />
+                        <span>Descargar plantilla (.csv)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cargarCatalogoEjemplo}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#97D6DF]/20 hover:bg-[#97D6DF]/30 text-xs font-semibold text-[#190088] dark:text-[#97D6DF] transition-all cursor-pointer"
+                      >
+                        <CheckCircleIcon className="w-3.5 h-3.5" />
+                        <span>Cargar demo</span>
+                      </button>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  <textarea
-                    value={textoManual}
-                    onChange={(e) => setTextoManual(e.target.value)}
-                    placeholder="Ejemplo:&#10;Producto A - Descripción breve del producto - $28.000&#10;Producto B - Variante de producto - $15.000&#10;Producto C - Con empaque ecológico - $8.500"
-                    className="w-full h-36 p-4 rounded-2xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-[#FF3F1A] focus:ring-1 focus:ring-[#FF3F1A]"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Escribe un producto por línea con su precio y descripción.
-                  </p>
-                </div>
-              )}
+              </div>
 
-              {errorCarga && (
-                <div className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl text-xs text-red-700 dark:text-red-400 flex items-center gap-2">
-                  <AlertIcon className="w-4 h-4 shrink-0" />
-                  <span>{errorCarga}</span>
-                </div>
-              )}
-
-              {/* Barra de atajos para el usuario */}
-              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+              {/* Barra inferior de acciones */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={descargarPlantillaExcel}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
                   >
                     <DownloadIcon className="w-3.5 h-3.5 text-gray-500" />
-                    Descargar plantilla (.csv)
+                    <span>Descargar plantilla (.csv)</span>
                   </button>
                   <button
                     type="button"
                     onClick={cargarCatalogoEjemplo}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#97D6DF]/20 hover:bg-[#97D6DF]/30 text-xs font-semibold text-[#190088] dark:text-[#97D6DF] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#97D6DF]/20 hover:bg-[#97D6DF]/30 text-xs font-semibold text-[#190088] dark:text-[#97D6DF] transition-colors cursor-pointer"
                   >
                     <CheckCircleIcon className="w-3.5 h-3.5" />
-                    Cargar demo
+                    <span>Cargar demo</span>
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <button
                     type="button"
                     onClick={() => setMostrarImportador(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
@@ -913,7 +1021,7 @@ export const CatalogoPage: React.FC = observer(() => {
                     type="button"
                     onClick={ejecutarImportacion}
                     disabled={procesandoArchivo || (!archivo && !textoManual.trim())}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-xs font-bold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF3F1A] hover:bg-[#FF3F1A]/90 text-white text-xs font-bold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
                   >
                     <FileIcon className="w-4 h-4" />
                     <span>{procesandoArchivo ? (mensajeProgreso || 'Procesando...') : 'Cargar Productos'}</span>
