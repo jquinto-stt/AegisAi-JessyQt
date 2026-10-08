@@ -24,7 +24,6 @@ import {
   InfoIcon,
   ArrowRightIcon,
   PlusIcon,
-  AiIcon,
   ChatIcon,
   PieChartIcon,
   BoxIconLine,
@@ -216,68 +215,6 @@ const SimulacionBanner = observer(() => {
   );
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SECCIÓN TRANSVERSAL SIN CONECTAR — el motivo, no el silencio
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Fila que explica por qué una sección transversal está vacía.
- *
- * Antes, con el conector apagado, la sección **desaparecía entera**: se instalaba
- * Pedidos desde el catálogo, el sidebar perdía «Canales» e «Inteligencia», y nada
- * decía por qué. `instalarModulo()` no enciende conectores a propósito —la app no
- * fabrica una decisión de integración que el usuario no tomó—, pero el efecto
- * visible era un deshabilitado en silencio.
- *
- * Ocultar lo que el rol **no puede ejecutar** sigue siendo correcto, y ese gate
- * está fuera, en las condiciones de cada sección. Lo que no se puede es hacer
- * desaparecer algo que el rol sí puede ejecutar porque falte configuración.
- */
-const SeccionSinConectar = observer(({ titulo, motivo }: { titulo: string; motivo: string }) => {
-  const { isExpanded: showExpanded } = useSidebarContext();
-
-  /**
-   * El motivo se pinta SIEMPRE; el enlace solo si el rol puede ejecutarlo.
-   *
-   * El enlace apunta a `/configuracion?tab=modulos`, que exige `team.manage`.
-   * Antes se pintaba para todo el mundo, así que un rol con `channels.read` y sin
-   * `team.manage` veía «Activarlo», lo pulsaba y aterrizaba en «No tienes acceso
-   * a esta sección» — un control visible que el rol no puede ejecutar, que es
-   * justo lo que el contrato manda **ocultar**. Es el mismo defecto que se retiró
-   * del pie del sidebar, en otra ubicación. Medido con un operador simulado en
-   * `outputs/flujos-config-verify/`.
-   *
-   * La pestaña va explícita porque el destino por defecto de `/configuracion` es
-   * «General»: «Activarlo» significa encender un módulo, y eso vive en la pestaña
-   * de módulos.
-   *
-   * Ocultar el motivo entero sería peor: la sección está vacía y quien la busca
-   * tiene derecho a saber por qué. Se dice la verdad, y se nombra a quien puede
-   * cambiarla en vez de ofrecer un enlace que termina en una negación.
-   */
-  const puedeActivarlo = sessionStore.hasPermission("team.manage");
-
-  return (
-    <div>
-      <MenuSectionHeader title={titulo} />
-      {showExpanded && (
-        <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs leading-relaxed text-gray-500 dark:border-white/10 dark:text-gray-400">
-          {motivo}{" "}
-          {puedeActivarlo ? (
-            <Link
-              to="/configuracion?tab=modulos"
-              className="font-medium text-brand-500 hover:underline dark:text-brand-400"
-            >
-              Activarlo
-            </Link>
-          ) : (
-            <span>Pídele a un administrador que lo active.</span>
-          )}
-        </p>
-      )}
-    </div>
-  );
-});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SIDEBAR CONTENT — Módulos de negocio
@@ -360,16 +297,7 @@ const SidebarContent = observer(() => {
   const esRutaConfiguracion = (path: string) => esRutaConHijas(path);
   const esRutaEquipo = (path: string) => esRutaConHijas(path);
 
-  // Las dos preguntas que decide cada sección transversal, separadas a propósito:
-  // «¿el rol puede?» (permiso) y «¿la organización lo tiene encendido?» (config).
-  const puedeVerCanales = sessionStore.hasPermission("channels.read");
-  const puedeVerAsistente = sessionStore.hasPermission("assistant.use");
-  const canalesConectados = organizacionStore.tieneConectorActivo("whatsapp");
-  const asistenteConectado = organizacionStore.tieneConectorActivo("necto_ia");
-  // Sin ningún módulo activo no hay nada que conectar, así que el motivo sobra:
-  // decir «el canal está desconectado» cuando el problema es que no hay módulo
-  // sería cambiar un silencio por una explicación falsa.
-  const hayModuloActivo = organizacionStore.modulosActivos.length > 0;
+
 
   const [colapsados, setColapsados] = useState<Record<string, boolean>>(() => {
     try {
@@ -401,33 +329,7 @@ const SidebarContent = observer(() => {
       <div className="flex flex-col gap-5">
 
 
-        {/* Inteligencia (Necto Intelligence) — justo debajo de Canales, mismo criterio. */}
-        {puedeVerAsistente && asistenteConectado && (
-          <div>
-            <MenuSectionHeader
-              title="Inteligencia"
-              collapsible
-              isCollapsed={estaColapsado("inteligencia")}
-              onToggle={() => toggleSeccion("inteligencia")}
-            />
-            <div
-              className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                estaColapsado("inteligencia") ? "max-h-0 opacity-0" : "max-h-96 opacity-100"
-              }`}
-            >
-              <ul className="flex flex-col gap-1">
-                <MenuItem icon={<AiIcon />} name="NECTO AI" path="/asistente" isActive={isActive} />
-                <MenuItem icon={<PlugInIcon />} name="Configuración de la IA" path="/asistente/config" isActive={isActive} />
-              </ul>
-            </div>
-          </div>
-        )}
-        {puedeVerAsistente && !asistenteConectado && hayModuloActivo && (
-          <SeccionSinConectar
-            titulo="Inteligencia"
-            motivo="Necto Intelligence está desconectado, así que NECTO AI todavía no aparece."
-          />
-        )}
+
 
         {/* Módulos de negocio — UNA rama por módulo, y ninguna escrita a mano.
             Antes era una rama literal de Pedidos con el título `"Pedidos"` y seis
