@@ -976,10 +976,15 @@ const seed = (): Pedido[] => [
   },
   {
     id: "pd2", numero: "P-002", cliente: "María Fernanda", telefono: "+573002223344", modalidad: "retiro",
-    items: [{ nombre: "Postre del día", cantidad: 1, precio: 8000 }],
+    items: [
+      { nombre: "Hamburguesa Doble Artesanal", cantidad: 2, precio: 26000 },
+      { nombre: "Papas Rústicas Cheddar", cantidad: 1, precio: 12000 },
+      { nombre: "Gaseosa 400ml", cantidad: 2, precio: 5000 },
+      { nombre: "Postre del día (Cheesecake)", cantidad: 1, precio: 8000 }
+    ],
     estado: "listo", origen: "whatsapp", pagado: true,
     metodoPago: "transferencia",
-    createdAt: minutesAgoIso(12), estadoDesde: minutesAgoIso(6),
+    createdAt: minutesAgoIso(14), estadoDesde: minutesAgoIso(6),
     auditoria: [
       {
         id: "aud-pd2-2",
@@ -990,7 +995,7 @@ const seed = (): Pedido[] => [
       },
       {
         id: "aud-pd2-1",
-        fecha: minutesAgoIso(12),
+        fecha: minutesAgoIso(14),
         accion: "Pago confirmado y verificado",
         operadorNombre: "Mateo Vargas",
         operadorCargo: "Operador de ventas",
@@ -1096,6 +1101,67 @@ const seed = (): Pedido[] => [
     },
     costoEnvio: 4000,
     metodoPago: "contra_entrega",
+  },
+  {
+    id: "pd8", numero: "P-008", cliente: "Carolina Herrera", telefono: "+573019998877", modalidad: "retiro",
+    items: [
+      { nombre: "Pizza Familiar Especial", cantidad: 1, precio: 42000 },
+      { nombre: "Gaseosa 1.5L", cantidad: 1, precio: 8000 }
+    ],
+    estado: "listo", origen: "whatsapp", pagado: true,
+    metodoPago: "tarjeta",
+    createdAt: minutesAgoIso(25), estadoDesde: minutesAgoIso(8),
+    auditoria: [
+      {
+        id: "aud-pd8-1",
+        fecha: minutesAgoIso(8),
+        accion: "Avanzado a: Listo para entrega",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+    ],
+  },
+  {
+    id: "pd9", numero: "P-009", cliente: "David Restrepo", telefono: "+573021112233", modalidad: "domicilio",
+    items: [
+      { nombre: "Combo Alitas BBQ", cantidad: 2, precio: 32000 },
+      { nombre: "Porción de Papas Francesa", cantidad: 2, precio: 9000 },
+      { nombre: "Cerveza Artesanal", cantidad: 2, precio: 10000 }
+    ],
+    notas: "Salsa BBQ extra por favor.", estado: "en_preparacion", origen: "operador", pagado: true,
+    createdAt: minutesAgoIso(28), estadoDesde: minutesAgoIso(15),
+    direccionEntrega: {
+      calle: "Circular 4 # 71-45",
+      barrio: "Laureles",
+      referencia: "Edificio Palmeras Apto 302",
+    },
+    costoEnvio: 5000,
+    metodoPago: "transferencia",
+    auditoria: [
+      {
+        id: "aud-pd9-1",
+        fecha: minutesAgoIso(15),
+        accion: "Enviado a cocina para preparación",
+        operadorNombre: "Andrés Molina",
+        operadorCargo: "Jefe de cocina",
+      },
+    ],
+  },
+  {
+    id: "pd10", numero: "P-010", cliente: "Alejandro Vélez", telefono: "+573023334455", modalidad: "domicilio",
+    items: [
+      { nombre: "Hamburguesa Clásica", cantidad: 2, precio: 22000 },
+      { nombre: "Malteada de Arequipe", cantidad: 2, precio: 14000 }
+    ],
+    estado: "confirmado", origen: "whatsapp", pagado: false,
+    createdAt: minutesAgoIso(10), estadoDesde: minutesAgoIso(5),
+    direccionEntrega: {
+      calle: "Carrera 80 # 32-15",
+      barrio: "Belén Rosales",
+    },
+    costoEnvio: 4500,
+    metodoPago: "efectivo",
+    pagaCon: 100000,
   },
 ];
 

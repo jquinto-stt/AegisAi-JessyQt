@@ -33,6 +33,7 @@ export interface PedidoDestacadoCardProps {
  */
 export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCardProps) => {
   const [filtro] = useState<FiltroModalidad>("todas");
+  const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState<string | null>(null);
 
   // Filtrar pedidos activos no terminales
   const enCurso = pedidosStore
@@ -40,8 +41,9 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
     .filter((p) => p.estado !== "cancelado" && p.estado !== "entregado");
 
   // Priorizar el pedido más urgente u operativo:
-  // 1º listos para entrega/despacho, 2º en preparación, 3º nuevos/confirmados
+  // 1º seleccionado por el usuario, 2º listos para entrega/despacho, 3º en preparación, 4º nuevos/confirmados
   const pedidoActivo: Pedido | undefined =
+    (pedidoSeleccionadoId ? enCurso.find((p) => p.id === pedidoSeleccionadoId) : undefined) ||
     enCurso.find((p) => p.estado === "listo") ||
     enCurso.find((p) => p.estado === "en_preparacion") ||
     enCurso[0];
@@ -76,6 +78,44 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
 
         {pedidoActivo ? (
           <>
+            {/* Top selector tabs for multiple active orders */}
+            {enCurso.length > 1 && (
+              <div className="relative z-10 -mt-2 mb-4 pb-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-white/10">
+                <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 shrink-0 mr-1">
+                  En cola ({enCurso.length}):
+                </span>
+                {enCurso.map((p) => {
+                  const esSeleccionado = p.id === pedidoActivo.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPedidoSeleccionadoId(p.id)}
+                      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        esSeleccionado
+                          ? "bg-white text-indigo-950 shadow-md ring-2 ring-indigo-400"
+                          : "bg-white/10 text-slate-200 hover:bg-white/20 hover:text-white"
+                      }`}
+                    >
+                      <span className="font-mono">{p.numero}</span>
+                      <span className="font-medium text-[11px] opacity-90 truncate max-w-[110px]">
+                        {p.cliente}
+                      </span>
+                      <span
+                        className={`size-2 rounded-full ${
+                          p.estado === "listo"
+                            ? "bg-emerald-400"
+                            : p.estado === "en_preparacion"
+                            ? "bg-amber-400"
+                            : "bg-sky-400"
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Top meta: Order number and Badge */}
             <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -97,7 +137,7 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
             </div>
 
             {/* Mid section: Customer info and item breakdown */}
-            <div className="relative z-10 mt-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center flex-1">
+            <div className="relative z-10 mt-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start flex-1">
               {/* Left Info column: Customer & Total Amount */}
               <div className="md:col-span-5 space-y-4">
                 {/* Customer / Repartidor */}
@@ -147,54 +187,52 @@ export const PedidoDestacadoCard = observer(({ onVerDetalle }: PedidoDestacadoCa
                 </div>
               </div>
 
-              {/* Right Box: Food item presentation card */}
-              <div className="md:col-span-7 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex flex-col sm:flex-row items-center gap-4">
-                {/* Item Thumbnail */}
-                <div className="relative w-full sm:w-36 h-36 flex-shrink-0 rounded-xl overflow-hidden shadow-md bg-slate-900 border border-white/10">
-                  <img
-                    alt={itemPrincipal?.nombre || "Producto"}
-                    src={fotoItem}
-                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
-                  />
+              {/* Right Box: Full items list presentation card */}
+              <div className="md:col-span-7 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+                    Detalle del pedido ({pedidoActivo.items.length} {pedidoActivo.items.length === 1 ? "ítem" : "ítems"})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onVerDetalle(pedidoActivo.id)}
+                    className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-white font-medium cursor-pointer"
+                  >
+                    <span>Ver ficha completa</span>
+                    <ChevronDownIcon className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {/* Item info */}
-                <div className="flex-1 text-center sm:text-left space-y-2 min-w-0">
-                  <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-400 shrink-0" />
-                    <h3 className="text-lg md:text-xl font-extrabold text-white leading-snug truncate">
-                      {itemPrincipal
-                        ? `${itemPrincipal.cantidad}× ${itemPrincipal.nombre}`
-                        : "1× Ítem en pedido"}
-                    </h3>
-                  </div>
-
-                  {puedeVerMontos && itemPrincipal?.precio ? (
-                    <p className="text-sm text-indigo-200 font-medium">
-                      Valor unitario:{" "}
-                      <span className="text-white font-semibold font-mono">
-                        {money(itemPrincipal.precio)}
-                      </span>
-                    </p>
-                  ) : null}
-
-                  {pedidoActivo.items.length > 1 && (
-                    <p className="text-xs text-indigo-300 font-medium">
-                      +{pedidoActivo.items.length - 1} producto(s) adicional(es)
-                    </p>
-                  )}
-
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={() => onVerDetalle(pedidoActivo.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold text-white border border-white/15 transition-colors cursor-pointer"
+                {/* Items scrollable list */}
+                <div className="max-h-48 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                  {pedidoActivo.items.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-3 p-2 rounded-xl bg-white/[0.04] border border-white/5 text-sm"
                     >
-                      <span>Más info</span>
-                      <ChevronDownIcon className="w-3.5 h-3.5 text-indigo-300" />
-                    </button>
-                  </div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="flex items-center justify-center size-6 rounded-lg bg-indigo-500/30 text-indigo-200 text-xs font-bold font-mono shrink-0">
+                          {item.cantidad}×
+                        </span>
+                        <span className="font-semibold text-white truncate text-xs md:text-sm">
+                          {item.nombre}
+                        </span>
+                      </div>
+                      {puedeVerMontos && item.precio ? (
+                        <span className="text-xs md:text-sm font-mono font-bold text-indigo-200 shrink-0">
+                          {money(item.precio * (item.cantidad || 1))}
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
+
+                {pedidoActivo.notas && (
+                  <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200 flex items-start gap-1.5">
+                    <span className="font-bold shrink-0">Nota:</span>
+                    <span className="italic truncate">{pedidoActivo.notas}</span>
+                  </div>
+                )}
               </div>
             </div>
 

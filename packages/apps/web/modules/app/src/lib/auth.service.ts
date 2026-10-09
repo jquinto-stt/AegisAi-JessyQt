@@ -198,6 +198,10 @@ export function asegurarSesionPruebas(emailPersonalizado?: string): ResultadoAut
     });
   }
 
+  pedidosStore.restaurarSeed();
+  inventariosStore.restaurarSeed();
+  operadoresStore.restaurarSeed();
+
   if (!organizacionStore.esModuloInstalado("pedidos")) {
     organizacionStore.instalarModulo("pedidos");
   }
@@ -219,19 +223,60 @@ export function asegurarSesionPruebas(emailPersonalizado?: string): ResultadoAut
 
 /**
  * Autentica usuario con correo y contraseña.
- * En modo de pruebas para el equipo, no valida contraseñas reales ni restringe el acceso.
+ * Valida con Supabase Auth si está configurado y verifica si requiere onboarding.
  */
 export async function iniciarSesion(credenciales: CredencialesLogin): Promise<ResultadoAuth> {
-  const { email } = credenciales;
-  return asegurarSesionPruebas(email);
+  const { email, password } = credenciales;
+  const cleanEmail = email.trim();
+
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
+
+    if (error) {
+      return { ok: false, motivo: traducirErrorAuth(error) };
+    }
+
+    if (data.user) {
+      const syncRes = await sincronizarIdentidadNecto(
+        data.user.id,
+        data.user.email || cleanEmail,
+        data.user.user_metadata,
+      );
+      return { ok: true, requiereOnboarding: syncRes.requiereOnboarding };
+    }
+  }
+
+  // Fallback sin Supabase o modo local: comprobar si el negocio ya completó onboarding
+  const yaCompleto = organizacionStore.tienePerfil && organizacionStore.tieneOrganizacion;
+  if (!yaCompleto) {
+    return { ok: true, requiereOnboarding: true };
+  }
+
+  return { ok: true, requiereOnboarding: false };
 }
 
 /**
  * Autenticación mediante Google OAuth.
- * En modo de pruebas para el equipo, concede acceso directo inmediato.
  */
 export async function iniciarSesionConGoogle(): Promise<ResultadoAuth> {
-  return asegurarSesionPruebas("google.tester@necto.io");
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/login`,
+      },
+    });
+    if (error) {
+      return { ok: false, motivo: traducirErrorAuth(error) };
+    }
+    return { ok: true };
+  }
+  return { ok: true, requiereOnboarding: !organizacionStore.tieneOrganizacion };
 }
 
 /**
@@ -250,10 +295,25 @@ export async function cerrarSesion(): Promise<void> {
 }
 
 /**
- * Hidrata la sesión local. En modo de pruebas para el equipo, asegura siempre
- * que la sesión esté lista con rol de administrador sin bloqueos.
+ * Hidrata la sesión local si existe una sesión activa persistida en Supabase Auth.
  */
 export async function autoHidratarSesionSupabase(): Promise<boolean> {
+  const sb = getSupabase();
+  if (sb && hayConfiguracion()) {
+    try {
+      const { data } = await sb.auth.getSession();
+      const session = data?.session;
+      if (session?.user) {
+        await sincronizarIdentidadNecto(
+          session.user.id,
+          session.user.email || "",
+          session.user.user_metadata,
+        );
+        return true;
+      }
+    } catch {}
+  }
+
   asegurarSesionPruebas();
   return true;
 }

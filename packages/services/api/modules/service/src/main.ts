@@ -26,7 +26,7 @@ for (const loc of envLocations) {
       if (eqIdx > 0) {
         const k = trimmed.slice(0, eqIdx).trim();
         const v = trimmed.slice(eqIdx + 1).trim();
-        if (!process.env[k]) process.env[k] = v;
+        process.env[k] = v;
       }
     }
     break;
@@ -49,13 +49,18 @@ export async function main() {
     console.info(`🚀 SrvApi listening on port ${PORT}...`);
   });
 
-  if (process.env.TELEGRAM_BOT_TOKEN) {
+  const getEnv = (k: string) => process.env[k];
+  const telegramToken = getEnv('TELEGRAM_BOT_TOKEN');
+  if (telegramToken) {
     try {
-      const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
+      console.info(`[TelegramBot] Iniciando bot con token: ${telegramToken.slice(0, 10)}...`);
+      const telegramBot = new TelegramBot(telegramToken);
       telegramBot.start();
     } catch (e: any) {
       console.error('[TelegramBot] No se pudo inicializar:', e.message);
     }
+  } else {
+    console.warn('[TelegramBot] TELEGRAM_BOT_TOKEN no configurado en entorno.');
   }
 
   return { app };

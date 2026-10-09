@@ -17,7 +17,7 @@ export class TelegramBot {
   private handler: TelegramHandler;
 
   constructor(token?: string) {
-    this.token = token || process.env.TELEGRAM_BOT_TOKEN || '';
+    this.token = token || (process.env as any)['TELEGRAM_BOT_TOKEN'] || '';
     if (!this.token) {
       throw new Error('[TelegramBot] TELEGRAM_BOT_TOKEN no está definido.');
     }

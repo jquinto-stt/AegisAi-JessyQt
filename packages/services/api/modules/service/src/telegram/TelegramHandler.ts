@@ -365,8 +365,9 @@ export class TelegramHandler {
     let borradorFinal = transition.nextDraft;
     let nextState = transition.nextState;
     const removeKeyboard = Boolean(transition.removeKeyboard);
+    let customReplyMarkup: any = undefined;
     const clientePerfilSiguiente = transition.clientePerfil !== undefined ? transition.clientePerfil : estadoConv.clientePerfil;
-    let baseUrl = process.env.CHECKOUT_BASE_URL || 'http://localhost:6020';
+    let baseUrl = (process.env as any)['CHECKOUT_BASE_URL'] || 'http://localhost:6020';
     try {
       const linkPath = path.resolve(process.cwd(), 'scratch/link.txt');
       if (fs.existsSync(linkPath)) {

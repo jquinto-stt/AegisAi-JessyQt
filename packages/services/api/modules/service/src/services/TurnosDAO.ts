@@ -123,7 +123,7 @@ export class TurnosDAO {
     this.doc = DynamoDBDocumentClient.from(client, {
       marshallOptions: { removeUndefinedValues: true },
     });
-    const table = process.env.TABLE_NAME;
+    const table = (process.env as any)['TABLE_NAME'];
     if (!table) throw new Error('TABLE_NAME env var is required');
     this.table = table;
   }

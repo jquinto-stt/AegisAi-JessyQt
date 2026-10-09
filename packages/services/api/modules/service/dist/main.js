@@ -140085,7 +140085,7 @@ class TurnosDAO {
     this.doc = $DynamoDBDocumentClient.from(client, {
       marshallOptions: { removeUndefinedValues: true }
     });
-    const table = process.env.TABLE_NAME;
+    const table = process.env["TABLE_NAME"];
     if (!table)
       throw new Error("TABLE_NAME env var is required");
     this.table = table;
@@ -143485,8 +143485,9 @@ class Auth {
     if (!password || typeof password !== "string" || password.length < 6) {
       return new HttpResponseBadRequest({ error: "La contraseña debe tener al menos 6 caracteres." });
     }
-    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const getEnv = (k) => process.env[k];
+    const url = getEnv("SUPABASE_URL") || getEnv("VITE_SUPABASE_URL");
+    const key = getEnv("SUPABASE_SERVICE_ROLE_KEY");
     if (!url || !key) {
       return new HttpResponseBadRequest({ error: "Servicio de base de datos no configurado." });
     }
@@ -143574,9 +143575,10 @@ class CatalogoIAService {
   apiKey;
   deployment;
   constructor() {
-    let ep = process.env.AZURE_CATALOG_OPENAI_ENDPOINT;
-    let key = process.env.AZURE_CATALOG_OPENAI_KEY;
-    this.deployment = process.env.AZURE_CATALOG_OPENAI_DEPLOYMENT || "gpt-4o";
+    const getEnv = (k) => process.env[k];
+    let ep = getEnv("AZURE_CATALOG_OPENAI_ENDPOINT");
+    let key = getEnv("AZURE_CATALOG_OPENAI_KEY");
+    this.deployment = getEnv("AZURE_CATALOG_OPENAI_DEPLOYMENT") || "gpt-4o";
     if (!ep || !key) {
       const envPaths = [
         path.resolve(process.cwd(), ".env.local"),
@@ -148508,9 +148510,10 @@ class TelegramCognitiveEngine {
   apiKey;
   deployment;
   constructor() {
-    let ep = process.env.AZURE_OPENAI_ENDPOINT;
-    let key = process.env.AZURE_OPENAI_KEY;
-    this.deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4o";
+    const getEnv = (k) => process.env[k];
+    let ep = getEnv("AZURE_OPENAI_ENDPOINT");
+    let key = getEnv("AZURE_OPENAI_KEY");
+    this.deployment = getEnv("AZURE_OPENAI_DEPLOYMENT") || "gpt-4o";
     if (!key && fs2.existsSync(".env")) {
       try {
         const envContent = fs2.readFileSync(".env", "utf8");
@@ -149040,8 +149043,9 @@ No hay artículos por debajo del punto mínimo de reorden en este momento. El in
     let borradorFinal = transition.nextDraft;
     let nextState = transition.nextState;
     const removeKeyboard = Boolean(transition.removeKeyboard);
+    let customReplyMarkup = undefined;
     const clientePerfilSiguiente = transition.clientePerfil !== undefined ? transition.clientePerfil : estadoConv.clientePerfil;
-    let baseUrl = process.env.CHECKOUT_BASE_URL || "http://localhost:6020";
+    let baseUrl = process.env["CHECKOUT_BASE_URL"] || "http://localhost:6020";
     try {
       const linkPath = path2.resolve(process.cwd(), "scratch/link.txt");
       if (fs3.existsSync(linkPath)) {
@@ -149109,7 +149113,7 @@ ${checkoutLink}
     if (nextState === "CATALOGO_ACTIVO") {
       const nombreCliente = clientePerfilSiguiente?.nombre || estadoConv.clientePerfil?.nombre || fullName || "Cliente";
       if (baseUrl.startsWith("https://")) {
-        const menuUrl = `${baseUrl}/menu?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent("Sede Principal")}&direccion=${encodeURIComponent(borradorFinal?.direccion || "Medellín")}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(borradorFinal?.modalidad || "retiro")}`;
+        const menuUrl = `${baseUrl}/catalogo-clientes?cliente=${encodeURIComponent(nombreCliente)}&sede=${encodeURIComponent("Sede Principal")}&direccion=${encodeURIComponent(borradorFinal?.direccion || "Medellín")}&chatId=${encodeURIComponent(chatId)}&modalidad=${encodeURIComponent(borradorFinal?.modalidad || "retiro")}`;
         textoFinal += `
 
 \uD83D\uDD17 <b>Catálogo interactivo:</b> <a href="${menuUrl}">Abrir catálogo en línea</a>`;
@@ -149153,8 +149157,9 @@ class TelegramDAO {
   catalogoCacheExp = 0;
   convCache = new Map;
   constructor() {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const getEnv = (k) => process.env[k];
+    const url = getEnv("SUPABASE_URL");
+    const key = getEnv("SUPABASE_SERVICE_ROLE_KEY");
     if (url && key) {
       this.sb = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false }
@@ -149685,7 +149690,7 @@ class TelegramBot {
   running = false;
   handler;
   constructor(token) {
-    this.token = token || process.env.TELEGRAM_BOT_TOKEN || "";
+    this.token = token || process.env["TELEGRAM_BOT_TOKEN"] || "";
     if (!this.token) {
       throw new Error("[TelegramBot] TELEGRAM_BOT_TOKEN no está definido.");
     }
@@ -149914,8 +149919,7 @@ for (const loc of envLocations) {
       if (eqIdx > 0) {
         const k = trimmed.slice(0, eqIdx).trim();
         const v = trimmed.slice(eqIdx + 1).trim();
-        if (!process.env[k])
-          process.env[k] = v;
+        process.env[k] = v;
       }
     }
     break;
@@ -149932,13 +149936,18 @@ async function main() {
   app.listen(PORT, () => {
     console.info(`\uD83D\uDE80 SrvApi listening on port ${PORT}...`);
   });
-  if (process.env.TELEGRAM_BOT_TOKEN) {
+  const getEnv = (k) => process.env[k];
+  const telegramToken = getEnv("TELEGRAM_BOT_TOKEN");
+  if (telegramToken) {
     try {
-      const telegramBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN);
+      console.info(`[TelegramBot] Iniciando bot con token: ${telegramToken.slice(0, 10)}...`);
+      const telegramBot = new TelegramBot(telegramToken);
       telegramBot.start();
     } catch (e) {
       console.error("[TelegramBot] No se pudo inicializar:", e.message);
     }
+  } else {
+    console.warn("[TelegramBot] TELEGRAM_BOT_TOKEN no configurado en entorno.");
   }
   return { app };
 }

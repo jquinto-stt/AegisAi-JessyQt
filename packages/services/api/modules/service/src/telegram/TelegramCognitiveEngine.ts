@@ -208,9 +208,10 @@ export class TelegramCognitiveEngine {
   private deployment: string;
 
   constructor() {
-    let ep = process.env.AZURE_OPENAI_ENDPOINT;
-    let key = process.env.AZURE_OPENAI_KEY;
-    this.deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o';
+    const getEnv = (k: string) => (process.env as any)[k];
+    let ep = getEnv('AZURE_OPENAI_ENDPOINT');
+    let key = getEnv('AZURE_OPENAI_KEY');
+    this.deployment = getEnv('AZURE_OPENAI_DEPLOYMENT') || 'gpt-4o';
 
     if (!key && fs.existsSync('.env')) {
       try {

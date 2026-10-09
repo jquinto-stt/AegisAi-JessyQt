@@ -19,8 +19,9 @@ class Auth {
       return new HttpResponseBadRequest({ error: 'La contraseña debe tener al menos 6 caracteres.' });
     }
 
-    const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const getEnv = (k: string) => (process.env as any)[k];
+    const url = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL');
+    const key = getEnv('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!url || !key) {
       return new HttpResponseBadRequest({ error: 'Servicio de base de datos no configurado.' });

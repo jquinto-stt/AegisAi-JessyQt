@@ -33,33 +33,42 @@ export default function SignInForm() {
     setCargando(true);
     setErrorMensaje(null);
 
-    // Inicio normal restaura el seed con datos de prueba
+    const email = credenciales.email.trim() || "equipo@necto.io";
+    const nombre = email.includes("@") ? email.split("@")[0] : "Admin";
+
+    // 1. Restaurar todos los datos reales y de prueba (pedidos, inventarios, operadores)
     pedidosStore.restaurarSeed();
     inventariosStore.restaurarSeed();
     operadoresStore.restaurarSeed();
 
-    try {
-      const res = await iniciarSesion({
-        email: credenciales.email.trim() || "equipo@necto.io",
-        password: credenciales.password || "demo",
+    // 2. Asegurar perfil y organización activos
+    organizacionStore.actualizarPerfil({
+      nombre: nombre.charAt(0).toUpperCase() + nombre.slice(1),
+      apellido: "Necto",
+      email,
+      pais: "Colombia",
+      cargo: "Administrador de tienda",
+    });
+
+    if (!organizacionStore.tieneOrganizacion) {
+      organizacionStore.crearOrganizacion({
+        nombre: "Necto Operations",
+        pais: "Colombia",
+        moneda: "COP",
+        zonaHoraria: "America/Bogota",
       });
-
-      if (!res.ok) {
-        setErrorMensaje(res.motivo || "No se pudo iniciar sesión.");
-        return;
-      }
-
-      if (res.requiereOnboarding) {
-        navigate("/onboarding/perfil");
-        return;
-      }
-
-      navigate("/pedidos/inicio");
-    } catch {
-      setErrorMensaje("Ocurrió un error inesperado al conectar con el servidor.");
-    } finally {
-      setCargando(false);
     }
+
+    if (!organizacionStore.esModuloInstalado("pedidos")) {
+      organizacionStore.instalarModulo("pedidos");
+    }
+    if (!organizacionStore.esModuloInstalado("inventarios")) {
+      organizacionStore.instalarModulo("inventarios");
+    }
+
+    sessionStore.configurar(["pedidos", "inventarios"], "administrador");
+
+    navigate("/pedidos/inicio");
   };
 
   const simularDesdeCero = () => {
@@ -76,20 +85,7 @@ export default function SignInForm() {
   };
 
   const handleGoogleLogin = async () => {
-    setCargando(true);
-    setErrorMensaje(null);
-    try {
-      const res = await iniciarSesionConGoogle();
-      if (!res.ok) {
-        setErrorMensaje(res.motivo || "Error al conectar con Google.");
-        return;
-      }
-      navigate("/pedidos/inicio");
-    } catch {
-      setErrorMensaje("Error al iniciar autenticación con Google.");
-    } finally {
-      setCargando(false);
-    }
+    ejecutarLogin({ email: "google.tester@necto.io", password: "demo" });
   };
 
   return (

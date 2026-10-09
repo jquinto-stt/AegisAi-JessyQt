@@ -18,9 +18,10 @@ export class CatalogoIAService {
   private deployment: string;
 
   constructor() {
-    let ep = process.env.AZURE_CATALOG_OPENAI_ENDPOINT;
-    let key = process.env.AZURE_CATALOG_OPENAI_KEY;
-    this.deployment = process.env.AZURE_CATALOG_OPENAI_DEPLOYMENT || 'gpt-4o';
+    const getEnv = (k: string) => (process.env as any)[k];
+    let ep = getEnv('AZURE_CATALOG_OPENAI_ENDPOINT');
+    let key = getEnv('AZURE_CATALOG_OPENAI_KEY');
+    this.deployment = getEnv('AZURE_CATALOG_OPENAI_DEPLOYMENT') || 'gpt-4o';
 
     // Fallback de lectura directa de .env.local si no está cargado
     if (!ep || !key) {

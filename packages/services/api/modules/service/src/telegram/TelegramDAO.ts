@@ -11,8 +11,9 @@ export class TelegramDAO {
   private convCache = new Map<string, { conversacionId: string; contactoId: string }>();
 
   constructor() {
-    const url = process.env.SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const getEnv = (k: string) => process.env[k];
+    const url = getEnv('SUPABASE_URL');
+    const key = getEnv('SUPABASE_SERVICE_ROLE_KEY');
     if (url && key) {
       this.sb = createClient(url, key, {
         auth: { persistSession: false, autoRefreshToken: false },
